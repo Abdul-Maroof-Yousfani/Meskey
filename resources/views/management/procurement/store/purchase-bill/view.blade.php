@@ -221,11 +221,13 @@
                                    class="form-control" 
                                    accept="image/*,application/pdf">
                             @if (!empty($data->PurchaseOrderReceivingData->purchase_order_data->printing_sample))
-                                <small class="d-block mt-1">
-                                    <a href="{{ asset('storage/' . $data->PurchaseOrderReceivingData->purchase_order_data->printing_sample) }}" target="_blank">
-                                        View existing file
-                                    </a>
-                                </small>
+                                @foreach((array)$data->PurchaseOrderReceivingData->purchase_order_data->printing_sample as $sample)
+                                    <small class="d-block mt-1">
+                                        <a href="{{ asset('storage/' . $sample) }}" target="_blank">
+                                            View file
+                                        </a>
+                                    </small>
+                                @endforeach
                             @endif
                         </td>
                     

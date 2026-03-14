@@ -208,10 +208,19 @@ class ApprovalController extends Controller
 
         $results = [];
         $uniqueParents = [];
+        $processedApprovedIds = [];
 
         // First, process all child records
         foreach ($modelDataIds as $dataId) {
             $record = $modelClass::find($dataId);
+
+            if (!$record) {
+                // Fallback: If not found, try the suffix 'Data' (e.g., PurchaseQuotation -> PurchaseQuotationData)
+                $dataModelClass = $modelClass . 'Data';
+                if (class_exists($dataModelClass)) {
+                    $record = $dataModelClass::find($dataId);
+                }
+            }
 
             if (!$record) {
                 $results[] = [
@@ -240,6 +249,9 @@ class ApprovalController extends Controller
             } else { // approve
                 if ($record->canApprove()) {
                     $returnedChild = $record->approve($request->comments);
+                    if ($returnedChild) {
+                        $processedApprovedIds[] = $record->purchase_request_data_id;
+                    }
                 } else {
                     $returnedChild = false;
                 }
@@ -258,38 +270,54 @@ class ApprovalController extends Controller
 
         // Now, process unique parents
         foreach ($uniqueParents as $parentId => $parentRecord) {
-            if ($reqType == 'revert') {
+            if ($reqType == 'revert' || $reqType == 'reject') {
                 $parentRecord->am_change_made = 0;
                 $parentRecord->save();
 
-                $returnedParent = $parentRecord->revert($request->comments);
-            } elseif ($reqType == 'reject') {
-                $parentRecord->am_change_made = 0;
-                $parentRecord->save();
+                $allChildren = $parentRecord->quotation_data()->get();
+                $pendingCount = $allChildren->whereNotIn('am_approval_status', ['approved', 'rejected', 'neglected'])->count();
+                $approvedCount = $allChildren->where('am_approval_status', 'approved')->count();
 
-                $returnedParent = $parentRecord->reject($request->comments);
+                if ($reqType == 'reject' && $pendingCount == 0 && $approvedCount == 0) {
+                    $returnedParent = $parentRecord->reject($request->comments);
+                } else {
+                    if ($parentRecord->canApprove()) {
+                        if ($pendingCount == 0 && $approvedCount > 0) {
+                            $returnedParent = $parentRecord->approve($request->comments);
+                        } elseif ($approvedCount > 0) {
+                            $returnedParent = $parentRecord->partial_approve($request->comments);
+                        } else {
+                            $returnedParent = true;
+                        }
+                    } else {
+                        $returnedParent = true;
+                    }
+                }
             } else { // approve
-                $NoRemainingPendingChild = $parentRecord->quotation_data()->where('am_approval_status', 'pending')->count() === 0;
-                
-
                 if ($parentRecord->canApprove()) {
-                    $purchase_request_id = $parentRecord->purchase_request_id;
-                    $purchase_request = PurchaseRequest::find($purchase_request_id);
-                    $purchase_quotation_data = PurchaseQuotationData::whereIn("purchase_request_data_id", $purchase_request->PurchaseData->pluck("id"))
-                                                                    ->where("am_approval_status", "pending")
-                                                                    ->get();
+                    // Update unselected items in the same Purchase Request
+                    $pr_id = $parentRecord->purchase_request_id;
+                    $remainingQuotations = PurchaseQuotationData::whereHas('purchase_quotation', function($query) use ($pr_id) {
+                            $query->where('purchase_request_id', $pr_id);
+                        })
+                        ->where('am_approval_status', 'pending')
+                        ->whereNotIn('id', $modelDataIds) 
+                        ->get();
 
-                    foreach($purchase_quotation_data as $data) {
-                        $data->reject($request->comments);
+                    foreach ($remainingQuotations as $quotationData) {
+                        // Mark all unselected pending items as rejected
+                        $quotationData->update(['am_approval_status' => 'rejected']);
+                        $quotationData->approvalRows()->update(['status' => 'rejected']);
                     }
                     
-                    $pendingChildren = $parentRecord->quotation_data()->where("am_approval_status", 'pending')->get();
+                    // Re-calculate status after updates (items are now either approved, rejected, or neglected from previous actions)
+                    $NoRemainingPendingChild = $parentRecord->quotation_data()
+                        ->whereNotIn('am_approval_status', ['approved', 'rejected', 'neglected'])
+                        ->count() === 0;
+                    
                     if (!$NoRemainingPendingChild) {
-                        // dd("ok1");
                         $returnedParent = $parentRecord->partial_approve($request->comments);
                     } else {
-                        // dd("ok2");
-
                         $returnedParent = $parentRecord->approve($request->comments);
                     }
                 } else {

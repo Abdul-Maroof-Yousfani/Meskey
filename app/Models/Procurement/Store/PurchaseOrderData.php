@@ -19,6 +19,9 @@ class PurchaseOrderData extends Model
     use HasFactory, HasApproval;
     protected $table = "purchase_order_data";
     protected $guarded = [];
+    protected $casts = [
+        'printing_sample' => 'array',
+    ];
 
 
     public function purchase_order()

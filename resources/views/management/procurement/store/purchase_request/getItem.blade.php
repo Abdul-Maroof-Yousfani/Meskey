@@ -6,7 +6,10 @@
     @foreach ($job_order->packing_items as $index => $packing_item)
         @php
             $i = $job_order->id . '-' . $index;
+            $balance = jobOrderPackingBalanceAgainstPurchaseRequest($packing_item->id);
         @endphp
+
+        @if ($balance > 0)
         <tr id="row_pre_{{ $i }}" class="jo-{{ $job_order->id }}">
 
             <td style="min-width: 250px;">
@@ -31,7 +34,7 @@
 
             <td style="min-width: 100px;">
                 <input type="number" name="qty[]" id="qty_{{ $i }}" class="form-control" step="0.01"
-                    min="0" placeholder="Qty" value="{{ jobOrderPackingBalanceAgainstPurchaseRequest($packing_item->id) }}">
+                    min="0" placeholder="Qty" value="{{ $balance }}" readonly>
             </td>
 
             <td class="bag-only" style="min-width: 250px;">
@@ -79,9 +82,9 @@
                     min="0" placeholder="Cons./sq. in.">
             </td>
 
-            <td class="bag-only" style="min-width: 150px;">
+            <td class="bag-only" style="width: 150px; min-width: 150px; max-width: 150px;">
                 <select name="size[]" id="size_{{ $i }}"
-                    class="form-control item-select size-select select2Dropdown">
+                    class="form-control item-select size-select select2Dropdown" style="width: 100%;">
                     <option value="">Select Size</option>
                     @foreach (getAllSizes() ?? [] as $size)
                         <option value="{{ $size->id }}">{{ $size->size }}</option>
@@ -108,8 +111,8 @@
             </td>
 
             <td class="bag-only" style="min-width: 250px;">
-                <input type="file" name="printing_sample[]" id="printing_sample_{{ $i }}"
-                    class="form-control" accept="image/*,application/pdf">
+                <input type="file" name="printing_sample[{{ $i }}][]" id="printing_sample_{{ $i }}"
+                    class="form-control" accept="image/*,application/pdf" multiple>
             </td>
 
             <td style="min-width: 200px;">
@@ -124,7 +127,7 @@
                 </button>
             </td>
         </tr>
-
+        @endif
 
         {{-- Sub Packing Item --}}
         @foreach($packing_item->subItems as $sub_packing_item)
@@ -160,7 +163,7 @@
 
             <td>
                 <input type="number" name="qty[]" id="qty_{{ $i }}" class="form-control" step="0.01"
-                    min="0" placeholder="Qty" style="width:120px;" value="{{ $balance }}">
+                    min="0" placeholder="Qty" style="width:120px;" value="{{ $balance }}" readonly>
             </td>
 
             <td class="bag-only">
@@ -208,9 +211,9 @@
                     min="0" placeholder="Cons./sq. in.">
             </td>
 
-            <td class="bag-only" style="min-width: 150px;">
+            <td class="bag-only" style="width: 150px; min-width: 150px; max-width: 150px;">
                 <select name="size[]" id="size_{{ $i }}"
-                    class="form-control item-select size-select select2Dropdown">
+                    class="form-control item-select size-select select2Dropdown" style="width: 100%;">
                     <option value="">Select Size</option>
                     @foreach (getAllSizes() ?? [] as $size)
                         <option value="{{ $size->id }}">{{ $size->size }}</option>
@@ -238,8 +241,8 @@
             </td>
 
             <td class="bag-only" style="min-width: 250px;">
-                <input type="file" name="printing_sample[]" id="printing_sample_{{ $i }}"
-                    class="form-control" accept="image/*,application/pdf">
+                <input type="file" name="printing_sample[{{ $i }}][]" id="printing_sample_{{ $i }}"
+                    class="form-control" accept="image/*,application/pdf" multiple>
             </td>
 
             <td style="min-width: 200px;">
@@ -267,8 +270,11 @@
     $(document).ready(function() {
         $(".select2Dropdown").select2();
         $(".stitching-select").select2();
-    
-
+        $(".size-select").select2({
+            tags: true,
+            placeholder: "Select or add size",
+            allowClear: true
+        });
     });
 
     $(".job_orders").on("change", function() {

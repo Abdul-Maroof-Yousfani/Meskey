@@ -177,18 +177,20 @@
         <td style="min-width: 150px;" class="bag-only">
             <div class="loop-fields">
                 <div class="form-group mb-0">
-                    {{-- <input type="file" name="printing_sample[]" id="printing_sample_{{ $key }}"
-                        class="form-control" accept="image/*,application/pdf" placeholder="Printing Sample"> --}}
-                     <input type="hidden" name="printing_sample[]" id="printing_sample_{{ $key }}" value="{{ $data->printing_sample ? $data->printing_sample : $data->purchase_request->printing_sample}}"
-                                            class="form-control" accept="image/*,application/pdf" placeholder="Printing Sample">
+                    @php
+                        $printingSample = $data->printing_sample ?: $data->purchase_request->printing_sample;
+                    @endphp
+                     <input type="hidden" name="printing_sample[]" id="printing_sample_{{ $key }}" value="{{ is_array($printingSample) ? json_encode($printingSample) : $printingSample }}">
 
-                    @if (!empty(($data->printing_sample ? $data->printing_sample : $data->purchase_request->printing_sample)))
-                        <small>
-                            <a href="{{ asset('storage/' . ($data->printing_sample ? $data->printing_sample : $data->purchase_request->printing_sample)) }}" target="_blank">
-                                View existing file
-                            </a>
-                        </small>
-                        @else
+                    @if (!empty($printingSample))
+                        @foreach((array)$printingSample as $sample)
+                            <small class="d-block">
+                                <a href="{{ asset('storage/' . $sample) }}" target="_blank">
+                                    View file
+                                </a>
+                            </small>
+                        @endforeach
+                    @else
                         <span>No Attach.</span>
                     @endif
                 </div>

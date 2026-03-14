@@ -194,12 +194,19 @@ class PurchaseQuotationController extends Controller
                 $quotaionRowspan = 0;
                 $requestItems = [];
                 $hasApprovedItem = false;
-
+                $hasPendingOrRevertedItem = false;
                 foreach ($quotationGroup['items'] as $itemGroup) {
                     foreach ($itemGroup['suppliers'] as $supplierData) {
                         $approvalStatus = $supplierData->{$supplierData->getApprovalModule()->approval_column ?? 'am_approval_status'};
-                        if (strtolower($approvalStatus) === 'approved') {
+                        $status = strtolower($approvalStatus);
+                        if ($status === 'approved') {
                             $hasApprovedItem = true;
+                        }
+                        if ($status === 'pending' || $status === 'reverted' || $status === 'neglected') {
+                            $hasPendingOrRevertedItem = true;
+                        }
+
+                        if ($hasApprovedItem && $hasPendingOrRevertedItem) {
                             break 2;
                         }
                     }
@@ -241,7 +248,8 @@ class PurchaseQuotationController extends Controller
 
 
                     'items' => $requestItems,
-                    'has_approved_item' => $hasApprovedItem
+                    'has_approved_item' => $hasApprovedItem,
+                    'has_pending_or_reverted_item' => $hasPendingOrRevertedItem
                 ];
 
             }
@@ -318,12 +326,20 @@ class PurchaseQuotationController extends Controller
                 $quotaionRowspan = 0;
                 $requestItems = [];
                 $hasApprovedItem = false;
+                $hasPendingOrRevertedItem = false;
 
                 foreach ($quotationGroup['items'] as $itemGroup) {
                     foreach ($itemGroup['suppliers'] as $supplierData) {
                         $approvalStatus = $supplierData->{$supplierData->getApprovalModule()->approval_column ?? 'am_approval_status'};
-                        if (strtolower($approvalStatus) === 'approved') {
+                        $status = strtolower($approvalStatus);
+                        if ($status === 'approved') {
                             $hasApprovedItem = true;
+                        }
+                        if ($status === 'pending' || $status === 'reverted' || $status === 'neglected') {
+                            $hasPendingOrRevertedItem = true;
+                        }
+
+                        if ($hasApprovedItem && $hasPendingOrRevertedItem) {
                             break 2;
                         }
                     }
@@ -365,7 +381,8 @@ class PurchaseQuotationController extends Controller
 
 
                     'items' => $requestItems,
-                    'has_approved_item' => $hasApprovedItem
+                    'has_approved_item' => $hasApprovedItem,
+                    'has_pending_or_reverted_item' => $hasPendingOrRevertedItem
                 ];
 
             }
@@ -472,9 +489,12 @@ class PurchaseQuotationController extends Controller
             // })
             ->get();
                 
-        $data = PurchaseQuotationData::with(relations: ['purchase_quotation', 'supplier', 'item', 'category'])
+        $data = PurchaseQuotationData::with(['purchase_quotation', 'supplier', 'item', 'category'])
             ->whereIn('purchase_quotation_id', $PurchaseQuotationIds2)
-            // ->where('am_approval_status', 'pending')
+            ->where('am_approval_status', 'pending')
+            ->latest()->first() 
+            ?? PurchaseQuotationData::with(['purchase_quotation', 'supplier', 'item', 'category'])
+            ->whereIn('purchase_quotation_id', $PurchaseQuotationIds2)
             ->latest()->first();
       
         return view('management.procurement.store.purchase_quotation.dataForComparison', [
@@ -514,7 +534,7 @@ class PurchaseQuotationController extends Controller
 
         $PurchaseQuotationData = PurchaseQuotationData::with(['purchase_request', 'purchase_quotation', 'supplier', 'item', 'category'])
             ->whereIn('purchase_quotation_id', $PurchaseQuotationIds)
-            ->whereNotIn("am_approval_status", ["rejected", "approved"])
+            ->whereNotIn("am_approval_status", ["rejected", "approved", "reverted"])
             // ->where('am_approval_status', 'pending')
             //     ->whereHas('purchase_quotation', function ($query) {
             //     $query->whereNotIn('am_approval_status', ['partial_approved']);
@@ -522,10 +542,14 @@ class PurchaseQuotationController extends Controller
             ->get();
 
 
-        $data = PurchaseQuotationData::with(relations: ['purchase_quotation', 'supplier', 'item', 'category'])
+        $data = PurchaseQuotationData::with(['purchase_quotation', 'supplier', 'item', 'category'])
             ->whereIn('purchase_quotation_id', $PurchaseQuotationIds2)
-            // ->where('am_approval_status', 'pending')
+            ->whereIn('am_approval_status', ['pending', 'neglected'])
+            ->latest()->first() 
+            ?? PurchaseQuotationData::with(['purchase_quotation', 'supplier', 'item', 'category'])
+            ->whereIn('purchase_quotation_id', $PurchaseQuotationIds2)
             ->latest()->first();
+        
       
         return view('management.procurement.store.purchase_quotation.approvalComparisonCanvas', [
             'purchaseRequest' => $purchaseRequest,
@@ -614,13 +638,17 @@ class PurchaseQuotationController extends Controller
 
             ->get();
 
+        $pendingData = PurchaseQuotationData::where('purchase_quotation_id', $id)
+            ->where('am_approval_status', 'pending')
+            ->first();
+
         return view('management.procurement.store.purchase_quotation.approvalCanvas', [
             'purchaseQuotation' => $purchaseQuotation,
             'categories' => $categories,
             'locations' => $locations,
             'job_orders' => $job_orders,
             'purchaseQuotationData' => $purchaseQuotationData,
-            'data1' => $purchaseQuotation,
+            'data1' => $pendingData ?? $purchaseQuotation,
         ]);
     }
 
@@ -808,16 +836,17 @@ class PurchaseQuotationController extends Controller
      */
     public function edit($id)
     {
-        $purchase_request_id = request()->purchase_request_id;
         $purchaseQuotation = PurchaseQuotation::with([
             'quotation_data',
             'quotation_data.category',
             'quotation_data.item',
             'purchase_request.PurchaseData'
         ])->findOrFail($id);
+
+        $purchase_request_id = request()->purchase_request_id ?? $purchaseQuotation->purchase_request_id;
    
         $PurchaseQuotationIds = PurchaseQuotation::where('purchase_request_id', $purchase_request_id)
-                                                ->whereIn("am_approval_status", ["pending", "reverted"])
+                                                ->whereIn("am_approval_status", ["pending", "reverted", "partial approved"])
                                                 ->pluck('id');
 
         $PurchaseQuotationIds2 = PurchaseQuotation::where('purchase_request_id', $purchase_request_id)
@@ -1036,7 +1065,7 @@ class PurchaseQuotationController extends Controller
         try {
             // $PurchaseQuotation = PurchaseQuotation::findOrFail($id);
             $PurchaseQuotations = PurchaseQuotation::where("purchase_request_id", $id)
-                                                    ->whereIn("am_approval_status", ["pending", "reverted"])
+                                                    ->whereIn("am_approval_status", ["pending", "reverted", "partial approved", "approved"])
                                                     ->get();
             
             $updated_ids = [];
@@ -1045,7 +1074,7 @@ class PurchaseQuotationController extends Controller
 
                 $PurchaseQuotation->update([
                     'description' => $request->description,
-                    'am_change_made' => 0,
+                    'am_change_made' => 1,
                     "am_approval_status" => "pending"
                 ]);
 
@@ -1078,7 +1107,7 @@ class PurchaseQuotationController extends Controller
                         'rate'    => $rate,
                         'total'   => $qty * $rate,
                         "am_approval_status" => "pending",
-                        "am_change_made" => 0,
+                        "am_change_made" => 1,
                         'remarks' => $request->remarks[$row->id] ?? null,
                     ]);
                 }

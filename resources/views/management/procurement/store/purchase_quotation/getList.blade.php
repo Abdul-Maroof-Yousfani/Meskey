@@ -55,8 +55,8 @@
                                     $statusText = '';
                                     $statusColor = '';
                                     if(strtolower($approvalStatus) === 'partial approved' && strtolower($approvalDataStatus) === 'pending') {
-                                        $statusText = 'Neglected';
-                                        $statusColor = 'text-danger';
+                                        $statusText = 'Pending';
+                                        $statusColor = 'text-warning';
                                     } elseif(strtolower($approvalStatus) === 'rejected' && strtolower($approvalDataStatus) === 'pending') {
                                         $statusText = 'Rejected';
                                         $statusColor = 'text-danger';
@@ -65,10 +65,15 @@
                                         $statusColor = match(strtolower($statusText)) {
                                             'approved' => 'text-success',
                                             'rejected' => 'text-danger',
+                                            'neglected' => 'text-warning',
                                             'returned' => 'text-primary',
                                             'pending' => 'text-warning',
                                             default => 'text-muted',
                                         };
+
+                                        if (strtolower($statusText) === 'neglected') {
+                                            $statusText = 'Pending';
+                                        }
                                     }
                                 @endphp
                                 @if($statusText)
@@ -100,10 +105,15 @@
                                         $badgeClass = match(strtolower($approvalStatus)) {
                                             'approved' => 'badge-success',
                                             'rejected' => 'badge-danger',
+                                            'neglected' => 'badge-warning',
                                             'pending' => 'badge-warning',
                                             'returned' => 'badge-info',
                                             default => 'badge-secondary',
                                         };
+
+                                        if (strtolower($approvalStatus) === 'neglected') {
+                                            $approvalStatus = 'Pending';
+                                        }
                                     @endphp
                                     <span class="badge {{ $badgeClass }}">
                                         {{ $approvalStatus }}

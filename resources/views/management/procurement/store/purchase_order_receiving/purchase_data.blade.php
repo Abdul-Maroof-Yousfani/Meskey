@@ -147,11 +147,13 @@
         <input type="file" name="printing_sample[]" id="printing_sample_{{ $key }}" disabled
             class="form-control" accept="image/*,application/pdf">
         @if (!empty($data->printing_sample))
-            <small class="d-block mt-1">
-                <a href="{{ asset('storage/' . $data->printing_sample) }}" target="_blank">
-                    View existing file
-                </a>
-            </small>
+            @foreach((array)$data->printing_sample as $sample)
+                <small class="d-block mt-1">
+                    <a href="{{ asset('storage/' . $sample) }}" target="_blank">
+                        View file
+                    </a>
+                </small>
+            @endforeach
         @endif
     </td>
 

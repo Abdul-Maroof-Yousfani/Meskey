@@ -14,6 +14,8 @@ use App\Models\Procurement\Store\PurchaseRequest;
 use App\Models\Procurement\Store\PurchaseRequestData;
 use App\Models\Master\Department;
 use App\Models\Master\RequestBy;
+use App\Models\Master\Color;
+use App\Models\Master\Size;
 use App\Models\Product;
 use App\Models\Sales\JobOrder;
 use Carbon\Carbon;
@@ -32,7 +34,7 @@ class PurchaseRequestController extends Controller
     public function getItems(Request $request)
     {
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
-        $job_orders = JobOrder::with('packing_items')->where('id', request()->job_order)->get();
+        $job_orders = JobOrder::with('packing_items.subItems')->where('id', request()->job_order)->get();
         $items = Product::with("unitOfMeasure")->where("product_type", "general_items")->where("status", "active")->get();
 
 
@@ -121,25 +123,30 @@ class PurchaseRequestController extends Controller
     {
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $job_orders = JobOrder::select('id', 'job_order_no')
-                                ->get()
-                                ->reject(function($job_order) {
-                                    $packings = $job_order->packing_items;
-                                    $subpackings = $job_order->sub_packing_items;
-                                    foreach($packings as $packing) {
-                                        $balance = jobOrderPackingBalanceAgainstPurchaseRequest($packing->id);
-                                        if($balance <= 0) {
-                                            return true;
-                                        }
-                                    }
+                                ->get();
+                                // ->reject(function($job_order) {
+                                //     $packings = $job_order->packing_items;
+                                    
+                                //     $any_item_has_balance = false;
 
-                                    foreach($subpackings as $subpacking) {
-                                        $balance = jobOrderSubPackingBalanceAgainstPurchaseRequest($subpacking->id);
-                                        if($balance <= 0) {
-                                            return true;
-                                        }
-                                    }
-                                    return false;
-                                });
+                                //     foreach($packings as $packing) {
+                                //         if (jobOrderPackingBalanceAgainstPurchaseRequest($packing->id) > 0) {
+                                //             $any_item_has_balance = true;
+                                //             break;
+                                //         }
+
+                                //         foreach($packing->subItems as $subpacking) {
+                                //             if (jobOrderSubPackingBalanceAgainstPurchaseRequest($subpacking->id) > 0) {
+                                //                 $any_item_has_balance = true;
+                                //                 break;
+                                //             }
+                                //         }
+
+                                //         if ($any_item_has_balance) break;
+                                //     }
+
+                                //     return !$any_item_has_balance;
+                                // });
         $items = Product::with("unitOfMeasure")->where("product_type", "general_items")->where("status", "active")->get();
         $departments = Department::where('status', 'active')->get();
         $request_bies = RequestBy::where('status', 'active')->get();
@@ -178,11 +185,13 @@ class PurchaseRequestController extends Controller
 
             $purchase_request_data_ids = [];
             foreach ($request->item_id as $index => $itemId) {
-                $printingSamplePath = null;
+                $indexKey = $request->index[$index] ?? $index;
+                $printingSamplePaths = [];
 
-                if ($request->hasFile('printing_sample.'.$index)) {
-                    $file = $request->file('printing_sample.'.$index);
-                    $printingSamplePath = $file->store('printing_samples', 'public');
+                if ($request->hasFile("printing_sample.$indexKey")) {
+                    foreach ($request->file("printing_sample.$indexKey") as $file) {
+                        $printingSamplePaths[] = $file->store('printing_samples', 'public');
+                    }
                 }
 
                 // Handle stitching multi-select - convert array to comma-separated string
@@ -210,6 +219,13 @@ class PurchaseRequestController extends Controller
                     ], 422);
                 }
 
+                // Handle Dynamic Size Creation
+                $sizeId = $request->size[$index] ?? null;
+                if ($sizeId && !is_numeric($sizeId)) {
+                    $newSize = Size::firstOrCreate(['size' => $sizeId], ['status' => 1, 'company_id' => $request->company_id]);
+                    $sizeId = $newSize->id;
+                }
+
                 $requestData = PurchaseRequestData::create([
                     'purchase_request_id' => $purchaseRequest->id,
                     'category_id' => $request->category_id_header,
@@ -219,10 +235,10 @@ class PurchaseRequestController extends Controller
                     'min_weight' => $request->min_weight[$index] ?? null,
                     'color' => $request->color[$index] ?? null,
                     'construction_per_square_inch' => $request->construction_per_square_inch[$index] ?? null,
-                    'size' => $request->size[$index] ?? null,
+                    'size' => $sizeId,
                     'stitching' => $stitchingValue,
                     'micron' => $request->micron[$index] ?? null,
-                    'printing_sample' => $printingSamplePath,
+                    'printing_sample' => $printingSamplePaths,
                     'brand_id' => $request->brands[$index] ?? null,
                     'remarks' => $request->remarks[$index] ?? null,
                     'packing_id' => $request->packing_id[$index] ?? null,
@@ -355,9 +371,14 @@ class PurchaseRequestController extends Controller
                     $printingSamplePath = $requestData->printing_sample;
 
                     if ($requestData) {
-                        if ($request->hasFile('printing_sample.'.$index)) {
-                            $file = $request->file('printing_sample.'.$index);
-                            $printingSamplePath = $file->store('printing_samples', 'public');
+                        $indexKeyUpdate = $request->index[$index] ?? $index;
+                        if ($request->hasFile("printing_sample.$indexKeyUpdate")) {
+                            $newFiles = [];
+                            foreach ($request->file("printing_sample.$indexKeyUpdate") as $file) {
+                                $newFiles[] = $file->store('printing_samples', 'public');
+                            }
+                            // Merge with existing files if any
+                            $printingSamplePath = array_merge((array)$printingSamplePath, $newFiles);
                         }
 
                         // Handle stitching multi-select - convert array to comma-separated string
@@ -389,6 +410,13 @@ class PurchaseRequestController extends Controller
                             ], 422);
                         }
 
+                        // Handle Dynamic Size Creation
+                        $sizeId = $request->size[$index] ?? null;
+                        if ($sizeId && !is_numeric($sizeId)) {
+                            $newSize = Size::firstOrCreate(['size' => $sizeId], ['status' => 1, 'company_id' => $request->company_id]);
+                            $sizeId = $newSize->id;
+                        }
+
                         $requestData->update([
                             'category_id' => $request->category_id_header,
                             'item_id' => $itemId,
@@ -396,7 +424,7 @@ class PurchaseRequestController extends Controller
                             'min_weight' => $request->min_weight[$index] ?? null,
                             'color' => $request->color[$index] ?? null,
                             'construction_per_square_inch' => $request->construction_per_square_inch[$index] ?? null,
-                            'size' => $request->size[$index] ?? null,
+                            'size' => $sizeId,
                             'stitching' => $stitchingValue,
                             'printing_sample' => $printingSamplePath,
                             'remarks' => $request->remarks[$index] ?? null,
@@ -421,9 +449,13 @@ class PurchaseRequestController extends Controller
                     }
                 } else {
 
-                    if ($request->hasFile('printing_sample.'.$index)) {
-                        $file = $request->file('printing_sample.'.$index);
-                        $printingSamplePath = $file->store('printing_samples', 'public');
+                    $indexKeyNew = $request->index[$index] ?? $index;
+                    $printingSamplePathNew = [];
+
+                    if ($request->hasFile("printing_sample.$indexKeyNew")) {
+                        foreach ($request->file("printing_sample.$indexKeyNew") as $file) {
+                            $printingSamplePathNew[] = $file->store('printing_samples', 'public');
+                        }
                     }
 
                     // Handle stitching multi-select - convert array to comma-separated string
@@ -452,6 +484,13 @@ class PurchaseRequestController extends Controller
                         ], 422);
                     }
 
+                    // Handle Dynamic Size Creation
+                    $sizeIdNew = $request->size[$index] ?? null;
+                    if ($sizeIdNew && !is_numeric($sizeIdNew)) {
+                        $newSize = Size::firstOrCreate(['size' => $sizeIdNew], ['status' => 1, 'company_id' => $request->company_id]);
+                        $sizeIdNew = $newSize->id;
+                    }
+
                     $requestData = PurchaseRequestData::create([
                         'purchase_request_id' => $purchaseRequest->id,
                         'category_id' => $request->category_id_header,
@@ -461,9 +500,9 @@ class PurchaseRequestController extends Controller
                         'min_weight' => $request->min_weight[$index] ?? null,
                         'color' => $request->color[$index] ?? null,
                         'construction_per_square_inch' => $request->construction_per_square_inch[$index] ?? null,
-                        'size' => $request->size[$index] ?? null,
+                        'size' => $sizeIdNew,
                         'stitching' => $stitchingValueNew,
-                        'printing_sample' => $printingSamplePath,
+                        'printing_sample' => $printingSamplePathNew,
                         'brand_id' => $request->brands[$index] ?? null,
                         'remarks' => $request->remarks[$index] ?? null,
                         'packing_id' => $request->packing_id[$index] ?? null,

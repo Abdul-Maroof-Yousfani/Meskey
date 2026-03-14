@@ -42,7 +42,7 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label>Order Date:</label>
-                <input readonly type="date" id="purchase_date" value="{{ optional($purchaseOrder)->order_date }}"
+                <input readonly type="date" id="purchase_date" min="{{ date('Y-m-d') }}" value="{{ optional($purchaseOrder)->order_date }}"
                     name="purchase_date" class="form-control">
             </div>
         </div>
@@ -125,7 +125,7 @@
                             <th>Duty</th>
 
                             @if($isBag)
-                                <th>Min Weight</th>
+                                <th>Min Weight (KG)</th>
                                 <th>Brand</th>
                                 <th>Color</th>
                                 <th>Cons./sq. in.</th>
@@ -294,20 +294,17 @@
                                 <td style="min-width: 150px;" class="bag-only">
                                     <div class="loop-fields">
                                         <div class="form-group mb-0">
-                                            {{-- <input type="file" name="printing_sample[]" id="printing_sample_{{ $key }}"
-                                            class="form-control" accept="image/*,application/pdf" placeholder="Printing Sample"> --}}
-
                                             <input type="hidden" style="display: none;" name="printing_sample[]"
                                                 id="printing_sample_{{ $key }}"
-                                                value="{{ $data->printing_sample }}" class="form-control"
-                                                accept="image/*,application/pdf" placeholder="Printing Sample">
+                                                value="{{ is_array($data->printing_sample) ? json_encode($data->printing_sample) : $data->printing_sample }}" class="form-control">
                                             @if (!empty($data->printing_sample))
-                                                <small>
-                                                    <a href="{{ asset('storage/' . $data->printing_sample) }}"
-                                                        target="_blank">
-                                                        View existing file
-                                                    </a>
-                                                </small>
+                                                @foreach((array)$data->printing_sample as $sample)
+                                                    <small class="d-block">
+                                                        <a href="{{ asset('storage/' . $sample) }}" target="_blank">
+                                                            View file
+                                                        </a>
+                                                    </small>
+                                                @endforeach
                                             @else
                                                 <span>No Attach.</span>
                                             @endif

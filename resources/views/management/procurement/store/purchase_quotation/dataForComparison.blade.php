@@ -8,7 +8,7 @@
          <div class="form-group">
              <label>Purchase Request:</label>
              <select readonly class="form-control" onchange="get_purchase(this.value)" name="purchase_request_id">
-                 <option value="{{ optional($purchaseRequest)->id }}<">
+                 <option value="{{ optional($purchaseRequest)->id }}">
                      {{ optional($purchaseRequest)->purchase_request_no }}
                  </option>
              </select>
@@ -75,11 +75,19 @@
              <table class="table table-bordered" id="purchaseRequestTable">
                  <thead>
                      <tr>
+                          <th style="width: 50px; min-width: 50px; vertical-align: middle !important;">
+                              <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
+                                  <input type="checkbox" id="check-all" class="form-check-input" style="cursor: pointer; transform: scale(1.2); margin: 0;">
+                              </div>
+                          </th>
                          <th class="col-sm-4">PQ No.</th>
                          <th class="col-sm-3">Supplier</th>
                          <th class="col-sm-3">Item</th>
+                         <th>Qty</th>
+                         <th>Rate</th>
+                         <th>Total Amount</th>
                          <th class="col-sm-3">Item uom</th>
-                         <th class="col-sm-3 bag-only">Min Weight</th>
+                         <th class="col-sm-3 bag-only">Min Weight (KG)</th>
                          <th class="col-sm-3 bag-only">Brand</th>
                          <th class="col-sm-3 bag-only">Color</th>
                          <th class="col-sm-3 bag-only">Cons./sq. in.</th>
@@ -87,10 +95,6 @@
                          <th class="col-sm-3 bag-only">Stitching</th>
                          <th class="col-sm-3 bag-only">Micron</th>
                          <th class="col-sm-3 bag-only">Printing Sample</th>
-                         {{-- <th>Item UOM</th> --}}
-                         <th>Qty</th>
-                         <th>Rate</th>
-                         <th>Total Amount</th>
                          <th>Remarks</th>
                          <th>Status</th>
                          <th>Action</th>
@@ -99,6 +103,11 @@
                  <tbody id="purchaseRequestBody">
                      @forelse ($PurchaseQuotationData ?? [] as $key => $data)
                          <tr id="row_{{ $key }}">
+                              <td style="vertical-align: middle !important;">
+                                  <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
+                                      <input type="checkbox" class="form-check-input item-checkbox" style="cursor: pointer; transform: scale(1.2); margin: 0;">
+                                  </div>
+                              </td>
                              <td style="width: 30%">
                                  <input type="hidden" name="data_id[]" value="{{ $data->id }}">
                                  <input style="width: 100%" type="text" readonly
@@ -133,10 +142,31 @@
                                  </select>
                                  <input type="hidden" name="item_id[]" value="{{ $data->item_id }}">
                              </td>
+
+                             <td style="width: 30%">
+                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
+                                     disabled onblur="calc({{ $key }})" value="{{ $data->qty }}"
+                                     id="qty_{{ $key }}" class="form-control" step="0.01"
+                                     min="0">
+                                 <input type="hidden" name="qty[]" value="{{ $data->qty }}">
+                             </td>
+                             <td style="width: 30%">
+                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
+                                     onblur="calc({{ $key }})" name="rate[]" value="{{ $data->rate }}"
+                                     disabled id="rate_{{ $key }}" class="form-control" step="0.01"
+                                     min="{{ $key }}">
+                             </td>
+                             <td style="width: 30%">
+                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
+                                     onblur="calc({{ $key }})" name="amount[]"
+                                     value="{{ (int) $data->rate * (int) $data->qty }}" readonly
+                                     id="total_{{ $key }}" class="form-control" step="0.01"
+                                     min="{{ $key }}">
+                             </td>
                              <td style="width: 30%">
                                  <input style="width: 100px" type="text" value="{{ get_uom($data->item_id) }}"
                                      onkeyup="calc({{ $key }})" disabled onblur="calc({{ $key }})"
-                                     id="uom{{ $key }}" id="qty_{{ $key }}" class="form-control"
+                                     id="uom{{ $key }}" class="form-control"
                                      step="0.01" min="0">
                              </td>
 
@@ -199,36 +229,18 @@
                             <td style="width:150px;" class="bag-only">
                                 <input type="file" name="printing_sample[]" id="printing_sample_{{ $key }}" disabled class="form-control" accept="image/*,application/pdf">
                                 @if (!empty($data->purchase_request->printing_sample))
-                                    <small>
-                                        <a href="{{ asset('storage/' . $data->purchase_request->printing_sample) }}" target="_blank">
-                                            View existing file
-                                        </a>
-                                    </small>
+                                    @foreach((array)$data->purchase_request->printing_sample as $sample)
+                                        <small class="d-block">
+                                            <a href="{{ asset('storage/' . $sample) }}" target="_blank">
+                                                View existing file
+                                            </a>
+                                        </small>
+                                    @endforeach
                                 @endif
                             </td>
-                             <td style="width: 30%">
-                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
-                                     disabled onblur="calc({{ $key }})" value="{{ $data->qty }}"
-                                     id="qty_{{ $key }}" class="form-control" step="0.01"
-                                     min="0">
-                                 <input type="hidden" name="qty[]" value="{{ $data->qty }}">
-                             </td>
-                             <td style="width: 30%">
-                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
-                                     onblur="calc({{ $key }})" name="rate[]" value="{{ $data->rate }}"
-                                     disabled id="rate_{{ $key }}" class="form-control" step="0.01"
-                                     min="{{ $key }}">
-                             </td>
 
 
 
-                             <td style="width: 30%">
-                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
-                                     onblur="calc({{ $key }})" name="amount[]"
-                                     value="{{ (int) $data->rate * (int) $data->qty }}" readonly
-                                     id="rate_{{ $key }}" class="form-control" step="0.01"
-                                     min="{{ $key }}">
-                             </td>
 
                              <td style="width: 30%">
                                  <input style="width: 100px" type="text" readonly value="{{ $data->remarks }}"
@@ -236,18 +248,19 @@
                                  <input type="hidden" name="remarks[]" value="{{ $data->remarks }}">
                              </td>                          
                              <td>
-                                @php
-                                    $badgeClass = match (strtolower($data->am_approval_status)) {
-                                        'approved' => 'badge-success',
-                                        'rejected' => 'badge-danger',
-                                        'pending' => 'badge-warning',
-                                        'returned' => 'badge-info',
-                                        default => 'badge-secondary',
-                                    };
-                                    @endphp
-                                    <span class="badge {{ $badgeClass }}">
-                                        {{ $data->am_approval_status }}
-                                    </span>
+                                 @php
+                                     $badgeClass = match (strtolower($data->am_approval_status)) {
+                                         'approved' => 'badge-success',
+                                         'rejected' => 'badge-danger',
+                                         'neglected' => 'badge-warning',
+                                         'pending' => 'badge-warning',
+                                         'returned' => 'badge-info',
+                                         default => 'badge-secondary',
+                                     };
+                                     @endphp
+                                     <span class="badge {{ $badgeClass }}">
+                                         {{ $data->am_approval_status }}
+                                     </span>
                              </td>
                              <td>
                                  <button type="button" class="btn btn-danger btn-sm removeRowBtn"
@@ -270,6 +283,13 @@
  </div>
  </div>
  <input type="hidden" id="rowCount" value="0">
+ @if ($PurchaseQuotationData->isNotEmpty() && request()->routeIs('store.purchase-quotation.comparison-approvals'))
+     <div class="row">
+         <div class="col-12">
+             <x-approval-status :model="$data1" />
+         </div>
+     </div>
+ @endif
 
  <div class="row bottom-button-bar">
      <div class="col-12">
@@ -290,6 +310,10 @@
          if (initialCategoryId) {
              toggleVisibility(initialCategoryId);
          }
+
+          $('#check-all').on('change', function() {
+              $('.item-checkbox').prop('checked', $(this).prop('checked'));
+          });
      });
 
     rowIndex = 1;

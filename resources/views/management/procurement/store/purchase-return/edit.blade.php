@@ -87,6 +87,7 @@
                             onchange="getNumber()"
                             id="date"
                             class="form-control"
+                            min="{{ date('Y-m-d') }}"
                             value="{{ $purchaseReturn->date }}"
                         >
                     </div>

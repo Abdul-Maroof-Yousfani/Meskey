@@ -179,7 +179,9 @@ class PurchaseOrderController extends Controller
         if ($quotationNo) {
             $quotation = PurchaseQuotation::where('purchase_request_id', $requestId)
                 ->where('id', $quotationNo)
-                ->whereIn('am_approval_status', ['approved', 'partial approved'])
+                ->whereHas("quotation_data", function($q) {
+                    $q->where("am_approval_status", "approved");
+                })
                 ->first();
 
             if ($quotation) {
@@ -316,7 +318,7 @@ class PurchaseOrderController extends Controller
                     'stitching' => $request->stitching[$index],
                     'micron' => $request->micron[$index],
                     'brand' => $request->brand[$index],
-                    'printing_sample' => $request->printing_sample[$index],
+                    'printing_sample' => is_string($request->printing_sample[$index]) ? json_decode($request->printing_sample[$index], true) : $request->printing_sample[$index],
 
                     'remarks' => $request->remarks[$index] ?? null,
                 ]);
@@ -496,7 +498,7 @@ class PurchaseOrderController extends Controller
                     'size' => $request->input('size.'.$index),
                     'stitching' => $request->input('stitching.'.$index),
                     'micron' => $request->input('micron.'.$index),
-                    'printing_sample' => $request->input('printing_sample.'.$index),
+                    'printing_sample' => is_string($request->input('printing_sample.'.$index)) ? json_decode($request->input('printing_sample.'.$index), true) : $request->input('printing_sample.'.$index),
                     'remarks' => $request->input('remarks.'.$index),
                     
                 ]);
@@ -581,11 +583,13 @@ class PurchaseOrderController extends Controller
         $pr_id = request()->pr_id;
        
         $quotations = PurchaseQuotation::with(["quotation_data", "quotation_data.purchase_order_data"])
-                    ->whereIn("am_approval_status", ["approved", "partial approved"])
+                    ->whereHas("quotation_data", function($q) {
+                        $q->where("am_approval_status", "approved");
+                    })
                     ->where("purchase_request_id", $pr_id)
                     ->get();
         
-        $quotations = $quotations->filter(function($quotation) use (&$i) { // note the &
+        $quotations = $quotations->filter(function($quotation) {
             $totalQty = $quotation->quotation_data->where("am_approval_status", 'approved')->sum("qty");
             $po_qty = $quotation->quotation_data->sum(function ($qData) {
                 return $qData->purchase_order_data->sum('qty');

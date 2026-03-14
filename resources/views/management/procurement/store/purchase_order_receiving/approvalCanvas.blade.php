@@ -111,7 +111,7 @@
                      <th>Deduction Per KG</th>
 @endif
                      @if(optional($purchaseOrderReceiving->purchase_request)->category_id == 38)
-                     <th>Min Weight</th>
+                     <th>Min Weight (KG)</th>
                      <th>Brand</th>
                      <th>Color</th>
                      <th>Cons./sq. in.</th>
@@ -307,11 +307,13 @@
                id="printing_sample_{{ $key }}" disabled 
                class="form-control" accept="image/*,application/pdf">
         @if (!empty($data->purchase_order_data->printing_sample))
-            <small class="d-block mt-1">
-                <a href="{{ asset('storage/' . $data->purchase_order_data->printing_sample) }}" target="_blank">
-                    View existing file
-                </a>
-            </small>
+            @foreach((array)$data->purchase_order_data->printing_sample as $sample)
+                <small class="d-block mt-1">
+                    <a href="{{ asset('storage/' . $sample) }}" target="_blank">
+                        View file
+                    </a>
+                </small>
+            @endforeach
         @endif
     </td>
     @endif

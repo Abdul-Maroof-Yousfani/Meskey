@@ -27,7 +27,7 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Purchase Date:</label>
-                <input type="date" name="purchase_date" class="form-control" id="purchase_date" readonly
+                <input type="date" name="purchase_date" class="form-control" id="purchase_date" readonly min="{{ date('Y-m-d') }}"
                     value="{{ $purchaseRequest->purchase_date }}">
             </div>
         </div>
@@ -120,10 +120,10 @@
                 <th style="min-width: 100px;">Qty</th>
                 <th class="bag-only" style="min-width: 250px;">Job Orders</th>
                 <th class="bag-only" style="min-width: 150px;">Brands</th>
-                <th class="bag-only" style="min-width: 120px;">Min Weight</th>
+                <th class="bag-only" style="min-width: 120px;">Min Weight (KG)</th>
                 <th class="bag-only" style="min-width: 150px;">Color</th>
                 <th class="bag-only" style="min-width: 150px;">Cons./sq. in.</th>
-                <th class="bag-only" style="min-width: 150px;">Size</th>
+                <th class="bag-only" style="width: 150px; min-width: 150px; max-width: 150px;">Size</th>
                 <th class="bag-only" style="min-width: 200px;">Stitching</th>
                 <th class="bag-only" style="min-width: 120px;">Micron</th>
                 <th class="bag-only" style="min-width: 250px;">Printing Sample</th>
@@ -159,8 +159,8 @@
                 <td style="min-width: 100px;"><input type="text" name="uom[]" id="uom_{{ $rowId }}" class="form-control uom" readonly
                         value="{{ $item->item->unitOfMeasure->name ?? '' }}"></td>
 
-                <td style="min-width: 100px;"><input type="number" name="qty[]" id="qty_{{ $rowId }}" class="form-control bg-white"
-                        step="0.01" min="0" placeholder="Qty" value="{{ $item->qty }}"></td>
+                <td style="min-width: 100px;"><input type="number" name="qty[]" id="qty_{{ $rowId }}" class="form-control {{ $item->is_single_job_order == 1 ? '' : 'bg-white' }}"
+                        step="0.01" min="0" placeholder="Qty" value="{{ $item->qty }}" @readonly($item->is_single_job_order == 1)></td>
 
                 
                 <td class="bag-only" style="min-width: 250px;">
@@ -168,7 +168,7 @@
                         <input type="hidden" name="job_order_id[{{ $rowId }}][]" value="{{ $item->JobOrder->pluck("job_order_id")->toArray()[0] }}" />
                     @endif
                     <select name="job_order_id[{{ $rowId }}][]" id="job_order_id_{{ $rowId }}" multiple
-                        class="form-control item-select select2" data-index="{{ $rowId }}" @disabled($item->is_single_job_order != 1)>
+                        class="form-control item-select select2" data-index="{{ $rowId }}" disabled>
                         <option value="">Select Job Order</option>
                         @foreach ($job_orders ?? [] as $job_order)
                         <option value="{{ $job_order->id }}"
@@ -181,7 +181,10 @@
                 </td>
 
                  <td class="bag-only" style="min-width: 150px;">
-                    <select id="brands_{{ $rowId }}" name="brands[]" class="form-control item-select color-select">
+                    @if($item->is_single_job_order)
+                        <input type="hidden" name="brands[]" value="{{ $item->brand_id }}" />
+                    @endif
+                    <select id="brands_{{ $rowId }}" name="brands[]" class="form-control item-select color-select" @disabled($item->is_single_job_order == 1)>
                         <option value="">Select Brand</option>
                         @foreach(getAllBrands() ?? [] as $brand)
                         <option @selected($brand->id == $item->brand_id) value="{{ $brand->id }}">
@@ -191,11 +194,14 @@
                 </td>
                
                 <td class="bag-only" style="min-width: 120px;"><input type="number" name="min_weight[]" id="min_weight_{{ $rowId }}" class="form-control"
-                        step="0.01" min="0" value="{{ $item->min_weight }}" placeholder="Min Weight"></td>
+                        step="0.01" min="0" value="{{ $item->min_weight }}" placeholder="Min Weight" @readonly($item->is_single_job_order == 1)></td>
 
            
                 <td class="bag-only" style="min-width: 150px;">
-                    <select id="color_{{ $rowId }}" name="color[]" class="form-control item-select color-select">
+                    @if($item->is_single_job_order)
+                        <input type="hidden" name="color[]" value="{{ $item->color }}" />
+                    @endif
+                    <select id="color_{{ $rowId }}" name="color[]" class="form-control item-select color-select" @disabled($item->is_single_job_order == 1)>
                         <option value="">Select Color</option>
                         @foreach(getAllColors() ?? [] as $color)
                         <option @selected($color->id == $item->color) value="{{ $color->id }}">
@@ -208,7 +214,7 @@
                         class="form-control" step="0.01" min="0" value="{{ $item->construction_per_square_inch }}"
                         placeholder="Cons./sq. in."></td>
 
-                <td class="bag-only" style="min-width: 150px;">
+                <td class="bag-only" style="width: 150px; min-width: 150px; max-width: 150px;">
                     <select id="size_{{ $rowId }}" name="size[]" class="form-control item-select size-select">
                         <option value="">Select Size</option>
                         @foreach(getAllSizes() ?? [] as $size)
@@ -222,7 +228,12 @@
                     @php
                         $selectedStitchings = $item->stitching ? array_filter(array_map('trim', explode(',', $item->stitching))) : [];
                     @endphp
-                    <select id="stitching_{{ $rowId }}" name="stitching[{{ $rowId }}][]" class="form-control item-select stitching-select select2" multiple>
+                    @if($item->is_single_job_order)
+                        @foreach($selectedStitchings as $stitchingId)
+                            <input type="hidden" name="stitching[{{ $rowId }}][]" value="{{ $stitchingId }}" />
+                        @endforeach
+                    @endif
+                    <select id="stitching_{{ $rowId }}" name="stitching[{{ $rowId }}][]" class="form-control item-select stitching-select select2" multiple @disabled($item->is_single_job_order == 1)>
                         <option value="">Select Stitching</option>
                         @foreach(getAllStitchings() ?? [] as $stitching)
                             <option value="{{ $stitching->id }}" @selected(in_array($stitching->id, $selectedStitchings))>
@@ -237,12 +248,14 @@
                         min="0" value="{{ $item->micron }}" placeholder="Micron"></td>
 
                 <td class="bag-only" style="min-width: 250px;">
-                    <input type="file" name="printing_sample[]" id="printing_sample_{{ $rowId }}"
-                        class="form-control" accept="image/*,application/pdf">
-                    @if (!empty($item->printing_sample))
-                    <small>
-                        <a href="{{ asset('storage/' . $item->printing_sample) }}" target="_blank">View existing file</a>
-                    </small>
+                <input type="file" name="printing_sample[{{ $rowId }}][]" id="printing_sample_{{ $rowId }}"
+                    class="form-control" accept="image/*,application/pdf" multiple>
+            @if (!empty($item->printing_sample))
+                        @foreach((array)$item->printing_sample as $sample)
+                            <small class="d-block">
+                                <a href="{{ asset('storage/' . $sample) }}" target="_blank">View file</a>
+                            </small>
+                        @endforeach
                     @endif
                 </td>
 
@@ -278,6 +291,11 @@
     purchaseRequestRowIndex = {{ count($purchaseRequest->PurchaseData) }};
 
     $(document).ready(function() {
+        // $(".size-select").select2({
+        //     tags: true,
+        //     placeholder: "Select or add size",
+        //     allowClear: true
+        // });
         $(".select2").select2();
         @foreach ($purchaseRequest->PurchaseData as $loopIndex => $item)
             @php
@@ -288,7 +306,11 @@
 
             $("#color_{{ $jsIndex }}").select2();
             $("#brands_{{ $jsIndex }}").select2();
-            $("#size_{{ $jsIndex }}").select2();
+            $("#size_{{ $jsIndex }}").select2({
+                tags: true,
+                placeholder: "Select or add size",
+                allowClear: true
+            });
             $("#stitching_{{ $jsIndex }}").select2();
             $('#job_order_id_{{ $jsIndex }}').select2({
                 placeholder: 'Please Select Job Order',
@@ -404,12 +426,13 @@
                     <td style="min-width: 250px;">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
-                                <select name="item_id[]" id="item_id_${index}"  onchange="get_uom(${index})"
+                                <select name="item_id[]" id="item_id_${index}"  onchange="get_uom('${index}')"
                                     class="form-control item-select item-list" data-index="0" style="width: 100%;">
                                 </select>
                                 <input type="hidden" name="packing_id[]" value="" />
                                 <input type="hidden" name="module_type[]" value="" />
                                 <input type="hidden" name="index[]" value="${index}" />
+                                <input type="hidden" name="is_single_job_order[]" value="0" />
          
                             </div>
                         </div>
@@ -420,7 +443,7 @@
                     <td style="min-width: 100px;">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
-                                <input type="number" name="qty[]" id="qty_${index}" class="form-control" step="0.01"
+                                <input type="number" name="qty[]" id="qty_${index}" class="form-control bg-white" step="0.01"
                                     min="0" placeholder="Qty">
                             </div>
                         </div>
@@ -472,7 +495,7 @@
                         </div>
                     </td>
                     
-                    <td class="bag-only" style="min-width: 150px;"><select name="size[]" id="size_${index}" class="form-control item-select size-select">
+                    <td class="bag-only" style="width: 150px; min-width: 150px; max-width: 150px;"><select name="size[]" id="size_${index}" class="form-control item-select size-select" style="width: 100%;">
                         <option value="">Select Size</option>
                         @foreach(getAllSizes() ?? [] as $size)
                             <option value="{{ $size->id }}">{{ $size->size }}</option>
@@ -522,7 +545,11 @@
         $('#purchaseRequestBody').append(row);
 
         $('#color_' + index).select2();
-        $('#size_' + index).select2();
+        $('#size_' + index).select2({
+            tags: true,
+            placeholder: "Select or add size",
+            allowClear: true
+        });
         $('#brands_' + index).select2();
         $('#stitching_' + index).select2();
         $('#category_id_' + index).select2();
