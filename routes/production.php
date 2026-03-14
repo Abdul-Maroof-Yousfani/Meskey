@@ -27,6 +27,7 @@ Route::post('get-production-voucher', [ProductionVoucherController::class, 'getL
 Route::post('production-voucher-get-job-orders-by-location', [ProductionVoucherController::class, 'getJobOrdersByLocation'])->name('production-voucher.get-job-orders-by-location');
 Route::post('production-voucher-get-commodities-by-location', [ProductionVoucherController::class, 'getCommoditiesByLocation'])->name('production-voucher.get-commodities-by-location');
 Route::post('production-voucher-get-plants-by-location', [ProductionVoucherController::class, 'getPlantsByLocation'])->name('production-voucher.get-plants-by-location');
+Route::post('production-voucher-get-sublocations-by-location', [ProductionVoucherController::class, 'getSublocationsByLocation'])->name('production-voucher.get-sublocations-by-location');
 Route::post('production-voucher-get-packing-items', [ProductionVoucherController::class, 'getPackingItemsByJobOrder'])->name('production-voucher.get-packing-items');
 Route::post('production-voucher-get-packing-items-with-produced', [ProductionVoucherController::class, 'getPackingItemsWithProduced'])->name('production-voucher.get-packing-items-with-produced');
 Route::post('production-voucher-get-brands-by-job-orders', [ProductionVoucherController::class, 'getBrandsByJobOrders'])->name('production-voucher.get-brands-by-job-orders');

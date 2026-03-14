@@ -553,7 +553,72 @@
                     </div>
                 </div>
             </div>
+
+
+             <div class="row my-2">
+                                    <div class="col-md-6">
+                                        <div class="row header-heading-sepration w-100 mx-auto mb-1 align-items-center"
+                                            style="background-color: #93c3f2;">
+                                            <div class="col-md-12">
+                                                <h6 class="m-0">Total Input</h6>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <input type="text" name="net_total_input" value="{{ $productionVoucher->net_total_input }}" class="form-control" readonly>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="row header-heading-sepration w-100 mx-auto mb-1 align-items-center"
+                                            style="background-color: #93c3f2;">
+                                            <div class="col-md-12">
+                                                <h6 class="m-0">Total Output</h6>
+                                            </div>
+                                        </div>
+                                        <div id="productionTotalOutputTable">
+                                            <input type="text" name="net_total_output" value="{{ $productionVoucher->net_total_output }}" class="form-control" readonly>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <table class="table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Labour Charges / Kg</th>
+                                                    <th>Total Labour Charges</th>
+                                                    <th>Deduction</th>
+                                                    <th>Net Amount</th>
+                                                    <th>Deduction Remarks</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td><input type="number" name="labour_charges_per_kg"
+                                                            id="production_labour_charges_per_kg" class="form-control"
+                                                            step="0.01" min="0.01" value="{{ $productionVoucher->labour_charges_per_kg }}" readonly></td>
+                                                    <td><input type="number" name="total_labour_charges"
+                                                            class="form-control" step="0.01" min="0.01" value="{{ $productionVoucher->total_labour_charges }}" readonly></td>
+                                                    <td><input type="number" name="labour_deduction"
+                                                            onkeyup="calculateNetTotalInput()" value="{{ $productionVoucher->labour_deduction }}" class="form-control"
+                                                            step="0.01" min="0.01"></td>
+                                                    <td><input type="number" name="labour_net_amount" value="{{ $productionVoucher->labour_net_amount }}" class="form-control"
+                                                            step="0.01" min="0.01" readonly></td>
+                                                    <td><input type="text" name="labour_deduction_remarks"
+                                                            class="form-control" value="{{ $productionVoucher->labour_deduction_remarks }}">
+                                                    </td>
+                                                </tr>
+
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
         </div>
+
+        
+
+
+
+        
 
         <div class="row bottom-button-bar mt-4 w-100 mx-auto">
             <div class="col-12 text-right">

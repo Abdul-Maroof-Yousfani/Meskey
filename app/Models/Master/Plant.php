@@ -19,6 +19,7 @@ class Plant extends Model
         'arrival_location_id',
         'name',
         'description',
+        'production_labour_charges_per_kg',
         'status',
     ];
 

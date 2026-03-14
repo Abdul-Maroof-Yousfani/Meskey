@@ -43,6 +43,10 @@ class ProductionVoucherRequest extends FormRequest
                 'required',
                 'exists:company_locations,id'
             ],
+            'sub_location_id' => [
+                'required',
+                'exists:arrival_sub_locations,id'
+            ],
             'product_id' => [
                 'required',
                 'exists:products,id'
@@ -59,6 +63,28 @@ class ProductionVoucherRequest extends FormRequest
                 'nullable',
                 // 'string',
                 'max:1000'
+            ],
+            'labour_deduction' => [
+                'nullable',
+                'numeric',
+                'min:0'
+            ],
+            'labour_deduction_remarks' => [
+                'nullable',
+                'string',
+                'max:1000',
+                Rule::requiredIf($this->labour_deduction > 0)
+            ],
+            'net_total_input' => [
+                'required',
+                'numeric',
+                'min:0'
+            ],
+            'net_total_output' => [
+                'required',
+                'numeric',
+                'min:0',
+                'lte:net_total_input'
             ],
             // Production Inputs (using input_ prefix to avoid conflict with main form fields)
             'input_product_id.*' => [

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Production;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Production\ProductionVoucherRequest;
+use App\Models\Master\ArrivalLocation;
 use App\Models\Production\JobOrder\JobOrder;
 use App\Models\Production\JobOrder\JobOrderPackingItem;
 use App\Models\Production\JobOrder\JobOrderRawMaterialQc;
@@ -645,7 +646,7 @@ class ProductionVoucherController extends Controller
 
     public function getPlantsByLocation(Request $request)
     {
-        $locationId = $request->location_id;
+        $locationId = $request->subLocationId;
 
         if (!$locationId) {
             return response()->json(['plants' => []]);
@@ -653,7 +654,7 @@ class ProductionVoucherController extends Controller
 
         $user = auth()->user();
 
-        $plants = Plant::where('company_location_id', $locationId)
+        $plants = Plant::where('arrival_location_id', $locationId)
             ->where('status', 'active')
             ->when($user->user_type !== 'super-admin', function ($query) use ($user) {
                 return $query->where('company_id', $user->company_id);
@@ -662,11 +663,37 @@ class ProductionVoucherController extends Controller
             ->map(function ($plant) {
                 return [
                     'id' => $plant->id,
-                    'name' => $plant->name
+                    'name' => $plant->name,
+                    'production_labour_charges_per_kg' => $plant->production_labour_charges_per_kg
                 ];
             });
 
         return response()->json(['plants' => $plants]);
+    }
+    public function getSublocationsByLocation(Request $request)
+    {
+        $locationId = $request->location_id;
+
+        if (!$locationId) {
+            return response()->json(['sublocations' => []]);
+        }
+
+        $user = auth()->user();
+
+        $sublocations = ArrivalLocation::where('company_location_id', $locationId)
+            ->where('status', 'active')
+            ->when($user->user_type !== 'super-admin', function ($query) use ($user) {
+                return $query->where('company_id', $user->company_id);
+            })
+            ->get()
+            ->map(function ($sublocation) {
+                return [
+                    'id' => $sublocation->id,
+                    'name' => $sublocation->name
+                ];
+            });
+
+        return response()->json(['sublocations' => $sublocations]);
     }
 
     public function getHeadProductsByCommodity(Request $request)
@@ -733,6 +760,14 @@ class ProductionVoucherController extends Controller
                 'plant_id' => $request->input('plant_id'),
                 'by_product_id' => $request->input('by_product_id'),
                 'remarks' => $request->input('remarks'),
+                'sub_location_id' => $request->input('sub_location_id'),
+                'net_total_input' => $request->input('net_total_input'),
+                'net_total_output' => $request->input('net_total_output'),
+                'labour_charges_per_kg' => $request->input('labour_charges_per_kg'),
+                'total_labour_charges' => $request->input('total_labour_charges'),
+                'labour_deduction' => $request->input('labour_deduction') ?? 0,
+                'labour_deduction_remarks' => $request->input('labour_deduction_remarks'),
+                'labour_net_amount' => $request->input('labour_net_amount'),
                 // 'status' => 'active',
             ];
 
@@ -943,6 +978,7 @@ class ProductionVoucherController extends Controller
             ->pluck('id')
             ->toArray();
 
+
         $jobOrderIds = $productionVoucher->jobOrders->pluck('id')->toArray();
 
         $byProductIds = Product::where(function ($query) use ($productionVoucher) {
@@ -955,12 +991,29 @@ class ProductionVoucherController extends Controller
             ->pluck('id')
             ->toArray();
 
+
+
+        $product = Product::find($productionVoucher->product_id);
+
+        $parentId = $product->parent_id ? $product->parent_id : $product->id;
+
+        $allHeadProductIds = Product::where(function ($q) use ($parentId) {
+            $q->where('id', $parentId)         // parent
+                ->orWhere('parent_id', $parentId); // children
+        })
+            ->whereIn('product_category_flags', ['head', 'b2'])
+            ->pluck('id')
+            ->toArray();
+        // dd($productIds);   
         // Get all related product IDs for head products (including children)
-        $allHeadProductIds = Product::where('id', $productionVoucher->product_id)
+        $allHeadProductIdsbk = Product::where('id', $productionVoucher->product_id)
             ->orWhere('parent_id', $productionVoucher->product_id)
             ->whereIn('product_category_flags', ['head', 'b2'])
             ->pluck('id')
             ->toArray();
+
+
+
 
         // Initialize collections for head products
         $packingItemsProducts = collect();

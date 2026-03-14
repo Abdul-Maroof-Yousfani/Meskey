@@ -33,7 +33,7 @@ class PlantRequest extends FormRequest
 
                 Rule::unique('plants', 'name')
                     ->where('company_id', $this->input('company_id'))
-                    ->ignore($this->arrival_location)
+                    ->ignore($this->plant)
             ],
             'description' => 'nullable|string|max:500',
             'status' => ['required', Rule::in(['active', 'inactive'])],

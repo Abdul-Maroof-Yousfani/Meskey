@@ -41,6 +41,14 @@
             </div>
         </div>
 
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group">
+                <label>Production Labour charges:</label>
+                <input type="number" step="0.01" min="0" name="production_labour_charges_per_kg"
+                    placeholder="Production Labour charges" class="form-control" />
+            </div>
+        </div>
+
         <!-- Status -->
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">

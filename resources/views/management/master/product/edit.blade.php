@@ -154,7 +154,7 @@
                     class="form-control" />
             </div>
         </div>
-        <div class="col-xs-12 col-sm-12 col-md-12">
+        <!-- <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Child/By Product:</label>
                 <ul class="list-unstyled mb-0">
@@ -172,7 +172,7 @@
                     </li>
                 </ul>
             </div>
-        </div>
+        </div> -->
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group ">
                 <label>Status:</label>
