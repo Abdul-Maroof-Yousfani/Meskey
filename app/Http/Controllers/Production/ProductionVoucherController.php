@@ -47,17 +47,20 @@ class ProductionVoucherController extends Controller
 
 
         $productIds = $Product->pluck('id')->toArray();
-        $jobOrderPackings = JobOrderPackingItem::with([
-            'jobOrder:id,job_order_no,product_id', // product_id zaroor add karein
-            'jobOrder.product:id,name'
+        if ($request->job_order_ids && count($request->job_order_ids) != 0) {
+            $jobOrderPackings = JobOrderPackingItem::with([
+                'jobOrder:id,job_order_no,product_id', // product_id zaroor add karein
+                'jobOrder.product:id,name'
 
-        ])
+            ])
 
-            ->whereIn('job_order_id', $request->job_order_ids)
-            ->whereHas('jobOrder', function ($query) use ($productIds) {
-                $query->whereIn('product_id', $productIds);
-            });
-
+                ->whereIn('job_order_id', $request->job_order_ids)
+                ->whereHas('jobOrder', function ($query) use ($productIds) {
+                    $query->whereIn('product_id', $productIds);
+                });
+        } else {
+            $jobOrderPackings = collect();
+        }
 
 
 
@@ -71,6 +74,7 @@ class ProductionVoucherController extends Controller
             $productionVoucher = ProductionVoucher::find($productionVoucherId);
             $byProductOutputs = $productionVoucher->outputs;
         }
+
         // Filter products based on parent_id logic
         // $productsQuery = Product::where('status', 1);
 
@@ -410,11 +414,13 @@ class ProductionVoucherController extends Controller
     {
         $companyLocations = CompanyLocation::where('status', 'active')->get();
         $products = Product::where('status', 1)->get();
+        $byheadsproducts = Product::where('status', 1)->where('parent_id', null)->get();
         $sublocations = ArrivalSubLocation::with('arrivalLocation')->get();
 
         return view('management.production.production_voucher.create', compact(
             'companyLocations',
             'products',
+            'byheadsproducts',
             'sublocations'
         ));
     }

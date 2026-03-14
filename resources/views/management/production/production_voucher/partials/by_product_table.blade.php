@@ -19,12 +19,14 @@
             @foreach($byProducts as $product)
                 @php
                     $existingOutputs = isset($byProductOutputs) && $byProductOutputs ? $byProductOutputs->where('product_id', $product->id)->values() : collect();
+                  
                     $outputCount = $existingOutputs->count() > 0 ? $existingOutputs->count() : 1;
                 @endphp
                 @for($i = 0; $i < $outputCount; $i++)
                     @php
                         $output = $existingOutputs->count() > 0 ? $existingOutputs->get($i) : null;
                     @endphp
+                  
                     @if(isset($jobOrderPackings) && $jobOrderPackings->count() != 0)
                         
                  @php
