@@ -180,7 +180,7 @@
 
                                         </a>
                                     </div>
-                                    {{ \App\Models\User::find($requestGroup["created_by_id"]) }}
+                                    {{-- {{ \App\Models\User::find($requestGroup["created_by_id"]) }} --}}
                                     @if($requestGroup['created_by_id'] == auth()->user()->id)
                                         @if($is_editing_allowed)
                                    
