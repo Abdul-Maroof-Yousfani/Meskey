@@ -181,7 +181,7 @@
                                         </a>
                                     </div>
                                     @if($requestGroup['created_by_id'] == auth()->user()->id)
-                                        @if($is_editing_allowed)
+                                        @if($requestGroup['has_pending_or_reverted_item'])
                                    
                                         <div class="d-flex gap-2">
                                             <a onclick="openModal(this, '{{ route('store.purchase-quotation.edit', [$supplierRow['data']->purchase_quotation->id, 'purchase_request_id' => $supplierRow['data']->purchase_quotation->purchase_request_id]) }}', 'Quotation Edit', false, '100%')"
