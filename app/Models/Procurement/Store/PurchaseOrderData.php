@@ -53,6 +53,11 @@ class PurchaseOrderData extends Model
         return $this->hasOne(PurchaseRequestData::class, 'id', 'purchase_request_data_id');
     }
 
+    public function purchase_quotation_data()
+    {
+        return $this->hasOne(PurchaseQuotationData::class, 'id', 'purchase_quotation_data_id');
+    }
+
     /**
      * Get all GRNs for this purchase order data
      */

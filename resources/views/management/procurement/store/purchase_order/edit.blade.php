@@ -28,7 +28,7 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label>Location:</label>
-                <select disabled name="company_location" id="company_location_id" class="form-control select2" multiple>
+                <select name="company_location" id="company_location_id" class="form-control select2" multiple>
                     <option value="">Select Location</option>
                     @foreach (get_locations() as $loc)
                         <option
@@ -42,7 +42,7 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label>Order Date:</label>
-                <input readonly type="date" id="purchase_date" min="{{ date('Y-m-d') }}" value="{{ optional($purchaseOrder)->order_date }}"
+                <input type="date" id="purchase_date" min="{{ date('Y-m-d') }}" value="{{ optional($purchaseOrder)->order_date }}"
                     name="purchase_date" class="form-control">
             </div>
         </div>
@@ -59,7 +59,7 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label class="form-label">Supplier:</label>
-                <select disabled id="vendor_id" name="vendor_id" class="form-control item-select select2">
+                <select id="vendor_id" name="vendor_id" class="form-control item-select select2">
                     <option value="">Select Vendor</option>
                     @foreach (get_supplier() as $supplier)
                         <option value="{{ $supplier->id }}"
@@ -76,7 +76,7 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label>Payment Term:</label>
-                <select disabled name="payment_term_id" id="payment_term_id" class="form-control select2">
+                <select name="payment_term_id" id="payment_term_id" class="form-control select2">
                     <option value="">Select Payment Term</option>
                     @foreach ($payment_terms as $payment_term)
                         <option value="{{ $payment_term->id }}"
@@ -144,7 +144,7 @@
                             
                             <tr id="row_{{ $key }}">
                                 <td style="min-width: 120px;">
-                                    <select  id="category_id_{{ $key }}" disabled
+                                    <select  id="category_id_{{ $key }}" 
                                         onchange="filter_items(this.value,{{ $key }})"
                                         class="form-control item-select select2" data-index="{{ $key }}">
                                         <option value="">Select Category</option>
@@ -160,7 +160,7 @@
                                 </td>
                                 <td style="min-width: 120px;">
                                     <select  id="item_id_{{ $key }}"
-                                        onchange="get_uom({{ $key }})" disabled
+                                        onchange="get_uom({{ $key }})" 
                                         class="form-control item-select select2" data-index="{{ $key }}">
                                         @foreach (get_product_by_id($data->item_id) as $item)
                                             <option data-uom="{{ $item->unitOfMeasure->name ?? '' }}"
@@ -189,19 +189,26 @@
                                 </select>
                             </td> --}}
                                 <td style="min-width: 120px;">
+                                    @php
+                                        $sourceData = $data->purchase_request_data;
+                                        $sourceQty = $sourceData->qty ?? 0;
+                                        $otherPOsQty = optional($sourceData->purchase_order_data ?? null)->where('id', '!=', $data->id)->sum('qty') ?? 0;
+                                        $maxAllowed = $sourceQty - $otherPOsQty;
+                                        $currentBalance = $sourceQty - (optional($sourceData->purchase_order_data ?? null)->sum('qty') ?? 0);
+                                    @endphp
                                     <input  type="number"
                                         onkeyup="calc({{ $key }}); calculatePercentage(this)"
                                         onblur="calc({{ $key }})" name="qty[]"
                                         value="{{ $data->qty }}" id="qty_{{ $key }}"
                                         class="form-control qty" step="0.01" min="0"
-                                        max="{{ optional($data->purchase_request_data)->qty - (optional($data->purchase_request_data->purchase_order_data)->sum('qty') - $data->qty) }}" @if (isset($data->purchase_quotation_data_id)) readonly @endif>
+                                        max="{{ $maxAllowed }}">
                                     
                                     <div class="d-flex align-items-center">
-                                        balance: {{ optional($data->purchase_request_data)->qty - optional($data->purchase_request_data->purchase_order_data)->sum('qty') }}
+                                        balance: {{ $currentBalance }}
                                     </div>
 
                                     <div class="d-flex align-items-center">
-                                        total qty: {{ optional($data->purchase_request_data)->qty }}
+                                        total qty: {{ $sourceQty }}
                                     </div>
                                 </td>
                                 <td style="min-width: 120px;">
@@ -209,8 +216,7 @@
                                         onkeyup="calc({{ $key }}); calculatePercentage(this)"
                                         onblur="calc({{ $key }})" name="rate[]"
                                         value="{{ $data->rate }}" id="rate_{{ $key }}"
-                                        class="form-control rate" step="0.01" min="{{ $key }}"
-                                        @if (isset($data->purchase_quotation_data_id)) readonly @endif>
+                                        class="form-control rate" step="0.01" min="{{ $key }}">
                                 </td>
                                 <td style="min-width: 120px;">
                                     <input  type="number" readonly
@@ -350,7 +356,7 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Other Terms:</label>
-                <textarea disabled name="other_term" id="other_term" placeholder="Other Terms" class="form-control">{{ $purchaseOrder->other_terms }}</textarea>
+                <textarea name="other_term" id="other_term" placeholder="Other Terms" class="form-control">{{ $purchaseOrder->other_terms }}</textarea>
             </div>
         </div>
     </div>
