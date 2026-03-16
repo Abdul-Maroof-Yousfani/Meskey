@@ -272,6 +272,7 @@ class PurchaseOrderController extends Controller
         $arrivalPurchaseOrder = ArrivalPurchaseOrder::findOrFail($id);
         $data = $request->validated();
         $data = $request->all();
+        // dd($data);
 
         DB::transaction(function () use ($data, $arrivalPurchaseOrder) {
             $updateData = [
@@ -298,6 +299,10 @@ class PurchaseOrderController extends Controller
                 'is_replacement' => ($data['is_replacement'] ?? '') == '1',
                 'weighbridge_from' => $data['weighbridge_from'] ?? null,
                 'delivery_address' => $data['delivery_address'] ?? null,
+                'min_quantity' => $data['min_quantity'] ?? null,
+                'max_quantity' => $data['max_quantity'] ?? null,
+                'min_bags' => $data['min_bags'] ?? null,
+                'max_bags' => $data['max_bags'] ?? null,
                 'remarks' => $data['remarks'] ?? null,
             ];
 
@@ -311,8 +316,8 @@ class PurchaseOrderController extends Controller
                 $updateData['total_quantity'] = $data['total_quantity'] ?? null;
             }
 
-            $updateData['min_quantity'] = $data['min_quantity_input'] ?? null;
-            $updateData['max_quantity'] = $data['max_quantity_input'] ?? null;
+            $updateData['min_quantity'] = $data['min_quantity'] ?? null;
+            $updateData['max_quantity'] = $data['max_quantity'] ?? null;
             $updateData['min_bags'] = $data['min_bags'] ?? null;
             $updateData['max_bags'] = $data['max_bags'] ?? null;
 
