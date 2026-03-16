@@ -617,7 +617,7 @@ class TicketPaymentRequestController extends Controller
                     'paymentRequestData.purchaseTicket.purchaseOrder',
                     'paymentRequestData.purchaseTicket.purchaseFreight',
                     'paymentRequestData.arrivalTicket.freight',
-                    'approvals.approver'
+                    'approval'
                 ])->get();
 
         $requestedAmount = PaymentRequest::whereHas('paymentRequestData', function ($q) use ($arrivalTicket, $id) {

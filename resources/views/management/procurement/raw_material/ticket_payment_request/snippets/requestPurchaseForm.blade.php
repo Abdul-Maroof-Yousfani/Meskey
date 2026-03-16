@@ -334,6 +334,9 @@
                                 Amount
                             </th>
                             <th>
+                                Remarks
+                            </th>
+                            <th>
                                 Status
                             </th>
                         </tr>
@@ -346,6 +349,9 @@
                             </td>
                             <td>
                                 {{$paymentRequest->amount}}
+                            </td>
+                            <td>
+                                {{$paymentRequest->approval->remarks ?? 'N/A'}}
                             </td>
                             <td>
                                 @if($paymentRequest->status == 'pending')
