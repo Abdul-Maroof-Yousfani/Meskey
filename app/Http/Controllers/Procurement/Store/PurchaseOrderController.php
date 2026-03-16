@@ -185,7 +185,7 @@ class PurchaseOrderController extends Controller
                 ->first();
 
             if ($quotation) {
-                $dataItems = PurchaseQuotationData::with(['purchase_order_data', 'purchase_request', 'purchase_quotation', 'item', 'category'])
+                $dataItems = PurchaseQuotationData::with(['purchase_order_data', 'purchase_request.purchase_order_data', 'purchase_quotation', 'item', 'category'])
                     ->where('purchase_quotation_id', $quotation->id)
                     ->where('am_approval_status', 'approved')
                     ->get();
@@ -193,40 +193,9 @@ class PurchaseOrderController extends Controller
         }
 
         if (!$quotation || $dataItems->isEmpty()) {
-            $dataItems = PurchaseRequestData::with(['purchase_request', 'item', 'category'])
+            $dataItems = PurchaseRequestData::with(['purchase_request', 'item', 'category', 'purchase_order_data'])
                 ->where('purchase_request_id', $requestId)
                 ->get();
-
-            $purchaseRequestDataIds = $dataItems->pluck('id');
-
-            $existingQuotationCount = PurchaseOrderData::whereIn('purchase_request_data_id', $purchaseRequestDataIds)
-                ->whereHas('purchase_order', function ($q) use ($supplierId) {
-                    $q->where('supplier_id', $supplierId);
-                })
-                ->count();
-         
-            if ($existingQuotationCount > 0) {
-                $quotationQuantities = PurchaseOrderData::whereIn('purchase_request_data_id', $purchaseRequestDataIds)
-                    ->whereHas('purchase_order', function ($q) use ($supplierId) {
-                        $q->where('supplier_id', $supplierId);
-                    })
-                    ->select('item_id', DB::raw('SUM(qty) as total_quoted_qty'))
-                    ->groupBy('item_id')
-                    ->pluck('total_quoted_qty', 'item_id');
-
-                foreach ($dataItems as $item) {
-                    $quotedQty = $quotationQuantities[$item->item_id] ?? 0;
-                    $remainingQty = $item->qty - $quotedQty;
-                    $item->qty = max($remainingQty, 0);
-                    $item->total_quoted_qty = $quotedQty;
-
-                }
-            } else {
-                foreach ($dataItems as $item) {
-                    $item->total_quoted_qty = 0;
-                }
-            }
-
         }
 
         
@@ -406,9 +375,10 @@ class PurchaseOrderController extends Controller
         $purchaseOrder = PurchaseOrder::with([
             'purchaseOrderData',
             'purchaseOrderData.category',
-            'purchaseOrderData.purchase_request_data.purchase_order_data',
-            'purchaseOrderData.item',
             'purchase_request.PurchaseData',
+            'purchaseOrderData.purchase_request_data.purchase_order_data',
+            'purchaseOrderData.purchase_quotation_data.purchase_order_data',
+            'purchaseOrderData.item',
             'purchase_quotation.quotation_data'
         ])->findOrFail($id);
         $purchaseRequest = $purchaseOrder->purchase_request;
