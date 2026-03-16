@@ -91,12 +91,12 @@
                                     @if ($shouldDisableApproval)
                                         <span class="bg-info text-white p-1 text-center mr-2 position-relative" style="opacity: 0.5; cursor: not-allowed; border-radius: 4px; min-width: 50px;"
                                             title="Approval disabled - Another item in this request is already approved">
-                                            View
+                                            Approval
                                         </span>
                                     @else
                                         <a onclick="openModal(this, '{{ route('store.purchase-request.approvals', $itemGroup['item_data']->id) }}', 'Approval Voucher', false, '100%')"
                                             class="bg-info text-white p-1 text-center mr-2 position-relative" title="Approval" style="border-radius: 4px; min-width: 50px;">
-                                            View
+                                            Approval
                                         </a>
                                     @endif
                                     @if($requestGroup['created_by_id'] == auth()->user()->id)
