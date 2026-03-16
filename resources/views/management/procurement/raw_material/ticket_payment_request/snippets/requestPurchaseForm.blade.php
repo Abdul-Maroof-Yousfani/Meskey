@@ -82,7 +82,8 @@
     $paidAmount = $approvedAmount ?? 0;
     $advanceFreight = $ticket->purchaseFreight->advance_freight ?? 0;
     $remainingFreight = $advanceFreight - ($pRsSumForFreight ?? 0);
-    $totalDeductions += $bagsRateSum + $loadingWeighbridgeSum + $bagWeightInKgSum - $arrivalFreightAmount;
+    // $totalDeductions += $bagsRateSum + $loadingWeighbridgeSum + $bagWeightInKgSum - $arrivalFreightAmount;
+    $totalDeductions += $bagsRateSum + $loadingWeighbridgeSum + $bagWeightInKgSum - $grossFreightAmount;
     $totalAmount += $bagWeightInKgSum + $loadingWeighbridgeSum;
     $grossAmount = $ratePerKg * $loadingWeight;
     $existingOtherDeductionKg = $otherDeduction->other_deduction_kg ?? 0;
@@ -692,9 +693,9 @@
                             <td>
                                 <input type="text" class="form-control" name="freight_deduction_amount_display"
                                     id="freight_deduction_amount_display"
-                                    value="{{ number_format($arrivalFreightAmount, 2) }}" readonly>
+                                    value="{{ number_format($grossFreightAmount, 2) }}" readonly>
                                 <input type="hidden" class="form-control" name="loading_weighbridge_amount1"
-                                    id="freight_deduction_amount" value="{{ $arrivalFreightAmount }}" readonly>
+                                    id="freight_deduction_amount" value="{{ $grossFreightAmount }}" readonly>
                             </td>
                         </tr>
                         <tr>
@@ -1042,7 +1043,7 @@
                 const totalDeductionsForFormula = totalSamplingDeductions + bagWeightAmount +
                     loadingWeighbridgeAmount;
                 const totalAmount = grossAmount - totalDeductionsForFormula + bagRateAmount - parseInt(
-                    {{ $arrivalFreightAmount ?? 0 }}) + {{ $totalSupplierCommission }};
+                    {{ $grossFreightAmount ?? 0 }}) + {{ $totalSupplierCommission }};
 
                 $('#total_amount').val(totalAmount);
                 $('#total_amount_display').val(totalAmount.toFixed(2));
