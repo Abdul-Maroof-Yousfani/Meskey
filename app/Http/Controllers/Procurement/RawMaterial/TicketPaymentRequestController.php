@@ -647,7 +647,8 @@ class TicketPaymentRequestController extends Controller
             ->where('purchase_order_id', $arrivalTicket->arrival_purchase_order_id)
             ->where('module_type', 'freight_payment')
             ->latest() // id ya created_at ke hisaab se last record
-            ->value('gross_amount');
+            // ->value('gross_amount');
+            ->value('total_amount');
 
         $samplingRequest = null;
         $samplingRequestCompulsuryResults = collect();
