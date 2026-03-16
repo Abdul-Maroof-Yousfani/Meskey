@@ -209,6 +209,9 @@
                             <input type="hidden" name="id" value="{{ $model->id }}">
                             <input type="hidden" name="model_data_ids" id="model_data_ids">
                             <input type="hidden" name="type" id="approvalTypeInput" value="">
+                            @if($listRefresh)
+                                <input type="hidden" id="listRefresh" value="{{ $listRefresh }}" />
+                            @endif
 
                             <div class="mb-3">
                                 <label for="comment" class="form-label fw-medium">Comment

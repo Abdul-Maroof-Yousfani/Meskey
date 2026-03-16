@@ -50,11 +50,11 @@ function filterationCommonoldat12Dec2025(
     function (start, end, label) {
       console.log(
         "A new date selection was made: " +
-          start.format("YYYY-MM-DD") +
-          "  -  " +
-          start +
-          " to " +
-          end.format("YYYY-MM-DD")
+        start.format("YYYY-MM-DD") +
+        "  -  " +
+        start +
+        " to " +
+        end.format("YYYY-MM-DD")
       );
       $("[name='daterange']").val(
         `${start.format("MM/DD/YYYY")} - ${end.format("MM/DD/YYYY")}`
@@ -153,6 +153,7 @@ function filterationCommonoldat12Dec2025(
       }
     }
 
+    urlParams.delete("daterange");
     const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
     window.history.pushState(null, "", newUrl);
   }
@@ -223,15 +224,15 @@ function filterationCommonoldat12Dec2025(
 
         $("#date_range").val(
           startDate.format("YYYY-MM-DD") +
-            " - " +
-            currentDate.format("YYYY-MM-DD")
+          " - " +
+          currentDate.format("YYYY-MM-DD")
         );
 
         $("#date_range").on("apply.daterangepicker", function (ev, picker) {
           $(this).val(
             picker.startDate.format("YYYY-MM-DD") +
-              " - " +
-              picker.endDate.format("YYYY-MM-DD")
+            " - " +
+            picker.endDate.format("YYYY-MM-DD")
           );
           var formData = $("#filterForm").serialize();
           updateUrlParams(formData);
@@ -359,11 +360,11 @@ function filterationCommon(
     function (start, end, label) {
       console.log(
         "A new date selection was made: " +
-          start.format("YYYY-MM-DD") +
-          "  -  " +
-          start +
-          " to " +
-          end.format("YYYY-MM-DD")
+        start.format("YYYY-MM-DD") +
+        "  -  " +
+        start +
+        " to " +
+        end.format("YYYY-MM-DD")
       );
       $("[name='daterange']").val(
         `${start.format("MM/DD/YYYY")} - ${end.format("MM/DD/YYYY")}`
@@ -486,6 +487,7 @@ function filterationCommon(
       }
     }
 
+    urlParams.delete("daterange");
     const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
     window.history.pushState(null, "", newUrl);
   }
@@ -511,15 +513,15 @@ function filterationCommon(
 
         $("#date_range").val(
           startDate.format("YYYY-MM-DD") +
-            " - " +
-            currentDate.format("YYYY-MM-DD")
+          " - " +
+          currentDate.format("YYYY-MM-DD")
         );
 
         $("#date_range").on("apply.daterangepicker", function (ev, picker) {
           $(this).val(
             picker.startDate.format("YYYY-MM-DD") +
-              " - " +
-              picker.endDate.format("YYYY-MM-DD")
+            " - " +
+            picker.endDate.format("YYYY-MM-DD")
           );
           var formData = $("#" + formId).serialize();
           updateUrlParams(formData);
@@ -1077,13 +1079,11 @@ function openImageModal(
       const imageElement = $(`
         <div class="image-wrapper mb-4" style="text-align: center;">
           <img src="${imageUrl}" class="img-fluid" style="max-height: 70vh; max-width: 100%;">
-          ${
-            images.length > 1
-              ? `<div class="image-counter mt-2">Image ${index + 1} of ${
-                  images.length
-                }</div>`
-              : ""
-          }
+          ${images.length > 1
+          ? `<div class="image-counter mt-2">Image ${index + 1} of ${images.length
+          }</div>`
+          : ""
+        }
           <div class="image-actions mt-2">
             <button class="btn btn-sm btn-primary zoom-in" data-image="${imageUrl}">
               <i class="ft-plus"></i> Zoom In

@@ -28,7 +28,9 @@ class PurchaseRequestController extends Controller
 {
     public function index()
     {
-        return view('management.procurement.store.purchase_request.index');
+        $categories = Category::where('category_type', 'general_items')->get();
+        $items = Product::where('product_type', 'general_items')->where('status', 'active')->get();
+        return view('management.procurement.store.purchase_request.index', compact('categories', 'items'));
     }
 
     public function getItems(Request $request)
@@ -46,9 +48,35 @@ class PurchaseRequestController extends Controller
      */
     public function getList(Request $request)
     {
-        $PurchaseRequests = PurchaseRequestData::with('purchase_request', 'category', 'item', 'approval')
-            ->whereStatus(true)
-            ->latest()
+        $query = PurchaseRequestData::with('purchase_request', 'category', 'item', 'approval')
+            ->whereStatus(true);
+
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('qty', 'like', "%{$search}%")
+                  ->orWhereHas('purchase_request', function($pr) use ($search) {
+                      $pr->where('purchase_request_no', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        if ($request->has('category_id') && $request->category_id != 'all' && !empty($request->category_id)) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        if ($request->has('item_id') && $request->item_id != 'all' && !empty($request->item_id)) {
+            $query->where('item_id', $request->item_id);
+        }
+
+        if ($request->has('status') && $request->status != 'all' && !empty($request->status)) {
+            $status = $request->status;
+            $query->whereHas('purchase_request', function($pr) use ($status) {
+                $pr->where('am_approval_status', $status);
+            });
+        }
+
+        $PurchaseRequests = $query->latest()
             ->paginate(request('per_page', 25));
 
         $groupedData = [];

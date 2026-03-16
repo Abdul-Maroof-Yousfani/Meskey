@@ -26,7 +26,39 @@
                                     <div class="col-md-12 my-1 ">
                                         <div class="row justify-content-end text-right">
                                             <div class="col-md-2">
-                                                <label for="customers" class="form-label">Search</label>
+                                                <label for="item_id" class="form-label">Item</label>
+                                                <select name="item_id" id="item_id" class="form-control select2">
+                                                    <option value="all">All Items</option>
+                                                    @foreach ($items as $item)
+                                                        <option value="{{ $item->id }}" {{ request('item_id') == $item->id ? 'selected' : '' }}>
+                                                            {{ $item->name }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label for="category_id" class="form-label">Category</label>
+                                                <select name="category_id" id="category_id" class="form-control select2">
+                                                    <option value="all">All Categories</option>
+                                                    @foreach ($categories as $category)
+                                                        <option value="{{ $category->id }}" {{ request('category_id') == $category->id ? 'selected' : '' }}>
+                                                            {{ $category->name }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label for="status" class="form-label">Status</label>
+                                                <select name="status" id="status" class="form-control">
+                                                    <option value="all" {{ request('status') == 'all' ? 'selected' : '' }}>All Status</option>
+                                                    <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                                                    <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>
+                                                    <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
+                                                    <option value="reverted" {{ request('status') == 'reverted' ? 'selected' : '' }}>Reverted</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label for="search" class="form-label">Search</label>
                                                 <input type="hidden" name="page" value="{{ request('page', 1) }}">
                                                 <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
                                                 <input type="text" class="form-control" id="search"
@@ -51,7 +83,7 @@
                                             {{-- <th class="col-1 text-right">Approved Qty</th> --}}
                                             <th class="col-1">PR Date</th>
                                             <th class="col-1">Status</th>
-                                            <th class="col-1">Action</th>
+                                            <th class="col-2">Action</th>
                                         </tr>
                                     </thead>
                                 </table>
@@ -69,6 +101,11 @@
     <script>
         $(document).ready(function () {
             filterationCommon(`{{ route('store.get.purchase-request') }}`)
+            
+            // Re-initialize select2 after any AJAX update to preserve selected value in visual UI
+            $(document).on('ajaxSuccess', function() {
+                $('#category_id, #item_id').select2();
+            });
         });
     </script>
 @endsection
