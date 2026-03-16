@@ -339,7 +339,7 @@
  <input type="hidden" id="rowCount" value="0">
  <div class="row">
      <div class="col-12">
-         <x-approval-status :model="$data1" />
+         <x-approval-status :model="$data1" :listRefresh="request()->get('listRefresh', route('store.get.purchase-order'))" />
      </div>
  </div>
  <div class="row bottom-button-bar">
