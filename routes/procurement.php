@@ -185,6 +185,7 @@ Route::prefix('store')->name('store.')->group(function () {
     Route::resource("debit-note", DebitNoteController::class);
 
 
+    Route::get('purchase-quotation/filtered-options', [PurchaseQuotationController::class, 'getFilteredOptions'])->name('purchase-quotation.filtered-options');
     
     Route::delete("/qc/{qc}/delete", [QcController::class, "destroy"])->name("qc.delete");
     Route::post("qc/submit", [QcController::class, "store"])->name("qc.store");
