@@ -76,6 +76,17 @@ class PurchaseRequestController extends Controller
             });
         }
 
+        if ($request->has('daterange') && !empty($request->daterange)) {
+            $dates = explode(' - ', $request->daterange);
+            if (count($dates) == 2) {
+                $startDate = \Carbon\Carbon::parse($dates[0])->startOfDay();
+                $endDate = \Carbon\Carbon::parse($dates[1])->endOfDay();
+                $query->whereHas('purchase_request', function($pr) use ($startDate, $endDate) {
+                    $pr->whereBetween('purchase_date', [$startDate, $endDate]);
+                });
+            }
+        }
+
         $PurchaseRequests = $query->latest()
             ->paginate(request('per_page', 25));
 

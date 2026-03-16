@@ -56,7 +56,7 @@
                         </td> --}}
                         <td>
                             <p class="m-0 white-nowrap">
-                                {{ \Carbon\Carbon::parse($itemGroup['item_data']->created_at)->format('Y-m-d h:i A') }}
+                                {{ optional($itemGroup['item_data']->purchase_request)->purchase_date }}
                             </p>
                         </td>
 

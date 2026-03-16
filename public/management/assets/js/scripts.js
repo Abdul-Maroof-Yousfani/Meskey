@@ -153,7 +153,6 @@ function filterationCommonoldat12Dec2025(
       }
     }
 
-    urlParams.delete("daterange");
     const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
     window.history.pushState(null, "", newUrl);
   }
@@ -349,39 +348,7 @@ function filterationCommon(
     };
   }
 
-  $('input[name="daterange"]').daterangepicker(
-    {
-      opens: "left",
-      // autoUpdateInput: false,
-      locale: {
-        cancelLabel: "Clear",
-      },
-    },
-    function (start, end, label) {
-      console.log(
-        "A new date selection was made: " +
-        start.format("YYYY-MM-DD") +
-        "  -  " +
-        start +
-        " to " +
-        end.format("YYYY-MM-DD")
-      );
-      $("[name='daterange']").val(
-        `${start.format("MM/DD/YYYY")} - ${end.format("MM/DD/YYYY")}`
-      );
 
-      if ($("#" + appenddiv).length) {
-        renderLoadingTable(
-          $("#" + appenddiv).find("table") || $("#" + appenddiv),
-          12
-        );
-      }
-      var formData = $("#" + formId).serialize();
-
-      updateUrlParams(formData);
-      fetch_data(formData);
-    }
-  );
 
   // Handle form input changes
   $("#" + formId + " input, #" + formId + " select")
@@ -487,7 +454,6 @@ function filterationCommon(
       }
     }
 
-    urlParams.delete("daterange");
     const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
     window.history.pushState(null, "", newUrl);
   }
@@ -499,23 +465,33 @@ function filterationCommon(
   function initializeDaterangepicker() {
     try {
       if ($("#date_range").length) {
-        var currentDate = moment().add(1, "days");
+        var existingValue = $("#date_range").val();
         var startDate = moment().subtract(28, "days");
+        var endDate = moment();
+
+        if (existingValue && existingValue.includes(" - ")) {
+          var dates = existingValue.split(" - ");
+          startDate = moment(dates[0], "YYYY-MM-DD");
+          endDate = moment(dates[1], "YYYY-MM-DD");
+        }
 
         $("#date_range").daterangepicker({
           startDate: startDate,
-          endDate: currentDate,
+          endDate: endDate,
           autoUpdateInput: false,
           locale: {
-            cancelLabel: "Clear Date & All",
+            format: "YYYY-MM-DD",
+            cancelLabel: "Clear",
           },
         });
 
-        $("#date_range").val(
-          startDate.format("YYYY-MM-DD") +
-          " - " +
-          currentDate.format("YYYY-MM-DD")
-        );
+        if (!existingValue) {
+          $("#date_range").val(
+            startDate.format("YYYY-MM-DD") +
+            " - " +
+            endDate.format("YYYY-MM-DD")
+          );
+        }
 
         $("#date_range").on("apply.daterangepicker", function (ev, picker) {
           $(this).val(
@@ -536,15 +512,7 @@ function filterationCommon(
         });
       }
     } catch (error) {
-      console.error(error);
-      Swal.fire({
-        icon: "error",
-        title: "Initialization Error",
-        text:
-          "An error occurred while initializing the date range picker: " +
-          error.message,
-        confirmButtonColor: "#3085d6",
-      });
+      console.error("Daterangepicker initialization error:", error);
     }
   }
 }
