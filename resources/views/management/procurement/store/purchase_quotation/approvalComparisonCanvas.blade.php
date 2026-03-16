@@ -262,7 +262,7 @@
  @if ($PurchaseQuotationData->isNotEmpty() && request()->routeIs('store.purchase-quotation.comparison-approvals'))
      <div class="row">
          <div class="col-12">
-             <x-approval-status :model="$data1" />
+             <x-approval-status :model="$data1" :listRefresh="request()->get('listRefresh', route('store.get.purchase-quotation'))" />
          </div>
      </div>
  @endif
