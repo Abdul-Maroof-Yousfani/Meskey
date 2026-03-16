@@ -311,9 +311,18 @@
 
 
     function calc(num) {
-        var excise_duty = parseFloat($('#excise_duty_' + num).val()) || 0;
-        var qty = parseFloat($('#qty_' + num).val()) || 0;
+        var qtyInput = $('#qty_' + num);
+        var maxQty = parseFloat(qtyInput.attr('max')) || 0;
+        var qty = parseFloat(qtyInput.val()) || 0;
         var rate = parseFloat($('#rate_' + num).val()) || 0;
+        var excise_duty = parseFloat($('#excise_duty_' + num).val()) || 0;
+
+        // Check max quantity
+        if (qty > maxQty) {
+            alert('Maximum allowed quantity is ' + maxQty);
+            qty = maxQty;
+            qtyInput.val(maxQty);
+        }
 
         // get selected option and its data attribute
         var selectedOption = $('#tax_id_' + num + ' option:selected');

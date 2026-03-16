@@ -48,7 +48,7 @@
         </div>
     </div>
 
-     <div class="col-md-3">
+     <!-- <div class="col-md-3">
             <div class="form-group">
                 <label class="form-label">Supplier:</label>
                 <select disabled id="supplier_id" name="supplier_id" class="form-control item-select select2">
@@ -61,7 +61,7 @@
                     @endforeach
                 </select>
             </div>
-        </div>
+        </div> -->
      <div class="col-xs-12 col-sm-12 col-md-12">
          <div class="form-group">
              <label>Description (Optional):</label>

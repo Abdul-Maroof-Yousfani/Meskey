@@ -194,8 +194,15 @@
                                         onblur="calc({{ $key }})" name="qty[]"
                                         value="{{ $data->qty }}" id="qty_{{ $key }}"
                                         class="form-control qty" step="0.01" min="0"
-                                        max="{{ $data->qty }}" @if (isset($data->purchase_quotation_data_id)) readonly @endif>
-                                    {{-- <input type="hidden" name="qty[]" value="{{ $data->qty }}"> --}}
+                                        max="{{ optional($data->purchase_request_data)->qty - (optional($data->purchase_request_data->purchase_order_data)->sum('qty') - $data->qty) }}" @if (isset($data->purchase_quotation_data_id)) readonly @endif>
+                                    
+                                    <div class="d-flex align-items-center">
+                                        balance: {{ optional($data->purchase_request_data)->qty - optional($data->purchase_request_data->purchase_order_data)->sum('qty') }}
+                                    </div>
+
+                                    <div class="d-flex align-items-center">
+                                        total qty: {{ optional($data->purchase_request_data)->qty }}
+                                    </div>
                                 </td>
                                 <td style="min-width: 120px;">
                                     <input  type="number"

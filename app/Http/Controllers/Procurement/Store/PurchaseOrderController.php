@@ -406,7 +406,7 @@ class PurchaseOrderController extends Controller
         $purchaseOrder = PurchaseOrder::with([
             'purchaseOrderData',
             'purchaseOrderData.category',
-            'purchaseOrderData.purchase_request_data',
+            'purchaseOrderData.purchase_request_data.purchase_order_data',
             'purchaseOrderData.item',
             'purchase_request.PurchaseData',
             'purchase_quotation.quotation_data'
@@ -637,7 +637,7 @@ class PurchaseOrderController extends Controller
 
         $master = PurchaseOrder::find($requestId);
 
-        $dataItems = PurchaseOrderData::with(['purchase_order', 'item', 'category'])
+        $dataItems = PurchaseOrderData::with(['purchase_order', 'item', 'category', 'purchase_request_data.purchase_order_data'])
             ->where('purchase_order_id', $requestId)
             ->get();
 

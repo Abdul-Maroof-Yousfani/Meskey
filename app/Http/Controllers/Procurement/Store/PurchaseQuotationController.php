@@ -171,6 +171,12 @@ class PurchaseQuotationController extends Controller
                 ];
             }
 
+            if($row->am_approval_status == "reverted" || $row->am_approval_status == "pending") {
+                $groupedData[$purchaseRequestNo]["is_editable"] = true;
+            } else {
+                $groupedData[$purchaseRequestNo]["is_editable"] = false;
+            }
+
             if (!isset($groupedData[$purchaseRequestNo]['quotations'][$requestNo])) {
                 $groupedData[$purchaseRequestNo]['quotations'][$requestNo] = [
                     'quotation_data' => $row->purchase_quotation,
