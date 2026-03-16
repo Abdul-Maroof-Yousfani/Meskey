@@ -11,18 +11,23 @@
 @endphp
 
 
-@if (isset($data->purchase_order_data))
-    @php
-        $totalOrdered = $data->purchase_order_data->sum('qty');
-    @endphp
-@else
-    @php
-        $totalOrdered = 0;
-    @endphp
-@endif
-
 @php
-    $remainingQty = $data->qty - $totalOrdered;
+    if (isset($data->purchase_order_data)) {
+        // PurchaseQuotationData or PurchaseRequestData with loaded POs
+        $totalOrdered = $data->purchase_order_data->sum('qty');
+        $totalQty = $data->qty;
+        $remainingQty = $totalQty - $totalOrdered;
+    } elseif (isset($data->purchase_request_data)) {
+        // PurchaseOrderData (Edit mode)
+        $totalOrdered = optional($data->purchase_request_data->purchase_order_data)->sum('qty') ?? 0;
+        $totalQty = $data->purchase_request_data->qty ?? 0;
+        $remainingQty = $totalQty - $totalOrdered;
+    } else {
+        // PurchaseRequestData (Create mode, via controller adjustment)
+        $totalOrdered = $data->total_quoted_qty ?? 0;
+        $totalQty = $totalOrdered + $data->qty;
+        $remainingQty = $data->qty;
+    }
     $isQuotationAvailable = ($data->rate) > 0 ? true : false;
 @endphp
 @if($remainingQty <= 0) @continue @endif;
@@ -86,11 +91,11 @@
     >
 
     <div class="d-flex align-items-center">
-        Total Qty: {{ $data->total_quoted_qty+$data->qty }}
+        balance: {{ $remainingQty }}
     </div>
 
     <div class="d-flex align-items-center">
-        Ordered Qty: {{ $data->total_quoted_qty }}
+        total qty: {{ $totalQty }}
     </div>
 </td>
         <td style="min-width: 120px;">
@@ -237,28 +242,33 @@ function remove(id) {
 }
 
 function calculatePercentage(el) {
-    const gross_amount = $(el).closest("tr").find(".gross_amount");
-    const rate = $(el).closest("tr").find(".rate");
-    const qty = $(el).closest("tr").find(".qty");
+    const row = $(el).closest("tr");
+    const gross_amount = row.find(".gross_amount");
+    const qtyInput = row.find(".qty");
+    const rateInput = row.find(".rate");
     
-    gross_amount.val(rate.val() * qty.val());
-    
-    const tax_percent = $(el)
-            .closest("tr")
-            .find(".taxes option:selected")
-            .data("percentage");
-    const percent_amount = $(el).closest("tr").find(".percent_amount");
-    const net_amount = $(el).closest("tr").find(".net_amount");
+    const maxQty = parseFloat(qtyInput.attr("max")) || 0;
+    let qty = parseFloat(qtyInput.val()) || 0;
+    const rate = parseFloat(rateInput.val()) || 0;
 
-   
+    // Check max quantity
+    if (qty > maxQty) {
+        alert('Maximum allowed quantity is ' + maxQty);
+        qty = maxQty;
+        qtyInput.val(maxQty);
+    }
+    
+    gross_amount.val((rate * qty).toFixed(2));
+    
+    const tax_percent = row.find(".taxes option:selected").data("percentage") || 0;
+    const percent_amount = row.find(".percent_amount");
+    const net_amount = row.find(".net_amount");
 
     const percent_amount_of_gross = (parseFloat(tax_percent) / 100) * parseFloat(gross_amount.val());
     const net_amount_value = parseFloat(gross_amount.val()) + parseFloat(percent_amount_of_gross);
 
-    percent_amount.val(percent_amount_of_gross);
-    net_amount.val(net_amount_value)
-
-
+    percent_amount.val(percent_amount_of_gross.toFixed(2));
+    net_amount.val(net_amount_value.toFixed(2));
 }
 </script>
 
