@@ -32,14 +32,40 @@ class PurchaseOrderReceivingController extends Controller
 {
     public function index()
     {
-        return view('management.procurement.store.purchase_order_receiving.index');
+        $suppliers = Supplier::where('status', 'active')->get();
+        return view('management.procurement.store.purchase_order_receiving.index', compact('suppliers'));
     }
 
 
 
     public function getList(Request $request)
     {
-        $PurchaseOrderRaw = PurchaseOrderReceivingData::with(
+        $query = PurchaseOrderReceivingData::query();
+
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('qty', 'like', "%{$search}%")
+                    ->orWhere('rate', 'like', "%{$search}%")
+                    ->orWhere('total', 'like', "%{$search}%")
+                    ->orWhereHas('purchase_order_receiving', function ($q) use ($search) {
+                        $q->where('purchase_order_receiving_no', 'like', "%{$search}%")
+                            ->orWhere('dc_no', 'like', "%{$search}%")
+                            ->orWhereHas('purchase_order', function ($q) use ($search) {
+                                $q->where('purchase_order_no', 'like', "%{$search}%")
+                                    ->orWhereHas('purchase_request', function ($q) use ($search) {
+                                        $q->where('purchase_request_no', 'like', "%{$search}%");
+                                    });
+                            });
+                    });
+            });
+        }
+
+        if ($request->has('supplier_id') && $request->supplier_id !== 'all' && !empty($request->supplier_id)) {
+            $query->where('supplier_id', $request->supplier_id);
+        }
+
+        $PurchaseOrderRaw = $query->with(
             'qc',
             'purchase_order_data',
             'purchase_order_receiving.purchase_order.purchase_request',
@@ -47,7 +73,6 @@ class PurchaseOrderReceivingController extends Controller
             'item',
             'supplier'
         )
-            
             ->orderBy("purchase_order_receiving_id", "desc")
             ->paginate(request('per_page', 25));
 

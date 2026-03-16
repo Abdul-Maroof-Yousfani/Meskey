@@ -187,8 +187,8 @@
                                                 Approved
                                             </span>
                                         @elseif($itemGroup["qc_status"] == 'rejected')
-                                            <span class="badge badge-success">
-                                                Approved
+                                            <span class="badge badge-danger">
+                                                Rejected
                                             </span>
                                         @else
                                             <span class="badge badge-info">
@@ -211,7 +211,7 @@
 
                             @if ($isFirstRequestRow)
                                 <td rowspan="{{ $requestGroup['request_rowspan'] }}">
-                                    <div class="d-flex gap-2">
+                                    <div class="d-flex" style="gap: 10px;">
                                         @php
                                             $currentApprovalStatus =
                                                 $supplierRow['data']
@@ -222,28 +222,21 @@
                                                 $requestGroup['has_approved_item'] && !$isCurrentApproved;
                                         @endphp
                                         <a onclick="openModal(this, '{{ route('store.purchase-order-receiving.approvals', $supplierRow['data']->purchase_order_receiving->id) }}', 'View GRN', false, '100%')"
-                                            class="info p-1 text-center mr-2 position-relative" title="Approval">
-                                            <i class="ft-eye font-medium-3"></i>
+                                            class="bg-info text-white p-1 text-center position-relative" title="Approval" style="border-radius: 4px; min-width: 60px;">
+                                            Approval
                                         </a>
 
-                                        {{-- <a onclick="openModal(this, '{{ route('store.qc.create', $supplierRow['data']->purchase_order_receiving->id) }}', 'QC', false, '100%')"
-                                            class="info p-1 text-center mr-2 position-relative" title="Approval">
-                                            <i class="ft-edit font-medium-3"></i>
-                                        </a> --}}
-                                        
                                         @if($requestGroup['created_by_id'] == auth()->user()->id)
 
-                                            
                                             @if ($requestGroup['request_status'] != 'approved' && $requestGroup['request_status'] != 'rejected')
                                                 <a onclick="openModal(this, '{{ route('store.purchase-order-receiving.edit', $supplierRow['data']->purchase_order_receiving->id) }}', 'Edit GRN', false, '100%')"
-                                                    class="info p-1 text-center mr-2 position-relative">
-                                                    <i class="ft-edit font-medium-3"></i>
+                                                    class="bg-warning text-white p-1 text-center position-relative" title="Edit" style="border-radius: 4px; min-width: 60px;">
+                                                    Edit
                                                 </a>
 
-
                                                 <a onclick="deletemodal('{{ route('store.purchase-order-receiving.destroy', $supplierRow['data']->purchase_order_receiving->id) }}', '{{ route('store.get.purchase-order-receiving') }}')"
-                                                    class="danger p-1 text-center mr-2 position-relative">
-                                                    <i class="ft-x font-medium-3"></i>
+                                                    class="bg-danger text-white p-1 text-center position-relative" title="Delete" style="border-radius: 4px; min-width: 60px;">
+                                                    Delete
                                                 </a>
                                             @endif
                                         @endif

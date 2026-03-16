@@ -57,11 +57,7 @@
                                                     <option value="reverted" {{ request('status') == 'reverted' ? 'selected' : '' }}>Reverted</option>
                                                 </select>
                                             </div>
-                                            <div class="col-md-2">
-                                                <label for="date_range" class="form-label">Date Range</label>
-                                                <input type="text" name="daterange" id="date_range" class="form-control"
-                                                    placeholder="Select Date Range" value="{{ request('daterange') }}">
-                                            </div>
+
                                             <div class="col-md-2">
                                                 <label for="search" class="form-label">Search</label>
                                                 <input type="hidden" name="page" value="{{ request('page', 1) }}">
