@@ -266,7 +266,7 @@
 </form>
 <div class="row">
     <div class="col-12">
-        <x-approval-status :model="$data" />
+        <x-approval-status :model="$data" :listRefresh="route('store.get.purchase-request')" />
     </div>
 </div>
 

@@ -88,15 +88,13 @@
 
                             {{-- ✅ Other columns --}}
                             @if ($isFirstRequestRow)
-                                @php
-                                    $quotation_rowspan += $requestGroup['request_rowspan'];
-                                @endphp
                                 <td rowspan="{{ $requestGroup['request_rowspan'] }}"
                                     style="background-color: #e3f2fd; vertical-align: middle;">
                                     <p class="m-0 font-weight-bold">
                                         #{{ $requestGroup['request_no'] }}
                                     </p>
                                 </td>
+                                @php $isFirstRequestRow = false; @endphp
                             @endif
 
                             <td>
@@ -165,37 +163,24 @@
                             </td>
 
                             @if ($previousRequestNo !== $currentRequestNo)
-                                <td rowspan="{{ $requestGroup['quotaion_rowspan'] }}">
-                                    <div class="d-flex gap-2">
-                                        <a onclick="openModal(this, '{{ route('store.purchase-quotation.comparison-approvals', $supplierRow['data']->purchase_quotation->purchase_request_id) }}', 'Quotation Approval', false, '100%')"
-                                            class="info p-1 text-center mr-2 position-relative" title="Approval">
-                                            <i class="ft-eye font-medium-3"></i>
-
+                                <td rowspan="{{ $totalRequestRowspan }}" style="vertical-align: middle;">
+                                    <div class="d-flex flex-column" style="gap: 10px;">
+                                        <a onclick="openModal(this, '{{ route('store.purchase-quotation.comparison-approvals', ['id' => $supplierRow['data']->purchase_quotation->purchase_request_id, 'listRefresh' => route('store.purchase-quotation.comparison')]) }}', 'Quotation Approval', false, '100%')"
+                                            class="bg-info text-white p-1 text-center position-relative" title="Approval" style="border-radius: 4px; min-width: 70px;">
+                                            Approval
                                         </a>
-                                    </div>
-                                    <div class="d-flex gap-2">
-                                        <a onclick="openModal(this, '{{ route('store.purchase-quotation.dataForComparison', $supplierRow['data']->purchase_quotation->purchase_request_id) }}', 'View Quotation', false, '100%')"
-                                            class="info p-1 text-center mr-2 position-relative" title="Approval">
-                                            <i class="ft-list font-medium-3"></i>
-
+                                        <a onclick="openModal(this, '{{ route('store.purchase-quotation.dataForComparison', $supplierRow['data']->purchase_quotation->purchase_request_id) }}', 'View Comparison', false, '100%')"
+                                            class="bg-primary text-white p-1 text-center position-relative" title="Compare" style="border-radius: 4px; min-width: 70px;">
+                                            Compare
                                         </a>
-                                    </div>
-                                    {{-- {{ \App\Models\User::find($requestGroup["created_by_id"]) }} --}}
-                                    @if($requestGroup['created_by_id'] == auth()->user()->id)
-                                        @if($is_editing_allowed)
-                                   
-                                        <div class="d-flex gap-2">
+                                        @if($requestGroup['created_by_id'] == auth()->user()->id && $is_editing_allowed)
                                             <a onclick="openModal(this, '{{ route('store.purchase-quotation.edit', [$supplierRow['data']->purchase_quotation->id, 'purchase_request_id' => $supplierRow['data']->purchase_quotation->purchase_request_id]) }}', 'Quotation Edit', false, '100%')"
-                                                class="info p-1 text-center mr-2 position-relative"
-                                                title="View Approved">
-                                                <i class="ft-edit font-medium-3"></i>
-
+                                                class="bg-warning text-white p-1 text-center position-relative" title="Edit" style="border-radius: 4px; min-width: 70px;">
+                                                Edit
                                             </a>
-                                        </div>
-                                    @endif
-                                    @endif
+                                        @endif
+                                    </div>
                                 </td>
-
                                 @php
                                     $previousRequestNo = $currentRequestNo;
                                 @endphp
@@ -204,7 +189,6 @@
                         </tr>
                       
                     @endforeach
-                    @php $isFirstRequestRow = false; @endphp
                 @endforeach
             @endforeach
         @else

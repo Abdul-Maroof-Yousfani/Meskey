@@ -125,7 +125,7 @@
                                     </span>
                                 </td>
                                 <td rowspan="{{ $requestGroup['request_rowspan'] }}">
-                                    <div class="d-flex gap-2">
+                                    <div class="d-flex" style="gap: 10px;">
                                         @php
                                             $currentApprovalStatus =
                                                 $supplierRow['data']
@@ -137,9 +137,9 @@
                                         @endphp
 
                                         {{-- View Approval --}}
-                                        <a onclick="openModal(this, '{{ route('store.purchase-order.approvals', $supplierRow['data']->purchase_order->id) }}', 'View Purchase Order', false, '100%')"
-                                            class="info p-1 text-center mr-2 position-relative" title="Approval">
-                                            <i class="ft-eye font-medium-3"></i>
+                                        <a onclick="openModal(this, '{{ route('store.purchase-order.approvals', ['id' => $supplierRow['data']->purchase_order->id, 'listRefresh' => route('store.get.purchase-order')]) }}', 'View Purchase Order', false, '100%')"
+                                            class="bg-info text-white p-1 text-center position-relative" title="Approval" style="border-radius: 4px; min-width: 60px;">
+                                            Approval
                                         </a>
 
                                         {{-- Edit/Delete (only if not approved or rejected) --}}
@@ -147,13 +147,13 @@
 
                                             @if ($requestGroup['request_status'] != 'approved' && $requestGroup['request_status'] != 'rejected')
                                                 <a onclick="openModal(this, '{{ route('store.purchase-order.edit', $supplierRow['data']->purchase_order->id) }}', 'Edit Purchase Order', false, '100%')"
-                                                    class="info p-1 text-center mr-2 position-relative">
-                                                    <i class="ft-edit font-medium-3"></i>
+                                                    class="bg-warning text-white p-1 text-center position-relative" title="Edit" style="border-radius: 4px; min-width: 60px;">
+                                                    Edit
                                                 </a>
 
                                                 <a onclick="deletemodal('{{ route('store.purchase-order.destroy', $supplierRow['data']->purchase_order->id) }}', '{{ route('store.get.purchase-order') }}')"
-                                                    class="danger p-1 text-center mr-2 position-relative">
-                                                    <i class="ft-x font-medium-3"></i>
+                                                    class="bg-danger text-white p-1 text-center position-relative" title="Delete" style="border-radius: 4px; min-width: 60px;">
+                                                    Delete
                                                 </a>
                                             @endif
                                         @endif

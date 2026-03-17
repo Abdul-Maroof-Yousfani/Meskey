@@ -50,11 +50,11 @@ function filterationCommonoldat12Dec2025(
     function (start, end, label) {
       console.log(
         "A new date selection was made: " +
-          start.format("YYYY-MM-DD") +
-          "  -  " +
-          start +
-          " to " +
-          end.format("YYYY-MM-DD")
+        start.format("YYYY-MM-DD") +
+        "  -  " +
+        start +
+        " to " +
+        end.format("YYYY-MM-DD")
       );
       $("[name='daterange']").val(
         `${start.format("MM/DD/YYYY")} - ${end.format("MM/DD/YYYY")}`
@@ -223,15 +223,15 @@ function filterationCommonoldat12Dec2025(
 
         $("#date_range").val(
           startDate.format("YYYY-MM-DD") +
-            " - " +
-            currentDate.format("YYYY-MM-DD")
+          " - " +
+          currentDate.format("YYYY-MM-DD")
         );
 
         $("#date_range").on("apply.daterangepicker", function (ev, picker) {
           $(this).val(
             picker.startDate.format("YYYY-MM-DD") +
-              " - " +
-              picker.endDate.format("YYYY-MM-DD")
+            " - " +
+            picker.endDate.format("YYYY-MM-DD")
           );
           var formData = $("#filterForm").serialize();
           updateUrlParams(formData);
@@ -348,39 +348,7 @@ function filterationCommon(
     };
   }
 
-  $('input[name="daterange"]').daterangepicker(
-    {
-      opens: "left",
-      // autoUpdateInput: false,
-      locale: {
-        cancelLabel: "Clear",
-      },
-    },
-    function (start, end, label) {
-      console.log(
-        "A new date selection was made: " +
-          start.format("YYYY-MM-DD") +
-          "  -  " +
-          start +
-          " to " +
-          end.format("YYYY-MM-DD")
-      );
-      $("[name='daterange']").val(
-        `${start.format("MM/DD/YYYY")} - ${end.format("MM/DD/YYYY")}`
-      );
 
-      if ($("#" + appenddiv).length) {
-        renderLoadingTable(
-          $("#" + appenddiv).find("table") || $("#" + appenddiv),
-          12
-        );
-      }
-      var formData = $("#" + formId).serialize();
-
-      updateUrlParams(formData);
-      fetch_data(formData);
-    }
-  );
 
   // Handle form input changes
   $("#" + formId + " input, #" + formId + " select")
@@ -497,29 +465,39 @@ function filterationCommon(
   function initializeDaterangepicker() {
     try {
       if ($("#date_range").length) {
-        var currentDate = moment().add(1, "days");
+        var existingValue = $("#date_range").val();
         var startDate = moment().subtract(28, "days");
+        var endDate = moment();
+
+        if (existingValue && existingValue.includes(" - ")) {
+          var dates = existingValue.split(" - ");
+          startDate = moment(dates[0], "YYYY-MM-DD");
+          endDate = moment(dates[1], "YYYY-MM-DD");
+        }
 
         $("#date_range").daterangepicker({
           startDate: startDate,
-          endDate: currentDate,
+          endDate: endDate,
           autoUpdateInput: false,
           locale: {
-            cancelLabel: "Clear Date & All",
+            format: "YYYY-MM-DD",
+            cancelLabel: "Clear",
           },
         });
 
-        $("#date_range").val(
-          startDate.format("YYYY-MM-DD") +
+        if (!existingValue) {
+          $("#date_range").val(
+            startDate.format("YYYY-MM-DD") +
             " - " +
-            currentDate.format("YYYY-MM-DD")
-        );
+            endDate.format("YYYY-MM-DD")
+          );
+        }
 
         $("#date_range").on("apply.daterangepicker", function (ev, picker) {
           $(this).val(
             picker.startDate.format("YYYY-MM-DD") +
-              " - " +
-              picker.endDate.format("YYYY-MM-DD")
+            " - " +
+            picker.endDate.format("YYYY-MM-DD")
           );
           var formData = $("#" + formId).serialize();
           updateUrlParams(formData);
@@ -534,15 +512,7 @@ function filterationCommon(
         });
       }
     } catch (error) {
-      console.error(error);
-      Swal.fire({
-        icon: "error",
-        title: "Initialization Error",
-        text:
-          "An error occurred while initializing the date range picker: " +
-          error.message,
-        confirmButtonColor: "#3085d6",
-      });
+      console.error("Daterangepicker initialization error:", error);
     }
   }
 }
@@ -1077,13 +1047,11 @@ function openImageModal(
       const imageElement = $(`
         <div class="image-wrapper mb-4" style="text-align: center;">
           <img src="${imageUrl}" class="img-fluid" style="max-height: 70vh; max-width: 100%;">
-          ${
-            images.length > 1
-              ? `<div class="image-counter mt-2">Image ${index + 1} of ${
-                  images.length
-                }</div>`
-              : ""
-          }
+          ${images.length > 1
+          ? `<div class="image-counter mt-2">Image ${index + 1} of ${images.length
+          }</div>`
+          : ""
+        }
           <div class="image-actions mt-2">
             <button class="btn btn-sm btn-primary zoom-in" data-image="${imageUrl}">
               <i class="ft-plus"></i> Zoom In

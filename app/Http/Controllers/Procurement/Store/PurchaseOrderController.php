@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Procurement\Store;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Procurement\Store\PurchaseOrderRequest;
+use App\Models\Product;
 use App\Models\Category;
 use App\Models\Master\CompanyLocation;
 use App\Models\Master\Supplier;
@@ -24,7 +25,10 @@ class PurchaseOrderController extends Controller
 {
     public function index()
     {
-        return view('management.procurement.store.purchase_order.index');
+        $categories = Category::where('category_type', 'general_items')->get();
+        $items = Product::where('product_type', 'general_items')->where('status', 'active')->get();
+        $suppliers = Supplier::where('status', 'active')->get();
+        return view('management.procurement.store.purchase_order.index', compact('categories', 'items', 'suppliers'));
     }
 
     /**
@@ -41,7 +45,46 @@ class PurchaseOrderController extends Controller
 
     public function getList(Request $request)
     {
-        $PurchaseOrderRaw = PurchaseOrderData::with(
+        $query = PurchaseOrderData::query();
+
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('qty', 'like', "%{$search}%")
+                    ->orWhere('rate', 'like', "%{$search}%")
+                    ->orWhere('total', 'like', "%{$search}%")
+                    ->orWhereHas('purchase_order', function ($q) use ($search) {
+                        $q->where('purchase_order_no', 'like', "%{$search}%")
+                            ->orWhereHas('purchase_quotation', function ($q) use ($search) {
+                                $q->where('purchase_quotation_no', 'like', "%{$search}%")
+                                    ->orWhereHas('purchase_request', function ($q) use ($search) {
+                                        $q->where('purchase_request_no', 'like', "%{$search}%");
+                                    });
+                            });
+                    });
+            });
+        }
+
+        if ($request->has('status') && $request->status !== 'all' && !empty($request->status)) {
+            $status = $request->status;
+            $query->whereHas('purchase_order', function ($q) use ($status) {
+                $q->where('am_approval_status', $status);
+            });
+        }
+
+        if ($request->has('category_id') && $request->category_id != 'all' && !empty($request->category_id)) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        if ($request->has('item_id') && $request->item_id != 'all' && !empty($request->item_id)) {
+            $query->where('item_id', $request->item_id);
+        }
+
+        if ($request->has('supplier_id') && $request->supplier_id != 'all' && !empty($request->supplier_id)) {
+            $query->where('supplier_id', $request->supplier_id);
+        }
+
+        $PurchaseOrderRaw = $query->with(
             'purchase_order.purchase_quotation.purchase_request',
             'category',
             'item',

@@ -152,8 +152,8 @@ class ExportOrderRequest extends FormRequest
             'mode_of_transport_id.required' => 'Mode of transport is required',
 
             'origin_country_id.required' => 'Country of origin is required',
-            'port_of_discharge_id.required' => 'Port of discharge is required',
-            'port_of_loading_id.required' => 'Port of loading is required',
+            // 'port_of_discharge_id.required' => 'Port of discharge is required',
+            // 'port_of_loading_id.required' => 'Port of loading is required',
 
             'hs_code_id.required' => 'HS code is required',
             'currency_id.required' => 'Currency is required',
