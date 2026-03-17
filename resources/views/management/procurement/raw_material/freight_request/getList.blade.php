@@ -3,6 +3,9 @@
         <tr>
             <th class="col-sm-2">Ticket No / Contract No</th>
             <th class="col-sm-2">Supplier</th>
+            <th class="col-sm-2">Truck No</th>
+
+            <th class="col-sm-2">Builty No</th>
             <th class="col-sm-1">Commodity</th>
             <th class="col-sm-1">Loading date</th>
             <th class="col-sm-2">Amounts</th>
@@ -20,7 +23,10 @@
                         <strong>Contract:</strong> #{{ $ticket['purchaseOrder']->contract_no ?? 'N/A' }}<br>
 
                     </td>
+
                     <td>{{ $ticket['purchaseOrder']->supplier->name ?? 'N/A' }}</td>
+                    <td>{{ $ticket['model']->truck_no ?? 'N/A' }}</td>
+                    <td>{{ $ticket['model']->bilty_no ?? 'N/A' }}</td>
                     <td>{{ $ticket['purchaseOrder']->qcProduct->name ?? ($ticket['qcProduct']->name ?? 'N/A') }}</td>
                     <td>
                         @if ($ticket['type'] == 'thadda')

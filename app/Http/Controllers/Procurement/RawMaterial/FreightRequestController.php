@@ -100,6 +100,7 @@ class FreightRequestController extends Controller
             $arrivalQuery->where(function ($q) use ($search) {
                 $q->where('unique_no', 'like', "%{$search}%")
                     ->orWhere('truck_no', 'like', "%{$search}%")
+                    ->orWhere('bilty_no', 'like', "%{$search}%")
                     ->orWhereHas('purchaseOrder', function ($q) use ($search) {
                         $q->where('contract_no', 'like', "%{$search}%")
                             ->orWhere('ref_no', 'like', "%{$search}%");
