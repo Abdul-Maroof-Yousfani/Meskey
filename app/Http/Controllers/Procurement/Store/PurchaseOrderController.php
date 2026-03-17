@@ -445,38 +445,9 @@ class PurchaseOrderController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, $id)
+    public function update(PurchaseOrderRequest $request, $id)
     {
         // dd($request->all());
-        $validated = $request->validate([
-            'delivery_address' => "nullable",
-            'purchase_date' => 'required|date',
-            'purchase_request_id' => 'required|exists:purchase_requests,id',
-            'location_id' => 'required|exists:company_locations,id',
-            'reference_no' => 'nullable|string|max:255',
-            'description' => 'nullable|string',
-
-            'category_id' => 'required|array|min:1',
-            'category_id.*' => 'required|exists:categories,id',
-
-            'item_id' => 'required|array|min:1',
-            'item_id.*' => 'required|exists:products,id',
-
-            'uom' => 'nullable|array',
-            'uom.*' => 'nullable|string|max:255',
-
-            'qty' => 'required|array|min:1',
-            'qty.*' => 'required|numeric|min:0.01',
-
-            'rate' => 'required|array|min:1',
-            'rate.*' => 'required|numeric|min:0.01',
-
-            'remarks' => 'nullable|array',
-            'remarks.*' => 'nullable|string|max:1000',
-
-            'micron' => 'nullable|array',
-            'micron.*' => 'nullable|string|max:1000',
-        ]);
 
 
 

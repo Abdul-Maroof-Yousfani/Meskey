@@ -51,11 +51,17 @@ class PurchaseOrderRequest extends FormRequest
             'remarks' => 'nullable|array',
             'remarks.*' => 'nullable|string|max:1000',
 
-            // 'purchase_request_data_id' => 'sometimes|array',
-            // 'purchase_request_data_id.*' => 'sometimes|exists:purchase_request_data,id',
+            'micron' => 'nullable|array',
+            'micron.*' => 'nullable|string|max:1000',
 
-            // 'purchase_quotation_data_id' => 'sometimes|array',
-            // 'purchase_quotation_data_id.*' => 'sometimes|exists:purchase_quotation_data,id',
+            'excise_duty' => 'nullable|array',
+            'excise_duty.*' => 'nullable|numeric|min:0',
+
+            'tax_id' => 'nullable|array',
+            'tax_id.*' => 'nullable|exists:taxes,id',
+
+            'purchase_request_data_id' => 'required|array|min:1',
+            'purchase_request_data_id.*' => 'required|exists:purchase_request_data,id',
 
             'use_quotation' => 'sometimes|array',
             'use_quotation.*' => 'sometimes|boolean',
@@ -207,5 +213,42 @@ class PurchaseOrderRequest extends FormRequest
 
         // Add additional processing if needed
         return $validated;
+    }
+
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            if ($validator->errors()->any()) return;
+
+            $orderId = $this->route('purchase_order'); // Get ID if it's an update route
+
+            foreach ($this->qty as $index => $qty) {
+                $prDataId = $this->purchase_request_data_id[$index] ?? null;
+                if (!$prDataId) continue;
+
+                $prData = \App\Models\Procurement\Store\PurchaseRequestData::find($prDataId);
+                if (!$prData) {
+                    $validator->errors()->add("qty.$index", "Invalid purchase request reference.");
+                    continue;
+                }
+
+                $maxQty = $prData->qty;
+                $orderedQtyQuery = \App\Models\Procurement\Store\PurchaseOrderData::where('purchase_request_data_id', $prDataId);
+                
+                if ($orderId) {
+                    // For updates, the current PO's quantities should not be counted against the limit
+                    $orderedQtyQuery->where('purchase_order_id', '!=', $orderId);
+                }
+
+                $alreadyOrdered = $orderedQtyQuery->sum('qty');
+                $remaining = (float)$maxQty - (float)$alreadyOrdered;
+
+                // Using a small epsilon for float comparison to avoid precision issues
+                if ((float)$qty > ($remaining + 0.0001)) {
+                    $itemName = $prData->item->name ?? "Item " . ($index + 1);
+                    $validator->errors()->add("qty.$index", "Ordered quantity for '{$itemName}' exceeds the allowed balance. Remaining: " . round($remaining, 2));
+                }
+            }
+        });
     }
 }

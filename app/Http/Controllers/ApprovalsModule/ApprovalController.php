@@ -296,19 +296,19 @@ class ApprovalController extends Controller
             } else { // approve
                 if ($parentRecord->canApprove()) {
                     // Update unselected items in the same Purchase Request
-                    $pr_id = $parentRecord->purchase_request_id;
-                    $remainingQuotations = PurchaseQuotationData::whereHas('purchase_quotation', function($query) use ($pr_id) {
-                            $query->where('purchase_request_id', $pr_id);
-                        })
-                        ->where('am_approval_status', 'pending')
-                        ->whereNotIn('id', $modelDataIds) 
-                        ->get();
+                    // $pr_id = $parentRecord->purchase_request_id;
+                    // $remainingQuotations = PurchaseQuotationData::whereHas('purchase_quotation', function($query) use ($pr_id) {
+                    //         $query->where('purchase_request_id', $pr_id);
+                    //     })
+                    //     ->where('am_approval_status', 'pending')
+                    //     ->whereNotIn('id', $modelDataIds) 
+                    //     ->get();
 
-                    foreach ($remainingQuotations as $quotationData) {
-                        // Mark all unselected pending items as rejected
-                        $quotationData->update(['am_approval_status' => 'rejected']);
-                        $quotationData->approvalRows()->update(['status' => 'rejected']);
-                    }
+                    // foreach ($remainingQuotations as $quotationData) {
+                    //     // Mark all unselected pending items as rejected
+                    //     $quotationData->update(['am_approval_status' => 'rejected']);
+                    //     $quotationData->approvalRows()->update(['status' => 'rejected']);
+                    // }
                     
                     // Re-calculate status after updates (items are now either approved, rejected, or neglected from previous actions)
                     $NoRemainingPendingChild = $parentRecord->quotation_data()
