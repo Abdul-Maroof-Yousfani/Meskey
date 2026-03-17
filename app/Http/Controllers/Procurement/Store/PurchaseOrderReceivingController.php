@@ -13,6 +13,7 @@ use App\Models\Master\Account\GoodReceiveNote;
 use App\Models\Master\Account\Stock;
 use App\Models\Master\CompanyLocation;
 use App\Models\Master\GrnNumber;
+use App\Models\Master\Supplier;
 use App\Models\Procurement\Store\PurchaseBagQC;
 use App\Models\Procurement\Store\PurchaseOrder;
 use App\Models\Procurement\Store\PurchaseOrderData;
