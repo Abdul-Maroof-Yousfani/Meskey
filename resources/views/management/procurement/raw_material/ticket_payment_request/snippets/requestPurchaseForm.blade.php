@@ -617,7 +617,7 @@
                                                 name="other_deduction[kg_value]" id="other_deduction_kg"
                                                 value="{{ $existingOtherDeductionKg }}" placeholder="Enter KG value">
                                             <div class="input-group-append">
-                                                <span class="input-group-text text-sm">KG</span>
+                                                <span class="input-group-text text-sm">Rs/Kg</span>
                                             </div>
                                         </div>
                                     </td>
