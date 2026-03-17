@@ -26,7 +26,8 @@ class ReceivingRequest extends Model
         'inhouse_weighbridge_amount',
         'company_id',
         'created_by_id',
-        'am_approval_status'
+        'am_approval_status',
+        'am_change_made'
     ];
 
     protected $casts = [
