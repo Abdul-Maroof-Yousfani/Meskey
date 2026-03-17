@@ -151,6 +151,13 @@ class ProductionVoucherRequest extends FormRequest
                 'nullable',
                 'string',
                 'max:1000'
+            ],
+            'production_machine_id' => [
+                'nullable',
+                'array'
+            ],
+            'production_machine_id.*' => [
+                'exists:production_machines,id'
             ]
         ];
 

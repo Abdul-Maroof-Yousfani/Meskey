@@ -68,7 +68,7 @@
                                         <div class="col-md-3">
                                             <div class="form-group">
                                                 <label>Plant:</label>
-                                                <select name="plant_id" id="plant_id" onchange="loadlabourCharges();"
+                                                <select name="plant_id" id="plant_id" onchange="loadlabourCharges();loadMachinesByPlant();"
                                                     class="form-control select2" required>
                                                     <option value="">Select Plant</option>
                                                     <!-- Plants will be loaded dynamically based on location -->
@@ -420,6 +420,19 @@
                                         </table>
                                     </div>
                                 </div>
+                                <div class="row mt-3" id="productionMachinesSection" style="display: none;">
+                                    <div class="col-md-12">
+                                        <div class="row header-heading-sepration w-100 mx-auto mb-1 align-items-center"
+                                            style="background-color: #93c3f2;">
+                                            <div class="col-md-12">
+                                                <h6 class="m-0">Production Machines</h6>
+                                            </div>
+                                        </div>
+                                        <div id="productionMachinesContainer" class="p-3 border">
+                                            <!-- Machines will be loaded here -->
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                             <div class="row bottom-button-bar text-right">
                                 <div class="col-12">
@@ -616,6 +629,69 @@
             const plant = $('#plant_id option:selected');
             const productionLabourChargesPerKg = plant.data('production_labour_charges_per_kg');
             $('#production_labour_charges_per_kg').val(productionLabourChargesPerKg);
+        }
+
+        function loadMachinesByPlant() {
+            const plantId = $('#plant_id').val();
+            const container = $('#productionMachinesContainer');
+            const section = $('#productionMachinesSection');
+
+            if (!plantId) {
+                container.empty();
+                section.hide();
+                return;
+            }
+
+            $.ajax({
+                url: '{{ route("production-voucher.get-machines-by-plant") }}',
+                method: 'POST',
+                data: {
+                    plant_id: plantId,
+                    _token: '{{ csrf_token() }}'
+                },
+                success: function (response) {
+                    container.empty();
+                    if (response.machines && response.machines.length > 0) {
+                        section.show();
+                        let html = `
+                            <table class="table table-bordered table-sm">
+                                <thead style="background-color: #f8f9fa;">
+                                    <tr>
+                                        <th width="10%">S.No</th>
+                                        <th>Machine Name</th>
+                                        <th width="20%" class="text-center">Select</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                        `;
+                        $.each(response.machines, function (index, machine) {
+                            html += `
+                                <tr>
+                                    <td>${index + 1}</td>
+                                    <td>${machine.name}</td>
+                                    <td class="text-center">
+                                        <div class="custom-control custom-switch">
+                                            <input type="checkbox" class="custom-control-input" name="production_machine_id[]" value="${machine.id}" id="machine_${machine.id}" checked>
+                                            <label class="custom-control-label" for="machine_${machine.id}"></label>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                        html += `
+                                </tbody>
+                            </table>
+                        `;
+                        container.append(html);
+                    } else {
+                        section.hide();
+                    }
+                },
+                error: function (xhr) {
+                    console.error('Error loading machines:', xhr);
+                    section.hide();
+                }
+            });
         }
         function loadJobOrdersByLocation() {
             const locationId = $('#location_id').val();

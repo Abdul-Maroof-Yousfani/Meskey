@@ -31,6 +31,7 @@ Route::post('production-voucher-get-sublocations-by-location', [ProductionVouche
 Route::post('production-voucher-get-packing-items', [ProductionVoucherController::class, 'getPackingItemsByJobOrder'])->name('production-voucher.get-packing-items');
 Route::post('production-voucher-get-packing-items-with-produced', [ProductionVoucherController::class, 'getPackingItemsWithProduced'])->name('production-voucher.get-packing-items-with-produced');
 Route::post('production-voucher-get-brands-by-job-orders', [ProductionVoucherController::class, 'getBrandsByJobOrders'])->name('production-voucher.get-brands-by-job-orders');
+Route::post('production-voucher-get-machines-by-plant', [ProductionVoucherController::class, 'getMachinesByPlant'])->name('production-voucher.get-machines-by-plant');
 Route::get('production-voucher/{id}/input-form', [ProductionVoucherController::class, 'getInputForm'])->name('production-voucher.input.form');
 Route::get('production-voucher/{id}/input-form/{inputId}', [ProductionVoucherController::class, 'getInputForm'])->name('production-voucher.input.edit-form');
 Route::get('production-voucher/{id}/output-form', [ProductionVoucherController::class, 'getOutputForm'])->name('production-voucher.output.form');

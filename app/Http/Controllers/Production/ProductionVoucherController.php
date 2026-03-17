@@ -18,6 +18,7 @@ use App\Models\Master\CompanyLocation;
 use App\Models\Master\ArrivalSubLocation;
 use App\Models\Master\Brands;
 use App\Models\Master\Plant;
+use App\Models\Master\ProductionMachine;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -743,6 +744,20 @@ class ProductionVoucherController extends Controller
         return response()->json(['headProducts' => $headProducts]);
     }
 
+    public function getMachinesByPlant(Request $request)
+    {
+        $plantId = $request->plant_id;
+        if (!$plantId) {
+            return response()->json(['machines' => []]);
+        }
+
+        $machines = ProductionMachine::where('plant_id', $plantId)
+            ->where('status', 'active')
+            ->get();
+
+        return response()->json(['machines' => $machines]);
+    }
+
     public function store(ProductionVoucherRequest $request)
     {
         // dd($request);
@@ -792,6 +807,11 @@ class ProductionVoucherController extends Controller
             // Sync job orders to pivot table
             if (!empty($jobOrderIds)) {
                 $productionVoucher->jobOrders()->sync($jobOrderIds);
+            }
+
+            // Sync production machines
+            if ($request->has('production_machine_id')) {
+                $productionVoucher->productionMachines()->sync($request->production_machine_id);
             }
 
             // Save Production Inputs
@@ -1118,10 +1138,18 @@ class ProductionVoucherController extends Controller
             // Extract single values for main production voucher fields (same as store)
             $productionVoucherData = [
                 'prod_date' => $request->input('prod_date'),
-                'location_id' => $request->input('location_id'), // Single value from main form
-                'product_id' => $request->input('product_id'), // Single value from main form
+                'location_id' => $request->input('location_id'),
+                'sub_location_id' => $request->input('sub_location_id'),
+                'product_id' => $request->input('product_id'),
                 'plant_id' => $request->input('plant_id'),
                 'by_product_id' => $request->input('by_product_id'),
+                'net_total_input' => $request->input('net_total_input'),
+                'net_total_output' => $request->input('net_total_output'),
+                'labour_charges_per_kg' => $request->input('labour_charges_per_kg'),
+                'total_labour_charges' => $request->input('total_labour_charges'),
+                'labour_deduction' => $request->input('labour_deduction') ?? 0,
+                'labour_deduction_remarks' => $request->input('labour_deduction_remarks'),
+                'labour_net_amount' => $request->input('labour_net_amount'),
                 'remarks' => $request->input('remarks')
             ];
 
@@ -1136,6 +1164,13 @@ class ProductionVoucherController extends Controller
                 $productionVoucher->jobOrders()->sync($jobOrderIds);
             } else {
                 $productionVoucher->jobOrders()->sync([]);
+            }
+
+            // Sync production machines
+            if ($request->has('production_machine_id')) {
+                $productionVoucher->productionMachines()->sync($request->production_machine_id);
+            } else {
+                $productionVoucher->productionMachines()->sync([]);
             }
 
             // Delete existing inputs and outputs (always delete and recreate from form data)

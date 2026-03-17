@@ -178,7 +178,7 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label>Location:</label>
-                        <select name="location_id" id="location_id" class="form-control select2" required onchange="loadData();loadCommoditiesByLocation();">
+                        <select name="location_id" id="location_id" class="form-control select2" required onchange="loadData();loadCommoditiesByLocation();loadSubLocationByLocation();">
                             <option value="">Select Location</option>
                             @foreach($companyLocations as $location)
                                 <option value="{{ $location->id }}" {{ $productionVoucher->location_id == $location->id ? 'selected' : '' }}>
@@ -191,13 +191,31 @@
 
                 <div class="col-md-3">
                     <div class="form-group">
+                        <label>Sub Location:</label>
+                        <select name="sub_location_id" id="sub_location_id" class="form-control select2" required onchange="loadPlantsBySubLocation();">
+                            <option value="">Select Sub Location</option>
+                            @foreach($sublocations as $sublocation)
+                                @if($sublocation->company_location_id == $productionVoucher->location_id)
+                                    <option value="{{ $sublocation->id }}" {{ $productionVoucher->sub_location_id == $sublocation->id ? 'selected' : '' }}>
+                                        {{ $sublocation->name }}
+                                    </option>
+                                @endif
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="form-group">
                         <label>Plant:</label>
-                        <select name="plant_id" id="plant_id" class="form-control select2" required>
+                        <select name="plant_id" id="plant_id" class="form-control select2" required onchange="loadlabourCharges();loadMachinesByPlant();">
                             <option value="">Select Plant</option>
                             @foreach($plants as $plant)
-                                <option value="{{ $plant->id }}" {{ $productionVoucher->plant_id == $plant->id ? 'selected' : '' }}>
-                                    {{ $plant->name }}
-                                </option>
+                                @if($plant->arrival_location_id == $productionVoucher->sub_location_id)
+                                    <option value="{{ $plant->id }}" {{ $productionVoucher->plant_id == $plant->id ? 'selected' : '' }} data-production_labour_charges_per_kg="{{ $plant->production_labour_charges_per_kg }}">
+                                        {{ $plant->name }}
+                                    </option>
+                                @endif
                             @endforeach
                         </select>
                     </div>
@@ -555,6 +573,7 @@
             </div>
 
 
+
              <div class="row my-2">
                                     <div class="col-md-6">
                                         <div class="row header-heading-sepration w-100 mx-auto mb-1 align-items-center"
@@ -612,6 +631,48 @@
                                         </table>
                                     </div>
                                 </div>
+                                <div class="row mt-3" id="productionMachinesSection" style="display: {{ $productionVoucher->plant_id ? 'block' : 'none' }};">
+                                    <div class="col-md-12">
+                                        <div class="row header-heading-sepration w-100 mx-auto mb-1 align-items-center"
+                                            style="background-color: #93c3f2;">
+                                            <div class="col-md-12">
+                                                <h6 class="m-0">Production Machines</h6>
+                                            </div>
+                                        </div>
+                                        <div id="productionMachinesContainer" class="p-3 border">
+                                            <!-- Machines will be loaded here -->
+                                            @if($productionVoucher->plant_id)
+                                                @php
+                                                    $allMachines = \App\Models\Master\ProductionMachine::where('plant_id', $productionVoucher->plant_id)->where('status', 'active')->get();
+                                                    $selectedMachineIds = $productionVoucher->productionMachines->pluck('id')->toArray();
+                                                @endphp
+                                                <table class="table table-bordered table-sm">
+                                                    <thead style="background-color: #f8f9fa;">
+                                                        <tr>
+                                                            <th width="10%">S.No</th>
+                                                            <th>Machine Name</th>
+                                                            <th width="20%" class="text-center">Select</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach($allMachines as $index => $machine)
+                                                            <tr>
+                                                                <td>{{ $index + 1 }}</td>
+                                                                <td>{{ $machine->name }}</td>
+                                                                <td class="text-center">
+                                                                    <div class="custom-control custom-switch">
+                                                                        <input type="checkbox" class="custom-control-input" name="production_machine_id[]" value="{{ $machine->id }}" id="machine_{{ $machine->id }}" {{ in_array($machine->id, $selectedMachineIds) ? 'checked' : '' }}>
+                                                                        <label class="custom-control-label" for="machine_{{ $machine->id }}"></label>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
         </div>
 
         
@@ -667,9 +728,6 @@
             return;
         }
 
-        // Load plants for this location
-        loadPlantsByLocation();
-
         // Show loading
         commoditySelect.prop('disabled', true);
 
@@ -704,11 +762,67 @@
         });
     }
 
-    function loadPlantsByLocation() {
+    function loadlabourCharges() {
+        const plantId = $('#plant_id').val();
+        const plant = $('#plant_id option:selected');
+        const productionLabourChargesPerKg = plant.data('production_labour_charges_per_kg');
+        $('#production_labour_charges_per_kg').val(productionLabourChargesPerKg);
+    }
+
+    function loadSubLocationByLocation() {
         const locationId = $('#location_id').val();
+        const subLocationSelect = $('#sub_location_id');
         const plantSelect = $('#plant_id');
 
+        // Clear sublocation and plant dropdowns
+        subLocationSelect.empty().append('<option value="">Select Sub Location</option>');
+        plantSelect.empty().append('<option value="">Select Plant</option>');
+
         if (!locationId) {
+            subLocationSelect.trigger('change');
+            plantSelect.trigger('change');
+            return;
+        }
+
+        subLocationSelect.prop('disabled', true);
+
+        $.ajax({
+            url: '{{ route("production-voucher.get-sublocations-by-location") }}',
+            method: 'POST',
+            data: {
+                location_id: locationId,
+                _token: '{{ csrf_token() }}'
+            },
+            success: function (response) {
+                subLocationSelect.empty().append('<option value="">Select Sub Location</option>');
+                if (response.sublocations && response.sublocations.length > 0) {
+                    $.each(response.sublocations, function (index, sublocation) {
+                        subLocationSelect.append(
+                            $('<option></option>')
+                                .attr('value', sublocation.id)
+                                .text(sublocation.name)
+                        );
+                    });
+                } else {
+                    subLocationSelect.append('<option value="">No Sub Location Found</option>');
+                }
+                subLocationSelect.trigger('change');
+            },
+            error: function (xhr) {
+                console.error('Error loading sublocations:', xhr);
+                subLocationSelect.append('<option value="">Error loading Sub Location</option>');
+            },
+            complete: function () {
+                subLocationSelect.prop('disabled', false);
+            }
+        });
+    }
+
+    function loadPlantsBySubLocation() {
+        const subLocationId = $('#sub_location_id').val();
+        const plantSelect = $('#plant_id');
+
+        if (!subLocationId) {
             plantSelect.empty().append('<option value="">Select Plant</option>');
             return;
         }
@@ -719,7 +833,7 @@
             url: '{{ route("production-voucher.get-plants-by-location") }}',
             method: 'POST',
             data: {
-                location_id: locationId,
+                subLocationId: subLocationId,
                 _token: '{{ csrf_token() }}'
             },
             success: function (response) {
@@ -730,6 +844,7 @@
                             $('<option></option>')
                                 .attr('value', plant.id)
                                 .text(plant.name)
+                                .attr('data-production_labour_charges_per_kg', plant.production_labour_charges_per_kg)
                         );
                     });
                 } else {
@@ -743,6 +858,69 @@
             },
             complete: function () {
                 plantSelect.prop('disabled', false);
+            }
+        });
+    }
+
+    function loadMachinesByPlant() {
+        const plantId = $('#plant_id').val();
+        const container = $('#productionMachinesContainer');
+        const section = $('#productionMachinesSection');
+
+        if (!plantId) {
+            container.empty();
+            section.hide();
+            return;
+        }
+
+        $.ajax({
+            url: '{{ route("production-voucher.get-machines-by-plant") }}',
+            method: 'POST',
+            data: {
+                plant_id: plantId,
+                _token: '{{ csrf_token() }}'
+            },
+            success: function (response) {
+                container.empty();
+                if (response.machines && response.machines.length > 0) {
+                    section.show();
+                    let html = `
+                        <table class="table table-bordered table-sm">
+                            <thead style="background-color: #f8f9fa;">
+                                <tr>
+                                    <th width="10%">S.No</th>
+                                    <th>Machine Name</th>
+                                    <th width="20%" class="text-center">Select</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    $.each(response.machines, function (index, machine) {
+                        html += `
+                            <tr>
+                                <td>${index + 1}</td>
+                                <td>${machine.name}</td>
+                                <td class="text-center">
+                                    <div class="custom-control custom-switch">
+                                        <input type="checkbox" class="custom-control-input" name="production_machine_id[]" value="${machine.id}" id="machine_${machine.id}" checked>
+                                        <label class="custom-control-label" for="machine_${machine.id}"></label>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    html += `
+                            </tbody>
+                        </table>
+                    `;
+                    container.append(html);
+                } else {
+                    section.hide();
+                }
+            },
+            error: function (xhr) {
+                console.error('Error loading machines:', xhr);
+                section.hide();
             }
         });
     }

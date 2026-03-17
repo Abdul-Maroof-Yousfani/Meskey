@@ -105,4 +105,9 @@ class ProductionVoucher extends Model
     {
         return $this->hasMany(ProductionSlot::class);
     }
+
+    public function productionMachines()
+    {
+        return $this->belongsToMany(\App\Models\Master\ProductionMachine::class, 'production_voucher_machines', 'production_voucher_id', 'production_machine_id')->withTimestamps();
+    }
 }
