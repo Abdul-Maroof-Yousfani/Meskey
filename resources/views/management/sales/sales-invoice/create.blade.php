@@ -356,10 +356,10 @@
                 <input type="number" name="packing[]" id="packing_${index}" onkeyup="calculateRow(this)" class="form-control packing" step="0.01" min="0">
             </td>
             <td style="min-width: 100px;">
-                <input type="number" name="no_of_bags[]" id="no_of_bags_${index}" onkeyup="calculateRow(this)" class="form-control no_of_bags" step="0.01" min="0">
+                <input type="number" name="no_of_bags[]" id="no_of_bags_${index}" onkeyup="calculateRow(this)" class="form-control no_of_bags" step="0.01" min="0" readonly>
             </td>
             <td style="min-width: 100px;">
-                <input type="number" name="qty[]" id="qty_${index}" class="form-control qty" step="0.01" min="0" readonly>
+                <input type="number" name="qty[]" id="qty_${index}" onkeyup="calculateRow(this)" class="form-control qty" step="0.01" min="0">
             </td>
             <td style="min-width: 100px;">
                 <input type="number" name="rate[]" id="rate_${index}" onkeyup="calculateRow(this)" class="form-control rate" step="0.01" min="0">
@@ -434,16 +434,25 @@
         let gstPercent = parseFloat(gstPercentInput.val()) || 0;
 
         // Calculate based on what changed
-        if ($(el).hasClass("packing") || $(el).hasClass("no_of_bags")) {
-            // When packing or no_of_bags changes, calculate qty
-            qty = packing * noOfBags;
-            qtyInput.val(round(qty));
-        } else if ($(el).hasClass("qty")) {
+        if ($(el).hasClass("qty")) {
             // When qty changes, calculate no_of_bags (if packing > 0)
             if (packing > 0) {
                 noOfBags = qty / packing;
+                const maxBalance = parseFloat(row.find(".max_balance").val()) || 0;
+                if (maxBalance > 0 && noOfBags > maxBalance) {
+                    noOfBags = maxBalance;
+                    qty = noOfBags * packing;
+                    qtyInput.val(round(qty));
+                    if (typeof toastr !== 'undefined') {
+                        toastr.warning(`Cannot exceed available balance of ${maxBalance} bags`);
+                    }
+                }
                 noOfBagsInput.val(Math.round(noOfBags));
             }
+        } else if ($(el).hasClass("packing") || $(el).hasClass("no_of_bags")) {
+            // When packing or no_of_bags changes, calculate qty
+            qty = packing * noOfBags;
+            qtyInput.val(round(qty));
         }
 
         // Always recalculate amounts based on current values

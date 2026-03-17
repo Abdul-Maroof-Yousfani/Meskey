@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Master;
 
 use App\Http\Controllers\Controller;
 use App\Models\Master\ArrivalTruckType;
+use App\Models\Master\CompanyLocation;
 use Illuminate\Http\Request;
 use App\Http\Requests\Master\TruckTypeRequest;
 
@@ -39,7 +40,8 @@ class TruckTypeController extends Controller
      */
     public function create()
     {
-        return view('management.master.truck_type.create');
+        $locations = CompanyLocation::all();
+        return view('management.master.truck_type.create', compact('locations'));
     }
 
     /**
@@ -47,13 +49,21 @@ class TruckTypeController extends Controller
      */
     public function store(TruckTypeRequest $request)
     {
-        $data = $request->validated();
-        $request = $request->all();
+        $data = $request->all();
+        $data['weighbridge_amount'] = $data['weighbridge_amount'] ?: 0;
+        $data['sample_money'] = $data['sample_money'] ?: 0;
 
-        $request['unique_no'] = generateUniqueNumber('brokers', null, null, 'unique_no');
-        $ArrivalTruckType = ArrivalTruckType::create($request);
+        $ArrivalTruckType = ArrivalTruckType::create($data);
 
-        return response()->json(['success' => 'Station created successfully.', 'data' => $ArrivalTruckType], 201);
+        if ($request->has('location_amounts')) {
+            foreach ($request->location_amounts as $location_id => $amount) {
+                if ($amount !== null && $amount !== '' && $amount > 0) {
+                    $ArrivalTruckType->locationAmounts()->attach($location_id, ['amount' => $amount]);
+                }
+            }
+        }
+
+        return response()->json(['success' => 'Truck Type created successfully.', 'data' => $ArrivalTruckType], 201);
     }
 
     /**
@@ -61,8 +71,9 @@ class TruckTypeController extends Controller
      */
     public function edit($id)
     {
-        $ArrivalTruckType = ArrivalTruckType::findOrFail($id);
-        return view('management.master.truck_type.edit', compact('ArrivalTruckType'));
+        $ArrivalTruckType = ArrivalTruckType::with('locationAmounts')->findOrFail($id);
+        $locations = CompanyLocation::all();
+        return view('management.master.truck_type.edit', compact('ArrivalTruckType', 'locations'));
     }
 
     /**
@@ -70,11 +81,25 @@ class TruckTypeController extends Controller
      */
     public function update(TruckTypeRequest $request, $id)
     {
-        $data = $request->validated();
-        $broker = ArrivalTruckType::findOrFail($id);
-        $broker->update($request->all());
+        $ArrivalTruckType = ArrivalTruckType::findOrFail($id);
+        
+        $data = $request->all();
+        $data['weighbridge_amount'] = $data['weighbridge_amount'] ?: 0;
+        $data['sample_money'] = $data['sample_money'] ?: 0;
+        
+        $ArrivalTruckType->update($data);
 
-        return response()->json(['success' => 'Truck Type updated successfully.', 'data' => $broker], 200);
+        if ($request->has('location_amounts')) {
+            $syncData = [];
+            foreach ($request->location_amounts as $location_id => $amount) {
+                if ($amount !== null && $amount !== '' && $amount > 0) {
+                    $syncData[$location_id] = ['amount' => $amount];
+                }
+            }
+            $ArrivalTruckType->locationAmounts()->sync($syncData);
+        }
+
+        return response()->json(['success' => 'Truck Type updated successfully.', 'data' => $ArrivalTruckType], 200);
     }
 
     /**
@@ -82,9 +107,8 @@ class TruckTypeController extends Controller
      */
     public function destroy($id)
     {
-        $broker = ArrivalTruckType::findOrFail($id);
-
-        $broker->delete();
-        return response()->json(['success' => 'Station deleted successfully.'], 200);
+        $ArrivalTruckType = ArrivalTruckType::findOrFail($id);
+        $ArrivalTruckType->delete();
+        return response()->json(['success' => 'Truck Type deleted successfully.'], 200);
     }
 }

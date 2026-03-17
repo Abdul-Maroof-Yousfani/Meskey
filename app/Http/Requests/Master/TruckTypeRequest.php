@@ -27,6 +27,10 @@ class TruckTypeRequest extends FormRequest
             ],
             'description' => 'nullable|string|max:500',
             'status' => ['nullable', Rule::in(['active', 'inactive'])],
+            'sample_money' => 'nullable|numeric|min:0',
+            'weighbridge_amount' => 'nullable|numeric|min:0',
+            'location_amounts' => 'nullable|array',
+            'location_amounts.*' => 'nullable|numeric|min:0',
         ];
     }
 

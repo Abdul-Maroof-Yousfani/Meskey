@@ -11,13 +11,13 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Sample Money:</label>
-                <input type="text" name="sample_money" placeholder="Sample Money" class="form-control"  />
+                <input type="text" name="sample_money" value="0" placeholder="Sample Money" class="form-control"  />
             </div>
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
-                <label>Weighbridge Amount:</label>
-                <input type="text" name="weighbridge_amount" placeholder="Weighbridge Amount" class="form-control"  />
+                <label>Weighbridge Amount (Fallback):</label>
+                <input type="text" name="weighbridge_amount" value="0" placeholder="Weighbridge Amount (Fallback)" class="form-control"  />
             </div>
         </div>
 
@@ -26,6 +26,30 @@
             <div class="form-group">
                 <label>Description (Optional):</label>
                 <textarea name="description" placeholder="Description" class="form-control"></textarea>
+            </div>
+        </div>
+
+        <div class="col-12">
+            <h6 class="header-heading-sepration">Location Amounts</h6>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>Company Location</th>
+                            <th style="width: 200px;">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($locations ?? [] as $location)
+                            <tr>
+                                <td>{{ $location->name }}</td>
+                                <td>
+                                    <input type="number" name="location_amounts[{{ $location->id }}]" value="0" step="0.01" min="0" class="form-control" placeholder="Amount">
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
             </div>
         </div>
         <!-- Status -->

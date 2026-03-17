@@ -166,8 +166,13 @@
                                 
                         </td>
                         <td style="min-width: 100px;">
-                            <input type="number" class="form-control" value="{{ $data->qty }}" readonly>
-                            
+                            @php
+                                $qty = $data->qty;
+                                if (($qty <= 0 || $qty == null) && $data->no_of_bags > 0 && $data->packing > 0) {
+                                    $qty = $data->no_of_bags * $data->packing;
+                                }
+                            @endphp
+                            <input type="number" class="form-control" value="{{ $qty }}" readonly>
                         </td>
                         <td style="min-width: 100px;">
                             <input type="number" class="form-control" value="{{ $data->rate }}" readonly>
