@@ -387,10 +387,21 @@ class FreightController extends Controller
 
     public function getFreightForm(Request $request)
     {
-        $ticket = ArrivalTicket::with('product')->find($request->arrival_ticket_id);
+        $ticket = ArrivalTicket::with(['product', 'truckType', 'truckType.locationAmounts'])->find($request->arrival_ticket_id);
 
         if (!$ticket) {
             return response()->json(['success' => false, 'message' => 'Ticket not found'], 404);
+        }
+
+        $weighbridgeAmount = 0;
+        if ($ticket->truckType) {
+            $locationAmount = $ticket->truckType->locationAmounts
+                ->where('id', $ticket->location_id)
+                ->first();
+
+            if ($locationAmount) {
+                $weighbridgeAmount = $locationAmount->pivot->amount;
+            }
         }
 
         $isNotGeneratable = false;
@@ -400,6 +411,7 @@ class FreightController extends Controller
         $html = view('management.arrival.freight.partials.freight_form', [
             'ticket' => $ticket,
             'isNotGeneratable' => $isNotGeneratable,
+            'weighbridgeAmount' => $weighbridgeAmount
         ])->render();
 
         return response()->json([
