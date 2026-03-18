@@ -128,7 +128,7 @@
                 <label>Arrived Kanta Charges</label>
                 <input type="number" step="0.01" name="karachi_kanta_charges" readonly
                     class="form-control calculate-final" min="0"
-                    value="{{ $ticket->truckType->weighbridge_amount ?? 0 }}" />
+                    value="{{ $weighbridgeAmount ?? 0 }}" />
             </div>
         </div>
 
