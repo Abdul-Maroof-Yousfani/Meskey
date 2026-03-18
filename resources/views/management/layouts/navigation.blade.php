@@ -747,6 +747,16 @@
                         </li>
                         @endcanAccess
 
+                        @canAccess('export-soda-field')
+                        <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                href="{{ route('export-soda-field.index') }}"
+                                onclick="loadPageContent('{{ route('export-soda-field.index') }}')"
+                                data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                                <span data-i18n="Task Board">Export Soda Field</span>
+                            </a>
+                        </li>
+                        @endcanAccess
+
                         @canAccess('export-order')
                         <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                 href="{{ route('export-order.index') }}"
