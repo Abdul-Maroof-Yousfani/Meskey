@@ -3,44 +3,41 @@
 namespace App\Http\Controllers\Export;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Export\ExportOrderRequest;
 use App\Models\BagCondition;
 use App\Models\BagPacking;
 use App\Models\BagType;
+use App\Models\Country;
 use App\Models\Export\Bank;
 use App\Models\Export\Currency;
 use App\Models\Export\ExportOrder;
 use App\Models\Export\IncoTerm;
 use App\Models\Export\ModeOfTerm;
 use App\Models\Export\ModeOfTransport;
-use App\Models\Master\ArrivalLocation;
-use App\Models\Master\ArrivalSubLocation;
+use App\Models\Export\Proforma;
 use App\Models\Master\Brands;
 use App\Models\Master\Broker;
 use App\Models\Master\Color;
 use App\Models\Master\CompanyLocation;
-use App\Models\Master\Country;
 use App\Models\Master\HsCode;
 use App\Models\Master\Port;
-use App\Models\Master\ProductSlab;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
-class ExportOrderController extends Controller
+class ProformaController extends Controller
 {
     public function index(Request $request): View
     {
-        $export_orders = ExportOrder::orderBy('id', 'ASC')->paginate(0);
+        $proformas = Proforma::orderBy('id', 'ASC')->paginate(0);
 
-        return view('management.export.export-order.index', compact('export_orders'))->with('i', ($request->input('page', 1) - 1) * 5);
+        return view('management.export.proforma.index', compact('proformas'))->with('i', ($request->input('page', 1) - 1) * 5);
     }
 
-    public function getExportOrderTable(Request $request)
+    public function getProformaTable(Request $request)
     {
-        $export_orders = ExportOrder::with(['product'])
+        $proformas = Proforma::with(['exportOrder', 'exportOrder.modeOfTerm', 'exportOrder.buyer'])
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%'.$request->search.'%';
 
@@ -52,11 +49,24 @@ class ExportOrderController extends Controller
             ->latest()
             ->paginate(request('per_page', 25));
 
-        return view('management.export.export-order.getList', compact('export_orders'));
+        return view('management.export.proforma.getList', compact('proformas'));
     }
 
-    public function create(): View
+    public function selectExportOrder(): View
     {
+        $export_orders = ExportOrder::with(['specifications', 'packingItems', 'product', 'modeOfTerm', 'buyer'])
+            ->where('am_approval_status', 'approved')
+            ->whereDoesntHave('proforma')
+            ->orderBy('id', 'ASC')
+            ->paginate(10);
+
+        return view('management.export.proforma.select-export-order', compact('export_orders'));
+    }
+
+    public function create($exportOrderId): View
+    {
+        $exportOrder = ExportOrder::with(['specifications', 'packingItems', 'product'])->findOrFail($exportOrderId);
+
         $products = Product::where('status', 1)->get();
         $companyLocations = CompanyLocation::where('status', 'active')->get();
         $bagTypes = BagType::where('status', 1)->get();
@@ -75,7 +85,8 @@ class ExportOrderController extends Controller
         $hscodes = HsCode::where('status', 1)->get();
         $currencies = Currency::where('status', 1)->get();
 
-        return view('management.export.export-order.create', compact(
+        return view('management.export.proforma.create', compact(
+            'exportOrder',
             'products',
             'companyLocations',
             'bagTypes',
@@ -96,106 +107,46 @@ class ExportOrderController extends Controller
         ));
     }
 
-    public function store(ExportOrderRequest $request)
+    public function store(Request $request, $exportOrderId)
     {
         DB::beginTransaction();
 
         try {
-            $exportOrderData = $request->only([
-                'company_id',
-                'buyer_id',
-                'product_id',
-                'voucher_no',
-                'contract_no',
-                'voucher_date',
-                'voucher_heading',
-                'shipment_delivery_date_from',
-                'shipment_delivery_date_to',
-                'other_specifications',
-                'bank_id',
-                'correspondent_bank_id',
-                'incoterm_id',
-                'packing_type',
-                'mode_of_term_id',
-                'mode_of_transport_id',
-                'origin_country_id',
-                'port_of_discharge_id',
-                'port_of_loading_id',
-                'hs_code_id',
-                'partial_payment',
-                'transhipment',
-                'part_shipment',
-                'insurance_covered_by',
-                'advance_payment',
-                'payment_days',
-                'currency_id',
-                'currency_rate',
-                'marking_labeling',
-                'shipping_instructions',
-                'documents_to_be_provided',
-                'other_condition',
-                'force_majure',
-                'application_law',
-                'broker_id',
+
+            $exportOrder = ExportOrder::findOrFail($exportOrderId);
+
+            $request->validate([
+                'consigned_details' => 'nullable|string|max:5000',
             ]);
 
-            $exportOrder = ExportOrder::create(array_merge(
-                $exportOrderData,
-                [
-                    'created_by' => auth()->user()->id,
-                    'company_location_ids' => $request->company_location_ids,
-                    'arrival_location_ids' => $request->arrival_location_ids,
-                    'arrival_sub_location_ids' => $request->arrival_sub_location_ids,
-                ]
-            ));
+            $proforma = Proforma::create([
+                'export_order_id' => $exportOrder->id,
+                'proforma_date' => $exportOrder->voucher_date,
+                'consigned_details' => $request->consigned_details,
+            ]);
 
-            // product specifications
-            if ($request->has('specifications')) {
-                foreach ($request->specifications as $spec) {
-                    $exportOrder->specifications()->create([
-                        'product_slab_type_id' => $spec['product_slab_type_id'],
-                        'spec_name' => $spec['spec_name'],
-                        'spec_value' => $spec['spec_value'],
-                        'uom' => $spec['uom'] ?? null,
-                        'value_type' => $spec['value_type'] ?? null,
-                    ]);
-                }
-            }
-
-            // PACKING ITEMS
-            if ($request->filled('packing_items')) {
-                foreach ($request->packing_items as $item) {
-                    $exportOrder->packingItems()->create([
-                        'brand_id' => $item['brand_id'],
-                        'bag_type_id' => $item['bag_type_id'],
-                        'bag_packing_id' => $item['bag_packing_id'],
-                        'bag_condition_id' => $item['bag_condition_id'],
-                        'bag_color_id' => $item['bag_color_id'],
-
-                        'bag_size' => $item['bag_size'],
-                        'metric_tons' => $item['metric_tons'],
-
-                        'stuffing_in_container' => $item['stuffing_in_container'] ?? 0,
-                        'no_of_containers' => $item['no_of_containers'] ?? 0,
-
-                        'rate' => $item['rate'],
-                        // 'amount_pkr' => $item['amount_pkr'] ?? 0,
-                    ]);
-                }
-            }
+            $proforma->proforma_no = $exportOrder->contract_no.'('.$proforma->id.')';
+            $proforma->save();
 
             DB::commit();
 
             return response()->json([
-                'success' => 'Export Order created successfully',
-                'data' => $exportOrder->load(['product', 'company', 'specifications']),
+                'success' => true,
+                'message' => 'Proforma created successfully',
+                'data' => [
+                    'proforma_id' => $proforma->id,
+                    'proforma_no' => $proforma->proforma_no,
+                    'export_order' => $exportOrder,
+                ],
             ], 201);
 
         } catch (\Throwable $e) {
+
             DB::rollBack();
 
             return response()->json([
-                'success' => 'Something went wrong',
+                'success' => false,
+                'message' => 'Something went wrong',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -203,7 +154,8 @@ class ExportOrderController extends Controller
 
     public function show($id): View
     {
-        $exportOrder = ExportOrder::with(['specifications', 'packingItems', 'product'])->findOrFail($id);
+        $proforma = Proforma::with(['exportOrder', 'exportOrder.modeOfTerm', 'exportOrder.buyer'])->findOrFail($id);
+        $exportOrder = ExportOrder::with(['specifications', 'packingItems', 'product'])->where('id', $proforma->export_order_id)->first();
 
         $products = Product::where('status', 1)->get();
         $companyLocations = CompanyLocation::where('status', 'active')->get();
@@ -223,7 +175,8 @@ class ExportOrderController extends Controller
         $hscodes = HsCode::where('status', 1)->get();
         $currencies = Currency::where('status', 1)->get();
 
-        return view('management.export.export-order.show', compact(
+        return view('management.export.proforma.show', compact(
+            'proforma',
             'exportOrder',
             'products',
             'companyLocations',
@@ -267,7 +220,7 @@ class ExportOrderController extends Controller
         $hscodes = HsCode::where('status', 1)->get();
         $currencies = Currency::where('status', 1)->get();
 
-        return view('management.export.export-order.edit', compact(
+        return view('management.export.proforma.edit', compact(
             'exportOrder',
             'products',
             'companyLocations',
@@ -397,17 +350,14 @@ class ExportOrderController extends Controller
         DB::beginTransaction();
 
         try {
-            $exportOrder = ExportOrder::with(['specifications', 'packingItems'])->findOrFail($id);
-
-            $exportOrder->specifications()->delete();
-            $exportOrder->packingItems()->delete();
-            $exportOrder->delete();
+            $proforma = Proforma::findOrFail($id);
+            $proforma->delete();
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Export Order deleted successfully.',
+                'message' => 'Proforma deleted successfully.',
             ], 200);
 
         } catch (\Throwable $e) {
@@ -415,7 +365,7 @@ class ExportOrderController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to delete Export Order',
+                'message' => 'Failed to delete Proforma',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -441,28 +391,6 @@ class ExportOrderController extends Controller
             })
             ->values(); // Array keys reset karega
 
-        return view('management.export.export-order.partials.product_specs', compact('specs'));
-    }
-
-    public function getArrivalLocationsByCompanyLocations(Request $request)
-    {
-        $locationIds = $request->company_location_ids ?? [];
-
-        $arrivalLocations = ArrivalLocation::whereIn('company_location_id', $locationIds)
-            ->where('status', 'active')
-            ->get();
-
-        return response()->json($arrivalLocations);
-    }
-
-    public function getArrivalSubLocationsByArrivalLocations(Request $request)
-    {
-        $arrivalLocationIds = $request->arrival_location_ids ?? [];
-
-        $subLocations = ArrivalSubLocation::whereIn('arrival_location_id', $arrivalLocationIds)
-            ->where('status', 'active')
-            ->get();
-
-        return response()->json($subLocations);
+        return view('management.export.proforma.partials.product_specs', compact('specs'));
     }
 }

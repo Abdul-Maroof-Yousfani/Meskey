@@ -12,8 +12,8 @@
         </tr>
     </thead>
     <tbody>
-        @if (count($export_orders) != 0)
-            @foreach ($export_orders as $key => $export)
+        @if (count($invoices) != 0)
+            @foreach ($invoices as $key => $export)
                 <tr>
                     <td>{{ $key + 1 }}</td>
                     <td>
@@ -39,29 +39,22 @@
                     <td>
                         {{-- @canAccess('export-order-show') --}}
                         <a class="info p-1 text-center position-relative "
-                            onclick="openModal(this,'{{ route('export-order.show', $export->id) }}','Show Export Order',false,'90%')">
+                            onclick="openModal(this,'{{ route('commercial-invoice.show', $export->id) }}','Show Commercial Invoice',false,'90%')">
                             <i class="ft-eye font-medium-3"></i></a>
                         {{-- @endcanAccess --}}
 
-                        @php
-                            $approvalColumn = $export->getApprovalModule()->approval_column ?? 'am_approval_status';
-                            $approvalStatus = strtolower($export->{$approvalColumn} ?? '');
-                        @endphp
+                        {{-- @canAccess('export-order-edit') --}}
+                        <a class="info p-1 text-center position-relative "
+                            onclick="openModal(this,'{{ route('commercial-invoice.edit', $export->id) }}','Edit Commercial Invoice',false,'90%')">
+                            <i class="ft-edit font-medium-3"></i></a>
+                        {{-- @endcanAccess --}}
+                        {{-- @canAccess('export-order-delete') --}}
+                        <a onclick="deletemodal('{{ route('commercial-invoice.destroy', $export->id) }}','{{ route('get.commercial-invoice') }}')"
+                            class="danger p-1 text-center mr-2 position-relative ">
 
-                        @if (auth()->user()->id == $export->created_by && $approvalStatus === 'pending' || $approvalStatus === 'reverted')
-                            {{-- @canAccess('export-order-edit') --}}
-                            <a class="info p-1 text-center position-relative "
-                                onclick="openModal(this,'{{ route('export-order.edit', $export->id) }}','Edit Export Order',false,'90%')">
-                                <i class="ft-edit font-medium-3"></i></a>
-                            {{-- @endcanAccess --}}
-                            {{-- @canAccess('export-order-delete') --}}
-                            <a onclick="deletemodal('{{ route('export-order.destroy', $export->id) }}','{{ route('get.export-order') }}')"
-                                class="danger p-1 text-center mr-2 position-relative ">
-
-                                <i class="ft-x font-medium-3"></i>
-                            </a>
-                            {{-- @endcanAccess --}}
-                        @endif
+                            <i class="ft-x font-medium-3"></i>
+                        </a>
+                        {{-- @endcanAccess --}}
                     </td>
                 </tr>
             @endforeach
@@ -94,7 +87,7 @@
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">
         <div id="">
-            {{ $export_orders->links() }}
+            {{ $invoices->links() }}
         </div>
     </div>
 </div>

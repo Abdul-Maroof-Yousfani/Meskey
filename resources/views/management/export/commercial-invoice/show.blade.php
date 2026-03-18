@@ -17,7 +17,7 @@
     }
 </style>
 
-<form action="{{ route('export-order.update', $exportOrder->id) }}" method="POST" id="ajaxSubmit2" autocomplete="off">
+<form action="{{ route('export-order.update', $exportOrder->id) }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
     @method('PUT')
     <input type="hidden" id="listRefresh" value="{{ route('get.export-order') }}" />

@@ -3,44 +3,25 @@
 namespace App\Http\Controllers\Export;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Export\ExportOrderRequest;
-use App\Models\BagCondition;
-use App\Models\BagPacking;
-use App\Models\BagType;
-use App\Models\Export\Bank;
-use App\Models\Export\Currency;
+use App\Models\Export\CommercialInvoice;
 use App\Models\Export\ExportOrder;
-use App\Models\Export\IncoTerm;
-use App\Models\Export\ModeOfTerm;
-use App\Models\Export\ModeOfTransport;
-use App\Models\Master\ArrivalLocation;
-use App\Models\Master\ArrivalSubLocation;
-use App\Models\Master\Brands;
-use App\Models\Master\Broker;
-use App\Models\Master\Color;
-use App\Models\Master\CompanyLocation;
-use App\Models\Master\Country;
-use App\Models\Master\HsCode;
-use App\Models\Master\Port;
 use App\Models\Master\ProductSlab;
-use App\Models\Product;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
-class ExportOrderController extends Controller
+class CommercialInvoiceController extends Controller
 {
     public function index(Request $request): View
     {
-        $export_orders = ExportOrder::orderBy('id', 'ASC')->paginate(0);
+        $invoices = CommercialInvoice::orderBy('id', 'ASC')->paginate(0);
 
-        return view('management.export.export-order.index', compact('export_orders'))->with('i', ($request->input('page', 1) - 1) * 5);
+        return view('management.export.commercial-invoice.index', compact('invoices'))->with('i', ($request->input('page', 1) - 1) * 5);
     }
 
-    public function getExportOrderTable(Request $request)
+    public function getCommercialInvoiceTable(Request $request)
     {
-        $export_orders = ExportOrder::with(['product'])
+        $invoices = CommercialInvoice::with(['exportOrder'])
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%'.$request->search.'%';
 
@@ -52,48 +33,14 @@ class ExportOrderController extends Controller
             ->latest()
             ->paginate(request('per_page', 25));
 
-        return view('management.export.export-order.getList', compact('export_orders'));
+        return view('management.export.commercial-invoice.getList', compact('invoices'));
     }
-
+    
     public function create(): View
     {
-        $products = Product::where('status', 1)->get();
-        $companyLocations = CompanyLocation::where('status', 'active')->get();
-        $bagTypes = BagType::where('status', 1)->get();
-        $bagConditions = BagCondition::where('status', 1)->get();
-        $bagPackings = BagPacking::where('status', 1)->get();
-        $brands = Brands::where('status', 1)->get();
-        $bagColors = Color::where('status', 1)->get();
-        $users = User::get(); // buyer
-        $banks = Bank::where('status', 1)->get();
-        $brokers = Broker::where('status', 1)->get();
-        $incoterms = IncoTerm::where('status', 1)->get();
-        $modeofterms = ModeOfTerm::where('status', 1)->get();
-        $modeoftransport = ModeOfTransport::where('status', 1)->get();
-        $countries = Country::get();
-        $ports = Port::where('status', 1)->get();
-        $hscodes = HsCode::where('status', 1)->get();
-        $currencies = Currency::where('status', 1)->get();
+        $invoices = CommercialInvoice::with(['exportOrder'])->orderBy('id','ASC')->get();
 
-        return view('management.export.export-order.create', compact(
-            'products',
-            'companyLocations',
-            'bagTypes',
-            'bagConditions',
-            'bagPackings',
-            'brands',
-            'bagColors',
-            'users',
-            'banks',
-            'brokers',
-            'incoterms',
-            'modeofterms',
-            'modeoftransport',
-            'countries',
-            'ports',
-            'hscodes',
-            'currencies',
-        ));
+        return view('management.export.commercial-invoice.create', compact('invoices'));
     }
 
     public function store(ExportOrderRequest $request)
@@ -223,7 +170,7 @@ class ExportOrderController extends Controller
         $hscodes = HsCode::where('status', 1)->get();
         $currencies = Currency::where('status', 1)->get();
 
-        return view('management.export.export-order.show', compact(
+        return view('management.export.commercial-invoice.show', compact(
             'exportOrder',
             'products',
             'companyLocations',
@@ -267,7 +214,7 @@ class ExportOrderController extends Controller
         $hscodes = HsCode::where('status', 1)->get();
         $currencies = Currency::where('status', 1)->get();
 
-        return view('management.export.export-order.edit', compact(
+        return view('management.export.commercial-invoice.edit', compact(
             'exportOrder',
             'products',
             'companyLocations',
@@ -441,28 +388,28 @@ class ExportOrderController extends Controller
             })
             ->values(); // Array keys reset karega
 
-        return view('management.export.export-order.partials.product_specs', compact('specs'));
+        return view('management.export.commercial-invoice.partials.product_specs', compact('specs'));
     }
 
-    public function getArrivalLocationsByCompanyLocations(Request $request)
-    {
-        $locationIds = $request->company_location_ids ?? [];
+    // public function getArrivalLocationsByCompanyLocations(Request $request)
+    // {
+    //     $locationIds = $request->company_location_ids ?? [];
 
-        $arrivalLocations = ArrivalLocation::whereIn('company_location_id', $locationIds)
-            ->where('status', 'active')
-            ->get();
+    //     $arrivalLocations = ArrivalLocation::whereIn('company_location_id', $locationIds)
+    //         ->where('status', 'active')
+    //         ->get();
 
-        return response()->json($arrivalLocations);
-    }
+    //     return response()->json($arrivalLocations);
+    // }
 
-    public function getArrivalSubLocationsByArrivalLocations(Request $request)
-    {
-        $arrivalLocationIds = $request->arrival_location_ids ?? [];
+    // public function getArrivalSubLocationsByArrivalLocations(Request $request)
+    // {
+    //     $arrivalLocationIds = $request->arrival_location_ids ?? [];
 
-        $subLocations = ArrivalSubLocation::whereIn('arrival_location_id', $arrivalLocationIds)
-            ->where('status', 'active')
-            ->get();
+    //     $subLocations = ArrivalSubLocation::whereIn('arrival_location_id', $arrivalLocationIds)
+    //         ->where('status', 'active')
+    //         ->get();
 
-        return response()->json($subLocations);
-    }
+    //     return response()->json($subLocations);
+    // }
 }

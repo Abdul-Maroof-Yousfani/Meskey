@@ -674,11 +674,14 @@
             {{-- @endcanAccess --}}
             @canAccess('procurement-raw-material')
             <li class="dropdown nav-item {{ request()->is('export*') ? 'active' : '' }}" data-menu="dropdown"><a
+
+            {{-- @canAccess('export-module') --}}
+            <li class="dropdown nav-item" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-arrow-up"></i><span data-i18n="UI Kit">Export</span></a>
                 <ul class="dropdown-menu">
 
-                    @canAccess("procurement-purchase-sampling")
+                    @canAccess("export-module")
                     <li class="dropdown dropdown-submenu" data-menu="dropdown-submenu"><a
                             class="dropdown-item d-flex align-items-center dropdown-toggle" href="javascript:;"
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
@@ -749,18 +752,32 @@
                         </ul>
                     </li>
                     @endcanAccess
-                    @canAccess('export-order')
+                    {{-- @canAccess('export-order') --}}
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('export-order.index') }}"
                             onclick="loadPageContent('{{ route('export-order.index') }}')" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i><span data-i18n="Extended">Export
                                 Order</span></a>
                     </li>
+                    {{-- @endcanAccess --}}
+                    @canAccess('proforma')
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('proforma.index') }}" onclick="loadPageContent('{{ route('proforma.index') }}')"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                data-i18n="Extended">Proforma</span></a>
+                    </li>
                     @endcanAccess
+                    {{-- @canAccess('commercial-invoice')
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('commercial-invoice.index') }}" onclick="loadPageContent('{{ route('commercial-invoice.index') }}')"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                data-i18n="Extended">Commercial Incoice</span></a>
+                    </li>
+                    @endcanAccess --}}
                 </ul>
 
             </li>
-            @endcanAccess
+            {{-- @endcanAccess --}}
 
             @canAccess('access-control')
             <li class="dropdown nav-item {{ request()->is('acl*') ? 'active' : '' }}" data-menu="dropdown"><a
