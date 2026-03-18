@@ -672,7 +672,7 @@
             
 
             {{-- @endcanAccess --}}
-            @canAccess('procurement-raw-material')
+            {{-- @canAccess('procurement-raw-material') --}}
             <li class="dropdown nav-item {{ request()->is('export*') ? 'active' : '' }}" data-menu="dropdown"><a
 
             {{-- @canAccess('export-module') --}}
