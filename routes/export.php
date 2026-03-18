@@ -1,11 +1,13 @@
 <?php
 
 use App\Http\Controllers\Export\BankController;
+use App\Http\Controllers\Export\CommercialInvoiceController;
 use App\Http\Controllers\Export\CurrencyController;
 use App\Http\Controllers\Export\ExportOrderController;
 use App\Http\Controllers\Export\IncoTermController;
 use App\Http\Controllers\Export\ModeOfTermController;
 use App\Http\Controllers\Export\ModeOfTransportController;
+use App\Http\Controllers\Export\ProformaController;
 use Illuminate\Support\Facades\Route;
 
 // mode of terms
@@ -40,3 +42,13 @@ Route::get('get-product-specs/{productId}', [ExportOrderController::class, 'getP
 Route::post('/get-arrival-locations', [ExportOrderController::class, 'getArrivalLocationsByCompanyLocations']);
 Route::post('/get-arrival-sub-locations', [ExportOrderController::class, 'getArrivalSubLocationsByArrivalLocations']);
 
+// proforma
+Route::resource('proforma', ProformaController::class)->except(['create', 'store']);
+Route::post('/get-proforma', [ProformaController::class, 'getProformaTable'])->name('get.proforma');
+Route::get('/select-export-order', [ProformaController::class, 'selectExportOrder'])->name('proforma.select.export-order');
+Route::get('/proforma/create/{exportOrderId}', [ProformaController::class, 'create'])->name('proforma.create');
+Route::post('/proforma/create/{exportOrderId}', [ProformaController::class, 'store'])->name('proforma.store');
+
+// commerical invoice
+Route::resource('commercial-invoice', CommercialInvoiceController::class);
+Route::post('/get-commercial-invoice', [CommercialInvoiceController::class, 'getCommercialInvoiceTable'])->name('get.commercial-invoice');

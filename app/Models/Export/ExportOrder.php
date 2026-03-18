@@ -7,13 +7,15 @@ use App\Models\ExportOrderSpecification;
 use App\Models\Master\Broker;
 use App\Models\Master\CompanyLocation;
 use App\Models\Product;
+use App\Models\User;
+use App\Traits\HasApproval;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ExportOrder extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasApproval, HasFactory, SoftDeletes;
 
     protected $guarded = [];
 
@@ -22,6 +24,32 @@ class ExportOrder extends Model
         'arrival_location_ids' => 'array',
         'arrival_sub_location_ids' => 'array',
     ];
+
+    protected static function booted()
+    {
+        static::updating(
+            function ($model) {
+                $changes = $model->getDirty();
+                $changedColumns = [];
+
+                foreach ($changes as $key => $newValue) {
+                    if ($key !== 'am_change_made') {
+                        $oldValue = $model->getOriginal($key);
+                        $changedColumns[$key] = [
+                            'old' => $oldValue,
+                            'new' => $newValue,
+                        ];
+                    }
+                }
+
+                if (! empty($changedColumns)) {
+                    if ($model->getAttribute('am_change_made') !== null) {
+                        $model->am_change_made = 1;
+                    }
+                }
+            }
+        );
+    }
 
     public function company()
     {
@@ -51,6 +79,26 @@ class ExportOrder extends Model
     public function packingItems()
     {
         return $this->hasMany(ExportOrderPackingItem::class);
+    }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function modeOfTerm()
+    {
+        return $this->belongsTo(ModeOfTerm::class, 'mode_of_term_id');
+    }
+
+    public function buyer()
+    {
+        return $this->belongsTo(User::class, 'buyer_id');
+    }
+
+    public function proforma()
+    {
+        return $this->hasOne(Proforma::class);
     }
 
     // Auto calculate total fields
