@@ -4,6 +4,7 @@ use App\Http\Controllers\Export\BankController;
 use App\Http\Controllers\Export\CommercialInvoiceController;
 use App\Http\Controllers\Export\CurrencyController;
 use App\Http\Controllers\Export\ExportOrderController;
+use App\Http\Controllers\Export\ExportSodaFieldController;
 use App\Http\Controllers\Export\IncoTermController;
 use App\Http\Controllers\Export\ModeOfTermController;
 use App\Http\Controllers\Export\ModeOfTransportController;
@@ -52,3 +53,7 @@ Route::post('/proforma/create/{exportOrderId}', [ProformaController::class, 'sto
 // commerical invoice
 Route::resource('commercial-invoice', CommercialInvoiceController::class);
 Route::post('/get-commercial-invoice', [CommercialInvoiceController::class, 'getCommercialInvoiceTable'])->name('get.commercial-invoice');
+
+// export soda field 
+Route::resource('export-soda-field', ExportSodaFieldController::class);
+Route::post('/get-export-soda-field', [ExportSodaFieldController::class, 'getExportSodaFieldTable'])->name('get.export-soda-field');
