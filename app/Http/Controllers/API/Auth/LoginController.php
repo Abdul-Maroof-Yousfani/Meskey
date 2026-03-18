@@ -34,6 +34,12 @@ class LoginController extends Controller
             ]);
         }
 
+        if (!$user->current_company_id && count($user->companies) == 1) {
+            $user->update(['current_company_id' => $user->companies()->first()->id]);
+            $request->merge([
+                'company_id' => $user->current_company_id,
+            ]);
+        }
         // if ($user->status != 1) {
         //     return ApiResponse::error('Account is inactive', 403, [
         //         'success' => false,

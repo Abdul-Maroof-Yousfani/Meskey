@@ -3,6 +3,27 @@
     body {
         overflow-x: hidden;
     }
+
+    .amount-info-box {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 15px;
+        background-color: #f8f9fa;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .amount-info-box .form-group {
+        margin-bottom: 10px;
+    }
+
+    .amount-info-box .form-group:last-child {
+        margin-bottom: 0;
+    }
+
+    .amount-info-box .form-label {
+        font-weight: 600;
+        font-size: 13px;
+    }
 </style>
 
 <form action="{{ route('sales.sale-order.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
@@ -10,106 +31,179 @@
 
     <input type="hidden" id="listRefresh" value="{{ route('sales.get.sales-order.list') }}" />
     <div class="row form-mar">
+        <div class="col-md-12">
+            <div class="row">
+                <div class="col-12">
+                    <h6 class="header-heading-sepration">General Information</h6>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">SO No:</label>
+                        <input type="text" name="reference_no" id="reference_no" class="form-control" readonly>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Date:</label>
+                        <input type="date" name="order_date" id="order_date" onchange="getNumber(); validateExpiry()" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Inquiry No:</label>
+                        <select name="inquiry_id" id="inquiry_id" onchange="get_inquiry_data()" class="form-control select2">
+                            <option value="">Select Inquiry (Optional)</option>
+                            @foreach ($inquiries ?? [] as $inquiry)
+                                <option value="{{ $inquiry->id }}">{{ $inquiry->inquiry_no }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Contract Type:</label>
+                        <select name="sauda_type" id="sauda_type" class="form-control select2">
+                            <option value="">Select Contract Type</option>
+                            <option value="pohanch">Pohanch</option>
+                            <option value="x-mill">X-mill</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Delivery Date:</label>
+                        <input type="date" name="delivery_date" id="delivery_date" onchange="validateExpiry()" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Reference Number:</label>
+                        <input type="text" name="so_reference_no" id="so_reference_no" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Transporter used:</label>
+                        <select name="transporter_used" id="transporter_used" class="form-control select2">
+                            <option value="no">No</option>
+                            <option value="yes">Yes</option>
+                        </select>
+                    </div>
+                </div>
 
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Delivery Date:</label>
-                <input type="date" name="delivery_date" onchange="getNumber()" id="delivery_date"
-                    class="form-control">
+                <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Customer Details</h6>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Customer:</label>
+                        <select name="customer_id" id="customer_id" onchange="get_inquiries()" class="form-control select2">
+                            <option value="">Select Customer</option>
+                            @foreach ($customers ?? [] as $customer)
+                                <option value="{{ $customer->id }}">{{ $customer->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Contact Person:</label>
+                        <input type="text" name="contact_person" id="contact_person" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Token Money:</label>
+                        <input type="number" name="token_money" id="token_money" class="form-control" step="0.01" min="0">
+                    </div>
+                </div>
+
+                <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Payment Details</h6>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Pay Type:</label>
+                        <select name="pay_type_id" id="pay_type_id" class="form-control select2" onchange="is_type_credit(this)">
+                            <option value="">Select Pay Type</option>
+                            @foreach ($pay_types as $pay_type)
+                                <option value="{{ $pay_type->id }}">{{ $pay_type->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Payment Terms:</label>
+                        <select name="payment_term_id" id="payment_term_id" class="form-control select2 credit" disabled>
+                            <option value="">Select Payment Term</option>
+                            @foreach ($payment_terms as $payment_term)
+                                <option value="{{ $payment_term->id }}">{{ $payment_term->desc }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Location Details</h6>
+                </div>
+                @php
+                    $selectedFactories = old('arrival_location_id', []);
+                    $selectedSections = old('arrival_sub_location_id', []);
+                @endphp
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Locations:</label>
+                        <select name="locations[]" id="locations" class="form-control select2" multiple>
+                            <option value="">Select Locations</option>
+                            @foreach (get_locations() as $location)
+                                <option value="{{ $location->id }}">{{ $location->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Factory:</label>
+                        <select name="arrival_location_id[]" id="arrival_location_id" class="form-control select2" multiple>
+                            <option value="">Select Factory</option>
+                            @foreach ($arrivalLocations as $factory)
+                                <option value="{{ $factory->id }}" data-company="{{ $factory->company_location_id }}" @selected(in_array($factory->id, $selectedFactories))>{{ $factory->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Section:</label>
+                        <select name="arrival_sub_location_id[]" id="arrival_sub_location_id" class="form-control select2" multiple>
+                            <option value="">Select Section</option>
+                            @foreach ($arrivalSubLocations as $section)
+                                <option value="{{ $section->id }}" data-factory="{{ $section->arrival_location_id }}" @selected(in_array($section->id, $selectedSections))>{{ $section->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Remarks</h6>
+                </div>
+                <div class="col-12">
+                    <div class="form-group">
+                        <textarea name="remarks" id="remarks" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
             </div>
         </div>
-
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Expiry Date:</label>
-                <input type="date" name="expiry_date" id="expiry_date" class="form-control">
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">So No:</label>
-                <input type="text" name="reference_no" id="reference_no" class="form-control" readonly>
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Customer:</label>
-                <select name="customer_id" id="customer_id" onchange="get_inquiries()" class="form-control select2">
-                    <option value="">Select Customer</option>
-                    @foreach ($customers ?? [] as $customer)
-                        <option value="{{ $customer->id }}">{{ $customer->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Inquiries:</label>
-                <select name="inquiry_id" id="inquiry_id" onchange="get_inquiry_data()" class="form-control select2">
-                    <option value="">Select Inquiry</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Sauda Type:</label>
-                <select name="sauda_type" id="sauda_type" class="form-control select2">
-                    <option value="">Select Sauda Type</option>
-                    <option value="pohanch">Pohanch</option>
-                    <option value="x-mill">X-mill</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Payment Terms:</label>
-                <select name="payment_term_id" id="payment_term_id" class="form-control select2">
-                    <option value="">Select Payment Term</option>
-                    @foreach ($payment_terms as $payment_term)
-                        <option value="{{ $payment_term->id }}">{{ $payment_term->desc }}</option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Locations:</label>
-                <select name="locations[]" id="locations" class="form-control select2" multiple>
-                    <option value="">Select Locations</option>
-                    @foreach (get_locations() as $location)
-                        <option value="{{ $location->id }}">{{ $location->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Pay Types:</label>
-                <select name="pay_type_id" id="pay_type_id" class="form-control select2">
-                    <option value="">Select Pay Type</option>
-                    @foreach ($pay_types as $pay_type)
-                        <option value="{{ $pay_type->id }}">{{ $pay_type->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-
     </div>
 
     <div class="row form-mar">
-        <div class="col-12 text-right mb-2">
+        {{-- <div class="col-12 text-right mb-2">
             <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()" id="addRowBtn"
-                disabled>
+            >
                 <i class="fa fa-plus"></i>&nbsp; Add New Item
             </button>
-        </div>
+        </div> --}}
 
         <div class="col-md-12">
             <div class="table-responsive" style="overflow-x: auto; white-space: nowrap;">
@@ -118,13 +212,15 @@
                         <tr>
                             <th>Item</th>
                             <th>Bag Type</th>
-                            <th>Bag Size</th>
+                            <th>Packing</th>
                             <th>No of Bags</th>
-                            <th>Quantity</th>
-                            <th>Rate</th>
+                            <th>Quantity (kg)</th>
+                            <th>Rate per Kg</th>
+                            <th>Rate per Mond</th>
                             <th>Brand</th>
                             <th style="display: none;">Pack Size</th>
                             <th>Amount</th>
+                            <th>Description</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -147,24 +243,31 @@
                                 </select>
                             </td>
                             <td>
-                                <input type="text" name="bag_size[]" id="bag_size_0" value="{{ $item->bag_size }}" class="form-control bag_size" onkeyup="calcBagTypes(this)" step="0.01"
-                                    min="0">
+                                <select name="bag_size[]" id="bag_size_0" class="form-control bag_size select2" onchange="calcBagTypes(this)">
+                                    <option value="">Select Packing</option>
+                                    @foreach ($packings as $packing)
+                                        <option value="{{ $packing }}">{{ $packing }}</option>
+                                    @endforeach
+                                </select>
 
                                 <input type="hidden" name="sales_inquiry_id[]" id="sales_inquiry_id_0" value="{{ $item->id }}" class="form-control sales_inquiry_id" onkeyup="calc(this)" step="0.01"
                                     min="0">
                             </td>
                             <td>
-                                <input type="text" name="no_of_bags[]" id="no_of_bags_0" value="{{ $item->no_of_bags }}" class="form-control no_of_bags" onkeyup="calcBagTypes(this)" step="0.01"
-                                    min="0">
+                                <input type="text" name="no_of_bags[]" id="no_of_bags_0" value="{{ $item->no_of_bags }}" class="form-control no_of_bags" readonly>
                             </td>
 
                             <td>
-                                <input type="number" name="qty[]" id="qty_0" onkeyup="calc(this)"
-                                    class="form-control qty" step="0.01" min="0">
+                                <input type="number" name="qty[]" id="qty_0"
+                                    class="form-control qty" step="0.01" min="0" onkeyup="calcBagTypes(this)" onchange="calcBagTypes(this)">
                             </td>
                             <td>
-                                <input type="number" name="rate[]" id="rate_0" onkeyup="calc(this)"
-                                    class="form-control rate" step="0.01" min="0">
+                                <input type="number" name="rate[]" id="rate_0" onkeyup="calc(this); calculateRates(this)"
+                                    class="form-control rate rate_per_kg" step="0.01" min="0">
+                            </td>
+                            <td>
+                                <input type="number" name="rate_per_mond[]" id="rate_per_mond_0" onkeyup="calc(this); calculateRates(this)"
+                                    class="form-control rate_per_mond" step="0.01" min="0">
                             </td>
                             <td>
 
@@ -182,6 +285,11 @@
                             <td>
                                 <input type="text" name="amount[]" id="amount_0" class="form-control amount"
                                     readonly>
+                            </td>
+
+                            <td>
+                                <input type="text" name="description[]" id="description_0" class="form-control description"
+                                    >
                             </td>
                             <td>
                                 <button type="button" disabled class="btn btn-danger btn-sm removeRowBtn"
@@ -210,35 +318,143 @@
 <script>
     salesInquiryRowIndex = 1;
 
-    function calc(el) {
-        const element  = $(el).closest("tr");
-        const bag_size = $(element).find(".bag_size");
-        const no_of_bags = $(element).find(".no_of_bags");
-        const qty = $(element).find(".qty");
-
-        if(!(bag_size.val() && no_of_bags.val())) return;
-
-        const result = parseFloat(bag_size.val()) * parseFloat(no_of_bags.val());
-        alert(result);
-  
-        qty.val(result);
+    function calculateForRatePerKg(mond) {
+        return mond / 40;
     }
 
+    function calculateForRatePerMond(kg) {
+        return kg * 40;
+    }
+
+    function calculateRates(el) {
+
+        if(!$(el).val()) {
+            $(el).closest("tr").find(".rate_per_kg").removeAttr("readonly", "readonly");
+            $(el).closest("tr").find(".rate_per_mond").removeAttr("readonly", "readonly");
+
+            $(el).closest("tr").find(".rate_per_kg").val("");
+            $(el).closest("tr").find(".rate_per_mond").val("");
+            return;
+        }
+
+        if($(el).hasClass("rate_per_kg")) {
+            $(el).closest("tr").find(".rate_per_mond").attr("readonly", "readonly");
+            $(el).closest("tr").find(".rate_per_mond").val(calculateForRatePerMond($(el).val()));
+        } else {
+            $(el).closest("tr").find(".rate_per_kg").attr("readonly", "readonly");
+            $(el).closest("tr").find(".rate_per_kg").val(calculateForRatePerKg($(el).val()));
+            
+        }
+
+
+    }
+    function is_type_credit(el) {
+        const type = $(el).val();
+        
+        if(type == 8) {
+            $(".credit").prop('disabled', false);
+        } else {
+            $(".credit").prop("disabled", true);
+        }
+    }
+
+    // apply validate expiry date for order date and delivery date
+    function validateExpiry() {
+        // console.log('validateExpiry');
+        // const orderDate = $('#order_date').val();
+        // const deliveryDate = $('#delivery_date').val();
+        // if (orderDate && deliveryDate) {
+        //     if (orderDate > deliveryDate) {
+        //         $('#delivery_date').addClass('is-invalid');
+        //         Swal.fire({
+        //             icon: 'error',
+        //             title: 'Expired!',
+        //             text: 'Order date cannot be greater than delivery date.',
+        //             confirmButtonText: 'OK'
+        //         });
+        //     }
+        // }
+    }
+    
     $(document).ready(function() {
         $('.select2').select2();
+
+        const factories = @json($arrivalLocations);
+        const sections = @json($arrivalSubLocations);
+        const initialFactories = @json($selectedFactories ?? []);
+        const initialSections = @json($selectedSections ?? []);
+
+        function populateFactories() {
+            const selectedLocations = $('#locations').val() || [];
+            const currentValues = $('#arrival_location_id').val() || initialFactories;
+            $('#arrival_location_id').empty().append('<option value="">Select Factory</option>');
+
+            factories
+                .filter(f => selectedLocations.length === 0 || selectedLocations.includes(String(f.company_location_id)))
+                .forEach(f => {
+                    $('#arrival_location_id').append(`<option value="${f.id}" data-company="${f.company_location_id}">${f.name} (${f.company_location.name})</option>`);
+                });
+
+            $('#arrival_location_id').val(currentValues).trigger('change.select2');
+        }
+
+        function populateSections() {
+            const factoryIds = $('#arrival_location_id').val() || initialFactories;
+            const currentSections = $('#arrival_sub_location_id').val() || initialSections;
+            $('#arrival_sub_location_id').empty().append('<option value="">Select Section</option>');
+
+            sections
+                .filter(s => factoryIds.length === 0 || factoryIds.includes(String(s.arrival_location_id)))
+                .forEach(s => {
+                    $('#arrival_sub_location_id').append(`<option value="${s.id}" data-factory="${s.arrival_location_id}">${s.name} (${s.arrival_location.name})</option>`);
+                });
+
+            $('#arrival_sub_location_id').val(currentSections).trigger('change.select2');
+        }
+
+        $('#locations').on('change', function() {
+            populateFactories();
+            populateSections();
+        });
+
+        $('#arrival_location_id').on('change', function() {
+            populateSections();
+        });
+
+        populateFactories();
+        populateSections();
     });
 
     function calcBagTypes(el) {
-        const element  = $(el).closest("tr");
-        const bag_size = $(element).find(".bag_size");
+        const element = $(el).closest("tr");
+        const bag_size = parseFloat($(element).find(".bag_size").val());
+        const qty = parseFloat($(element).find(".qty").val());
         const no_of_bags = $(element).find(".no_of_bags");
-        const qty = $(element).find(".qty");
 
-        if(!(bag_size.val() && no_of_bags.val())) return;
+        if (isNaN(bag_size) || isNaN(qty)) {
+            no_of_bags.val('');
+            return;
+        }
 
-        const result = parseFloat(bag_size.val()) * parseFloat(no_of_bags.val());
-  
-        qty.val(result);
+        // No of bags = bag size * quantity
+        const result = (qty / bag_size).toFixed();
+        no_of_bags.val(result);
+
+        
+        
+        // Also calculate amount
+        calc(el);
+    }
+
+    function calc(el) {
+        const element = $(el).closest("tr");
+
+        const rate = parseFloat($(element).find(".rate").val()) || 0;
+        const qty = parseFloat($(element).find(".qty").val()) || 0;
+
+        const amount = $(element).find(".amount");
+      
+        amount.val(rate * qty);
     }
 
     function addRow() {
@@ -254,10 +470,41 @@
                 </select>
             </td>
             <td>
-                <input type="number" name="qty[]" id="qty_${index}" onkeyup="calc(this)" class="form-control qty" step="0.01" min="0">
+                <select name="bag_type[]" id="bag_type_${index}" class="form-control select2">
+                    <option value="">Select Bag Type</option>
+                    @foreach ($bag_types ?? [] as $bag_type)
+                        <option value="{{ $bag_type->id }}">{{ $bag_type->name }}</option>
+                    @endforeach
+                </select>
+            </td>
+            <td>
+                <select name="bag_size[]" id="bag_size_${index}" class="form-control bag_size select2" onchange="calcBagTypes(this)">
+                    <option value="">Select Packing</option>
+                    @foreach ($packings as $packing)
+                        <option value="{{ $packing }}">{{ $packing }}</option>
+                    @endforeach
+                </select>
+                <input type="hidden" name="sales_inquiry_id[]" id="sales_inquiry_id_${index}" value="" class="form-control">
+            </td>
+            <td>
+                <input type="text" name="no_of_bags[]" id="no_of_bags_${index}" class="form-control no_of_bags" readonly>
+            </td>
+            <td>
+                <input type="number" name="qty[]" id="qty_${index}" onkeyup="calcBagTypes(this)" onchange="calcBagTypes(this)" class="form-control qty" step="0.01" min="0">
             </td>
             <td>
                 <input type="number" name="rate[]" id="rate_${index}" onkeyup="calc(this)" class="form-control rate" step="0.01" min="0">
+            </td>
+            <td>
+                <select name="brand_id[]" id="brand_id_${index}" class="form-control select2">
+                    <option value="">Select Brands</option>
+                    @foreach (getAllBrands() ?? [] as $brand)
+                        <option value="{{ $brand->id }}">{{ $brand->name }}</option>
+                    @endforeach
+                </select>
+            </td>
+            <td style="display: none;">
+                <input type="number" name="pack_size[]" id="pack_size_${index}" value="0" class="form-control pack_size" step="0.01" min="0">
             </td>
             <td>
                 <input type="text" name="amount[]" id="amount_${index}" class="form-control amount" readonly>
@@ -271,26 +518,13 @@
     `;
         $('#salesInquiryBody').append(row);
         $(`#item_id_${index}`).select2();
-        $('#row_0 .removeRowBtn').prop('disabled', true);
-        $('.removeRowBtn').not('#row_0 .removeRowBtn').prop('disabled', false);
+        $(`#bag_type_${index}`).select2();
+        $(`#bag_size_${index}`).select2();
+        $(`#brand_id_${index}`).select2();
     }
 
     function removeRow(index) {
         $('#row_' + index).remove();
-        if ($('#salesInquiryBody tr').length === 1) {
-            $('#row_0 .removeRowBtn').prop('disabled', true);
-        }
-    }
-
-    function calc(el) {
-        const element = $(el).closest("tr");
-
-        const rate = parseFloat($(element).find(".rate").val()) || 0;
-        const qty = parseFloat($(element).find(".qty").val()) || 0;
-
-        const amount = $(element).find(".amount");
-
-        amount.val(rate * qty);
     }
 
     function get_inquiries() {
@@ -318,8 +552,99 @@
     }
 
     function get_inquiry_data() {
+        
         const inquiry_id = $("#inquiry_id").val();
 
+        if (!inquiry_id) {
+            // If no inquiry selected, make fields editable
+            enableInquiryFields();
+            return;
+        }
+
+        // First, get the inquiry details
+        $.ajax({
+            url: "{{ route('sales.get-sale-inquiry-data') }}",
+            method: "GET",
+            data: {
+                inquiry_id: inquiry_id,
+                get_details: true
+            },
+            dataType: "json",
+            success: function(res) {
+                // Fill delivery date with required_date
+                if (res.required_date) {
+                    $("#delivery_date").val(res.required_date);
+                    getNumber(); // Generate SO number based on date
+                }
+
+                // Fill customer
+                if (res.customer_id) {
+                    $("#customer_id").val(res.customer_id).trigger('change.select2');
+                }
+
+                // Fill contract type (sauda_type)
+                if (res.contract_type) {
+                    $("#sauda_type").val(res.contract_type).trigger('change.select2');
+                }
+
+                if (res.contact_person) {
+                    $("#contact_person").val(res.contact_person).prop('readonly', true);
+                }
+
+
+                const inquiryFactories = res.arrival_locations || (res.arrival_location_id ? [res.arrival_location_id] : []);
+                const inquirySections = res.arrival_sub_locations || (res.arrival_sub_location_id ? [res.arrival_sub_location_id] : []);
+
+                // clear old options
+                $('#arrival_location_id').empty();
+
+                // append + select all
+                res.arrival_locations.forEach(item => {
+                    let option = new Option(item.text, item.id, true, true); // selected = true
+                    $('#arrival_location_id').append(option);
+                });
+
+                // notify select2
+                $('#arrival_location_id').trigger('change');
+
+                 // clear old options
+                $('#locations').empty();
+
+                // append + select all
+                res.locations.forEach(item => {
+                    let option = new Option(item.text, item.id, true, true); // selected = true
+                    $('#locations').append(option);
+                });
+
+                // notify select2
+                $('#locations').trigger('change');
+
+               
+                $('#arrival_sub_location_id').empty();
+
+                // append + select all
+                res.arrival_sub_locations.forEach(item => {
+                    let option = new Option(item.text, item.id, true, true); // selected = true
+                    $('#arrival_sub_location_id').append(option);
+                });
+
+                // notify select2
+                $('#arrival_sub_location_id').trigger('change');
+
+                // Fill token money
+                if (res.token_money !== null && res.token_money !== undefined) {
+                    $("#token_money").val(res.token_money);
+                }
+
+                // Make fields readonly
+                disableInquiryFields();
+            },
+            error: function(error) {
+                console.log(error);
+            }
+        });
+
+        // Then, get the line items
         $.ajax({
             url: "{{ route('sales.get-sale-inquiry-data') }}",
             method: "GET",
@@ -328,15 +653,214 @@
             },
             dataType: "html",
             success: function(res) {
-                console.log("success");
-                $("#alesInquiryBody").empty();
                 $("#salesInquiryBody").html(res);
+                $('#salesInquiryBody').find('.select2').select2();
+                if ($("#inquiry_id").val()) {
+                    disableTableFields();
+                }
             },
             error: function(error) {
                 console.log(error);
             }
         });
+    }
 
+    function disableInquiryFields() {
+        // Disable fields when inquiry is selected
+        $("#delivery_date").prop('readonly', true);
+        $("#customer_id").prop('disabled', true);
+        $("#sauda_type").prop('disabled', true);
+        $("#locations").prop('disabled', true);
+        $("#token_money").prop('readonly', true);
+        $("#contact_person").prop('readonly', true);
+        $("#arrival_location_id").prop('disabled', true);
+        $("#arrival_sub_location_id").prop('disabled', true);
+
+        // Add hidden input for customer_id
+        if (!$('#customer_id_hidden').length) {
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'customer_id',
+                id: 'customer_id_hidden',
+                value: $("#customer_id").val()
+            }).appendTo('form');
+        } else {
+            $('#sauda_type_hidden').val(
+                $("#sauda_type").val().toLowerCase().replace(/ /g, '-').replace(/[^a-z0-9\-]/g, '')
+            );
+        }
+
+        // Add hidden input for sauda_type (contract type)
+        if (!$('#sauda_type_hidden').length) {
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'sauda_type',
+                id: 'sauda_type_hidden',
+                value: $("#sauda_type").val()
+            }).appendTo('form');
+        } else {
+            $('#sauda_type_hidden').val(
+                $("#sauda_type").val().toLowerCase().replace(/ /g, '-').replace(/[^a-z0-9\-]/g, '')
+            );
+        }
+
+        // Add hidden inputs for locations (multiple)
+        $('.locations_hidden').remove(); // Remove existing hidden inputs first
+        var selectedLocations = $("#locations").val();
+        if (selectedLocations && selectedLocations.length > 0) {
+            selectedLocations.forEach(function(loc) {
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: 'locations[]',
+                    class: 'locations_hidden',
+                    value: loc
+                }).appendTo('form');
+            });
+        }
+
+        // Add hidden for arrival_location_id (multiple)
+        $('.arrival_location_hidden').remove();
+        const selectedFactories = $("#arrival_location_id").val() || [];
+        selectedFactories.forEach(function(id) {
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'arrival_location_id[]',
+                class: 'arrival_location_hidden',
+                value: id
+            }).appendTo('form');
+        });
+
+        // Add hidden for arrival_sub_location_id (multiple)
+        $('.arrival_sub_location_hidden').remove();
+        const selectedSections = $("#arrival_sub_location_id").val() || [];
+        selectedSections.forEach(function(id) {
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'arrival_sub_location_id[]',
+                class: 'arrival_sub_location_hidden',
+                value: id
+            }).appendTo('form');
+        });
+
+        // Remove the name from disabled selects to avoid conflict
+        $("#customer_id").removeAttr('name');
+        $("#sauda_type").removeAttr('name');
+        $("#locations").removeAttr('name');
+        $("#arrival_location_id").removeAttr('name');
+        $("#arrival_sub_location_id").removeAttr('name');
+    }
+
+    function disableTableFields() {
+        // Disable UI controls
+        $('#salesInquiryTable').find('input, select, textarea, button').each(function() {
+            const $el = $(this);
+            if ($el.is('select')) {
+                $el.prop('disabled', true);
+            } else if ($el.is('button')) {
+                $el.prop('disabled', true);
+            } else {
+                $el.prop('readonly', true);
+            }
+        });
+
+        // Ensure disabled values for item_id, brand_id, and bag_type are posted
+        $('#salesInquiryTable tbody tr').each(function() {
+            const $row = $(this);
+            const itemVal = $row.find('select[name="item_id[]"], input[name="item_id[]"]').val() || '';
+            const brandVal = $row.find('select[name="brand_id[]"], input[name="brand_id[]"]').val() || '';
+            const bagTypeVal = $row.find('select[name="bag_type_id[]"], select[name="bag_type[]"], input[name="bag_type[]"]').val() || '';
+            const bagSizeVal = $row.find('select[name="bag_size[]"], input[name="bag_size[]"]').val() || '';
+
+            $row.find('.hidden_item_id').remove();
+            $row.find('.hidden_brand_id').remove();
+            $row.find('.hidden_bag_type').remove();
+            $row.find('.hidden_bag_size').remove();
+
+            if (itemVal) {
+                $('<input>', {
+                    type: 'hidden',
+                    name: 'item_id[]',
+                    class: 'hidden_item_id',
+                    value: itemVal
+                }).appendTo($row);
+            }
+
+            if (brandVal) {
+                $('<input>', {
+                    type: 'hidden',
+                    name: 'brand_id[]',
+                    class: 'hidden_brand_id',
+                    value: brandVal
+                }).appendTo($row);
+            }
+
+            if (bagTypeVal) {
+                $('<input>', {
+                    type: 'hidden',
+                    name: 'bag_type[]',
+                    class: 'hidden_bag_type',
+                    value: bagTypeVal
+                }).appendTo($row);
+            }
+
+            if (bagSizeVal) {
+                $('<input>', {
+                    type: 'hidden',
+                    name: 'bag_size[]',
+                    class: 'hidden_bag_size',
+                    value: bagSizeVal
+                }).appendTo($row);
+            }
+        });
+    }
+
+    function enableTableFields() {
+        $('#salesInquiryTable').find('input, select, textarea, button').each(function() {
+            const $el = $(this);
+            if ($el.is('select')) {
+                $el.prop('disabled', false);
+            } else if ($el.is('button')) {
+                $el.prop('disabled', false);
+            } else {
+                $el.prop('readonly', false);
+            }
+        });
+
+        $('#salesInquiryTable tbody tr').each(function() {
+            const $row = $(this);
+            $row.find('.hidden_item_id').remove();
+            $row.find('.hidden_brand_id').remove();
+            $row.find('.hidden_bag_type').remove();
+            $row.find('.hidden_bag_size').remove();
+        });
+    }
+
+    function enableInquiryFields() {
+        // Enable fields when no inquiry selected
+        $("#delivery_date").prop('readonly', false);
+        $("#customer_id").prop('disabled', false);
+        $("#sauda_type").prop('disabled', false);
+        $("#locations").prop('disabled', false);
+        $("#token_money").prop('readonly', false);
+        $("#contact_person").prop('readonly', false).val('');
+        $("#arrival_location_id").prop('disabled', false).val('').trigger('change.select2');
+        $("#arrival_sub_location_id").prop('disabled', false).val('').trigger('change.select2');
+        $("#token_money").val(''); // Clear token money when no inquiry
+
+        // Restore name attributes and remove hidden inputs
+        $("#customer_id").attr('name', 'customer_id');
+        $("#sauda_type").attr('name', 'sauda_type');
+        $("#locations").attr('name', 'locations[]');
+        $("#arrival_location_id").attr('name', 'arrival_location_id[]');
+        $("#arrival_sub_location_id").attr('name', 'arrival_sub_location_id[]');
+        
+        $('#customer_id_hidden').remove();
+        $('#sauda_type_hidden').remove();
+        $('.locations_hidden').remove();
+        $('.arrival_location_hidden').remove();
+        $('.arrival_sub_location_hidden').remove();
+        
+        enableTableFields();
     }
 
     function getNumber() {
@@ -344,7 +868,7 @@
             url: "{{ route('sales.get.sales-order.getnumber') }}",
             method: "GET",
             data: {
-                contract_date: $("#delivery_date").val()
+                contract_date: $("#order_date").val()
             },
             dataType: "json",
             success: function(res) {

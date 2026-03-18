@@ -37,7 +37,7 @@
          <div class="col-xs-6 col-sm-6 col-md-6">
              <div class="form-group">
                  <label>Sauda Type:</label>
-                 <select name="sauda_type_id" id="sauda_type_id" class="form-control ">
+                 <select name="sauda_type_id" id="sauda_type_id{{ $ticketcounts != 0 ? 'ub-nh-chlunga' : '' }}" class="form-control ">
                      <option value="{{ $arrivalPurchaseOrder->saudaType->id ?? null }}">
                          {{ $arrivalPurchaseOrder->saudaType?->name ?? 'Sauda Type Name' }}</option>
                  </select>
@@ -231,21 +231,21 @@
          <div class="col-xs-4 col-sm-4 col-md-4">
              <div class="form-group">
                  <label>Rate Per KG:</label>
-                 <input type="number" name="rate_per_kg" value="{{ $arrivalPurchaseOrder->rate_per_kg }}"
+                 <input type="number" step="0.01"name="rate_per_kg" value="{{ $arrivalPurchaseOrder->rate_per_kg }}"
                      placeholder="Rate Per KG" class="form-control" />
              </div>
          </div>
          <div class="col-xs-4 col-sm-4 col-md-4">
              <div class="form-group">
                  <label>Rate Per Mound:</label>
-                 <input type="number" name="rate_per_mound" value="{{ $arrivalPurchaseOrder->rate_per_mound }}"
+                 <input type="number" step="0.01" name="rate_per_mound" value="{{ $arrivalPurchaseOrder->rate_per_mound }}"
                      placeholder="Rate Per Mound" class="form-control" />
              </div>
          </div>
          <div class="col-xs-4 col-sm-4 col-md-4">
              <div class="form-group">
                  <label>Rate Per 100KG:</label>
-                 <input type="number" name="rate_per_100kg" value="{{ $arrivalPurchaseOrder->rate_per_100kg }}"
+                 <input type="number" step="0.01" name="rate_per_100kg" value="{{ $arrivalPurchaseOrder->rate_per_100kg }}"
                      placeholder="Rate Per 100KG" class="form-control" />
              </div>
          </div>
@@ -539,17 +539,20 @@
                     <div class="pl-0 col-md-6"> 
                         <div class="form-group">
                             <label>Min Quantity (kg):</label>
-                            <input type="number" name="min_quantity_input" id="min_quantity_input" placeholder="Min Quantity" class="form-control" min="25000" value="{{ $arrivalPurchaseOrder->min_quantity ?? '' }}" />
+                            <input type="number" name="min_quantity_input" id="min_quantity_input" placeholder="Min Quantity" class="form-control" value="{{ $arrivalPurchaseOrder->min_quantity ?? '' }}" />
                         </div>
                     </div>
                     <div class="pr-0 col-md-6">
                         <div class="form-group">
                             <label>Max Quantity (kg):</label>
-                            <input type="number" name="max_quantity_input" id="max_quantity_input" placeholder="Max Quantity" class="form-control" min="25000" value="{{ $arrivalPurchaseOrder->max_quantity ?? '' }}" />
+                            <input type="number" name="max_quantity_input" id="max_quantity_input" placeholder="Max Quantity" class="form-control"  value="{{ $arrivalPurchaseOrder->max_quantity ?? '' }}" />
                         </div>
                     </div>
                 </div>
             `);
+            $('#min_quantity_input, #max_quantity_input').on('input change', function() {
+                        calculateQuantityAndBags();
+                    });
              }
          }
 
@@ -590,9 +593,15 @@
              calculateRates('rate_per_100kg');
          });
 
+
+
+         $('#no_of_trucks, #total_quantity, #bag_weight, #product_id').on('input change',
+                function() {
+                    calculateQuantityAndBags();
+                });
          // Quantity and bags calculation
          function calculateQuantityAndBags() {
-             const MIN_QTY = 25000;
+             const MIN_QTY = 0;
              const bagWeight = $('#product_id option:selected').data('bag-weight') || 1;
              let minQuantity, maxQuantity;
 

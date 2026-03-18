@@ -34,7 +34,7 @@ class ArrivalSlipController extends Controller
     /**
      * Get list of categories.
      */
-    public function getList(Request $request)
+    public function getListbk(Request $request)
     {
         $authUser = auth()->user();
         $isSuperAdmin = $authUser->user_type === 'super-admin';
@@ -51,10 +51,13 @@ class ArrivalSlipController extends Controller
                     $sq->where('arrival_slips.unique_no', 'like', $searchTerm);
                 });
             })
-            ->when(!$isSuperAdmin, function ($q) use ($authUser) {
-                return $q->whereHas('arrivalTicket', function ($query) use ($authUser) {
-                    $query->where('location_id', $authUser->company_location_id);
-                });
+            // ->when(!$isSuperAdmin, function ($q) use ($authUser) {
+            //     return $q->whereHas('arrivalTicket', function ($query) use ($authUser) {
+            //         $query->where('location_id', $authUser->company_location_id);
+            //     });
+            // })
+            ->whereHas('arrivalTicket', function ($q) {
+                $q->whereIn('location_id', getUserCurrentCompanyLocations());
             })
             ->where('arrival_slips.company_id', $request->company_id)
             ->latest('arrival_slips.created_at')
@@ -63,6 +66,40 @@ class ArrivalSlipController extends Controller
         return view('management.arrival.arrival_slip.getList', compact('ArrivalSlip'));
     }
 
+    public function getList(Request $request)
+    {
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser->user_type === 'super-admin';
+
+        $ArrivalSlip = ArrivalSlip::select('arrival_slips.*', 'grn_numbers.unique_no as grn_unique_no')
+            ->leftJoin('grn_numbers', function ($join) {
+                $join->on('arrival_slips.id', '=', 'grn_numbers.model_id')
+                    ->where('grn_numbers.model_type', 'arrival-slip');
+            })
+            ->with(['arrivalTicket'])
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $searchTerm = '%' . $request->search . '%';
+                return $q->where(function ($sq) use ($searchTerm) {
+                    $sq->where('arrival_slips.unique_no', 'like', $searchTerm)
+                        ->orWhereHas('arrivalTicket', function ($ticketQuery) use ($searchTerm) {
+                            $ticketQuery->where('unique_no', 'like', $searchTerm);
+                        });
+                });
+            })
+            // ->when(!$isSuperAdmin, function ($q) use ($authUser) {
+            //     return $q->whereHas('arrivalTicket', function ($query) use ($authUser) {
+            //         $query->where('location_id', $authUser->company_location_id);
+            //     });
+            // })
+            ->whereHas('arrivalTicket', function ($q) {
+                $q->whereIn('location_id', getUserCurrentCompanyLocations());
+            })
+            ->where('arrival_slips.company_id', $request->company_id)
+            ->latest('arrival_slips.created_at')
+            ->paginate(request('per_page', 25));
+
+        return view('management.arrival.arrival_slip.getList', compact('ArrivalSlip'));
+    }
     /**
      * Show the form for creating a new resource.
      */
@@ -71,8 +108,8 @@ class ArrivalSlipController extends Controller
         $authUser = auth()->user();
         $isSuperAdmin = $authUser->user_type === 'super-admin';
 
-        $data['ArrivalLocations'] =  ArrivalLocation::where('status', 'active')->get();
-        $data['ArrivalTickets'] =  ArrivalTicket::where('arrival_slip_status', 'pending')->when(!$isSuperAdmin, function ($query) use ($authUser) {
+        $data['ArrivalLocations'] = ArrivalLocation::where('status', 'active')->get();
+        $data['ArrivalTickets'] = ArrivalTicket::where('arrival_slip_status', 'pending')->when(!$isSuperAdmin, function ($query) use ($authUser) {
             return $query->where('location_id', $authUser->company_location_id);
         })->get();
         return view('management.arrival.arrival_slip.create', $data);
@@ -109,7 +146,7 @@ class ArrivalSlipController extends Controller
      */
     public function edit($id)
     {
-        $ArrivalTickets =  ArrivalTicket::where('second_weighbridge_status', 'completed')->get();
+        $ArrivalTickets = ArrivalTicket::where('second_weighbridge_status', 'completed')->get();
         $arrival_slip = ArrivalSlip::findOrFail($id);
 
         $arrivalTicket = ArrivalTicket::with([
@@ -125,8 +162,8 @@ class ArrivalSlipController extends Controller
             ->whereIn('approved_status', ['approved', 'rejected'])
             ->get()->last();
 
-        $samplingRequestCompulsuryResults  = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $samplingRequest->id)->get();
-        $samplingRequestResults  = ArrivalSamplingResult::where('arrival_sampling_request_id', $samplingRequest->id)->get();
+        $samplingRequestCompulsuryResults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $samplingRequest->id)->get();
+        $samplingRequestResults = ArrivalSamplingResult::where('arrival_sampling_request_id', $samplingRequest->id)->get();
 
         $slabs = ProductSlab::where('product_id', $samplingRequest->arrival_product_id)
             ->get()
@@ -185,8 +222,8 @@ class ArrivalSlipController extends Controller
             ->whereIn('approved_status', ['approved', 'rejected'])
             ->get()->last();
 
-        $samplingRequestCompulsuryResults  = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $samplingRequest->id)->get();
-        $samplingRequestResults  = ArrivalSamplingResult::where('arrival_sampling_request_id', $samplingRequest->id)->get();
+        $samplingRequestCompulsuryResults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $samplingRequest->id)->get();
+        $samplingRequestResults = ArrivalSamplingResult::where('arrival_sampling_request_id', $samplingRequest->id)->get();
 
         $slabs = ProductSlab::where('product_id', $samplingRequest->arrival_product_id)
             ->get()

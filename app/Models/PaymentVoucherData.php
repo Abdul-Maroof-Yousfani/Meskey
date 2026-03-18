@@ -15,7 +15,11 @@ class PaymentVoucherData extends Model
         'payment_voucher_id',
         'payment_request_id',
         'amount',
-        'description'
+        'description',
+        "account_id",
+        "tax_id",
+        "tax_amount",
+        "net_amount"
     ];
 
     public function paymentVoucher()

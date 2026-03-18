@@ -100,6 +100,7 @@ class FreightRequestController extends Controller
             $arrivalQuery->where(function ($q) use ($search) {
                 $q->where('unique_no', 'like', "%{$search}%")
                     ->orWhere('truck_no', 'like', "%{$search}%")
+                    ->orWhere('bilty_no', 'like', "%{$search}%")
                     ->orWhereHas('purchaseOrder', function ($q) use ($search) {
                         $q->where('contract_no', 'like', "%{$search}%")
                             ->orWhere('ref_no', 'like', "%{$search}%");
@@ -218,8 +219,8 @@ class FreightRequestController extends Controller
             $requestData = $request->all();
             $requestData['module_type'] = 'freight_payment';
             $requestData['total_amount'] = $requestData['net_amount'];
-          
-            
+
+
             $ticketID = $requestData['ticket_id'];
             $purchaseOrderID = $requestData['purchase_order_id'];
 
@@ -649,6 +650,7 @@ class FreightRequestController extends Controller
                 ->where('module_type', 'freight_payment')
                 ->where('purchase_order_id', $arrivalTicket->arrival_purchase_order_id);
         })
+            ->where('status', '!=', 'rejected')
             ->where('module_type', 'freight_payment')
             ->sum('amount');
 
@@ -967,7 +969,7 @@ class FreightRequestController extends Controller
                     'account_id' => $vendorLabourAcc->account_id,
                     'payment_to_type' => $paymentRequestData->payment_to_type,
                     'payment_to' => $paymentRequestData->payment_to,
-                    'amount' =>$request->total_labour ?? 0
+                    'amount' => $request->total_labour ?? 0
                 ]);
 
 

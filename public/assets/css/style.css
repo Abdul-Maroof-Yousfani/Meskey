@@ -154,3 +154,63 @@ body.drawer-opened {
 .clean-sidebar-drawer ~ .clean-sidebar-drawer {
   filter: brightness(0.97);
 }
+
+.required::after {
+  content: '*';
+}
+
+.table-responsive.special td, .table-responsive.special th {
+  min-width: 250px !important;
+}
+
+/* Last 3 columns ko fixed rakhein (Action, Attachment, Thread Color) */
+/* Aap columns ki quantity ke hisaab se adjust kar sakte hain */
+/* .table th:last-child,
+.table td:last-child {
+    position: sticky;
+    right: 0;
+    background-color: #f8f9fa; 
+    z-index: 10;
+    border-left: 2px solid #dee2e6 !important;
+} */
+
+/* For Action column (last) */
+.table.sticky1 th:nth-last-child(1),
+.table.sticky1 td:nth-last-child(1) {
+    position: sticky;
+    right: 0;
+    background-color: #fff;
+    z-index: 20;
+    min-width: 120px;
+    box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+}
+
+/* For Attachment column (second last) */
+.table.sticky2 th:nth-last-child(2),
+.table.sticky2 td:nth-last-child(2) {
+    position: sticky;
+    right: 120px; /* Action column ki width ke equal */
+    background-color: #fff;
+    z-index: 15;
+    min-width: 150px;
+}
+
+/* .table th:nth-last-child(3),
+.table td:nth-last-child(3) {
+    position: sticky;
+    right: 270px; 
+    background-color: #fff;
+    z-index: 15;
+    min-width: 150px;
+} */
+
+/* Optional: Header row ke liye z-index zyada rakhein */
+/* .table thead th {
+    z-index: 25 !important;
+    background-color: #f8f9fa !important;
+} */
+
+/* Hover effect for better visibility */
+/* .table tbody tr:hover td {
+    background-color: rgba(0,0,0,0.02);
+} */

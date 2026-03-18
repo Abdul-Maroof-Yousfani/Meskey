@@ -59,26 +59,23 @@
                 </label>
             </td>
             <td>
-                <p class="m-0 white-nowrap">
-                    {{ \Carbon\Carbon::parse($row->created_at)->format('Y-m-d') }} <br>
-                    {{ \Carbon\Carbon::parse($row->created_at)->format('h:i A') }}
-                </p>
+                {!! dateFormatHtml($row->created_at) !!}
             </td>
             <td>
-                <div class="d-flex gap-2 align-items-center justify-content-center">
+                <div class="d-flex gap-2 align-items-center justify-content-">
 
                     <a onclick="openModal(this,'{{ route('ticket.edit', $row->id) }}','View Ticket', true)"
                         class="info p-1 text-center mr-2 position-relative">
                         <i class="ft-eye font-medium-3"></i>
                     </a>
                     @canAccess('arrival-master-control')
-                    <a href="{{ route('ticket.arrival-revert', $row->id) }}" class="btn btn-sm btn-danger">
+                    <a href="{{ route('ticket.arrival-revert', $row->id) }}" class="badge badge-danger border-0 mr-2">
                         Master Control
                     </a>
                     @endcanAccess
 
                     @if ($row->first_qc_status == 'rejected' && $row->bilty_return_confirmation == 0)
-                        <button onclick="confirmBiltyReturn({{ $row->id }})" class="btn btn-sm btn-danger">
+                        <button onclick="confirmBiltyReturn({{ $row->id }})" class="badge badge-warning border-0 mr-2">
                             Confirm Bilty Return
                         </button>
                     @elseif($row->first_qc_status == 'rejected' && $row->bilty_return_confirmation == 1)

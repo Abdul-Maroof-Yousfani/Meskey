@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Procurement\Store;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Procurement\Store\PurchaseOrderRequest;
+use App\Models\Product;
 use App\Models\Category;
 use App\Models\Master\CompanyLocation;
+use App\Models\Master\Supplier;
 use App\Models\PaymentTerm;
 use App\Models\Procurement\Store\PurchaseOrder;
 use App\Models\Procurement\Store\PurchaseOrderData;
@@ -23,7 +25,10 @@ class PurchaseOrderController extends Controller
 {
     public function index()
     {
-        return view('management.procurement.store.purchase_order.index');
+        $categories = Category::where('category_type', 'general_items')->get();
+        $items = Product::where('product_type', 'general_items')->where('status', 'active')->get();
+        $suppliers = Supplier::where('status', 'active')->get();
+        return view('management.procurement.store.purchase_order.index', compact('categories', 'items', 'suppliers'));
     }
 
     /**
@@ -40,7 +45,46 @@ class PurchaseOrderController extends Controller
 
     public function getList(Request $request)
     {
-        $PurchaseOrderRaw = PurchaseOrderData::with(
+        $query = PurchaseOrderData::query();
+
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('qty', 'like', "%{$search}%")
+                    ->orWhere('rate', 'like', "%{$search}%")
+                    ->orWhere('total', 'like', "%{$search}%")
+                    ->orWhereHas('purchase_order', function ($q) use ($search) {
+                        $q->where('purchase_order_no', 'like', "%{$search}%")
+                            ->orWhereHas('purchase_quotation', function ($q) use ($search) {
+                                $q->where('purchase_quotation_no', 'like', "%{$search}%")
+                                    ->orWhereHas('purchase_request', function ($q) use ($search) {
+                                        $q->where('purchase_request_no', 'like', "%{$search}%");
+                                    });
+                            });
+                    });
+            });
+        }
+
+        if ($request->has('status') && $request->status !== 'all' && !empty($request->status)) {
+            $status = $request->status;
+            $query->whereHas('purchase_order', function ($q) use ($status) {
+                $q->where('am_approval_status', $status);
+            });
+        }
+
+        if ($request->has('category_id') && $request->category_id != 'all' && !empty($request->category_id)) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        if ($request->has('item_id') && $request->item_id != 'all' && !empty($request->item_id)) {
+            $query->where('item_id', $request->item_id);
+        }
+
+        if ($request->has('supplier_id') && $request->supplier_id != 'all' && !empty($request->supplier_id)) {
+            $query->where('supplier_id', $request->supplier_id);
+        }
+
+        $PurchaseOrderRaw = $query->with(
             'purchase_order.purchase_quotation.purchase_request',
             'category',
             'item',
@@ -178,11 +222,13 @@ class PurchaseOrderController extends Controller
         if ($quotationNo) {
             $quotation = PurchaseQuotation::where('purchase_request_id', $requestId)
                 ->where('id', $quotationNo)
-                ->whereIn('am_approval_status', ['approved', 'partial approved'])
+                ->whereHas("quotation_data", function($q) {
+                    $q->where("am_approval_status", "approved");
+                })
                 ->first();
 
             if ($quotation) {
-                $dataItems = PurchaseQuotationData::with(['purchase_order_data', 'purchase_request', 'purchase_quotation', 'item', 'category'])
+                $dataItems = PurchaseQuotationData::with(['purchase_order_data', 'purchase_request.purchase_order_data', 'purchase_quotation', 'item', 'category'])
                     ->where('purchase_quotation_id', $quotation->id)
                     ->where('am_approval_status', 'approved')
                     ->get();
@@ -190,42 +236,13 @@ class PurchaseOrderController extends Controller
         }
 
         if (!$quotation || $dataItems->isEmpty()) {
-            $dataItems = PurchaseRequestData::with(['purchase_request', 'item', 'category'])
+            $dataItems = PurchaseRequestData::with(['purchase_request', 'item', 'category', 'purchase_order_data'])
                 ->where('purchase_request_id', $requestId)
                 ->get();
-
-            $purchaseRequestDataIds = $dataItems->pluck('id');
-
-            $existingQuotationCount = PurchaseOrderData::whereIn('purchase_request_data_id', $purchaseRequestDataIds)
-                ->whereHas('purchase_order', function ($q) use ($supplierId) {
-                    $q->where('supplier_id', $supplierId);
-                })
-                ->count();
-         
-            if ($existingQuotationCount > 0) {
-                $quotationQuantities = PurchaseOrderData::whereIn('purchase_request_data_id', $purchaseRequestDataIds)
-                    ->whereHas('purchase_order', function ($q) use ($supplierId) {
-                        $q->where('supplier_id', $supplierId);
-                    })
-                    ->select('item_id', DB::raw('SUM(qty) as total_quoted_qty'))
-                    ->groupBy('item_id')
-                    ->pluck('total_quoted_qty', 'item_id');
-
-                foreach ($dataItems as $item) {
-                    $quotedQty = $quotationQuantities[$item->item_id] ?? 0;
-                    $remainingQty = $item->qty - $quotedQty;
-                    $item->qty = max($remainingQty, 0);
-                    $item->total_quoted_qty = $quotedQty;
-
-                }
-            } else {
-                foreach ($dataItems as $item) {
-                    $item->qty = $item->qty;
-                    $item->total_quoted_qty = 0;
-                }
-            }
-
         }
+
+        
+
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $job_orders = JobOrder::select('id', 'job_order_no')->get();
         $taxes = Tax::select('id', 'name', 'percentage')->where('status', 'active')->get();
@@ -235,7 +252,8 @@ class PurchaseOrderController extends Controller
             'html' => $html,
             'master' => $master,
             'quotation' => $quotation,
-            'locations_id' => $locations_id
+            'locations_id' => $locations_id,
+            'category_id' => $dataItems->first()->category_id ?? null
         ]);
     }
 
@@ -276,7 +294,6 @@ class PurchaseOrderController extends Controller
                 $quotation = PurchaseQuotation::where('purchase_quotation_no', $request->quotation_no)->first();
             }
 
-
             $PurchaseOrder = PurchaseOrder::create([
                 'purchase_order_no' => self::getNumber($request, $request->location_id, $request->purchase_date),
                 'purchase_request_id' => $request->purchase_request_id,
@@ -313,7 +330,7 @@ class PurchaseOrderController extends Controller
                     'stitching' => $request->stitching[$index],
                     'micron' => $request->micron[$index],
                     'brand' => $request->brand[$index],
-                    'printing_sample' => $request->printing_sample[$index],
+                    'printing_sample' => is_string($request->printing_sample[$index]) ? json_decode($request->printing_sample[$index], true) : $request->printing_sample[$index],
 
                     'remarks' => $request->remarks[$index] ?? null,
                 ]);
@@ -401,9 +418,10 @@ class PurchaseOrderController extends Controller
         $purchaseOrder = PurchaseOrder::with([
             'purchaseOrderData',
             'purchaseOrderData.category',
-            'purchaseOrderData.purchase_request_data',
-            'purchaseOrderData.item',
             'purchase_request.PurchaseData',
+            'purchaseOrderData.purchase_request_data.purchase_order_data',
+            'purchaseOrderData.purchase_quotation_data.purchase_order_data',
+            'purchaseOrderData.item',
             'purchase_quotation.quotation_data'
         ])->findOrFail($id);
         $purchaseRequest = $purchaseOrder->purchase_request;
@@ -427,38 +445,9 @@ class PurchaseOrderController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, $id)
+    public function update(PurchaseOrderRequest $request, $id)
     {
         // dd($request->all());
-        $validated = $request->validate([
-            'delivery_address' => "required",
-            'purchase_date' => 'required|date',
-            'purchase_request_id' => 'required|exists:purchase_requests,id',
-            'location_id' => 'required|exists:company_locations,id',
-            'reference_no' => 'nullable|string|max:255',
-            'description' => 'nullable|string',
-
-            'category_id' => 'required|array|min:1',
-            'category_id.*' => 'required|exists:categories,id',
-
-            'item_id' => 'required|array|min:1',
-            'item_id.*' => 'required|exists:products,id',
-
-            'uom' => 'nullable|array',
-            'uom.*' => 'nullable|string|max:255',
-
-            'qty' => 'required|array|min:1',
-            'qty.*' => 'required|numeric|min:0.01',
-
-            'rate' => 'required|array|min:1',
-            'rate.*' => 'required|numeric|min:0.01',
-
-            'remarks' => 'nullable|array',
-            'remarks.*' => 'nullable|string|max:1000',
-
-            'micron' => 'nullable|array',
-            'micron.*' => 'nullable|string|max:1000',
-        ]);
 
 
 
@@ -468,7 +457,9 @@ class PurchaseOrderController extends Controller
             $PurchaseOrder = PurchaseOrder::findOrFail($id);
             $PurchaseOrder->update([
                 'description' => $request->description,
-                'delivery_address' => $request->delivery_address
+                'delivery_address' => $request->delivery_address,
+                'am_approval_status' => 'pending',
+                'am_change_made' => 1,
             ]);
             PurchaseOrderData::where('purchase_order_id', $PurchaseOrder->id)->delete();
 
@@ -477,21 +468,23 @@ class PurchaseOrderController extends Controller
                     'purchase_order_id' => $PurchaseOrder->id,
                     'category_id' => $request->category_id[$index],
                     'item_id' => $itemId,
+                    'purchase_request_data_id' => $request->purchase_request_data_id[$index],
                     'qty' => $request->qty[$index],
                     'rate' => $request->rate[$index],
                     'total' => $request->total[$index],
                     'supplier_id' => $request->supplier_id,
-                    'tax_id' => $request->tax_id[$index] ?? null,
-                    'excise_duty' => $request->excise_duty[$index] ?? 0,
-                    'min_weight' => $request->min_weight[$index],
-                    'color' => $request->color[$index],
-                    'brand' => $request->brand[$index],
-                    'construction_per_square_inch' => $request->construction_per_square_inch[$index],
-                    'size' => $request->size[$index],
-                    'stitching' => $request->stitching[$index],
-                    'micron' => $request->micron[$index],
-                    'printing_sample' => $request->printing_sample[$index],
-                    'remarks' => $request->remarks[$index] ?? null,
+                    'tax_id' => $request->input('tax_id.'.$index),
+                    'excise_duty' => $request->input('excise_duty.'.$index, 0),
+                    'min_weight' => $request->input('min_weight.'.$index),
+                    'color' => $request->input('color.'.$index),
+                    'brand' => $request->input('brand.'.$index),
+                    'construction_per_square_inch' => $request->input('construction_per_square_inch.'.$index),
+                    'size' => $request->input('size.'.$index),
+                    'stitching' => $request->input('stitching.'.$index),
+                    'micron' => $request->input('micron.'.$index),
+                    'printing_sample' => is_string($request->input('printing_sample.'.$index)) ? json_decode($request->input('printing_sample.'.$index), true) : $request->input('printing_sample.'.$index),
+                    'remarks' => $request->input('remarks.'.$index),
+                    
                 ]);
             }
 
@@ -518,8 +511,14 @@ class PurchaseOrderController extends Controller
      */
     public function destroy($id)
     {
-        $purchaseOrder= PurchaseOrder::where("id", $id)->delete();
-        $PurchaseOrderData = PurchaseOrderData::where('id', $id)->delete();
+        $purchaseOrder = PurchaseOrder::where("id", $id)->first();
+
+        if($purchaseOrder != null) {
+            $purchaseOrder->purchaseOrderData()->delete();
+        }
+
+        $purchaseOrder->delete();
+
         return response()->json(['success' => 'Purchase Request deleted successfully.'], 200);
     }
 
@@ -564,13 +563,65 @@ class PurchaseOrderController extends Controller
         ]);
     }
 
+    public function get_quotations(): array {
+        $pr_id = request()->pr_id;
+       
+        $quotations = PurchaseQuotation::with(["quotation_data", "quotation_data.purchase_order_data"])
+                    ->whereHas("quotation_data", function($q) {
+                        $q->where("am_approval_status", "approved");
+                    })
+                    ->where("purchase_request_id", $pr_id)
+                    ->get();
+        
+        $quotations = $quotations->filter(function($quotation) {
+            $totalQty = $quotation->quotation_data->where("am_approval_status", 'approved')->sum("qty");
+            $po_qty = $quotation->quotation_data->sum(function ($qData) {
+                return $qData->purchase_order_data->sum('qty');
+            });
+            return $po_qty < $totalQty;
+        });
+
+
+
+        $data = [
+            [
+                "id" => "",
+                "text" => "Select Quotation"
+            ]
+        ];
+        foreach($quotations as $quotation) {
+            $data[] = [
+                "id" => $quotation->id,
+                "text" => $quotation->purchase_quotation_no
+            ];
+        }
+
+        return $data;
+    }
+
+    public function get_supplier(): array {
+        $pq_id = request()->pq_id;
+        
+        $purchase_quotation = PurchaseQuotation::select("id", "supplier_id")->find($pq_id);
+      
+
+        $supplier = Supplier::select('id', 'name')->find($purchase_quotation->supplier_id);
+
+        return [
+            [
+            "id" => $supplier->id,
+            "text" => $supplier->name
+            ]
+        ];
+    }
+
     public function get_order_item(Request $request)
     {
         $requestId = $request->id;
 
         $master = PurchaseOrder::find($requestId);
 
-        $dataItems = PurchaseOrderData::with(['purchase_order', 'item', 'category'])
+        $dataItems = PurchaseOrderData::with(['purchase_order', 'item', 'category', 'purchase_request_data.purchase_order_data'])
             ->where('purchase_order_id', $requestId)
             ->get();
 
@@ -588,6 +639,7 @@ class PurchaseOrderController extends Controller
             'master' => $master,
             'allowed_categories' => $categoryIds,
             'allowed_items' => $itemIds,
+            'category_id' => $dataItems->first()->category_id ?? null
         ]);
     }
 

@@ -131,7 +131,29 @@ class ArrivalMasterRevertController extends Controller
 
             $Compulsuryresults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $arrivalSamplingRequest->id)->get();
 
-            $arrivalPurchaseOrders = ArrivalPurchaseOrder::where('product_id', $arrivalSamplingRequest->arrivalTicket->product_id)->get();
+
+            // $arrivalPurchaseOrders = ArrivalPurchaseOrder::
+            // when($arrivalTicket->qc_product != null, function ($q) use ($arrivalTicket) {
+            //     $q->where('product_id', $arrivalTicket->qc_product)
+            // })
+            // ->when($arrivalTicket->qc_product == null, function ($q) use ($arrivalTicket) {
+            //     $q->where('product_id', $arrivalTicket->product_id)
+            // })
+            // ->where('product_id', $arrivalTicket->qc_product)
+            //     ->where("company_location_id", $arrivalTicket->location_id)
+            //     ->get();
+
+
+
+            $arrivalPurchaseOrders = ArrivalPurchaseOrder::when($arrivalTicket->qc_product != null, function ($q) use ($arrivalTicket) {
+                $q->where('product_id', $arrivalTicket->qc_product);
+            })
+            ->when($arrivalTicket->qc_product == null, function ($q) use ($arrivalTicket) {
+                $q->where('product_id', $arrivalTicket->product_id);
+            })
+            ->where("company_location_id", $arrivalTicket->location_id)
+            ->get();
+                // dd($arrivalPurchaseOrders,$arrivalSamplingRequest->arrivalTicket->product_id);
             $sampleTakenByUsers = User::all();
             $authUserCompany = $request->company_id;
             $saudaTypes = SaudaType::all();
@@ -566,7 +588,9 @@ class ArrivalMasterRevertController extends Controller
             'station' => 'required|string|max:255',
             'bilty_no' => 'required|string|max:255',
             'truck_no' => 'required|string|max:255',
+            'product_id' => 'nullable',
             'bags' => 'required|numeric',
+            'product_id' => 'nullable',
             'truck_type_id' => 'required|max:255',
             'sample_money_type' => 'required|in:n/a,single,double',
             'sample_money' => 'required|numeric',
@@ -579,6 +603,10 @@ class ArrivalMasterRevertController extends Controller
         // Update or create approval record
         if ($arrivalTicket) {
 
+            if (!empty($requestData['arrival_purchase_order_id'])) {
+                $ArrivalPurchaseOrder = ArrivalPurchaseOrder::findOrFail($requestData['arrival_purchase_order_id']);
+                $requestData['sauda_type_id'] = $ArrivalPurchaseOrder->sauda_type_id;
+            }
             if (!empty($requestData['station'])) {
                 $station = Station::firstOrCreate(
                     [
@@ -593,7 +621,7 @@ class ArrivalMasterRevertController extends Controller
 
 
             if (!empty($requestData['accounts_of'])) {
-              //  dd($requestData['accounts_of']);
+                //  dd($requestData['accounts_of']);
                 $supplier = Supplier::where('name', $requestData['accounts_of'])->first();
                 $requestData['accounts_of_id'] = $supplier ? $supplier->id : null;
                 $requestData['accounts_of_name'] = $requestData['accounts_of'];

@@ -61,6 +61,15 @@
         const IS_LOCAL = @json(env('IS_LOCAL', false));
         let purchaseRequestRowIndex = 1;
     </script>
+    <style>
+        .custom-switch .custom-control-label::before {
+            background-color: #e9ecef; /* Default bootstrap grey */
+        }
+        .custom-switch .custom-control-input:checked ~ .custom-control-label::before {
+            background-color: #007bff; /* Primary blue */
+            border-color: #007bff;
+        }
+    </style>
 </head>
 
 <body
@@ -164,13 +173,8 @@
                                                                     <i class="{{ auth()->user()->current_company_id == $v->id ? 'ft-check active' : 'ft-arrow-up-right primary' }}"
                                                                         style="font-size: 30px;"></i>
                                                                 </small>
-
-
-
-
-                                                            </h6><small class="noti-text">Commented on your
-                                                                photo</small>
-
+                                                            </h6>
+                                                            <small class="noti-text">Commented on your photo</small>
                                                         </div>
                                                     </div>
                                                 </a>

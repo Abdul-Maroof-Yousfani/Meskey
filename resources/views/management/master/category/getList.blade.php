@@ -3,6 +3,7 @@
         <tr>
             <th class="col-sm-4">Name </th>
             <th class="col-sm-4">Parent Category</th>
+            <th class="col-sm-4">Category Type</th>
             <th class="col-sm-2">Action</th>
         </tr>
     </thead>
@@ -20,21 +21,27 @@
                             <small> {{ $row->parent->name ?? '--' }}</small>
                         </p>
                     </td>
+                    <td style="text-transform: uppercase">
+                        {{ Str::replace("_", " ", $row->category_type) }}
+                    </td>
 
                     <td>
-                        @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('category.edit', $row->id) }}','Edit Category')"
-                                class="info p-1 text-center mr-2 position-relative ">
-                                <i class="ft-edit font-medium-3"></i>
-                            </a>
-                        @endcan
-                        @can('role-delete')
-                            <a onclick="deletemodal('{{ route('category.destroy', $row->id) }}','{{ route('get.category') }}')"
-                                class="danger p-1 text-center mr-2 position-relative ">
+                        @if($row->is_protected !== "yes")
+                            @can('role-edit')
+                                <a onclick="openModal(this,'{{ route('category.edit', $row->id) }}','Edit Category')"
+                                    class="info p-1 text-center mr-2 position-relative ">
+                                    <i class="ft-edit font-medium-3"></i>
+                                </a>
+                            @endcan
+                            @can('role-delete')
+                                <a onclick="deletemodal('{{ route('category.destroy', $row->id) }}','{{ route('get.category') }}')"
+                                    class="danger p-1 text-center mr-2 position-relative ">
 
-                                <i class="ft-x font-medium-3"></i>
-                            </a>
-                        @endcan
+                                    <i class="ft-x font-medium-3"></i>
+                                </a>
+                            @endcan
+                        @endif
+                        
                     </td>
                 </tr>
             @endforeach

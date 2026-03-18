@@ -195,7 +195,7 @@
                 <div class="col-md-8 mx-auto">
                     <div class="action-form">
                         @php
-                            $routeName = class_basename($model) === 'PurchaseQuotationData'
+                            $routeName = in_array(class_basename($model), ['PurchaseQuotationData', 'PurchaseQuotation'])
                                 ? 'approval.bulk_quotation_approval'
                                 : 'approval.approve';
                         @endphp
@@ -209,6 +209,9 @@
                             <input type="hidden" name="id" value="{{ $model->id }}">
                             <input type="hidden" name="model_data_ids" id="model_data_ids">
                             <input type="hidden" name="type" id="approvalTypeInput" value="">
+                            @if($listRefresh)
+                                <input type="hidden" id="listRefresh" value="{{ $listRefresh }}" />
+                            @endif
 
                             <div class="mb-3">
                                 <label for="comment" class="form-label fw-medium">Comment
@@ -399,9 +402,26 @@
             }).then((result) => {
                 if (result.isConfirmed) {
                     let approvedQtys = [];
-                    $('input[name="data_id[]"]').each(function () {
-                        approvedQtys.push($(this).val());
-                    });
+                    // Check if there are any checkboxes for individual selection
+                    if ($('.item-checkbox').length > 0) {
+                        $('.item-checkbox:checked').each(function () {
+                            // Find the corresponding data_id input in the same row
+                            let dataId = $(this).closest('tr').find('input[name="data_id[]"]').val();
+                            if (dataId) {
+                                approvedQtys.push(dataId);
+                            }
+                        });
+                        
+                        if (approvedQtys.length === 0) {
+                            Swal.fire('Warning', 'Please select at least one item.', 'warning');
+                            return;
+                        }
+                    } else {
+                        // Fallback to original behavior for modules without checkboxes
+                        $('input[name="data_id[]"]').each(function () {
+                            approvedQtys.push($(this).val());
+                        });
+                    }
                     $('#model_data_ids').val(JSON.stringify(approvedQtys));
 
                     $('#approvalTypeInput').val(type);

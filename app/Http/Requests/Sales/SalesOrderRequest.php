@@ -21,16 +21,26 @@ class SalesOrderRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
-            "delivery_date" => "required|date",
-            "expiry_date" => "required|date",
-            "reference_no" => "required",
+
+        // delivery date and order date can be equal to each other
+        $rules = [
+            "delivery_date" => "required|date|after_or_equal:order_date",
+            "order_date" => "required|date|before_or_equal:delivery_date",
+            "reference_no" => "nullable",
+            "so_reference_no" => "nullable|string|max:255",
+            "transporter_used" => "nullable|in:yes,no",
             "customer_id" => "required|numeric",
             "inquiry_id" => "nullable|numeric",
-            "sauda_type" => "required|in:pohanch,x-mill",
-            "payment_term_id" => "required|numeric",
+            "sauda_type" => "required|in:pohanch,x-mill,thadda",
             "company_id" => "required",
             'pay_type_id' => 'required',
+            'token_money' => 'nullable|numeric',
+            "remarks" => "nullable",
+            "contact_person" => "nullable|string|max:255",
+            "arrival_location_id" => "nullable|array",
+            "arrival_location_id.*" => "integer|exists:arrival_locations,id",
+            "arrival_sub_location_id" => "nullable|array",
+            "arrival_sub_location_id.*" => "integer|exists:arrival_sub_locations,id",
 
             "item_id" => "required",
             "item_id.*" => "required",
@@ -44,12 +54,37 @@ class SalesOrderRequest extends FormRequest
             "brand_id" => "required",
             "brand_id.*" => "required",
 
+
+            "description" => "nullable",
+            "description.*" => "nullable",
+
             "pack_size" => "required",
             "pack_size.*" => "required",
 
-            "sales_inquiry_id" => "required",
-            "sales_inquiry_id.*" => "required"
+            "sales_inquiry_id" => "nullable",
+            "sales_inquiry_id.*" => "nullable",
+
+            "bag_size" => "required",
+            "bag_size.*" => 'required',
+
+            "no_of_bags" => "required",
+            "no_of_bags.*" => 'required',
+
+            "bag_type" => "required",
+            "bag_type.*" => 'required',
+
+            "amount" => "required",
+            "amount.*" => 'required',
         ];
+
+        if(request()->pay_type_id == 8) {
+            $rules = array_merge($rules, [
+                "payment_term_id" => "required|numeric",
+           
+            ]);
+        }
+
+        return $rules;
     }
 
     public function messages() {

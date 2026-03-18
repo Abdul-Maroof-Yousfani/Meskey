@@ -15,5 +15,9 @@ class Stock extends Model
         'narration',
         'price',
         'avg_price_per_kg',
+        'parent_id',
+        'company_location_id',
+        'arrival_id',
+        'subarrival_id'
     ];
 }

@@ -36,6 +36,7 @@ class GateBuyingController extends Controller
                 $sq->where('name', 'like', $searchTerm);
             });
         })
+            ->whereIn('company_location_id', getUserCurrentCompanyLocations())
             ->latest()
             ->paginate(request('per_page', 25));
 
@@ -56,6 +57,7 @@ class GateBuyingController extends Controller
                 $q->where('companies.id', $authUserCompany);
             })
             ->get();
+        $data['companyLocations'] = CompanyLocation::whereIn('id', getUserCurrentCompanyLocations())->get();
         return view('management.procurement.raw_material.gate_buying.create', $data);
     }
 

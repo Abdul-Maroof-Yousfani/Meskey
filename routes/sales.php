@@ -2,9 +2,14 @@
 
 use App\Http\Controllers\Sales\DeliveryChallanController;
 use App\Http\Controllers\Sales\DeliveryOrderController;
+use App\Http\Controllers\Sales\FirstWeighBridgeController;
+use App\Http\Controllers\Sales\LoadingProgramController;
+use App\Http\Controllers\Sales\SecondWeighBridgeController;
+use App\Http\Controllers\Sales\ReceivingRequestController;
 use App\Http\Controllers\Sales\SaleOrderController;
 use App\Http\Controllers\Sales\SalesInquiryController;
 use App\Http\Controllers\Sales\SalesInvoiceController;
+use App\Http\Controllers\Sales\SalesReturnController;
 
 
 Route::name("sales.")->group(function () {
@@ -30,13 +35,44 @@ Route::name("sales.")->group(function () {
     Route::get("/delivery-order/{id}/view", [DeliveryOrderController::class, "view"])->name("get.delivery-order.view");
     Route::get("/get-arrival-locations-against-company-location", [DeliveryOrderController::class, "get_arrivals"])->name("get.arrival-locations");
     Route::get("/get-storage-locations-against-arrival-location", [DeliveryOrderController::class, "get_storages"])->name("get.storage-locations");
+    Route::get("/get-delivery-order-balance-balance-against-second-weighbridge", [DeliveryOrderController::class, "get_balance_against_second_weighbridge"])->name("balance-against-second-weighbridge");
 
     Route::resource("delivery-challan", DeliveryChallanController::class);
     Route::post("get-delivery-challan", [DeliveryChallanController::class, "getList"])->name("get.delivery-challan.list");
     Route::get("/get/dc-no", [DeliveryChallanController::class, "getNumber"])->name("get.delivery-challan.getNumber");
     Route::get("get-do-against-customer", [DeliveryChallanController::class, "get_delivery_orders"])->name("get.delivery-challan.get-do");
     Route::get("/get-delivery-order-items",  [DeliveryChallanController::class, "getItems"])->name("get.delivery-challan.get-items");
+    Route::get("/get-delivery-challan-tickets", [DeliveryChallanController::class, "getTickets"])->name("delivery-challan.get-tickets");
+    Route::get("/get-items-against-tickets", [DeliveryChallanController::class, "getItemsByTickets"])->name("delivery-challan.get-ticket-items");
     Route::get("/delivery-challan/{delivery_challan}/view", [DeliveryChallanController::class, "view"])->name("get.delivery-challan.view");
+    Route::get("/get-tickets-with-dispatch-qc", [DeliveryChallanController::class, "getTicketsWithDispatchQc"])->name("delivery-challan.get-tickets-with-dispatch-qc");
+    Route::get("/get-ticket-data-for-dc", [DeliveryChallanController::class, "getTicketDataForDC"])->name("delivery-challan.get-ticket-data");
+
+
+    Route::resource("first-weighbridge", FirstWeighBridgeController::class);
+    Route::post("get-first-weighbridge", [FirstWeighBridgeController::class, "getList"])->name("get.first-weighbridge");
+    Route::get('/get-first-weighbridge-related-data', [FirstWeighBridgeController::class, 'getFirstWeighbridgeRelatedData'])->name('getFirstWeighbridgeRelatedData');
+    Route::get('/get-delivery-orders-by-sale-order', [FirstWeighBridgeController::class, 'getDeliveryOrdersBySaleOrder'])->name('getDeliveryOrdersBySaleOrder');
+    Route::get('/get-weighbridge-amount', [FirstWeighBridgeController::class, 'getWeighbridgeAmount'])->name('getWeighbridgeAmount');
+
+    Route::resource("second-weighbridge", SecondWeighBridgeController::class);
+    Route::post("get-second-weighbridge", [SecondWeighBridgeController::class, "getList"])->name("get.second-weighbridge");
+    Route::get('/get-second-weighbridge-related-data', [SecondWeighBridgeController::class, 'getSecondWeighbridgeRelatedData'])->name('getSecondWeighbridgeRelatedData');
+    Route::get('/get-delivery-orders-by-sale-order-second', [SecondWeighBridgeController::class, 'getDeliveryOrdersBySaleOrder'])->name('getDeliveryOrdersBySaleOrderSecond');
+
+    Route::resource("loading-program", \App\Http\Controllers\Sales\LoadingProgramController::class);
+    Route::post("get-loading-program", [\App\Http\Controllers\Sales\LoadingProgramController::class, "getList"])->name("get.loading-program");
+    Route::get('/get-sale-order-related-data', [\App\Http\Controllers\Sales\LoadingProgramController::class, 'getSaleOrderRelatedData'])->name('getSaleOrderRelatedData');
+    Route::get('/get-delivery-orders-by-sale-order-loading', [\App\Http\Controllers\Sales\LoadingProgramController::class, 'getDeliveryOrdersBySaleOrder'])->name('getDeliveryOrdersBySaleOrderLoading');
+    Route::get('/get-delivery-orders-by-sale-order-loading-edit', [\App\Http\Controllers\Sales\LoadingProgramController::class, 'getDeliveryOrdersBySaleOrderEdit'])->name('getDeliveryOrdersBySaleOrderLoadingEdit');
+    Route::get('/fetch-sale-orders-by-location', [\App\Http\Controllers\Sales\LoadingProgramController::class, 'fetchSaleOrdersByLocation'])->name('fetchSaleOrdersByLocation');
+    Route::get("/get-do-qty", [LoadingProgramController::class, "getDo"])->name("getDoQty");
+    Route::get("/get-sale-order-locations", [LoadingProgramController::class, 'getLocations'])->name("so.locations");
+    
+    // Receiving Request Routes
+    Route::resource("receiving-request", ReceivingRequestController::class)->only(['index', 'edit', 'update']);
+    Route::post("get-receiving-request", [ReceivingRequestController::class, "getList"])->name("get.receiving-request.list");
+    Route::get("/receiving-request/{id}/view", [ReceivingRequestController::class, "view"])->name("receiving-request.view");
 
     // Sales Invoice Routes
     Route::resource("sales-invoice", SalesInvoiceController::class);
@@ -45,5 +81,31 @@ Route::name("sales.")->group(function () {
     Route::get("get-dc-for-invoice", [SalesInvoiceController::class, "get_delivery_challans"])->name("get.sales-invoice.get-dc");
     Route::get("/get-sales-invoice-items", [SalesInvoiceController::class, "getItems"])->name("get.sales-invoice.get-items");
     Route::get("/sales-invoice/{sales_invoice}/view", [SalesInvoiceController::class, "view"])->name("get.sales-invoice.view");
+
+    Route::resource("sales-return", SalesReturnController::class);
+    Route::get("/get/sale-invoices", [SalesReturnController::class, "get_sale_invoices"])->name("get.invoice-numbers");
+    Route::get("/get/sale-invoice-items", [SalesReturnController::class, "getitems"])->name("get.invoice-items");
+    Route::get("/get/sr-no", [SalesReturnController::class, "getNumber"])->name("get.sales-return.getNumber");
+    Route::post("get-sale-returns", [SalesReturnController::class, "getList"])->name("get.sales-return.list");
+    Route::get("sales-return/{id}/view", [SalesReturnController::class, "view"])->name("sales-return.view");
+  
+    Route::resource("sales-qc", \App\Http\Controllers\Sales\SalesQcController::class);
+    Route::post("get-sales-qc", [\App\Http\Controllers\Sales\SalesQcController::class, "getList"])->name("get.sales-qc");
+    Route::get('/get-ticket-related-data', [\App\Http\Controllers\Sales\SalesQcController::class, 'getTicketRelatedData'])->name('getTicketRelatedData');
+
+    Route::resource("dispatch-qc", \App\Http\Controllers\Sales\DispatchQCController::class);
+    Route::get('/get-dispatch-qc-ticket-data', [\App\Http\Controllers\Sales\DispatchQCController::class, 'getTicketRelatedData'])->name('getDispatchQcTicketData');
+    Route::post("get-dispatch-qc", [\App\Http\Controllers\Sales\DispatchQCController::class, "getList"])->name("get.dispatch-qc");
+    Route::get("/dispatch-qc/{id}/gate-out", [\App\Http\Controllers\Sales\DispatchQCController::class, "get_gate_out"])->name("get.dispatch-qc.gate-out");
+
+    Route::resource("logistics", \App\Http\Controllers\Sales\LogisticsController::class);
+    Route::post("get-logistics", [\App\Http\Controllers\Sales\LogisticsController::class, "getList"])->name("get.logistics.list");
+    Route::get("logistics/get-order-details/{id}", [\App\Http\Controllers\Sales\LogisticsController::class, "getOrderDetails"])->name("logistics.getOrderDetails");
+
+    Route::resource("loading-slip", \App\Http\Controllers\Sales\LoadingSlipController::class);
+    Route::post("get-loading-slip", [\App\Http\Controllers\Sales\LoadingSlipController::class, "getList"])->name("get.loading-slip");
+    Route::get('/get-loading-slip-ticket-data', [\App\Http\Controllers\Sales\LoadingSlipController::class, 'getTicketRelatedData'])->name('getLoadingSlipTicketData');
+
+    Route::get("/get-so-locations", [LoadingProgramController::class, "getLocationsOfSaleOrder"])->name("get.locations");
 
 });

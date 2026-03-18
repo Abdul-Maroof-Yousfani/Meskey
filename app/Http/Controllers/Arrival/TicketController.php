@@ -43,6 +43,7 @@ class TicketController extends Controller
      */
     public function getList(Request $request)
     {
+      //  dd(getUserCurrentCompanyLocations());
         $tickets = ArrivalTicket::when($request->filled('search'), function ($q) use ($request) {
             $searchTerm = '%' . $request->search . '%';
             $q->where(function ($sq) use ($searchTerm) {
@@ -73,9 +74,11 @@ class TicketController extends Controller
                     ->whereDate('created_at', '<=', $endDate);
             })
             // Yahan naya condition add karen
-            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
-                return $q->where('location_id', auth()->user()->company_location_id);
-            })
+            // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+            //     return $q->where('location_id', auth()->user()->company_location_id);
+            // })
+
+            ->whereIn('location_id', getUserCurrentCompanyLocations())
             ->latest()
             ->paginate($request->get('per_page', 25));
 
@@ -93,15 +96,18 @@ class TicketController extends Controller
         $userLocation = $authUser->companyLocation ?? null;
         $authUserCompany = $request->company_id;
 
-        $companyLocations = $isSuperAdmin
-            ? CompanyLocation::all()
-            : collect([$userLocation])->filter();
+        // $companyLocations = $isSuperAdmin
+        //     ? CompanyLocation::all()
+        //     : collect([$userLocation])->filter();
+
+        $companyLocations = CompanyLocation::whereIn('id', getUserCurrentCompanyLocations())->get();
 
         $arrivalPurchaseOrders = ArrivalPurchaseOrder::with(['product', 'supplier', 'saudaType'])
             ->where('purchase_type', 'regular')
             ->when(!$isSuperAdmin, function ($q) use ($userLocation) {
                 $q->where('company_location_id', $userLocation?->id);
             })
+            ->whereIn('company_location_id', getUserCurrentCompanyLocations())
             ->orderByDesc('id')
             ->get();
 
@@ -129,7 +135,6 @@ class TicketController extends Controller
     {
         $location = CompanyLocation::find($locationId);
         $code = $location->code ?? 'KHI';
-
         $ticketNo = generateTicketNoWithDateFormat('arrival_tickets', $code);
 
         return response()->json([

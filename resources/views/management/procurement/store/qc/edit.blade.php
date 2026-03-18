@@ -5,7 +5,7 @@
             <div class="col-md-6">
                 <div class="form-group">
                     <label class="form-label">Date:</label>
-                    <input type="date" name="date" value="{{ $purchaseOrderReceivingData->qc->date }}" id="date" class="form-control">
+                    <input type="date" name="date" value="{{ $purchaseOrderReceivingData->qc->date }}" id="date" class="form-control" readonly>
                 </div>
             </div>
             <div class="col-md-6">
@@ -21,9 +21,11 @@
                     <thead>
                         <tr>
                             <th>Item</th>
+                            @if($purchaseOrderReceivingData->category_id == 38)
                             <th>Size</th>
                             <th>Brand</th>
                             <th>Job Order</th>
+                            @endif
                             <th>DC No</th>
                             <th>Required Weight Per Bag (grams)</th>
                             <th>Average Weight of 1 Bag (grams)</th>
@@ -38,6 +40,7 @@
                                 <input type="text" name="item" id="item" value="{{ getItem($purchaseOrderReceivingData->item_id)->name }}" readonly
                                     class="form-control">
                             </td>
+                            @if($purchaseOrderReceivingData->category_id == 38)
                             <td>
                                 <input type="text" name="size" id="size" value="{{ $purchaseOrderReceivingData?->purchase_order_data?->size ?? null }}" readonly
                                     class="form-control">
@@ -51,17 +54,18 @@
                                 <input type="text" name="job_order" id="job_order" value="JOB-KHI-11-2025-0001" readonly
                                     class="form-control">
                             </td>
+                            @endif
 
                             <td>
                                 <input type="text" name="dc_no" id="dc_no" value="{{ $purchaseOrderReceivingData->purchase_order_receiving->dc_no }}" readonly
                                     class="form-control">
                             </td>
                             <td>
-                                <input type="text" name="required_weight_per_bag" value="{{ $purchaseOrderReceivingData?->purchase_order_data?->min_weight ?? null }}" id="required_weight_per_bag" readonly class="form-control">
+                                <input type="text" name="required_weight_per_bag" value="{{ $purchaseOrderReceivingData->category_id == 38 ? ($purchaseOrderReceivingData?->purchase_order_data?->min_weight ?? null) : 0 }}" id="required_weight_per_bag" readonly class="form-control">
                             </td>
 
                             <td>
-                                <input type="text" name="average_weight_of_one_bag" value="{{ (round($purchaseOrderReceivingData->receive_weight / $purchaseOrderReceivingData->qty, 2)) * 1000 }}" onkeyup="calculate_total_recieved_weight(this)" id="average_weight_of_1_bag"
+                                <input type="text" name="average_weight_of_one_bag" value="{{ (round($purchaseOrderReceivingData->receive_weight / $purchaseOrderReceivingData->qty * 1000, 2)) }}" onkeyup="calculate_total_recieved_weight(this)" id="average_weight_of_1_bag"
                                      class="form-control" placeholder="Average Weight of One Bag" readonly>
                             </td>
 
@@ -124,7 +128,7 @@
 
                                 <td>
                                     <input type="text" name="total_weight[]" value="{{ $bag_weight > 0 ? round($net_weight / $bag_weight, 2) : '' }}" id="total_weight" placeholder="Bag Weight"
-                                        class="form-control">
+                                        class="form-control" readonly>
                                 </td>
                             </tr>
                         @endfor
@@ -164,7 +168,7 @@
 
                                 <td>
                                     <input type="text" name="total_weight[]" value="{{ $bag_weight > 0 ? round($net_weight / $bag_weight, 2) : '' }}" id="total_weight" placeholder="Bag Weight"
-                                        class="form-control">
+                                        class="form-control" readonly>
                                 </td>
                             </tr>
                         @endfor
@@ -193,8 +197,8 @@
                 <label class="form-label">Smell:</label>
                 <select  name="smell" class="taxes form-group form-control select2">
                     <option value="">Select Smell</option>
-                    <option value="2">Smell 1</option>
-                    <option value="3">Smell 1</option>
+                    <option value="2" @selected($purchaseOrderReceivingData->qc->smell == '2')>Smell 1</option>
+                    <option value="3" @selected($purchaseOrderReceivingData->qc->smell == '3')>Smell 1</option>
                 </select>
             </div>
         </div>
@@ -247,7 +251,7 @@
     </div>
 
     <div class="row" style="margin-top: 10px; margin-bottom: 30px;">
-        @can("approve")
+        @if(auth()->user()->can('approve') || $purchaseOrderReceivingData->purchase_order_receiving->created_by == auth()->user()->id)
             <div class="col-md-4">
                 <div class="form-group">
                     <label class="form-label">Accepted Qty:</label>
@@ -272,10 +276,45 @@
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
             <button type="submit" class="btn btn-primary submitbutton">Save</button>
+            <a onclick="deleteQc('{{ $purchaseOrderReceivingData->qc?->id }}')" class="btn btn-warning submitbutton">Delete</a>
         </div>
     </div>
 </form>
 <script>
+    function deleteQc(id) {
+        Swal.fire({
+        title: 'Are you sure?',
+        text: "You won't be able to revert this!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, delete it!',
+        cancelButtonText: 'No, cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: '{{ route("store.qc.remove") }}',
+                method: 'DELETE',
+                data: { id }, 
+                success: function(response) {
+                    Swal.fire({
+                        title: "Deleted!",
+                        text: "The record has been deleted successfully.",
+                        icon: "success"
+                    });
+                    $(".modal-sidebar-close").trigger("click");
+                },
+                
+                error: function(xhr) {
+                    console.error('Failed:', xhr.status, xhr.responseText);
+                    alert('Error ' + xhr.status + ': ' + (xhr.responseJSON?.message || 'Unknown error'));
+                }
+            });
+        }
+    })
+        
+    }
      function calculateTotalWeight(element) {
         const el = $(element);
         

@@ -3,6 +3,11 @@
 use App\Http\Controllers\Arrival\ArrivalSlipController;
 use App\Http\Controllers\Master\ArrivalLocationController;
 use App\Http\Controllers\Master\ProductSlabController;
+use App\Models\Category;
+use App\Models\JournalVoucher;
+use App\Models\Master\Account\Account;
+use App\Models\Master\Account\Transaction;
+use App\Models\Master\Account\TransactionVoucherType;
 use App\Models\Master\Customer;
 use App\Models\Procurement\Store\PurchaseBill;
 use App\Models\Procurement\Store\PurchaseBillData;
@@ -15,12 +20,27 @@ use App\Models\Procurement\Store\PurchaseQuotationData;
 use App\Models\Procurement\Store\PurchaseRequest;
 use App\Models\Procurement\Store\PurchaseRequestData;
 use App\Models\Procurement\Store\PurchaseBagQC;
+use App\Models\Procurement\Store\PurchaseReturn;
+use App\Models\Procurement\Store\PurchaseReturnData;
 use App\Models\Procurement\Store\QCItems;
+use App\Models\Product;
 use App\Models\Production\JobOrder\JobOrder;
+use App\Models\ReceiptVoucher;
 use App\Models\Sales\DeliveryChallan;
+
+
 use App\Models\Sales\DeliveryOrder;
+use App\Models\Sales\FirstWeighbridge;
+use App\Models\Sales\LoadingProgram;
+use App\Models\Sales\LoadingSlip;
+use App\Models\Sales\ReceivingRequest;
+use App\Models\Sales\SaleReturnData;
 use App\Models\Sales\SalesInquiry;
+use App\Models\Sales\SalesInvoice;
 use App\Models\Sales\SalesOrder;
+use App\Models\Sales\SalesQc;
+use App\Models\Sales\SalesReturn;
+use App\Models\Sales\SecondWeighbridge;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Http\Request;
@@ -36,11 +56,139 @@ use App\Http\Controllers\Reports\{
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
 
+Route::get("/receipt-vouchers/delete", function() {
+    $receipt_voucher = ReceiptVoucher::query()->delete();
+});
+
+Route::get("get-all-vouchers", function() {
+    dd(TransactionVoucherType::all());
+});
+
+Route::get("voucher-types", function() {
+
+    $transaction = TransactionVoucherType::create([
+        "name" => "Purchase Return",
+        "code" => "PR",
+        "status" => "active"
+    ]);
+
+    $transaction->id = 6;
+    $transaction->save();
+
+    $transaction = TransactionVoucherType::create([
+        "name" => "Debit Note",
+        "code" => "DN",
+        "status" => "active"
+    ]);
+
+    $transaction->id = 7;
+    $transaction->save();
+
+    // $transaction = TransactionVoucherType::where("name", "Goods Receiving Note")->first();
+    // $transaction->id = 8;
+    // $transaction->save();
+    return;
+
+    $newTransaction = TransactionVoucherType::create([
+        "name" => "Goods Receiving Note",
+        "code" => "GRN",
+        "status" => "active",
+        "id" => 8
+    ]);
+
+    $transaction = TransactionVoucherType::where("name", "QC")->first();
+    $transaction->id = 9;
+    $transaction->save();
+
+
+    $transaction = TransactionVoucherType::where("name", "Sale Return")->first();
+    $transaction->id = 10;
+    $transaction->save();
+});
+
+Route::get("create-accounts", function() {
+    $products = Product::whereNull("account_id")->get();
+    foreach($products as $product) {
+        $account = Account::create(getParamsForAccountCreationByPath(1, $product->name, '1-2', 'Inventory'));
+        $product->account_id = $account->id;
+        $product->save();
+    }
+});
+
+Route::get("change-type", function() {
+    $category = Category::where("name", "Bags")->first();
+    $category->update([
+        "category_type" => "general_items",
+        "is_protected" => "yes"
+    ]);
+
+    $category = Category::where("name", "Store & Spare")->first();
+    $category->update([
+        "category_type" => "general_items",
+        "is_protected" => "yes"
+    ]);
+
+});
+
+Route::get("/procurement/delete-data", function() {
+    
+Schema::disableForeignKeyConstraints();
+    PurchaseRequest::query()->delete();
+    PurchaseRequestData::query()->delete();
+
+    PurchaseQuotation::query()->delete();
+    PurchaseQuotationData::query()->delete();
+    
+    PurchaseOrder::query()->delete();
+    PurchaseOrderData::query()->delete();
+    
+    PurchaseOrderReceiving::query()->delete();
+    PurchaseOrderReceivingData::query()->delete();
+    
+    PurchaseBagQC::query()->delete();
+    
+    PurchaseBillData::query()->delete();
+    PurchaseBill::query()->delete();
+    
+    PurchaseReturnData::query()->delete();
+    PurchaseReturn::query()->delete();
+    Schema::enableForeignKeyConstraints();
+});
+
+Route::get("uom-fill", function() {
+    $products = Product::whereNull("unit_of_measure_id")->update([
+        "unit_of_measure_id" => 1
+    ]);
+});
+
+Route::get("update-customer", function() {
+    Customer::where("name", "Meskey")->update([
+        'account_id' => 111
+    ]);
+
+    Customer::where("name", "123")->update([
+        'account_id' => 113
+    ]);
+
+});
+
+
 Route::get("checking-data", function() {
     SalesInquiry::query()->delete();
     SalesOrder::query()->delete();
     DeliveryOrder::query()->delete();
+    LoadingProgram::query()->delete();
+    FirstWeighbridge::query()->delete();
+    SalesQc::query()->delete();
+    LoadingSlip::query()->delete();
+    SecondWeighbridge::query()->delete();
     DeliveryChallan::query()->delete();
+    ReceivingRequest::query()->delete();
+    SalesInvoice::query()->delete();
+    SalesReturn::query()->delete();
+    ReceiptVoucher::query()->delete();
+    JournalVoucher::query()->delete();
+
 });
 
 
@@ -188,7 +336,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('logouts', function (Request $request) {
         $user = Auth::user();
         if ($user) {
-            $user->current_company_id = null;
+            // $user->current_company_id = null;
             $user->save();
         }
         Auth::logout();

@@ -31,6 +31,7 @@ return new class extends Migration
             $table->text('remarks')->nullable();
             $table->decimal('total_amount', 15, 2)->default(0);
             $table->decimal("withhold_amount", 15, 2)->default(0);
+            $table->boolean("is_direct")->default(0);
             $table->timestamps();
             $table->softDeletes();
         });

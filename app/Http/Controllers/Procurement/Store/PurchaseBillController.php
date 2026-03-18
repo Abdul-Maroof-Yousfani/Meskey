@@ -34,8 +34,8 @@ class PurchaseBillController extends Controller
             ->whereHas('bill_data', function ($q): void {
                 $q->whereRaw('qty > (SELECT COALESCE(SUM(qty), 0) FROM purchase_bills_data WHERE purchase_bills_data.purchase_bill_id = purchase_bills.id)');
             })
+      
             ->get();
-
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $purchaseRequests = PurchaseRequest::select('id', 'purchase_request_no')->where('am_approval_status', 'approved')->get();
 
@@ -264,22 +264,36 @@ class PurchaseBillController extends Controller
     {
         $supplier_id = $request->supplier_id;
 
-        $purchase_order_receivings = PurchaseOrderReceiving::whereHas('purchaseOrderReceivingData.qc', function ($query) {
-            $query->where('am_approval_status', 'approved');
+        $purchase_order_receivings = PurchaseOrderReceiving::where(function ($q) {
+            $q->whereHas('purchaseOrderReceivingData.qc', function ($query) {
+                $query->where('am_approval_status', 'approved')
+                        ->where("accepted_quantity", ">", 0);
+            })->orWhere(function ($subQ) {
+                $subQ->where('am_approval_status', 'approved')
+                     ->whereHas('purchaseOrderReceivingData', function ($dataQ) {
+                         $dataQ->where('category_id', '!=', 38);
+                     });
+            });
         })
+            // ->whereDoesntHave("bills")
             ->select('id', 'purchase_order_receiving_no')
             ->where('supplier_id', $supplier_id)
             ->get()
             ->filter(function ($data) {
-                $purchase_order_receiving_data = PurchaseOrderReceivingData::withCount(['qc' => function ($query) {
-                    $query->where('am_approval_status', 'approved');
-                }])->where('purchase_order_receiving_id', $data->id)->get();
+                $purchase_order_receiving_data = PurchaseOrderReceivingData::where('purchase_order_receiving_id', $data->id)->get();
+                $is_bag = ! $purchase_order_receiving_data->isEmpty() && $purchase_order_receiving_data->first()->category_id == 38;
 
                 $ids = $purchase_order_receiving_data->pluck('id');
-
                 $bills_count = PurchaseBillData::whereIn('purchase_order_receiving_data_id', $ids)->count();
 
-                return $bills_count != $purchase_order_receiving_data->sum('qc_count');
+                if ($is_bag) {
+                    $approved_qc_count = \App\Models\Procurement\Store\PurchaseBagQC::whereIn('purchase_order_receiving_data_id', $ids)
+                        ->where('am_approval_status', 'approved')
+                        ->count();
+                    return $bills_count != $approved_qc_count;
+                }
+
+                return $bills_count != $purchase_order_receiving_data->count();
             });
 
         $results = [];
@@ -302,15 +316,18 @@ class PurchaseBillController extends Controller
 
         $master = PurchaseOrderReceiving::with("purchase_request")->where('purchase_order_receiving_no', $requestId)->first();
         $locations = $master?->purchase_request?->locations;
-        $location_ids = $locations->pluck("location_id")->toArray();
+        $location_ids = $master->location_id;
         
         $dataItems = collect();
 
-        $dataItems = PurchaseOrderReceivingData::whereHas('qc', function ($query) {
-            $query->where('am_approval_status', 'approved');
+        $dataItems = PurchaseOrderReceivingData::where(function ($q) {
+            $q->whereHas('qc', function ($query) {
+                $query->where('am_approval_status', 'approved')
+                        ->where("accepted_quantity", ">", 0);
+            })->orWhere('category_id', '!=', 38);
         })
             ->whereDoesntHave('bill')
-            ->with(['purchase_request_data', 'item', 'purchase_order_data'])
+            ->with(['purchase_request_data', 'item', 'purchase_order_data', 'qc'])
             ->where('purchase_order_receiving_id', $master->id)
             ->get();
 
@@ -470,6 +487,8 @@ class PurchaseBillController extends Controller
                     'am_change_mode' => 1,
                 ]);
             }
+
+        
 
             DB::commit();
 

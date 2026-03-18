@@ -51,6 +51,7 @@ class PurchaseSamplingRequestController extends Controller
                 return $q->whereDate('created_at', '>=', $startDate)
                     ->whereDate('created_at', '<=', $endDate);
             })
+            ->whereIn('company_location_id', getUserCurrentCompanyLocations())
             ->with(['supplier', 'product', 'location'])
             ->latest()
             ->paginate(request('per_page', 25));

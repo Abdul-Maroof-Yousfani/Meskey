@@ -4,11 +4,23 @@
     <input type="hidden" name="purchase_type" value="gate_buying" />
 
     <div class="row form-mar">
-        <div class="col-xs-6 col-sm-6 col-md-6">
+        <!-- <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group ">
                 <label>Location:</label>
                 <select name="company_location_id" id="company_location_id" class="form-control  ">
                     <option value="">Location</option>
+                </select>
+            </div>
+        </div> -->
+
+        <div class="col-xs-6 col-sm-6 col-md-6">
+            <div class="form-group ">
+                <label>Location:</label>
+                <select name="company_location_id" id="company_location_id" class="form-control select2">
+                    <option value="">Location</option>
+                    @foreach ($companyLocations as $location)
+                        <option value="{{ $location->id }}">{{ $location->name }}</option>
+                    @endforeach
                 </select>
             </div>
         </div>
@@ -369,6 +381,6 @@
         });
 
         initializeDynamicSelect2('#broker_id', 'brokers', 'name', 'name', true, false);
-        initializeDynamicSelect2('#company_location_id', 'company_locations', 'name', 'id', false, false);
+        // initializeDynamicSelect2('#company_location_id', 'company_locations', 'name', 'id', false, false);
     });
 </script>

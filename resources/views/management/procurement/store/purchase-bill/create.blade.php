@@ -44,7 +44,7 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label>Bill Date:</label>
-                <input type="date" id="purchase_date" name="purchase_bill_date" class="form-control">
+                <input type="date" id="purchase_date" min="{{ date('Y-m-d') }}" name="purchase_bill_date" class="form-control">
             </div>
         </div>
         <div class="col-md-3">
@@ -86,8 +86,8 @@
                             <th>Gross Amount</th>
                             <th>Discount %</th>
                             <th>Discount Amount</th>
-                            <th>Deduction Per Piece</th>
-                            <th>Deduction</th>
+                            <th class="deduction-header">Deduction Per Piece</th>
+                            <th class="deduction-header">Deduction</th>
                             <th>Amount</th>
                             <th>Printing Samples</th>
                             <th>GST %</th>
@@ -161,7 +161,13 @@
             success: function (response) {
                 $('#company_location_id').val(response.location_ids).trigger('change');
                 $('#billBody').html(response.html);
-              
+                const firstRow = $('#billBody').find('tr').first();
+                const categoryId = firstRow.data('category-id');
+                if (categoryId != 38) {
+                    $('.deduction-header').hide();
+                } else {
+                    $('.deduction-header').show();
+                }
             },
             error: function () {
                 $('#purchaseRequestBody').html('<p>Error loading data.</p>');

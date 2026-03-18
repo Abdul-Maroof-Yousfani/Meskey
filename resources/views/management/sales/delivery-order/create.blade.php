@@ -32,12 +32,58 @@
     <input type="hidden" id="listRefresh" value="{{ route('sales.get.delivery-order.list') }}" />
 
     <div class="row form-mar">
-        <!-- Left side fields (2 columns) -->
         <div class="col-md-12">
-            <!-- Row 1: Dispatch Date, Do No -->
             <div class="row">
+                <div class="col-12">
+                    <h6 class="header-heading-sepration">General Information</h6>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Do No:</label>
+                        <input type="text" name="reference_no" id="reference_no" class="form-control" readonly>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Do Date:</label>
+                        <input
+                            type="date"
+                            name="dispatch_date"
+                            id="dispatch_date"
+                            class="form-control"
+                            value="{{ date('Y-m-d') }}"
+                            readonly
+                        >
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Contract Type:</label>
+                        <input type="hidden" name="sauda_type" id="sauda_type_hidden">
+                        <select name="sauda_type" id="sauda_type" class="form-control select2" disabled>
+                            <option value="">Select Contract Type</option>
+                            <option value="pohanch">Pohanch</option>
+                            <option value="x-mill">X-mill</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Delivery Date:</label>
+                        <input type="date" name="delivery_date" id="delivery_date" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Reference Number:</label>
+                        <input type="text" name="ref_no" id="ref_no" class="form-control">
+                    </div>
+                </div>
 
-                <div class="col-md-4">
+                <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Customer & Order Details</h6>
+                </div>
+                <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Customer:</label>
                         <select name="customer_id" id="customer_id" onchange="get_sale_orders(); get_receipt_vouchers()"
@@ -49,17 +95,20 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Sale Orders:</label>
                         <select name="sale_order_id" id="sale_order"
-                            onchange="get_so_detail(), get_so_items(), check_so_type()" class="form-control select2">
+                            onchange="get_so_detail(), get_so_items(), check_so_type(); validate_expiry(); get_receipt_vouchers()" class="form-control select2">
                             <option value="">Select SO</option>
                         </select>
                     </div>
                 </div>
 
-                <div class="col-md-4 advanced">
+                <div class="col-12 mt-3 advanced" style="display: none">
+                    <h6 class="header-heading-sepration">Payment Details</h6>
+                </div>
+                <div class="col-md-3 advanced" style="display: none">
                     <div class="form-group">
                         <label class="form-label">Receipt Vouchers:</label>
                         <select name="receipt_vouchers[]" id="receipt_vouchers"
@@ -69,57 +118,33 @@
                         </select>
                     </div>
                 </div>
-            </div>
-
-            <div class="row">
-                <div class="col-md-4 advanced">
+                <div class="col-md-3 advanced" style="display: none">
                     <div class="form-group">
                         <label class="form-label">Advance Amount:</label>
-                        <input type="number" name="advance_amount" onchange="" id="advance_amount"
+                        <input type="number" step="any" name="advance_amount" onchange="" id="advance_amount"
                             class="form-control" readonly>
                     </div>
                 </div>
-
-                <div class="col-md-4 advanced">
+                <div class="col-md-3 advanced" style="display: none">
                     <div class="form-group">
                         <label class="form-label">Withhold Amount:</label>
-                        <input type="number" name="withhold_amount" value="0" onkeyup="change_withhold_amount()"
+                        <input type="number" step="any" name="withhold_amount" value="0" onkeyup="change_withhold_amount()"
                             id="withhold_amount" class="form-control">
-
                     </div>
                 </div>
-
-                <div class="col-md-4 advanced">
+                <div class="col-md-3 advanced" style="display: none">
                     <div class="form-group">
                         <label class="form-label">Withhold for RV:</label>
-                        <select name="withhold_for_rv" id="withhold_for_rv" class="form-control select2">
+                        <select name="withhold_for_rv" id="withhold_for_rv" class="form-control select2" disabled>
                             <option value="">Select Receipt Vouchers</option>
                         </select>
                     </div>
                 </div>
 
-
-            </div>
-
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label class="form-label">Dispatch Date:</label>
-                        <input type="date" name="dispatch_date" onchange="getNumber()" id="dispatch_date"
-                            class="form-control">
-                    </div>
+                <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Location Details</h6>
                 </div>
-
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label class="form-label">Do No:</label>
-                        <input type="text" name="reference_no" id="reference_no" class="form-control" readonly>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Locations:</label>
                         <select name="location_id" id="locations" onchange="selectLocation(this)"
@@ -131,51 +156,38 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="form-group">
-                        <label class="form-label">Arrival:</label>
-                        <select name="arrival_id" id="arrivals" onchange="selectStorage(this)" class="form-control select2" disabled>
-                            <option value="">Select Arrival </option>
+                        <label class="form-label">Factory:</label>
+                        <select name="arrival_id[]" id="arrivals" onchange="selectStorage(this)"
+                            class="form-control select2" disabled multiple>
+                            <option value="">Select Factory </option>
                             @foreach (get_locations() as $location)
                                 <option value="{{ $location->id }}">{{ $location->name }}</option>
                             @endforeach
                         </select>
                     </div>
                 </div>
-                <div class="col-md-4" style="display: none;">
+                <div class="col-md-4">
                     <div class="form-group">
-                        <label class="form-label">Storage:</label>
-                        <select name="storage_id" id="storages" class="form-control select2" disabled>
-                            <option value="">Select Storage</option>
+                        <label class="form-label">Section:</label>
+                        <select name="storage_id[]" id="storages" class="form-control select2" disabled multiple>
+                            <option value="">Select Section</option>
                             @foreach (get_locations() as $location)
                                 <option value="{{ $location->id }}">{{ $location->name }}</option>
                             @endforeach
                         </select>
                     </div>
                 </div>
-            </div>
 
-            <!-- Row 2: Sale Orders, Sauda Type -->
-            <div class="row">
-                <div class="col-md-6">
+                <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Remarks</h6>
+                </div>
+                <div class="col-12">
                     <div class="form-group">
-                        <label class="form-label">Sauda Type:</label>
-                        <select name="sauda_type" id="sauda_type" class="form-control select2">
-                            <option value="">Select Sauda Type</option>
-                            <option value="pohanch">Pohanch</option>
-                            <option value="x-mill">X-mill</option>
-                        </select>
+                        <textarea name="remarks" id="remarks" class="form-control" rows="3"></textarea>
                     </div>
                 </div>
-
-
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label class="form-label">Line Description:</label>
-                        <textarea name="line_desc" id="line_desc" class="form-control"></textarea>
-                    </div>
-                </div>
-
             </div>
         </div>
 
@@ -192,12 +204,12 @@
 
     <div class="row form-mar">
 
-        <div class="col-12 text-right mb-2">
+        {{-- <div class="col-12 text-right mb-2">
             <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()"
                 id="addRowBtn" disabled>
                 <i class="fa fa-plus"></i>&nbsp; Add New Item
             </button>
-        </div>
+        </div> --}}
 
         <div class="col-md-12">
             <div class="table-responsive" style="overflow-x: auto; white-space: nowrap;">
@@ -206,15 +218,15 @@
                         <tr>
                             <th>Item</th>
                             <th>Bag Type</th>
-                            <th>Pack Size</th>
+                            <th>Packing</th>
                             <th>No of Bags</th>
                             <th>Quantity (Kg)</th>
-                            <th>Rate</th>
+                            <th>Rate per Kg</th>
+                            <th>Rate per Mond</th>
                             <th>Amount</th>
                             <th>Brand</th>
                             <th>Desc</th>
                             <th style="display: none">Pack Size</th>
-                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody id="soTableBody">
@@ -241,16 +253,68 @@
 
     $(document).ready(function() {
         $('.select2').select2();
+        $('#sauda_type').prop('disabled', true);
+        getNumber();
     });
 
+    function validate_expiry() {
+
+        // const do_date = $("#dispatch_date").val();
+        // const delivery_date = $("#delivery_date").val();
+     
+        // const dispatchDate = new Date(do_date);
+        // const deliveryDate = new Date(delivery_date);
+
+        // if(do_date > delivery_date) {
+        //     Swal.fire({
+        //         icon: 'error',
+        //         title: 'Expired!',
+        //         text: 'Dispatch date cannot be greater than delivery date.',
+        //         confirmButtonText: 'OK'
+        //     });
+        // }
+    }
 
     sum = 0;
     so_amount = 0;
     remaining_amount = 0;
+    soFactoryMap = {};
+    soSectionMap = {};
+
+    function applySaudaType(saudaType) {
+        const normalized = (saudaType || '').toLowerCase();
+        $('#sauda_type').val(normalized).trigger('change');
+        $('#sauda_type_hidden').val(normalized);
+        $('#sauda_type').prop('disabled', true);
+    }
+
+    function updateLocations(locations) {
+        const select = $("#locations").select2({data: locations});
+        const current = select.val();
+        select.empty();
+        select.append('<option value="">Select Locations</option>');
+
+        (locations || []).forEach(loc => {
+            select.append(`<option value="${loc.id}">${loc.text}</option>`);
+        });
+
+        if (current && locations.find?.(l => String(l.id) === String(current))) {
+            select.val(current);
+        } else {
+            select.val('');
+        }
+
+        select.prop('disabled', false).trigger('change');
+        select.select2();
+
+        // Reset dependent dropdowns
+        $("#arrivals").empty().append('<option value=\"\">Select Factory</option>').prop('disabled', true).trigger('change.select2');
+        $("#storages").empty().append('<option value=\"\">Select Section</option>').prop('disabled', true).trigger('change.select2');
+    }
 
     function check_so_type() {
         const type = $("#sale_order").find("option:selected").data("type");
-        if (type == 8) {
+        if (type == 10) {
             $(".advanced").css("display", "block");
         } else {
             $(".advanced").css("display", "none");
@@ -259,13 +323,30 @@
 
     function selectLocation(el) {
         const company = $(el).val();
+        const allowedFactories = soFactoryMap[String(company)] || [];
 
         if (!company) {
             $("#arrivals").prop("disabled", true);
             $("#arrivals").empty();
+            $("#storages").prop("disabled", true);
+            $("#storages").empty();
             return;
+        }
+
+        // Prefer SO-selected factories; fallback to all factories for the location
+        if (allowedFactories.length > 0) {
+            $("#arrivals").prop("disabled", false).empty();
+            allowedFactories.forEach(loc => {
+                $("#arrivals").append(`<option value="${loc.id}">${loc.text}</option>`);
+            });
+            
+            // Auto-select ALL factories
+            const allFactoryIds = allowedFactories.map(loc => String(loc.id));
+            $("#arrivals").val(allFactoryIds).trigger('change.select2');
+            
+            // Populate and select all sections for all selected factories
+            selectAllStorages(allFactoryIds);
         } else {
-            // get.arrival-locations; send request to this url
             $("#arrivals").prop("disabled", false);
             $.ajax({
                 url: "{{ route('sales.get.arrival-locations') }}",
@@ -276,8 +357,7 @@
                 dataType: "json",
                 success: function(res) {
                     $("#arrivals").empty();
-                    $("#arrivals").append(`<option value=''>Select Arrivals</option>`)
-                
+
                     res.forEach(loc => {
                         $("#arrivals").append(`
                         <option value="${loc.id}" >
@@ -286,7 +366,12 @@
                     `);
                     });
 
-                    $("#arrivals").select2();
+                    // Auto-select ALL factories
+                    const allFactoryIds = res.map(loc => String(loc.id));
+                    $("#arrivals").val(allFactoryIds).trigger('change.select2');
+                    
+                    // Clear sections as no mapping exists
+                    $("#storages").empty().prop("disabled", true).trigger('change.select2');
                 },
                 error: function(error) {
 
@@ -294,43 +379,50 @@
             });
         }
     }
+    
+    // Function to populate and select all sections for all selected factories (using SO mapping)
+    function selectAllStorages(factoryIds) {
+        $("#storages").prop("disabled", false).empty();
+        
+        let allSections = [];
+        factoryIds.forEach(factoryId => {
+            const sections = soSectionMap[String(factoryId)] || [];
+            sections.forEach(section => {
+                // Avoid duplicates
+                if (!allSections.find(s => s.id === section.id)) {
+                    allSections.push(section);
+                }
+            });
+        });
+        
+        if (allSections.length > 0) {
+            allSections.forEach(section => {
+                $("#storages").append(`<option value="${section.id}">${section.text}</option>`);
+            });
+            
+            // Auto-select ALL sections
+            const allSectionIds = allSections.map(s => String(s.id));
+            $("#storages").val(allSectionIds).trigger('change.select2');
+        } else {
+            // No sections in mapping, clear list and disable
+            $("#storages").empty().prop("disabled", true).trigger('change.select2');
+        }
+    }
 
     function selectStorage(el) {
-        const arrival = $(el).val();
-        console.log(arrival);
-        if (!arrival) {
+        const arrivals = $(el).val(); // This is now an array since it's multiple select
+        
+        if (!arrivals || arrivals.length === 0) {
             $("#storages").prop("disabled", true);
             $("#storages").empty();
             return;
-        } else {
-            // get.arrival-locations; send request to this url
-            $("#storages").prop("disabled", false);
-            $.ajax({
-                url: "{{ route('sales.get.storage-locations') }}",
-                method: "GET",
-                data: {
-                    arrival_id: arrival
-                },
-                dataType: "json",
-                success: function(res) {
-                    console.log(res);
-                    $("#storages").empty();
-                    $("#storages").append(`<option value=''>Select Storage</option>`)
-                    res.forEach(loc => {
-                        $("#storages").append(`
-                        <option value="${loc.id}">
-                            ${loc.text}
-                        </option>
-                    `);
-                    });
-
-                    $("#storages").select2();
-                },
-                error: function(error) {
-
-                }
-            });
         }
+
+        // Convert to array if single value
+        const factoryIds = Array.isArray(arrivals) ? arrivals : [arrivals];
+        
+        // We strictly use mapping data, no server fallback
+        selectAllStorages(factoryIds);
     }
 
     function add_advance_amount() {
@@ -356,34 +448,61 @@
     }
 
     function change_withhold_amount() {
-        remaining_amount = parseFloat($("#advance_amount").val() ?? 0) - parseFloat($("#withhold_amount").val() ?? 0);
-        rate = $("#rate_0").val();
-        $("#qty_0").val((remaining_amount / rate).toFixed(2));
-
-        $("withhold_for_rv").val("").trigger("change");
-        $('#withhold_for_rv').select2({
-            templateResult: function(data) {
-
-                if (!data.id) return data.text;
-
-                let amount = $(data.element).data('amount');
-
-
-                if (parseFloat($("#withhold_amount").val()) > parseFloat(amount)) {
-                    return null; // Hides this option
+        const withhold = parseFloat($("#withhold_amount").val()) || 0;
+        const advance = parseFloat($("#advance_amount").val()) || 0;
+        
+        // Basic calculation for first row
+        if (advance > 0 || withhold > 0) {
+            remaining_amount = advance - withhold;
+            bag_size = $("#bag_size_0").val() || 0;
+            rate = $("#rate_0").val() || 0;
+            
+            if (rate > 0) {
+                const qtyVal = ((remaining_amount / rate)).toFixed(2);
+                $("#qty_0").val(qtyVal);
+                $("#qty_0").prop("readonly", true);
+                $("#amount_0").val((parseFloat(rate) * parseFloat(qtyVal)).toFixed(2));
+                
+                if (bag_size > 0) {
+                    const no_of_bags = Math.round(parseFloat(qtyVal) / parseFloat(bag_size));
+                    $("#no_of_bags_0").val(isNaN(no_of_bags) ? 0 : no_of_bags);
                 }
+            }
+        }
 
-                let $item = $(`
-                    <span>
-                        ${data.text}
-                        <strong style="color: green; margin-left: 6px;">(${amount})</strong>
-                    </span>
-                `);
-
-                return $item;
+        const receipt_vouchers = $("#receipt_vouchers");
+        let withholdSelect = $("#withhold_for_rv");
+        let currentWithholdVal = withholdSelect.val();
+        
+        withholdSelect.empty();
+        withholdSelect.append(`<option value='' data-amount="0">Select Receipt Voucher</option>`);
+        
+        // Get selected receipt vouchers and add them to withhold_for_rv
+        $("#receipt_vouchers option:selected").each(function() {
+            const val = $(this).val();
+            const text = $(this).text();
+            const amount = $(this).data('amount');
+            
+            if (val) {
+                withholdSelect.append(
+                    `<option value="${val}" data-amount="${amount}">${text}</option>`
+                );
             }
         });
 
+        // Re-select previous value if still exists
+        if (currentWithholdVal && withholdSelect.find(`option[value="${currentWithholdVal}"]`).length > 0) {
+            withholdSelect.val(currentWithholdVal);
+        }
+
+        if (withhold > 0 && receipt_vouchers.val() && receipt_vouchers.val().length > 0) {
+            withholdSelect.prop("disabled", false);
+        } else {
+            withholdSelect.prop("disabled", true);
+            withholdSelect.val("").trigger("change");
+        }
+        
+        withholdSelect.trigger('change.select2');
     }
 
     function addRow() {
@@ -429,14 +548,74 @@
 
     function calc(el) {
         const element = $(el).closest("tr");
-
-        const rate = parseFloat($(element).find(".rate").val()) || 0;
-        const qty = parseFloat($(element).find(".qty").val()) || 0;
-
+        const bag_size = $(element).find(".bag_size");
+        const no_of_bags = $(element).find(".no_of_bags");
+        const qty = $(element).find(".qty");
+        const rate = $(element).find(".rate");
         const amount = $(element).find(".amount");
 
-        amount.val(rate * qty);
+        const balance = parseFloat(no_of_bags.data("balance")) || parseFloat($(element).find(".allowed_value").val()) || null;
+
+        // Calculate no_of_bags from bag_size * qty
+        if (bag_size.val() && qty.val()) {
+            let bagsResult = Math.round(parseFloat(bag_size.val()) * parseFloat(qty.val()));
+
+            if (balance && bagsResult > balance) {
+                // Swal.fire({
+                //     icon: 'warning',
+                //     title: 'Limit Exceeded',
+                //     text: 'No of bags cannot exceed available balance (' + balance + ').',
+                // });
+                // bagsResult = balance;
+                // adjust qty to match the capped bags
+                // const limitedQty = parseFloat(bagsResult) / parseFloat(bag_size.val() || 1);
+                // qty.val(limitedQty.toFixed(2));
+            }
+
+            no_of_bags.val(bagsResult);
+        } else {
+            no_of_bags.val('');
+        }
+
+        // Calculate amount from qty * rate
+        const qtyVal = parseFloat(qty.val()) || 0;
+        const rateVal = parseFloat(rate.val()) || 0;
+        amount.val((qtyVal * rateVal).toFixed(2));
     }
+
+    function validateBagsBeforeSubmit() {
+        let valid = true;
+        $("#soTableBody tr").each(function() {
+            const row = $(this);
+            const no_of_bags = row.find(".no_of_bags");
+            const bag_size = row.find(".bag_size");
+            const qty = row.find(".qty");
+            const balance = parseFloat(no_of_bags.data("balance")) || parseFloat(row.find(".allowed_value").val()) || null;
+
+            if (balance) {
+                // Ensure latest calc
+                if (bag_size.val() && qty.val()) {
+                    const bagsResult = Math.round(parseFloat(bag_size.val()) * parseFloat(qty.val()));
+                    if (bagsResult > balance) {
+                        // valid = false;
+                        // Swal.fire({
+                        //     icon: 'warning',
+                        //     title: 'Limit Exceeded',
+                        //     text: 'No of bags cannot exceed available balance (' + balance + ').',
+                        // });
+                        // return false; // break .each
+                    }
+                }
+            }
+        });
+        return valid;
+    }
+
+    $("#ajaxSubmit").on("submit", function(e) {
+        if (!validateBagsBeforeSubmit()) {
+            e.preventDefault();
+        }
+    });
 
     function get_sale_orders() {
         const customer_id = $("#customer_id").val();
@@ -450,9 +629,15 @@
             },
             dataType: "json",
             success: function(res) {
+                const data = res.processedData;
+                const rawData = res.rawData;
+        
                 $("#sale_order").empty();
 
-                res.forEach(item => {
+                // Add default "Select Sale Order" option first
+                $("#sale_order").append('<option value="" selected>Select Sale Order</option>');
+                
+                data.forEach(item => {
                     $("#sale_order").append(`
                         <option value="${item.id}" 
                                 data-type="${item.type}">
@@ -482,7 +667,6 @@
             },
             dataType: "html",
             success: function(res) {
-                console.log("success");
                 $("#alesInquiryBody").empty();
                 $("#salesInquiryBody").html(res);
             },
@@ -561,11 +745,18 @@
 
 
     function get_so_detail() {
+        const soId = $("#sale_order").val();
+        if (!soId) {
+            applySaudaType('');
+            updateLocations([]);
+            return;
+        }
+
         $.ajax({
             url: "{{ route('sales.get.delivery-order.details') }}",
             method: "GET",
             data: {
-                so_id: $("#sale_order").val(),
+                so_id: soId,
             },
             dataType: "json",
             success: function(res) {
@@ -573,15 +764,22 @@
                 // $("#so_amount").val(res.so_amount)
                 // $("#unused_amount").val(res.unused_amount)
 
-                // $("#sauda_type").val(res.sauda_type)
-                // $("#sauda_type").trigger("change");
+                applySaudaType(res.sauda_type);
+                updateLocations(res.locations || []);
+                soFactoryMap = res.factory_map || {};
+                soSectionMap = res.section_map || {};
 
                 // $("#payment_term_id").val(res.payment_term_id);
                 // $("#payment_term_id").trigger("change");
 
                 so_amount = res.so_amount;
 
+                $("#delivery_date").val(res.delivery_date);
+                $("#delivery_date").prop("readonly", true);
+                validate_expiry();
+
                 // $("#locations").val(res.locations).trigger("change");
+               
             },
             error: function(error) {
                 // Handle errors here
@@ -599,12 +797,13 @@
             method: "GET",
             data: {
                 customer_id: $("#customer_id").val(),
+                sale_order_id: $("#sale_order").val()
             },
             dataType: "json",
             success: function(res) {
-                // withhold_for_rv
-
+                // Populate receipt_vouchers dropdown
                 let select = $("#receipt_vouchers");
+                let selectedValues = select.val() || [];
                 select.empty();
                 select.append(
                     `<option value='' data-amount="0">Select Receipt Voucher</option>`
@@ -619,27 +818,21 @@
                     );
                 });
 
-                select.select2();
+                select.val(selectedValues).trigger('change.select2');
+                add_advance_amount();
 
+                if (res.length > 0) {
+                    // $(".advanced").show();
+                }
 
-                select = $("#withhold_for_rv");
-                select.empty();
-
-                select.append(
+                // Reset withhold_for_rv - it will be populated when receipt vouchers are selected
+                let withholdSelect = $("#withhold_for_rv");
+                withholdSelect.empty();
+                withholdSelect.append(
                     `<option value='' data-amount="0">Select Receipt Voucher</option>`
                 );
-                res.forEach(item => {
-                    select.append(
-                        `<option value="${item.id}"
-                                data-amount="${item.amount}">
-                            ${item.text}
-                        </option>`
-                    );
-                });
-
-                select.select2();
-
-
+                withholdSelect.prop("disabled", true);
+                withholdSelect.select2();
             },
             error: function(error) {
                 // Handle errors here
@@ -659,8 +852,11 @@
             dataType: "html",
             success: function(res) {
                 $('#soTableBody').empty();
-
+                console.log(res);
                 $('#soTableBody').html(res);
+                $("#locations").val("");
+                $("#locations").trigger();
+                
 
             },
             error: function(error) {
@@ -670,4 +866,11 @@
             }
         });
     }
+
+    $('.select2').on('select2:open', function (e) {
+        // Remove all Select2 scroll blockers from window & parents
+        $(document).off('scroll.select2');
+        $(window).off('scroll.select2');
+        $('*').off('scroll.select2');           // aggressive but often works
+    });
 </script>

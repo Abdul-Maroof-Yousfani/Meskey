@@ -24,7 +24,7 @@ class EventServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-
+        // Receiving Request is created directly in DeliveryChallanController::store()
     }
 
     /**

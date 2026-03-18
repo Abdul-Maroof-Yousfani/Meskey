@@ -9,9 +9,7 @@
                 <select id="company_location_id" name="company_location_id" class="form-control select2" required>
                     <option value="">Select Location</option>
                     @foreach ($companyLocations as $companyLocation)
-                        <option 
-                            value="{{ $companyLocation->id }}" 
-                            {{ $plant->company_location_id == $companyLocation->id ? 'selected' : '' }}>
+                        <option value="{{ $companyLocation->id }}" {{ $plant->company_location_id == $companyLocation->id ? 'selected' : '' }}>
                             {{ $companyLocation->name }}
                         </option>
                     @endforeach
@@ -25,9 +23,7 @@
                 <select id="arrival_location_id" name="arrival_location_id" class="form-control select2" required>
                     <option value="">Select Location</option>
                     @foreach ($arrivalLocations as $arrivalLocation)
-                        <option 
-                            value="{{ $arrivalLocation->id }}" 
-                            {{ $plant->arrival_location_id == $arrivalLocation->id ? 'selected' : '' }}>
+                        <option value="{{ $arrivalLocation->id }}" {{ $plant->arrival_location_id == $arrivalLocation->id ? 'selected' : '' }}>
                             {{ $arrivalLocation->name }}
                         </option>
                     @endforeach
@@ -38,11 +34,7 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Name:</label>
-                <input type="text" 
-                    name="name" 
-                    value="{{ $plant->name }}" 
-                    placeholder="Name" 
-                    class="form-control" 
+                <input type="text" name="name" value="{{ $plant->name }}" placeholder="Name" class="form-control"
                     autocomplete="off" />
             </div>
         </div>
@@ -50,10 +42,18 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Description:</label>
-                <textarea name="description" placeholder="Description" class="form-control">{{ $plant->description }}</textarea>
+                <textarea name="description" placeholder="Description"
+                    class="form-control">{{ $plant->description }}</textarea>
             </div>
         </div>
-
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group">
+                <label>Production Labour charges:</label>
+                <input type="number" step="0.01" min="0" name="production_labour_charges_per_kg"
+                    value="{{ $plant->production_labour_charges_per_kg }}" placeholder="Production Labour charges"
+                    class="form-control" />
+            </div>
+        </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group ">
                 <label>Status:</label>

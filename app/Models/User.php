@@ -2,32 +2,30 @@
 
 namespace App\Models;
 
-use BaconQrCode\Common\ErrorCorrectionLevel;
-use BaconQrCode\Encoder\QrCode;
-use BaconQrCode\Renderer\ImageRenderer;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
-use App\Models\Acl\{LoginHistory, Company};
+use App\Models\Acl\Company;
+use App\Models\Acl\LoginHistory;
 use App\Models\Master\Account\Account;
 use App\Models\Master\Account\Transaction;
 use App\Models\Master\ArrivalLocation;
 use App\Models\Master\CompanyLocation;
+use BaconQrCode\Common\ErrorCorrectionLevel;
+use BaconQrCode\Encoder\QrCode;
+use BaconQrCode\Renderer\ImageRenderer;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable, HasRoles;
+    use HasApiTokens, HasFactory, HasRoles, Notifiable;
 
     /**
      * The attributes that are mass assignable.
      *
      * @var array
-
      */
     protected $fillable = [
         'name',
@@ -40,20 +38,22 @@ class User extends Authenticatable
         'current_company_id',
         'company_location_id',
         'arrival_location_id',
+        // json
+        'company_location_ids',
+        'arrival_location_ids',
     ];
 
     /**
      * The attributes that should be hidden for serialization.
      *
      * @var array
-
      */
     protected $hidden = ['password', 'remember_token'];
 
     public function companies()
     {
         return $this->belongsToMany(Company::class, 'company_user_role')
-            ->withPivot('role_id')
+            ->withPivot('role_id', 'locations', 'arrival_locations')
             ->withTimestamps();
     }
 
@@ -112,6 +112,7 @@ class User extends Authenticatable
     {
         $newCode = $this->twoFactorCode();
         $this->update(['google2fa_secret' => '']);
+
         return $newCode;
     }
 
@@ -119,17 +120,17 @@ class User extends Authenticatable
     {
         $url = sprintf('otpauth://totp/%s:%s?secret=%s&issuer=%s', rawurlencode($issuer), rawurlencode($email), $secret, rawurlencode($issuer));
 
-        $renderer = new ImageRenderer(new \BaconQrCode\Renderer\RendererStyle\RendererStyle(400), new DefaultImageWriter());
+        $renderer = new ImageRenderer(new \BaconQrCode\Renderer\RendererStyle\RendererStyle(400), new DefaultImageWriter);
 
         $generator = new \BaconQrCode\Generator\Generator($renderer);
-        $qrCode = $generator->generate($url, new QrCode(), new ErrorCorrectionLevel(ErrorCorrectionLevel::MEDIUM));
+        $qrCode = $generator->generate($url, new QrCode, new ErrorCorrectionLevel(ErrorCorrectionLevel::MEDIUM));
 
         ob_start();
         imagepng($qrCode->toImage());
         $qrCodeImage = ob_get_contents();
         ob_end_clean();
 
-        return 'data:image/png;base64,' . base64_encode($qrCodeImage);
+        return 'data:image/png;base64,'.base64_encode($qrCodeImage);
     }
 
     public function leadsAssignedTo()
@@ -146,10 +147,11 @@ class User extends Authenticatable
      * The attributes that should be cast.
      *
      * @var array
-
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'company_location_ids' => 'array',
+        'arrival_location_ids' => 'array',
     ];
 
     public function createdAccounts()

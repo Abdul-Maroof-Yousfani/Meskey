@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Arrival\ArrivalSamplingRequest;
 use App\Models\Arrival\ArrivalTicket;
+use App\Models\Master\CompanyLocation;
 use App\Models\Procurement\Store\PurchaseOrderData;
 use App\Services\ArrivalDashboardService;
 use Carbon\Carbon;
@@ -224,8 +225,12 @@ class HomeController extends Controller
             case 'total_tickets':
                 $title = 'Total Tickets';
                 $data = ArrivalTicket::where('company_id', $request->company_id)
-                    ->when(auth()->user()->user_type != 'super-admin', function ($q) {
-                        return $q->where('location_id', auth()->user()->company_location_id);
+                    // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                    //     return $q->where('location_id', auth()->user()->company_location_id);
+                    // })
+                    ->whereIn('location_id', getUserCurrentCompanyLocations())
+                    ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
+                        return $q->where('location_id', $request->location_id);
                     })
                     // ->whereIn('first_qc_status', ['pending', 'resampling'])
                     ->whereBetween('created_at', $dateRange)
@@ -241,18 +246,13 @@ class HomeController extends Controller
                     ->whereIn('first_qc_status', ['pending', 'resampling'])
                     ->whereBetween('created_at', $dateRange)
                     ->with(['product', 'station', 'accountsOf'])
-                    // Superadmin
-                    ->when(auth()->user()->user_type != 'super-admin', function ($q) {
-                        return $q->where('location_id', auth()->user()->company_location_id);
+                    ->whereIn('location_id', getUserCurrentCompanyLocations())
+                    ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
+                        return $q->where('location_id', $request->location_id);
                     })
-                    ->when(
-                        $authUser->user_type != 'super-admin' && $authUser->arrival_location_id,
-                        function ($query) use ($authUser) {
-                            return $query->whereHas('unloadingLocation', function ($q) use ($authUser) {
-                                $q->where('arrival_location_id', $authUser->arrival_location_id);
-                            });
-                        }
-                    )
+                    ->whereHas('unloadingLocation', function ($q) {
+                        return $q->whereIn('arrival_location_id', getUserCurrentCompanyArrivalLocations());
+                    })
                     ->latest()
                     ->paginate(1000);
                 break;
@@ -265,10 +265,13 @@ class HomeController extends Controller
                     ->where('sampling_type', 'initial')
                     ->where('is_done', 'no')
                     ->with(['arrivalTicket.product', 'arrivalTicket.station'])
-                    // Superadmin
-                    ->when(auth()->user()->user_type != 'super-admin', function ($q) {
-                        return $q->whereHas('arrivalTicket', function ($sq) {
-                            $sq->where('location_id', auth()->user()->company_location_id);
+
+                    ->whereHas('arrivalTicket', function ($q) {
+                        $q->whereIn('location_id', getUserCurrentCompanyLocations());
+                    })
+                    ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
+                        return $q->whereHas('arrivalTicket', function ($sq) use ($request) {
+                            $sq->where('location_id', $request->location_id);
                         });
                     })
 
@@ -282,18 +285,14 @@ class HomeController extends Controller
                     ->where('arrival_slip_status', 'generated')
                     ->with(['product', 'station', 'accountsOf'])
                     ->whereBetween('created_at', $dateRange)
-                    // Superadmin
-                    ->when(auth()->user()->user_type != 'super-admin', function ($q) {
-                        return $q->where('location_id', auth()->user()->company_location_id);
+
+                    ->whereIn('location_id', getUserCurrentCompanyLocations())
+                    ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
+                        return $q->where('location_id', $request->location_id);
                     })
-                    ->when(
-                        $authUser->user_type != 'super-admin' && $authUser->arrival_location_id,
-                        function ($query) use ($authUser) {
-                            return $query->whereHas('unloadingLocation', function ($q) use ($authUser) {
-                                $q->where('arrival_location_id', $authUser->arrival_location_id);
-                            });
-                        }
-                    )
+                    ->whereHas('unloadingLocation', function ($q) {
+                        $q->whereIn('arrival_location_id', getUserCurrentCompanyArrivalLocations());
+                    })
                     ->latest()
                     ->paginate(1000);
                 break;
@@ -308,10 +307,13 @@ class HomeController extends Controller
                     ->where('is_done', 'yes')
                     ->where('approved_status', 'pending')
                     ->with(['arrivalTicket.product', 'arrivalTicket.station'])
-                    // Superadmin
-                    ->when(auth()->user()->user_type != 'super-admin', function ($q) {
-                        return $q->whereHas('arrivalTicket', function ($sq) {
-                            $sq->where('location_id', auth()->user()->company_location_id);
+
+                    ->whereHas('arrivalTicket', function ($q) {
+                        $q->whereIn('location_id', getUserCurrentCompanyLocations());
+                    })
+                    ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
+                        return $q->whereHas('arrivalTicket', function ($sq) use ($request) {
+                            $sq->where('location_id', $request->location_id);
                         });
                     })
                     ->latest()
@@ -338,9 +340,10 @@ class HomeController extends Controller
                     ->where('location_transfer_status', 'pending')
                     ->whereBetween('created_at', $dateRange)
                     ->with(['product', 'station', 'accountsOf'])
-                    // superadmin
-                    ->when(auth()->user()->user_type != 'super-admin', function ($q) {
-                        return $q->where('location_id', auth()->user()->company_location_id);
+
+                    ->whereIn('location_id', getUserCurrentCompanyLocations())
+                    ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
+                        return $q->where('location_id', $request->location_id);
                     })
                     ->latest()
                     ->paginate(1000);
@@ -352,10 +355,13 @@ class HomeController extends Controller
                     ->where('first_qc_status', 'rejected')
                     // ->where('bilty_return_confirmation', 0)
                     ->whereBetween('created_at', $dateRange)
-                    // superadmin
-                    ->when(auth()->user()->user_type != 'super-admin', function ($q) {
-                        return $q->where('location_id', auth()->user()->company_location_id);
+                    ->whereIn('location_id', getUserCurrentCompanyLocations())
+                    ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
+                        return $q->where('location_id', $request->location_id);
                     })
+                    // ->whereHas('unloadingLocation', function ($q) {
+                    //     $q->whereIn('arrival_location_id', getUserCurrentCompanyArrivalLocations());
+                    // })
                     ->with(['product', 'station', 'accountsOf'])
                     ->latest()
                     ->paginate(1000);
@@ -367,19 +373,13 @@ class HomeController extends Controller
                     ->where('location_transfer_status', 'transfered')
                     ->where('first_weighbridge_status', 'pending')
                     ->whereBetween('created_at', $dateRange)
-                    // superadmin
-                    ->when(auth()->user()->user_type != 'super-admin', function ($q) {
-                        return $q->where('location_id', auth()->user()->company_location_id);
+                    ->whereIn('location_id', getUserCurrentCompanyLocations())
+                    ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
+                        return $q->where('location_id', $request->location_id);
                     })
-
-                    ->when(
-                        $authUser->user_type != 'super-admin' && $authUser->arrival_location_id,
-                        function ($query) use ($authUser) {
-                            return $query->whereHas('unloadingLocation', function ($q) use ($authUser) {
-                                $q->where('arrival_location_id', $authUser->arrival_location_id);
-                            });
-                        }
-                    )
+                    ->whereHas('unloadingLocation', function ($q) {
+                        $q->whereIn('arrival_location_id', getUserCurrentCompanyArrivalLocations());
+                    })
                     ->with(['product', 'station', 'accountsOf', 'unloadingLocation'])
                     ->latest()
                     ->paginate(1000);
@@ -391,9 +391,12 @@ class HomeController extends Controller
                     $q->where('company_id', $request->company_id)
                         ->whereBetween('created_at', $dateRange);
                 })
-                    ->when(auth()->user()->user_type != 'super-admin', function ($q) {
-                        return $q->whereHas('arrivalTicket', function ($sq) {
-                            $sq->where('location_id', auth()->user()->company_location_id);
+                    ->whereHas('arrivalTicket', function ($q) {
+                        $q->whereIn('location_id', getUserCurrentCompanyLocations());
+                    })
+                    ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
+                        return $q->whereHas('arrivalTicket', function ($sq) use ($request) {
+                            $sq->where('location_id', $request->location_id);
                         });
                     })
                     ->where('sampling_type', 'inner')
@@ -436,9 +439,9 @@ class HomeController extends Controller
                         $q->where('sampling_type', 'inner')
                             ->where('approved_status', 'pending');
                     })
-                    // superadmin
-                    ->when(auth()->user()->user_type != 'super-admin', function ($q) {
-                        return $q->where('location_id', auth()->user()->company_location_id);
+                    ->whereIn('location_id', getUserCurrentCompanyLocations())
+                    ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
+                        return $q->where('location_id', $request->location_id);
                     })
                     ->whereBetween('created_at', $dateRange)
                     ->with(['product', 'station', 'accountsOf', 'firstWeighbridge'])
@@ -451,9 +454,9 @@ class HomeController extends Controller
                 $data = ArrivalTicket::where('company_id', $request->company_id)
                     ->whereIn('document_approval_status', ['half_approved', 'fully_approved'])
                     ->where('second_weighbridge_status', 'pending')
-                    // superadmin
-                    ->when(auth()->user()->user_type != 'super-admin', function ($q) {
-                        return $q->where('location_id', auth()->user()->company_location_id);
+                    ->whereIn('location_id', getUserCurrentCompanyLocations())
+                    ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
+                        return $q->where('location_id', $request->location_id);
                     })
                     ->whereBetween('created_at', $dateRange)
                     ->with(['product', 'station', 'accountsOf', 'approvals'])
@@ -466,9 +469,9 @@ class HomeController extends Controller
                     ->where('second_weighbridge_status', 'completed')
                     ->where('freight_status', 'pending')
                     ->whereBetween('created_at', $dateRange)
-                    // superadmin
-                    ->when(auth()->user()->user_type != 'super-admin', function ($q) {
-                        return $q->where('location_id', auth()->user()->company_location_id);
+                    ->whereIn('location_id', getUserCurrentCompanyLocations())
+                    ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
+                        return $q->where('location_id', $request->location_id);
                     })
                     ->with(['product', 'station', 'accountsOf', 'secondWeighbridge'])
                     ->latest()
@@ -482,22 +485,15 @@ class HomeController extends Controller
                     ->where('freight_status', 'pending')
                     ->where('decision_making', 0)
                     ->whereBetween('created_at', $dateRange)
-                    // superadmin
-                    ->when(auth()->user()->user_type != 'super-admin', function ($q) {
-                        return $q->where('location_id', auth()->user()->company_location_id);
+                    ->whereIn('location_id', getUserCurrentCompanyLocations())
+                    ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
+                        return $q->where('location_id', $request->location_id);
                     })
                     ->with(['product', 'station', 'accountsOf', 'secondWeighbridge'])
                     ->latest()
                     ->paginate(1000);
                 break;
         }
-
-        // return response()->json([
-        //     'title' => $title,
-        //     'data' => $data,
-        //     'type' => $type
-        // ]);
-
         return view('management.dashboard.snippets.list_data', compact('data', 'type'));
     }
 
@@ -505,21 +501,22 @@ class HomeController extends Controller
     {
         $module = $request->get('module', 'arrival');
         $fromDate = $request->get('from_date', Carbon::today()->format('Y-m-d'));
-        // $fromDate = $request->get('from_date', Carbon::now()->subYear()->format('Y-m-d'));
+        $location_id = $request->get('location_id', null);
         $toDate = $request->get('to_date', Carbon::today()->format('Y-m-d'));
-
+        $companylocations = CompanyLocation::where('company_id', $request->company_id)
+            ->whereIn('id', getUserCurrentCompanyLocations())->where('status', 'active')->get();
         $data = [];
 
         if ($module === 'arrival') {
             $data = $service->getArrivalDashboardData(
                 $request->from_date,
                 $request->to_date,
-                $request->company_id
+                $request->company_id,
+                $request
             );
-            // $data = $this->getArrivalDashboardData($fromDate, $toDate, $request->company_id);
         }
 
-        return view('management.dashboard.index', compact('data', 'module', 'fromDate', 'toDate'));
+        return view('management.dashboard.index', compact('data', 'module', 'fromDate', 'toDate', 'companylocations', 'location_id'));
     }
 
     public function getCitiesByState(Request $request)

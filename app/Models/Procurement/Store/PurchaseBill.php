@@ -3,7 +3,9 @@
 namespace App\Models\Procurement\Store;
 
 use App\Http\Requests\Procurement\PurchaseRequest;
+use App\Models\Master\Supplier;
 use App\Traits\HasApproval;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Procurement\Store\PurchaseOrderReceiving;
@@ -20,10 +22,15 @@ class PurchaseBill extends Model
         "updated_at"
     ];
 
+
     protected $table = "purchase_bills";
 
     public function grn() {
         return $this->belongsTo(PurchaseOrderReceiving::class, "purchase_order_receiving_id");
+    }
+
+    public function supplier() {
+        return $this->belongsTo(Supplier::class, "supplier_id");
     }
 
     public function purchase_request() {
@@ -37,5 +44,13 @@ class PurchaseBill extends Model
     public function bill_data() {
         return $this->hasMany(PurchaseBillData::class, "purchase_bill_id");
     }
-    
+
+    public function purchaseReturns() {
+        return $this->belongsToMany(PurchaseReturn::class, 'purchase_bill_purchase_return', 'purchase_bill_id', 'purchase_return_id');
+    }
+
+    public function debitNotes() {
+        return $this->hasMany(DebitNote::class, "bill_id");
+    }
+
 }

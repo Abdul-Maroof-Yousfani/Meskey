@@ -20,6 +20,33 @@
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
+                <label>Product Sort Type:</label>
+                <ul class="list-unstyled mb-0">
+                    <li class="d-inline-block mr-2 mb-2">
+                        <div class="radio radio-success">
+                            <input type="radio" name="product_category_flags" id="head-product" value="head" checked>
+                            <label for="head-product"><span>Head Product</span></label>
+                        </div>
+                    </li>
+
+                    <li class="d-inline-block mr-2 mb-2">
+                        <div class="radio radio-success">
+                            <input type="radio" name="product_category_flags" id="b2-product" value="b2">
+                            <label for="b2-product"><span>B2 Product</span></label>
+                        </div>
+                    </li>
+
+                    <li class="d-inline-block mr-2 mb-2">
+                        <div class="radio radio-success">
+                            <input type="radio" name="product_category_flags" id="by-product" value="by">
+                            <label for="by-product"><span>By Product</span></label>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group">
                 <label>Product Type:</label>
                 <select class="form-control" onchange="check(this.value)" name="product_type">
                     <option value="">Select Product Type</option>
@@ -97,16 +124,8 @@
                 <input type="text" name="price" placeholder="Price" class="form-control" />
             </div>
         </div>
-        <div class="col-xs-12 col-sm-12 col-md-12">
-            <div class="form-group">
-                <label>Status:</label>
-                <select class="form-control" name="status">
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                </select>
-            </div>
-        </div>
-        <div class="col-xs-12 col-sm-12 col-md-12" style="margin-top: 20px;">
+
+        {{-- <div class="col-xs-12 col-sm-12 col-md-12" style="margin-top: 20px;">
             <div class="form-group">
                 <label>Type:</label>
                 <br>
@@ -118,6 +137,18 @@
                     <input type="radio" name="is_bag" value="0"> Not Bag
                 </label>
 
+            </div>
+        </div> --}}
+
+
+
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group">
+                <label>Status:</label>
+                <select class="form-control" name="status">
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                </select>
             </div>
         </div>
     </div>

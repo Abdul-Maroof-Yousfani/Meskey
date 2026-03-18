@@ -35,10 +35,13 @@ class InnersampleRequestController extends Controller
                 $sq->where('name', 'like', $searchTerm);
             });
         })
-            ->when(!$isSuperAdmin, function ($q) use ($authUser) {
-                return $q->whereHas('arrivalTicket.unloadingLocation', function ($query) use ($authUser) {
-                    $query->where('arrival_location_id', $authUser->arrival_location_id);
-                });
+            // ->when(!$isSuperAdmin, function ($q) use ($authUser) {
+            //     return $q->whereHas('arrivalTicket.unloadingLocation', function ($query) use ($authUser) {
+            //         $query->where('arrival_location_id', $authUser->arrival_location_id);
+            //     });
+            // })
+            ->whereHas('arrivalTicket.unloadingLocation', function ($q) {
+                $q->whereIn('arrival_location_id', getUserCurrentCompanyArrivalLocations());
             })
             ->where('company_id', $request->company_id)
             ->latest()
@@ -68,10 +71,13 @@ class InnersampleRequestController extends Controller
                     ->where('approved_status', 'pending')
                     ->where('arrival_sampling_requests.deleted_at', null);
             })
-            ->when(!$isSuperAdmin, function ($q) use ($authUser) {
-                return $q->whereHas('unloadingLocation', function ($query) use ($authUser) {
-                    $query->where('arrival_location_id', $authUser->arrival_location_id);
-                });
+            // ->when(!$isSuperAdmin, function ($q) use ($authUser) {
+            //     return $q->whereHas('unloadingLocation', function ($query) use ($authUser) {
+            //         $query->where('arrival_location_id', $authUser->arrival_location_id);
+            //     });
+            // })
+            ->whereHas('unloadingLocation', function ($q) {
+                $q->whereIn('arrival_location_id', getUserCurrentCompanyArrivalLocations());
             })
             ->whereNull('arrival_sampling_requests.id')
             ->select('arrival_tickets.*')

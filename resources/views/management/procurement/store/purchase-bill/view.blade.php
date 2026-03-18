@@ -49,12 +49,12 @@
         <div class="form-group">
             <label>Location:</label>
             @php
-                $locations = $purchase_bill?->grn?->purchase_order?->purchase_request?->locations?->pluck("location_id")?->toArray() ?? []; 
+                $locations = $purchase_bill->location_id; 
             @endphp
             <select name="company_location" id="company_location_id" class="form-control select2" multiple readonly>
                 <option value="">Select Location</option>
                 @foreach (get_locations() as $value)
-                    <option value="{{ $value->id }}" @selected(in_array($value->id, $locations))>{{ $value->name }}</option>
+                    <option value="{{ $value->id }}" @selected($value->id == $locations)>{{ $value->name }}</option>
                 @endforeach
                 <input type="hidden" name="location_id" id="location_id">
             </select>
@@ -80,8 +80,8 @@
                         <th>Gross Amount</th>
                         <th>Discount %</th>
                         <th>Discount Amount</th>
-                        <th>Deduction Per Piece</th>
-                        <th>Deduction</th>
+                        <th class="deduction-header">Deduction Per Piece</th>
+                        <th class="deduction-header">Deduction</th>
                         <th>Amount</th>
                         <th>Printing Samples</th>
                         <th>GST %</th>
@@ -93,126 +93,190 @@
 
                 <tbody id="billBody">
                     @foreach ($purchaseBillData as $key => $data)
-                        <tr id="row_{{ $key }}">
+                    <tr id="row_{{ $key }}" data-category-id="{{ $data->PurchaseOrderReceivingData->category_id }}">
 
-                            <td style="width: 20%">
-                                <select id="item_id_{{ $key }}" onchange="get_uom({{ $key }})"
-                                    class="form-control item-select select2" data-index="{{ $key }}" disabled>
-                                    @foreach (get_product_by_category($data->category_id) as $item)
-                                        <option data-uom="{{ $item->unitOfMeasure->name ?? '' }}"
-                                            value="{{ $item->id }}"
-                                            {{ $item->id == $data->item_id ? 'selected' : '' }}>
-                                            {{ $item->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-
-                                <input type="hidden" name="item_id[]" value="{{ $data->item_id }}">
+                        <td style="width: 320px; min-width: 320px;">
+                            <input type="text" style="width: 100%;" 
+                                   name="item[]" 
+                                   value="{{ getItem($data->item_id)?->name }}"
+                                   id="item_{{ $key }}" 
+                                   class="form-control item" 
+                                   readonly>
+                    
+                            <input type="hidden" name="item_id[]" value="{{ $data->item_id }}">
+                            <input type="hidden" name="purchase_order_receiving_data_id[]" value="{{ $data->purchase_order_receiving_data_id }}">
+                        </td>
+                    
+                        <td style="width: 360px; min-width: 360px;">
+                            <input type="text" style="width: 100%;" 
+                                   name="description[]" 
+                                   value="{{ $data->description }}"
+                                   id="description_{{ $key }}" 
+                                   class="form-control" 
+                                   readonly 
+                                   placeholder="Description">
+                        </td>
+                    
+                        <td style="width: 140px; min-width: 140px;">
+                            <input style="width: 100%;" 
+                                   type="number" 
+                                   name="qty[]" 
+                                   value="{{ $data->qty }}"
+                                   id="qty_{{ $key }}" 
+                                   class="form-control qty" 
+                                   step="0.01" 
+                                   readonly>
+                        </td>
+                    
+                        <td style="width: 140px; min-width: 140px;">
+                            <input style="width: 100%;" 
+                                   type="number" 
+                                   name="rate[]" 
+                                   value="{{ $data->rate }}"
+                                   id="rate_{{ $key }}" 
+                                   class="form-control rate" 
+                                   step="0.01" 
+                                   readonly>
+                        </td>
+                    
+                        <td style="width: 160px; min-width: 160px;">
+                            <input type="text" style="width: 100%;" 
+                                   name="gross_amount[]" 
+                                   value="{{ $data->gross_amount }}" 
+                                   id="gross_amount_{{ $key }}"
+                                   class="form-control gross_amount" 
+                                   readonly>
+                        </td>
+                    
+                        <td style="width: 140px; min-width: 140px;">
+                            <input style="width: 100%;" 
+                                   type="number" 
+                                   name="discount_id[]" 
+                                   value="{{ $data->discount_percent }}" 
+                                   id="discount_percent_{{ $key }}"
+                                   class="form-control discounts" 
+                                   onkeyup="calculatePercentage(this)" 
+                                   step="0.01" 
+                                   min="0">
+                        </td>
+                    
+                        <td style="width: 160px; min-width: 160px;">
+                            <input style="width: 100%;" 
+                                   type="number" 
+                                   readonly 
+                                   name="discount_amount[]" 
+                                   value="{{ $data->discount_amount }}"
+                                   id="discount_amount_{{ $key }}" 
+                                   class="form-control discount_amount"
+                                   step="0.01" 
+                                   min="0">
+                        </td>
+                    
+                        @if($data->PurchaseOrderReceivingData->category_id == 38)
+                            <td style="width: 160px; min-width: 160px;" class="deduction-col">
+                                <input style="width: 100%;" 
+                                       type="number" 
+                                       readonly 
+                                       name="deduction_per_piece[]" 
+                                       id="deduction_per_piece_{{ $key }}"
+                                       value="{{ $data->deduction_per_piece }}"
+                                       class="form-control deduction_per_piece" 
+                                       step="0.01" 
+                                       min="0">
                             </td>
-
-                            <td style="width: 30%">
-                                <input type="text" style="width: 100%;" name="description[]"
-                                    value="{{ $data->description }}" id="description_{{ $key }}"
-                                    class="form-control uom" readonly>
+                        
+                            <td style="width: 160px; min-width: 160px;" class="deduction-col">
+                                <input style="width: 100%;" 
+                                       type="number" 
+                                       readonly 
+                                       name="deduction[]" 
+                                       value="{{ $data->deduction }}" 
+                                       id="deduction_{{ $key }}"
+                                       class="form-control deduction" 
+                                       step="0.01" 
+                                       min="0">
                             </td>
-
-                            <td style="width: 30%">
-                                <input style="width: 100%" type="number"
-                                    onkeyup="calc({{ $key }}); calculatePercentage(this)"
-                                    onblur="calc({{ $key }})" name="qty[]" value="{{ $data->qty }}"
-                                    id="qty_{{ $key }}" class="form-control qty" step="0.01" readonly
-                                    {{-- {{ $isQuotationAvailable ? 'readonly' : '' }} --}}>
-                            </td>
-
-                            <td style="width: 30%">
-                                <input style="width: 100px" type="number"
-                                    onkeyup="calc({{ $key }}); calculatePercentage(this)"
-                                    onblur="calc({{ $key }})" name="rate[]" value="{{ $data->rate }}"
-                                    id="rate_{{ $key }}" class="form-control rate" step="0.01" readonly>
-                            </td>
-
-                            <td style="width: 30%">
-                                <input type="text" style="width: 100px;" name="gross_amount[]"
-                                    value="{{ $data->gross_amount }}" id="gross_amount{{ $key }}"
-                                    class="form-control gross_amount" readonly>
-                            </td>
-
-                            <td style="width: 30%">
-
-
-                                <input style="width: 100px" type="number" name="discount_id[]"
-                                    value="{{ $data->discount_percent }}" id="total_{{ $key }}"
-                                    class="form-control discounts" onkeyup="calculatePercentage(this)" step="0.01"
-                                    min="0" readonly>
-                            </td>
-
-                            <td style="width: 30%">
-                                <input style="width: 100px" type="number" readonly name="discount_amount[]"
-                                    value="{{ $data->discount_amount }}" id="discount_amount_{{ $key }}"
-                                    class="form-control discount_amount" step="0.01" min="0" readonly>
-                            </td>
-                            <td style="width: 30%">
-                                <input style="width: 100px" type="number" readonly name="deduction_per_piece[]"
-                                    id="deduction_per_piece_{{ $key }}"
-                                    value="{{ $data->deduction_per_piece }}" class="form-control deduction_per_piece"
-                                    step="0.01" min="0" readonly>
-                            </td>
-
-                            <td style="width: 30%">
-                                <input style="width: 100px" type="number" readonly name="deduction[]"
-                                    value="{{ $data->deduction }}" id="deduction_{{ $key }}"
-                                    class="form-control deduction" step="0.01" min="0" readonly>
-                            </td>
-
-                            <td style="width: 30%">
-                                <input style="width: 100px" type="number" readonly name="net_amount[]"
-                                    value="{{ $data->net_amount }}" id="total_{{ $key }}"
-                                    class="form-control net_amount" step="0.01" min="0" readonly>
-                            </td>
-
-                            <td style="width:150px;">
-                                <input type="file" name="printing_sample[]" id="printing_sample_{{ $key }}" disabled class="form-control" accept="image/*,application/pdf">
-                                @if (!empty($data->PurchaseOrderReceivingData->purchase_order_data->printing_sample))
-                                    <small>
-                                        <a href="{{ asset('storage/' . $data->PurchaseOrderReceivingData->purchase_order_data->printing_sample) }}" target="_blank">
-                                            View existing file
+                        @else
+                            <input type="hidden" name="deduction_per_piece[]" value="0" class="deduction_per_piece">
+                            <input type="hidden" name="deduction[]" value="0" class="deduction">
+                        @endif
+                    
+                        <td style="width: 170px; min-width: 170px;">
+                            <input style="width: 100%;" 
+                                   type="number" 
+                                   readonly 
+                                   name="net_amount[]" 
+                                   value="{{ $data->net_amount }}" 
+                                   id="net_amount_{{ $key }}"
+                                   class="form-control net_amount" 
+                                   step="0.01" 
+                                   min="0">
+                        </td>
+                    
+                        <td style="width: 240px; min-width: 240px;">
+                            <input type="file" 
+                                   name="printing_sample[]" 
+                                   id="printing_sample_{{ $key }}" 
+                                   disabled 
+                                   class="form-control" 
+                                   accept="image/*,application/pdf">
+                            @if (!empty($data->PurchaseOrderReceivingData->purchase_order_data->printing_sample))
+                                @foreach((array)$data->PurchaseOrderReceivingData->purchase_order_data->printing_sample as $sample)
+                                    <small class="d-block mt-1">
+                                        <a href="{{ asset('storage/' . $sample) }}" target="_blank">
+                                            View file
                                         </a>
                                     </small>
-                                @endif
-                            </td>
-
-                            <td style="width: 30%">
-                                <input style="width: 100px" type="number" onkeyup="calculatePercentage(this)"
-                                    name="tax_id[]" value="{{ $data->tax_percent }}"
-                                    id="tax_id_{{ $key }}" class="form-control tax_id" step="0.01"
-                                    min="0" readonly>
-                            </td>
-                            <td style="width: 30%">
-                                <input style="width: 100px" type="number" readonly
-                                    onkeyup="calculatePercentage(this)" name="tax_amount[]"
-                                    value="{{ $data->tax_amount }}" id="tax_id_{{ $key }}"
-                                    class="form-control tax_amount" step="0.01" min="0" readonly>
-                            </td>
-
-
-
-
-
-
-
-                            <td style="width: 30%">
-                                <input style="width: 100px" type="number" readonly name="final_amount[]"
-                                    value="{{ $data->final_amount }}" id="final_amount_{{ $key }}"
-                                    class="form-control final_amount" step="0.01" min="0" readonly>
-                            </td>
-
-
-                            <td>
-                                <button type="button" class="btn btn-danger btn-sm removeRowBtn"
+                                @endforeach
+                            @endif
+                        </td>
+                    
+                        <td style="width: 140px; min-width: 140px;">
+                            <input style="width: 100%;" 
+                                   type="number" 
+                                   onkeyup="calculatePercentage(this)"
+                                   name="tax_id[]" 
+                                   value="{{ $data->tax_percent }}"
+                                   id="tax_percent_{{ $key }}" 
+                                   class="form-control tax_id" 
+                                   step="0.01" 
+                                   min="0">
+                        </td>
+                    
+                        <td style="width: 160px; min-width: 160px;">
+                            <input style="width: 100%;" 
+                                   type="number" 
+                                   readonly 
+                                   onkeyup="calculatePercentage(this)" 
+                                   name="tax_amount[]"
+                                   value="{{ $data->tax_amount }}" 
+                                   id="tax_amount_{{ $key }}"
+                                   class="form-control tax_amount" 
+                                   step="0.01" 
+                                   min="0">
+                        </td>
+                    
+                        <td style="width: 180px; min-width: 180px;">
+                            <input style="width: 100%;" 
+                                   type="number" 
+                                   readonly 
+                                   name="final_amount[]" 
+                                   value="{{ $data->final_amount }}" 
+                                   id="final_amount_{{ $key }}"
+                                   class="form-control final_amount" 
+                                   step="0.01" 
+                                   min="0">
+                        </td>
+                    
+                        <td style="width: 110px; min-width: 110px; text-align: center; vertical-align: middle;">
+                            <button type="button" 
+                                    class="btn btn-danger btn-sm removeRowBtn"
                                     onclick="remove({{ $key }})"
-                                    data-id="{{ $key }}">Remove</button>
-                            </td>
-                        </tr>
+                                    data-id="{{ $key }}" 
+                                    disabled>Remove</button>
+                        </td>
+                    
+                    </tr>
                     @endforeach
                 </tbody>
             </table>
@@ -252,6 +316,11 @@
 
 <script>
     $(document).ready(function() {
+        const firstRow = $('#billBody').find('tr').first();
+        const categoryId = firstRow.data('category-id');
+        if (categoryId && categoryId != 38) {
+            $('.deduction-header').hide();
+        }
 
         $(document).on('change', '#purchase_date', function() {
             fetchUniqueNumber();

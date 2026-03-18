@@ -21,6 +21,7 @@
                     <thead class="thead-dark">
                         <tr>
                             <th width="20%">Location</th>
+                            <th width="20%">Sub Location</th>
                             <th width="15%">Sugg. QTY (kgs)</th>
                             @foreach($qcParameters as $parameter)
                                 @php
@@ -41,11 +42,20 @@
                         <!-- First row -->
                         <tr class="location-row">
                             <td>
-                                <select name="qc_data[{{ $commodityId }}][locations][0][sublocation_id]" 
+                                <select name="qc_data[{{ $commodityId }}][locations][0][location_id]" 
                                         class="form-control form-control-sm sublocation-select" required>
                                     <option value="">Select Location</option>
+                                    @foreach($locations as $location)
+                                        <option value="{{ $location->id }}">{{ $location->name }}</option>
+                                    @endforeach
+                                </select>
+                            </td>
+                            <td>
+                                <select name="qc_data[{{ $commodityId }}][locations][0][sublocation_id]" 
+                                        class="form-control form-control-sm sublocation-select" required>
+                                    <option value="">Select Sub Location</option>
                                     @foreach($sublocations as $sublocation)
-                                        <option value="{{ $sublocation->id }}">{{ $sublocation->name }}</option>
+                                        <option value="{{ $sublocation->id }}" data-location-id="{{ $sublocation->arrival_location_id }}">{{ $sublocation->name }}</option>
                                     @endforeach
                                 </select>
                             </td>
@@ -197,3 +207,39 @@
     font-weight: 600;
 }
 </style>
+
+<script>
+$(document).ready(function() {
+
+    // Filter sublocations based on location select
+    $(document).on('change', '.location-row select[name*="[location_id]"]', function() {
+        let $locationSelect = $(this);
+        let selectedLocationId = $locationSelect.val();
+        
+        // Find the corresponding sublocation select in the same row
+        let $row = $locationSelect.closest('tr');
+        let $sublocationSelect = $row.find('select[name*="[sublocation_id]"]');
+        
+        $sublocationSelect.find('option').each(function() {
+            let $option = $(this);
+            let optionLocationId = $option.data('location-id');
+
+            if (!optionLocationId) {
+                // Keep the placeholder option
+                $option.show();
+                return;
+            }
+
+            if (optionLocationId == selectedLocationId) {
+                $option.show();
+            } else {
+                $option.hide();
+            }
+        });
+
+        // Reset sublocation selection
+        $sublocationSelect.val('');
+    });
+
+});
+</script>

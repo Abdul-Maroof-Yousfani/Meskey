@@ -91,7 +91,7 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Invoice Date:<span class="text-danger">*</span></label>
-                        <input type="date" name="invoice_date" onchange="getNumber()" id="invoice_date" class="form-control" value="{{ $sales_invoice->invoice_date }}">
+                        <input type="date" name="invoice_date" onchange="getNumber()" id="invoice_date" class="form-control" value="{{ $sales_invoice->invoice_date }}" readonly>
                     </div>
                 </div>
             </div>
@@ -189,14 +189,24 @@
                                 <input type="number" name="packing[]" id="packing_{{ $index }}" class="form-control packing" step="0.01" min="0" value="{{ $data->packing }}" readonly>
                             </td>
                             <td style="min-width: 100px;">
-                                @if($data->dc_data_id)
-                                <input type="number" name="no_of_bags[]" id="no_of_bags_{{ $index }}" onkeyup="calculateRow(this); validateBalance(this)" class="form-control no_of_bags" step="0.01" min="0" max="{{ $maxBalance }}" value="{{ $data->no_of_bags }}">
-                                @else
-                                <input type="number" name="no_of_bags[]" id="no_of_bags_{{ $index }}" onkeyup="calculateRow(this)" class="form-control no_of_bags" step="0.01" min="0" value="{{ $data->no_of_bags }}">
-                                @endif
+                                <input type="number" name="no_of_bags[]" id="no_of_bags_{{ $index }}" onkeyup="validateBalance(this)" class="form-control no_of_bags" step="0.01" min="0" value="{{ $data->no_of_bags }}" readonly>
+
+                                <span style="font-size: 14px;;">Used Quantity:
+                                    {{ sales_invoice_bags_used($data->dc_data_id) }}</span>
+                                <br />
+                                <span style="font-size: 14px;">Balance:
+                                    {{ sales_invoice_balance($data->dc_data_id) }}</span>
+                                
+       
                             </td>
                             <td style="min-width: 100px;">
-                                <input type="number" name="qty[]" id="qty_{{ $index }}" class="form-control qty" step="0.01" min="0" readonly value="{{ $data->qty }}">
+                                @php
+                                    $qty = $data->qty;
+                                    if (($qty <= 0 || $qty == null) && $data->no_of_bags > 0 && $data->packing > 0) {
+                                        $qty = $data->no_of_bags * $data->packing;
+                                    }
+                                @endphp
+                                <input type="number" name="qty[]" data-balance="{{ sales_invoice_balance($data->dc_data_id) + $data->no_of_bags }}" id="qty_{{ $index }}" class="form-control qty" step="0.01" min="0" value="{{ $qty }}" onkeyup="calculateRow(this); check_balance(this, 'no_of_bags_{{ $index }}')">
                             </td>
                             <td style="min-width: 100px;">
                                 <input type="number" name="rate[]" id="rate_{{ $index }}" onkeyup="calculateRow(this)" class="form-control rate" step="0.01" min="0" value="{{ $data->rate }}">
@@ -253,11 +263,28 @@
 </form>
 
 <script>
-    let salesInvoiceRowIndex = {{ count($sales_invoice->sales_invoice_data) }};
+    salesInvoiceRowIndex = {{ count($sales_invoice->sales_invoice_data) }};
 
     $(document).ready(function() {
         $('.select2').select2();
     });
+
+    function check_balance(el, target) {
+        const balance = $(el).data("balance");
+        const value = $("#" + target).val();
+        
+        if(value > balance) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Limit Exceeded',
+                text: 'Cannot proceed more than ' + balance,
+            });
+                
+            $("#" + target).addClass("is-invalid");
+        } else {
+            $("#" + target).removeClass("is-invalid");
+        }
+    }
 
     function selectLocation(el) {
         const company = $(el).val();
@@ -448,15 +475,34 @@
         const netAmountInput = row.find(".net_amount");
 
         // Get values
-        const packing = parseFloat(packingInput.val()) || 0;
-        const noOfBags = parseFloat(noOfBagsInput.val()) || 0;
-        const rate = parseFloat(rateInput.val()) || 0;
-        const discountPercent = parseFloat(discountPercentInput.val()) || 0;
-        const gstPercent = parseFloat(gstPercentInput.val()) || 0;
+        let packing = parseFloat(packingInput.val()) || 0;
+        let noOfBags = parseFloat(noOfBagsInput.val()) || 0;
+        let qty = parseFloat(qtyInput.val()) || 0;
+        let rate = parseFloat(rateInput.val()) || 0;
+        let discountPercent = parseFloat(discountPercentInput.val()) || 0;
+        let gstPercent = parseFloat(gstPercentInput.val()) || 0;
 
-        // Calculate Qty = Packing * No of Bags
-        const qty = packing * noOfBags;
-        qtyInput.val(round(qty));
+        // Calculate based on what changed
+        if ($(el).hasClass("qty")) {
+            // When qty changes, calculate no_of_bags (if packing > 0)
+            if (packing > 0) {
+                noOfBags = qty / packing;
+                const maxBalance = parseFloat(row.find(".max_balance").val()) || 0;
+                if (maxBalance > 0 && noOfBags > maxBalance) {
+                    noOfBags = maxBalance;
+                    qty = noOfBags * packing;
+                    qtyInput.val(round(qty));
+                    if (typeof toastr !== 'undefined') {
+                        toastr.warning(`Cannot exceed available balance of ${maxBalance} bags`);
+                    }
+                }
+                noOfBagsInput.val(Math.round(noOfBags));
+            }
+        } else if ($(el).hasClass("packing") || $(el).hasClass("no_of_bags")) {
+            // When packing or no_of_bags changes, calculate qty
+            qty = packing * noOfBags;
+            qtyInput.val(round(qty));
+        }
 
         // Calculate Gross Amount = Qty * Rate
         const grossAmount = qty * rate;

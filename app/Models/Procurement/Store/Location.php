@@ -15,4 +15,8 @@ class Location extends Model
     public function locationable() {
         return $this->morphTo();
     }
+
+    public function companyLocation() {
+        return $this->belongsTo(\App\Models\Master\CompanyLocation::class, 'location_id');
+    }
 }

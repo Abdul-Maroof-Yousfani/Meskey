@@ -85,7 +85,7 @@
                      <th>Item UOM</th>
                      <th>Vendor</th>
                      <th>Qty</th>
-                     <th>Min Weight</th>
+                     <th>Min Weight (KG)</th>
                      <th>Brand</th>
                      <th>Color</th>
                      <th>Cons./sq. in.</th>

@@ -30,7 +30,11 @@ class PurchaseRequestData extends Model
         'po_status',
         'status',
         'brand_id',
-        'micron'
+        'micron',
+        'is_single_job_order',
+        'net_amount',
+        'packing_id',
+        'module_type'
     ];
 
     protected $casts = [
@@ -38,6 +42,7 @@ class PurchaseRequestData extends Model
         'quotation_status' => 'integer',
         'po_status' => 'integer',
         'status' => 'boolean',
+        'printing_sample' => 'array',
     ];
 
     protected $guarded = [];

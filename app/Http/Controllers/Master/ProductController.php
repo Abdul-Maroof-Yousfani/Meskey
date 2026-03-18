@@ -22,7 +22,7 @@ class ProductController extends Controller
     /**
      * Get list of categories.
      */
-    public function getList(Request $request)
+    public function getListbk(Request $request)
     {
         $products = Product::with('children') // Eager load children
             ->when($request->filled('search'), function ($q) use ($request) {
@@ -31,7 +31,47 @@ class ProductController extends Controller
             })
             ->where('company_id', $request->company_id)
             ->whereNull('parent_id') // Only fetch top-level parents
+            ->orderByRaw("
+            CASE 
+                WHEN product_category_flags = 'head' THEN 1
+                WHEN product_category_flags = 'b2' THEN 2
+                ELSE 3
+            END
+        ")
             ->latest()
+            ->paginate($request->get('per_page', 25));
+
+        return view('management.master.product.getList', compact('products'));
+    }
+
+    public function getList(Request $request)
+    {
+        $products = Product::with([
+            'children' => function ($q) {
+                $q->orderByRaw("
+                CASE 
+                    WHEN product_category_flags = 'head' THEN 1
+                    WHEN product_category_flags = 'b2' THEN 2
+                    ELSE 3
+                END
+            ")
+                    ->orderBy('created_at', 'desc');
+            }
+        ])
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $searchTerm = '%' . $request->search . '%';
+                return $q->where('name', 'like', $searchTerm);
+            })
+            ->where('company_id', $request->company_id)
+            ->whereNull('parent_id')
+            ->orderByRaw("
+            CASE 
+                WHEN product_category_flags = 'head' THEN 1
+                WHEN product_category_flags = 'b2' THEN 2
+                ELSE 3
+            END
+        ")
+            ->orderBy('created_at', 'desc')
             ->paginate($request->get('per_page', 25));
 
         return view('management.master.product.getList', compact('products'));
@@ -44,7 +84,13 @@ class ProductController extends Controller
             $category_id = $request->query('category_id');
 
             // Fetch categories based on category_type
-            $products = Product::with('unitOfMeasure')->where('category_id', $category_id)->get();
+            $products = Product::with('unitOfMeasure')
+                ->where('status', 'active')
+                ->when($category_id, function ($q) use ($category_id) {
+                    return $q->where('category_id', $category_id)
+                        ->orWhere('product_type', 'general_items');
+                })
+                ->get();
 
             return response()->json([
                 'success' => true,
@@ -63,6 +109,7 @@ class ProductController extends Controller
      */
     public function create(Request $request)
     {
+
         $categories = Category::where('company_id', $request->company_id)->get();
         $units = UnitOfMeasure::where('company_id', $request->company_id)->get();
         $parentProducts = Product::where('parent_id', null)->get();
@@ -78,6 +125,7 @@ class ProductController extends Controller
      */
     public function store(StoreProductRequest $request)
     {
+        // dd($request);
         $data = $request->all();
         $account = Account::create(getParamsForAccountCreation($request->company_id, $request->name, 'Inventory', 'yes'));
 
@@ -116,8 +164,12 @@ class ProductController extends Controller
      */
     public function update(UpdateProductRequest $request, Product $product)
     {
+        // dd($request);
         $data = $request->validated();
+        $data['parent_id'] = $request->parent_id ?? null;
 
+        // $data['is_child_product'] = $request->is_child_product ?? 'no';
+        // $data['is_by_product'] = $request->is_by_product ?? 'no';
         if (empty($product->account_id)) {
             $account = Account::create(getParamsForAccountCreation(
                 $request->company_id,

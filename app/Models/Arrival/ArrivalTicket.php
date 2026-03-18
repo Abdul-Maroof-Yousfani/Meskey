@@ -190,6 +190,11 @@ class ArrivalTicket extends Model
     {
         return $this->hasMany(ArrivalSamplingRequest::class, 'arrival_ticket_id');
     }
+    public function latestArrivalSamplingRequest()
+    {
+        return $this->hasOne(ArrivalSamplingRequest::class, 'arrival_ticket_id')
+            ->latestOfMany();
+    }
 
     public function unloadingLocation()
     {
@@ -220,4 +225,19 @@ class ArrivalTicket extends Model
     {
         return $this->hasMany(PurchaseFreight::class, 'arrival_ticket_id');
     }
+
+    public function latestInnerSampling()
+    {
+        return $this->hasOne(ArrivalSamplingRequest::class)
+            ->where('sampling_type', 'inner')
+            ->latestOfMany();
+    }
+
+    public function latestInitialSampling()
+    {
+        return $this->hasOne(ArrivalSamplingRequest::class)
+            ->where('sampling_type', 'initial')
+            ->latestOfMany();
+    }
+
 }

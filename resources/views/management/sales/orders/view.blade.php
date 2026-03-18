@@ -3,6 +3,27 @@
     body {
         overflow-x: hidden;
     }
+
+    .amount-info-box {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 15px;
+        background-color: #f8f9fa;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .amount-info-box .form-group {
+        margin-bottom: 10px;
+    }
+
+    .amount-info-box .form-group:last-child {
+        margin-bottom: 0;
+    }
+
+    .amount-info-box .form-label {
+        font-weight: 600;
+        font-size: 13px;
+    }
 </style>
 
 <form action="{{ route('sales.sale-order.store') }}" method="POST" id="ajaxSubmit2" autocomplete="off">
@@ -10,71 +31,180 @@
 
     <input type="hidden" id="listRefresh" value="{{ route('sales.get.sales-order.list') }}" />
     <div class="row form-mar">
-        
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Delivery Date:</label>
-                <input type="date" name="delivery_date" value="{{ $sale_order->delivery_date }}" onchange="getNumber()" id="delivery_date" class="form-control" readonly>
-            </div>
-        </div>
+        <div class="col-md-12">
+            <div class="row">
+                <div class="col-12">
+                    <h6 class="header-heading-sepration">General Information</h6>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">SO No:</label>
+                        <input type="text" name="reference_no" id="reference_no" value="{{ $sale_order->reference_no }}" class="form-control" readonly>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Date:</label>
+                        <input type="date" name="order_date" id="order_date" value="{{ $sale_order->order_date }}" class="form-control" readonly>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Inquiry No:</label>
+                        <select name="inquiry_id" id="inquiry_id" onchange="get_inquiry_data()" class="form-control select2" disabled>
+                            <option value="">Select Inquiry</option>
+                            @foreach ($inquiries ?? [] as $inquiry)
+                                <option value="{{ $inquiry->id }}" @selected($inquiry->id == $sale_order->inquiry_id)>{{ $inquiry->inquiry_no }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Contract Type:</label>
+                        <select name="sauda_type" id="sauda_type" class="form-control select2" disabled>
+                            <option value="">Select Contract Type</option>
+                            <option value="pohanch" @selected(strtolower($sale_order->sauda_type) == 'pohanch')>Pohanch</option>
+                            <option value="x-mill" @selected(strtolower($sale_order->sauda_type) == 'x-mill')>X-mill</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Delivery Date:</label>
+                        <input type="date" name="delivery_date" value="{{ $sale_order->delivery_date }}" id="delivery_date" class="form-control" readonly>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Reference Number:</label>
+                        <input type="text" name="so_reference_no" id="so_reference_no" value="{{ $sale_order->so_reference_no }}" class="form-control" readonly>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Transporter used:</label>
+                        <input type="text" name="transporter_used" id="transporter_used" value="{{ ucfirst($sale_order->transporter_used) }}" class="form-control" readonly>
+                    </div>
+                </div>
 
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Expiry Date:</label>
-                <input type="date" name="expiry_date" id="expiry_date" value="{{ $sale_order->expiry_date }}" class="form-control" readonly>
-            </div>
-        </div>
+                <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Customer Details</h6>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Customer:</label>
+                        <input type="text" value="{{ get_customer_name($sale_order->customer_id) }}" class="form-control" readonly>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Contact Person:</label>
+                        <input type="text" name="contact_person" id="contact_person" value="{{ $sale_order->contact_person }}" class="form-control" readonly>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Token Money:</label>
+                        <input type="number" name="token_money" id="token_money" value="{{ $sale_order->token_money }}" class="form-control" step="0.01" min="0" readonly>
+                    </div>
+                </div>
 
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">So No:</label>
-                <input type="text" name="reference_no" id="reference_no" value="{{ $sale_order->reference_no }}" class="form-control" readonly>
-            </div>
-        </div>
+                <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Payment Details</h6>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Pay Type:</label>
+                        <input type="text" value="{{ $sale_order->pay_type?->name ?? 'N/A' }}" class="form-control" readonly>
+                    </div>
+                </div>
+                @if($sale_order->payment_term_id)
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Payment Terms {{ $sale_order->payment_term_id }}:</label>
+                            <input type="text" value="{{ get_payment_term($sale_order->payment_term_id)?->desc ?? '' }}" class="form-control" readonly>
+                        </div>
+                    </div>
+                @endif
 
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Customer:</label>
-                <input type="text" value="{{ get_customer_name($sale_order->customer_id) }}" class="form-control" readonly>
-                <input type="hidden"  name="customer_id" id="customer_id" value="{{ $sale_order->customer_id }}" />
-            </div>
-        </div>
+                <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Location Details</h6>
+                </div>
+                @php
+                    $selectedFactories = $sale_order->factories?->pluck('arrival_location_id')->toArray() ?? [];
+                    if (empty($selectedFactories) && $sale_order->arrival_location_id) {
+                        $selectedFactories = [$sale_order->arrival_location_id];
+                    }
+                    $selectedSections = $sale_order->sections?->pluck('arrival_sub_location_id')->toArray() ?? [];
+                    if (empty($selectedSections) && $sale_order->arrival_sub_location_id) {
+                        $selectedSections = [$sale_order->arrival_sub_location_id];
+                    }
+                @endphp
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Locations:</label>
+                        <select name="locations[]" id="locations" class="form-control select2" multiple disabled>
+                            <option value="">Select Locations</option>
+                            @foreach(get_locations() as $location)
+                                <option value="{{ $location->id }}" @selected(in_array($location->id, $sale_order->locations->pluck("location_id")->toArray()))>{{ $location->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Factory:</label>
+                        <select name="arrival_location_id[]" id="arrival_location_id" class="form-control select2" multiple disabled>
+                            <option value="">Select Factory</option>
+                            @foreach($arrivalLocations as $factory)
+                                <option value="{{ $factory->id }}" data-company="{{ $factory->company_location_id ?? '' }}" @selected(in_array($factory->id, $selectedFactories))>{{ $factory->name }} ({{ $factory->companyLocation->name }})</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        @php
+                            $selectedFactoryNames = [];
+                            if (!empty($selectedFactories)) {
+                                $selectedFactoryNames = \App\Models\Master\ArrivalLocation::whereIn('id', $selectedFactories)->pluck('name')->toArray();
+                            }
+                            $factoryNamesString = !empty($selectedFactoryNames) ? ' (' . implode(', ', $selectedFactoryNames) . ')' : '';
+                        @endphp
+                        <label class="form-label">Section{{ $factoryNamesString }}:</label>
+                        <select name="arrival_sub_location_id[]" id="arrival_sub_location_id" class="form-control select2" multiple disabled>
+                            <option value="">Select Section</option>
+                            @foreach($arrivalSubLocations as $section)
+                                <option value="{{ $section->id }}" data-factory="{{ $section->arrival_location_id }}" @selected(in_array($section->id, $selectedSections))>{{ $section->name }} ({{ $section->arrivalLocation->name }})</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
 
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Inquiries:</label>
-                <input type="text" value="{{ $sale_order->inquiry_id ? get_inquiry_reference_number($sale_order->inquiry_id) : '' }}" class="form-control" readonly>
-                <input type="hidden"  name="inquiry_id" id="inquiry_id" value="{{ $sale_order->inquiry_id }}" />
+                <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Remarks</h6>
+                </div>
+                <div class="col-12">
+                    <div class="form-group">
+                        <textarea name="remarks" id="remarks" class="form-control" rows="3" readonly>{{ $sale_order->remarks }}</textarea>
+                    </div>
+                </div>
             </div>
         </div>
+    </div>
 
+    <div class="row form-mar">
         <div class="col-md-4">
             <div class="form-group">
-                <label class="form-label">Sauda Type:</label>
-                <select name="sauda_type" id="sauda_type" class="form-control select2" readonly>
-                    <option value="">Select Sauda Type</option>
-                    <option value="pohanch" @selected($sale_order->sauda_type == 'pohanch')>Pohanch</option>
-                    <option value="x-mill" @selected($sale_order->sauda_type == 'x-mill')>X-mill</option>
-                </select>
+                <label class="form-label">Token Money:</label>
+                <input type="text" value="{{ $sale_order->token_money ?? 'N/A' }}" class="form-control" readonly>
             </div>
         </div>
-
-        <div class="col-md-4">
+        <div class="col-md-8">
             <div class="form-group">
-                <label class="form-label">Contract Terms:</label>
-                <input type="text" value="{{ get_payment_term($sale_order->payment_term_id)?->desc ?? '' }}" class="form-control" readonly>
-                <input type="hidden" name="payment_term_id" id="payment_term_id" value="{{ $sale_order->payment_term_id }}" />
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Locations:</label>
-                <select name="locations[]" id="locations" class="form-control select2" multiple>
-                    <option value="">Select Locations</option>
-                    @foreach(get_locations() as $location)
-                        <option value="{{ $location->id }}" @selected(in_array($location->id, $sale_order->locations->pluck("location_id")->toArray()))>{{ $location->name }}</option>
-                    @endforeach
-                </select>
+                <label class="form-label">Remarks:</label>
+                <textarea name="remarks" id="remarks" class="form-control" rows="2" readonly>{{ $sale_order->remarks }}</textarea>
             </div>
         </div>
     </div>
@@ -94,12 +224,15 @@
                         <tr>
                             <th>Item</th>
                             <th>Bag Type</th>
-                            <th>Pack Size</th>
-                            <th>Quantity</th>
-                            <th>Rate</th>
+                            <th>Packing</th>
+                            <th>No of Bags</th>
+                            <th>Quantity (kg)</th>
+                            <th>Rate per Kg</th>
+                            <th>Rate per Mond</th>
                             <th>Amount</th>
                             <th>Brand</th>
                             <th style="display: none;">Pack Size</th>
+                            <th>Description</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -123,11 +256,18 @@
                                         min="0" readonly>
                                 </td>
                                 <td>
-                                    <input type="number" name="qty[]" id="qty_{{ $index }}" value="{{ $data->qty }}" onkeyup="calc(this)" class="form-control qty" step="0.01"
+                                    <input type="text" name="no_of_bags[]" id="no_of_bags_{{ $index }}" value="{{ $data->no_of_bags }}" class="form-control no_of_bags" readonly>
+                                </td>
+                                <td>
+                                    <input type="number" name="qty[]" id="qty_{{ $index }}" value="{{ $data->qty }}" class="form-control qty" step="0.01"
                                         min="0" readonly>
                                 </td>
                                 <td>
                                     <input type="number" name="rate[]" id="rate_{{ $index }}" value="{{ $data->rate }}" onkeyup="calc(this)" class="form-control rate" step="0.01"
+                                        min="0" readonly>
+                                </td>
+                                <td>
+                                    <input type="number" name="rate[]" id="rate_{{ $index }}" value="{{ $data->rate_per_mond }}" onkeyup="calc(this)" class="form-control rate" step="0.01"
                                         min="0" readonly>
                                 </td>
                                 <td>
@@ -141,6 +281,11 @@
                                 <td style="display: none;">
                                     <input type="text" name="pack_size[]" value="0" id="pack_size{{ $index }}" value="{{ $data->pack_size }}" class="form-control pack_size" readonly>
                                 </td>
+
+                                <td>
+                                    <input type="text" name="description[]" id="description{{ $index }}" value="{{ $data->description }}" class="form-control description" readonly>
+                                </td>
+
                                 <td>
                                     <button type="button" disabled class="btn btn-danger btn-sm removeRowBtn"
                                         style="width:60px;">
@@ -162,7 +307,7 @@
         <div class="col-12 text-end">
             <a type="button"
             class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton me-2">Close</a>
-            <button type="submit" class="btn btn-primary submitbutton">Save</button>
+            {{-- <button type="submit" class="btn btn-primary submitbutton">Save</button> --}}
         </div>
     </div>
 </form>

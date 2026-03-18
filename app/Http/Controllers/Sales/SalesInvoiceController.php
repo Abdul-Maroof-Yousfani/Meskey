@@ -34,6 +34,14 @@ class SalesInvoiceController extends Controller
         DB::beginTransaction();
         $dc_ids = $request->dc_no;
         
+        // Sale Invoice's invoice dat should not be previous than delivery challans's date, and also tell that which delivery order is breaking it along with its date and transation number
+        $delivery_challans = DeliveryChallan::whereIn("id", $dc_ids)->get();
+        foreach ($delivery_challans as $delivery_challan) {
+            if(strtotime($delivery_challan->dispatch_date) > strtotime($request->invoice_date)) {
+                return response()->json("Backward date is not allowed. Delivery order: " . $delivery_challan->dc_no . " Date: " . $delivery_challan->dispatch_date, 422);
+            }
+        }
+
         try {
             // Validate that no_of_bags doesn't exceed available balance
             if ($request->dc_data_id) {
@@ -42,11 +50,11 @@ class SalesInvoiceController extends Controller
                         $requestedBags = $request->no_of_bags[$index] ?? 0;
                         $availableBalance = $this->getAvailableBalance($dc_data_id);
                         
-                        if ($requestedBags > $availableBalance) {
-                            return response()->json([
-                                "error" => "Requested bags ({$requestedBags}) exceeds available balance ({$availableBalance}) for item at row " . ($index + 1)
-                            ], 422);
-                        }
+                        // if ($requestedBags > $availableBalance) {
+                        //     return response()->json([
+                        //         "error" => "Requested bags ({$requestedBags}) exceeds available balance ({$availableBalance}) for item at row " . ($index + 1)
+                        //     ], 422);
+                        // }
                     }
                 }
             }
@@ -73,6 +81,11 @@ class SalesInvoiceController extends Controller
             // Store line items if provided
             if ($request->item_id) {
                 foreach ($request->item_id as $index => $item) {
+                    $balance = sales_invoice_balance($request->dc_data_id[$index]);
+
+                    if($request->no_of_bags[$index] > $balance) {
+                        return response()->json("Total balance is $balance. you can not exceed this balance", 422);
+                    }
                     $sales_invoice->sales_invoice_data()->create([
                         "item_id" => $request->item_id[$index],
                         "packing" => $request->packing[$index] ?? 0,
@@ -136,6 +149,15 @@ class SalesInvoiceController extends Controller
         DB::beginTransaction();
         $dc_ids = $request->dc_no;
         
+        // Sale Invoice's invoice dat should not be previous than delivery challans's date, and also tell that which delivery order is breaking it along with its date and transation number
+        $delivery_challans = $sales_invoice->delivery_challans;
+        foreach ($delivery_challans as $delivery_challan) {
+            if(strtotime($delivery_challan->dispatch_date) > strtotime($request->invoice_date)) {
+                return response()->json("Backward date is not allowed. Delivery order: " . $delivery_challan->dc_no . " Date: " . $delivery_challan->dispatch_date, 422);
+            }
+        }
+
+
         try {
             // Validate that no_of_bags doesn't exceed available balance
             if ($request->dc_data_id) {
@@ -145,11 +167,11 @@ class SalesInvoiceController extends Controller
                         // Exclude current invoice when calculating balance
                         $availableBalance = $this->getAvailableBalance($dc_data_id, $sales_invoice->id);
                         
-                        if ($requestedBags > $availableBalance) {
-                            return response()->json([
-                                "error" => "Requested bags ({$requestedBags}) exceeds available balance ({$availableBalance}) for item at row " . ($index + 1)
-                            ], 422);
-                        }
+                        // if ($requestedBags > $availableBalance) {
+                        //     return response()->json([
+                        //         "error" => "Requested bags ({$requestedBags}) exceeds available balance ({$availableBalance}) for item at row " . ($index + 1)
+                        //     ], 422);
+                        // }
                     }
                 }
             }
@@ -164,6 +186,8 @@ class SalesInvoiceController extends Controller
                 "reference_number" => $request->reference_number,
                 "sauda_type" => $request->sauda_type,
                 "remarks" => $request->remarks,
+                'am_approval_status' => "pending",
+                "am_change_made" => 1
             ]);
 
             // Sync delivery challans
@@ -176,6 +200,11 @@ class SalesInvoiceController extends Controller
 
             if ($request->item_id) {
                 foreach ($request->item_id as $index => $item) {
+                    $balance = sales_invoice_balance($request->dc_data_id[$index]);
+
+                    if($request->no_of_bags[$index] > $balance) {
+                        return response()->json("Total balance is $balance. you can not exceed this balance", 422);
+                    }
                     $sales_invoice->sales_invoice_data()->create([
                         "item_id" => $request->item_id[$index],
                         "packing" => $request->packing[$index] ?? 0,
@@ -209,6 +238,7 @@ class SalesInvoiceController extends Controller
     public function destroy(SalesInvoice $sales_invoice)
     {
         $sales_invoice->delete();
+        $sales_invoice->sales_invoice_data()->delete();
 
         return response()->json(["message" => "Sales Invoice has been deleted!"]);
     }
@@ -219,12 +249,8 @@ class SalesInvoiceController extends Controller
         $customers = Customer::all();
         $items = Product::all();
         
-        $delivery_challans = DeliveryChallan::select("id", "dc_no")
-            ->where("customer_id", $sales_invoice->customer_id)
-            ->where("location_id", $sales_invoice->location_id)
-            ->where("arrival_id", $sales_invoice->arrival_id)
-            ->where("am_approval_status", "approved")
-            ->get();
+        // Get the delivery challans that are already associated with this sales invoice
+        $delivery_challans = $sales_invoice->delivery_challans;
        
         return view("management.sales.sales-invoice.view", compact("customers", "delivery_challans", "sales_invoice", "items"));
     }
@@ -342,16 +368,34 @@ class SalesInvoiceController extends Controller
      */
     private function getDeliveryChallansWithBalance($customerId, $locationId, $arrivalId, $excludeSalesInvoiceId = null)
     {
+        // First, get the DCs already selected for this sales invoice
+        $selectedDcIds = [];
+        if ($excludeSalesInvoiceId) {
+            $salesInvoice = SalesInvoice::find($excludeSalesInvoiceId);
+            if ($salesInvoice) {
+                $selectedDcIds = $salesInvoice->delivery_challans()->pluck('delivery_challans.id')->toArray();
+            }
+        }
+
+        // Get approved delivery challans with receiving request approved for this customer
         $delivery_challans = DeliveryChallan::with("delivery_challan_data")
+            ->whereHas("receivingRequest", function($query) {
+                $query->where("am_approval_status", "approved");
+            })
             ->where("customer_id", $customerId)
-            ->where("location_id", $locationId)
-            ->where("arrival_id", $arrivalId)
             ->where("am_approval_status", "approved")
             ->get();
 
         $result = [];
 
         foreach ($delivery_challans as $dc) {
+            // Always include already selected DCs
+            if (in_array($dc->id, $selectedDcIds)) {
+                $result[] = $dc;
+                continue;
+            }
+
+            // Check if DC has any items with available balance
             $hasAvailableItems = false;
             
             foreach ($dc->delivery_challan_data as $dcData) {
@@ -373,21 +417,23 @@ class SalesInvoiceController extends Controller
     public function get_delivery_challans(Request $request)
     {
         $customer_id = $request->customer_id;
-        $location_id = $request->company_location_id;
-        $arrival_location_id = $request->arrival_location_id;
         $exclude_sales_invoice_id = $request->exclude_sales_invoice_id;
-
-        $delivery_challans = DeliveryChallan::with("delivery_challan_data")
+        $sauda_type = $request->sauda_type;
+    
+        $delivery_challans = DeliveryChallan::whereHas("receivingRequest", function($query) {
+                $query->where("am_approval_status", "approved");
+            })->with("delivery_challan_data")
             ->where("customer_id", $customer_id)
-            ->where("location_id", $location_id)
-            ->where("arrival_id", $arrival_location_id)
+            ->where("sauda_type", $sauda_type)
+            // ->where("location_id", $location_id)
+            // ->where("arrival_id", $arrival_location_id)
             ->where("am_approval_status", "approved")
             ->get();
+
 
         $data = [];
 
         foreach ($delivery_challans as $delivery_challan) {
-            // Check if DC has any items with available balance
             $hasAvailableItems = false;
             
             foreach ($delivery_challan->delivery_challan_data as $dcData) {
@@ -398,7 +444,6 @@ class SalesInvoiceController extends Controller
                 }
             }
 
-            // Only include DCs with available items
             if ($hasAvailableItems) {
                 $data[] = [
                     "id" => $delivery_challan->id,
@@ -406,6 +451,7 @@ class SalesInvoiceController extends Controller
                 ];
             }
         }
+
 
         return $data;
     }

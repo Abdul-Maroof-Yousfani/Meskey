@@ -43,7 +43,7 @@ class SamplingMonitoringController extends Controller
                 return $q->where(function ($sq) use ($searchTerm) {
                     $sq->orWhereHas('arrivalTicket', function ($aq) use ($searchTerm) {
                         $aq->where('unique_no', 'like', $searchTerm)
-                            ->orWhere('supplier_name', 'like', $searchTerm);
+                            ->orWhere('accounts_of_name', 'like', $searchTerm);
                     });
                 });
             })
@@ -62,6 +62,9 @@ class SamplingMonitoringController extends Controller
                             ->orWhere('decision_id', $authUser->parent_user_id);
                     });
                 });
+            })
+            ->whereHas('arrivalTicket', function ($query) {
+                $query->whereIn('location_id', getUserCurrentCompanyLocations());
             })
             ->where(function ($q) {
                 $q->where('approved_status', 'pending')
@@ -285,7 +288,8 @@ class SamplingMonitoringController extends Controller
             }
 
             $ArrivalSamplingRequest->update([
-                'remark' => $request->remarks,
+                'approved_remarks' => $request->remarks,
+                //'remark' => $request->remarks,
                 'decision_making' => $isDecisionMaking,
                 'lumpsum_deduction' => (float) $request->lumpsum_deduction ?? 0.00,
                 'lumpsum_deduction_kgs' => (float) $request->lumpsum_deduction_kgs ?? 0.00,

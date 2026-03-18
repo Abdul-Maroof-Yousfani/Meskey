@@ -52,6 +52,11 @@ class PaymentRequest extends Model
         return $this->hasMany(PaymentRequestApproval::class);
     }
 
+    public function approval()
+    {
+        return $this->hasOne(PaymentRequestApproval::class);
+    }
+
     public function paymentVoucherData()
     {
         return $this->hasOne(PaymentVoucherData::class, 'payment_request_id');

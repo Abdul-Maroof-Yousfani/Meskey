@@ -104,8 +104,8 @@
                                         </span>
 
                                     @elseif($itemGroup["qc_status"] == 'rejected')
-                                        <span class="badge badge-success">
-                                            Approved
+                                        <span class="badge badge-danger">
+                                            Rejected
                                         </span>
                                     @else
                                         <span class="badge badge-info">

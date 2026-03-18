@@ -2,9 +2,11 @@
     <thead>
         <tr>
             <th class="col-sm-1">Image </th>
+            <th class="col-sm-1">Type </th>
             <th class="col-sm-3">Name </th>
             <th class="col-sm-3">Parent</th>
             <th class="col-sm-1">Product Type</th>
+            <th class="col-sm-1">Category</th>
             <th class="col-sm-1">Status</th>
             <th class="col-sm-2">Created</th>
             <th class="col-sm-1">Action</th>
@@ -13,13 +15,22 @@
     <tbody>
         @if ($products->count() > 0)
             @foreach ($products as $parent)
-
                 {{-- ==== Parent Product Row ==== --}}
                 <tr style="background: #f7f7f7;">
                     <td><img src="{{ image_path($parent->image) }}" class="avatar lisiavatarlogo" /></td>
+                    <td class="text-uppercase" style="background: #f7f7f7;">
+                        <label class="badge 
+                        bg-light-{{ 
+                            $parent->product_category_flags == 'head' ? 'success' :
+                    ($parent->product_category_flags == 'b2' ? 'warning' : 'secondary') 
+                        }}">
+                            <small>{{ $parent->product_category_flags }}</small>
+                        </label>
+                    </td>
                     <td style="background: #f7f7f7; font-weight: bold;">{{ $parent->name }}</td>
                     <td>—</td>
                     <td><small>{{ formatEnumValue($parent->product_type) ?? '--' }}</small></td>
+                    <td><small>{{ get_category_name($parent->category_id) }}</small></td>
                     <td><label
                             class="badge bg-light-{{ $parent->status == 'inactive' ? 'danger' : 'success' }}">{{ $parent->status }}</label>
                     </td>
@@ -37,14 +48,23 @@
                         @endcan
                     </td>
                 </tr>
-
                 {{-- ==== Child Products Under Same Parent ==== --}}
                 @foreach ($parent->children as $child)
                     <tr>
                         <td><img src="{{ image_path($child->image) }}" class="avatar lisiavatarlogo" /></td>
+                        <td class="text-uppercase">
+                            <label class="badge 
+                    bg-light-{{ 
+                        $child->product_category_flags == 'head' ? 'success' :
+                            ($child->product_category_flags == 'b2' ? 'warning' : 'secondary') 
+                    }}">
+                                <small>——{{ $child->product_category_flags }}</small>
+                            </label>
+                        </td>
                         <td>—— {{ $child->name }}</td>
                         <td>{{ $parent->name }}</td>
                         <td><small>{{ formatEnumValue($child->product_type) ?? '--' }}</small></td>
+                        <td><small>{{ get_category_name($parent->category_id) }}</small></td>
                         <td><label
                                 class="badge bg-light-{{ $child->status == 'inactive' ? 'danger' : 'success' }}">{{ $child->status }}</label>
                         </td>
@@ -92,9 +112,6 @@
 {{-- <div id="paginationLinks">
     {{ $roles->links() }}
 </div> --}}
-
-
-
 <div class="row d-flex" id="paginationLinks">
     <div class="col-md-12 text-right">
         {{ $products->links() }}

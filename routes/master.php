@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\ApprovalsModule\ApprovalModuleController;
 use App\Http\Controllers\Master\CountryCityController;
+use App\Http\Controllers\Master\LabourRateController;
+use App\Http\Controllers\Master\StitchingController;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Master\{
@@ -35,7 +37,11 @@ use App\Http\Controllers\Master\{
     SizeController,
     PaymentTermController,
     PayTypeController,
-    PortController
+    PortController,
+    WeighbridgeAmountController,
+    DepartmentController,
+    RequestByController,
+    TransporterController
 };
 
 
@@ -62,6 +68,9 @@ Route::get('/get-categories', [CategoryController::class, 'getCategories'])->nam
 Route::resource('unit_of_measure', UnitOfMeasureController::class);
 Route::post('/get-unit_of_measure', [UnitOfMeasureController::class, 'getList'])->name('get.unit_of_measure');
 
+Route::resource('plant-breakdown-type', \App\Http\Controllers\Master\PlantBreakdownTypeController::class);
+Route::post('/get-plant-breakdown-type', [\App\Http\Controllers\Master\PlantBreakdownTypeController::class, 'getList'])->name('get.plant-breakdown-type');
+
 Route::resource('truck-size-ranges', TruckSizeRangeController::class);
 Route::post('get-truck-size-ranges', [TruckSizeRangeController::class, 'getList'])->name('get.truck_size_ranges');
 
@@ -86,6 +95,9 @@ Route::post('/get-division', [DivisionController::class, 'getList'])->name('get.
 
 Route::resource('broker', BrokerController::class);
 Route::post('/get-broker', [BrokerController::class, 'getList'])->name('get.broker');
+
+Route::resource('transporter', TransporterController::class);
+Route::post('/get-transporter', [TransporterController::class, 'getList'])->name('get.transporter');
 
 Route::resource('product-slab-type', ProductSlabTypeController::class);
 Route::post('/get-product-slab-type', [ProductSlabTypeController::class, 'getList'])->name('get.product-slab-type');
@@ -126,6 +138,9 @@ Route::post('/get-inspection-company', [InspectionCompanyController::class, 'get
 Route::resource('brands', BrandsController::class);
 Route::post('/get-brands', [BrandsController::class, 'getList'])->name('get.brands');
 
+Route::resource('stitching', StitchingController::class);
+Route::post('/get-stitching', [StitchingController::class, 'getList'])->name('get.stitching');
+
 Route::resource('account', AccountController::class);
 Route::post('/get-account', [AccountController::class, 'getList'])->name('get.account');
 
@@ -150,3 +165,17 @@ Route::post('/get-city', [CountryCityController::class, 'getCountryCityTable'])-
 Route::resource('ports', PortController::class);
 Route::post('/get-port', [PortController::class, 'getPortTable'])->name('get.port');
 Route::get('/get-cities/{country_id}', [PortController::class, 'getCities']);
+
+// weighbridge amounts
+Route::resource('weighbridge-amount', WeighbridgeAmountController::class);
+Route::post('/get-weighbridge-amount', [WeighbridgeAmountController::class, 'getList'])->name('get.weighbridge-amount');
+
+Route::resource('department', DepartmentController::class);
+Route::post('/get-department', [DepartmentController::class, 'getList'])->name('get.department');
+
+Route::resource('request-by', RequestByController::class);
+Route::post('/get-request-by', [RequestByController::class, 'getList'])->name('get.request-by');
+Route::get('/get-request-by-department/{department_id}', [RequestByController::class, 'getByDepartment'])->name('get.request-by-department');
+
+Route::resource("labour-rates", LabourRateController::class);
+Route::post("labour-rate/getList", [LabourRateController::class, "getList"])->name("get.labour-rate");

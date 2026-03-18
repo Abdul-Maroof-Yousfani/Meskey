@@ -8,7 +8,7 @@
                 <select class="form-control select2" name="arrival_ticket_id" id="arrival_ticket_id">
                     <option value="">Select Ticket</option>
                     @foreach ($ArrivalTickets as $arrivalTicket)
-                        <option value="{{ $arrivalTicket->id }}"
+                        <option value="{{ $arrivalTicket->id }}" data-location-id="{{ $arrivalTicket->location_id }}"
                             data-product="{{ $arrivalTicket->product->name ?? 'N/A' }}">
                             Ticket No: {{ $arrivalTicket->unique_no }} --
                             Truck No: {{ $arrivalTicket->truck_no }}
@@ -21,10 +21,10 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Location:</label>
-                <select class="form-control select2" name="arrival_location_id">
+                <select class="form-control select2" name="arrival_location_id" id="arrival_location_id">
                     <option value="">Select Location</option>
                     @foreach ($ArrivalLocations as $ArrivalLocations)
-                        <option value="{{ $ArrivalLocations->id }}">
+                        <option data-location-id="{{ $ArrivalLocations->company_location_id }}" value="{{ $ArrivalLocations->id }}">
                             {{ $ArrivalLocations->name }}
                         </option>
                     @endforeach
@@ -54,6 +54,48 @@
 </form>
 
 <script>
+
+// 1️⃣ Select2 init (SIRF EK DAFA)
+$('#arrival_location_id').select2({
+    placeholder: 'Select Arrival Location',
+    width: '100%'
+});
+
+// 2️⃣ Original options backup
+var originalOptions = $('#arrival_location_id').html();
+
+// 3️⃣ Ticket change
+$('#arrival_ticket_id').on('change', function () {
+
+    var locationId = $(this).find('option:selected').data('location-id');
+
+    // reset locations
+    $('#arrival_location_id').html(originalOptions);
+
+    if (!locationId) {
+        $('#arrival_location_id').val(null).trigger('change');
+        return;
+    }
+
+    // sirf matching location rakho (BAQI REMOVE)
+    $('#arrival_location_id option').each(function () {
+        if ($(this).data('location-id') != locationId && $(this).val() !== "") {
+            $(this).remove();
+        }
+    });
+
+    // select2 refresh
+    $('#arrival_location_id').select2({
+        placeholder: 'Select Arrival Location',
+        width: '100%'
+    });
+
+});
+
+
+
+
+    
     $(document).ready(function() {
         $('.select2').select2();
 

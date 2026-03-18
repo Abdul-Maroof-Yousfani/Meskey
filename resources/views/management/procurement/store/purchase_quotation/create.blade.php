@@ -40,7 +40,7 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label>Quatation Date:</label>
-                <input type="date" id="purchase_date" name="purchase_date" class="form-control">
+                <input type="date" id="purchase_date" name="purchase_date" class="form-control" min="{{ date('Y-m-d') }}">
             </div>
         </div>
         <div class="col-md-3">
@@ -78,23 +78,23 @@
         </div> --}}
         <div class="col-md-12">
         <div style="overflow-x: auto; white-space: nowrap;">
-            <table class="table table-bordered" id="purchaseRequestTable">
+            <table class="table table-bordered" id="purchaseRequestTable" style="min-width: 2000px;">
                 <thead>
                     <tr>
                         <th>Category</th>
                         <th>Item</th>
-                        <th>Item UOM</th>
-                        <th class="col-sm-2">Min Weight</th>
-                        <th class="col-sm-2">Brands</th>
-                        <th class="col-sm-2">Color</th>
-                        <th class="col-sm-2">Cons./sq. in.</th>
-                        <th class="col-sm-2">Size</th>
-                        <th class="col-sm-2">Stitching</th>
-                        <th class="col-sm-2">Micron</th>
-                        <th class="col-sm-2">Printing Sample</th>
                         <th>Qty</th>
                         <th>Rate</th>
                         <th>Total Amount</th>
+                        <th>Item UOM</th>
+                        <th class="bag-only">Min Weight (KG)</th>
+                        <th class="bag-only">Brands</th>
+                        <th class="bag-only">Color</th>
+                        <th class="bag-only">Cons./sq. in.</th>
+                        <th class="bag-only">Size</th>
+                        <th class="bag-only">Stitching</th>
+                        <th class="bag-only">Micron</th>
+                        <th class="bag-only">Printing Sample</th>
                         <th>Remarks</th>
                         <th>Action</th>
                     </tr>
@@ -197,31 +197,30 @@
         let row = `
             <tr id="row_${index}">
                 <td style="width: 25%">
-                <select name="category_id[]" onchange="filter_items(this.value, ${index})"
-                        id="category_id_${index}" class="form-control item-select select2">
-                    ${categoryOptions}
-                </select>
-            </td>
-            
-                <td style="width: 25%">
-                <select name="item_id[]" id="item_id_${index}" onchange="get_uom(${index})"
-                        class="form-control item-select select2"></select>
-                <input type="hidden" name="data_id[]" value="0">
-            </td>
-                <td style="width: 15%"><input type="text" name="uom[]" id="uom_${index}" class="form-control uom" readonly></td>
-                 <td style="width: 20%">
-                    <select name="supplier_id[]" id="supplier_id_${index}" class="form-control item-select" data-index="0">
-                        <option value="">Select Vendor</option>
-                        @foreach (get_supplier() as $supplier)
-                            <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
-                        @endforeach
+                    <select name="category_id[]" onchange="filter_items(this.value, ${index})"
+                            id="category_id_${index}" class="form-control item-select select2">
+                        ${categoryOptions}
                     </select>
                 </td>
-                <td style="width: 10%"><input  onkeyup="calc(${index})" onblur="calc(${index})" style="width: 100px" type="number" name="qty[]" id="qty_${index}" class="form-control" step="0.01" min="0"></td>
-                <td style="width: 20%"><input  onkeyup="calc(${index})" onblur="calc(${index})" style="width: 100px" type="number" name="rate[]" id="rate_${index}" class="form-control" step="0.01" min="0"></td>
+                <td style="width: 25%">
+                    <select name="item_id[]" id="item_id_${index}" onchange="get_uom(${index})"
+                            class="form-control item-select select2"></select>
+                    <input type="hidden" name="data_id[]" value="0">
+                </td>
+                <td style="width: 10%"><input onkeyup="calc(${index})" onblur="calc(${index})" style="width: 100px" type="number" name="qty[]" id="qty_${index}" class="form-control" step="0.01" min="0"></td>
+                <td style="width: 20%"><input onkeyup="calc(${index})" onblur="calc(${index})" style="width: 100px" type="number" name="rate[]" id="rate_${index}" class="form-control" step="0.01" min="0"></td>
                 <td style="width: 20%"><input style="width: 100px" type="number" readonly name="total[]" id="total_${index}" class="form-control" step="0.01" min="0"></td>
-                <td style="width: 25%"><input style="width: 100px" type="text" name="remarks[]" id="remark_${index}" class="form-control"></td>
+                <td style="width: 15%"><input type="text" name="uom[]" id="uom_${index}" class="form-control uom" readonly></td>
                 
+                <td class="bag-only"></td>
+                <td class="bag-only"></td>
+                <td class="bag-only"></td>
+                <td class="bag-only"></td>
+                <td class="bag-only"></td>
+                <td class="bag-only"></td>
+                <td class="bag-only"></td>
+                <td class="bag-only"></td>
+                <td style="width: 25%"><input style="width: 140px" type="text" name="remarks[]" id="remark_${index}" class="form-control"></td>
                 <td><button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="remove(${index})">Remove</button></td>
             </tr>`;
         $('#purchaseRequestBody').append(row);
@@ -370,6 +369,11 @@
                     placeholder: 'Please Select',
                     width: '100%'
                 });
+
+                // ✅ Toggle visibility based on category
+                if (master && master.category_id) {
+                    toggleVisibility(master.category_id);
+                }
             },
             error: function () {
                 $('#purchaseRequestBody').html('<p>Error loading data.</p>');
@@ -394,4 +398,27 @@
         $('#total_' + num).val(total);
     }
 
+    // ✅ Toggle visibility for Bag-specific columns
+    function toggleVisibility(categoryId) {
+        const bagCategoryIds = [11, 38]; // "Bags" category IDs are 11 and 38
+        const isBag = bagCategoryIds.includes(parseInt(categoryId));
+
+        if (isBag) {
+            $('.bag-only').show();
+        } else {
+            $('.bag-only').hide();
+        }
+    }
+
+    // Disable mousewheel on number inputs to prevent accidental changes and scroll issues
+    $(document).on('wheel', 'input[type=number]', function (e) {
+        $(this).blur();
+    });
+
+    $(document).on('select2:open', function (e) {
+        // Remove all Select2 scroll blockers from window & parents
+        $(document).off('scroll.select2');
+        $(window).off('scroll.select2');
+        $('*').off('scroll.select2');           // aggressive but often works
+    });
 </script>

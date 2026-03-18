@@ -1,6 +1,7 @@
-<x-sticky-table :items="$tickets" :leftSticky="2" :rightSticky="1" :emptyMessage="'No tickets found'" :pagination="$tickets->links()">
+<x-sticky-table :items="$tickets" :leftSticky="3" :rightSticky="1" :emptyMessage="'No tickets found'" :pagination="$tickets->links()">
     @slot('head')
         <th>Ticket #</th>
+        <th></th>
         <th>GRN #</th>
         <th>Miller</th>
         <th>Broker</th>
@@ -35,6 +36,8 @@
                 class="{{ is_null($row->arrival_purchase_order_id) || ($row->arrival_purchase_order_id && $row->is_ticket_verified == 0) ? ' bg-orange ' : '' }} {{ $row->first_qc_status == 'rejected' ? ' bg-red ' : '' }}">
                 <td>
                     #{{ $row->unique_no ?? 'N/A' }}
+                </td>
+                <td>
                     @if ($row->first_qc_status == 'rejected')
                         <span class="badge bg-danger ml-1">Rejected</span>
                     @elseif (is_null($row->arrival_purchase_order_id))
@@ -146,12 +149,12 @@
                 <td>
                     @if (!$row->purchaseOrder || ($row->purchaseOrder->status ?? '') == 'draft')
                         <a href="{{ route('raw-material.ticket-contracts.create', ['ticket_id' => $row->id]) }}"
-                            class="info p-1 text-center mr-2 position-relative">
+                            class="info p-1 text-center mx-2 position-relative">
                             <i class="ft-edit font-medium-3"></i>
                         </a>
                     @else
                         <a href="{{ route('raw-material.ticket-contracts.edit', $row->id) }}"
-                            class="info p-1 text-center mr-2 position-relative">
+                            class="info p-1 text-center mx-2 position-relative">
                             <i class="ft-eye font-medium-3"></i>
                         </a>
                     @endif

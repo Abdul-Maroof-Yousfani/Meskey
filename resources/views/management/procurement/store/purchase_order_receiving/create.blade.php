@@ -1,4 +1,4 @@
-<form action="{{ route('store.purchase-order-receiving.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form style="overflow-x: hidden;" action="{{ route('store.purchase-order-receiving.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-order-receiving') }}" />
     <div class="row form-mar">
@@ -34,7 +34,7 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label>Receiving Date:</label>
-                <input type="date" id="receiving_date" name="receiving_date" value="{{ now()->toDateString() }}" class="form-control" readonly>
+                <input type="date" id="receiving_date" min="{{ date('Y-m-d') }}" name="receiving_date" value="{{ now()->toDateString() }}" class="form-control" readonly>
             </div>
         </div>
         <div class="col-md-4">
@@ -47,37 +47,36 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label>Location:</label>
-                <select disabled name="company_location[]" id="company_location_id" class="form-control select2" multiple>
+                <select name="location_id" id="location_id" class="form-control select2" onchange="fetchUniqueNumber()" required>
                     <option value="">Select Location</option>
                     @foreach (get_locations() as $value)
                         <option value="{{ $value->id }}">{{ $value->name }}</option>
                     @endforeach
-                    <input type="hidden" name="location_id" id="location_id">
                 </select>
             </div>
         </div>
         <div class="col-md-4">
             <div class="form-group">
                 <label>Truck No:</label>
-                <input type="text" name="truck_no" id="truck_no" class="form-control" placeholder="Truck No">
+                <input type="text" name="truck_no" id="truck_no" class="form-control" placeholder="Truck No" required>
             </div>
         </div>
         <div class="col-md-4">
             <div class="form-group">
                 <label>DC No:</label>
-                <input type="text" name="dc_no" id="dc_no" class="form-control" placeholder="DC NO">
+                <input type="text" name="dc_no" id="dc_no" class="form-control" placeholder="DC NO" required>
             </div>
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
-                <label>Description (Optional):</label>
-                <textarea readonly name="description" id="description" placeholder="Description"
+                <label>Description:</label>
+                <textarea name="description" id="description" placeholder="Description"
                     class="form-control"></textarea>
             </div>
         </div>
     </div>
     <div class="row form-mar">
-        <div class="col-md-12">
+        <div class="col-md-12" style="overflow-x: auto">
             <table class="table table-bordered" id="purchaseRequestTable">
                 <thead>
                     <tr>
@@ -85,15 +84,15 @@
                         <th>Item</th>
                         <th>Item UOM</th>
                         <th>Qty</th>
-                        <th>Receive Weight</th>
-                        <th>Min Weight</th>
-                        <th>Brands</th>
-                        <th>Color</th>
-                        <th>Cons./sq. in.</th>
-                        <th>Size</th>
-                        <th>Stitching</th>
-                        <th>Micron</th>
-                        <th>Printing Sample</th>
+                        <th class="bag-only">Receive Weight (kg)</th>
+                        <th class="bag-only">Min Weight (Kg)</th>
+                        <th class="bag-only">Brands</th>
+                        <th class="bag-only">Color</th>
+                        <th class="bag-only">Cons./sq. in.</th>
+                        <th class="bag-only">Size</th>
+                        <th class="bag-only">Stitching</th>
+                        <th class="bag-only">Micron</th>
+                        <th class="bag-only">Printing Sample</th>
                         {{-- <th>Rate</th>
                         <th>Amount</th> --}}
                         <th>Remarks</th>
@@ -117,7 +116,9 @@
 
 
 <script>
-    $(".select2").select2();
+    $(".select2").select2({
+        dropdownParent: $('#modal-sidebar')
+    });
     
 
     rowIndex = 1;
@@ -269,22 +270,42 @@
                 $('#purchase_request_id').val(master.purchase_request_id || '');
                 $('#purchase_request_no').val(master.purchase_request?.purchase_request_no || '');
 
-                $('#location_id').val(master.location_id);
-                $('#location_name').val(master.location?.name);
-                $("#location_name").trigger("change");
+                console.log(response.location_dropdowns);
+                $("#location_id").select2('destroy');
+
+                $("#location_id")
+                    .empty()
+                    .select2({
+                        data: response.location_dropdowns,
+                        width: '100%',
+                        dropdownParent: $('#modal-sidebar')
+                    })
+                    .trigger('change');
+                    
+                // $('#location_id').val(master.location_id);
+                // $('#location_name').val(master.location?.name);
+                // $("#location_name").trigger("change");
 
                 // $('#reference_no').val(master.reference_no);
-                $('#description').val(master.description);
-                $('#company_location_id').val(response.locations_id).trigger('change');
+                // $('#description').val();
+                // $('#company_location_id').val(response.locations_id).trigger('change');
                 fetchUniqueNumber();
 
 
 
                 $('#purchaseOrderBody').html(html);
 
+                // Toggle bag-only columns
+                if (master.purchase_order && master.purchase_order.category_id == 38 || master.category_id == 38 || master.purchase_request?.category_id == 38) {
+                    $(".bag-only").show();
+                } else {
+                    $(".bag-only").hide();
+                }
+
                 $('.select2').select2({
                     placeholder: 'Please Select',
-                    width: '100%'
+                    width: '100%',
+                    dropdownParent: $('#modal-sidebar')
                 });
             },
             error: function () {
@@ -311,4 +332,16 @@
         $('#total_' + num).val(total);
 
     }
+
+    // Disable mousewheel on number inputs to prevent accidental changes and scroll issues
+    $(document).on('wheel', 'input[type=number]', function (e) {
+        $(this).blur();
+    });
+
+    $(document).on('select2:open', function (e) {
+        // Remove all Select2 scroll blockers from window & parents
+        $(document).off('scroll.select2');
+        $(window).off('scroll.select2');
+        $('*').off('scroll.select2');           // aggressive but often works
+    });
 </script>

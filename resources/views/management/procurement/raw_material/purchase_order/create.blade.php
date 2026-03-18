@@ -7,6 +7,9 @@
                 <label>Location:</label>
                 <select name="company_location_id" id="company_location_id" class="form-control select22">
                     <option value="">Location</option>
+                    @foreach ($companyLocations as $location)
+                        <option value="{{ $location->id }}">{{ $location->name }}</option>
+                    @endforeach
                 </select>
             </div>
         </div>
@@ -216,14 +219,14 @@
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group ">
                 <label>Rate Per Mound:</label>
-                <input type="number" name="rate_per_mound" placeholder="Rate Per Mound" class="form-control" />
+                <input type="number" step="0.01" name="rate_per_mound" placeholder="Rate Per Mound" class="form-control" />
 
             </div>
         </div>
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group ">
                 <label>Rate Per 100KG:</label>
-                <input type="number" name="rate_per_100kg" placeholder="Rate Per 100KG" class="form-control" />
+                <input type="number" step="0.01" name="rate_per_100kg" placeholder="Rate Per 100KG" class="form-control" />
             </div>
         </div>
     </div>
@@ -623,7 +626,7 @@
                 });
 
             function calculateQuantityAndBags() {
-                const MIN_QTY = 25000; // Minimum allowed quantity
+                const MIN_QTY = 0; // Minimum allowed quantity
                 const bagWeight = $('#product_id option:selected').data('bag-weight') || 1;
                 let minQuantity, maxQuantity;
 
@@ -636,8 +639,11 @@
                     if (minQuantity < MIN_QTY) {
                         minQuantity = MIN_QTY;
                         maxQuantity = Math.max(MIN_QTY, maxQuantity);
-                        $('#no_of_trucks').val(Math.ceil(MIN_QTY / TRUCK_MIN));
+                        // $('#no_of_trucks').val(Math.ceil(MIN_QTY / TRUCK_MIN));
+                        $('#no_of_trucks').val(Math.ceil(1));
                     }
+                    
+
                 } else {
                     minQuantity = parseInt($('#min_quantity_input').val()) || MIN_QTY;
                     maxQuantity = parseInt($('#max_quantity_input').val()) || minQuantity;
@@ -678,7 +684,7 @@
             calculateQuantityAndBags();
         });
 
-        initializeDynamicSelect2('#company_location_id', 'company_locations', 'name', 'id', true, false);
+        // initializeDynamicSelect2('#company_location_id', 'company_locations', 'name', 'id', true, false);
         initializeDynamicSelect2('#division_id', 'divisions', 'name', 'id', true, false);
         initializeDynamicSelect2('#sauda_type_id', 'sauda_types', 'name', 'id', true, false);
         // initializeDynamicSelect2('#supplier_id', 'suppliers', 'name', 'id', true, false);

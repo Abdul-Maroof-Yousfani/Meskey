@@ -19,4 +19,7 @@ class PurchaseAgainstJobOrder extends Model
     public function job_order_data() {
         return $this->belongsTo(JobOrder::class, "job_order_id");
     }
+    public function purchase_request_data() {
+        return $this->belongsTo(PurchaseRequestData::class, "purchase_request_data_id");
+    }
 }

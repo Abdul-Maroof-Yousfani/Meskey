@@ -24,15 +24,20 @@ class SalesInquiryRequest extends FormRequest
         return [
             "reference_no" => "required",
             "locations" => "required|array",
-            "inquiry_date" => "required|date",
+
+            "inquiry_date" => "required|date|before_or_equal:required_date",
             "customer" => "required",
-            "reference_number" => "required",
+            "reference_number" => "nullable",
 
-            "required_date" => "required|date",
+            "required_date" => "required|date|after_or_equal:inquiry_date",
+            "arrival_location_id" => "nullable|array|min:1",
+            "arrival_location_id.*" => "integer|exists:arrival_locations,id",
+            "arrival_sub_location_id" => "nullable|array|min:1",
+            "arrival_sub_location_id.*" => "integer|exists:arrival_sub_locations,id",
 
-            "contract_type" => "required|in:thadda,pohanch",
-            "contact_person" => "required",
-            "remarks" => "required",
+            "contract_type" => "required|in:pohanch,x-mill",
+            "contact_person" => "nullable",
+            "remarks" => "nullable",
 
             "item_id" => "nullable|array",
             "item_id.*" => "required",
@@ -44,8 +49,8 @@ class SalesInquiryRequest extends FormRequest
             "rate" => "nullable|array",
             "rate.*" => "required",
 
-            "desc" => "nullable|array",
-            "desc.*" => "required",
+            // "desc" => "nullable|array",
+            // "desc.*" => "nullable|required",
 
             "bag_size" => "nullable|array",
             "bag_size.*" => "required",
@@ -62,6 +67,10 @@ class SalesInquiryRequest extends FormRequest
             "pack_size" => "nullable|array",
             "pack_size.*" => "required",
 
+            "token_money" => "nullable|numeric",
+
+            "rate_per_mond" => "required",
+            "rate_per_mond.*" => "required"
 
         ];
     }

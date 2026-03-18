@@ -21,9 +21,11 @@
                         <thead>
                             <tr>
                                 <th>Item</th>
+                                @if($purchaseOrderReceivingData->category_id == 38)
                                 <th>Size</th>
                                 <th>Brand</th>
                                 <th>Job Order</th>
+                                @endif
                                 <th>Required Weight Per Bag</th>
                                 <th>Average Weight of 1 Bag</th>
                                 <th>Total Bags</th>
@@ -37,6 +39,7 @@
                                 <input type="text" name="item" id="item" value="{{ getItem($purchaseOrderReceivingData->item_id)->name }}" readonly
                                     class="form-control">
                             </td>
+                            @if($purchaseOrderReceivingData->category_id == 38)
                             <td>
                                 <input type="text" name="size" id="size" value="{{ $purchaseOrderReceivingData?->purchase_order_data?->size ?? null }}" readonly
                                     class="form-control">
@@ -45,32 +48,40 @@
                                 <input type="text" name="brand" id="brand" value="{{ $purchaseOrderReceivingData?->purchase_order_data?->brand ?? null }}" readonly
                                     class="form-control">
                             </td>
+                            @php
+                                $data = $purchaseOrderReceivingData->purchase_order_data->purchase_request_data->JobOrder;
+                                $string = "";
+                                foreach($data as $datum) {
+                                    $string .= $datum->job_order_data->job_order_no . ", ";
+                                }
 
+                            @endphp
                             <td>
-                                <input type="text" name="job_order" id="job_order" value="JOB-KHI-11-2025-0001" readonly
+                                <input type="text" name="job_order" id="job_order" value="{{ trim($string, ", ") }}" readonly
                                     class="form-control">
                             </td>
+                            @endif
                             <td>
-                                <input type="text" name="required_weight_per_bag" value="{{ $purchaseOrderReceivingData?->purchase_order_data?->min_weight ?? null }}" id="required_weight_per_bag" readonly class="form-control">
+                                <input type="text" name="required_weight_per_bag" value="{{ $purchaseOrderReceivingData->category_id == 38 ? ($purchaseOrderReceivingData?->purchase_order_data?->min_weight ?? null) : 0 }}" id="required_weight_per_bag" readonly class="form-control">
                             </td>
 
                             <td>
                                 <input type="text" name="average_weight_of_one_bag" value="{{ $purchaseOrderReceivingData?->qc?->average_weight_of_one_bag }}" onkeyup="calculate_total_recieved_weight(this)" id="average_weight_of_1_bag"
-                                     class="form-control" placeholder="Average Weight of One Bag">
+                                     class="form-control" placeholder="Average Weight of One Bag" readonly>
                             </td>
 
                             <td>
-                                <input type="text" name="total_bags" id="total_bags" value="{{ $purchaseOrderReceivingData?->purchase_order_data?->qty }}" readonly
+                                <input type="text" name="total_bags" id="total_bags" value="{{ $purchaseOrderReceivingData?->qty }}" readonly
                                     class="form-control">
                             </td>
 
                             <td>
-                                <input type="text" name="total_weight_required" value="{{ (($purchaseOrderReceivingData?->purchase_order_data?->qty ?? 0) * ($purchaseOrderReceivingData?->purchase_order_data?->min_weight ?? 0)) / 1000 }}" id="total_weight_required" value="Total Weight Required"
+                                <input type="text" name="total_weight_required" value="{{ (($purchaseOrderReceivingData?->qty ?? 0) * ($purchaseOrderReceivingData?->purchase_order_data?->min_weight ?? 0)) / 1000 }}" id="total_weight_required" value="Total Weight Required"
                                     readonly class="form-control">
                             </td>
 
                             <td>
-                                <input type="text" name="total_weight_received" id="total_weight_received" value="{{ ($purchaseOrderReceivingData?->purchase_order_data?->qty * $purchaseOrderReceivingData?->qc?->average_weight_of_one_bag) / 1000 }}"
+                                <input type="text" name="total_weight_received" id="total_weight_received" value="{{ ($purchaseOrderReceivingData?->qty * $purchaseOrderReceivingData?->qc?->average_weight_of_one_bag) / 1000 }}"
                                     readonly class="form-control">
                             </td>
 
@@ -87,8 +98,9 @@
                         <thead>
                             <tr>
                                 <th>S.#</th>
-                                <th>Net Weight</th>
-                                <th>Bag Weight</th>
+                                <th>Net Weight (grams)</th>
+                                <th>Number of bags</th>
+                                <th>Average weight of 1 bag (grams)</th>
                             </tr>
                         </thead>
                         @php
@@ -97,6 +109,11 @@
                         @endphp
                         <tbody id="purchaseOrderBody">
                             @for ($i = 0; $i < 5; $i++)
+
+                                @php
+                                    $net_weight = $bags[$i]["net_weight"] ?? 0;
+                                    $bag_weight = $bags[$i]["bag_weight"] ?? 0;
+                                @endphp
                                 <tr>
                                     <td style="width: 100px;">
                                         <input type="text" name="item" style="text-align: center" id="item"
@@ -110,8 +127,13 @@
                                     <td>
                                         <input type="text" name="bag_weight[]"
                                             value="{{ $bags[$i]['bag_weight'] ?? '' }}" id="bag_weight"
-                                            placeholder="Bag Weight" readonly class="form-control">
+                                            placeholder="Bag Weight" readonly class="form-control" >
                                     </td>
+                                   
+                                <td>
+                                    <input type="text" name="total_weight[]" value="{{ $bag_weight > 0 ? round($net_weight / $bag_weight, 2) : '' }}" id="total_weight" placeholder="Bag Weight"
+                                        class="form-control" readonly>
+                                </td>
                                 </tr>
                             @endfor
 
@@ -123,12 +145,17 @@
                         <thead>
                             <tr>
                                 <th>S.#</th>
-                                <th>Net Weight</th>
-                                <th>Bag Weight</th>
+                                <th>Net Weight (grams)</th>
+                                <th>Number of bags</th>
+                                <th>Average weight of 1 bag (grams)</th>
                             </tr>
                         </thead>
                         <tbody id="purchaseOrderBody">
                             @for ($i = 5; $i < 10; $i++)
+                               @php
+                                    $net_weight = $bags[$i]["net_weight"] ?? 0;
+                                    $bag_weight = $bags[$i]["bag_weight"] ?? 0;
+                                @endphp
                                 <tr>
                                     <td style="width: 100px; text-align: center;">
                                         <input type="text" name="item" style="text-align: center"
@@ -143,8 +170,13 @@
                                     <td>
                                         <input type="text" name="bag_weight[]"
                                             value="{{ $bags[$i]['bag_weight'] ?? '' }}" id="bag_weight"
-                                            placeholder="Bag Weight" readonly class="form-control">
+                                            placeholder="Bag Weight"  class="form-control" readonly>
                                     </td>
+
+                                <td>
+                                    <input type="text" name="total_weight[]" value="{{ $bag_weight > 0 ? round($net_weight / $bag_weight, 2) : '' }}" id="total_weight" placeholder="Bag Weight"
+                                        class="form-control" readonly>
+                                </td>
                                 </tr>
                             @endfor
                         </tbody>
@@ -239,7 +271,7 @@
                 <input type="hidden" name="id" value="{{ $purchaseOrderReceivingData->qc->id }}" />
 
                 <input type="hidden" name="total_bags" id="total_bags"
-                    value="{{ $purchaseOrderReceivingData?->purchase_order_data?->qty }}" readonly
+                    value="{{ $purchaseOrderReceivingData?->qty }}" readonly
                     class="form-control">
 
                 <div class="row" style="margin-top: 10px; margin-bottom: 30px;">
@@ -274,11 +306,13 @@
         </form>
 
 
-        <div class="row">
-            <div class="col-12">
-                <x-approval-status-and-saved :model="$purchaseOrderReceivingData->qc" />
+        @if($type != "view")
+            <div class="row">
+                <div class="col-12">
+                    <x-approval-status-and-saved :model="$purchaseOrderReceivingData->qc" />
+                </div>
             </div>
-        </div>
+        @endif
         <div class="row bottom-button-bar" style="padding-bottom: 20px;">
             &nbsp;
         </div>

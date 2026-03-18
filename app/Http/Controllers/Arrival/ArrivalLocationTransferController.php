@@ -36,10 +36,13 @@ class ArrivalLocationTransferController extends Controller
                 $sq->where('name', 'like', $searchTerm);
             });
         })
-            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
-                return $q->whereHas('arrivalTicket', function ($sq) {
-                    $sq->where('location_id', auth()->user()->company_location_id);
-                });
+            // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+            //     return $q->whereHas('arrivalTicket', function ($sq) {
+            //         $sq->where('location_id', auth()->user()->company_location_id);
+            //     });
+            // })
+            ->whereHas('arrivalTicket', function ($q) {
+                $q->whereIn('location_id', getUserCurrentCompanyLocations());
             })
             ->latest()
             ->paginate(request('per_page', 25));
@@ -53,16 +56,17 @@ class ArrivalLocationTransferController extends Controller
     public function create()
     {
         $data['ArrivalLocations'] = ArrivalLocation::where('status', 'active')
-            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
-                return $q->where('company_location_id', auth()->user()->company_location_id);
-            })
+            // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+            //     return $q->where('company_location_id', auth()->user()->company_location_id);
+            // })
+            ->whereIn('company_location_id', getUserCurrentCompanyLocations())
             ->get();
             
         $data['ArrivalTickets'] = ArrivalTicket::where('location_transfer_status', 'pending')
-        
-          ->when(auth()->user()->user_type != 'super-admin', function ($q) {
-                return $q->where('location_id', auth()->user()->company_location_id);
-            })
+            ->whereIn('location_id', getUserCurrentCompanyLocations())
+        //   ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+        //         return $q->where('location_id', auth()->user()->company_location_id);
+        //     })
         ->get();
 
         return view('management.arrival.location_transfer.create', $data);

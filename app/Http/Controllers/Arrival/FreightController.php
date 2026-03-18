@@ -23,26 +23,28 @@ class FreightController extends Controller
         return view('management.arrival.freight.index');
     }
 
-    public function getList(Request $request)
+      public function getList(Request $request)
     {
         $authUser = auth()->user();
         $isSuperAdmin = $authUser->user_type === 'super-admin';
 
         $query = Freight::with(['arrivalTicket'])
-            ->when($request->filled('search'), function ($q) use ($request) {
-                $searchTerm = '%' . $request->search . '%';
-                return $q->where(function ($sq) use ($searchTerm) {
-                    $sq->where('ticket_number', 'like', $searchTerm)
-                        ->orWhere('truck_number', 'like', $searchTerm)
-                        ->orWhere('billy_number', 'like', $searchTerm);
-                });
-            })
-            ->where('company_id', $request->company_id)
-            ->when(!$isSuperAdmin, function ($q) use ($authUser) {
-                return $q->whereHas('arrivalTicket', function ($query) use ($authUser) {
-                    $query->where('location_id', $authUser->company_location_id);
-                });
-            });
+    ->when($request->filled('search'), function ($q) use ($request) {
+        $searchTerm = '%' . $request->search . '%';
+
+        $q->where(function ($sq) use ($searchTerm) {
+               $sq->orWhereHas('arrivalTicket', function ($aq) use ($searchTerm) {
+                    $aq->where('unique_no', 'like', $searchTerm)
+                        ->orWhere("truck_no", 'like', $searchTerm)
+                        ->orWhere('bilty_no', 'like', $searchTerm);
+
+               });
+        });
+    })
+    ->where('company_id', $request->company_id)
+    ->whereHas('arrivalTicket', function ($q) {
+        $q->whereIn('location_id', getUserCurrentCompanyLocations());
+    });
 
         $freights = $query->latest()
             ->paginate($request->get('per_page', 25));
@@ -58,11 +60,12 @@ class FreightController extends Controller
         $tickets = ArrivalTicket::where('freight_status', 'pending')
             ->whereNotNull('qc_product')
             // where('arrival_purchase_order_id', '!=', Null)
-            ->when(!$isSuperAdmin, function ($query) use ($authUser) {
-                // return $query->whereHas('unloadingLocation', function ($q) use ($authUser) {
-                return $query->where('location_id', $authUser->company_location_id);
-                // });
-            })
+            // ->when(!$isSuperAdmin, function ($query) use ($authUser) {
+            //     // return $query->whereHas('unloadingLocation', function ($q) use ($authUser) {
+            //     return $query->where('location_id', $authUser->company_location_id);
+            //     // });
+            // })
+            ->whereIn('location_id', getUserCurrentCompanyLocations())
             ->get();
 
         return view('management.arrival.freight.create', ['tickets' => $tickets]);

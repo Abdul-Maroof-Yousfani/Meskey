@@ -38,6 +38,9 @@
                                                     <select name="company_location_id_f" id="company_location"
                                                         class="form-control ">
                                                         <option value="">Location</option>
+                                                        @foreach ($companyLocations as $location)
+                                                            <option value="{{ $location->id }}">{{ $location->name }}</option>
+                                                        @endforeach
                                                     </select>
                                                 </div>
                                             </div>

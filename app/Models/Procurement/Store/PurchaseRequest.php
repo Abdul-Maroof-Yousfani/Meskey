@@ -16,6 +16,7 @@ class PurchaseRequest extends Model
     protected $fillable = [
         'purchase_request_no',
         'company_id',
+        'category_id',
         'purchase_date',
         'location_id',
         'reference_no',
@@ -27,6 +28,9 @@ class PurchaseRequest extends Model
         'status',
         'po_status',
         'created_by',
+        'job_orders',
+        'department_id',
+        'request_by_id'
     ];
 
     public function location()
@@ -36,6 +40,11 @@ class PurchaseRequest extends Model
 
     public function locations() {
         return $this->morphMany(Location::class, 'locationable');
+    }
+
+    public function category()
+    {
+        return $this->belongsTo(\App\Models\Category::class, 'category_id');
     }
 
     public function PurchaseData()
@@ -60,5 +69,15 @@ class PurchaseRequest extends Model
     public function createdBy()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function department()
+    {
+        return $this->belongsTo(\App\Models\Master\Department::class, 'department_id');
+    }
+
+    public function requestBy()
+    {
+        return $this->belongsTo(\App\Models\Master\RequestBy::class, 'request_by_id');
     }
 }

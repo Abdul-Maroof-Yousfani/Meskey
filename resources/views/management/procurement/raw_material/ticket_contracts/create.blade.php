@@ -276,8 +276,7 @@
                                                         <div class="form-group">
                                                             <label>Avg. Weight per Bag</label>
                                                             <input type="text" class="form-control"
-                                                                value="{{ $arrivalTicket->net_weight / $arrivalTicket->bags ?? 'N/A' }}"
-                                                                readonly>
+                                                            value="{{ $arrivalTicket->bags > 0 ? $arrivalTicket->net_weight / $arrivalTicket->bags : 'N/A' }}"                                                                readonly>
                                                         </div>
                                                     </div>
                                                     <div class="col-md-3">
@@ -613,6 +612,7 @@
                 }
 
                 const contractRow = $(`.contract-row[data-id="${currentSelectedContract}"]`);
+                const contractCalculationType = contractRow.data('contractcaltype');
                 const remainingQty = parseFloat(contractRow.find(`td:eq(${remainingQtyRow})`).text().split(
                         ' - ')[1] ||
                     contractRow.find(`td:eq(${remainingQtyRow})`).text().split(' - ')[0]) || 0;
@@ -661,7 +661,7 @@
                             <option value="1.5">1.5</option>
                             <option value="2">2</option>
                         </select>
-                        <small class="text-muted">Max allowed: ${remainingTrucks}</small>
+                        <small class="text-muted">Max allowed: ${contractCalculationType != 'quantity' ? remainingTrucks : 'N/A | Quantity Wise Sauda'}</small>
                     </div>
                     <div class="form-check text-left mt-3">
                         <input type="checkbox" class="form-check-input" id="swal-verify-ticket" ${isTicketVerified ? 'checked' : ''}>
@@ -709,6 +709,7 @@
                     preConfirm: () => {
                         const trucksQty = parseFloat($('#swal-closing-trucks').val());
                         const verifyTicket = $('#swal-verify-ticket').is(':checked');
+                      
 
                         if (!trucksQty || trucksQty <= 0) {
                             Swal.showValidationMessage(
@@ -716,14 +717,14 @@
                             );
                             return false;
                         }
-
+                        if(contractCalculationType != 'quantity'){
                         if (trucksQty > remainingTrucks) {
                             Swal.showValidationMessage(
                                 `Closing trucks quantity cannot exceed remaining trucks (${remainingTrucks})`
                             );
                             return false;
                         }
-
+                    }
                         // if (requiresFreightConfirmation && !$('#swal-confirm-different-freight')
                         //     .is(':checked')) {
                         //     Swal.showValidationMessage(

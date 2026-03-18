@@ -30,7 +30,32 @@ class QCRequest extends FormRequest
             "bottom_stitching" => "required",
             "ready_to_pack" => "required",
             "remarks" => "required",
-            "date" => "required"
+            "date" => "required",
+            "accepted_quantity" => [
+                "required",
+                function($attribute, $value, $fail) {
+                    $accepted_quantity = $this->accepted_quantity;
+                    $rejected_quantity = $this->rejected_quantity;
+                    $qty = $this->total_bags;
+
+                    if(((int)$accepted_quantity + (int)$rejected_quantity) != $qty) {
+                        $fail("Accepted quantity, and Rejected quantity should be equal to $qty");
+                    }
+                }
+            ],
+            "deduction_per_bag" => ["nullable"],
+            "rejected_quantity" => [
+                "required",
+                function($attribute, $value, $fail) {
+                    $accepted_quantity = $this->accepted_quantity;
+                    $rejected_quantity = $this->rejected_quantity;
+                    $qty = $this->total_bags;
+
+                    if(((int)$accepted_quantity + (int)$rejected_quantity) != $qty) {
+                        $fail("Accepted quantity, and Rejected quantity should be equal to $qty");
+                    }
+                }
+            ], 
         ];
     }
 }

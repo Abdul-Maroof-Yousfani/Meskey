@@ -16,15 +16,30 @@
     <tbody>
         @if (count($GroupedPurchaseQuotation) != 0)
             @php
-                $previousRequestNo = null; // Track previous request number
-                $previousQuotationNo = null;
-                $isFirstRequestRow = true;
+                $previousRequestNo = null; 
             @endphp
-        
             @foreach ($GroupedPurchaseQuotation as $requestGroup)
                 @php
+                    $is_editing_allowed = false;
                     $currentRequestNo = $requestGroup['purchase_request_no'];
-                    // $totalRequestRowspan = $requestGroup['request_rowspan'];
+
+                    // Check if ANY item in ANY quotation belonging to this PR is pending or reverted
+                    foreach ($GroupedPurchaseQuotation as $row) {
+                        if ($row['purchase_request_no'] === $currentRequestNo) {
+                            foreach ($row['items'] as $itemGroup) {
+                                foreach ($itemGroup['suppliers'] as $supplierRowData) {
+                                    $status = strtolower(
+                                        $supplierRowData['data']?->{$supplierRowData['data']->getApprovalModule()->approval_column ?? 'am_approval_status'} ?? ''
+                                    );
+                                    if (in_array($status, ['pending', 'reverted'])) {
+                                        $is_editing_allowed = true;
+                                        break 3;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     $totalRequestRowspan = array_sum(
                         array_column(
                             array_filter($GroupedPurchaseQuotation, function ($row) use ($currentRequestNo) {
@@ -33,8 +48,6 @@
                             'request_rowspan'
                         )
                     );
-
-                    // $totalRequestRowspan = array_sum(array_column($GroupedPurchaseQuotation, 'request_rowspan'));
                 @endphp
 
                 @php $isFirstRequestRow = true; @endphp
@@ -75,15 +88,13 @@
 
                             {{-- ✅ Other columns --}}
                             @if ($isFirstRequestRow)
-                                @php
-                                    $quotation_rowspan += $requestGroup['request_rowspan'];
-                                @endphp
                                 <td rowspan="{{ $requestGroup['request_rowspan'] }}"
                                     style="background-color: #e3f2fd; vertical-align: middle;">
                                     <p class="m-0 font-weight-bold">
                                         #{{ $requestGroup['request_no'] }}
                                     </p>
                                 </td>
+                                @php $isFirstRequestRow = false; @endphp
                             @endif
 
                             <td>
@@ -95,8 +106,8 @@
                                         strtolower($approvalStatus) === 'partial approved' &&
                                         strtolower($approvalDataStatus) === 'pending'
                                     ) {
-                                        $statusText = 'Neglected';
-                                        $statusColor = 'text-danger';
+                                        $statusText = 'Pending';
+                                        $statusColor = 'text-warning';
                                     } elseif (
                                         strtolower($approvalStatus) === 'rejected' &&
                                         strtolower($approvalDataStatus) === 'pending'
@@ -108,6 +119,7 @@
                                         $statusColor = match (strtolower($statusText)) {
                                             'approved' => 'text-success',
                                             'rejected' => 'text-danger',
+                                            'neglected' => 'text-warning',
                                             'returned' => 'text-primary',
                                             'pending' => 'text-warning',
                                             default => 'text-muted',
@@ -151,37 +163,24 @@
                             </td>
 
                             @if ($previousRequestNo !== $currentRequestNo)
-                                <td rowspan="{{ $requestGroup['quotaion_rowspan'] }}">
-                                    <div class="d-flex gap-2">
-                                        <a onclick="openModal(this, '{{ route('store.purchase-quotation.comparison-approvals', $supplierRow['data']->purchase_quotation->purchase_request_id) }}', 'Quotation Approval', false, '100%')"
-                                            class="info p-1 text-center mr-2 position-relative" title="Approval">
-                                            <i class="ft-check font-medium-3"></i>
-
+                                <td rowspan="{{ $totalRequestRowspan }}" style="vertical-align: middle;">
+                                    <div class="d-flex flex-column" style="gap: 10px;">
+                                        <a onclick="openModal(this, '{{ route('store.purchase-quotation.comparison-approvals', ['id' => $supplierRow['data']->purchase_quotation->purchase_request_id, 'listRefresh' => route('store.purchase-quotation.comparison')]) }}', 'Quotation Approval', false, '100%')"
+                                            class="bg-info text-white p-1 text-center position-relative" title="Approval" style="border-radius: 4px; min-width: 70px;">
+                                            Approval
                                         </a>
-                                    </div>
-                                    @if (
-                                        $requestGroup['request_status'] != 'approved' &&
-                                            $requestGroup['request_status'] != 'rejected' &&
-                                            $requestGroup['request_status'] != 'partial approved')
-                                        <div class="d-flex gap-2">
+                                        <a onclick="openModal(this, '{{ route('store.purchase-quotation.dataForComparison', $supplierRow['data']->purchase_quotation->purchase_request_id) }}', 'View Comparison', false, '100%')"
+                                            class="bg-primary text-white p-1 text-center position-relative" title="Compare" style="border-radius: 4px; min-width: 70px;">
+                                            Compare
+                                        </a>
+                                        @if($requestGroup['created_by_id'] == auth()->user()->id && $is_editing_allowed)
                                             <a onclick="openModal(this, '{{ route('store.purchase-quotation.edit', [$supplierRow['data']->purchase_quotation->id, 'purchase_request_id' => $supplierRow['data']->purchase_quotation->purchase_request_id]) }}', 'Quotation Edit', false, '100%')"
-                                                class="info p-1 text-center mr-2 position-relative"
-                                                title="View Approved">
-                                                <i class="ft-edit font-medium-3"></i>
-
+                                                class="bg-warning text-white p-1 text-center position-relative" title="Edit" style="border-radius: 4px; min-width: 70px;">
+                                                Edit
                                             </a>
-                                        </div>
-                                    @endif
-                                    {{-- </td>
-                            <td rowspan="{{ $requestGroup['quotaion_rowspan'] }}"> --}}
-                                    <div class="d-flex gap-2">
-                                        <a onclick="openModal(this, '{{ route('store.purchase-quotation.comparison-approvals-view', $supplierRow['data']->purchase_quotation->purchase_request_id) }}', 'Quotation Approval', false, '100%')"
-                                            class="info p-1 text-center mr-2 position-relative" title="View Approved">
-                                            <i class="ft-eye font-medium-3"></i>
-                                        </a>
+                                        @endif
                                     </div>
                                 </td>
-
                                 @php
                                     $previousRequestNo = $currentRequestNo;
                                 @endphp
@@ -190,7 +189,6 @@
                         </tr>
                       
                     @endforeach
-                    @php $isFirstRequestRow = false; @endphp
                 @endforeach
             @endforeach
         @else

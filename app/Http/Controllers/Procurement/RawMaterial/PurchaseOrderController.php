@@ -26,7 +26,11 @@ class PurchaseOrderController extends Controller
      */
     public function index()
     {
-        return view('management.procurement.raw_material.purchase_order.index');
+        // $companyLocations = CompanyLocation::when(auth()->user()->user_type != 'super-admin', function ($q) {
+        //     return $q->where('id', auth()->user()->company_location_id);
+        // })->get();
+        $companyLocations = CompanyLocation::whereIn('id', getUserCurrentCompanyLocations())->get();
+        return view('management.procurement.raw_material.purchase_order.index', compact('companyLocations'));
     }
 
     /**
@@ -79,6 +83,8 @@ class PurchaseOrderController extends Controller
 
                 return $q->whereDate('created_at', '>=', $startDate)
                     ->whereDate('created_at', '<=', $endDate);
+            })->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                return $q->where('company_location_id', auth()->user()->company_location_id);
             })
             ->where('purchase_type', 'regular')
             ->latest()
@@ -130,6 +136,10 @@ class PurchaseOrderController extends Controller
         $data['truckSizeRanges'] = TruckSizeRange::where('status', 'active')->get();
         $data['products'] = Product::where('product_type', 'raw_material')->get();
         $data['brokers'] = Broker::all();
+        // $data['companyLocations'] = CompanyLocation::when(auth()->user()->user_type != 'super-admin', function ($q) {
+        //     return $q->where('id', auth()->user()->company_location_id);
+        // })->get();
+        $data['companyLocations'] = CompanyLocation::whereIn('id', getUserCurrentCompanyLocations())->get();
         $authUser = auth()->user();
         $locationId = $authUser->companyLocation?->id ?? '1';
         $locationId = (string) $locationId;
@@ -220,7 +230,8 @@ class PurchaseOrderController extends Controller
         $data['truckSizeRanges'] = TruckSizeRange::where('status', 'active')->get();
         $data['products'] = Product::where('product_type', 'raw_material')->get();
         $data['brokers'] = Broker::all();
-
+        $po = $data['arrivalPurchaseOrder'];
+        $data['ticketcounts'] = $po->arrivalTickets()->count() ?? 0;
         $getSlabs = ProductSlabForRmPo::with('slabType')
             ->where('product_id', $data['arrivalPurchaseOrder']->product_id)
             ->where('company_id', $data['arrivalPurchaseOrder']->company_id)
@@ -261,6 +272,7 @@ class PurchaseOrderController extends Controller
         $arrivalPurchaseOrder = ArrivalPurchaseOrder::findOrFail($id);
         $data = $request->validated();
         $data = $request->all();
+        // dd($data);
 
         DB::transaction(function () use ($data, $arrivalPurchaseOrder) {
             $updateData = [
@@ -287,6 +299,10 @@ class PurchaseOrderController extends Controller
                 'is_replacement' => ($data['is_replacement'] ?? '') == '1',
                 'weighbridge_from' => $data['weighbridge_from'] ?? null,
                 'delivery_address' => $data['delivery_address'] ?? null,
+                'min_quantity' => $data['min_quantity'] ?? null,
+                'max_quantity' => $data['max_quantity'] ?? null,
+                'min_bags' => $data['min_bags'] ?? null,
+                'max_bags' => $data['max_bags'] ?? null,
                 'remarks' => $data['remarks'] ?? null,
             ];
 

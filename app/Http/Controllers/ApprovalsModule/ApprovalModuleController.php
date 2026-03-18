@@ -18,6 +18,7 @@ class ApprovalModuleController extends Controller
     public function index()
     {
         $modules = ApprovalModule::with('roles.role')->latest()->paginate(10);
+        
         return view('management.master.approval_modules.index', compact('modules'));
     }
 
@@ -40,10 +41,17 @@ class ApprovalModuleController extends Controller
                 'label' => 'Purchase Quotation Item',
             ],
             [
-                'value' => 'App\Models\Procurement\Store\QC',
+                'value' => 'App\Models\Procurement\Store\PurchaseBagQC',
                 'label' => 'QC data'
             ],
-
+            [
+                'value' => 'App\Models\Procurement\Store\DebitNote',
+                'label' => 'Debit Note'
+            ],
+            [
+                'value' => 'App\Models\Procurement\Store\PurchaseReturn',
+                'label' => 'Purchase Return'
+            ],
             [
                 'value' => 'App\Models\Procurement\Store\PurchaseBill',
                 'label' => 'Purchase Bill'
@@ -68,7 +76,26 @@ class ApprovalModuleController extends Controller
                 'value' => 'App\Models\Sales\SalesInvoice',
                 'label' => 'Sales Invoice'
             ],
-            
+            [
+                'value' => 'App\Models\Sales\ReceivingRequest',
+                'label' => 'Receiving Request'
+            ],
+            [
+                'value' => 'App\Models\Sales\SalesReturn',
+                'label' => 'Sales Return'
+            ],
+            [
+                'value' => 'App\Models\Sales\SalesQc',
+                'label' => 'Sales QC'
+            ],
+            [
+                'value' => 'App\Models\Sales\Logistics',
+                'label' => 'Logistics'
+            ],
+                [
+                'value' => 'App\Models\Procurement\Store\PurchaseOrderReceiving',
+                'label' => 'Purchase Order Receiving'
+            ],
         ];
 
         $availableModels = collect($allModels)->reject(function ($model) use ($usedModels) {

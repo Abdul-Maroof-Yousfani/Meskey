@@ -43,6 +43,7 @@ Route::prefix('v1')->middleware(['api', 'throttle:60,1'])->group(function () {
                 Route::post('store', 'store');
             });
             Route::get('available-tickets-with-status', [ArrivalApproveController::class, 'getAvailableTicketsInnerSamplingStatus']);
+            Route::get('available-tickets-with-qc-status', [ArrivalApproveController::class, 'getAvailableTicketsWithQcStatus']);
 
         });
 

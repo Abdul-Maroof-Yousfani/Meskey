@@ -2,6 +2,10 @@
     html, body {
         overflow-x: hidden;
     }
+
+    #purchaseRequestTable .select2-container {
+        width: 100% !important;
+    }
 </style>
 <form action="{{ route('store.purchase-request.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
@@ -18,7 +22,7 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Purchase Date:</label>
-                <input type="date" name="purchase_date" class="form-control" id="purchase_date">
+                <input type="date" name="purchase_date" class="form-control" min="{{ date('Y-m-d') }}" id="purchase_date">
             </div>
         </div>
         <div class="col-md-4">
@@ -29,117 +33,95 @@
             </div>
         </div>
 
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="form-label">Category:</label>
+                <select name="category_id_header" id="category_id_header" class="form-control select2" required>
+                    <option value="">Select Category</option>
+                    @foreach ($categories ?? [] as $category)
+                        <option value="{{ $category->id }}">
+                            {{ $category->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+
+        <div class="col-md-4 header-conditional job-order-section" style="display: none;">
+            <div class="form-group">
+                <label class="form-label">Job Orders:</label>
+                <select class="form-control select2 job_orders" name="master_job_orders[]" multiple data-placeholder="Select Job Orders" style="width: 100%;">
+                    @foreach($job_orders as $job_order)
+                        <option value="{{ $job_order->id }}">{{ $job_order->job_order_no }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+
+        <div class="col-md-4 header-conditional other-category-section" style="display: none;">
+            <div class="form-group">
+                <label class="form-label">DEPARTMENT:</label>
+                <select name="department_id" id="department_id" class="form-control select2" style="width: 100%;">
+                    <option value="">Select Department</option>
+                    @foreach ($departments ?? [] as $department)
+                        <option value="{{ $department->id }}">
+                            {{ $department->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+
+        <div class="col-md-4 header-conditional other-category-section" style="display: none;">
+            <div class="form-group">
+                <label class="form-label">REQUEST BY:</label>
+                <select name="request_by_id" id="request_by_id" class="form-control select2" style="width: 100%;">
+                    <option value="">Select Request By</option>
+                </select>
+            </div>
+        </div>
+
         <div class="col-xs-12 col-sm-12 col-md-12 mt-3">
             <div class="form-group">
-                <label class="form-label">Description (Optional):</label>
-                <textarea name="description" placeholder="Description" class="form-control" rows="2"></textarea>
+                <label class="form-label">Remarks (Optional):</label>
+                <textarea name="description" placeholder="Remarks" class="form-control" rows="2"></textarea>
             </div>
         </div>
     </div>
 
-    <div class="row form-mar">
+    <div class="row form-mar" id="itemSection" style="display: none;">
         <div class="col-12 text-right mb-2">
-            <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()" id="addRowBtn">
+            <button type="button" style="float: right;" class="btn btn-sm btn-primary" onclick="addRow()" id="addRowBtn">
                 <i class="fa fa-plus"></i>&nbsp; Add New Item
             </button>
         </div>
 
         <div class="col-md-12">
-   <div class="table-responsive" style="overflow-x: auto; white-space: nowrap;">
-    <table class="table table-bordered" id="purchaseRequestTable" style="min-width:2000px;">
+   <div style="overflow-x: auto; width: 100%;">
+    <table class="table table-bordered" id="purchaseRequestTable" style="width:100%;">
         <thead>
             <tr>
-                <th>Category</th>
-                <th>Item</th>
-                <th>Item UOM</th>
-                <th>Qty</th>
-                <th>Job Orders</th>
-                <th>Brands</th>
-                <th>Min Weight</th>
-                <th>Color</th>
-                <th>Cons./sq. in.</th>
-                <th>Size</th>
-                <th>Stitching</th>
-                <th>Micron</th>
-                <th>Printing Sample</th>
-                <th>Remarks</th>
-                <th>Action</th>
+                <th style="min-width: 250px;">Item</th>
+                <th style="min-width: 100px;">Item UOM</th>
+                <th style="min-width: 100px;">Qty</th>
+                <th class="bag-only" style="min-width: 250px;">Job Orders</th>
+                <th class="bag-only" style="min-width: 150px;">Brands</th>
+                <th class="bag-only" style="min-width: 120px;">Min Weight (KG)</th>
+                <th class="bag-only" style="min-width: 150px;">Color</th>
+                <th class="bag-only" style="min-width: 150px;">Cons./sq. in.</th>
+                <th class="bag-only" style="width: 150px; min-width: 150px; max-width: 150px;">Size</th>
+                <th class="bag-only" style="min-width: 200px;">Stitching</th>
+                <th class="bag-only" style="min-width: 120px;">Micron</th>
+                <th class="bag-only" style="min-width: 250px;">Printing Sample</th>
+                <th style="min-width: 200px;">line desc</th>
+                <th style="min-width: 80px;">Action</th>
             </tr>
         </thead>
         <tbody id="purchaseRequestBody">
-            <tr id="row_0">
-                <td><select name="category_id[]" id="category_id_0" onchange="filter_items(this.value,0)"
-                        class="form-control item-select" data-index="0" style="width:180px;">
-                        <option value="">Select Category</option>
-                        @foreach ($categories ?? [] as $category)
-                            <option value="{{ $category->id }}">{{ $category->name }}</option>
-                        @endforeach
-                    </select></td>
-
-                <td><select name="item_id[]" id="item_id_0" onchange="get_uom(0)"
-                        class="form-control item-select" data-index="0" style="width:180px;">
-                        <option value="">Select Item</option>
-                    </select></td>
-
-
-                <td><input type="text" name="uom[]" id="uom_0" class="form-control uom" readonly style="width:120px;"></td>
-
-                <td><input type="number" name="qty[]" id="qty_0" class="form-control" step="0.01"
-                        min="0" placeholder="Qty" style="width:120px;"></td>
-
-                <td><select name="job_order_id[0][]" id="job_order_id_0" multiple
-                        class="form-control item-select" data-index="0" style="width:180px;">
-                        <option value="">Select Job Order</option>
-                        @foreach ($job_orders ?? [] as $job_order)
-                            <option value="{{ $job_order->id }}">{{ $job_order->job_order_no }}</option>
-                        @endforeach
-                    </select></td>
-
-                    <td><select name="brands[]" id="brands_0" class="form-control item-select brand-select" style="width:150px;">
-                        <option value="">Select Brand</option>
-                        @foreach(getAllBrands() ?? [] as $brand)
-                            <option value="{{ $brand->id }}">{{ $brand->name }}</option>
-                        @endforeach
-                    </select></td>
-                <td><input type="number" name="min_weight[]" id="min_weight_0" class="form-control"
-                        step="0.01" min="0" placeholder="Min Weight" style="width:120px;"></td>
-
-                <td><select name="color[]" id="color_0" class="form-control item-select color-select" style="width:150px;">
-                        <option value="">Select Color</option>
-                        @foreach(getAllColors() ?? [] as $color)
-                            <option value="{{ $color->id }}">{{ $color->color }}</option>
-                        @endforeach
-                    </select></td>
-
-                <td><input type="text" name="construction_per_square_inch[]" id="construction_per_square_inch_0"
-                        class="form-control" step="0.01" min="0" placeholder="Cons./sq. in." style="width:150px;"></td>
-
-                <td><select name="size[]" id="size_0" class="form-control item-select size-select" style="width:150px;">
-                        <option value="">Select Size</option>
-                        @foreach(getAllSizes() ?? [] as $size)
-                            <option value="{{ $size->id }}">{{ $size->size }}</option>
-                        @endforeach
-                    </select></td>
-
-                <td><input type="text" name="stitching[]" id="stitching_0" class="form-control"
-                        step="0.01" min="0" placeholder="Stitching" style="width:120px;"></td>
-
-                
-                 <td>
-                    <input type="text" name="micron[]" id="micron" placeholder="Micron" class="form-control micron" style="width:120px;">
-                 </td>
-                <td><input type="file" name="printing_sample[]" id="printing_sample_0"
-                        class="form-control" accept="image/*,application/pdf" placeholder="Printing Sample" style="width:180px;"></td>
-
-                <td><input type="text" name="remarks[]" id="remark_0" class="form-control"
-                        placeholder="Remarks" style="width:150px;"></td>
-
-                <td><button type="button" disabled class="btn btn-danger btn-sm removeRowBtn" data-id="0" style="width:60px;">
-                        <i class="fa fa-trash"></i>
-                    </button></td>
-            </tr>
         </tbody>
     </table>
+</div>
+
 </div>
 
 
@@ -158,11 +140,17 @@
 </form>
 
 <script>
+    purchaseRequestRowIndex = 0;
     $(document).ready(function () {
         $('#category_id_0').select2();
         $(".color-select").select2();
-        $(".brand-select").select2();
-        $(".size-select").select2();
+        $(".size-select").select2({
+            tags: true,
+            placeholder: "Select or add size",
+            allowClear: true
+        });
+        $(".stitching-select").select2();
+        $(".select2").select2();
         $('#job_order_id_0').select2({
             placeholder: 'Please Select Job Order',
             width: '100%'
@@ -170,6 +158,7 @@
 
         initializeDynamicSelect2('#company_location_id', 'company_locations', 'name', 'id', true, true);
 
+        
         function fetchUniqueNumber() {
             let locationId = $('#company_location_id').val();
             let contractDate = $('#purchase_date').val();
@@ -196,54 +185,134 @@
         }
 
         $('#company_location_id, #purchase_date').on('change', fetchUniqueNumber);
+
+        $('#category_id_header').on('change', function() {
+            let category_id = $(this).val();
+            // Clear items and job orders if category changes
+            $("#purchaseRequestBody").empty();
+            $(".job_orders").val(null).trigger('change');
+            toggleVisibility(category_id);
+
+            if (category_id) {
+                $('#itemSection').show();
+            } else {
+                $('#itemSection').hide();
+            }
+        });
+
+        $('#department_id').on('change', function() {
+            let departmentId = $(this).val();
+            let $requestBy = $('#request_by_id');
+            $requestBy.empty();
+            $requestBy.append('<option value="">Select Request By</option>');
+            if (departmentId) {
+                $.ajax({
+                    url: '/master/get-request-by-department/' + departmentId,
+                    type: 'GET',
+                    success: function (response) {
+                        if (response.success) {
+                            $.each(response.data, function(index, item) {
+                                $requestBy.append('<option value="' + item.id + '">' + item.name + '</option>');
+                            });
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('AJAX Error:', status, error);
+                    }
+                });
+            }
+        });
     });
 
+    function toggleVisibility(categoryId) {
+        $('.header-conditional').hide();
+        if (categoryId == 38) { // 38 is "Bags"
+            $('.bag-only').show();
+            $('.job-order-section').show();
+            $('#purchaseRequestTable').css('min-width', '2200px');
+        } else {
+            $('.bag-only').hide();
+            if (categoryId) {
+                $('.other-category-section').show();
+            }
+            $('#purchaseRequestTable').css('min-width', '100%');
+        }
+    }
+
+    $(".job_orders").on("change", function() {
+        console.log($(this).val());
+    })
+
+    $('.job_orders').on('select2:select', function (e) {
+        let id = e.params.data.id;
+        if (!id) return;
+     
+        $.ajax({
+            url: '{{ route('store.get.jobOrdersDataForPurchaseRequest') }}',
+            type: 'GET',
+            data: {
+                job_order: id,
+                category_id: $('#category_id_header').val()
+            },
+            success: function (response) {
+                if($('#category_id_header').val() == "") {
+                    alert("Please select category first.");
+                    $(".job_orders").val(null).trigger('change');
+                    return;
+                }
+                $("#purchaseRequestBody").append(response);
+            },
+            error: function (xhr, status, error) {
+                console.log(error);
+            }
+        });
+    });
+
+    $('.job_orders').on('select2:unselect', function (e) {
+        let id = e.params.data.id;
+        $(`.jo-${id}`).remove();
+    });
+
+
     function addRow() {
-        let index = purchaseRequestRowIndex++;
+        if($('#category_id_header').val() == "") {
+            alert("Please select category first.");
+            return;
+        }
+        let index = `${purchaseRequestRowIndex++}0`;
+   
         let row = `
                 <tr id="row_${index}">
-                    <td style="width: 10%">
+                    <td style="min-width: 250px;">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
-                                <select name="category_id[]" id="category_id_${index}"
-                                    onchange="filter_items(this.value,${index})" class="form-control item-select"
-                                    data-index="0">
-                                    <option value="">Select Category</option>
-                                    @foreach ($categories ?? [] as $category)
-                                        <option value="{{ $category->id }}">
-                                            {{ $category->name }}
-                                        </option>
-                                    @endforeach
+                                <select name="item_id[]" id="item_id_${index}"  onchange="get_uom('${index}')"
+                                    class="form-control item-select item-list" data-index="0" style="width: 100%;">
                                 </select>
+                                <input type="hidden" name="packing_id[]" value="" />
+                                <input type="hidden" name="module_type[]" value="" />
+                                <input type="hidden" name="index[]" value="${index}" />
+                                <input type="hidden" name="is_single_job_order[]" value="0" />
+         
                             </div>
                         </div>
                     </td>
-                    <td style="width: 15%">
-                        <div class="loop-fields">
-                            <div class="form-group mb-0">
-                                <select name="item_id[]" id="item_id_${index}" onchange="get_uom(${index})"
-                                    class="form-control item-select" data-index="0">
-                                    <option value="">Select Item</option>
-                                </select>
-                            </div>
-                        </div>
-                    </td>
-                    <td style="width: 8%">
+                    <td style="min-width: 100px;">
                         <input type="text" name="uom[]" id="uom_${index}" class="form-control uom" readonly>
                     </td>
-                    <td style="width: 8%">
+                    <td style="min-width: 100px;">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
-                                <input type="number" name="qty[]" id="qty_${index}" class="form-control" step="0.01"
+                                <input type="number" name="qty[]" id="qty_${index}" class="form-control bg-white" step="0.01"
                                     min="0" placeholder="Qty">
                             </div>
                         </div>
                     </td>
-                    <td style="width: 8%">
+                    <td class="bag-only" style="min-width: 250px;">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
-                                <select name="job_order_id[0][]" id="job_order_id_${index}" multiple
-                                    class="form-control item-select" data-index="0">
+                                <select name="job_order_id[${index}][]" id="job_order_id_${index}" multiple
+                                    class="form-control item-select" data-index="0" disabled>
                                     <option value="">Select Job Order</option>
                                     @foreach ($job_orders ?? [] as $job_order)
                                         <option value="{{ $job_order->id }}">
@@ -254,13 +323,13 @@
                             </div>
                         </div>
                     </td>
-                    <td><select name="brands[]" id="brands_${index}" class="form-control item-select brand-select" style="width:150px;">
+                    <td class="bag-only" style="min-width: 150px;"><select name="brands[]" id="brands_${index}" class="form-control item-select brand-select">
                         <option value="">Select Brand</option>
                         @foreach(getAllBrands() ?? [] as $brand)
                             <option value="{{ $brand->id }}">{{ $brand->name }}</option>
                         @endforeach
                     </select></td>
-                    <td style="width: 7%">
+                    <td class="bag-only" style="min-width: 120px;">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
                                 <input type="number" name="min_weight[]" id="min_weight_${index}" class="form-control"
@@ -268,7 +337,7 @@
                             </div>
                         </div>
                     </td>
-                    <td><select name="color[]" id="color_${index}" class="form-control item-select color-select" style="width:150px;">
+                    <td class="bag-only" style="min-width: 150px;"><select name="color[]" id="color_${index}" class="form-control item-select color-select">
                         <option value="">Select Color</option>
                         @foreach(getAllColors() ?? [] as $color)
                             <option value="{{ $color->id }}">{{ $color->color }}</option>
@@ -276,7 +345,7 @@
                     </select></td>
                     
 
-                    <td style="width: 7%">
+                    <td class="bag-only" style="min-width: 150px;">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
                                 <input type="text" name="construction_per_square_inch[]"
@@ -286,22 +355,26 @@
                         </div>
                     </td>
                     
-                    <td><select name="size[]" id="size_${index}" class="form-control item-select size-select" style="width:150px;">
+                    <td class="bag-only" style="width: 150px; min-width: 150px; max-width: 150px;"><select name="size[]" id="size_${index}" class="form-control item-select size-select" style="width: 100%;">
                         <option value="">Select Size</option>
                         @foreach(getAllSizes() ?? [] as $size)
                             <option value="{{ $size->id }}">{{ $size->size }}</option>
                         @endforeach
                     </select></td>
 
-                    <td style="width: 6%">
+                    <td class="bag-only" style="min-width: 200px;">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
-                                <input type="text" name="stitching[]" id="stitching_${index}" class="form-control"
-                                    step="0.01" min="0" placeholder="Stitching">
+                                <select name="stitching[${index}][]" id="stitching_${index}" class="form-control item-select stitching-select" style="width:100%;" multiple>
+                                    <option value="">Select Stitching</option>
+                                    @foreach(getAllStitchings() ?? [] as $stitching)
+                                        <option value="{{ $stitching->id }}">{{ $stitching->name }}</option>
+                                    @endforeach
+                                </select>
                             </div>
                         </div>
                     </td>
-                    <td style="width: 6%">
+                    <td style="min-width: 120px;" class="bag-only">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
                                 <input type="text" name="micron[]" id="micron_${index}" class="form-control"
@@ -309,20 +382,20 @@
                             </div>
                         </div>
                     </td>
-                    <td style="width: 8%">
+                    <td class="bag-only" style="min-width: 250px;">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
-                                <input type="file" name="printing_sample[]" id="printing_sample_${index}"
+                                <input type="file" name="printing_sample[${index}][]" id="printing_sample_${index}"
                                     class="form-control" accept="image/*,application/pdf"
-                                    placeholder="Printing Sample">
+                                    placeholder="Printing Sample" multiple>
                             </div>
                         </div>
                     </td>
-                    <td style="width: 8%">
+                    <td style="min-width: 200px;">
                         <input type="text" name="remarks[]" id="remark_${index}" class="form-control"
-                            placeholder="Remarks">
+                            placeholder="line desc">
                     </td>
-                    <td>
+                    <td style="min-width: 80px;">
                         <button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="removeRow(${index})">
                             <i class="fa fa-trash"></i>
                         </button>
@@ -338,14 +411,25 @@
             width: '100%'
         });
 
+        filter_items($('#category_id_header').val(), index);
+        toggleVisibility($('#category_id_header').val());
+
 
         $("#brands_" + index).select2();
         $("#color_" + index).select2();
-        $("#size_" + index).select2();
+        $("#size_" + index).select2({
+            tags: true,
+            placeholder: "Select or add size",
+            allowClear: true
+        });
+        $("#stitching_" + index).select2();
 
 
         $('.removeRowBtn').prop('disabled', false);
         $('#row_0 .removeRowBtn').prop('disabled', true);
+            $(".item-list").select2();
+        $(`#item_id_${index}`).trigger("change");
+    
     }
 
 
@@ -360,7 +444,9 @@
 
 
     function get_uom(index) {
+        console.log(index);
         let uom = $('#item_id_' + index).find(':selected').data('uom');
+        console.log($('#item_id_' + index).find(':selected'));
         $('#uom_' + index).val(uom);
     }
 

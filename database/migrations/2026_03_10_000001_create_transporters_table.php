@@ -1,0 +1,54 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration {
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('transporters', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('company_id');
+            $table->enum('type', ['raw_material', 'store_transporter'])->default('raw_material');
+            $table->enum('is_gate_buying_transporter', ['Yes', 'No'])->default('No');
+            $table->unsignedBigInteger('account_id')->nullable();
+
+            $table->string('unique_no');
+            $table->string('name');
+            $table->string('company_name');
+            $table->string('owner_name')->nullable();
+            $table->string('owner_mobile_no')->nullable();
+            $table->string('owner_cnic_no')->nullable();
+
+            $table->string('next_to_kin')->nullable();
+            $table->string('next_to_kin_mobile_no')->nullable();
+
+            $table->string('owner_bank_detail')->nullable();
+            $table->string('company_bank_detail')->nullable();
+            $table->string('prefix')->nullable();
+            $table->string('email')->nullable();
+            $table->string('phone')->nullable();
+            $table->string('address')->nullable();
+            $table->string('ntn')->nullable();
+            $table->string('stn')->nullable();
+            $table->string('attachment')->nullable();
+            $table->text('company_location_ids')->nullable();
+            $table->enum('status', ['active', 'inactive'])->default('active');
+            $table->timestamps();
+
+            $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('transporters');
+    }
+};

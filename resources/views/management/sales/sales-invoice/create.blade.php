@@ -50,7 +50,8 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Invoice Address:</label>
-                        <textarea name="invoice_address" id="invoice_address" class="form-control" rows="1" placeholder="Enter invoice address"></textarea>
+                        <textarea name="invoice_address" id="invoice_address" class="form-control" rows="1"
+                            placeholder="Enter invoice address"></textarea>
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -66,7 +67,7 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Company Location:<span class="text-danger">*</span></label>
-                        <select name="locations" id="locations" onchange="selectLocation(this); get_delivery_challans()"
+                        <select name="locations" id="locations" onchange="selectLocation(this);"
                             class="form-control select2">
                             <option value="">Select Company Location</option>
                             @foreach (get_locations() ?? [] as $location)
@@ -77,17 +78,26 @@
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
-                        <label class="form-label">Arrival Location:<span class="text-danger">*</span></label>
-                        <select name="arrival_locations" id="arrivals" onchange="get_delivery_challans()"
+                        <label class="form-label">Factory:<span class="text-danger">*</span></label>
+                        <select name="arrival_locations" id="arrivals" onchange="selectStorage(this);"
                             class="form-control select2">
-                            <option value="">Select Arrival Location</option>
+                            <option value="">Select Factory</option>
                         </select>
                     </div>
                 </div>
+              
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Invoice Date:<span class="text-danger">*</span></label>
-                        <input type="date" name="invoice_date" onchange="getNumber()" id="invoice_date" class="form-control">
+                        <input 
+                            type="date" 
+                            name="invoice_date" 
+                            onchange="getNumber()" 
+                            id="invoice_date"
+                            class="form-control"
+                            value="{{ date('Y-m-d') }}"
+                            readonly
+                        >
                     </div>
                 </div>
             </div>
@@ -97,13 +107,14 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Reference Number:</label>
-                        <input type="text" name="reference_number" id="reference_number" class="form-control" placeholder="Enter reference number">
+                        <input type="text" name="reference_number" id="reference_number" class="form-control"
+                            placeholder="Enter reference number">
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Sauda Type:<span class="text-danger">*</span></label>
-                        <select name="sauda_type" id="sauda_type" class="form-control select2">
+                        <select name="sauda_type" id="sauda_type" class="form-control select2" onchange="get_delivery_challans()">
                             <option value="">Select Sauda Type</option>
                             <option value="pohanch">Pohanch</option>
                             <option value="x-mill">X-mill</option>
@@ -113,7 +124,8 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">DC Numbers:</label>
-                        <select name="dc_no[]" id="dc_no" onchange="get_items(this)" class="form-control select2" multiple>
+                        <select name="dc_no[]" id="dc_no" onchange="get_items(this)" class="form-control select2"
+                            multiple>
                             <option value="">Select Delivery Challans</option>
                         </select>
                     </div>
@@ -181,11 +193,51 @@
 </form>
 
 <script>
-    let salesInvoiceRowIndex = 1;
+    salesInvoiceRowIndex = 1;
 
     $(document).ready(function() {
         $('.select2').select2();
+
+        getNumber();
     });
+
+    function selectStorage(el) {
+        const arrival = $(el).val();
+        console.log(arrival);
+        if (!arrival) {
+            $("#sections").prop("disabled", true);
+            $("#sections").empty();
+            return;
+        } else {
+            // get.arrival-locations; send request to this url
+            $("#sections").prop("disabled", false);
+            $.ajax({
+                url: "{{ route('sales.get.storage-locations') }}",
+                method: "GET",
+                data: {
+                    arrival_id: arrival
+                },
+                dataType: "json",
+                success: function(res) {
+                    console.log(res);
+                    $("#sections").empty();
+                    $("#sections").append(`<option value=''>Select Storage</option>`)
+                    res.forEach(loc => {
+                        $("#sections").append(`
+                        <option value="${loc.id}">
+                            ${loc.text}
+                        </option>
+                    `);
+                    });
+
+                    $("#sections").select2();
+                },
+                error: function(error) {
+
+                }
+            });
+        }
+    }
 
     function selectLocation(el) {
         const company = $(el).val();
@@ -255,7 +307,7 @@
         const location_id = $("#locations").val();
         const arrival_location_id = $("#arrivals").val();
 
-        if (!customer_id || !location_id || !arrival_location_id) return;
+        // if (!customer_id || !location_id || !arrival_location_id) return;
 
         $.ajax({
             url: "{{ route('sales.get.sales-invoice.get-dc') }}",
@@ -263,7 +315,8 @@
             data: {
                 customer_id: $("#customer_id").val(),
                 company_location_id: $("#locations").val(),
-                arrival_location_id: $("#arrivals").val()
+                arrival_location_id: $("#arrivals").val(),
+                sauda_type: $("#sauda_type").val()
             },
             dataType: "json",
             success: function(res) {
@@ -303,10 +356,10 @@
                 <input type="number" name="packing[]" id="packing_${index}" onkeyup="calculateRow(this)" class="form-control packing" step="0.01" min="0">
             </td>
             <td style="min-width: 100px;">
-                <input type="number" name="no_of_bags[]" id="no_of_bags_${index}" onkeyup="calculateRow(this)" class="form-control no_of_bags" step="0.01" min="0">
+                <input type="number" name="no_of_bags[]" id="no_of_bags_${index}" onkeyup="calculateRow(this)" class="form-control no_of_bags" step="0.01" min="0" readonly>
             </td>
             <td style="min-width: 100px;">
-                <input type="number" name="qty[]" id="qty_${index}" class="form-control qty" step="0.01" min="0" readonly>
+                <input type="number" name="qty[]" id="qty_${index}" onkeyup="calculateRow(this)" class="form-control qty" step="0.01" min="0">
             </td>
             <td style="min-width: 100px;">
                 <input type="number" name="rate[]" id="rate_${index}" onkeyup="calculateRow(this)" class="form-control rate" step="0.01" min="0">
@@ -359,7 +412,6 @@
 
     function calculateRow(el) {
         const row = $(el).closest("tr");
-
         // Get input elements
         const packingInput = row.find(".packing");
         const noOfBagsInput = row.find(".no_of_bags");
@@ -374,17 +426,36 @@
         const netAmountInput = row.find(".net_amount");
 
         // Get values
-        const packing = parseFloat(packingInput.val()) || 0;
-        const noOfBags = parseFloat(noOfBagsInput.val()) || 0;
-        const rate = parseFloat(rateInput.val()) || 0;
-        const discountPercent = parseFloat(discountPercentInput.val()) || 0;
-        const gstPercent = parseFloat(gstPercentInput.val()) || 0;
+        let packing = parseFloat(packingInput.val()) || 0;
+        let noOfBags = parseFloat(noOfBagsInput.val()) || 0;
+        let qty = parseFloat(qtyInput.val()) || 0;
+        let rate = parseFloat(rateInput.val()) || 0;
+        let discountPercent = parseFloat(discountPercentInput.val()) || 0;
+        let gstPercent = parseFloat(gstPercentInput.val()) || 0;
 
-        // Calculate Qty = Packing * No of Bags
-        const qty = packing * noOfBags;
-        qtyInput.val(round(qty));
+        // Calculate based on what changed
+        if ($(el).hasClass("qty")) {
+            // When qty changes, calculate no_of_bags (if packing > 0)
+            if (packing > 0) {
+                noOfBags = qty / packing;
+                const maxBalance = parseFloat(row.find(".max_balance").val()) || 0;
+                if (maxBalance > 0 && noOfBags > maxBalance) {
+                    noOfBags = maxBalance;
+                    qty = noOfBags * packing;
+                    qtyInput.val(round(qty));
+                    if (typeof toastr !== 'undefined') {
+                        toastr.warning(`Cannot exceed available balance of ${maxBalance} bags`);
+                    }
+                }
+                noOfBagsInput.val(Math.round(noOfBags));
+            }
+        } else if ($(el).hasClass("packing") || $(el).hasClass("no_of_bags")) {
+            // When packing or no_of_bags changes, calculate qty
+            qty = packing * noOfBags;
+            qtyInput.val(round(qty));
+        }
 
-        // Calculate Gross Amount = Qty * Rate
+        // Always recalculate amounts based on current values
         const grossAmount = qty * rate;
         grossAmountInput.val(round(grossAmount));
 
@@ -445,4 +516,3 @@
         }
     }
 </script>
-

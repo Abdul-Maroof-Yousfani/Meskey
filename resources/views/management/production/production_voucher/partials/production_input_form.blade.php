@@ -1,7 +1,11 @@
-<form id="productionInputForm" method="POST" autocomplete="off">
+<form method="POST" action="{{ isset($productionInput) ? route('production-voucher.input.update', [$productionVoucher->id, $productionInput->id]) : route('production-voucher.input.store', $productionVoucher->id) }}" id="ajaxSubmit" autocomplete="off">
     @csrf
+    @if(isset($productionInput))
+        @method('PUT')
+    @endif
     <input type="hidden" name="production_voucher_id" id="production_voucher_id" value="{{ $productionVoucher->id ?? '' }}">
-    <input type="hidden" name="input_id" id="input_id">
+    <input type="hidden" name="input_id" id="input_id" value="{{ $productionInput->id ?? '' }}">
+    <input type="hidden" id="listRefresh" value="{{ route('get.production-voucher-inputs', $productionVoucher->id) }}" />
 
     <div class="row form-mar">
         <div class="col-md-12">
@@ -15,7 +19,7 @@
                             <option value="">Select Commodity</option>
                             @if(isset($products))
                                 @foreach($products as $product)
-                                    <option value="{{ $product->id }}">{{ $product->name }}</option>
+                                    <option value="{{ $product->id }}" {{ isset($productionInput) && $productionInput->product_id == $product->id ? 'selected' : '' }}>{{ $product->name }}</option>
                                 @endforeach
                             @endif
                         </select>
@@ -29,7 +33,7 @@
                             <option value="">Select Location</option>
                             @if(isset($sublocations))
                                 @foreach($sublocations as $sublocation)
-                                    <option value="{{ $sublocation->id }}">{{ $sublocation->name }}</option>
+                                    <option value="{{ $sublocation->id }}" {{ isset($productionInput) && $productionInput->location_id == $sublocation->id ? 'selected' : '' }}>{{ $sublocation->name }}</option>
                                 @endforeach
                             @endif
                         </select>
@@ -39,14 +43,14 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label>Qty (kg):</label>
-                        <input type="number" name="qty" id="input_qty" class="form-control" step="0.01" min="0.01" required>
+                        <input type="number" name="qty" id="input_qty" class="form-control" step="0.01" min="0.01" value="{{ $productionInput->qty ?? '' }}" required>
                     </div>
                 </div>
 
                 <div class="col-md-12">
                     <div class="form-group">
                         <label>Remarks:</label>
-                        <textarea name="remarks" id="input_remarks" class="form-control" rows="3"></textarea>
+                        <textarea name="remarks" id="input_remarks" class="form-control" rows="3">{{ $productionInput->remarks ?? '' }}</textarea>
                     </div>
                 </div>
             </div>
@@ -84,7 +88,7 @@
     <div class="row bottom-button-bar">
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
-            <button type="button" class="btn btn-primary" onclick="saveProductionInput()">Save Production Input</button>
+            <button type="submit" class="btn btn-primary submitbutton">{{ isset($productionInput) ? 'Update' : 'Save' }} Production Input</button>
         </div>
     </div>
 </form>
@@ -121,32 +125,6 @@
         });
     }
 
-    function saveProductionInput() {
-        const form = $('#productionInputForm');
-        const voucherId = $('#production_voucher_id').val();
-        const inputId = $('#input_id').val();
-        const url = inputId 
-            ? '{{ route("production-voucher.input.update", [":id", ":inputId"]) }}'.replace(':id', voucherId).replace(':inputId', inputId)
-            : '{{ route("production-voucher.input.store", ":id") }}'.replace(':id', voucherId);
-        const method = inputId ? 'PUT' : 'POST';
-
-        $.ajax({
-            url: url,
-            method: method,
-            data: form.serialize(),
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            },
-            success: function(response) {
-                showNotification('success', response.success);
-                // Reload the page or update the table
-                location.reload();
-            },
-            error: function(xhr) {
-                const errors = xhr.responseJSON?.errors || {};
-                showNotification('error', 'Please fix the errors');
-            }
-        });
-    }
+    // Note: listRefresh is handled automatically by scripts.js for refresh-inputs-outputs route
 </script>
 

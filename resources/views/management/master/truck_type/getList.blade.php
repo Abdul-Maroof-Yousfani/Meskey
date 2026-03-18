@@ -29,7 +29,7 @@
                         </p>
                     </td>
                     <td>
-                        <label class="badge bg-light-{{ $row->status == 'inactive' ? 'primary' : 'danger' }}">
+                        <label class="badge bg-light-{{ $row->status == 'inactive' ? 'danger' : 'success' }}">
                             {{ $row->status }}
                         </label>
                     </td>

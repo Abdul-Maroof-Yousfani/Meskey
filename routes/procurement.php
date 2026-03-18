@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BillController;
 use App\Http\Controllers\IndicativePriceController;
+use App\Http\Controllers\Procurement\Store\DebitNoteController;
 use App\Http\Controllers\Procurement\Store\PurchaseBillController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Procurement\RawMaterial\{
@@ -28,6 +29,7 @@ use App\Http\Controllers\Procurement\Store\{
     PurchaseOrderPaymentRequestController,
     PurchaseOrderReceivingController,
     PurchaseQuotationController,
+    PurchaseReturnController,
     PurchaseRequestController as StorePurchaseRequestController,
     QcController
 };
@@ -36,6 +38,7 @@ use App\Http\Controllers\Procurement\Store\{
 Route::prefix('raw-material')->name('raw-material.')->group(function () {
     Route::resource('purchase-request', PurchaseRequestController::class);
     Route::post('get-purchase-request', [PurchaseRequestController::class, 'getList'])->name('get.purchase-request');
+   
 
     Route::resource('gate-buying', GateBuyingController::class);
     Route::post('get-gate-buying', [GateBuyingController::class, 'getList'])->name('get.gate-buying');
@@ -129,6 +132,8 @@ Route::prefix('raw-material')->name('raw-material.')->group(function () {
 
 Route::prefix('store')->name('store.')->group(function () {
     Route::resource('purchase-request', StorePurchaseRequestController::class);
+    Route::get("job-order/get", [StorePurchaseRequestController::class, "getItems"])->name("get.jobOrdersDataForPurchaseRequest");
+
     Route::post('get-purchase-request', [StorePurchaseRequestController::class, 'getList'])->name('get.purchase-request');
     Route::get('purchase-request-approvals/{id}', [StorePurchaseRequestController::class, 'manageApprovals'])->name('purchase-request.approvals');
     Route::get('get-unique-number/{locationId}/{contractDate}', [StorePurchaseRequestController::class, 'getNumber'])->name('get-unique-umber');
@@ -145,16 +150,26 @@ Route::prefix('store')->name('store.')->group(function () {
     Route::post('purchase-quotation/comparison-list', [PurchaseQuotationController::class, 'comparison_list'])->name('purchase-quotation.comparison-list.show');
     Route::get('purchase-quotation/comparison-approvals/{id}', [PurchaseQuotationController::class, 'manageComparisonApprovals'])->name('purchase-quotation.comparison-approvals');
     Route::get('purchase-quotation/comparison-approvals-view/{id}', [PurchaseQuotationController::class, 'manageComparisonApprovalsView'])->name('purchase-quotation.comparison-approvals-view');
+    Route::get('purchase-quotation/comparison-approvals-for-view/{id}', [PurchaseQuotationController::class, 'dataForComparison'])->name('purchase-quotation.dataForComparison');
+   
+
 
     Route::post("qc/create", [PurchaseOrderReceivingController::class, "createQc"])->name("qc.create");
     Route::get("/qc", [QcController::class, "index"])->name("qc.get");
     Route::post("/qc", [QcController::class, "index"])->name("qc.get");
     Route::post("/qc/getList", [QcController::class, "getList"])->name("qc.getList");
+    Route::delete("qc/delete", [QcController::class, "deleteQc"])->name("qc.remove");
     Route::get("/qc/view", [QcController::class, "show"])->name("qc.view");
     Route::get("/qc/edit", [QcController::class, "edit"])->name("qc.edit");
     Route::get("/qc/create", [QcController::class, "create"])->name("qc.show-create");
     Route::post("/qc/updateAmount", [QcController::class, "updateAmounts"])->name("qc.update-amount");
 
+
+    Route::resource('purchase-return', PurchaseReturnController::class);
+    Route::post('get-purchase-return', [PurchaseReturnController::class, 'getList'])->name('get.purchase-return');
+    Route::get('purchase-return/view/{id}', [PurchaseReturnController::class, 'view'])->name('purchase-return.view');
+    Route::post('purchase-return/get-items', [PurchaseReturnController::class, 'getItems'])->name('purchase-return.get-items');
+    Route::get('get-unique-number-purchase-return', [PurchaseReturnController::class, 'getNumber'])->name('purchase-return.getNumber');
 
     Route::get("purchase-bill/approve-item", [PurchaseBillController::class, "approve_item"])->name("purchase-bill.approve-item");
     Route::resource("purchase-bill", PurchaseBillController::class);
@@ -163,7 +178,15 @@ Route::prefix('store')->name('store.')->group(function () {
     Route::get("get-unique-number-purchase-bill/{locationId}/{contractDate}", [PurchaseBillController::class, "getNumber"])->name("purchase-bill.getNumber");
     Route::get("get-grns", [PurchaseBillController::class, "getGrns"])->name("get.grns");
    
+    Route::get("/debit-note/get-bills/{grn_id}", [DebitNoteController::class, "get_bills"])->name("debit-note.get-bills");
+    Route::get("/debit-note/get-bill-items/{bill_id}", [DebitNoteController::class, "get_bill_items"])->name("debit-note.get-bill-items");
+    Route::get("/debit-note/get-number", [DebitNoteController::class, "get_number"])->name("debit-note.get-number");
+    Route::post('get-debit-notes', [DebitNoteController::class, 'getList'])->name('get.debit-notes');
+    Route::resource("debit-note", DebitNoteController::class);
 
+
+    Route::get('purchase-quotation/filtered-options', [PurchaseQuotationController::class, 'getFilteredOptions'])->name('purchase-quotation.filtered-options');
+    
     Route::delete("/qc/{qc}/delete", [QcController::class, "destroy"])->name("qc.delete");
     Route::post("qc/submit", [QcController::class, "store"])->name("qc.store");
     Route::post("qc/update", [QcController::class, "update"])->name("qc.update");
@@ -175,6 +198,8 @@ Route::prefix('store')->name('store.')->group(function () {
     Route::get('purchase-order-approvals/{id}', [StorePurchaseOrderController::class, 'manageApprovals'])->name('purchase-order.approvals');
     Route::get('purchase-order/get_order_item', [StorePurchaseOrderController::class, 'get_order_item'])->name('purchase-order.get_order_item');
     Route::get('get-unique-number-order/{locationId}/{contractDate}', [StorePurchaseOrderController::class, 'getNumber'])->name('get-unique-number-order');
+    Route::get("purchase-quotation/get", [StorePurchaseOrderController::class, "get_quotations"])->name("get.quotations");
+    Route::get("purchase-quotation/supplier/get", [StorePurchaseOrderController::class, "get_supplier"])->name("pq.get.supplier");
 
     Route::resource('purchase-order-receiving', PurchaseOrderReceivingController::class)->except(['show']);
     Route::post('get-purchase-order-receiving', [PurchaseOrderReceivingController::class, 'getList'])->name('get.purchase-order-receiving');
@@ -213,4 +238,9 @@ Route::prefix('indicative-prices')->group(function () {
     Route::delete('/{id}', [IndicativePriceController::class, 'destroy'])->name('indicative-prices.destroy');
     Route::get('/reports', [IndicativePriceController::class, 'reportsView'])->name('indicative-prices.reports');
     Route::post('/reports-list', [IndicativePriceController::class, 'reports'])->name('indicative-prices.reports.get-list');
+});
+
+// AJAX routes that don't require full authentication
+Route::middleware(['web'])->prefix('procurement/store')->name('store.')->group(function () {
+    Route::get('purchase-return/get-bills-by-supplier', [App\Http\Controllers\Procurement\Store\PurchaseReturnController::class, 'getPurchaseBillsBySupplier'])->name('purchase-return.get-bills-by-supplier');
 });

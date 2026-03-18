@@ -1,8 +1,7 @@
 
 @foreach ($dataItems ?? [] as $key => $data)
     @php
-        $remainingQty = $data->qc?->accepted_quantity;
-
+        $remainingQty = ($data->category_id == 38) ? ($data->qc?->accepted_quantity ?? 0) : ($data->qty ?? 0);
     @endphp
     {{-- @php
    
@@ -33,13 +32,13 @@
 @endphp
 @if ($remainingQty <= 0) @continue @endif; --}}
 
-<tr id="row_{{ $key }}">
+<tr id="row_{{ $key }}" data-category-id="{{ $data->category_id }}">
 
       
         <td style="width: 20%">
             <select id="item_id_{{ $key }}" onchange="get_uom({{ $key }})"
                 class="form-control item-select select2" data-index="{{ $key }}" disabled>
-                @foreach (get_product_by_category($data->category_id) as $item)
+                @foreach (get_product_by_id($data->item_id) as $item)
                     <option data-uom="{{ $item->unitOfMeasure->name ?? '' }}" value="{{ $item->id }}"
                         {{ $item->id == $data->item_id ? 'selected' : '' }}>
                         {{ $item->name }}
@@ -87,20 +86,26 @@
                 id="discount_amount_{{ $key }}" class="form-control discount_amount" step="0.01"
                 min="0" readonly>
         </td>
-        <td style="width: 30%">
-            <input style="width: 100px" type="number" readonly name="deduction_per_piece[]" readonly
-                id="deduction_per_piece_{{ $key }}" value="{{ $data->qc?->deduction_per_bag ?? 0 }}"
-                class="form-control deduction_per_piece" step="0.01" min="0">
-        </td>
+        @if($data->category_id == 38)
+            <td style="width: 30%" class="deduction-col">
+                <input style="width: 100px" type="number" readonly name="deduction_per_piece[]" readonly
+                    id="deduction_per_piece_{{ $key }}" value="{{ $data->qc?->deduction_per_bag ?? 0 }}"
+                    class="form-control deduction_per_piece" step="0.01" min="0">
+            </td>
 
-        <td style="width: 30%">
-            <input style="width: 100px" type="number" readonly name="deduction[]"
-                value="{{ ($data->qc?->deduction_per_bag ?? 0) * $remainingQty }}" id="deduction_{{ $key }}"
-                class="form-control deduction" step="0.01" min="0" readonly>
-        </td>
+            <td style="width: 30%" class="deduction-col">
+                <input style="width: 100px" type="number" readonly name="deduction[]"
+                    value="{{ ($data->qc?->deduction_per_bag ?? 0) * $remainingQty }}" id="deduction_{{ $key }}"
+                    class="form-control deduction" step="0.01" min="0" readonly>
+            </td>
+        @else
+            <input type="hidden" name="deduction_per_piece[]" value="0" class="deduction_per_piece">
+            <input type="hidden" name="deduction[]" value="0" class="deduction">
+        @endif
 
         @php
-            $net_amount = ($remainingQty * $data->purchase_order_data->rate) - (($data->qc?->deduction_per_bag ?? 0) * $remainingQty);
+            $deduction = ($data->category_id == 38) ? (($data->qc?->deduction_per_bag ?? 0) * $remainingQty) : 0;
+            $net_amount = ($remainingQty * $data->purchase_order_data->rate) - $deduction;
         @endphp
 
         <td style="width: 30%">
@@ -112,18 +117,20 @@
         <td style="width:150px;">
             <input type="file" name="printing_sample[]" id="printing_sample_{{ $key }}" disabled class="form-control" accept="image/*,application/pdf">
             @if (!empty($data->purchase_order_data->printing_sample))
-                <small>
-                    <a href="{{ asset('storage/' . $data->purchase_order_data->printing_sample) }}" target="_blank">
-                        View existing file
-                    </a>
-                </small>
+                @foreach((array)$data->purchase_order_data->printing_sample as $sample)
+                    <small class="d-block">
+                        <a href="{{ asset('storage/' . $sample) }}" target="_blank">
+                            View file
+                        </a>
+                    </small>
+                @endforeach
             @endif
         </td>
 
         <td style="width: 30%">
             <input style="width: 100px" type="number" onkeyup="calculatePercentage(this)" name="tax_id[]"
                 value="{{ getTaxPercentageById($data->sales_tax) }}" id="tax_id_{{ $key }}"
-                class="form-control tax_id" step="0.01" min="0" readonly>
+                class="form-control tax_id" step="0.01" min="0">
         </td>
         @php
             $gst_amount = (getTaxPercentageById($data->sales_tax) / 100) * ($net_amount);
@@ -183,7 +190,9 @@
     const tax_percent = row.find(".tax_id");
     const percent_amount = row.find(".percent_amount");
     const net_amount = row.find(".net_amount");
-    const deduction_amount = row.find(".deduction").val();
+    const deduction_input = row.find(".deduction");
+    const categoryId = row.data("category-id");
+    const deduction_amount = (categoryId == 38) ? (parseFloat(deduction_input.val()) || 0) : 0;
 
     const rateVal = parseFloat(rate.val()) || 0;
     const qtyVal = parseFloat(qty.val()) || 0;

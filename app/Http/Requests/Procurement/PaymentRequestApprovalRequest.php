@@ -97,7 +97,7 @@ class PaymentRequestApprovalRequest extends FormRequest
             $query->where('ticket_id', $ticket->id);
         })
             ->where('request_type', 'payment')
-            // ->where('status', 'approved')
+            ->where('status', 'approved')
             ->where('module_type', $moduleType)
             ->where('id', '!=', $paymentRequest->id)
             ->sum('amount');

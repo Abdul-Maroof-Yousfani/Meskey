@@ -25,7 +25,7 @@
         font-size: 13px;
     }
 </style>
-
+                           
 <form action="{{ route('sales.delivery-order.update', ['delivery_order' => $delivery_order->id]) }}" method="POST"
     id="ajaxSubmit" autocomplete="off">
     @csrf
@@ -33,12 +33,56 @@
     <input type="hidden" id="listRefresh" value="{{ route('sales.get.delivery-order.list') }}" />
 
     <div class="row form-mar">
-        <!-- Left side fields (2 columns) -->
         <div class="col-md-12">
-            <!-- Row 1: Dispatch Date, Do No -->
             <div class="row">
+                <div class="col-12">
+                    <h6 class="header-heading-sepration">General Information</h6>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Do No:</label>
+                        <input type="text" name="reference_no" id="reference_no"
+                            value="{{ $delivery_order->reference_no }}" class="form-control" readonly>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Do Date:</label>
+                        <input type="date" name="dispatch_date" readonly onchange="getNumber(); validate_expiry()" id="dispatch_date"
+                            value="{{ $delivery_order->dispatch_date }}" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Contract Type:</label>
+                        <input type="hidden" name="sauda_type" id="sauda_type_hidden"
+                            value="{{ $delivery_order->sauda_type }}">
+                        <select name="sauda_type" id="sauda_type" class="form-control select2" disabled>
+                            <option value="">Select Sauda Type</option>
+                            <option value="pohanch" @selected($delivery_order->sauda_type == 'pohanch')>Pohanch</option>
+                            <option value="x-mill" @selected($delivery_order->sauda_type == 'x-mill')>X-mill</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Delivery Date:</label>
+                        <input type="date" name="delivery_date" id="delivery_date"
+                            value="{{ $delivery_order->delivery_date }}" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Reference Number:</label>
+                        <input type="text" name="ref_no" id="ref_no" class="form-control"
+                            value="{{ $delivery_order->ref_no }}">
+                    </div>
+                </div>
 
-                <div class="col-md-4">
+                <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Customer & Order Details</h6>
+                </div>
+                <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Customer:</label>
                         <select name="customer_id" id="customer_id" onchange="get_sale_orders()"
@@ -51,22 +95,25 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Sale Orders:</label>
                         <select name="sale_order_id" id="sale_order"
-                            onchange="get_so_detail(), get_receipt_vouchers(), get_so_items()"
+                            onchange="get_so_detail(), get_receipt_vouchers(), get_so_items(), check_so_type(); validate_expiry()"
                             class="form-control select2">
                             <option value="">Select SO</option>
                             @foreach ($sale_orders as $sale_order)
-                                <option value="{{ $sale_order->id }}" @selected($delivery_order->so_id == $sale_order->id)>
+                                <option value="{{ $sale_order->id }}" data-type="{{ $sale_order->pay_type_id }}" @selected($delivery_order->so_id == $sale_order->id)>
                                     {{ $sale_order->reference_no }}</option>
                             @endforeach
                         </select>
                     </div>
                 </div>
-
-                <div class="col-md-4 advanced">
+                
+                <div class="col-12 mt-3 advanced" style="display: {{ $sale_order_of_delivery_order->pay_type_id == 10 ? 'block' : 'none' }}">
+                    <h6 class="header-heading-sepration">Payment Details</h6>
+                </div>
+                <div class="col-md-3 advanced" style="display: {{ $sale_order_of_delivery_order->pay_type_id == 10 ? 'block' : 'none' }}">
                     <div class="form-group">
                         <label class="form-label">Receipt Vouchers:</label>
                         <select name="receipt_vouchers[]" id="receipt_vouchers"
@@ -74,131 +121,126 @@
                             multiple>
                             <option value="">Select Receipt Vouchers</option>
 
-                            @foreach ($receipt_vouchers as $receipt_voucher)
-                                <option value="{{ $receipt_voucher->id }}"
-                                    data-amount="{{ $receipt_voucher->withhold_amount }}" @selected(in_array($receipt_voucher->id, $delivery_order->receipt_vouchers->pluck('id')->toArray()))>
-                                    {{ $receipt_voucher->unique_no }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-md-4 advanced">
-                    <div class="form-group">
-                        <label class="form-label">Advance Amount:</label>
-                        <input type="number" name="advance_amount" onchange=""
-                            value="{{ $delivery_order->advance_amount }}" id="advance_amount" class="form-control"
-                            readonly>
-                    </div>
-                </div>
-
-                <div class="col-md-4 advanced">
-                    <div class="form-group">
-                        <label class="form-label">Withhold Amount:</label>
-                        <input type="number" name="withhold_amount" value="{{ $delivery_order->withhold_amount }}"
-                            value="0" onkeyup="change_withhold_amount()" id="withhold_amount" class="form-control">
-
-                    </div>
-                </div>
-
-                <div class="col-md-4 advanced">
-                    <div class="form-group">
-                        <label class="form-label">Withhold for RV:</label>
-                        <select name="withhold_for_rv" id="withhold_for_rv" class="form-control select2">
-                            <option value="">Select Receipt Vouchers</option>
-                            @foreach ($receipt_vouchers as $receipt_voucher)
-                                <option value="{{ $receipt_voucher->id }}" @selected($receipt_voucher->id == $delivery_order->withhold_for_rv_id)
-                                    data-amount="{{ $receipt_voucher->withhold_amount }}">
-                                    {{ $receipt_voucher->unique_no }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label class="form-label">Dispatch Date:</label>
-                        <input type="date" name="dispatch_date" onchange="getNumber()"
-                            value="{{ $delivery_order->dispatch_date }}" id="dispatch_date" class="form-control">
-                    </div>
-                </div>
-
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label class="form-label">Do No:</label>
-                        <input type="text" name="reference_no" id="reference_no"
-                            value="{{ $delivery_order->reference_no }}" class="form-control" readonly>
-                    </div>
-                </div>
-
-
-            </div>
-
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label class="form-label">Locations:</label>
-                        <select name="location_id" id="locations" onchange="selectLocation(this)"
-                            class="form-control select2">
-                            <option value="">Select Locations</option>
-                            @foreach (get_locations() as $location)
-                                <option value="{{ $location->id }}" @selected($location->id == $delivery_order->location_id)>{{ $location->name }}
+                            @foreach ($receipt_vouchers as $item)
+                                @php
+                                    $isSelected = false;
+                                    if (str_starts_with($item->unified_id, 'adv_')) {
+                                        $adv_id = str_replace('adv_', '', $item->unified_id);
+                                        $isSelected = $delivery_order->receipt_vouchers->where('pivot.receipt_voucher_advance_id', $adv_id)->isNotEmpty();
+                                    } else {
+                                        $rv_id = str_replace('rv_', '', $item->unified_id);
+                                        $isSelected = $delivery_order->receipt_vouchers->whereNull('pivot.receipt_voucher_advance_id')->where('id', $rv_id)->isNotEmpty();
+                                    }
+                                @endphp
+                                <option value="{{ $item->unified_id }}"
+                                    data-amount="{{ $item->remaining_amount }}"
+                                    @selected($isSelected)>
+                                    {{ $item->unified_text }}
                                 </option>
                             @endforeach
                         </select>
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-3 advanced" style="display: {{ $sale_order_of_delivery_order->pay_type_id == 10 ? 'block' : 'none' }}">
                     <div class="form-group">
-                        <label class="form-label">Arrival:</label>
-                        <select name="arrival_id" id="arrivals" onchange="selectStorage(this)"
-                            class="form-control select2">
-                            <option value="">Select Arrival {{ $delivery_order->location_id }} </option>
-                            @foreach (get_arrivals_by($delivery_order->location_id) as $location)
-                                <option value="{{ $location->id }}" @selected($location->id == $delivery_order->arrival_location_id)>
-                                    {{ $location->name }}</option>
-                            @endforeach
-                        </select>
+                        <label class="form-label">Advance Amount:</label>
+                        <input type="number" step="any" name="advance_amount" onchange=""
+                            value="{{ $delivery_order->advance_amount }}" id="advance_amount" class="form-control"
+                            readonly>
                     </div>
                 </div>
-                <div class="col-md-4" style="display: none">
+                <div class="col-md-3 advanced" style="display: {{ $sale_order_of_delivery_order->pay_type_id == 10 ? 'block' : 'none' }}">
                     <div class="form-group">
-                        <label class="form-label">Storage:</label>
-                        <select name="storage_id" id="storages" class="form-control select2">
-                            <option value="">Select Storage</option>
-                            @foreach (get_sub_arrivals_by($delivery_order->arrival_location_id) as $location)
-                                <option value="{{ $location->id }}" @selected($location->id == $delivery_order->sub_arrival_location_id)>
-                                    {{ $location->name }}</option>
-                            @endforeach
-                        </select>
+                        <label class="form-label">Withhold Amount:</label>
+                        <input type="number" step="any" name="withhold_amount" value="{{ $delivery_order->withhold_amount }}"
+                            onkeyup="change_withhold_amount()" id="withhold_amount"
+                            class="form-control">
                     </div>
                 </div>
-            </div>
+                <div class="col-md-3 advanced" style="display: {{ $sale_order_of_delivery_order->pay_type_id == 10 ? 'block' : 'none' }}">
+                    <div class="form-group">
+                        <label class="form-label">Withhold for RV:</label>
+                        <select name="withhold_for_rv" id="withhold_for_rv" class="form-control select2"
+                            @disabled(!$delivery_order->receipt_vouchers->sum('pivot.withhold_amount'))>
+                                <option value="">Select Receipt Vouchers</option>
+                                @foreach ($receipt_vouchers as $item)
+                                    @php
+                                        $pivotRow = null;
+                                        if (str_starts_with($item->unified_id, 'adv_')) {
+                                            $adv_id = str_replace('adv_', '', $item->unified_id);
+                                            $pivotRow = $delivery_order->receipt_vouchers->where('pivot.receipt_voucher_advance_id', $adv_id)->first();
+                                        } else {
+                                            $rv_id = str_replace('rv_', '', $item->unified_id);
+                                            $pivotRow = $delivery_order->receipt_vouchers->whereNull('pivot.receipt_voucher_advance_id')->where('id', $rv_id)->first();
+                                        }
+                                        $isWithheld = $pivotRow && $pivotRow->pivot->withhold_amount > 0;
+                                    @endphp
+                                    <option value="{{ $item->unified_id }}"
+                                        data-amount="{{ $item->remaining_amount }}"
+                                        @selected($isWithheld)>
+                                        {{ $item->unified_text }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
 
-            <!-- Row 2: Sale Orders, Sauda Type -->
-            <div class="row">
-                <div class="col-md-6">
+                <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Location Details</h6>
+                </div>
+                <div class="col-md-4">
                     <div class="form-group">
-                        <label class="form-label">Payment Terms:</label>
-                        <select name="payment_term_id" id="payment_term_id" class="form-control select2">
-                            <option value="">Select Payment Term</option>
-                            @foreach ($payment_terms as $payment_term)
-                                <option value="{{ $payment_term->id }}" @selected($payment_term->id == $delivery_order->payment_term_id)>
-                                    {{ $payment_term->desc }}</option>
+                        <label class="form-label">Locations:</label>
+                        <select name="location_id" id="locations" onchange="selectLocation(this)"
+                            class="form-control select2">
+                            <option value="">Select Locations</option>
+                            @foreach (getSaleOrderLocation($delivery_order->so_id) as $location)
+                                <option value="{{ $location->location_id }}" @selected($location->location_id == $delivery_order->location_id)>
+                                    {{ getLocation($location->location_id)?->name }}
+                                </option>
                             @endforeach
                         </select>
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="form-group">
-                        <label class="form-label">Sauda Type:</label>
-                        <select name="sauda_type" id="sauda_type" class="form-control select2">
-                            <option value="">Select Sauda Type</option>
-                            <option value="pohanch" @selected($delivery_order->sauda_type == 'pohanch')>Pohanch</option>
-                            <option value="x-mill" @selected($delivery_order->sauda_type == 'x-mill')>X-mill</option>
+                        <label class="form-label">Factory:</label>
+                        <select name="arrival_id[]" id="arrivals" onchange="selectStorage(this)"
+                            class="form-control select2" multiple @if (!$delivery_order->arrival_location_id) disabled @endif>
+                            <option value="">Select Factory</option>
+                            @php
+                                $selectedArrivalIds = $delivery_order->arrival_location_id ? explode(',', $delivery_order->arrival_location_id) : [];
+                            @endphp
+                            @foreach (get_arrivals_by($delivery_order->location_id) as $location)
+                                <option value="{{ $location->id }}" @selected(in_array($location->id, $selectedArrivalIds))>
+                                    {{ $location->name }}</option>
+                            @endforeach
                         </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Section:</label>
+                        <select name="storage_id[]" id="storages" class="form-control select2" multiple>
+                            <option value="">Select Section</option>
+                            @php
+                                $selectedSubArrivalIds = $delivery_order->sub_arrival_location_id ? explode(',', $delivery_order->sub_arrival_location_id) : [];
+                                $arrivalIds = $delivery_order->arrival_location_id ? explode(',', $delivery_order->arrival_location_id) : [$delivery_order->arrival_location_id];
+                            @endphp
+                            @foreach (getSaleOrderSubArrival($delivery_order->so_id) as $location)
+                                <option value="{{ $location->arrival_sub_location_id }}" @selected(in_array($location->arrival_sub_location_id, $selectedSubArrivalIds))>
+                                    {{ subArrivalLocationId($location->arrival_sub_location_id)?->name }} ({{ subArrivalLocationId($location->arrival_sub_location_id)?->arrivalLocation?->name }})</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Remarks</h6>
+                </div>
+                <div class="col-12">
+                    <div class="form-group">
+                        <textarea name="remarks" id="remarks" class="form-control" rows="3">{{ $delivery_order->line_desc }}</textarea>
                     </div>
                 </div>
             </div>
@@ -213,12 +255,7 @@
 
 
 
-        <div class="col-md-12">
-            <div class="form-group">
-                <label class="form-label">Line Description:</label>
-                <textarea name="line_desc" id="line_desc" class="form-control">{{ $delivery_order->line_desc }}</textarea>
-            </div>
-        </div>
+
 
     </div>
 
@@ -230,19 +267,21 @@
                 <i class="fa fa-plus"></i>&nbsp; Add New Item
             </button>
         </div>
-
         <div class="col-md-12">
             <div class="table-responsive" style="overflow-x: auto; white-space: nowrap;">
                 <table class="table table-bordered" id="salesInquiryTable" style="min-width:2000px;">
                     <thead>
                         <tr>
                             <th>Item</th>
-                            <th>Bag type</th>
-                            <th>Bag size</th>
+                            <th>Bag Type</th>
+                            <th>Pack Size</th>
                             <th>No of Bags</th>
-                            <th>Quantity</th>
-                            <th>Rate</th>
+                            <th>Quantity (Kg)</th>
+                            <th>Rate Per KG</th>
+                            <th>Rate Per Mond</th>
+                            <th>Amount</th>
                             <th>Brand</th>
+                            <th>Desc</th>
                             <th style="display: none;">Pack Size</th>
                             <th>Action</th>
                         </tr>
@@ -251,12 +290,13 @@
                         @foreach ($delivery_order->delivery_order_data as $index => $data)
                             @php
                                 $balance = delivery_order_balance($data->so_data_id);
-                                $allowed_value = (int)$balance + (int)$data->no_of_bags;
+                                $allowed_value = (int) $balance;
                             @endphp
+
                             <tr id="row_{{ $index }}">
                                 <td>
-
-                                    <select name="item_id[]" id="item_id" class="form-control select2" readonly>
+                                    <select name="item_id[]" id="item_id_{{ $index }}"
+                                        class="form-control select2">
                                         <option value="">Select Item</option>
                                         @foreach ($items as $item)
                                             <option value="{{ $item->id }}" @selected($item->id == $data->item_id)>
@@ -265,59 +305,79 @@
                                     </select>
                                 </td>
                                 <td>
+                                    <input type="text" id="bag_type_display_{{ $index }}"
+                                        value="{{ bag_type_name($data->bag_type) }}" class="form-control" readonly>
 
-                                    <input type="text" name="" id="bag_type_{{ $index }}"
-                                        value="{{ bag_type_name($data->bag_type) }}" onkeyup="calc(this)"
-                                        class="form-control bag_type" step="0.01" min="0">
+                                    <input type="hidden" name="bag_type[]" value="{{ $data->bag_type }}">
 
-                                    <input type="hidden" name="bag_type[]" id="bag_type_{{ $index }}"
-                                        value="{{ $data->bag_type }}" onkeyup="calc(this)"
-                                        class="form-control bag_type" step="0.01" min="0">
-
-                                        <input type="hidden" name="so_data_id[]" id="so_data_id_{{ $index }}"
-                                        value="{{ $data->so_data_id }}" onkeyup="calc(this)"
-                                        class="form-control so_data_id" step="0.01" min="0">
+                                    <input type="hidden" name="so_data_id[]" id="so_data_id_{{ $index }}"
+                                        value="{{ $data->so_data_id }}">
                                 </td>
                                 <td>
                                     <input type="text" name="bag_size[]" id="bag_size_{{ $index }}"
-                                        value="{{ $data->bag_size }}" onkeyup="calc(this)"
-                                        class="form-control bag_size" step="0.01" min="0">
+                                        value="{{ $data->bag_size }}" oninput="calc(this)"
+                                        class="form-control bag_size" step="0.01" min="0" readonly>
                                 </td>
+                                @php
+                                    $used_quantity = $data->no_of_bags - $balance;
+                                    $total_quantity = $data->no_of_bags;
+                                @endphp
                                 <td>
                                     <input type="hidden" class="allowed_value" value="{{ $allowed_value }}" />
-                                    <input type="text" name="no_of_bags[]" id="no_of_bags_{{ $index }}"
-                                        value="{{ $data->no_of_bags }}" onkeyup="calc(this); is_allowed(this)"
+                                    <input type="text" style="margin-bottom: 10px;" name="no_of_bags[]"
+                                        id="no_of_bags_{{ $index }}"
+                                        value="{{ round(($data->qty ?? 0) / $data->bag_size) }}" readonly
                                         class="form-control no_of_bags" step="0.01" min="0">
+
+                                    <span style="font-size: 14px;;">Used Quantity:
+                                        {{ delivery_order_bags_used($data->so_data_id) }}</span>
+                                    <br />
+                                    <span style="font-size: 14px;">Balance:
+                                        {{ delivery_order_balance($data->so_data_id) }}</span>
+
                                 </td>
                                 <td>
-                                    <input type="number" name="qty[]" id="qty_{{ $index }}"
-                                        onkeyup="calc(this)" value="{{ $data->qty }}" class="form-control qty"
-                                        step="0.01" min="0" readonly>
-                                </td>
+                                    <input type="text" name="qty[]" id="qty_{{ $index }}"
+                                        value="{{ $data->qty }}" class="form-control qty" step="0.01" data-balance="{{ delivery_order_balance($data->so_data_id) + $data->no_of_bags }}"
+                                        min="0" onchange="check_balance(this, 'no_of_bags_{{ $index }}')" onkeyup="check_balance(this, 'no_of_bags_{{ $index }}')" oninput="calc(this)" @readonly($delivery_order->salesOrder->pay_type_id == 10)>
+                                    
+                                    <input type="hidden" name="current_qty[]" id="qty_{{ $index }}"
+                                        value="{{ $data->qty }}" class="form-control qty" step="0.01" data-balance="{{ delivery_order_balance($data->so_data_id) + $data->no_of_bags }}"
+                                        min="0" onchange="check_balance(this, 'no_of_bags_{{ $index }}')" onkeyup="check_balance(this, 'no_of_bags_{{ $index }}')" oninput="calc(this)">
+                             
+                                    </td>
                                 <td>
-                                    <input type="number" name="rate[]" id="rate_{{ $index }}"
+                                    <input type="text" name="rate[]" id="rate_{{ $index }}"
                                         value="{{ $data->rate }}" onkeyup="calc(this)" class="form-control rate"
                                         step="0.01" min="0" readonly>
                                 </td>
-
-
-                                <td>
-
-                                    <select name="brand_id[]" id="brand_id" class="form-control select2" readonly>
-                                        <option value="">Select Brand</option>
-                                        @foreach (getAllBrands() as $brand)
-                                            <option value="{{ $brand->id }}" @selected($brand->id == $data->brand_id)>
-                                                {{ $brand->name }}</option>
-                                        @endforeach
-                                    </select>
+                                 <td>
+                                    <input type="text" name="rate_per_mond[]" id="rate_per_mond_{{ $index }}"
+                                        value="{{ $data->salesOrderData->rate_per_mond }}" onkeyup="calc(this)" class="form-control rate_per_mond"
+                                        step="0.01" min="0" readonly>
                                 </td>
+                                <td>
+                                    <input type="text" name="amount[]" id="amount_{{ $index }}"
+                                        value="{{ $data->rate * ($data->qty ?? 0) }}" class="form-control amount"
+                                        readonly>
+                                </td>
+                                <td>
+                                    <input type="text" 
+                                        value="{{ getBrandById($data->brand_id)?->name ?? 'N/A' }}" class="form-control amount"
+                                        readonly>
 
+                                    <input type="hidden" 
+                                        value="{{ $data->brand_id }}" name="brand_id[]" id="brand_id_{{ $index }}" class="form-control"
+                                        readonly>  
+                                </td>
+                                <td>
+                                    <input type="text" name="desc[]" id="desc_{{ $index }}"
+                                        value="{{ $data->description }}" class="form-control">
+                                </td>
                                 <td style="display: none;">
                                     <input type="text" name="pack_size[]" id="pack_size_{{ $index }}"
-                                        class="form-control pack_size" value="{{ 0 }}" readonly>
+                                        class="form-control pack_size" value="{{ $data->pack_size ?? 0 }}" readonly>
                                 </td>
-
-
                                 <td>
                                     <button type="button" disabled class="btn btn-danger btn-sm removeRowBtn"
                                         style="width:60px;">
@@ -348,12 +408,96 @@
 
     $(document).ready(function() {
         $('.select2').select2();
+        applySaudaType(`{{ strtolower($delivery_order->sauda_type) }}`);
+        // Initialize location options based on current sale order locations
+        get_so_detail();
+
+
     });
+
+
+    function validate_expiry(el) {
+
+        // const do_date = $("#dispatch_date").val();
+        // const delivery_date = $("#delivery_date").val();
+     
+        // const dispatchDate = new Date(do_date);
+        // const deliveryDate = new Date(delivery_date);
+
+        // if(dispatchDate > deliveryDate) {
+        //     Swal.fire({
+        //         icon: 'error',
+        //         title: 'Expired!',
+        //         text: 'Dispatch date cannot be greater than delivery date.',
+        //         confirmButtonText: 'OK'
+        //     });
+        // }
+    }
+
+    function check_so_type() {
+        const type = $("#sale_order").find("option:selected").data("type");
+        if (type == 10) {
+            $(".advanced").show();
+        } else {
+            $(".advanced").hide();
+        }
+    }
+
+    function check_balance(el, target) {
+      const balance = $(el).data("balance");
+      const value = $("#" + target).val();
+      
+      if(value > balance) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Limit Exceeded',
+            text: 'Cannot proceed more than ' + balance,
+        });
+            
+        $("#" + target).addClass("is-invalid");
+      } else {
+        $("#" + target).removeClass("is-invalid");
+      }
+  }
+
+    function applySaudaType(saudaType) {
+        const normalized = (saudaType || '').toLowerCase();
+        $('#sauda_type').val(normalized).trigger('change');
+        $('#sauda_type_hidden').val(normalized);
+        $('#sauda_type').prop('disabled', true);
+    }
+
+    function updateLocations(locations) {
+        const select = $("#locations");
+        const current = select.val();
+        select.empty();
+        select.append('<option value="">Select Locations</option>');
+
+        (locations || []).forEach(loc => {
+            select.append(`<option value="${loc.id}">${loc.text}</option>`);
+        });
+
+        const desired = current || initialLocationId || '';
+        if (desired && (locations || []).find?.(l => String(l.id) === String(desired))) {
+            select.val(String(desired));
+        } else {
+            select.val(desired ? String(desired) : '');
+        }
+
+        select.prop('disabled', false); // no change trigger on load
+        select.select2();
+
+        // Reset dependent dropdowns; will be rehydrated by selectLocation when data exists
+        $("#arrivals").empty().append('<option value=\"\">Select Factory</option>').prop('disabled', true).trigger(
+            'change.select2');
+        $("#storages").empty().append('<option value=\"\">Select Section</option>').prop('disabled', true).trigger(
+            'change.select2');
+    }
 
     function is_allowed(el) {
         const allowed_value = $(el).closest("tr").find(".allowed_value").val();
         const written_value = $(el).val();
-        if(parseFloat(written_value) > parseFloat(allowed_value)) {
+        if (parseFloat(written_value) > parseFloat(allowed_value)) {
             Swal.fire({
                 icon: 'warning',
                 title: 'Limit Exceeded',
@@ -364,13 +508,35 @@
         }
     }
 
-    function selectLocation(el) {
+    function selectLocation(el, isInit = false) {
         const company = $(el).val();
+        const allowedFactories = soFactoryMap[String(company)] || [];
 
-        if (!company) {
-            $("#arrivals").prop("disabled", true);
+   
+
+        if (allowedFactories.length > 0) {
             $("#arrivals").empty();
-            return;
+            allowedFactories.forEach(loc => {
+                const option = new Option(loc.text, loc.id);
+                $(option).attr("selected", "selected")
+                $("#arrivals").append(option);
+            });
+
+            // Apply initial arrival/section if present (for edit mode initialization)
+            if (!initialArrivalApplied && initialArrivalId) {
+                // Parse comma-separated IDs for multiple selection
+                const initialArrivalIds = initialArrivalId.split(',').map(id => id.trim());
+                // $("#arrivals").val(initialArrivalIds).trigger('change.select2');
+                initialArrivalApplied = true;
+                selectStorage(document.getElementById("arrivals"), true);
+            } else if (!isInit) {
+                // Auto-select ALL factories when user manually changes location
+                const allFactoryIds = allowedFactories.map(loc => String(loc.id));
+                // $("#arrivals").val(allFactoryIds).trigger('change.select2');
+                // Populate and select all sections for all selected factories
+                
+                selectAllStorages(allFactoryIds);
+            }
         } else {
             // get.arrival-locations; send request to this url
             $("#arrivals").prop("disabled", false);
@@ -383,17 +549,31 @@
                 dataType: "json",
                 success: function(res) {
                     $("#arrivals").empty();
-                    $("#arrivals").append(`<option value=''>Select Arrivals</option>`)
 
                     res.forEach(loc => {
                         $("#arrivals").append(`
-                        <option value="${loc.id}" >
+                        <option value="${loc.id}" selected>
                             ${loc.text}
                         </option>
                     `);
                     });
 
                     $("#arrivals").select2();
+
+                    if (!initialArrivalApplied && initialArrivalId) {
+                        // Parse comma-separated IDs for multiple selection
+                        const initialArrivalIds = initialArrivalId.split(',').map(id => id.trim());
+                        // $("#arrivals").val(initialArrivalIds).trigger('change.select2');
+                        initialArrivalApplied = true;
+                        selectStorage(document.getElementById("arrivals"), true);
+                    } else if (!isInit) {
+                        // Auto-select ALL factories
+                        const allFactoryIds = res.map(loc => String(loc.id));
+                        // $("#arrivals")   .val(allFactoryIds).trigger('change.select2');
+                        
+                        // Clear sections as no mapping exists
+                        $("#storages").empty().prop("disabled", true).trigger('change.select2');
+                    }
                 },
                 error: function(error) {
 
@@ -402,47 +582,70 @@
         }
     }
 
-    function selectStorage(el) {
-        const arrival = $(el).val();
-        console.log(arrival);
-        if (!arrival) {
+    function selectStorage(el, isInit = false) {
+        const arrivals = $(el).val(); // This is now an array since it's multiple select
+        if (!arrivals || arrivals.length === 0) {
             $("#storages").prop("disabled", true);
             $("#storages").empty();
             return;
-        } else {
-            // get.arrival-locations; send request to this url
-            $("#storages").prop("disabled", false);
-            $.ajax({
-                url: "{{ route('sales.get.storage-locations') }}",
-                method: "GET",
-                data: {
-                    arrival_id: arrival
-                },
-                dataType: "json",
-                success: function(res) {
-                    console.log(res);
-                    $("#storages").empty();
-                    $("#storages").append(`<option value=''>Select Storage</option>`)
-                    res.forEach(loc => {
-                        $("#storages").append(`
-                        <option value="${loc.id}">
-                            ${loc.text}
-                        </option>
-                    `);
-                    });
+        }
 
-                    $("#storages").select2();
-                },
-                error: function(error) {
+        // Convert to array if single value
+        const factoryIds = Array.isArray(arrivals) ? arrivals : [arrivals];
+        
+        // We strictly use mapping data, no server fallback
+        selectAllStorages(factoryIds, isInit);
+    }
 
+    function selectAllStorages(factoryIds, isInit = false) {
+        $("#storages").prop("disabled", false).empty();
+        
+        let allSections = [];
+        factoryIds.forEach(factoryId => {
+            const sections = soSectionMap[String(factoryId)] || [];
+            sections.forEach(section => {
+                // Avoid duplicates
+                if (!allSections.find(s => s.id === section.id)) {
+                    allSections.push(section);
                 }
             });
+        });
+
+        if (allSections.length > 0) {
+            allSections.forEach(section => {
+                $("#storages").append(`<option value="${section.id}">${section.text}</option>`);
+            });
+            
+            // Apply initial storage if present (for edit mode initialization)
+            if (!initialStorageApplied && initialStorageId && isInit) {
+                // Parse comma-separated IDs for multiple selection
+                const initialStorageIds = initialStorageId.split(',').map(id => id.trim());
+            $("#storages").val($("#storages option").map((_,o) => o.value).get()).trigger('change.select2');
+
+                initialStorageApplied = true;
+            } else if (!isInit) {
+                // Auto-select ALL sections when user manually changes
+                const allSectionIds = allSections.map(s => String(s.id));
+                $("#storages").val($("#storages option").map((_,o) => o.value).get()).trigger('change.select2');
+
+            }
+        } else {
+            // No sections in mapping, clear list and disable
+            $("#storages").empty().prop("disabled", true).trigger('change.select2');
         }
     }
 
+    isEdit = true;
     sum = 0;
     so_amount = 0;
     remaining_amount = 0;
+    soFactoryMap = {};
+    soSectionMap = {};
+    initialLocationId = "{{ $delivery_order->location_id }}";
+    initialArrivalId = "{{ $delivery_order->arrival_location_id }}";
+    initialStorageId = "{{ $delivery_order->sub_arrival_location_id }}";
+    initialArrivalApplied = false;
+    initialStorageApplied = false;
 
     function add_advance_amount() {
         let selectedAmounts = $("#receipt_vouchers option:selected")
@@ -467,34 +670,61 @@
     }
 
     function change_withhold_amount() {
-        remaining_amount = parseFloat($("#advance_amount").val() ?? 0) - parseFloat($("#withhold_amount").val() ?? 0);
-        rate = $("#rate_0").val();
-        $("#qty_0").val((remaining_amount / rate).toFixed(2));
-
-        $("withhold_for_rv").val("").trigger("change");
-        $('#withhold_for_rv').select2({
-            templateResult: function(data) {
-
-                if (!data.id) return data.text;
-
-                let amount = $(data.element).data('amount');
-
-
-                if (parseFloat($("#withhold_amount").val()) > parseFloat(amount)) {
-                    return null; // Hides this option
+        const withhold = parseFloat($("#withhold_amount").val()) || 0;
+        const advance = parseFloat($("#advance_amount").val()) || 0;
+        
+        // Basic calculation for first row
+        if (advance > 0 || withhold > 0) {
+            remaining_amount = advance - withhold;
+            bag_size = $("#bag_size_0").val() || 0;
+            rate = $("#rate_0").val() || 0;
+            
+            if (rate > 0) {
+                const qtyVal = ((remaining_amount / rate)).toFixed(2);
+                $("#qty_0").val(qtyVal);
+                $("#qty_0").prop("readonly", true);
+                $("#amount_0").val((parseFloat(rate) * parseFloat(qtyVal)).toFixed(2));
+                
+                if (bag_size > 0) {
+                    const no_of_bags = Math.round(parseFloat(qtyVal) / parseFloat(bag_size));
+                    $("#no_of_bags_0").val(isNaN(no_of_bags) ? 0 : no_of_bags);
                 }
+            }
+        }
 
-                let $item = $(`
-                    <span>
-                        ${data.text}
-                        <strong style="color: green; margin-left: 6px;">(${amount})</strong>
-                    </span>
-                `);
-
-                return $item;
+        const receipt_vouchers = $("#receipt_vouchers");
+        let withholdSelect = $("#withhold_for_rv");
+        let currentWithholdVal = withholdSelect.val();
+        
+        withholdSelect.empty();
+        withholdSelect.append(`<option value='' data-amount="0">Select Receipt Voucher</option>`);
+        
+        // Get selected receipt vouchers and add them to withhold_for_rv
+        $("#receipt_vouchers option:selected").each(function() {
+            const val = $(this).val();
+            const text = $(this).text();
+            const amount = $(this).data('amount');
+            
+            if (val) {
+                withholdSelect.append(
+                    `<option value="${val}" data-amount="${amount}">${text}</option>`
+                );
             }
         });
 
+        // Re-select previous value if still exists
+        if (currentWithholdVal && withholdSelect.find(`option[value="${currentWithholdVal}"]`).length > 0) {
+            withholdSelect.val(currentWithholdVal);
+        }
+
+        if (withhold > 0 && receipt_vouchers.val() && receipt_vouchers.val().length > 0) {
+            withholdSelect.prop("disabled", false);
+        } else {
+            withholdSelect.prop("disabled", true);
+            withholdSelect.val("").trigger("change");
+        }
+        
+        withholdSelect.trigger('change.select2');
     }
 
     function addRow() {
@@ -510,13 +740,42 @@
                 </select>
             </td>
             <td>
-                <input type="number" name="qty[]" id="qty_${index}" onkeyup="calc(this)" class="form-control qty" step="0.01" min="0">
+                <select name="bag_type[]" id="bag_type_${index}" class="form-control select2">
+                    <option value="">Select Bag Type</option>
+                    @foreach ($bag_types ?? [] as $bag_type)
+                        <option value="{{ $bag_type->id }}">{{ $bag_type->name }}</option>
+                    @endforeach
+                </select>
+                <input type="hidden" name="so_data_id[]" value="">
             </td>
             <td>
-                <input type="number" name="rate[]" id="rate_${index}" onkeyup="calc(this)" class="form-control rate" step="0.01" min="0">
+                <input type="text" name="bag_size[]" id="bag_size_${index}" class="form-control bag_size" onkeyup="calc(this)" step="0.01" min="0">
+            </td>
+            <td>
+                <input type="text" name="no_of_bags[]" id="no_of_bags_${index}" class="form-control no_of_bags" step="0.01" min="0" readonly>
+            </td>
+            <td>
+                <input type="text" name="qty[]" id="qty_${index}" class="form-control qty" step="0.01" min="0" oninput="calc(this)">
+            </td>
+            <td>
+                <input type="text" name="rate[]" id="rate_${index}" onkeyup="calc(this)" class="form-control rate" step="0.01" min="0">
             </td>
             <td>
                 <input type="text" name="amount[]" id="amount_${index}" class="form-control amount" readonly>
+            </td>
+            <td>
+                <select name="brand_id[]" id="brand_id_${index}" class="form-control select2">
+                    <option value="">Select Brand</option>
+                    @foreach (getAllBrands() ?? [] as $brand)
+                        <option value="{{ $brand->id }}">{{ $brand->name }}</option>
+                    @endforeach
+                </select>
+            </td>
+            <td>
+                <input type="text" name="desc[]" id="desc_${index}" class="form-control">
+            </td>
+            <td style="display: none;">
+                <input type="text" name="pack_size[]" id="pack_size_${index}" value="0" class="form-control pack_size" readonly>
             </td>
             <td>
                 <button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="removeRow(${index})" style="width:60px;">
@@ -525,30 +784,86 @@
             </td>
         </tr>
     `;
-        $('#salesInquiryBody').append(row);
+        $('#soTableBody').append(row);
         $(`#item_id_${index}`).select2();
-        $('#row_0 .removeRowBtn').prop('disabled', true);
-        $('.removeRowBtn').not('#row_0 .removeRowBtn').prop('disabled', false);
+        $(`#bag_type_${index}`).select2();
+        $(`#brand_id_${index}`).select2();
     }
 
     function removeRow(index) {
         $('#row_' + index).remove();
-        if ($('#salesInquiryBody tr').length === 1) {
-            $('#row_0 .removeRowBtn').prop('disabled', true);
-        }
     }
 
     function calc(el) {
         const element = $(el).closest("tr");
-
-
-        const rate = parseFloat($(element).find(".rate").val()) || 0;
-        const qty = parseFloat($(element).find(".qty").val()) || 0;
-
+        const bag_size = $(element).find(".bag_size");
+        const no_of_bags = $(element).find(".no_of_bags");
+        const qty = $(element).find(".qty");
+        const rate = $(element).find(".rate");
         const amount = $(element).find(".amount");
 
-        amount.val(rate * qty);
+        // Calculate no_of_bags from bag_size * qty
+        const balance = parseFloat(no_of_bags.data("balance")) || parseFloat($(element).find(".allowed_value").val()) ||
+            null;
+
+        if (bag_size.val() && qty.val()) {
+            let bagsResult = Math.round(parseFloat(parseFloat(qty.val() / bag_size.val())));
+
+            if (balance && bagsResult > balance) {
+                // Swal.fire({
+                //     icon: 'warning',
+                //     title: 'Limit Exceeded',
+                //     text: 'No of bags cannot exceed available balance (' + balance + ').',
+                // });
+                // bagsResult = balance;
+                // const limitedQty = parseFloat(bagsResult) / parseFloat(bag_size.val() || 1);
+                // qty.val(limitedQty.toFixed(2));
+            }
+
+            no_of_bags.val(bagsResult);
+        } else {
+            no_of_bags.val('');
+        }
+
+        // Calculate amount from qty * rate
+        const qtyVal = parseFloat(qty.val()) || 0;
+        const rateVal = parseFloat(rate.val()) || 0;
+        amount.val((qtyVal * rateVal).toFixed(2));
     }
+
+    function validateBagsBeforeSubmit() {
+        let valid = true;
+        $("#soTableBody tr").each(function() {
+            const row = $(this);
+            const no_of_bags = row.find(".no_of_bags");
+            const bag_size = row.find(".bag_size");
+            const qty = row.find(".qty");
+            const balance = parseFloat(no_of_bags.data("balance")) || parseFloat(row.find(".allowed_value")
+                .val()) || null;
+
+            if (balance) {
+                if (bag_size.val() && qty.val()) {
+                    const bagsResult = Math.round(parseFloat(bag_size.val()) * parseFloat(qty.val()));
+                    if (bagsResult > balance) {
+                        valid = false;
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Limit Exceeded',
+                            text: 'No of bags cannot exceed available balance (' + balance + ').',
+                        });
+                        return false;
+                    }
+                }
+            }
+        });
+        return valid;
+    }
+
+    $("#ajaxSubmit").on("submit", function(e) {
+        if (!validateBagsBeforeSubmit()) {
+            e.preventDefault();
+        }
+    });
 
     function get_sale_orders() {
         const customer_id = $("#customer_id").val();
@@ -562,9 +877,21 @@
             },
             dataType: "json",
             success: function(res) {
-                $("#sale_order").select2({
-                    data: res
+                $("#sale_order").empty();
+
+                // Add default "Select Sale Order" option first
+                $("#sale_order").append('<option value="" selected>Select Sale Order</option>');
+
+                res.forEach(item => {
+                    $("#sale_order").append(`
+                        <option value="${item.id}" 
+                                data-type="${item.type || ''}">
+                            ${item.text}
+                        </option>
+                    `);
                 });
+
+                $("#sale_order").select2();
             },
             error: function(error) {
 
@@ -664,11 +991,18 @@
 
 
     function get_so_detail() {
+        const soId = $("#sale_order").val();
+        if (!soId) {
+            applySaudaType('');
+            updateLocations([]);
+            return;
+        }
+
         $.ajax({
             url: "{{ route('sales.get.delivery-order.details') }}",
             method: "GET",
             data: {
-                so_id: $("#sale_order").val(),
+                so_id: soId,
             },
             dataType: "json",
             success: function(res) {
@@ -676,13 +1010,25 @@
                 // $("#so_amount").val(res.so_amount)
                 // $("#unused_amount").val(res.unused_amount)
 
-                // $("#sauda_type").val(res.sauda_type)
-                // $("#sauda_type").trigger("change");
+                applySaudaType(res.sauda_type);
+                if (!isEdit) {
+                    updateLocations(res.locations || []);
+                }
+                soFactoryMap = res.factory_map || {};
+                soSectionMap = res.section_map || {};
 
                 // $("#payment_term_id").val(res.payment_term_id);
                 // $("#payment_term_id").trigger("change");
 
                 so_amount = res.so_amount;
+
+                // Re-apply saved location/arrival/section after refreshing maps
+                $("#locations").val(String(initialLocationId || ''));
+
+
+                $("#delivery_date").val(res.delivery_date);
+                $("#delivery_date").prop("readonly", true);
+                // selectLocation(document.getElementById("locations"), true);
 
                 // $("#locations").val(res.locations).trigger("change");
             },
@@ -701,13 +1047,14 @@
             url: "{{ route('sales.get.delivery-order.getRvAgainstSo') }}",
             method: "GET",
             data: {
-                so_no: $("#sale_order option:selected").text(),
+                customer_id: $("#customer_id").val(),
+                sale_order_id: $("#sale_order").val()
             },
             dataType: "json",
             success: function(res) {
-                // withhold_for_rv
-
+                // Populate receipt_vouchers dropdown
                 let select = $("#receipt_vouchers");
+                let selectedValues = select.val() || [];
                 select.empty();
                 select.append(
                     `<option value='' data-amount="0">Select Receipt Voucher</option>`
@@ -722,27 +1069,24 @@
                     );
                 });
 
-                select.select2();
+                select.val(selectedValues).trigger('change.select2');
+                add_advance_amount();
 
+                if (res.length > 0) {
+                    // $(".advanced").show();
+                }
 
-                select = $("#withhold_for_rv");
-                select.empty();
-
-                select.append(
+                // Reset withhold_for_rv - it will be populated when receipt vouchers are selected
+                let withholdSelect = $("#withhold_for_rv");
+                let selectedWithhold = withholdSelect.val();
+                withholdSelect.empty();
+                withholdSelect.append(
                     `<option value='' data-amount="0">Select Receipt Voucher</option>`
                 );
-                res.forEach(item => {
-                    select.append(
-                        `<option value="${item.id}"
-                                data-amount="${item.amount}">
-                            ${item.text}
-                        </option>`
-                    );
-                });
-
-                select.select2();
-
-
+                
+                // We'll re-populate withholdSelect in change_withhold_amount() call from trigger('change.select2') above 
+                // but let's be explicit if needed.
+                change_withhold_amount();
             },
             error: function(error) {
                 // Handle errors here
@@ -773,4 +1117,11 @@
             }
         });
     }
+
+     $('.select2').on('select2:open', function (e) {
+        // Remove all Select2 scroll blockers from window & parents
+        $(document).off('scroll.select2');
+        $(window).off('scroll.select2');
+        $('*').off('scroll.select2');           // aggressive but often works
+    });
 </script>

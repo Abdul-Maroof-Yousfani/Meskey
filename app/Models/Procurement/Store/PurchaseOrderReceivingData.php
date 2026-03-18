@@ -20,7 +20,13 @@ class PurchaseOrderReceivingData extends Model
     protected $table = "purchase_order_receiving_data";
     protected $guarded = [];
 
-
+    public static function booted() {
+        static::deleted(function($grn) {
+            $stock = Stock::where("voucher_type", "grn")
+                            ->where("parent_id", $grn->purchase_order_data_id)
+                            ->delete();
+        });
+    }
     public function purchase_order_receiving()
     {
         return $this->belongsTo(PurchaseOrderReceiving::class);
@@ -105,4 +111,6 @@ class PurchaseOrderReceivingData extends Model
     public function bill() {
         return $this->hasOne(PurchaseBillData::class, "purchase_order_receiving_data_id");
     }
+
+
 }

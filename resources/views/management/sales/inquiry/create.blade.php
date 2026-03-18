@@ -3,119 +3,176 @@
     body {
         overflow-x: hidden;
     }
+
+    .amount-info-box {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 15px;
+        background-color: #f8f9fa;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .amount-info-box .form-group {
+        margin-bottom: 10px;
+    }
+
+    .amount-info-box .form-group:last-child {
+        margin-bottom: 0;
+    }
+
+    .amount-info-box .form-label {
+        font-weight: 600;
+        font-size: 13px;
+    }
 </style>
 
 <form action="{{ route('sales.sales-inquiry.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
 
     <input type="hidden" id="listRefresh" value="{{ route('sales.get.sales-inquiry.list') }}" />
-    <div class="row">
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Inquiry Number:</label>
-                <input type="text" name="reference_no" id="reference_no" class="form-control" readonly>
+    @php
+        $selectedFactories = old('arrival_location_id', []);
+        $selectedSections = old('arrival_sub_location_id', []);
+    @endphp
+    <div class="row form-mar">
+        <div class="col-md-12">
+            <div class="row">
+                <div class="col-12">
+                    <h6 class="header-heading-sepration">General Information</h6>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Inquiry Number: <span class="text-danger">*</span></label>
+                        <input type="text" name="reference_no" id="reference_no" class="form-control" readonly>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Inquiry Date: <span class="text-danger">*</span></label>
+                        <input type="date" name="inquiry_date" onchange="getNumber(); validateExpiry()" id="inquiry_date" class="form-control" value="{{ date('Y-m-d') }}">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Contract Type: <span class="text-danger">*</span></label>
+                        <select name="contract_type" id="contract_type" class="form-control select2">
+                            <option value="">Select Contract Type</option>
+                            <option value="x-mill">X-Mill</option>
+                            <option value="pohanch">Pohanch</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Delivery Date: <span class="text-danger">*</span></label>
+                        <input type="date" name="required_date" id="required_date" onchange="validateExpiry()" class="form-control">
+                    </div>
+                </div>
+
+                <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Customer Details</h6>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Customer: <span class="text-danger">*</span></label>
+                        <select name="customer" id="customer" class="form-control select2 required">
+                            <option value="">Select Customer</option>
+                            @foreach ($customers ?? [] as $customer)
+                                <option value="{{ $customer->id }}">{{ $customer->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Contact Person:</label>
+                        <input type="text" name="contact_person" id="contact_person" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Reference Number:</label>
+                        <input type="text" name="reference_number" id="reference_number" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Token Money: <span class="text-danger">*</span></label>
+                        <input type="number" name="token_money" id="token_money" class="form-control" step="0.01" min="0">
+                    </div>
+                </div>
+
+                <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Location Details</h6>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Locations: <span class="text-danger">*</span></label>
+                        <select name="locations[]" id="locations" class="form-control select2" multiple>
+                            @foreach (get_locations() as $location)
+                                <option value="{{ $location->id }}">{{ $location->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Factory:</label>
+                        <select name="arrival_location_id[]" id="arrival_location_id" class="form-control select2" multiple>
+                            <option value="">Select Factory</option>
+                            @foreach ($arrivalLocations as $factory)
+                                <option value="{{ $factory->id }}" data-company="{{ $factory->company_location_id }}" @selected(in_array($factory->id, $selectedFactories))>{{ $factory->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Section:</label>
+                        <select name="arrival_sub_location_id[]" id="arrival_sub_location_id" class="form-control select2" multiple>
+                            <option value="">Select Section</option>
+                            @foreach ($arrivalSubLocations as $section)
+                                <option value="{{ $section->id }}" data-factory="{{ $section->arrival_location_id }}" @selected(in_array($section->id, $selectedSections))>{{ $section->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Remarks</h6>
+                </div>
+                <div class="col-12">
+                    <div class="form-group">
+                        <textarea name="remarks" id="remarks" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
             </div>
         </div>
-
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Reference Number:</label>
-                <input type="text" name="reference_number" id="reference_number" class="form-control">
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Date:</label>
-                <input type="date" name="inquiry_date" onchange="getNumber()" id="inquiry_date" class="form-control">
-            </div>
-        </div>
-    </div>
-    <div class="row">
-
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Required Date:</label>
-                <input type="date" name="required_date" id="required_date" class="form-control">
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Customer:</label>
-                <select name="customer" id="customer" class="form-control select2">
-                    <option value="">Select Customer</option>
-                    @foreach ($customers ?? [] as $customer)
-                        <option value="{{ $customer->id }}">{{ $customer->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Contract Type:</label>
-                <select name="contract_type" id="contract_type" class="form-control select2">
-                    <option value="">Select Contract Type</option>
-                    <option value="thadda">Thadda</option>
-                    <option value="pohanch">Pohanch</option>
-                </select>
-            </div>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-md-4 mt-3">
-            <div class="form-group">
-                <label class="form-label">Contact Person:</label>
-                <input type="text" name="contact_person" id="contact_person" class="form-control">
-            </div>
-        </div>
-
-        <div class="col-md-4 mt-3">
-            <div class="form-group">
-                <label class="form-label">Locations:</label>
-                <select name="locations[]" id="locations" class="form-control select2" multiple>
-                    @foreach (get_locations() as $location)
-                        <option value="{{ $location->id }}">{{ $location->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-
-        <div class="col-md-4 mt-3">
-            <div class="form-group">
-                <label class="form-label">Remarks:</label>
-                <textarea name="remarks" id="remarks" class="form-control" rows="2"></textarea>
-            </div>
-        </div>
-    </div>
-
     </div>
 
     <div class="row form-mar">
-        <div class="col-12 text-right mb-2">
+        {{-- <div class="col-12 text-right mb-2">
             <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()"
                 id="addRowBtn">
                 <i class="fa fa-plus"></i>&nbsp; Add New Item
             </button>
-        </div>
+        </div> --}}
 
         <div class="col-md-12">
             <div class="table-responsive" style="overflow-x: auto; white-space: nowrap;">
-                <table class="table table-bordered" id="salesInquiryTable" style="min-width:2000px;">
+                <table class="table table-bordered" id="salesInquiryTable" style="min-width: 1500px;">
                     <thead>
                         <tr>
-                            <th>Item</th>
-                            <th>Bag Type</th>
-                            <th>Packing</th>
-                            <th>No of Bags</th>
-                            <th>Quantity (Kg)</th>
-                            <th>Rate</th>
-                            <th>Brands</th>
+                            <th class="required">Item</th>
+                            <th class="required">Bag Type</th>
+                            <th class="required">Packing</th>
+                            <th class="required">No of Bags</th>
+                            <th class="required">Quantity (Kg)</th>
+                            <th class="required">Rate per Kg</th>
+                            <th class="required">Rate per Mond</th>
+                            <th class="required">Brands</th>
                             <th style="display: none">Pack Size</th>
                             <th>Description</th>
-                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody id="salesInquiryBody">
@@ -137,21 +194,28 @@
                                 </select>
                             </td>
                             <td>
-                                <input type="text" name="bag_size[]" id="bag_size_0"
-                                    class="form-control bag_size" onkeyup="calc(this)" step="0.01"
-                                    min="0">
+                                <select name="bag_size[]" id="bag_size_0"
+                                    class="form-control bag_size select2" onchange="calc(this)">
+                                    <option value="">Select Packing</option>
+                                    @foreach ($packings as $packing)
+                                        <option value="{{ $packing }}">{{ $packing }}</option>
+                                    @endforeach
+                                </select>
                             </td>
                             <td>
-                                <input type="text" name="no_of_bags[]" id="no_of_bags_0"
-                                    class="form-control no_of_bags" onkeyup="calc(this)" step="0.01"
-                                    min="0">
+                            <input type="text" name="no_of_bags[]" id="no_of_bags_0"
+                                    class="form-control no_of_bags" readonly>
                             </td>
                             <td>
                                 <input type="number" name="qty[]" id="qty_0" class="form-control qty"
-                                    step="0.01" min="0" readonly>
+                                    step="0.01" min="0" onkeyup="calc(this)" onchange="calc(this)">
                             </td>
                             <td>
-                                <input type="number" name="rate[]" id="rate_0" class="form-control"
+                                <input onkeyup="calculateRates(this)" type="number" name="rate[]" id="rate_0" class="form-control rate_per_kg"
+                                    step="0.01" min="0">
+                            </td>
+                            <td>
+                                <input onkeyup="calculateRates(this)" type="number" name="rate_per_mond[]" id="rate_per_mond_0" class="form-control rate_per_mond"
                                     step="0.01" min="0">
                             </td>
                             <td>
@@ -168,12 +232,6 @@
                             </td>
                             <td>
                                 <input type="text" name="desc[]" id="desc_0" class="form-control">
-                            </td>
-                            <td>
-                                <button type="button" disabled class="btn btn-danger btn-sm removeRowBtn"
-                                    style="width:60px;">
-                                    <i class="fa fa-trash"></i>
-                                </button>
                             </td>
                         </tr>
                     </tbody>
@@ -196,53 +254,194 @@
 <script>
     salesInquiryRowIndex = 1;
 
+    function calculateForRatePerKg(mond) {
+        return mond / 40;
+    }
+
+    function calculateForRatePerMond(kg) {
+        return kg * 40;
+    }
+
+    function calculateRates(el) {
+
+        if(!$(el).val()) {
+            $(el).closest("tr").find(".rate_per_kg").removeAttr("readonly", "readonly");
+            $(el).closest("tr").find(".rate_per_mond").removeAttr("readonly", "readonly");
+
+            $(el).closest("tr").find(".rate_per_kg").val("");
+            $(el).closest("tr").find(".rate_per_mond").val("");
+            return;
+        }
+
+        if($(el).hasClass("rate_per_kg")) {
+            $(el).closest("tr").find(".rate_per_mond").attr("readonly", "readonly");
+            $(el).closest("tr").find(".rate_per_mond").val(calculateForRatePerMond($(el).val()));
+        } else {
+            $(el).closest("tr").find(".rate_per_kg").attr("readonly", "readonly");
+            $(el).closest("tr").find(".rate_per_kg").val(calculateForRatePerKg($(el).val()));
+            
+        }
+
+
+    }
+
     $(document).ready(function() {
         $('.select2').select2();
+
+        const factories = @json($arrivalLocations);
+        const sections = @json($arrivalSubLocations);
+        const initialFactories = @json($selectedFactories ?? []);
+        const initialSections = @json($selectedSections ?? []);
+
+        function populateFactories() {
+            const selectedLocations = $('#locations').val() || [];
+            const currentValues = $('#arrival_location_id').val() || initialFactories;
+            $('#arrival_location_id').empty().append('<option value="">Select Factory</option>');
+
+            factories
+                .filter(f => selectedLocations.length === 0 || selectedLocations.includes(String(f.company_location_id)))
+                .forEach(f => {
+                    console.log(f);
+                    $('#arrival_location_id').append(`<option value="${f.id}" data-company="${f.company_location_id}">${f.name} (${f.company_location.name})</option>`);
+                });
+
+            $('#arrival_location_id').val(currentValues).trigger('change.select2');
+        }
+
+
+        function populateSections() {
+            const factoryIds = $('#arrival_location_id').val() || initialFactories;
+            const currentSections = $('#arrival_sub_location_id').val() || initialSections;
+            $('#arrival_sub_location_id').empty().append('<option value="">Select Section</option>');
+
+            sections
+                .filter(s => factoryIds.length === 0 || factoryIds.includes(String(s.arrival_location_id)))
+                .forEach(s => {
+                    console.log(s);
+                    $('#arrival_sub_location_id').append(`<option value="${s.id}" data-factory="${s.arrival_location_id}">${s.name} (${s.arrival_location.name})</option>`);
+                });
+
+            $('#arrival_sub_location_id').val(currentSections).trigger('change.select2');
+        }
+
+        $('#locations').on('change', function() {
+            populateFactories();
+            populateSections();
+        });
+
+        $('#arrival_location_id').on('change', function() {
+            populateSections();
+        });
+
+        populateFactories();
+        populateSections();
+        $('#inquiry_date').trigger('change');
     });
 
     function calc(el) {
         const element = $(el).closest("tr");
-        const bag_size = $(element).find(".bag_size");
+        const bag_size = parseFloat($(element).find(".bag_size").val());
+        const qty = parseFloat($(element).find(".qty").val());
         const no_of_bags = $(element).find(".no_of_bags");
-        const qty = $(element).find(".qty");
 
-        if (!(bag_size.val() && no_of_bags.val())) return;
+        if (isNaN(bag_size) || isNaN(qty)) {
+            no_of_bags.val('');
+            return;
+        }
 
-        const result = parseFloat(bag_size.val()) * parseFloat(no_of_bags.val());
-
-        qty.val(result);
+        // Per requirement: No of bags = bag size * quantity
+        const result = (qty / bag_size).toFixed();
+        no_of_bags.val(result);
     }
+
+    function validateExpiry(){
+        // const inquiryDate = $('#inquiry_date').val();
+        // const requiredDate = $('#required_date').val();
+        // if (inquiryDate && requiredDate) {
+        //     if (inquiryDate > requiredDate) {
+        //         $('#required_date').addClass('is-invalid');
+
+        //         Swal.fire({
+        //             icon: 'error',
+        //             title: 'Expired!',
+        //             text: 'Inquiry date cannot be greater than required date.',
+        //             confirmButtonText: 'OK'
+        //         });
+        //     }
+        // }
+        }
 
     function addRow() {
         let index = salesInquiryRowIndex++;
         let row = `
-        <tr id="row_${index}">
-            <td>
-                <select name="item_id[]" id="item_id_${index}" class="form-control select2">
-                    <option value="">Select Item</option>
-                    @foreach ($items ?? [] as $item)
-                        <option value="{{ $item->id }}">{{ $item->name }}</option>
-                    @endforeach
-                </select>
-            </td>
-            <td>
-                <input type="number" name="qty[]" id="qty_${index}" class="form-control" step="0.01" min="0">
-            </td>
-            <td>
-                <input type="number" name="rate[]" id="rate_${index}" class="form-control" step="0.01" min="0">
-            </td>
-            <td>
-                <input type="text" name="desc[]" id="desc_${index}" class="form-control">
-            </td>
-            <td>
-                <button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="removeRow(${index})" style="width:60px;">
-                    <i class="fa fa-trash"></i>
-                </button>
-            </td>
-        </tr>
+                <tr id="row_${index}">
+                    <tr id="row_0">
+                            <td>
+                                <select name="item_id[]" id="item_id_${index}" class="form-control select2">
+                                    <option value="">Select Item</option>
+                                    @foreach ($items ?? [] as $item)
+                                        <option value="{{ $item->id }}">{{ $item->name }}</option>
+                                    @endforeach
+                                </select>
+                            </td>
+                            <td>
+                                <select name="bag_type[]" id="bag_type_${index}" class="form-control select2">
+                                    <option value="">Select Bag Type</option>
+                                    @foreach ($bag_types ?? [] as $bag_type)
+                                        <option value="{{ $bag_type->id }}">{{ $bag_type->name }}</option>
+                                    @endforeach
+                                </select>
+                            </td>
+                            <td>
+                                <select name="bag_size[]" id="bag_size_${index}"
+                                    class="form-control bag_size select2" onchange="calc(this)">
+                                    <option value="">Select Packing</option>
+                                    @foreach ($packings as $packing)
+                                        <option value="{{ $packing }}">{{ $packing }}</option>
+                                    @endforeach
+                                </select>
+                            </td>
+                            <td>
+                                <input type="text" name="no_of_bags[]" id="no_of_bags_${index}"
+                                    class="form-control no_of_bags" readonly>
+                            </td>
+                            <td>
+                                <input type="number" name="qty[]" id="qty_${index}" class="form-control qty"
+                                    step="0.01" min="0" onkeyup="calc(this)" onchange="calc(this)">
+                            </td>
+                            <td>
+                                <input type="number" name="rate[]" id="rate_${index}" class="form-control"
+                                    step="0.01" min="0">
+                            </td>
+                            <td>
+                                <select name="brand_id[]" id="brand_id_${index}" class="form-control select2">
+                                    <option value="">Select Brand</option>
+                                    @foreach (getAllBrands() ?? [] as $brand)
+                                        <option value="{{ $brand->id }}">{{ $brand->name }}</option>
+                                    @endforeach
+                                </select>
+                            </td>
+                            <td style="display: none;">
+                                <input type="text" value="0" name="pack_size[]" id="pack_size_${index}"
+                                    class="form-control" step="0.01" min="0">
+                            </td>
+                            <td>
+                                <input type="text" name="desc[]" id="desc_${index}" class="form-control">
+                            </td>
+                            <td>
+                                <button type="button" disabled class="btn btn-danger btn-sm removeRowBtn"
+                                    style="width:60px;">
+                                    <i class="fa fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                </tr>
     `;
         $('#salesInquiryBody').append(row);
         $(`#item_id_${index}`).select2();
+        $(`#bag_type_${index}`).select2();
+        $(`#bag_size_${index}`).select2();
+        $(`#brand_id_${index}`).select2();
         $('#row_0 .removeRowBtn').prop('disabled', true);
         $('.removeRowBtn').not('#row_0 .removeRowBtn').prop('disabled', false);
     }

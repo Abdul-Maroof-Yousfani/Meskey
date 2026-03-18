@@ -30,12 +30,16 @@ class ArrivalSubLocationController extends Controller
     public function getList(Request $request)
     {
         $arrival_locations = ArrivalSubLocation::with('companyLocation', 'arrivalLocation')
-        ->when($request->filled('search'), function ($q) use ($request) {
-            $searchTerm = '%' . $request->search . '%';
-            return $q->where(function ($sq) use ($searchTerm) {
-                $sq->where('name', 'like', $searchTerm);
-            });
-        })
+                ->when($request->filled('search'), function ($q) use ($request) {
+                    $searchTerm = '%' . $request->search . '%';
+                    return $q->where(function ($sq) use ($searchTerm) {
+                        $sq->where('name', 'like', $searchTerm);
+                    })->orWhereHas('companyLocation', function ($query) use ($searchTerm) {
+                        $query->where('name', 'like', "%{$searchTerm}%");
+                    })->orWhereHas('arrivalLocation', function ($query) use ($searchTerm) {
+                        $query->where('name', 'like', "%{$searchTerm}%");
+                    });
+                })
             ->where('company_id', $request->company_id)
 
             ->latest()

@@ -14,6 +14,7 @@ class ProductionInput extends Model
 
     protected $fillable = [
         'production_voucher_id',
+        'slot_id',
         'product_id',
         'location_id',
         'qty',
@@ -37,5 +38,10 @@ class ProductionInput extends Model
     public function location()
     {
         return $this->belongsTo(ArrivalSubLocation::class, 'location_id');
+    }
+
+    public function slot()
+    {
+        return $this->belongsTo(ProductionSlot::class);
     }
 }

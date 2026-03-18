@@ -1,5 +1,13 @@
 @php
     $isThadda = $arrivalTicket->sauda_type_id == 2;
+    calculatePaymentDetails($arrivalTicket->id, $arrivalTicket->sauda_type_id);
+    $paymentDetails = calculatePaymentDetails($arrivalTicket->id, $arrivalTicket->sauda_type_id);
+    $Deductionfromhelperfunction = $paymentDetails['deductions']['sampling_deduction_details'];
+
+
+    // dd($Deductionfromhelperfunction);
+    // $lumpsumDeduction = $paymentDetails->lumpsumDeduction;
+    // $lumpsumDeductionKgs = $paymentDetails->lumpsumDeductionKgs;
 
     $hasLoadingWeight = true;
 
@@ -38,7 +46,7 @@
     $noOfBags = $arrivalTicket->bags ?? 0;
     $ratePerKg = $purchaseOrder->rate_per_kg ?? 0;
     $kantaCharges = $arrivalTicket->freight->karachi_kanta_charges ?? 0;
-    //$grossFreightAmount = $arrivalTicket->freight->gross_freight_amount ?? 0;
+    $arrivalFreightAmount = $arrivalTicket->freight->gross_freight_amount ?? 0;
     $grossFreightAmount = $freightPaymentRequestgrossAmount ?? $arrivalTicket->freight->gross_freight_amount ?? 0;
     $netWeight = $loadingWeight - $bagWeight * $noOfBags;
 
@@ -70,9 +78,11 @@
     $loadingWeighbridgeSum = 0;
     $bagsRateSum = $bagRate * $noOfBags;
     $requestedAmount = $requestedAmount ?? 0;
+    // dd($requestedAmount);
     $paidAmount = $approvedAmount ?? 0;
     $advanceFreight = $ticket->purchaseFreight->advance_freight ?? 0;
     $remainingFreight = $advanceFreight - ($pRsSumForFreight ?? 0);
+    // $totalDeductions += $bagsRateSum + $loadingWeighbridgeSum + $bagWeightInKgSum - $arrivalFreightAmount;
     $totalDeductions += $bagsRateSum + $loadingWeighbridgeSum + $bagWeightInKgSum - $grossFreightAmount;
     $totalAmount += $bagWeightInKgSum + $loadingWeighbridgeSum;
     $grossAmount = $ratePerKg * $loadingWeight;
@@ -95,6 +105,12 @@
 @endphp
 
 <style>
+    .togglehistorytable{
+    display:none;
+}
+.togglehistory{
+    cursor:pointer;
+}
     .tooltip-container {
         position: relative;
         cursor: pointer;
@@ -304,7 +320,84 @@
                 </div>
             </div>
 
+@if(isset($paymentRequests) && count($paymentRequests) != 0)
+            <div class="col-md-12">
+            <h6 class="header-heading-sepration togglehistory">
+            Request History ({{ count($paymentRequests) }})
+        </h6>
+            <table class="table m-0 togglehistorytable">
+                     <thead>
+                        <tr>
+                            <th>
+                                Request Date
+                            </th>
+                            <th>
+                                Amount
+                            </th>
+                            <th>
+                                Remarks
+                            </th>
+                            <th>
+                                Status
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($paymentRequests as $paymentRequest)
+                        <tr>
+                            <td>
+                                {{$paymentRequest->created_at}}
+                            </td>
+                            <td>
+                                {{$paymentRequest->amount}}
+                            </td>
+                            <td>
+                                {{$paymentRequest->approval->remarks ?? 'N/A'}}
+                            </td>
+                            <td>
+                                @if($paymentRequest->status == 'pending')
+                                <label class="badge badge-warning">Pending</label>
+                                @elseif($paymentRequest->status == 'approved')
+                                <label class="badge badge-success">Approved</label>
+                                @elseif($paymentRequest->status == 'rejected')
+                                <label class="badge badge-danger">Rejected</label>
+                                @endif
+                            </td>
+                           
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            @endif
+
             @if ($showLumpSum && !$isSlabs && !$isCompulsury)
+            <div class="col-12">
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered table-hover">
+                        <thead class="thead-light">
+                            <tr>
+                                <th width="20%">Lump Sum Deduction</th>
+                                <th width="20%">Tabaar Deduction</th>
+                                <th width="20%">Deduction Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sampling-results-tbody">
+                        <tr data-lumpsum-amount="{{ number_format($Deductionfromhelperfunction['lumpsum']['amount_deduction'] ?? 0, 2) }}">
+                                <td>Lumpsum Deduction Rupees</td>
+                                <td>{{ number_format($samplingRequest->lumpsum_deduction, 2) }} Rs./KG </td>
+                                <td >
+                                {{ number_format($Deductionfromhelperfunction['lumpsum']['amount_deduction'] ?? 0, 2) }} Rs.</td>
+                            </tr>
+                            <tr data-lumpsum-kgamount="{{ number_format($Deductionfromhelperfunction['lumpsum']['kgs_deduction'] ?? 0, 2) }}">
+                                <td>Lumpsum Deduction KG's</td>
+                                <td>{{ number_format($samplingRequest->lumpsum_deduction_kgs, 2) }} KG's </td>
+                                <td>{{ number_format($Deductionfromhelperfunction['lumpsum']['kgs_deduction'] ?? 0, 2) }} Rs.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
             @else
                 <div class="col-12" bis_skin_checked="1">
                     <h6 class="header-heading-sepration">
@@ -524,7 +617,7 @@
                                                 name="other_deduction[kg_value]" id="other_deduction_kg"
                                                 value="{{ $existingOtherDeductionKg }}" placeholder="Enter KG value">
                                             <div class="input-group-append">
-                                                <span class="input-group-text text-sm">KG</span>
+                                                <span class="input-group-text text-sm">Rs/Kg</span>
                                             </div>
                                         </div>
                                     </td>
@@ -672,7 +765,8 @@
     @php
         $totalSupplierCommission = $purchaseOrder->supplier_commission * $loadingWeight;
         $totalAmount = $ratePerKg * $loadingWeight - ($totalAmount ?? 0) + ($bagsRateSum ?? 0);
-        $totalwithCommision = $totalAmount + $totalSupplierCommission;
+        $totalwithCommisio = $totalAmount + $totalSupplierCommission;
+       $totalwithCommision =  $paymentDetails['calculations']['supplier_net_amount'] ?? $totalwithCommisio
     @endphp
     {{-- @if (!$isApprovalPage) --}}
     <div class="col mb-3 px-0">
@@ -702,7 +796,7 @@
             </div>
             <div class="col-md-6">
                 <div class="form-group">
-                    <label>Remaining</label>
+                    <label>Remaining {{ $totalAmount - $requestedAmount }}</label>
                     <input type="text" class="form-control" name="remaining_amount" id="remaining_amount"
                         value="{{ number_format($totalAmount - $requestedAmount, 2) }}" readonly>
                 </div>
@@ -725,6 +819,10 @@
                 </div>
             @endif
         </div>
+
+
+
+     
     </div>
     {{-- @endif --}}
 
@@ -732,6 +830,13 @@
 
 @if ($hasLoadingWeight)
     <script>
+         var showLumpSum = <?= $showLumpSum ? 'true' : 'false' ?>;
+    var isSlabs = <?= $isSlabs ? 'true' : 'false' ?>;
+    var isCompulsury = <?= $isCompulsury ? 'true' : 'false' ?>;
+    
+    if(showLumpSum && !isSlabs && !isCompulsury) {
+        console.log('true');
+    }
         $(document).ready(function() {
             $('[data-toggle="tooltip"]').tooltip();
             $('.select_b').select2();
@@ -835,12 +940,14 @@
 
                 window.samplingData.samplingResults.forEach(slabData => {
                     const calculatedValue = calculateSlabDeduction(slabData, netWeight);
+                    console.log(calculatedValue+'ddddjjj');
                     totalSamplingAmount += calculatedValue;
 
                     $(`.deduction-amount-display[data-slab-id="${slabData.id}"]`).val(calculatedValue
                         .toFixed(2));
                     $(`.deduction-amount-hidden[data-slab-id="${slabData.id}"]`).val(calculatedValue);
                 });
+                
 
                 window.samplingData.compulsoryResults.forEach(slabData => {
                     const calculatedValue = slabData.applied_deduction * netWeight;
@@ -850,6 +957,18 @@
                         calculatedValue.toFixed(2));
                 });
 
+
+        
+                if(showLumpSum && !isSlabs && !isCompulsury) {
+                    var lumpsumAmount = $('tr[data-lumpsum-amount]').data('lumpsum-amount')|| 0;
+                    var lumpsumKgAmount = $('tr[data-lumpsum-kgamount]').data('lumpsum-kgamount')|| 0;
+                    console.log(lumpsumAmount)
+
+                    totalSamplingAmount += parseFloat(lumpsumAmount.replace(/,/g, '')) || 0;
+                    totalSamplingAmount += parseFloat(lumpsumKgAmount.replace(/,/g, '')) || 0;
+// console.log(totalSamplingAmount+'Wow');
+                    
+                }
                 const otherDeductionAmount = updateOtherDeduction();
                 totalSamplingAmount += otherDeductionAmount;
 
@@ -878,11 +997,12 @@
             function updatePaymentRequestCalculations() {
                 const totalAmount = parseFloat($('#total_amount').val()) || 0;
                 const paidAmount = parseFloat($('#paid_amount').val()) || 0;
+                const requested_amount = parseFloat($('#requested_amount').val()) || 0;
                 const paymentRequestInput = $('.payment-request-input');
                 const percentageInput = $('.percentage-input');
                 
                 const currentPaymentRequest = parseFloat(paymentRequestInput.val()) || 0;
-                const remainingAmount = totalAmount - paidAmount;
+                const remainingAmount = totalAmount - requested_amount;
 
                 // Update remaining amount
                 $('#remaining_amount').val(remainingAmount.toFixed(2));
@@ -954,8 +1074,10 @@
             $('.payment-request-input').on('input', function() {
                 const totalAmount = parseFloat($('#total_amount').val()) || 0;
                 const paidAmount = parseFloat($('#paid_amount').val()) || 0;
+                const requested_amount = parseFloat($('#requested_amount').val()) || 0;
                 const newRequested = parseFloat($(this).val()) || 0;
-                const remainingAmount = totalAmount - paidAmount;
+                // const remainingAmount = totalAmount - paidAmount;
+                const remainingAmount = totalAmount - requested_amount;
 
                 // Ensure payment request doesn't exceed remaining amount
                 if (newRequested > remainingAmount) {
@@ -983,13 +1105,17 @@
 
                 const totalAmount = parseFloat($('#total_amount').val()) || 0;
                 const paidAmount = parseFloat($('#paid_amount').val()) || 0;
-                const remainingAmount = totalAmount - paidAmount;
+                const requested_amount = parseFloat($('#requested_amount').val()) || 0;
+
+                // const remainingAmount = totalAmount - paidAmount;
+                const remainingAmount = totalAmount - requested_amount;
+
                 const amount = (remainingAmount * percentage) / 100;
                 
                 $('.payment-request-input').val(amount.toFixed(2));
                 
                 // Update remaining amount
-                const finalRemaining = totalAmount - (paidAmount + amount);
+                const finalRemaining = totalAmount - (requested_amount + amount);
                 $('#remaining_amount').val(finalRemaining.toFixed(2));
             });
 
@@ -1034,6 +1160,12 @@
 
             $loadingRadio.on('change', toggleSections);
             $withoutLoadingRadio.on('change', toggleSections);
+
+
+            $(".togglehistory").click(function(){
+    $(".togglehistorytable").slideToggle(400);
+    $(this).toggleClass("active");
+});
         });
     </script>
 @endif

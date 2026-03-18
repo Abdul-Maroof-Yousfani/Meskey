@@ -25,4 +25,11 @@ class ArrivalTruckType extends Model
     {
         return $this->belongsTo(Company::class);
     }
+
+    public function locationAmounts()
+    {
+        return $this->belongsToMany(CompanyLocation::class, 'truck_type_weighbridge_amounts', 'truck_type_id', 'company_location_id')
+            ->withPivot('amount')
+            ->withTimestamps();
+    }
 }

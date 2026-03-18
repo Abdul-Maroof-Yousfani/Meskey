@@ -14,7 +14,8 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('job_order_id')->constrained()->onDelete('cascade');
             $table->foreignId('company_location_id')->nullable()->constrained('company_locations');
-            $table->foreignId('bag_type_id')->constrained('bag_types');
+            // $table->foreignId('bag_type_id')->constrained('bag_types');
+            $table->foreignId('bag_product_id')->constrained('products');
             $table->foreignId('bag_condition_id')->constrained('bag_conditions');
             $table->decimal('bag_size', 8, 2);
             $table->integer('no_of_bags');
@@ -27,6 +28,8 @@ return new class extends Migration {
             $table->integer('no_of_containers')->default(0);
             $table->foreignId('brand_id')->constrained('brands');
             $table->foreignId('bag_color_id')->constrained('colors');
+            $table->foreignId('thread_color_id')->nullable()->constrained('colors');
+            $table->foreignId('stitching_id')->nullable()->constrained('stitchings');
             $table->decimal('min_weight_empty_bags', 8, 2)->default(0);
             $table->date('delivery_date')->nullable();
             $table->json('fumigation_company_id')->nullable(); // JSON for multiple fumigation companies

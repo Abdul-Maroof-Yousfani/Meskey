@@ -3,14 +3,18 @@
 namespace App\Models\Sales;
 
 use App\Models\Product;
+use App\Traits\HasBalancing;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class SalesInvoiceData extends Model
 {
-    use HasFactory;
+    use HasFactory, HasBalancing;
+
 
     protected $table = "sales_invoice_data";
+
+
 
     protected $fillable = [
         'sales_invoice_id',

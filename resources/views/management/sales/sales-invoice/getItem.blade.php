@@ -2,17 +2,20 @@
 @foreach($delivery_challans as $delivery_challan)
     @foreach($delivery_challan->delivery_challan_data as $data)
         @php
-            $balance = $balances[$data->id] ?? 0;
-            
+            $balance = (float)($balances[$data->id] ?? 0);
+
             // Skip items with 0 balance
             if ($balance <= 0) {
                 continue;
             }
+
+            // Handle comma-separated bag_size by taking the first value (replicates fuzzy PHP 7 casting)
+            $packing_raw = (string)($data->bag_size ?? '0');
+            $packing = (float)trim(explode(',', $packing_raw)[0]);
             
-            $packing = $data->bag_size ?? 0;
             $noOfBags = $balance; // Use available balance as default
-            $qty = $packing * $noOfBags;
-            $rate = $data->rate ?? 0;
+            $qty = $balance * $packing; // Calculate qty based on available bags and packing
+            $rate = (float)($data->rate ?? 0);
             $grossAmount = $qty * $rate;
             $discountPercent = 0;
             $discountAmount = 0;
@@ -22,6 +25,11 @@
             $netAmount = $amount + $gstAmount;
             $lineDesc = $data->description ?? '';
             $truckNo = $data->truck_no ?? '';
+            
+            // If calculated qty is 0, fallback to original item qty if packing was 0
+            if ($qty <= 0 && $packing <= 0) {
+                $qty = (float)($data->qty ?? 0);
+            }
         @endphp
         <tr id="row_{{ $rowIndex }}">
             <td style="min-width: 200px;">
@@ -35,19 +43,25 @@
                 <input type="hidden" class="max_balance" value="{{ $balance }}">
             </td>
             <td style="min-width: 100px;">
-                <input type="number" name="packing[]" id="packing_{{ $rowIndex }}" onkeyup="calculateRow(this)" class="form-control packing" step="0.01" min="0" value="{{ $packing }}" readonly>
+                <input type="number" name="packing[]" id="packing_{{ $rowIndex }}" onkeyup="" class="form-control packing" step="0.01" min="0" value="{{ $packing }}" readonly>
             </td>
             <td style="min-width: 100px;">
-                <input type="number" name="no_of_bags[]" id="no_of_bags_{{ $rowIndex }}" onkeyup="calculateRow(this); validateBalance(this)" class="form-control no_of_bags" step="0.01" min="0" max="{{ $balance }}" value="{{ $noOfBags }}">
+                <input type="number" name="no_of_bags[]" id="no_of_bags_{{ $rowIndex }}" onkeyup="validateBalance(this)" class="form-control no_of_bags" readonly min="0" max="{{ $balance }}" value="{{ $noOfBags }}">
+                
+                <span style="font-size: 14px;;">Used:
+                    {{ sales_invoice_bags_used($data->id) }}</span>
+                <br />
+                <span style="font-size: 14px;">Balance:
+                    {{ sales_invoice_balance($data->id) }}</span>
             </td>
             <td style="min-width: 100px;">
-                <input type="number" name="qty[]" id="qty_{{ $rowIndex }}" class="form-control qty" step="0.01" min="0" readonly value="{{ $qty }}">
+                <input type="number" name="qty[]" id="qty_{{ $rowIndex }}" data-balance="{{ sales_invoice_balance($data->id) }}" class="form-control qty" onkeyup="calculateRow(this); check_balance(this, 'no_of_bags_{{ $rowIndex }}')" step="0.01" min="0" value="{{ $qty }}">
             </td>
             <td style="min-width: 100px;">
                 <input type="number" name="rate[]" id="rate_{{ $rowIndex }}" onkeyup="calculateRow(this)" class="form-control rate" step="0.01" min="0" value="{{ $rate }}">
             </td>
             <td style="min-width: 120px;">
-                <input type="number" name="gross_amount[]" id="gross_amount_{{ $rowIndex }}" class="form-control gross_amount" readonly value="{{ $grossAmount }}">
+                <input type="number" name="gross_amount[]" id="gross_amount_{{ $rowIndex }}" class="form-control gross_amount" readonly value="{{ $qty * $rate }}">
             </td>
             <td style="min-width: 100px;">
                 <input type="number" name="discount_percent[]" id="discount_percent_{{ $rowIndex }}" onkeyup="calculateRow(this)" class="form-control discount_percent" step="0.01" min="0" max="100" value="{{ $discountPercent }}">
@@ -82,3 +96,35 @@
         @php $rowIndex++; @endphp
     @endforeach
 @endforeach
+
+<script>
+    $(".select2").select2({ width: '100%' });
+    function calc(el) {
+        const element = $(el).closest("tr");
+        const packing_input = $(element).find(".packing");
+        const no_of_bags = $(element).find(".no_of_bags");
+        const qty_input = $(element).find(".qty");
+        const maxBalance = parseFloat($(element).find(".max_balance").val()) || 0;
+
+        const packingVal = parseFloat(packing_input.val()) || 0;
+        let qtyVal = parseFloat(qty_input.val()) || 0;
+
+        if (packingVal > 0) {
+            let bagsResult = Math.round(qtyVal / packingVal);
+            
+            if (maxBalance > 0 && bagsResult > maxBalance) {
+                bagsResult = maxBalance;
+                qtyVal = bagsResult * packingVal;
+                qty_input.val(qtyVal.toFixed(2));
+                if (typeof toastr !== 'undefined') {
+                    toastr.warning(`Cannot exceed available balance of ${maxBalance} bags`);
+                }
+            }
+            no_of_bags.val(bagsResult);
+        }
+        
+        if (typeof calculateRow === 'function') {
+            calculateRow(el);
+        }
+    }
+</script>

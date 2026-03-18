@@ -19,12 +19,25 @@ class ProductionVoucher extends Model
         'prod_date',
         'job_order_id',
         'location_id',
+        'sub_location_id',
+        'net_total_input',
+        'net_total_output',
+        'labour_charges_per_kg',
+        'total_labour_charges',
+        'labour_deduction',
+        'labour_deduction_remarks',
+        'labour_net_amount',
+        'product_id',
+        'plant_id',
+        'by_product_id',
         'produced_qty_kg',
         'supervisor_id',
+        'user_id',
         'labor_cost_per_kg',
         'overhead_cost_per_kg',
         'status',
-        'remarks'
+        'remarks',
+        'qc_remarks'
     ];
 
     protected $casts = [
@@ -39,11 +52,35 @@ class ProductionVoucher extends Model
         return $this->belongsTo(JobOrder::class);
     }
 
+    public function jobOrders()
+    {
+        return $this->belongsToMany(JobOrder::class, 'production_voucher_job_orders');
+    }
+
     public function location()
     {
         return $this->belongsTo(CompanyLocation::class, 'location_id');
     }
 
+    public function product()
+    {
+        return $this->belongsTo(\App\Models\Product::class);
+    }
+
+    public function headProduct()
+    {
+        return $this->belongsTo(\App\Models\Product::class, 'product_id');
+    }
+
+    public function plant()
+    {
+        return $this->belongsTo(\App\Models\Master\Plant::class, 'plant_id');
+    }
+
+    public function byProducts()
+    {
+        return $this->belongsTo(\App\Models\Product::class, 'by_product_id');
+    }
     public function supervisor()
     {
         return $this->belongsTo(User::class, 'supervisor_id');
@@ -62,5 +99,15 @@ class ProductionVoucher extends Model
     public function outputs()
     {
         return $this->hasMany(ProductionOutput::class);
+    }
+
+    public function slots()
+    {
+        return $this->hasMany(ProductionSlot::class);
+    }
+
+    public function productionMachines()
+    {
+        return $this->belongsToMany(\App\Models\Master\ProductionMachine::class, 'production_voucher_machines', 'production_voucher_id', 'production_machine_id')->withTimestamps();
     }
 }

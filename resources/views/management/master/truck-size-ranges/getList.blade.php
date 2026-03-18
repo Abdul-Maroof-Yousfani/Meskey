@@ -15,7 +15,7 @@
                     <td>{{ $truckSizeRanges->firstItem() + $key }}</td>
                     <td>{{ $range->name }}</td>
                     <td>
-                        <span class="badge badge-{{ $range->status == 'active' ? 'success' : 'danger' }}">
+                        <span class="badge bg-light-{{ $range->status == 'inactive' ? 'danger' : 'success' }}">
                             {{ ucfirst($range->status) }}
                         </span>
                     </td>

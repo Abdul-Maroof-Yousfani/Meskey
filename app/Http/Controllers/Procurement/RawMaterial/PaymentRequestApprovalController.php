@@ -601,6 +601,7 @@ class PaymentRequestApprovalController extends Controller
 
         $requestedAmount = PaymentRequest::whereHas('paymentRequestData', fn($q) => $q->where('ticket_id', $ticket->id))
             ->where('request_type', 'payment')
+            ->where('status', '!=', 'rejected')
             ->where('module_type', $moduleType)->sum('amount');
 
         $approvedAmount = PaymentRequest::whereHas('paymentRequestData', fn($q) => $q->where('ticket_id', $ticket->id))

@@ -34,7 +34,7 @@ class QCAmountRequest extends FormRequest
                     }
                 }
             ],
-            "deduction_per_bag" => ["required"],
+            "deduction_per_bag" => ["nullable"],
             "rejected_quantity" => [
                 "required",
                 function($attribute, $value, $fail) {

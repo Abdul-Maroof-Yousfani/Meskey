@@ -35,10 +35,10 @@ class FreightRequest extends FormRequest
             'other_labour_charges' => 'required|numeric|min:0',
             'unpaid_labor_charges' => 'required|numeric|min:0',
             'freight_written_on_bilty' => 'required|numeric|min:0',
-            'bilty_document' => 'required|file|mimes:jpg,jpeg,png',
-            'loading_weight_document' => 'required|file|mimes:jpg,jpeg,png',
-            'other_document' => 'nullable|file|mimes:jpg,jpeg,png',
-            'other_document_2' => 'nullable|file|mimes:jpg,jpeg,png',
+            'bilty_document' => 'required|file|mimes:jpg,jpeg,png,pdf',
+            'loading_weight_document' => 'required|file|mimes:jpg,jpeg,png,pdf',
+            'other_document' => 'nullable|file|mimes:jpg,jpeg,png,pdf',
+            'other_document_2' => 'nullable|file|mimes:jpg,jpeg,png,pdf',
         ];
     }
 

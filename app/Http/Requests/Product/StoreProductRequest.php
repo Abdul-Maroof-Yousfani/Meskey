@@ -25,7 +25,11 @@ class StoreProductRequest extends FormRequest
             'bardcode' => 'nullable|string|max:255',
             'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'price' => 'nullable|numeric',
-            'is_bag' => 'required',
+            // 'is_bag' => 'required',
+
+            'product_category_flags' => 'nullable|in:head,by,b2',
+            // 'is_child_product' => 'nullable|in:yes,no',
+            // 'is_by_product' => 'nullable|in:yes,no',
             'status' => 'required|in:active,inactive'
         ];
     }

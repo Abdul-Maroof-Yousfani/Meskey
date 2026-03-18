@@ -8,7 +8,7 @@ use Carbon\Carbon;
 
 class ArrivalDashboardService
 {
-    public function getArrivalDashboardData($fromDate, $toDate, $companyId)
+    public function getArrivalDashboardData($fromDate, $toDate, $companyId, $request = null)
     {
 
         $authUser = auth()->user();
@@ -16,9 +16,13 @@ class ArrivalDashboardService
 
         $totalTickets = ArrivalTicket::where('company_id', $companyId)
             // ->whereIn('first_qc_status', ['pending', 'resampling'])
-            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
-                return $q->where('location_id', auth()->user()->company_location_id);
+            // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+            //     return $q->where('location_id', auth()->user()->company_location_id);
+            // })
+            ->when($request->has('location_id') && $request->location_id != ''  , function ($q) use ($request) {
+                return $q->where('location_id', $request->location_id);
             })
+            ->whereIn('location_id', getUserCurrentCompanyLocations())
             ->whereBetween('created_at', $dateRange)
             ->count();
 
@@ -34,10 +38,18 @@ class ArrivalDashboardService
         })
 
             //Superadmin
-            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
-                return $q->whereHas('arrivalTicket', function ($sq) {
-                    $sq->where('location_id', auth()->user()->company_location_id);
+            // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+            //     return $q->whereHas('arrivalTicket', function ($sq) {
+            //         $sq->where('location_id', auth()->user()->company_location_id   );
+            //     });
+            // })
+            ->when($request->has('location_id') && $request->location_id != ''  , function ($q) use ($request) {
+                return $q->whereHas('arrivalTicket', function ($sq) use ($request) {
+                    $sq->where('location_id', $request->location_id);
                 });
+            })
+            ->whereHas('arrivalTicket', function ($q) {
+                $q->whereIn('location_id', getUserCurrentCompanyLocations());
             })
             ->where('sampling_type', 'initial')
             ->where('is_done', 'no')
@@ -53,22 +65,38 @@ class ArrivalDashboardService
             ->where('sampling_type', 'initial')
             ->where('is_done', 'yes')
             ->where('approved_status', 'pending')
-            // Superadmin
-            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
-                return $q->whereHas('arrivalTicket', function ($sq) {
-                    $sq->where('location_id', auth()->user()->company_location_id);
+            ->when($request->has('location_id') && $request->location_id != ''  , function ($q) use ($request) {
+                return $q->whereHas('arrivalTicket', function ($sq) use ($request) {
+                    $sq->where('location_id', $request->location_id);
                 });
             })
+            ->whereHas('arrivalTicket', function ($q) {
+                $q->whereIn('location_id', getUserCurrentCompanyLocations());
+            })  
+            // Superadmin
+            // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+            //         return $q->whereHas('arrivalTicket', function ($sq) {
+            //             $sq->where('location_id', auth()->user()->company_location_id);
+            //         });
+            //     })
             ->count();
 
         $resamplingRequired = ArrivalSamplingRequest::whereHas('arrivalTicket', function ($q) use ($companyId, $dateRange) {
             $q->where('company_id', $companyId)
                 ->whereBetween('created_at', $dateRange);
         })
-            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
-                return $q->whereHas('arrivalTicket', function ($sq) {
-                    $sq->where('location_id', auth()->user()->company_location_id);
+            // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+            //     return $q->whereHas('arrivalTicket', function ($sq) {
+            //         $sq->where('location_id', auth()->user()->company_location_id);
+            //     });
+            // })
+            ->when($request->has('location_id') && $request->location_id != ''  , function ($q) use ($request) {
+                return $q->whereHas('arrivalTicket', function ($sq) use ($request) {
+                    $sq->where('location_id', $request->location_id);
                 });
+            })
+            ->whereHas('arrivalTicket', function ($q) {
+                $q->whereIn('location_id', getUserCurrentCompanyLocations());
             })
             ->where('sampling_type', 'initial')
             ->where('is_re_sampling', 'yes')
@@ -78,53 +106,75 @@ class ArrivalDashboardService
         $locationTransferPending = ArrivalTicket::where('company_id', $companyId)
             ->where('location_transfer_status', 'pending')
             //superadmin
-            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
-                return $q->where('location_id', auth()->user()->company_location_id);
+            // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+            //     return $q->where('location_id', auth()->user()->company_location_id);
+            // })
+            ->when($request->has('location_id') && $request->location_id != ''  , function ($q) use ($request) {
+                return $q->where('location_id', $request->location_id);
             })
+            ->whereIn('location_id', getUserCurrentCompanyLocations())
             ->whereBetween('created_at', $dateRange)
             ->count();
 
         $rejectedTickets = ArrivalTicket::where('company_id', $companyId)
             ->where('first_qc_status', 'rejected')
             // ->where('bilty_return_confirmation', 0)
-            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
-                return $q->where('location_id', auth()->user()->company_location_id);
+            // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+            //     return $q->where('location_id', auth()->user()->company_location_id);
+            // })
+            ->when($request->has('location_id') && $request->location_id != ''  , function ($q) use ($request) {
+                return $q->where('location_id', $request->location_id);
             })
+            ->whereIn('location_id', getUserCurrentCompanyLocations())
             ->whereBetween('created_at', $dateRange)
             ->count();
 
         $completedTickets = ArrivalTicket::where('company_id', $companyId)
             ->where('arrival_slip_status', 'generated')
             ->whereBetween('created_at', $dateRange)
-            // Superadmin
-            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
-                return $q->where('location_id', auth()->user()->company_location_id);
+            ->when($request->has('location_id') && $request->location_id != ''  , function ($q) use ($request) {
+                return $q->where('location_id', $request->location_id);
             })
-            ->when(
-                $authUser->user_type != 'super-admin' && $authUser->arrival_location_id,
-                function ($query) use ($authUser) {
-                    return $query->whereHas('unloadingLocation', function ($q) use ($authUser) {
-                        $q->where('arrival_location_id', $authUser->arrival_location_id);
-                    });
-                }
-            )
+            ->whereIn('location_id', getUserCurrentCompanyLocations())
+            ->whereHas('unloadingLocation', function ($q) {
+                $q->whereIn('arrival_location_id', getUserCurrentCompanyArrivalLocations());
+            })
+            // Superadmin
+            // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+            //     return $q->where('location_id', auth()->user()->company_location_id);
+            // })
+            // ->when(
+            //     $authUser->user_type != 'super-admin' && $authUser->arrival_location_id,
+            //     function ($query) use ($authUser) {
+            //         return $query->whereHas('unloadingLocation', function ($q) use ($authUser) {
+            //             $q->where('arrival_location_id', $authUser->arrival_location_id);
+            //         });
+            //     }
+            // )
             ->count();
 
         $firstWeighbridgePending = ArrivalTicket::where('company_id', $companyId)
             ->where('location_transfer_status', 'transfered')
             ->where('first_weighbridge_status', 'pending')
             //superadmin
-            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
-                return $q->where('location_id', auth()->user()->company_location_id);
+            // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+            //     return $q->where('location_id', auth()->user()->company_location_id);
+            // })
+            // ->when(
+            //     auth()->user()->user_type != 'super-admin' && auth()->user()->arrival_location_id,
+            //     function ($query) use ($authUser) {
+            //         return $query->whereHas('unloadingLocation', function ($q) use ($authUser) {
+            //             $q->where('arrival_location_id', $authUser->arrival_location_id);
+            //         });
+            //     }
+            // )
+            ->when($request->has('location_id') && $request->location_id != ''  , function ($q) use ($request) {
+                return $q->where('location_id', $request->location_id);
             })
-            ->when(
-                auth()->user()->user_type != 'super-admin' && auth()->user()->arrival_location_id,
-                function ($query) use ($authUser) {
-                    return $query->whereHas('unloadingLocation', function ($q) use ($authUser) {
-                        $q->where('arrival_location_id', $authUser->arrival_location_id);
-                    });
-                }
-            )
+            ->whereIn('location_id', getUserCurrentCompanyLocations())
+            ->whereHas('unloadingLocation', function ($q) {
+                $q->whereIn('arrival_location_id', getUserCurrentCompanyArrivalLocations());
+            })
             ->whereBetween('created_at', $dateRange)
             ->count();
 
@@ -132,10 +182,18 @@ class ArrivalDashboardService
             $q->where('company_id', $companyId)
                 ->whereBetween('created_at', $dateRange);
         })
-            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
-                return $q->whereHas('arrivalTicket', function ($sq) {
-                    $sq->where('location_id', auth()->user()->company_location_id);
+            // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+            //     return $q->whereHas('arrivalTicket', function ($sq) {
+            //         $sq->where('location_id', auth()->user()->company_location_id);
+            //     });
+            // })
+            ->when($request->has('location_id') && $request->location_id != ''  , function ($q) use ($request) {
+                return $q->whereHas('arrivalTicket', function ($sq) use ($request) {
+                    $sq->where('location_id', $request->location_id);
                 });
+            })
+            ->whereHas('arrivalTicket', function ($q) {
+                $q->whereIn('location_id', getUserCurrentCompanyLocations());
             })
             ->where('sampling_type', 'inner')
             ->where('is_done', 'no')
@@ -145,10 +203,18 @@ class ArrivalDashboardService
             $q->where('company_id', $companyId)
                 ->whereBetween('created_at', $dateRange);
         })
-            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
-                return $q->whereHas('arrivalTicket', function ($sq) {
-                    $sq->where('location_id', auth()->user()->company_location_id);
+            // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+            //     return $q->whereHas('arrivalTicket', function ($sq) {
+            //         $sq->where('location_id', auth()->user()->company_location_id);
+            //     });
+            // })
+            ->when($request->has('location_id') && $request->location_id != ''  , function ($q) use ($request) {
+                return $q->whereHas('arrivalTicket', function ($sq) use ($request) {
+                    $sq->where('location_id', $request->location_id);
                 });
+            })
+            ->whereHas('arrivalTicket', function ($q) {
+                $q->whereIn('location_id', getUserCurrentCompanyLocations());
             })
             ->where('sampling_type', 'inner')
             ->where('is_done', 'yes')
@@ -167,10 +233,14 @@ class ArrivalDashboardService
                 $q->where('sampling_type', 'inner')
                     ->where('approved_status', 'pending');
             })
-            //superadmin
-            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
-                return $q->where('location_id', auth()->user()->company_location_id);
+            ->when($request->has('location_id') && $request->location_id != ''  , function ($q) use ($request) {
+                return $q->where('location_id', $request->location_id);
             })
+            ->whereIn('location_id', getUserCurrentCompanyLocations())
+            //superadmin
+            // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+            //     return $q->where('location_id', auth()->user()->company_location_id);
+            // })
             ->whereBetween('created_at', $dateRange)
             ->count();
 
@@ -178,8 +248,12 @@ class ArrivalDashboardService
             ->whereIn('document_approval_status', ['half_approved', 'fully_approved'])
             ->where('second_weighbridge_status', 'pending')
             //superadmin
-            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
-                return $q->where('location_id', auth()->user()->company_location_id);
+            // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+            //     return $q->where('location_id', auth()->user()->company_location_id);
+            // })
+            ->whereIn('location_id', getUserCurrentCompanyLocations())
+            ->when($request->has('location_id') && $request->location_id != ''  , function ($q) use ($request) {
+                return $q->where('location_id', $request->location_id);
             })
             ->whereBetween('created_at', $dateRange)
             ->count();
@@ -188,17 +262,25 @@ class ArrivalDashboardService
             ->where('second_weighbridge_status', 'completed')
             ->whereNull('freight_status')
             ->where('decision_making', 0)
-            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
-                return $q->where('location_id', auth()->user()->company_location_id);
+            // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+            //     return $q->where('location_id', auth()->user()->company_location_id);
+            // })
+            ->when($request->has('location_id') && $request->location_id != ''  , function ($q) use ($request) {
+                return $q->where('location_id', $request->location_id);
             })
+            ->whereIn('location_id', getUserCurrentCompanyLocations())
             ->whereBetween('created_at', $dateRange)
             ->count();
 
         $freightReady = ArrivalTicket::where('company_id', $companyId)
             ->where('second_weighbridge_status', 'completed')
             ->where('freight_status', 'pending')
-            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
-                return $q->where('location_id', auth()->user()->company_location_id);
+            // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+            //     return $q->where('location_id', auth()->user()->company_location_id);
+            // })
+            ->whereIn('location_id', getUserCurrentCompanyLocations())
+            ->when($request->has('location_id') && $request->location_id != ''  , function ($q) use ($request) {
+                return $q->where('location_id', $request->location_id);
             })
             ->whereBetween('created_at', $dateRange)
             ->count();

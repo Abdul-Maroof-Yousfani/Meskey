@@ -1,10 +1,4 @@
-<style>
-    html, body {
-        overflow-x: hidden;
-    }
-</style>
-
-<form action="{{ route('store.purchase-order.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form style="overflow-x: hidden;" action="{{ route('store.purchase-order.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-order') }}" />
     <div class="row form-mar">
@@ -23,6 +17,17 @@
         </div>
         <div class="col-md-3">
             <div class="form-group">
+                <label class="form-label">Quotation</label>
+                <select id="quotation_no" name="quotation_no" class="form-control select2">
+                    <option value="">Select Quotation</option>
+
+                </select>
+                {{-- <input type="text" name="quotation_no" id="quotation_no" class="form-control"
+                    placeholder="Quotation number will appear here" value="" readonly> --}}
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
                 <label class="form-label">Supplier:</label>
                 <select id="supplier_id" name="supplier_id" class="form-control item-select select2">
                     <option value="">Select Vendor</option>
@@ -36,19 +41,8 @@
         </div>
         <div class="col-md-3">
             <div class="form-group">
-                <label class="form-label">Quotation</label>
-                <select id="quotation_no" name="quotation_no" class="form-control select2">
-                    <option value="">Select Quotation</option>
-
-                </select>
-                {{-- <input type="text" name="quotation_no" id="quotation_no" class="form-control"
-                    placeholder="Quotation number will appear here" value="" readonly> --}}
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="form-group">
                 <label>Purchase Order Date:</label>
-                <input type="date" id="purchase_date" name="purchase_date" class="form-control">
+                <input type="date" id="purchase_date" min="{{ date('Y-m-d') }}" name="purchase_date" class="form-control">
             </div>
         </div>
         <div class="col-md-3">
@@ -94,8 +88,8 @@
     </div>
     <div class="row form-mar">
         <div class="col-md-12">
-            <div style="overflow-x: auto; white-space: nowrap; width: 100%;">
-                <table class="table table-bordered" id="purchaseRequestTable">
+            <div style="overflow-x: auto; width: 100%;">
+                <table class="table table-bordered" id="purchaseRequestTable" style="min-width: 2000px;">
                     <thead>
                         <tr>
                             <th>Category</th>
@@ -108,14 +102,14 @@
                             <th>Tax Amount</th>
                             <th>Duty</th>
                             <th>Net Amount</th>
-                            <th>Min Weight</th>
-                            <th>Brand</th>
-                            <th>Color</th>
-                            <th>Cons./sq. in.</th>
-                            <th>Size</th>
-                            <th>Stitching</th>
-                            <th>Micron</th>
-                            <th>Printing Sample</th>
+                            <th class="bag-only">Min Weight (KG)</th>
+                            <th class="bag-only">Brand</th>
+                            <th class="bag-only">Color</th>
+                            <th class="bag-only">Cons./sq. in.</th>
+                            <th class="bag-only">Size</th>
+                            <th class="bag-only">Stitching</th>
+                            <th class="bag-only">Micron</th>
+                            <th class="bag-only">Printing Sample</th>
                             <th>Remarks</th>
                             <th>Action</th>
                         </tr>
@@ -123,6 +117,7 @@
 
                     <tbody id="purchaseOrderBody"></tbody>
                 </table>
+            </div>
             </div>
         </div>
 
@@ -168,10 +163,50 @@
             const purchaseRequestId = $('select[name="purchase_request_id"]').val();
             if (purchaseRequestId) {
                 get_purchase(purchaseRequestId);
+                get_supplier($(this).val());
             }
         });
 
-        $(document).on('change', '#supplier_id, [name="purchase_request_id"]', function() {
+
+        function get_supplier(pq_id) {
+            $.ajax({
+                url: "{{ route('store.pq.get.supplier') }}",
+                type: 'GET',
+                data: { pq_id },
+                success: function(response) {
+                    console.log(response);
+                    $("#supplier_id").empty();
+                    $("#supplier_id").select2({
+                        data: response
+                    })
+                },
+                error: function(xhr, status, error) {
+
+                }
+            });
+        }
+
+        $(document).on('change', '[name="purchase_request_id"]', function() {
+            $.ajax({
+                url: "{{ route('store.get.quotations') }}",
+                type: 'GET',
+                data: {
+                    pr_id: $('[name="purchase_request_id"]').val()
+                },
+                success: function(response) {
+                    $("#quotation_no").empty();
+                    $("#quotation_no").select2({
+                        data: response
+                    })
+                },
+                error: function(xhr, status, error) {
+
+                }
+            });
+        });
+        
+
+        $(document).on('change', '[name="purchase_request_id"]', function() {
             const supplierId = $('#supplier_id').val();
             const purchaseRequestId = $('[name="purchase_request_id"]').val();
             $('#quotation_no').empty();
@@ -254,6 +289,7 @@
                 console.log(response.locations_id);
                 $('#company_location_id').val(response.locations_id).trigger('change');
                 $('#purchaseOrderBody').html(html);
+                toggleVisibility(response.category_id);
                 $('.select2').select2({
                     placeholder: 'Please Select',
                     width: '100%'
@@ -275,9 +311,18 @@
 
 
     function calc(num) {
-        var excise_duty = parseFloat($('#excise_duty_' + num).val()) || 0;
-        var qty = parseFloat($('#qty_' + num).val()) || 0;
+        var qtyInput = $('#qty_' + num);
+        var maxQty = parseFloat(qtyInput.attr('max')) || 0;
+        var qty = parseFloat(qtyInput.val()) || 0;
         var rate = parseFloat($('#rate_' + num).val()) || 0;
+        var excise_duty = parseFloat($('#excise_duty_' + num).val()) || 0;
+
+        // Check max quantity
+        if (qty > maxQty) {
+            alert('Maximum allowed quantity is ' + maxQty);
+            qty = maxQty;
+            qtyInput.val(maxQty);
+        }
 
         // get selected option and its data attribute
         var selectedOption = $('#tax_id_' + num + ' option:selected');
@@ -289,4 +334,24 @@
 
         $('#total_' + num).val(total.toFixed(2));
     }
+
+    function toggleVisibility(categoryId) {
+        if (categoryId == 11 || categoryId == 38) {
+            $('.bag-only').show();
+        } else {
+            $('.bag-only').hide();
+        }
+    }
+
+    // Disable mousewheel on number inputs to prevent accidental changes and scroll issues
+    $(document).on('wheel', 'input[type=number]', function (e) {
+        $(this).blur();
+    });
+
+    $(document).on('select2:open', function (e) {
+        // Remove all Select2 scroll blockers from window & parents
+        $(document).off('scroll.select2');
+        $(window).off('scroll.select2');
+        $('*').off('scroll.select2');           // aggressive but often works
+    });
 </script>

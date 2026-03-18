@@ -51,7 +51,8 @@
                                 </td>
 
                                 <td class="text-right align-middle">
-                                    {{ number_format($itemRow['item_data']->rate, 2) }}
+                                    {{ number_format($itemRow['item_data']->rate, 2) }}/KG
+                                    {{-- {{ number_format($itemRow['item_data']->rate_per_mond, 2) }}<span class="text-muted">/Mond</span> --}}
                                 </td>
 
                                 <td class="text-right align-middle">
@@ -85,23 +86,24 @@
                                         <div class="btn-group" role="group">
 
                                             <a 
-                                               class="btn btn-sm btn-info" onclick="openModal(this,'{{ route('sales.get.delivery-order.view', ['id' => $group['id']]) }}','View Delivery Order', false, '100%')" title="View" style="margin-right: 10px;">
+                                               class="btn btn-sm btn-info" onclick="openModal(this,'{{ route('sales.get.delivery-order.view', ['id' => $group['id']]) }}','View Delivery Order', false, '90%')" title="View" style="margin-right: 10px;">
                                                 <i class="ft-eye"></i>
                                             </a>
-                                            @if(auth()->user()->id == $group['created_by_id'] && $group['status'] === 'pending')
+                                            @if(auth()->user()->id == $group['created_by_id'])
+                                            @if($group['status'] === 'pending' || $group['status'] === 'reverted')
                                                 <button 
-                                                    onclick="openModal(this,'{{ route('sales.delivery-order.edit', ['delivery_order' => $group['id']]) }}','Edit Delivery Order', false, '100%')"
+                                                    onclick="openModal(this,'{{ route('sales.delivery-order.edit', ['delivery_order' => $group['id']]) }}','Edit Delivery Order', false, '90%')"
                                                     class="btn btn-sm btn-warning" title="Edit" style="margin-right: 10px;">
                                                     <i class="ft-edit"></i>
                                                 </button>
-
                                                 
-                                            <button onclick="deletemodal('{{ route('sales.delivery-order.destroy', ['delivery_order' => $group['id']]) }}', '{{ route('sales.get.delivery-order.list') }}')" type="button"
-                                                    onclick="confirmDelete(this.closest('form'))"
-                                                    class="btn btn-sm btn-danger" title="Delete">
-                                                <i class="ft-trash-2"></i>
-                                            </button>
+                                                <button onclick="deletemodal('{{ route('sales.delivery-order.destroy', ['delivery_order' => $group['id']]) }}', '{{ route('sales.get.delivery-order.list') }}')" type="button"
+                                                        onclick="confirmDelete(this.closest('form'))"
+                                                        class="btn btn-sm btn-danger" title="Delete">
+                                                    <i class="ft-trash-2"></i>
+                                                </button>
                                             @endif
+                                        @endif
                                         </div>
                                     </td>
                                 @endif
@@ -121,7 +123,7 @@
                                             </g>
                                         </g>
                                     </svg>
-                                    <p class="text-muted mt-3">No Sale Order found</p>
+                                    <p class="text-muted mt-3">No Delivery Order found</p>
                                 </div>
                             </td>
                         </tr>
@@ -129,6 +131,13 @@
                 </tbody>
             </table>
    
+
+<!-- Pagination -->
+<div class="row d-flex" id="paginationLinks">
+    <div class="col-md-12 text-right">
+        {{ $DeliveryOrders->links() }}
+    </div>
+</div>
 
 <script>
     function confirmDelete(form) {

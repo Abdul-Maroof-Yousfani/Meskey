@@ -451,8 +451,8 @@ function calculatePohaunchDeductions($loadingInfo, $samplingData, $ratePerKg, $t
     }
 
     // Other calculations
-    //  $bagWeightInKgSum = $ratePerKg * ($loadingInfo['bag_weight'] * $loadingInfo['no_of_bags']);
-    $bagWeightInKgSum = 0;
+     $bagWeightInKgSum = $ratePerKg * ($loadingInfo['bag_weight'] * $loadingInfo['no_of_bags']);
+    // $bagWeightInKgSum = 0;
     // $loadingWeighbridgeSum = $loadingInfo['kanta_charges'] / 2;
     $loadingWeighbridgeSum = 0;
     // $bagsRateSum = $loadingInfo['bag_rate'] * $loadingInfo['no_of_bags'];

@@ -19,11 +19,18 @@ class PurchaseOrderData extends Model
     use HasFactory, HasApproval;
     protected $table = "purchase_order_data";
     protected $guarded = [];
+    protected $casts = [
+        'printing_sample' => 'array',
+    ];
 
 
     public function purchase_order()
     {
         return $this->belongsTo(PurchaseOrder::class);
+    }
+
+    public function grn() {
+        return $this->hasOne(PurchaseOrderReceivingData::class, "purchase_order_data_id");
     }
 
     public function category()
@@ -44,6 +51,11 @@ class PurchaseOrderData extends Model
     public function purchase_request_data()
     {
         return $this->hasOne(PurchaseRequestData::class, 'id', 'purchase_request_data_id');
+    }
+
+    public function purchase_quotation_data()
+    {
+        return $this->hasOne(PurchaseQuotationData::class, 'id', 'purchase_quotation_data_id');
     }
 
     /**

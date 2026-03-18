@@ -25,6 +25,44 @@
                                 <div class="row ">
                                     <div class="col-md-12 my-1 ">
                                         <div class="row justify-content-end text-right">
+                                            <div class="col-md-2 text-left">
+                                                <label for="filter_supplier_id" class="form-label">Supplier</label>
+                                                <select name="supplier_id" id="filter_supplier_id" class="form-control select2">
+                                                    <option value="all">All Suppliers</option>
+                                                    @foreach($suppliers as $supplier)
+                                                        <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+
+                                            <div class="col-md-2 text-left">
+                                                <label for="item_id" class="form-label">Item</label>
+                                                <select name="item_id" id="item_id" class="form-control select2">
+                                                    <option value="all">All Items</option>
+                                                    @foreach($items as $item)
+                                                        <option value="{{ $item->id }}">{{ $item->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div class="col-md-2 text-left">
+                                                <label for="uom_id" class="form-label">UOM</label>
+                                                <select name="uom_id" id="uom_id" class="form-control select2">
+                                                    <option value="all">All UOMs</option>
+                                                    @foreach($uoms as $uom)
+                                                        <option value="{{ $uom->id }}">{{ $uom->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div class="col-md-2 text-left">
+                                                <label for="status" class="form-label">Status</label>
+                                                <select name="status" id="status" class="form-control">
+                                                    <option value="all">All Status</option>
+                                                    <option value="pending">Pending</option>
+                                                    <option value="approved">Approved</option>
+                                                    <option value="rejected">Rejected</option>
+                                                    <option value="reverted">Reverted</option>
+                                                </select>
+                                            </div>
                                             <div class="col-md-2">
                                                 <label for="customers" class="form-label">Search</label>
                                                 <input type="hidden" name="page" value="{{ request('page', 1) }}">
@@ -70,8 +108,39 @@
 @section('script')
     <script>
         $(document).ready(function () {
-          
+            $('.select2').select2();
             filterationCommon(`{{ route('store.purchase-quotation.comparison') }}`)
+
+            $('#filter_supplier_id, #item_id, #uom_id, #status').on('change', function(e) {
+                if ($(this).data('updating')) return;
+
+                let supplier_id = $('#filter_supplier_id').val();
+                let item_id = $('#item_id').val();
+                let uom_id = $('#uom_id').val();
+                let status = $('#status').val();
+
+                $.ajax({
+                    url: "{{ route('store.purchase-quotation.filtered-options') }}",
+                    type: "GET",
+                    data: { supplier_id, item_id, uom_id, status },
+                    success: function(response) {
+                        updateDropdown('#item_id', response.items, item_id, 'Items');
+                        updateDropdown('#filter_supplier_id', response.suppliers, supplier_id, 'Suppliers');
+                        updateDropdown('#uom_id', response.uoms, uom_id, 'UOMs');
+                    }
+                });
+            });
+
+            function updateDropdown(selector, options, selectedValue, label) {
+                let $el = $(selector);
+                $el.data('updating', true);
+                $el.empty().append(`<option value="all">All ${label}</option>`);
+                options.forEach(opt => {
+                    $el.append(`<option value="${opt.id}" ${opt.id == selectedValue ? 'selected' : ''}>${opt.name}</option>`);
+                });
+                $el.trigger('change.select2');
+                $el.data('updating', false);
+            }
         });
     </script>
 @endsection

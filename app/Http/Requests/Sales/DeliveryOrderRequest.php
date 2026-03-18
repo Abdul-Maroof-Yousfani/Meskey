@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Sales;
 
 use App\Models\Sales\SalesOrder;
+use App\Rules\DeliveryAfterDispatch;
 use Illuminate\Foundation\Http\FormRequest;
 
 class DeliveryOrderRequest extends FormRequest
@@ -25,11 +26,16 @@ class DeliveryOrderRequest extends FormRequest
         $rules = [
             'customer_id' => 'required|numeric',
             'sale_order_id' => 'required|numeric',
-            'dispatch_date' => 'required|date',
+            'dispatch_date' => ["required", "date", new DeliveryAfterDispatch(request()->delivery_date, request()->dispatch_date)],
+            'delivery_date' => ["required", "date", new DeliveryAfterDispatch(request()->delivery_date, request()->dispatch_date)],
             'reference_no' => 'required',
             'payment_term_id' => 'nullable',
             'sauda_type' => 'required|in:pohanch,x-mill',
-            'line_desc' => 'required',
+            'line_desc' => 'nullable',
+            'remarks' => 'nullable|string',
+            "location_id" => "required|numeric",
+            "arrival_id" => "required",
+            "storage_id" => "nullable",
 
             'item_id' => 'required',
             'item_id.*' => 'required',
@@ -47,27 +53,37 @@ class DeliveryOrderRequest extends FormRequest
             'bag_type' => 'required',
             'bag_type.*' => 'required',
 
-
             'bag_size' => 'required',
             'bag_size.*' => 'required',
 
 
-            'no_of_bags' => 'required',
-            'no_of_bags.*' => 'required',
+            'no_of_bags' => "required",
+            'no_of_bags.*' => 'required|numeric',
 
         ];
 
         $saleOrder = SalesOrder::find(request()->sale_order_id);
-
-        if($saleOrder && $saleOrder->payment_term_id == 8) {
-            $rules[] = [
-                'advance_amount' => 'required|numeric',
-                'withhold_amount' => 'nullable|numeric',
-                'withhold_for_rv_id' => 'nullable|numeric',
-            ];
+       
+        if($saleOrder && $saleOrder->pay_type_id == 10) {
+              $rules = array_merge($rules, [
+                'advance_amount'   => 'nullable',
+                'withhold_amount'  => 'nullable',
+                'withhold_for_rv' => 'nullable',
+                "receipt_vouchers" => "required",
+                "receipt_vouchers.*" => "required"
+            ]);
+            if(request()->withhold_amount && request()->withhold_amount > 0) {
+                $rules["withhold_for_rv"] = "required";
+            }
         }
       
 
         return $rules;
     }
+
+    // public function messages() {
+    //     return [
+    //         "line_desc.required" => 'Reference number is required'       
+    //     ];
+    // }
 }

@@ -2,7 +2,9 @@
 
 namespace App\Models\Sales;
 
+use App\Models\Procurement\Store\FactoryLocation;
 use App\Models\Procurement\Store\Location;
+use App\Models\Procurement\Store\SectionLocation;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\HasApproval;
@@ -20,6 +22,14 @@ class SalesInquiry extends Model
 
     public function locations() {
         return $this->morphMany(Location::class, 'locationable');
+    }
+
+    public function factories() {
+        return $this->morphMany(FactoryLocation::class, 'factoryable');
+    }
+
+    public function sections() {
+        return $this->morphMany(SectionLocation::class, 'sectionable');
     }
 
     public function sale_order() {

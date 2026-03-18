@@ -10,20 +10,37 @@ use App\Models\Procurement\Store\PurchaseAgainstJobOrder;
 use App\Models\Procurement\Store\PurchaseItemApprove;
 use App\Models\Procurement\Store\PurchaseOrderData;
 use App\Models\Procurement\Store\PurchaseQuotationData;
-use Illuminate\Http\Request;
 use App\Models\Procurement\Store\PurchaseRequest;
 use App\Models\Procurement\Store\PurchaseRequestData;
+use App\Models\Master\Department;
+use App\Models\Master\RequestBy;
+use App\Models\Master\Color;
+use App\Models\Master\Size;
+use App\Models\Product;
 use App\Models\Sales\JobOrder;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
+use Validator;
 
 class PurchaseRequestController extends Controller
 {
     public function index()
     {
-        return view('management.procurement.store.purchase_request.index');
+        $categories = Category::where('category_type', 'general_items')->get();
+        $items = Product::where('product_type', 'general_items')->where('status', 'active')->get();
+        return view('management.procurement.store.purchase_request.index', compact('categories', 'items'));
+    }
+
+    public function getItems(Request $request)
+    {
+        $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
+        $job_orders = JobOrder::with('packing_items.subItems')->where('id', request()->job_order)->get();
+        $items = Product::with("unitOfMeasure")->where("product_type", "general_items")->where("status", "active")->get();
+
+
+        return view('management.procurement.store.purchase_request.getItem', compact('job_orders', 'categories', 'items'));
     }
 
     /**
@@ -31,9 +48,37 @@ class PurchaseRequestController extends Controller
      */
     public function getList(Request $request)
     {
-        $PurchaseRequests = PurchaseRequestData::with('purchase_request', 'category', 'item', 'approval')
-            ->whereStatus(true)
-            ->latest()
+        $query = PurchaseRequestData::with('purchase_request', 'category', 'item', 'approval')
+            ->whereStatus(true);
+
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('qty', 'like', "%{$search}%")
+                  ->orWhereHas('purchase_request', function($pr) use ($search) {
+                      $pr->where('purchase_request_no', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        if ($request->has('category_id') && $request->category_id != 'all' && !empty($request->category_id)) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        if ($request->has('item_id') && $request->item_id != 'all' && !empty($request->item_id)) {
+            $query->where('item_id', $request->item_id);
+        }
+
+        if ($request->has('status') && $request->status != 'all' && !empty($request->status)) {
+            $status = $request->status;
+            $query->whereHas('purchase_request', function($pr) use ($status) {
+                $pr->where('am_approval_status', $status);
+            });
+        }
+
+
+
+        $PurchaseRequests = $query->latest()
             ->paginate(request('per_page', 25));
 
         $groupedData = [];
@@ -43,10 +88,10 @@ class PurchaseRequestController extends Controller
             $created_by_id = $row->purchase_request?->created_by;
             $itemId = $row->item->id ?? 'unknown';
 
-            if (!isset($groupedData[$requestNo])) {
+            if (! isset($groupedData[$requestNo])) {
                 $groupedData[$requestNo] = [
                     'request_data' => $row->purchase_request,
-                    'items' => []
+                    'items' => [],
                 ];
             }
 
@@ -71,7 +116,7 @@ class PurchaseRequestController extends Controller
             foreach ($requestGroup['items'] as $itemId => $itemGroup) {
                 $requestItems[] = [
                     'item_data' => $itemGroup['item_data'],
-                    'item_rowspan' => 1
+                    'item_rowspan' => 1,
                 ];
             }
 
@@ -84,12 +129,13 @@ class PurchaseRequestController extends Controller
                 'request_status' => $requestGroup['request_data']?->am_approval_status,
                 'request_rowspan' => $requestRowspan,
                 'items' => $requestItems,
-                'has_approved_item' => $hasApprovedItem
+                'has_approved_item' => $hasApprovedItem,
             ];
         }
+
         return view('management.procurement.store.purchase_request.getList', [
             'PurchaseRequests' => $PurchaseRequests,
-            'GroupedPurchaseRequests' => $processedData
+            'GroupedPurchaseRequests' => $processedData,
         ]);
     }
 
@@ -103,14 +149,40 @@ class PurchaseRequestController extends Controller
         ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
-        $job_orders = JobOrder::select('id', 'job_order_no')->get();
-        return view('management.procurement.store.purchase_request.create', compact('categories', 'job_orders'));
+        $job_orders = JobOrder::select('id', 'job_order_no')
+                                ->get();
+                                // ->reject(function($job_order) {
+                                //     $packings = $job_order->packing_items;
+                                    
+                                //     $any_item_has_balance = false;
+
+                                //     foreach($packings as $packing) {
+                                //         if (jobOrderPackingBalanceAgainstPurchaseRequest($packing->id) > 0) {
+                                //             $any_item_has_balance = true;
+                                //             break;
+                                //         }
+
+                                //         foreach($packing->subItems as $subpacking) {
+                                //             if (jobOrderSubPackingBalanceAgainstPurchaseRequest($subpacking->id) > 0) {
+                                //                 $any_item_has_balance = true;
+                                //                 break;
+                                //             }
+                                //         }
+
+                                //         if ($any_item_has_balance) break;
+                                //     }
+
+                                //     return !$any_item_has_balance;
+                                // });
+        $items = Product::with("unitOfMeasure")->where("product_type", "general_items")->where("status", "active")->get();
+        $departments = Department::where('status', 'active')->get();
+        $request_bies = RequestBy::where('status', 'active')->get();
+
+      
+        return view('management.procurement.store.purchase_request.create', compact('categories', 'job_orders', 'items', 'departments', 'request_bies'));
     }
 
     /**
@@ -121,60 +193,106 @@ class PurchaseRequestController extends Controller
         DB::beginTransaction();
         try {
             $company_locations = $request->company_location_id;
-          
             $purchaseRequest = PurchaseRequest::create([
                 'purchase_request_no' => self::getNumber($request, $request->company_location_id, $request->purchase_date),
                 'purchase_date' => $request->purchase_date,
                 'location_id' => (CompanyLocation::first())->id,
                 'company_id' => $request->company_id,
+                'category_id' => $request->category_id_header,
+                'department_id' => $request->department_id,
+                'request_by_id' => $request->request_by_id,
                 'reference_no' => $request->reference_no,
                 'description' => $request->description,
                 'created_by' => auth()->user()->id,
+                'job_orders' => collect($request->master_job_orders)->flatten()->filter()
             ]);
 
-            foreach($company_locations as $company_location) {
+            foreach ($company_locations as $company_location) {
                 $purchaseRequest->locations()->create([
-                    'location_id' => $company_location
+                    'location_id' => $company_location,
                 ]);
             }
 
             $purchase_request_data_ids = [];
             foreach ($request->item_id as $index => $itemId) {
-                $printingSamplePath = null;
+                $indexKey = $request->index[$index] ?? $index;
+                $printingSamplePaths = [];
 
-                if ($request->hasFile('printing_sample.' . $index)) {
-                    $file = $request->file('printing_sample.' . $index);
-                    $printingSamplePath = $file->store('printing_samples', 'public');
+                if ($request->hasFile("printing_sample.$indexKey")) {
+                    foreach ($request->file("printing_sample.$indexKey") as $file) {
+                        $printingSamplePaths[] = $file->store('printing_samples', 'public');
+                    }
+                }
+
+                // Handle stitching multi-select - convert array to comma-separated string
+                $stitchingIndex = $request->index[$index] ?? $index;
+                $stitchingValue = null;
+                if (isset($request->stitching[$stitchingIndex])) {
+                    $stitchingValue = is_array($request->stitching[$stitchingIndex]) 
+                        ? implode(',', $request->stitching[$stitchingIndex]) 
+                        : $request->stitching[$stitchingIndex];
+                }
+                $balance = null;
+                if($request->module_type && $request->module_type[$index] == 'packing' && $request->packing_id && $request->packing_id[$index]) {
+                    $balance = jobOrderPackingBalanceAgainstPurchaseRequest($request->packing_id[$index]);
+                } else if($request->module_type && $request->module_type[$index] == 'subpacking' && $request->packing_id && $request->packing_id[$index]) {
+                    $balance = jobOrderSubPackingBalanceAgainstPurchaseRequest($request->packing_id[$index]);
+                }
+                if(!is_null($balance) && $balance < $request->qty[$index]) {
+                    DB::rollBack();
+                    $validator = Validator::make([], []);
+                    $validator->errors()->add(
+                        "qty[$index]", "Your qty balance is $balance, you can not exceed that balance."
+                    );
+                    return response()->json([
+                        "errors" => $validator->errors()
+                    ], 422);
+                }
+
+                // Handle Dynamic Size Creation
+                $sizeId = $request->size[$index] ?? null;
+                if ($sizeId && !is_numeric($sizeId)) {
+                    $newSize = Size::firstOrCreate(['size' => $sizeId], ['status' => 1, 'company_id' => $request->company_id]);
+                    $sizeId = $newSize->id;
                 }
 
                 $requestData = PurchaseRequestData::create([
                     'purchase_request_id' => $purchaseRequest->id,
-                    'category_id' => $request->category_id[$index],
+                    'category_id' => $request->category_id_header,
                     'item_id' => $itemId,
                     'qty' => $request->qty[$index],
                     'approved_qty' => 0,
                     'min_weight' => $request->min_weight[$index] ?? null,
                     'color' => $request->color[$index] ?? null,
                     'construction_per_square_inch' => $request->construction_per_square_inch[$index] ?? null,
-                    'size' => $request->size[$index] ?? null,
-                    'stitching' => $request->stitching[$index] ?? null,
+                    'size' => $sizeId,
+                    'stitching' => $stitchingValue,
                     'micron' => $request->micron[$index] ?? null,
-                    'printing_sample' => $printingSamplePath,
-                    'brand_id' => $request->brands[$index],
+                    'printing_sample' => $printingSamplePaths,
+                    'brand_id' => $request->brands[$index] ?? null,
                     'remarks' => $request->remarks[$index] ?? null,
-                    
+                    'packing_id' => $request->packing_id[$index] ?? null,
+                    "module_type" => $request->module_type[$index] ?? null,
+                    "is_single_job_order" => $request->is_single_job_order[$index] ?? false
+
                 ]);
-                if (!empty($request->job_order_id[$index]) && is_array($request->job_order_id[$index])) {
-                    foreach ($request->job_order_id[$index] as $jobOrderId) {
+                if (! empty($request->job_order_id[$request->index[$index]]) && is_array($request->job_order_id[$request->index[$index]])) {
+                    foreach ($request->job_order_id[$request->index[$index]] as $job_order) {
                         PurchaseAgainstJobOrder::create([
                             'purchase_request_id' => $purchaseRequest->id,
                             'purchase_request_data_id' => $requestData->id,
-                            'job_order_id' => $jobOrderId,
+                            'job_order_id' => $job_order,
                         ]);
                     }
                 }
             }
-            
+
+            // if (!empty($request->job_order_id[$index]) && is_array($request->job_order_id[$index])) {
+            //     foreach ($request->job_order_id[$index] as $jobOrderId) {
+
+            //     }
+            // }
+
             DB::commit();
 
             return response()->json([
@@ -190,7 +308,7 @@ class PurchaseRequestController extends Controller
                 'error' => $e->getMessage(),
                 'line' => $e->getLine(),
                 'file' => $e->getFile(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ], 500);
         }
     }
@@ -199,30 +317,38 @@ class PurchaseRequestController extends Controller
     {
         $purchaseRequestData = PurchaseRequestData::findOrFail($id);
         $purchaseRequest = PurchaseRequest::with(['locations', 'PurchaseData', 'PurchaseData.JobOrder', 'PurchaseData.item.unitOfMeasure'])->where('id', $purchaseRequestData->purchase_request_id)->first();
-        $locations_id = $purchaseRequest->locations->pluck("location_id")->toArray();
+        $locations_id = $purchaseRequest->locations->pluck('location_id')->toArray();
         $location_names = [];
-        foreach($locations_id as $location_id) {
+        foreach ($locations_id as $location_id) {
             $location_names[] = get_location_name_by_id($location_id);
         }
+        $items = Product::with("unitOfMeasure")->where("product_type", "general_items")->where("status", "active")->get();
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $job_orders = JobOrder::select('id', 'job_order_no')->get();
         $locations = CompanyLocation::all();
+        $departments = Department::where('status', 'active')->get();
+        $request_bies = RequestBy::where('status', 'active')->get();
 
-        return view('management.procurement.store.purchase_request.edit', compact('locations_id', 'location_names', 'purchaseRequest', 'purchaseRequestData', 'categories', 'job_orders', 'locations'));
+        return view('management.procurement.store.purchase_request.edit', compact('items', 'locations_id', 'location_names', 'purchaseRequest', 'purchaseRequestData', 'categories', 'job_orders', 'locations', 'departments', 'request_bies'));
     }
 
     public function manageApprovals($id)
     {
         $purchaseRequestData = PurchaseRequestData::findOrFail($id);
-        $purchaseRequest = PurchaseRequest::with(["locations", 'PurchaseData', 'PurchaseData.JobOrder', 'PurchaseData.item.unitOfMeasure'])->where('id', $purchaseRequestData->purchase_request_id)->first();
-        $locations_id = $purchaseRequest->locations->pluck("location_id")->toArray();
+        $purchaseRequest = PurchaseRequest::with(['locations', 'PurchaseData', 'PurchaseData.JobOrder', 'PurchaseData.item.unitOfMeasure'])->where('id', $purchaseRequestData->purchase_request_id)->first();
+        $locations_id = $purchaseRequest->locations->pluck('location_id')->toArray();
         $location_names = [];
-        foreach($locations_id as $location_id) {
+        foreach ($locations_id as $location_id) {
             $location_names[] = get_location_name_by_id($location_id);
         }
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $job_orders = JobOrder::select('id', 'job_order_no')->get();
+        $items = Product::with("unitOfMeasure")->where("product_type", "general_items")->where("status", "active")->get();
+
         $locations = CompanyLocation::all();
+        $departments = Department::where('status', 'active')->get();
+        $request_bies = RequestBy::where('status', 'active')->get();
+
         // dd($purchaseRequest);
         return view('management.procurement.store.purchase_request.approvalCanvas', [
             'purchaseRequest' => $purchaseRequest,
@@ -231,25 +357,31 @@ class PurchaseRequestController extends Controller
             'categories' => $categories,
             'job_orders' => $job_orders,
             'locations' => $locations,
-            "locations_id" => $locations_id,
-            "location_names" => $location_names
-
+            'locations_id' => $locations_id,
+            'items' => $items,
+            'location_names' => $location_names,
+            'departments' => $departments,
+            'request_bies' => $request_bies
         ]);
     }
 
     public function update(ProcurementPurchaseRequest $request, $id)
     {
         DB::beginTransaction();
-
+            
         try {
             $purchaseRequest = PurchaseRequest::findOrFail($id);
 
             $updateData = [
                 'purchase_date' => $request->purchase_date,
                 'company_id' => $request->company_id,
+                'category_id' => $request->category_id_header,
+                'department_id' => $request->department_id,
+                'request_by_id' => $request->request_by_id,
                 'reference_no' => $request->reference_no,
                 'description' => $request->description,
                 'am_change_made' => 1,
+                'job_orders' => collect($request->master_job_orders)->flatten()->filter()
             ];
             // echo $purchaseRequest->am_approval_status;
 
@@ -263,36 +395,80 @@ class PurchaseRequestController extends Controller
             $submittedItems = [];
 
             foreach ($request->item_id as $index => $itemId) {
-                if (!empty($request->item_row_id[$index])) {
+                $printingSamplePath = null;
+                if (! empty($request->item_row_id[$index])) {
                     $requestData = PurchaseRequestData::find($request->item_row_id[$index]);
                     $printingSamplePath = $requestData->printing_sample;
-                    
+
                     if ($requestData) {
-                        if ($request->hasFile('printing_sample.' . $index)) {
-                            $file = $request->file('printing_sample.' . $index);
-                            $printingSamplePath = $file->store('printing_samples', 'public');
+                        $indexKeyUpdate = $request->index[$index] ?? $index;
+                        if ($request->hasFile("printing_sample.$indexKeyUpdate")) {
+                            $newFiles = [];
+                            foreach ($request->file("printing_sample.$indexKeyUpdate") as $file) {
+                                $newFiles[] = $file->store('printing_samples', 'public');
+                            }
+                            // Merge with existing files if any
+                            $printingSamplePath = array_merge((array)$printingSamplePath, $newFiles);
+                        }
+
+                        // Handle stitching multi-select - convert array to comma-separated string
+                        $stitchingIndexUpdate = $request->index[$index] ?? $index;
+                        $stitchingValue = null;
+                        if (isset($request->stitching[$stitchingIndexUpdate])) {
+                            $stitchingValue = is_array($request->stitching[$stitchingIndexUpdate]) 
+                                ? implode(',', $request->stitching[$stitchingIndexUpdate]) 
+                                : $request->stitching[$stitchingIndexUpdate];
+                        }
+
+                        
+                        $balance = null;
+                        if($request->module_type && $request->module_type[$index] == 'packing' && $request->packing_id && $request->packing_id[$index]) {
+                            $balance = jobOrderPackingBalanceAgainstPurchaseRequest($request->packing_id[$index]);
+                        } else if($request->module_type && $request->module_type[$index] == 'subpacking' && $request->packing_id && $request->packing_id[$index]) {
+                            $balance = jobOrderSubPackingBalanceAgainstPurchaseRequest($request->packing_id[$index]);
+                        }
+                        $current_qty = $request->current_qty[$index];
+                        if(!is_null($balance) && ($balance + $current_qty) < $request->qty[$index]) {
+                            DB::rollBack();
+                            $validator = Validator::make([], []);
+                            $remaining = $balance + $current_qty;
+                            $validator->errors()->add(
+                                "qty[$index]", "Your qty balance is {$remaining}, you can not exceed that balance."
+                            );
+                            return response()->json([
+                                "errors" => $validator->errors()
+                            ], 422);
+                        }
+
+                        // Handle Dynamic Size Creation
+                        $sizeId = $request->size[$index] ?? null;
+                        if ($sizeId && !is_numeric($sizeId)) {
+                            $newSize = Size::firstOrCreate(['size' => $sizeId], ['status' => 1, 'company_id' => $request->company_id]);
+                            $sizeId = $newSize->id;
                         }
 
                         $requestData->update([
-                            'category_id' => $request->category_id[$index],
+                            'category_id' => $request->category_id_header,
                             'item_id' => $itemId,
                             'qty' => $request->qty[$index],
                             'min_weight' => $request->min_weight[$index] ?? null,
                             'color' => $request->color[$index] ?? null,
                             'construction_per_square_inch' => $request->construction_per_square_inch[$index] ?? null,
-                            'size' => $request->size[$index] ?? null,
-                            'stitching' => $request->stitching[$index] ?? null,
+                            'size' => $sizeId,
+                            'stitching' => $stitchingValue,
                             'printing_sample' => $printingSamplePath,
                             'remarks' => $request->remarks[$index] ?? null,
-                            'brand_id' => $request->brands[$index],
-                            'micron' => $request->micron[$index]
+                            'brand_id' => $request->brands[$index] ?? null,
+                            'micron' => $request->micron[$index] ?? null,
+                            'packing_id' => $request->packing_id[$index] ?? null,
+                            "module_type" => $request->module_type[$index] ?? null,
+                            "is_single_job_order" => $request->is_single_job_order[$index] ?? false
                         ]);
                         $submittedItems[] = $requestData->id;
 
                         PurchaseAgainstJobOrder::where('purchase_request_data_id', $requestData->id)->delete();
-
-                        if (!empty($request->job_order_id[$index]) && is_array($request->job_order_id[$index])) {
-                            foreach ($request->job_order_id[$index] as $jobOrderId) {
+                        if (! empty($request->job_order_id[$request->index[$index]]) && is_array($request->job_order_id[$request->index[$index]])) {
+                            foreach ($request->job_order_id[$request->index[$index]] as $jobOrderId) {
                                 PurchaseAgainstJobOrder::create([
                                     'purchase_request_id' => $purchaseRequest->id,
                                     'purchase_request_data_id' => $requestData->id,
@@ -303,32 +479,71 @@ class PurchaseRequestController extends Controller
                     }
                 } else {
 
-                    if ($request->hasFile('printing_sample.' . $index)) {
-                        $file = $request->file('printing_sample.' . $index);
-                        $printingSamplePath = $file->store('printing_samples', 'public');
+                    $indexKeyNew = $request->index[$index] ?? $index;
+                    $printingSamplePathNew = [];
+
+                    if ($request->hasFile("printing_sample.$indexKeyNew")) {
+                        foreach ($request->file("printing_sample.$indexKeyNew") as $file) {
+                            $printingSamplePathNew[] = $file->store('printing_samples', 'public');
+                        }
+                    }
+
+                    // Handle stitching multi-select - convert array to comma-separated string
+                    $stitchingIndexNew = $request->index[$index] ?? $index;
+                    $stitchingValueNew = null;
+                    if (isset($request->stitching[$stitchingIndexNew])) {
+                        $stitchingValueNew = is_array($request->stitching[$stitchingIndexNew]) 
+                            ? implode(',', $request->stitching[$stitchingIndexNew]) 
+                            : $request->stitching[$stitchingIndexNew];
+                    }
+
+                    $balance = null;
+                    if($request->module_type && $request->module_type[$index] == 'packing' && $request->packing_id && $request->packing_id[$index]) {
+                        $balance = jobOrderPackingBalanceAgainstPurchaseRequest($request->packing_id[$index]);
+                    } else if($request->module_type && $request->module_type[$index] == 'subpacking' && $request->packing_id && $request->packing_id[$index]) {
+                        $balance = jobOrderSubPackingBalanceAgainstPurchaseRequest($request->packing_id[$index]);
+                    }
+                    if(!is_null($balance) && $balance < $request->qty[$index]) {
+                        DB::rollBack();
+                        $validator = Validator::make([], []);
+                        $validator->errors()->add(
+                            "qty[$index]", "Your qty balance is $balance, you can not exceed that balance."
+                        );
+                        return response()->json([
+                            "errors" => $validator->errors()
+                        ], 422);
+                    }
+
+                    // Handle Dynamic Size Creation
+                    $sizeIdNew = $request->size[$index] ?? null;
+                    if ($sizeIdNew && !is_numeric($sizeIdNew)) {
+                        $newSize = Size::firstOrCreate(['size' => $sizeIdNew], ['status' => 1, 'company_id' => $request->company_id]);
+                        $sizeIdNew = $newSize->id;
                     }
 
                     $requestData = PurchaseRequestData::create([
                         'purchase_request_id' => $purchaseRequest->id,
-                        'category_id' => $request->category_id[$index],
+                        'category_id' => $request->category_id_header,
                         'item_id' => $itemId,
                         'qty' => $request->qty[$index],
                         'approved_qty' => 0,
                         'min_weight' => $request->min_weight[$index] ?? null,
                         'color' => $request->color[$index] ?? null,
                         'construction_per_square_inch' => $request->construction_per_square_inch[$index] ?? null,
-                        'size' => $request->size[$index] ?? null,
-                        'stitching' => $request->stitching[$index] ?? null,
-                        'printing_sample' => $printingSamplePath,
-                        'brand_id' => $request->brands[$index],
+                        'size' => $sizeIdNew,
+                        'stitching' => $stitchingValueNew,
+                        'printing_sample' => $printingSamplePathNew,
+                        'brand_id' => $request->brands[$index] ?? null,
                         'remarks' => $request->remarks[$index] ?? null,
-                        'micron' => $request->micron[$index]
+                        'packing_id' => $request->packing_id[$index] ?? null,
+                        "module_type" => $request->module_type[$index] ?? null,
+                        "is_single_job_order" => $request->is_single_job_order[$index] ?? false,
+                        'micron' => $request->micron[$index] ?? null,
                     ]);
 
                     $submittedItems[] = $requestData->id;
-
-                    if (!empty($request->job_order_id[$index]) && is_array($request->job_order_id[$index])) {
-                        foreach ($request->job_order_id[$index] as $jobOrderId) {
+                    if (! empty($request->job_order_id[$request->index[$index]]) && is_array($request->job_order_id[$request->index[$index]])) {
+                        foreach ($request->job_order_id[$request->index[$index]] as $jobOrderId) {
                             PurchaseAgainstJobOrder::create([
                                 'purchase_request_id' => $purchaseRequest->id,
                                 'purchase_request_data_id' => $requestData->id,
@@ -340,7 +555,7 @@ class PurchaseRequestController extends Controller
             }
 
             $itemsToDelete = array_diff($existingItems, $submittedItems);
-            if (!empty($itemsToDelete)) {
+            if (! empty($itemsToDelete)) {
                 PurchaseRequestData::whereIn('id', $itemsToDelete)->delete();
                 PurchaseAgainstJobOrder::whereIn('purchase_request_data_id', $itemsToDelete)->delete();
             }
@@ -364,9 +579,11 @@ class PurchaseRequestController extends Controller
 
     public function destroy($id)
     {
-        $PurchaseQuotationData = PurchaseQuotationData::where('purchase_request_data_id', $id)->delete();
-        $PurchaseOrderData = PurchaseOrderData::where('purchase_request_data_id', $id)->delete();
-        $PurchaseRequestData = PurchaseRequestData::where('id', $id)->update(['status' => '0']);
+        $purchaseRequest = PurchaseRequest::find($id)->delete();
+        // $PurchaseQuotationData = PurchaseQuotationData::where('purchase_request_data_id', $id)->delete();
+        // $PurchaseOrderData = PurchaseOrderData::where('purchase_request_data_id', $id)->delete();
+        // $PurchaseRequestData = PurchaseRequestData::where('id', $id)->delete();
+
         return response()->json(['success' => 'Purchase Request deleted successfully.'], 200);
     }
 
@@ -376,7 +593,7 @@ class PurchaseRequestController extends Controller
         $location = CompanyLocation::find($locationId ?? $request->company_location_id);
         $date = Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
 
-        $prefix = 'PR-' . Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
+        $prefix = 'PR-'.Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
 
         $latestContract = PurchaseRequest::where('purchase_request_no', 'like', "$prefix-%")
             ->latest()
@@ -392,12 +609,12 @@ class PurchaseRequestController extends Controller
             $newNumber = 1;
         }
 
-        $purchase_request_no = 'PR-' . $datePart . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+        $purchase_request_no = 'PR-'.$datePart.'-'.str_pad($newNumber, 3, '0', STR_PAD_LEFT);
 
-        if (!$locationId && !$contractDate) {
+        if (! $locationId && ! $contractDate) {
             return response()->json([
                 'success' => true,
-                'purchase_request_no' => $purchase_request_no
+                'purchase_request_no' => $purchase_request_no,
             ]);
         }
 

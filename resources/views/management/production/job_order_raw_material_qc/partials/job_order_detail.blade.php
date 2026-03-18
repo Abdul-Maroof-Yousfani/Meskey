@@ -178,7 +178,7 @@
         // Commodities Selection - Load Partial via AJAX
         $('#commoditiesSelect').change(function () {
             const selectedCommodities = $(this).val();
-
+            const company_location_id = $('*[name="company_location_id"]').val();
             if (selectedCommodities && selectedCommodities.length > 0) {
                 // Show loading
                 $('#qcCommoditiesSection').html('<div class="text-center py-4"><i class="ft-loader spinner"></i> Loading QC tables...</div>');
@@ -188,7 +188,8 @@
                     url: '{{ route("load_qc_commodities_tables") }}',
                     type: 'GET',
                     data: {
-                        commodities: selectedCommodities
+                        commodities: selectedCommodities,
+                        company_location_id:company_location_id
                     },
                     success: function (response) {
                         $('#qcCommoditiesSection').html(response);

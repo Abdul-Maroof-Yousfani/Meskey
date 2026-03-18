@@ -54,10 +54,13 @@ class TicketPaymentRequestController extends Controller
             'qcProduct',
             'freight',
             'paymentRequestData' => function ($query) {
-                $query->with(['paymentRequests' => function ($q) {
-                    $q->selectRaw('payment_request_data_id, request_type, status, SUM(amount) as total_amount')
-                        ->groupBy('payment_request_data_id', 'request_type', 'status');
-                }]);
+                $query->with([
+                    'paymentRequests' => function ($q) {
+                        $q->selectRaw('payment_request_data_id, request_type, status, SUM(amount) as total_amount')
+                            ->where('status', '!=', 'rejected')
+                            ->groupBy('payment_request_data_id', 'request_type', 'status');
+                    }
+                ]);
             }
         ])
             ->where('is_ticket_verified', 1)
@@ -76,7 +79,7 @@ class TicketPaymentRequestController extends Controller
                     ->whereDate('created_at', '<=', $endDate);
             })
             ->where('first_qc_status', '!=', 'rejected')
-                   ->whereHas('purchaseOrder', function ($q) {
+            ->whereHas('purchaseOrder', function ($q) {
                 $q->where('purchase_type', '!=', 'gate_buying');
             })
             ->whereHas('purchaseOrder')->where('sauda_type_id', 1)->orderByDesc(function ($query) {
@@ -231,7 +234,7 @@ class TicketPaymentRequestController extends Controller
             ->first();
 
         $supplierData = [
-            'amount' =>   $paymentDetails['calculations']['supplier_net_amount'] ?? 0,
+            'amount' => $paymentDetails['calculations']['supplier_net_amount'] ?? 0,
             'account_id' => $purchaseOrder->supplier->account_id,
             'type' => 'credit',
             'counter_account_id' => $qcAccountId,
@@ -301,7 +304,7 @@ class TicketPaymentRequestController extends Controller
             $amount = ($loadingWeight * $purchaseOrder->broker_one_commission);
 
             $existingBrokerTrx = Transaction::where('voucher_no', $contractNo)
-                ->where('payment_against',   'pohanch-purchase')
+                ->where('payment_against', 'pohanch-purchase')
                 ->where('account_id', $purchaseOrder->broker->account_id)
                 ->where('against_reference_no', "$truckNo/$biltyNo")
                 ->first();
@@ -338,7 +341,7 @@ class TicketPaymentRequestController extends Controller
             $amount = ($loadingWeight * $purchaseOrder->broker_two_commission);
 
             $existingBrokerTrx = Transaction::where('voucher_no', $contractNo)
-                ->where('payment_against',   'pohanch-purchase')
+                ->where('payment_against', 'pohanch-purchase')
                 ->where('account_id', $purchaseOrder->brokerTwo->account_id)
                 ->where('against_reference_no', "$truckNo/$biltyNo")
                 ->first();
@@ -375,7 +378,7 @@ class TicketPaymentRequestController extends Controller
             $amount = ($loadingWeight * $purchaseOrder->broker_three_commission);
 
             $existingBrokerTrx = Transaction::where('voucher_no', $contractNo)
-                ->where('payment_against',   'pohanch-purchase')
+                ->where('payment_against', 'pohanch-purchase')
                 ->where('account_id', $purchaseOrder->brokerThree->account_id)
                 ->where('against_reference_no', "$truckNo/$biltyNo")
                 ->first();
@@ -541,10 +544,10 @@ class TicketPaymentRequestController extends Controller
     }
 
     protected function createPaymentRequests($paymentRequestData, $request, $accountId = null)
-    { 
+    {
         if (isset($request->ticket_id)) {
             $ticket = ArrivalTicket::find($request->ticket_id);
-            
+
             if ($ticket && $ticket->purchaseOrder) {
                 $ticket->update(['bag_weight' => $request->bag_weight]);
             }
@@ -558,7 +561,7 @@ class TicketPaymentRequestController extends Controller
             'account_id' => $accountId,
             'module_type' => 'ticket',
             'amount' => $request->payment_request_amount ?? 0
-        ]); 
+        ]);
     }
 
     protected function updateSamplingResults($paymentRequestData, $request)
@@ -604,12 +607,25 @@ class TicketPaymentRequestController extends Controller
         $data['products'] = Product::where('product_type', 'raw_material')->get();
 
         $paymentRequestData = PaymentRequestData::where('ticket_id', $arrivalTicket->id)->where('module_type', 'ticket')->orderByDesc('id')->first();
+        $paymentRequests = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($arrivalTicket) {
+            $query->where('ticket_id', $arrivalTicket->id);
+        })->with([
+                    'paymentRequestData' => function ($query) use ($arrivalTicket) {
+                        $query->where('ticket_id', $arrivalTicket->id);
+                    },
+                    'paymentRequestData.purchaseOrder',
+                    'paymentRequestData.purchaseTicket.purchaseOrder',
+                    'paymentRequestData.purchaseTicket.purchaseFreight',
+                    'paymentRequestData.arrivalTicket.freight',
+                    'approval'
+                ])->get();
 
         $requestedAmount = PaymentRequest::whereHas('paymentRequestData', function ($q) use ($arrivalTicket, $id) {
             $q->where('ticket_id', $id)
                 ->where('purchase_order_id', $arrivalTicket->arrival_purchase_order_id);
         })
             ->where('request_type', 'payment')
+            ->where('status', '!=', 'rejected')
             ->sum('amount');
         // dd($requestedAmount, $arrivalTicket->arrival_purchase_order_id, $id);
         $approvedAmount = PaymentRequest::whereHas('paymentRequestData', function ($q) use ($arrivalTicket) {
@@ -626,13 +642,14 @@ class TicketPaymentRequestController extends Controller
         })
             ->where('request_type', 'freight_payment')
             ->sum('amount');
-        
-            $freightPaymentRequestgrossAmount = paymentRequestData::where('ticket_id', $arrivalTicket->id)
+
+        $freightPaymentRequestgrossAmount = paymentRequestData::where('ticket_id', $arrivalTicket->id)
             ->where('purchase_order_id', $arrivalTicket->arrival_purchase_order_id)
             ->where('module_type', 'freight_payment')
             ->latest() // id ya created_at ke hisaab se last record
-            ->value('gross_amount');
-        
+            // ->value('gross_amount');
+            ->value('total_amount');
+
         $samplingRequest = null;
         $samplingRequestCompulsuryResults = collect();
         $samplingRequestResults = collect();
@@ -702,6 +719,7 @@ class TicketPaymentRequestController extends Controller
             'brokers' => $brokers,
             'arrivalTicket' => $arrivalTicket,
             'paymentRequestData' => $paymentRequestData,
+            'paymentRequests' => $paymentRequests,
             'samplingRequest' => $samplingRequest,
             'samplingRequestCompulsuryResults' => $samplingRequestCompulsuryResults,
             'samplingRequestResults' => $samplingRequestResults,

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Production;
 
 
 use App\Http\Controllers\Controller;
+use App\Models\Master\ArrivalLocation;
 use App\Models\Production\JobOrder\{
     JobOrder,
     JobOrderRawMaterialQc,
@@ -164,7 +165,8 @@ class JobOrderRawMaterialQcController extends Controller
         $commodities = $request->get('commodities', []);
 
         $products = Product::whereIn('id', $commodities)->get();
-        $sublocations = ArrivalSubLocation::where('status', 1)->get();
+        $locations = ArrivalLocation::where('company_location_id',$request->company_location_id)->where('status', 1)->get();
+        $sublocations = ArrivalSubLocation::where('company_location_id',$request->company_location_id)->where('status', 1)->get();
 
         // Get QC parameters for each commodity separately
         $commodityParameters = [];
@@ -206,6 +208,7 @@ class JobOrderRawMaterialQcController extends Controller
             'commodities',
             'products',
             'sublocations',
+            'locations',
             'commodityParameters'
         ));
     }
@@ -247,6 +250,7 @@ class JobOrderRawMaterialQcController extends Controller
                     $qcItem = JobOrderRawMaterialQcItem::create([
                         'job_order_rm_qc_id' => $qc->id,
                         'product_id' => $productId,
+                        'arrival_location_id' => $locationData['location_id'],
                         'arrival_sub_location_id' => $locationData['sublocation_id'],
                         'suggested_quantity' => $locationData['suggested_quantity']
                     ]);
@@ -293,16 +297,20 @@ class JobOrderRawMaterialQcController extends Controller
             'location'
         ])->findOrFail($id);
 
+
+        
         $jobOrders = JobOrder::where('status', 1)->get();
         $companyLocations = CompanyLocation::where('status', 1)->get();
         $products = Product::where('status', 1)->get();
-        $sublocations = ArrivalSubLocation::where('status', 1)->get();
+        $sublocations = ArrivalSubLocation::where('company_location_id',$qc->location_id)->where('status', 1)->get();
+        $locations = ArrivalLocation::where('company_location_id',$qc->location_id)->where('status', 1)->get();
 
         return view('management.production.job_order_raw_material_qc.edit', compact(
             'qc',
             'jobOrders',
             'companyLocations',
             'products',
+            'locations',
             'sublocations'
         ));
     }
@@ -336,11 +344,14 @@ class JobOrderRawMaterialQcController extends Controller
 
         // Create new QC items and parameters
         foreach ($request->qc_data as $productId => $productData) {
+            // dd($productData['locations']);
             foreach ($productData['locations'] as $locationIndex => $locationData) {
                 // Create QC item
+                // dd($locationData);
                 $qcItem = JobOrderRawMaterialQcItem::create([
                     'job_order_rm_qc_id' => $jobOrderRawMaterialQc->id,
                     'product_id' => $productId,
+                    'arrival_location_id' => $locationData['location_id'],
                     'arrival_sub_location_id' => $locationData['sublocation_id'],
                     'suggested_quantity' => $locationData['suggested_quantity']
                 ]);

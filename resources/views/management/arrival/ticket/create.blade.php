@@ -8,10 +8,10 @@ $authUser = auth()->user();
 $isRegularUser = $authUser->user_type === 'user';
 $userLocation = $authUser->companyLocation ?? null;
 
-$unique_no = $isRegularUser ? generateTicketNoWithDateFormat('arrival_tickets', $userLocation->code) : '';
+// $unique_no = $isRegularUser ? generateTicketNoWithDateFormat('arrival_tickets', $userLocation->code) : '';
          ?>
 
-        @if ($isRegularUser)
+        <!-- @if ($isRegularUser)
             <div class="col-xs-12 col-sm-12 col-md-12">
                 <div class="form-group">
                     <label>Location:</label>
@@ -31,15 +31,27 @@ $unique_no = $isRegularUser ? generateTicketNoWithDateFormat('arrival_tickets', 
                     </select>
                 </div>
             </div>
-        @endif
-
+        @endif -->
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group">
+                <label>Location:</label>
+                <select name="company_location_id" id="company_location_id" class="form-control select2">
+                    <option value="">Select Location</option>
+                    @foreach ($companyLocations as $location)
+                        <option value="{{ $location->id }}">{{ $location->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
             <fieldset>
                 <div class="input-group">
                     <div class="input-group-prepend">
                         <button class="btn btn-primary" type="button">Ticket No#</button>
                     </div>
-                    <input type="text" disabled class="form-control" name="unique_no" value="{{ $unique_no }}"
+                    <!-- <input type="text" disabled class="form-control" name="unique_no" value=""
+                        placeholder="Select Location"> -->
+                    <input type="text" disabled class="form-control" name="unique_no" value=""
                         placeholder="Select Location">
                 </div>
             </fieldset>
@@ -241,6 +253,9 @@ $unique_no = $isRegularUser ? generateTicketNoWithDateFormat('arrival_tickets', 
 </form>
 
 <script>
+
+  
+
     function calculateSampleMoney() {
         let truckTypeSelect = $('[name="arrival_truck_type_id"]');
         let sampleMoney = truckTypeSelect.find(':selected').data('samplemoney') || 0;
@@ -547,17 +562,29 @@ $unique_no = $isRegularUser ? generateTicketNoWithDateFormat('arrival_tickets', 
             });
         }
 
-        $('#company_location_id').on('change', function () {
-            const locationId = $(this).val();
+     
 
+        function getTicketNumber(locationId) {
             if (locationId) {
                 $.get(`/arrival/get-ticket-number/${locationId}`, function (data) {
                     $('input[name="unique_no"]').val(data.ticket_no);
                 });
             }
-
             loadLocationData(locationId);
+
+        }
+        $(document).on('change', '#company_location_id', function () {
+            const locationId = $(this).val();
+            getTicketNumber(locationId);
         });
+        $(document).ready(function () {
+        // console.log($('#company_location_id option').length);
+        if ($('#company_location_id option').length == 2) {
+            $('#company_location_id').val($('#company_location_id option:nth-child(2)').val()).trigger('change');
+            getTicketNumber($('#company_location_id option:nth-child(2)').val());
+            loadLocationData($('#company_location_id option:nth-child(2)').val());
+        }
+    });
 
         @if ($isRegularUser)
             loadLocationData('{{ $userLocation->id ?? null }}');

@@ -1,11 +1,14 @@
-<table class="table m-0">
+<table class="table m-0 table-responsive special">
     <thead>
         <tr>
             <th class="col-sm-2">Ticket No. </th>
-            <th class="col-sm-2">Product</th>
+            <th class="col-sm-2">Commodity</th>
+            <th class="col-sm-2">Acc Of.</th>
+            <th class="col-sm-1">Truck No</th>
+            <th class="col-sm-1">Bilty No</th>
             <th class="col-sm-2">Unloading Location</th>
             <th class="col-sm-2">Created at</th>
-            <th class="col-sm-2">Action</th>
+            <th class="col-sm-1">Action</th>
         </tr>
     </thead>
     <tbody>
@@ -27,6 +30,21 @@
                     </td>
                     <td>
                         <p class="m-0">
+                            {{ $row->arrivalTicket->accountsOf->name ?? 'N/A' }} <br>
+                        </p>
+                    </td>
+                    <td>
+                        <p class="m-0">
+                            {{ $row->arrivalTicket->truck_no ?? 'N/A' }} <br>
+                        </p>
+                    </td>
+                    <td>
+                        <p class="m-0">
+                            {{ $row->arrivalTicket->bilty_no ?? 'N/A' }} <br>
+                        </p>
+                    </td>
+                    <td>
+                        <p class="m-0">
                             {{ $row->arrivalTicket->unloadingLocation->ArrivalLocation->name ?? 'N/A' }} <br>
                         </p>
                     </td>
@@ -44,10 +62,11 @@
                         </a>
                         {{-- @endcan
                         @can('role-delete') --}}
-                        {{-- <a onclick="deletemodal('{{ route('location-transfer.destroy', $row->id) }}','{{ route('get.arrival-location') }}')"
-                                class="danger p-1 text-center mr-2 position-relative ">
-                                <i class="ft-x font-medium-3"></i>
-                            </a> --}}
+                        {{-- <a
+                            onclick="deletemodal('{{ route('location-transfer.destroy', $row->id) }}','{{ route('get.arrival-location') }}')"
+                            class="danger p-1 text-center mr-2 position-relative ">
+                            <i class="ft-x font-medium-3"></i>
+                        </a> --}}
                         {{-- @endcan --}}
                     </td>
                 </tr>
