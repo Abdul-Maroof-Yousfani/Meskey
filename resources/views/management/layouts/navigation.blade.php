@@ -674,107 +674,113 @@
             {{-- @endcanAccess --}}
             {{-- @canAccess('procurement-raw-material') --}}
             <li class="dropdown nav-item {{ request()->is('export*') ? 'active' : '' }}" data-menu="dropdown"><a
+                    {{-- @canAccess('export-module') --}} <li class="dropdown nav-item" data-menu="dropdown"><a
+                        class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
+                        data-toggle="dropdown"><i class="ft-arrow-up"></i><span data-i18n="UI Kit">Export</span></a>
+                    <ul class="dropdown-menu">
 
-            {{-- @canAccess('export-module') --}}
-            <li class="dropdown nav-item" data-menu="dropdown"><a
-                    class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
-                    data-toggle="dropdown"><i class="ft-arrow-up"></i><span data-i18n="UI Kit">Export</span></a>
-                <ul class="dropdown-menu">
+                        @canAccess("export-module")
+                        <li class="dropdown dropdown-submenu" data-menu="dropdown-submenu"><a
+                                class="dropdown-item d-flex align-items-center dropdown-toggle" href="javascript:;"
+                                data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                    data-i18n="Bootstrap Tables">Setup</span></a>
+                            <ul class="dropdown-menu">
+                                @canAccess('modeofterms')
+                                <li data-menu="">
+                                    <a class="dropdown-item d-flex align-items-center"
+                                        href="{{ route('modeofterms.index') }}"
+                                        onclick="loadPageContent('{{ route('modeofterms.index') }}')"
+                                        data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                                        <span data-i18n="Task Board">Mode of Terms</span>
+                                    </a>
+                                </li>
+                                @endcanAccess
 
-                    @canAccess("export-module")
-                    <li class="dropdown dropdown-submenu" data-menu="dropdown-submenu"><a
-                            class="dropdown-item d-flex align-items-center dropdown-toggle" href="javascript:;"
-                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
-                                data-i18n="Bootstrap Tables">Setup</span></a>
-                        <ul class="dropdown-menu">
-                            @canAccess('modeofterms')
-                            <li data-menu="">
-                                <a class="dropdown-item d-flex align-items-center"
-                                    href="{{ route('modeofterms.index') }}"
-                                    onclick="loadPageContent('{{ route('modeofterms.index') }}')"
-                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
-                                    <span data-i18n="Task Board">Mode of Terms</span>
-                                </a>
-                            </li>
-                            @endcanAccess
+                                @canAccess('modeoftransport')
+                                <li data-menu="">
+                                    <a class="dropdown-item d-flex align-items-center"
+                                        href="{{ route('modeoftransport.index') }}"
+                                        onclick="loadPageContent('{{ route('modeoftransport.index') }}')"
+                                        data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                                        <span data-i18n="Task Board">Mode of Transports</span>
+                                    </a>
+                                </li>
+                                @endcanAccess
 
-                            @canAccess('modeoftransport')
-                            <li data-menu="">
-                                <a class="dropdown-item d-flex align-items-center"
-                                    href="{{ route('modeoftransport.index') }}"
-                                    onclick="loadPageContent('{{ route('modeoftransport.index') }}')"
-                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
-                                    <span data-i18n="Task Board">Mode of Transports</span>
-                                </a>
-                            </li>
-                            @endcanAccess
+                                @canAccess('currency')
+                                <li data-menu="">
+                                    <a class="dropdown-item d-flex align-items-center"
+                                        href="{{ route('currency.index') }}"
+                                        onclick="loadPageContent('{{ route('currency.index') }}')"
+                                        data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                                        <span data-i18n="Task Board">Currency</span>
+                                    </a>
+                                </li>
+                                @endcanAccess
 
-                            @canAccess('currency')
-                            <li data-menu="">
-                                <a class="dropdown-item d-flex align-items-center" href="{{ route('currency.index') }}"
-                                    onclick="loadPageContent('{{ route('currency.index') }}')" data-toggle="dropdown"><i
-                                        class="ft-arrow-right submenu-icon"></i>
-                                    <span data-i18n="Task Board">Currency</span>
-                                </a>
-                            </li>
-                            @endcanAccess
+                                @canAccess('incoterm')
+                                <li data-menu="">
+                                    <a class="dropdown-item d-flex align-items-center"
+                                        href="{{ route('incoterm.index') }}"
+                                        onclick="loadPageContent('{{ route('incoterm.index') }}')"
+                                        data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                                        <span data-i18n="Task Board">Incoterm</span>
+                                    </a>
+                                </li>
+                                @endcanAccess
 
-                            @canAccess('incoterm')
-                            <li data-menu="">
-                                <a class="dropdown-item d-flex align-items-center" href="{{ route('incoterm.index') }}"
-                                    onclick="loadPageContent('{{ route('incoterm.index') }}')" data-toggle="dropdown"><i
-                                        class="ft-arrow-right submenu-icon"></i>
-                                    <span data-i18n="Task Board">Incoterm</span>
-                                </a>
-                            </li>
-                            @endcanAccess
+                                @canAccess('bank')
+                                <li data-menu="">
+                                    <a class="dropdown-item d-flex align-items-center"
+                                        href="{{ route('bank.index') }}"
+                                        onclick="loadPageContent('{{ route('bank.index') }}')"
+                                        data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                                        <span data-i18n="Task Board">Bank</span>
+                                    </a>
+                                </li>
+                                @endcanAccess
 
-                            @canAccess('bank')
-                            <li data-menu="">
-                                <a class="dropdown-item d-flex align-items-center" href="{{ route('bank.index') }}"
-                                    onclick="loadPageContent('{{ route('bank.index') }}')" data-toggle="dropdown"><i
-                                        class="ft-arrow-right submenu-icon"></i>
-                                    <span data-i18n="Task Board">Bank</span>
-                                </a>
-                            </li>
-                            @endcanAccess
+                            </ul>
+                        </li>
+                        @endcanAccess
 
-                            {{-- @canAccess('procurement-raw-material-loading')
-                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                                    href="{{ route('raw-material.freight.index') }}"
-                                    onclick="loadPageContent('{{ route('raw-material.freight.index') }}')"
-                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
-                                    <span data-i18n="Task Board">Loading Management</span>
-                                </a>
-                            </li>
-                            @endcanAccess --}}
+                        @canAccess('export-order')
+                        <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                href="{{ route('export-order.index') }}"
+                                onclick="loadPageContent('{{ route('export-order.index') }}')"
+                                data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                    data-i18n="Extended">Export
+                                    Order</span></a>
+                        </li>
+                        @endcanAccess
 
-                        </ul>
-                    </li>
-                    @endcanAccess
-                    {{-- @canAccess('export-order') --}}
-                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                            href="{{ route('export-order.index') }}"
-                            onclick="loadPageContent('{{ route('export-order.index') }}')" data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Extended">Export
-                                Order</span></a>
-                    </li>
-                    {{-- @endcanAccess --}}
-                    @canAccess('proforma')
-                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                            href="{{ route('proforma.index') }}" onclick="loadPageContent('{{ route('proforma.index') }}')"
-                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
-                                data-i18n="Extended">Proforma</span></a>
-                    </li>
-                    @endcanAccess
-                    {{-- @canAccess('commercial-invoice')
+                        <!-- @canAccess('export-soda-field')
+                        <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                href="{{ route('export-soda-field.index') }}"
+                                onclick="loadPageContent('{{ route('export-soda-field.index') }}')"
+                                data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                                <span data-i18n="Task Board">Export Soda Field</span>
+                            </a>
+                        </li>
+                        @endcanAccess -->
+
+                        @canAccess('proforma')
+                        <li data-menu="">
+                            <a class="dropdown-item d-flex align-items-center" href="{{ route('proforma.index') }}"
+                                onclick="loadPageContent('{{ route('proforma.index') }}')" data-toggle="dropdown">
+                                <i class="ft-arrow-right submenu-icon"></i>
+                                <span data-i18n="Extended">Proforma</span>
+                            </a>
+                        </li>
+                        @endcanAccess
+                        {{-- @canAccess('commercial-invoice')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('commercial-invoice.index') }}" onclick="loadPageContent('{{ route('commercial-invoice.index') }}')"
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
                                 data-i18n="Extended">Commercial Incoice</span></a>
                     </li>
                     @endcanAccess --}}
-                </ul>
+                    </ul>
 
             </li>
             {{-- @endcanAccess --}}
