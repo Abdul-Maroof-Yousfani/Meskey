@@ -140,8 +140,11 @@
                 <input type="hidden" name="item_row_id[]" value="{{ $item->id }}">
 
                 <td style="min-width: 250px;">
-                        <select id="item_id_{{ $rowId }}" name="item_id[]" onchange="get_uom('{{ $rowId }}')"
-                            class="form-control item-select select2Dropdown" data-index="{{ $rowId }}" style="width: 100%;">
+                        @if($item->is_single_job_order == 1)
+                            <input type="hidden" name="item_id[]" value="{{ $item->item->id }}" />
+                        @endif
+                        <select id="item_id_{{ $rowId }}" @if($item->is_single_job_order != 1) name="item_id[]" @endif onchange="get_uom('{{ $rowId }}')"
+                            class="form-control item-select select2Dropdown" data-index="{{ $rowId }}" style="width: 100%;" @disabled($item->is_single_job_order == 1)>
                             <option value="">Select Item</option>
                             @foreach($items as $product)
                                 <option value="{{ $product->id }}" data-uom="{{ $product->unitOfMeasure->name }}" @selected($product->id == $item->item->id)>{{ $product->name }}</option>
