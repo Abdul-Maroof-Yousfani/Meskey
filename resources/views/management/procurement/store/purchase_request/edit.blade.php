@@ -263,7 +263,7 @@
                         placeholder="line desc" value="{{ $item->remarks }}"></td>
 
                 <td style="min-width: 80px;"><button type="button" class="btn btn-danger btn-sm removeRowBtn"
-                        onclick="removeRow('{{ $rowId }}')"><i class="fa fa-trash"></i></button></td>
+                        onclick="removeRow('{{ $rowId }}')" style="width:120px;"><i class="fa fa-trash"></i></button></td>
             </tr>
             @endforeach
         </tbody>
@@ -536,7 +536,7 @@
                             placeholder="line desc">
                     </td>
                     <td style="min-width: 80px;">
-                        <button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="removeRow(${index})">
+                        <button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="removeRow('${index}')" style="width:120px;">
                             <i class="fa fa-trash"></i>
                         </button>
                     </td>
