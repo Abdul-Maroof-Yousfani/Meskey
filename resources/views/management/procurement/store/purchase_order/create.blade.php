@@ -89,7 +89,7 @@
     <div class="row form-mar">
         <div class="col-md-12">
             <div style="overflow-x: auto; width: 100%;">
-                <table class="table table-bordered" id="purchaseRequestTable" style="min-width: 2000px;">
+                <table class="table table-bordered" id="purchaseRequestTable" style="min-width: 4000px;">
                     <thead>
                         <tr>
                             <th>Category</th>

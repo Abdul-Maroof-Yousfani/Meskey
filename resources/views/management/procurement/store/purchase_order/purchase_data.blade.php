@@ -86,7 +86,7 @@
     <tr id="row_{{ $key }}">
       
 
-        <td style="min-width: 150px;">
+        <td style="min-width: 250px;">
             <select id="category_id_{{ $key }}" onchange="filter_items(this.value,{{ $key }})"
                 class="form-control item-select select2" data-index="{{ $key }}">
                 <option value="">Select Category</option>
@@ -109,7 +109,7 @@
 
         </td>
 
-        <td style="min-width: 150px;">
+        <td style="min-width: 400px;">
             <select id="item_id_{{ $key }}" onchange="get_uom({{ $key }})"
                 class="form-control item-select select2" data-index="{{ $key }}">
                 @foreach (get_product_by_id($data->item_id) as $item)
@@ -123,7 +123,7 @@
             <input type="hidden" name="item_id[]" value="{{ $data->item_id }}">
         </td>
 
-        <td style="min-width: 120px;">
+        <td style="min-width: 150px;">
             <input type="text"  name="uom[]" value="{{ get_uom($data->item_id) }}" id="uom_{{ $key }}"
                 class="form-control uom" readonly>
         </td>
@@ -131,7 +131,7 @@
       
 
       
-        <td style="min-width: 120px;">
+        <td style="min-width: 200px;">
     <input
         
         type="number"
@@ -155,7 +155,7 @@
         total qty: {{ $totalQty }}
     </div>
 </td>
-        <td style="min-width: 120px;">
+        <td style="min-width: 150px;">
             <input 
                  
                 type="number"
@@ -168,11 +168,11 @@
                 step="0.01" 
                 min="0">
         </td>
-          <td style="min-width: 120px;">
+          <td style="min-width: 150px;">
             <input type="text"  name="gross_amount[]" value="{{ ($currentInputQty) * $data->rate }}" id="gross_amount{{ $key }}"
                 class="form-control gross_amount" readonly>
         </td>
-        <td style="min-width: 100px;">
+        <td style="min-width: 200px;">
             <select  onchange="calculatePercentage(this)" id="tax_id_{{ $key }}" name="tax_id[]" 
                 onchange="calc({{ $key }})" class="form-control item-select select2 taxes">
                 <option value="" selected data-percentage="0">Select Tax</option>
@@ -183,45 +183,45 @@
                 @endforeach
             </select>
         </td>
-        <td style="min-width: 120px;">
+        <td style="min-width: 150px;">
             <input type="text"  name="tax_amount[]" value="{{ (getTaxPercentageById($data->tax_id) / 100) * (($currentInputQty) * $data->rate) }}" id="tax_amount{{ $key }}"
                 class="form-control tax_amount percent_amount" readonly>
         </td>
         
 
-        <td style="min-width: 120px;">
+        <td style="min-width: 150px;">
             <input  type="number" oninput="calc({{ $key }})" name="excise_duty[]" value=""
                 id="excise_duty_{{ $key }}" class="form-control" step="0.01" min="0">
         </td>
 
-        <td style="min-width: 120px;">
+        <td style="min-width: 150px;">
             <input  type="number" readonly name="total[]" value="{{ (($currentInputQty) * $data->rate) + ((getTaxPercentageById($data->tax_id) / 100) * (($currentInputQty) * $data->rate)) }}"
                 id="total_{{ $key }}" class="form-control net_amount" step="0.01" min="0">
         </td>
 
 
 
-        <td style="min-width: 150px;" class="bag-only">
+        <td style="min-width: 200px;" class="bag-only">
             <input  type="number" readonly name="min_weight[]" value="{{ $data->min_weight ? $data->min_weight : $prSource->min_weight }}"
                 id="min_weight_{{ $key }}" class="form-control" step="0.01" min="0">
         </td>
-        <td style="min-width: 150px;" class="bag-only">
+        <td style="min-width: 200px;" class="bag-only">
             <input  type="text" readonly name="brand[]" value="{{ getBrandById($data->brand_id ? $data->brand_id : $prSource->brand_id)?->name ?? null }}"
                 id="brand_{{ $key }}" class="form-control" step="0.01" min="0">
         </td>
-         <td style="min-width: 150px;" class="bag-only">
+         <td style="min-width: 200px;" class="bag-only">
             <input  type="text" readonly name="color[]" value="{{ getColorById($data->color ? $data->color : $prSource->color)?->color ?? null }}"
                 id="color_{{ $key }}" class="form-control" step="0.01" min="0">
         </td>
-         <td style="min-width: 150px;" class="bag-only">
+         <td style="min-width: 200px;" class="bag-only">
             <input  type="text" readonly name="construction_per_square_inch[]" value="{{ $data->construction_per_square_inch ? $data->construction_per_square_inch : $prSource->construction_per_square_inch }}"
                 id="construction_per_square_inch_{{ $key }}" class="form-control" step="0.01" min="0">
         </td>
-         <td style="min-width: 150px;" class="bag-only">
+         <td style="min-width: 200px;" class="bag-only">
             <input  type="text" readonly name="size[]" value="{{ getSizeById($data->size ? $data->size : $prSource->size)?->size ?? null }}"
                 id="size_{{ $key }}" class="form-control" step="0.01" min="0">
         </td>
-         <td style="min-width: 150px;" class="bag-only">
+         <td style="min-width: 200px;" class="bag-only">
                 <select class="form-control select2" multiple disabled>
                     @foreach(getStitchingsByIds($data->stitching ? $data->stitching : $prSource->stitching) as $stitching)
                         <option value="{{ $stitching->id }}" selected>{{ $stitching->name }}</option>
@@ -231,11 +231,11 @@
                 value="{{ $data->stitching }}" id="stitching_{{ $key }}"
                 class="form-control" step="0.01" min="0">
         </td>
-         <td style="min-width: 150px;" class="bag-only">
+         <td style="min-width: 200px;" class="bag-only">
             <input  type="text" readonly name="micron[]" value="{{ $data->micron ? $data->micron : $prSource->micron }}"
                 id="micron_{{ $key }}" class="form-control" step="0.01" min="0">
         </td>
-        <td style="min-width: 150px;" class="bag-only">
+        <td style="min-width: 200px;" class="bag-only">
             <div class="loop-fields">
                 <div class="form-group mb-0">
                     @php
@@ -277,7 +277,7 @@
                                 </td> --}}
 
 
-        <td style="min-width: 250px;">
+        <td style="min-width: 400px;">
             <input  type="text" name="remarks[]" value=""
                 id="remark_{{ $key }}" class="form-control">
         </td>
