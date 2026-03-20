@@ -84,7 +84,7 @@
         <div class="col-md-12">
 
             <div style="overflow-x: auto; white-space: nowrap; width: 100%;">
-                <table class="table table-bordered" id="purchaseRequestTable" style="min-width: 2000px;">
+                <table class="table table-bordered" id="purchaseRequestTable" style="min-width: 3000px;">
                     <thead>
                         <tr>
                             <th>Category</th>
@@ -111,7 +111,7 @@
 
                         @foreach ($PurchaseQuotationData ?? [] as $key => $data)
                             <tr id="row_{{ $key }}">
-                                <td style="min-width: 150px;">
+                                <td style="min-width: 250px;">
                                     <select  id="category_id_{{ $key }}"
                                         onchange="filter_items(this.value,{{ $key }})"
                                         disabled
@@ -129,7 +129,7 @@
                                         value="{{ $data->purchase_request_data_id }}">
                                 </td>
 
-                                 <td style="min-width: 200px;">
+                                 <td style="min-width: 300px;">
                                     <select  id="supplier_id_{{ $key }}"
                                         name="supplier_id[]" class="form-control item-select select2"
                                         disabled
@@ -143,7 +143,7 @@
                                     </select>
                                 </td>
 
-                                <td style="min-width: 250px;">
+                                <td style="min-width: 400px;">
                                     <select id="item_id_{{ $key }}" onchange="get_uom({{ $key }})" disabled
                                         class="form-control item-select select2" data-index="{{ $key }}">
                                         @foreach (get_product_by_id($data->item_id) as $item)
@@ -156,7 +156,7 @@
                                     <input type="hidden" name="item_id[]" value="{{ $data->item_id }}">
                                 </td>
 
-                                    <td style="min-width: 100px;">
+                                    <td style="min-width: 150px;">
                                         <input  name="qty[{{ $data->id }}]" type="number"
                                             value="{{ $data->qty }}" id="qty_{{ $key }}"
                                             onkeyup="calc('{{ $key }}')"
@@ -164,26 +164,26 @@
                                             max="{{ $data->qty }}">
                                     </td>
 
-                                    <td style="min-width: 100px;">
+                                    <td style="min-width: 150px;">
                                         <input  type="number" name="rate[{{ $data->id }}]"
                                             value="{{ $data->rate }}" id="rate_{{ $key }}"
                                             onkeyup="calc('{{ $key }}')"
                                             class="form-control" step="0.01" min="0">
                                     </td>
 
-                                    <td style="min-width: 120px;">
+                                    <td style="min-width: 150px;">
                                         <input  type="number" value="{{ $data->total }}"
                                             id="total_{{ $key }}" class="form-control" step="0.01"
                                             min="0" name="total[]" readonly>
                                     </td>
 
-                                <td style="min-width: 100px;">
+                                <td style="min-width: 150px;">
                                     <input  type="text" value="{{ get_uom($data->item_id) }}"
                                         id="uom_{{ $key }}" class="form-control" readonly>
                                     <input type="hidden" name="uom[]" value="{{ get_uom($data->item_id) }}">
                                 </td>
 
-                                <td style="min-width: 150px;" class="bag-only">
+                                <td style="min-width: 200px;" class="bag-only">
                                     <input  type="number"
                                         value="{{ $data->purchase_request?->min_weight ?? null }}"
                                         id="min_weight_{{ $key }}" class="form-control" step="0.01"
@@ -191,14 +191,14 @@
                                     <input type="hidden" name="min_weight[]"
                                         value="{{ $data->purchase_request?->min_weight ?? null }}">
                                 </td>
-                                <td style="min-width: 150px;" class="bag-only">
+                                <td style="min-width: 200px;" class="bag-only">
                                     <input  type="text"
                                         value="{{ getBrandById($data->purchase_request?->brand_id ?? null)?->name ?? null }}"
                                         id="color_{{ $key }}" class="form-control" readonly>
                                     <input type="hidden" name="brand[]"
                                         value="{{ $data->purchase_request?->brand_id ?? null }}">
                                 </td>
-                                <td style="min-width: 150px;" class="bag-only">
+                                <td style="min-width: 200px;" class="bag-only">
                                     <input  type="text"
                                         value="{{ getColorById($data->purchase_request?->color ?? null)?->color ?? null }}"
                                         id="color_{{ $key }}" class="form-control" readonly>
@@ -206,7 +206,7 @@
                                         value="{{ $data->purchase_request?->color ?? null }}">
                                 </td>
 
-                                <td style="min-width: 150px;" class="bag-only">
+                                <td style="min-width: 200px;" class="bag-only">
                                     <input  type="number"
                                         value="{{ $data->purchase_request?->construction_per_square_inch ?? null }}"
                                         id="construction_{{ $key }}" class="form-control" step="0.01"
@@ -215,7 +215,7 @@
                                         value="{{ $data->purchase_request?->construction_per_square_inch ?? null }}">
                                 </td>
 
-                                <td style="min-width: 150px;" class="bag-only">
+                                <td style="min-width: 200px;" class="bag-only">
                                     <input  type="text"
                                         value="{{ getSizeById($data->purchase_request?->size ?? null)?->size ?? null }}"
                                         id="size_{{ $key }}" class="form-control" readonly>
@@ -223,7 +223,7 @@
                                         value="{{ $data->purchase_request?->size ?? null }}">
                                 </td>
 
-                                <td style="min-width: 150px;" class="bag-only">
+                                <td style="min-width: 200px;" class="bag-only">
                                     <select class="form-control select2" multiple disabled >
                                     @foreach(getStitchingsByIds($data?->purchase_request->stitching ?? "") as $stitching)
                                         <option value="{{ $stitching->id }}" selected>{{ $stitching->name }}</option>
@@ -233,7 +233,7 @@
                                         value="{{ $data->purchase_request?->stitching ?? null }}">
                                 </td>
 
-                                <td style="min-width: 150px;" class="bag-only">
+                                <td style="min-width: 200px;" class="bag-only">
                                     <input  type="text"
                                         value="{{ $data->purchase_request?->micron ?? null }}"
                                         id="micron_{{ $key }}" class="form-control" readonly>
@@ -241,7 +241,7 @@
                                         value="{{ $data->purchase_request?->micron ?? null }}">
                                 </td>
 
-                                <td style="min-width: 150px;" class="bag-only">
+                                <td style="min-width: 200px;" class="bag-only">
                                     <input disabled type="file" class="form-control" accept="image/*,application/pdf" multiple>
                                     @if (!empty($data->purchase_request->printing_sample))
                                         @foreach((array)$data->purchase_request->printing_sample as $sample)
@@ -254,10 +254,9 @@
                                     @endif
                                 </td>
 
-                                <td style="width: 12%">
-                                    <input style="width: 140px" name="remarks[{{ $data->id }}]" type="text" value="{{ $data->remarks }}"
+                                <td style="min-width: 400px;">
+                                    <input style="width: 100%" name="remarks[{{ $data->id }}]" type="text" value="{{ $data->remarks }}"
                                         id="remark_{{ $key }}" class="form-control">
-                                    {{-- <input type="hidden" name="remarks[]" value="{{ $data->remarks }}"> --}}
                                 </td>
 
                                 <td>
@@ -310,24 +309,24 @@
         let index = rowIndex++;
         let row = `
             <tr id="row_${index}">
-                <td >
-                    <select name="category_id[]" onchange="filter_items(this.value,${index})" id="category_id_${index}" class="form-control item-select" data-index="0">
+                <td style="min-width: 250px;">
+                    <select name="category_id[]" onchange="filter_items(this.value,${index})" id="category_id_${index}" class="form-control item-select select2" data-index="0">
                         <option value="">Select Category</option>
                         @foreach ($categories ?? [] as $category)
                             <option value="{{ $category->id }}">{{ $category->name }}</option>
                         @endforeach
                     </select>
                 </td>
-                <td >
-                    <select name="supplier_id[]" id="supplier_id_${index}" onchange="get_uom(${index})" class="form-control item-select" data-index="0">
+                <td style="min-width: 300px;">
+                    <select name="supplier_id[]" id="supplier_id_${index}" onchange="get_uom(${index})" class="form-control item-select select2" data-index="0">
                         <option value="">Select Vendor</option>
                         @foreach (get_supplier() as $supplier)
                             <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
                         @endforeach
                     </select>
                 </td>
-                <td >
-                    <select name="item_id[]" id="item_id_${index}" onchange="get_uom(${index})" class="form-control item-select" data-index="0">
+                <td style="min-width: 400px;">
+                    <select name="item_id[]" id="item_id_${index}" onchange="get_uom(${index})" class="form-control item-select select2" data-index="0">
                         <option value="">Select Item</option>
                     
                         @foreach ($items ?? [] as $item)
@@ -336,10 +335,10 @@
                     </select>
                     <input type="hidden" name="data_id[]" value="0">
                 </td>
-                <td ><input  onkeyup="calc(${index})" onblur="calc(${index})"  type="number" name="qty[]" id="qty_${index}" class="form-control" step="0.01" min="0"></td>
-                <td ><input  onkeyup="calc(${index})" onblur="calc(${index})"  type="number" name="rate[]" id="rate_${index}" class="form-control" step="0.01" min="0"></td>
-                <td ><input  type="number" readonly name="total[]" id="total_${index}" class="form-control" step="0.01" min="0"></td>
-                <td ><input  type="text" name="uom[]" id="uom_${index}" class="form-control uom" readonly></td>
+                <td style="min-width: 150px;"><input  onkeyup="calc(${index})" onblur="calc(${index})"  type="number" name="qty[]" id="qty_${index}" class="form-control" step="0.01" min="0"></td>
+                <td style="min-width: 150px;"><input  onkeyup="calc(${index})" onblur="calc(${index})"  type="number" name="rate[]" id="rate_${index}" class="form-control" step="0.01" min="0"></td>
+                <td style="min-width: 150px;"><input  type="number" readonly name="total[]" id="total_${index}" class="form-control" step="0.01" min="0"></td>
+                <td style="min-width: 150px;"><input  type="text" name="uom[]" id="uom_${index}" class="form-control uom" readonly></td>
                 
                 <td><button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="remove(${index})">Remove</button></td>
             </tr>`;
