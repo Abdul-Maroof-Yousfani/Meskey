@@ -121,12 +121,13 @@
             </button>
         </div> --}}
         <div class="col-md-12" style="overflow-x: auto; white-space: nowrap;">
-            <table class="table table-bordered" id="purchaseRequestTable" style="min-width: 4500px;">
+            <table class="table table-bordered" id="purchaseRequestTable" style="min-width: 4800px;">
                 <thead>
                     <tr>
                         <th>Category</th>
                      <th>Item</th>
                      <th>Item UOM</th>
+                     <th>Job Order</th>
                      <th>Qty</th>
 @if(optional($purchaseOrderReceiving->purchase_request)->category_id == 38)
                      <th>Receive Weight (kg)</th>
@@ -190,6 +191,16 @@
                                 <input type="text" id="uom_{{ $key }}" style="width: 100%" class="form-control uom"
                                     value="{{ get_uom($data->item_id) }}" disabled readonly>
                                 <input type="hidden" name="uom[]" value="{{ get_uom($data->item_id) }}">
+                            </td>
+
+                            <td style="min-width: 300px;">
+                                <select class="form-control select2" multiple disabled>
+                                    @if($data->purchase_order_data && $data->purchase_order_data->job_orders)
+                                        @foreach($data->purchase_order_data->job_orders as $pajo)
+                                            <option selected>{{ $pajo->job_order_data->job_order_no ?? 'N/A' }}</option>
+                                        @endforeach
+                                    @endif
+                                </select>
                             </td>
 
                             <td style="min-width: 150px;">

@@ -51,6 +51,16 @@
             class="form-control uom" readonly style="width: 100%;">
     </td>
 
+    <td style="width: 300px; min-width: 300px;">
+        <select class="form-control select2" multiple disabled>
+            @if($data->purchase_order_data && $data->purchase_order_data->job_orders)
+                @foreach($data->purchase_order_data->job_orders as $pajo)
+                    <option selected>{{ $pajo->job_order_data->job_order_no ?? 'N/A' }}</option>
+                @endforeach
+            @endif
+        </select>
+    </td>
+
     <td style="width: 250px; min-width: 250px;">
         <input type="number" style="width: 100%;" 
             onkeyup="calc({{ $key }})" onblur="calc({{ $key }})"
