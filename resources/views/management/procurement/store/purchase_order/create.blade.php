@@ -95,6 +95,7 @@
                             <th>Category</th>
                             <th>Item</th>
                             <th>Item UOM</th>
+                            <th>Job Order</th>
                             <th>Qty</th>
                             <th>Rate</th>
                             <th>Gross Amount</th>

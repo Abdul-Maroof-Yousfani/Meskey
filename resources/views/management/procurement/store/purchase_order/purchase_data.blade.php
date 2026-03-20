@@ -128,6 +128,16 @@
                 class="form-control uom" readonly>
         </td>
 
+        <td style="min-width: 250px;">
+            <select class="form-control select2" multiple disabled>
+                @if($prSource && $prSource->JobOrder)
+                    @foreach($prSource->JobOrder as $pajo)
+                        <option selected>{{ $pajo->job_order_data->job_order_no ?? 'N/A' }}</option>
+                    @endforeach
+                @endif
+            </select>
+        </td>
+
       
 
       

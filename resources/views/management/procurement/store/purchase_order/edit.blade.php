@@ -129,6 +129,7 @@
                             <th>Category</th>
                             <th>Item</th>
                             <th>Item UOM</th>
+                            <th>Job Order</th>
                             {{-- <th>Vendor</th> --}}
                             <th>Qty</th>
                             <th>Rate</th>
@@ -190,6 +191,16 @@
                                         class="form-control uom" value="{{ get_uom($data->item_id) }}" disabled
                                         readonly>
                                     <input type="hidden" name="uom[]" value="{{ get_uom($data->item_id) }}">
+                                </td>
+
+                                <td style="min-width: 250px;">
+                                    <select class="form-control select2" multiple disabled>
+                                        @if($data->purchase_request_data && $data->purchase_request_data->JobOrder)
+                                            @foreach($data->purchase_request_data->JobOrder as $pajo)
+                                                <option selected>{{ $pajo->job_order_data->job_order_no ?? 'N/A' }}</option>
+                                            @endforeach
+                                        @endif
+                                    </select>
                                 </td>
                                 {{-- <td style="width: 20%">
                                 <select id="supplier_id_{{ $key }}" name="supplier_id[]"
@@ -513,6 +524,7 @@
                     <input type="hidden" name="data_id[]" value="0">
                 </td>
                 <td style="min-width: 150px;"><input type="text" name="uom[]" id="uom_${index}" class="form-control uom" readonly></td>
+                <td style="min-width: 250px;"><select class="form-control select2" multiple disabled></select></td>
                  <td style="min-width: 300px;">
                     <select name="supplier_id[]" id="supplier_id_${index}" onchange="get_uom(${index})" class="form-control item-select select2" data-index="0">
                         <option value="">Select Vendor</option>
