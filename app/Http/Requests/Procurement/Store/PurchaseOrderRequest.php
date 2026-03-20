@@ -68,6 +68,8 @@ class PurchaseOrderRequest extends FormRequest
 
             // 'quotation_ids' => 'sometimes|array',
             // 'quotation_ids.*' => 'sometimes|exists:purchase_quotation_data,id',
+            'purchase_quotation_data_id' => 'nullable|array',
+            'purchase_quotation_data_id.*' => 'nullable|exists:purchase_quotation_data,id',
         ];
     }
 
@@ -224,6 +226,8 @@ class PurchaseOrderRequest extends FormRequest
 
             foreach ($this->qty as $index => $qty) {
                 $prDataId = $this->purchase_request_data_id[$index] ?? null;
+                $pqDataId = $this->purchase_quotation_data_id[$index] ?? null;
+                
                 if (!$prDataId) continue;
 
                 $prData = \App\Models\Procurement\Store\PurchaseRequestData::find($prDataId);
@@ -232,21 +236,38 @@ class PurchaseOrderRequest extends FormRequest
                     continue;
                 }
 
-                $maxQty = $prData->qty;
-                $orderedQtyQuery = \App\Models\Procurement\Store\PurchaseOrderData::where('purchase_request_data_id', $prDataId);
-                
+                // 1. Calculate PR Remaining Balance
+                $prTotal = (float)$prData->qty;
+                $prOrderedQuery = \App\Models\Procurement\Store\PurchaseOrderData::where('purchase_request_data_id', $prDataId);
                 if ($orderId) {
-                    // For updates, the current PO's quantities should not be counted against the limit
-                    $orderedQtyQuery->where('purchase_order_id', '!=', $orderId);
+                    $prOrderedQuery->where('purchase_order_id', '!=', $orderId);
+                }
+                $prOrdered = (float)$prOrderedQuery->sum('qty');
+                $prRemaining = $prTotal - $prOrdered;
+
+                // 2. Calculate PQ Remaining Balance (if applicable)
+                $pqRemaining = 999999999; // Default to large number if no PQ
+                if ($pqDataId && $pqDataId != 0 && $pqDataId != "") {
+                    $pqData = \App\Models\Procurement\Store\PurchaseQuotationData::find($pqDataId);
+                    if ($pqData) {
+                        $pqTotal = (float)$pqData->qty;
+                        $pqOrderedQuery = \App\Models\Procurement\Store\PurchaseOrderData::where('purchase_quotation_data_id', $pqDataId);
+                        if ($orderId) {
+                            $pqOrderedQuery->where('purchase_order_id', '!=', $orderId);
+                        }
+                        $pqOrdered = (float)$pqOrderedQuery->sum('qty');
+                        $pqRemaining = $pqTotal - $pqOrdered;
+                    }
                 }
 
-                $alreadyOrdered = $orderedQtyQuery->sum('qty');
-                $remaining = (float)$maxQty - (float)$alreadyOrdered;
-
+                // 3. Final Limit (Minimum of both)
+                $remaining = min($prRemaining, $pqRemaining);
+                
                 // Using a small epsilon for float comparison to avoid precision issues
                 if ((float)$qty > ($remaining + 0.0001)) {
                     $itemName = $prData->item->name ?? "Item " . ($index + 1);
-                    $validator->errors()->add("qty.$index", "Ordered quantity for '{$itemName}' exceeds the allowed balance. Remaining: " . round($remaining, 2));
+                    $sourceType = ($pqRemaining < $prRemaining) ? "Purchase Quotation" : "Purchase Request";
+                    $validator->errors()->add("qty.$index", "Ordered quantity for '{$itemName}' exceeds the allowed {$sourceType} balance. Remaining: " . round($remaining, 2));
                 }
             }
         });

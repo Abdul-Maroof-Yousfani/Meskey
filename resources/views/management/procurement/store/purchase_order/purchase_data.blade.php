@@ -12,43 +12,62 @@
 
 
 @php
-    // Find the master Purchase Request source for balancing
-    if (isset($data->purchase_request_data)) {
-        // PurchaseOrderData (Edit mode)
+    $isEditMode = isset($data->purchase_order_id);
+    
+    // 1. Identify sources
+    if ($isEditMode) {
         $prSource = $data->purchase_request_data;
-        $isEditMode = true;
+        $pqSource = $data->purchase_quotation_data;
     } elseif (isset($data->purchase_quotation_id)) {
-        // PurchaseQuotationData (Create mode via PQ)
+        $pqSource = $data;
         $prSource = $data->purchase_request;
-        $isEditMode = false;
     } else {
-        // PurchaseRequestData (Create mode via PR)
+        $pqSource = null;
         $prSource = $data;
-        $isEditMode = false;
     }
 
-    if ($prSource) {
-        $totalQty = $prSource->qty;
-        if ($isEditMode) {
-            $otherPOsQty = optional($prSource->purchase_order_data)->where('id', '!=', $data->id)->sum('qty') ?? 0;
-            $maxAllowed = $totalQty - $otherPOsQty;
-            $currentInputQty = $data->qty;
-            $remainingQty = $totalQty - optional($prSource->purchase_order_data)->sum('qty');
-        } else {
-            $totalOrdered = optional($prSource->purchase_order_data)->sum('qty') ?? 0;
-            $remainingQty = $totalQty - $totalOrdered;
-            $maxAllowed = $remainingQty;
-            $currentInputQty = (isset($data->purchase_quotation_id)) ? min($data->qty, $remainingQty) : $remainingQty;
+    $prTotal = $prSource ? (float)$prSource->qty : 0;
+    $pqTotal = $pqSource ? (float)$pqSource->qty : 0;
+
+    if ($isEditMode) {
+        $sumOrderedPR = (float)($prSource->purchase_order_data->sum('qty') ?? 0);
+        $otherPOsPR = (float)($prSource->purchase_order_data->where('id', '!=', $data->id)->sum('qty') ?? 0);
+        
+        $sumOrderedPQ = $pqSource ? (float)($pqSource->purchase_order_data->sum('qty') ?? 0) : 0;
+        $otherPOsPQ = $pqSource ? (float)($pqSource->purchase_order_data->where('id', '!=', $data->id)->sum('qty') ?? 0) : 0;
+
+        // Current balance for display
+        $remainingQty = $prTotal - $sumOrderedPR;
+        if ($pqSource) {
+            $remainingQty = min($remainingQty, $pqTotal - $sumOrderedPQ);
         }
+
+        // Logical limit for input
+        $maxAllowed = $prTotal - $otherPOsPR;
+        if ($pqSource) {
+            $maxAllowed = min($maxAllowed, $pqTotal - $otherPOsPQ);
+        }
+        
+        $currentInputQty = (float)$data->qty;
     } else {
-        $totalQty = $data->qty ?? 0;
-        $remainingQty = $totalQty;
-        $maxAllowed = $totalQty;
-        $currentInputQty = $totalQty;
+        $sumOrderedPR = $prSource ? (float)($prSource->purchase_order_data->sum('qty') ?? 0) : 0;
+        $remainingQty = $prTotal - $sumOrderedPR;
+        
+        if ($pqSource) {
+            $sumOrderedPQ = (float)($pqSource->purchase_order_data->sum('qty') ?? 0);
+            $remainingQty = min($remainingQty, $pqTotal - $sumOrderedPQ);
+        }
+
+        $maxAllowed = $remainingQty;
+        $currentInputQty = $remainingQty;
     }
-    $isQuotationAvailable = ($data->rate) > 0 ? true : false;
+
+    $remainingQty = max(0, $remainingQty);
+    $maxAllowed = max(0, $maxAllowed);
+    $totalQty = $pqSource ? $pqTotal : ($prSource ? $prTotal : (float)($data->qty ?? 0));
+    $isQuotationAvailable = ($pqSource || (isset($data->rate) && $data->rate > 0));
 @endphp
-@if($remainingQty <= 0) @continue @endif;
+@if($remainingQty <= 0 && !$isEditMode) @continue @endif
 
    
 
@@ -66,7 +85,15 @@
             </select>
             <input type="hidden" name="category_id[]" value="{{ $data->category_id }}">
             <input type="hidden" name="purchase_request_data_id[]" value="{{ $data->purchase_request_data_id ? $data->purchase_request_data_id : $data->id }}">
-            <input type="hidden" name="purchase_quotation_data_id[]" value="{{ isset($data->rate) ? $data->id : '' }}">
+            @php
+                $pqDataId = '';
+                if ($isEditMode) {
+                    $pqDataId = $data->purchase_quotation_data_id;
+                } elseif (isset($data->purchase_quotation_id)) {
+                    $pqDataId = $data->id;
+                }
+            @endphp
+            <input type="hidden" name="purchase_quotation_data_id[]" value="{{ $pqDataId }}">
 
         </td>
 
@@ -130,7 +157,7 @@
                 min="0">
         </td>
           <td style="min-width: 120px;">
-            <input type="text"  name="gross_amount[]" value="{{ ($data->qty) * $data->rate }}" id="gross_amount{{ $key }}"
+            <input type="text"  name="gross_amount[]" value="{{ ($currentInputQty) * $data->rate }}" id="gross_amount{{ $key }}"
                 class="form-control gross_amount" readonly>
         </td>
         <td style="min-width: 100px;">
@@ -145,7 +172,7 @@
             </select>
         </td>
         <td style="min-width: 120px;">
-            <input type="text"  name="tax_amount[]" value="{{ (getTaxPercentageById($data->tax_id) / 100) * (($data->qty) * $data->rate) }}" id="tax_amount{{ $key }}"
+            <input type="text"  name="tax_amount[]" value="{{ (getTaxPercentageById($data->tax_id) / 100) * (($currentInputQty) * $data->rate) }}" id="tax_amount{{ $key }}"
                 class="form-control tax_amount percent_amount" readonly>
         </td>
         
@@ -156,7 +183,7 @@
         </td>
 
         <td style="min-width: 120px;">
-            <input  type="number" readonly name="total[]" value="{{ (($data->qty) * $data->rate) + ((0 / 100) * (($data->qty) * $data->rate)) }}"
+            <input  type="number" readonly name="total[]" value="{{ (($currentInputQty) * $data->rate) + ((getTaxPercentageById($data->tax_id) / 100) * (($currentInputQty) * $data->rate)) }}"
                 id="total_{{ $key }}" class="form-control net_amount" step="0.01" min="0">
         </td>
 
