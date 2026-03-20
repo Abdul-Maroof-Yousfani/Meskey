@@ -121,7 +121,7 @@
             </button>
         </div> --}}
         <div class="col-md-12" style="overflow-x: auto; white-space: nowrap;">
-            <table class="table table-bordered" id="purchaseRequestTable">
+            <table class="table table-bordered" id="purchaseRequestTable" style="min-width: 4500px;">
                 <thead>
                     <tr>
                         <th>Category</th>
@@ -157,8 +157,8 @@
                       <button id="modalButtonViewQc{{ $key }}" style="visibility: hidden;" onclick="openModal(this, '{{ route('store.qc.view', ['id' => $data->id, 'grn' => optional($purchaseOrderReceiving)->reference_no]) }}', 'View QC', false, '100%')">&nbsp;</button>
              
                         <tr id="row_{{ $key }}">
-                            <td style="width: 12%">
-                                <select id="category_id_{{ $key }}" disabled style="width: 140px"
+                            <td style="min-width: 300px;">
+                                <select id="category_id_{{ $key }}" disabled style="width: 100%"
                                     onchange="filter_items(this.value,{{ $key }})"
                                     class="form-control item-select select2" data-index="{{ $key }}">
                                     <option value="">Select Category</option>
@@ -173,8 +173,8 @@
                                 <input type="hidden" name="purchase_order_data_id[]" value="{{ $data->purchase_order_data_id }}">
 
                             </td>
-                            <td style="width: 22%">
-                                <select id="item_id_{{ $key }}" onchange="get_uom({{ $key }})" style="width: 140px"
+                            <td style="min-width: 450px;">
+                                <select id="item_id_{{ $key }}" onchange="get_uom({{ $key }})" style="width: 100%"
                                     disabled class="form-control item-select select2" data-index="{{ $key }}">
                                     @foreach (get_product_by_id($data->item_id) as $item)
                                         <option data-uom="{{ $item->unitOfMeasure->name ?? '' }}"
@@ -186,117 +186,117 @@
                                 </select>
                                 <input type="hidden" name="item_id[]" value="{{ $data->item_id }}">
                             </td>
-                            <td style="width: 10%">
-                                <input type="text" id="uom_{{ $key }}" style="width: 120px" class="form-control uom"
+                            <td style="min-width: 150px;">
+                                <input type="text" id="uom_{{ $key }}" style="width: 100%" class="form-control uom"
                                     value="{{ get_uom($data->item_id) }}" disabled readonly>
                                 <input type="hidden" name="uom[]" value="{{ get_uom($data->item_id) }}">
                             </td>
 
-                            <td style="width: 6%">
-                                <input style="width: 80px" type="number" onkeyup="calc({{ $key }})"
+                            <td style="min-width: 150px;">
+                                <input style="width: 100%" type="number" onkeyup="calc({{ $key }})"
                                     onblur="calc({{ $key }})" name="qty[]" value="{{ $data->qty }}"
                                     id="qty_{{ $key }}" class="form-control" @readonly($data->qc) step="0.01" min="0" max="{{ $data->qty }}"
                                    >
                             </td>
 @if(optional($purchaseOrderReceiving->purchase_request)->category_id == 38)
-                            <td style="width: 6%">
-                                <input style="width: 80px" onkeyup="calc({{ $key }})"
+                             <td style="min-width: 200px;">
+                                <input style="width: 100%" onkeyup="calc({{ $key }})"
                                     onblur="calc({{ $key }})" name="receive_weight[]" value="{{ $data->receive_weight }}"
                                     id="receive_weight_{{ $key }}" class="form-control" @readonly($data->qc)
                                    >
                             </td>
-                            <td style="width: 6%">
-                                <input style="width: 80px" type="number" onkeyup="calc({{ $key }})"
+                             <td style="min-width: 150px;">
+                                <input style="width: 100%" type="number" onkeyup="calc({{ $key }})"
                                     onblur="calc({{ $key }})" name="accepted_qty[]" readonly value="{{ $data->qc?->accepted_quantity ?? null }}"
                                     id="accepted_qty_{{ $key }}" class="form-control accepted_qty" placeholder="Accepted Quantity" step="0.01" min="0" max=""
                                    >
                             </td>
 
-                            <td style="width: 6%">
-                                <input style="width: 80px" type="number" onkeyup="calc({{ $key }})"
+                             <td style="min-width: 150px;">
+                                <input style="width: 100%" type="number" onkeyup="calc({{ $key }})"
                                     onblur="calc({{ $key }})" name="rejected_qty[]" readonly value="{{ $data->qc?->rejected_quantity ?? null }}"
                                     id="rejected_qty_{{ $key }}" class="form-control rejected_qty" step="0.01" placeholder="Rejected Quantity"  min="0" max=""
                                    >
                             </td>
 
-                            <td style="width: 6%">
-                                <input style="width: 80px" type="number" onkeyup="calc({{ $key }})"
+                             <td style="min-width: 200px;">
+                                <input style="width: 100%" type="number" onkeyup="calc({{ $key }})"
                                     onblur="calc({{ $key }})" name="deduction_per_bag[]" readonly value="{{ $data->qc?->deduction_per_bag ?? null }}"
                                     id="deduction_per_bag{{ $key }}" class="form-control deduction_per_bag" step="0.01" placeholder="Deduction Per Bag" min="0" max=""
                                    >
                             </td>
 @endif
                             @if(optional($purchaseOrderReceiving->purchase_request)->category_id == 38)
-                            <td style="width: 8%">
+                            <td style="min-width: 200px;">
                                 <div class="loop-fields">
                                     <div class="form-group mb-0">
-                                        <input type="number" style="width: 100px;" name="min_weight[]" @readonly($data->qc) id="min_weight_0" class="form-control"
+                                        <input type="number" style="width: 100%;" name="min_weight[]" @readonly($data->qc) id="min_weight_0" class="form-control"
                                             step="0.01" min="0" value="{{ $data->purchase_order_data->min_weight }}" placeholder="Min Weight">
                                     </div>
                                 </div>
                             </td>
-                            <td style="width: 8%">
+                            <td style="min-width: 250px;">
                                 <input type="hidden" value="{{ !is_null($data->qc) }}" name="approval_status[]" />
                                 <div class="loop-fields">
                                     <div class="form-group mb-0">
-                                        <input type="text" name="brand[]"  style="width: 100px;" @readonly($data->qc) value="{{ $data->purchase_order_data->brand }}" id="color_0" class="form-control" step="0.01"
+                                        <input type="text" name="brand[]"  style="width: 100%;" @readonly($data->qc) value="{{ $data->purchase_order_data->brand }}" id="color_0" class="form-control" step="0.01"
                                             min="0" placeholder="Brand">
                                     </div>
                                 </div>
                             </td>
-                            <td style="width: 8%">
+                            <td style="min-width: 200px;">
                                 <div class="loop-fields">
                                     <div class="form-group mb-0">
-                                        <input type="text" name="color[]"  style="width: 100px;" @readonly($data->qc) value="{{ $data->purchase_order_data->color }}" id="color_0" class="form-control" step="0.01"
+                                        <input type="text" name="color[]"  style="width: 100%;" @readonly($data->qc) value="{{ $data->purchase_order_data->color }}" id="color_0" class="form-control" step="0.01"
                                             min="0" placeholder="Color">
                                     </div>
                                 </div>
                             </td>
 
 
-                            <td style="width: 8%">
+                            <td style="min-width: 200px;">
                                 <div class="loop-fields">
                                     <div class="form-group mb-0">
-                                        <input type="text" style="width: 100px;" name="construction_per_square_inch[]"
+                                        <input type="text" style="width: 100%;" name="construction_per_square_inch[]"
                                             id="construction_per_square_inch_0" @readonly($data->qc) value="{{ $data->purchase_order_data->construction_per_square_inch }}" class="form-control" step="0.01" min="0"
                                             placeholder="Cons./sq. in.">
                                     </div>
                                 </div>
                             </td>
-                            <td style="width: 8%">
+                            <td style="min-width: 200px;">
                                 <div class="loop-fields">
                                     <div class="form-group mb-0">
-                                        <input type="text" name="size[]" @readonly($data->qc) style="width: 100px;" id="size_0" value="{{ $data->purchase_order_data->size }}" class="form-control" step="0.01"
+                                        <input type="text" name="size[]" @readonly($data->qc) style="width: 100%;" id="size_0" value="{{ $data->purchase_order_data->size }}" class="form-control" step="0.01"
                                             min="0" placeholder="Size">
                                     </div>
                                 </div>
                             </td>
-                            <td style="width: 8%">
+                            <td style="min-width: 300px;">
                                 <div class="loop-fields">
                                     <div class="form-group mb-0">
-                                         <select class="form-control select2" multiple disabled style="width: 100px">
+                                         <select class="form-control select2" multiple disabled style="width: 100%">
                                     @foreach(getStitchingsByIds($data?->purchase_order_data?->purchase_request_data?->stitching ?? "") as $stitching)
                                         <option value="{{ $stitching->id }}" selected>{{ $stitching->name }}</option>
                                     @endforeach
                                 </select>
-                                        <input type="hidden" @readonly($data->qc) name="stitching[]" style="width: 100px;" id="stitching_0" value="{{ $data->purchase_order_data->stitching }}" class="form-control"
+                                        <input type="hidden" @readonly($data->qc) name="stitching[]" style="width: 100%;" id="stitching_0" value="{{ $data->purchase_order_data->stitching }}" class="form-control"
                                             step="0.01" min="0" placeholder="Stitching">
                                     </div>
                                 </div>
                             </td>
 
 
-                            <td style="width: 8%">
+                            <td style="min-width: 200px;">
                                 <div class="loop-fields">
                                     <div class="form-group mb-0">
-                                        <input type="text" @readonly($data->qc) name="micron[]" style="width: 100px;" id="micron_0" value="{{ $data->purchase_order_data->micron }}" class="form-control"
+                                        <input type="text" @readonly($data->qc) name="micron[]" style="width: 100%;" id="micron_0" value="{{ $data->purchase_order_data->micron }}" class="form-control"
                                             step="0.01" min="0" placeholder="Micron">
                                     </div>
                                 </div>
                             </td>
 
-                            <td style="width: 12%">
-                                <input type="file" name="printing_sample[]" id="printing_sample_{{ $key }}" disabled class="form-control" accept="image/*,application/pdf" style="width: 140px">
+                            <td style="min-width: 300px;">
+                                <input type="file" name="printing_sample[]" id="printing_sample_{{ $key }}" disabled class="form-control" accept="image/*,application/pdf" style="width: 100%">
                                 @if (!empty($data->purchase_order_data->printing_sample))
                                     @foreach((array)$data->purchase_order_data->printing_sample as $sample)
                                         <small class="d-block">
@@ -320,11 +320,11 @@
                                     id="total_{{ $key }}" class="form-control" step="0.01"
                                     min="0" name="total[]">
                             </td> --}}
-                            <td style="width: 10%">
-                                <input style="width: 120px" @readonly($data->qc) name="remarks[]" type="text" value="{{ $data->remarks }}"
+                            <td style="min-width: 450px;">
+                                <input style="width: 100%" @readonly($data->qc) name="remarks[]" type="text" value="{{ $data->remarks }}"
                                     id="remark_{{ $key }}" class="form-control">
                             </td>
-                            <td style="width: 15%">
+                            <td style="min-width: 250px;">
                                 <div class="d-flex" style="gap: 5px;">
                                     <button style="width: 70px;" type="button" class="btn btn-danger btn-sm removeRowBtn"
                                         onclick="remove({{ $key }})"
