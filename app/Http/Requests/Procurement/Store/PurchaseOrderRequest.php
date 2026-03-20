@@ -238,7 +238,11 @@ class PurchaseOrderRequest extends FormRequest
 
                 // 1. Calculate PR Remaining Balance
                 $prTotal = (float)$prData->qty;
-                $prOrderedQuery = \App\Models\Procurement\Store\PurchaseOrderData::where('purchase_request_data_id', $prDataId);
+                $prOrderedQuery = \App\Models\Procurement\Store\PurchaseOrderData::where('purchase_request_data_id', $prDataId)
+                                    ->where('am_approval_status', '!=', 'rejected')
+                                    ->whereHas('purchase_order', function($q) {
+                                        $q->where('am_approval_status', '!=', 'rejected');
+                                    });
                 if ($orderId) {
                     $prOrderedQuery->where('purchase_order_id', '!=', $orderId);
                 }
@@ -251,7 +255,11 @@ class PurchaseOrderRequest extends FormRequest
                     $pqData = \App\Models\Procurement\Store\PurchaseQuotationData::find($pqDataId);
                     if ($pqData) {
                         $pqTotal = (float)$pqData->qty;
-                        $pqOrderedQuery = \App\Models\Procurement\Store\PurchaseOrderData::where('purchase_quotation_data_id', $pqDataId);
+                        $pqOrderedQuery = \App\Models\Procurement\Store\PurchaseOrderData::where('purchase_quotation_data_id', $pqDataId)
+                                            ->where('am_approval_status', '!=', 'rejected')
+                                            ->whereHas('purchase_order', function($q) {
+                                                $q->where('am_approval_status', '!=', 'rejected');
+                                            });
                         if ($orderId) {
                             $pqOrderedQuery->where('purchase_order_id', '!=', $orderId);
                         }

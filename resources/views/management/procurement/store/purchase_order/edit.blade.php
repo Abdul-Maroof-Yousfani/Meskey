@@ -22,6 +22,19 @@
                 </select>
             </div>
         </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label class="form-label">Quotation</label>
+                <select id="quotation_no" name="quotation_no" class="form-control select2">
+                    <option value="">Select Quotation</option>
+                    @if($purchaseOrder->purchase_quotation_id)
+                        <option value="{{ $purchaseOrder->purchase_quotation_id }}" selected>
+                            {{ optional($purchaseOrder->purchase_quotation)->purchase_quotation_no }}
+                        </option>
+                    @endif
+                </select>
+            </div>
+        </div>
         @php  
             $locations = $purchaseOrder?->purchase_request?->locations?->pluck("location_id")?->toArray() ?? [];
         @endphp
@@ -190,11 +203,39 @@
                             </td> --}}
                                 <td style="min-width: 120px;">
                                     @php
-                                        $sourceData = $data->purchase_request_data;
-                                        $sourceQty = $sourceData->qty ?? 0;
-                                        $otherPOsQty = optional($sourceData->purchase_order_data ?? null)->where('id', '!=', $data->id)->sum('qty') ?? 0;
-                                        $maxAllowed = $sourceQty - $otherPOsQty;
-                                        $currentBalance = $sourceQty - (optional($sourceData->purchase_order_data ?? null)->sum('qty') ?? 0);
+                                        $prSource = $data->purchase_request_data;
+                                        $pqSource = $data->purchase_quotation_data;
+                                        $prTotal = (float)($prSource->qty ?? 0);
+                                        $pqTotal = (float)($pqSource->qty ?? 0);
+
+                                        $sumOrderedPR = (float)(optional($prSource->purchase_order_data ?? null)->filter(function($poItem){
+                                            return ($poItem->am_approval_status != 'rejected') && (optional($poItem->purchase_order)->am_approval_status != 'rejected');
+                                        })->sum('qty') ?? 0);
+                                        $otherPOsPR = (float)(optional($prSource->purchase_order_data ?? null)->where('id', '!=', $data->id)->filter(function($poItem){
+                                            return ($poItem->am_approval_status != 'rejected') && (optional($poItem->purchase_order)->am_approval_status != 'rejected');
+                                        })->sum('qty') ?? 0);
+                                        
+                                        $sumOrderedPQ = $pqSource ? (float)(optional($pqSource->purchase_order_data ?? null)->filter(function($poItem){
+                                            return ($poItem->am_approval_status != 'rejected') && (optional($poItem->purchase_order)->am_approval_status != 'rejected');
+                                        })->sum('qty') ?? 0) : 0;
+                                        $otherPOsPQ = $pqSource ? (float)(optional($pqSource->purchase_order_data ?? null)->where('id', '!=', $data->id)->filter(function($poItem){
+                                            return ($poItem->am_approval_status != 'rejected') && (optional($poItem->purchase_order)->am_approval_status != 'rejected');
+                                        })->sum('qty') ?? 0) : 0;
+
+                                        // Current balance for display
+                                        $currentBalance = $prTotal - $sumOrderedPR;
+                                        if ($pqSource) {
+                                            $currentBalance = min($currentBalance, $pqTotal - $sumOrderedPQ);
+                                        }
+
+                                        // Logical limit for input
+                                        $maxAllowed = $prTotal - $otherPOsPR;
+                                        if ($pqSource) {
+                                            $maxAllowed = min($maxAllowed, $pqTotal - $otherPOsPQ);
+                                        }
+
+                                        $currentBalance = max(0, $currentBalance);
+                                        $maxAllowed = max(0, $maxAllowed);
                                     @endphp
                                     <input  type="number"
                                         onkeyup="calc({{ $key }}); calculatePercentage(this)"
@@ -208,7 +249,7 @@
                                     </div>
 
                                     <div class="d-flex align-items-center">
-                                        total qty: {{ $sourceQty }}
+                                        total qty: {{ $pqSource ? $pqTotal : $prTotal }}
                                     </div>
                                 </td>
                                 <td style="min-width: 120px;">
@@ -377,11 +418,70 @@
         let purchaseOrderId = $('select[name="purchase_order_id"]').val();
 
         // Call your function if an ID exists
-        // Call your function if an ID exists
         @if($purchaseOrder->purchaseOrderData->isNotEmpty())
             toggleVisibility({{ $purchaseOrder->purchaseOrderData->first()->category_id }});
         @endif
+
+        // Trigger loading of quotations for the current PR
+        const purchaseRequestId = $('select[name="purchase_request_id"]').val();
+        if (purchaseRequestId) {
+            fetch_quotations(purchaseRequestId);
+        }
+
+        $(document).on('change', '#quotation_no', function() {
+            const prId = $('select[name="purchase_request_id"]').val();
+            if (prId) {
+                const quotationNo = $(this).val();
+                if (quotationNo) {
+                    // When changing to a NEW quotation in edit mode, 
+                    // we use approve-item logic to potentially load NEW items
+                    // unless you want to keep existing PO items.
+                    // Usually edit is more restrictive, but matching create's logic for now.
+                    get_purchase_with_quotation(prId, quotationNo);
+                }
+            }
+        });
     });
+
+    function fetch_quotations(pr_id) {
+        $.ajax({
+            url: "{{ route('store.get.quotations') }}",
+            type: 'GET',
+            data: { pr_id: pr_id },
+            success: function(response) {
+                const $dropdown = $("#quotation_no");
+                const currentVal = $dropdown.val();
+                $dropdown.empty();
+                $dropdown.select2({ data: response });
+                if (currentVal) {
+                    $dropdown.val(currentVal).trigger('change.select2');
+                }
+            }
+        });
+    }
+
+    function get_purchase_with_quotation(purchaseRequestId, quotationNo) {
+        $.ajax({
+            url: "{{ route('store.purchase-order.approve-item') }}",
+            type: "GET",
+            data: {
+                id: purchaseRequestId,
+                quotation_no: quotationNo,
+                supplier_id: $('#supplier_id').val()
+            },
+            beforeSend: function() {
+                $('#purchaseRequestBody').html('<p>Loading...</p>');
+            },
+            success: function(response) {
+                $('#purchaseRequestBody').html(response.html);
+                toggleVisibility(response.category_id);
+                $('.select2').select2({
+                    placeholder: 'Please Select',
+                    width: '100%'
+                });
+            }
+        });
+    }
     $('.select2').select2({
         placeholder: 'Please Select',
         width: '100%'

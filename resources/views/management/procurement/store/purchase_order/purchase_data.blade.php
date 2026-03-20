@@ -30,11 +30,19 @@
     $pqTotal = $pqSource ? (float)$pqSource->qty : 0;
 
     if ($isEditMode) {
-        $sumOrderedPR = (float)($prSource->purchase_order_data->sum('qty') ?? 0);
-        $otherPOsPR = (float)($prSource->purchase_order_data->where('id', '!=', $data->id)->sum('qty') ?? 0);
+        $sumOrderedPR = (float)($prSource->purchase_order_data->filter(function($poItem){
+            return ($poItem->am_approval_status != 'rejected') && (optional($poItem->purchase_order)->am_approval_status != 'rejected');
+        })->sum('qty') ?? 0);
+        $otherPOsPR = (float)($prSource->purchase_order_data->where('id', '!=', $data->id)->filter(function($poItem){
+             return ($poItem->am_approval_status != 'rejected') && (optional($poItem->purchase_order)->am_approval_status != 'rejected');
+        })->sum('qty') ?? 0);
         
-        $sumOrderedPQ = $pqSource ? (float)($pqSource->purchase_order_data->sum('qty') ?? 0) : 0;
-        $otherPOsPQ = $pqSource ? (float)($pqSource->purchase_order_data->where('id', '!=', $data->id)->sum('qty') ?? 0) : 0;
+        $sumOrderedPQ = $pqSource ? (float)($pqSource->purchase_order_data->filter(function($poItem){
+             return ($poItem->am_approval_status != 'rejected') && (optional($poItem->purchase_order)->am_approval_status != 'rejected');
+        })->sum('qty') ?? 0) : 0;
+        $otherPOsPQ = $pqSource ? (float)($pqSource->purchase_order_data->where('id', '!=', $data->id)->filter(function($poItem){
+             return ($poItem->am_approval_status != 'rejected') && (optional($poItem->purchase_order)->am_approval_status != 'rejected');
+        })->sum('qty') ?? 0) : 0;
 
         // Current balance for display
         $remainingQty = $prTotal - $sumOrderedPR;
@@ -50,11 +58,15 @@
         
         $currentInputQty = (float)$data->qty;
     } else {
-        $sumOrderedPR = $prSource ? (float)($prSource->purchase_order_data->sum('qty') ?? 0) : 0;
+        $sumOrderedPR = $prSource ? (float)($prSource->purchase_order_data->filter(function($poItem){
+             return ($poItem->am_approval_status != 'rejected') && (optional($poItem->purchase_order)->am_approval_status != 'rejected');
+        })->sum('qty') ?? 0) : 0;
         $remainingQty = $prTotal - $sumOrderedPR;
         
         if ($pqSource) {
-            $sumOrderedPQ = (float)($pqSource->purchase_order_data->sum('qty') ?? 0);
+            $sumOrderedPQ = (float)($pqSource->purchase_order_data->filter(function($poItem){
+                 return ($poItem->am_approval_status != 'rejected') && (optional($poItem->purchase_order)->am_approval_status != 'rejected');
+            })->sum('qty') ?? 0);
             $remainingQty = min($remainingQty, $pqTotal - $sumOrderedPQ);
         }
 
