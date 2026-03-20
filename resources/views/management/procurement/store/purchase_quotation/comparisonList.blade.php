@@ -44,19 +44,21 @@
                                                     @endforeach
                                                 </select>
                                             </div>
-                                            <div class="col-md-2 text-left">
+
+                                            <div class="col-md-1 text-left">
                                                 <label for="uom_id" class="form-label">UOM</label>
                                                 <select name="uom_id" id="uom_id" class="form-control select2">
-                                                    <option value="all">All UOMs</option>
+                                                    <option value="all">All</option>
                                                     @foreach($uoms as $uom)
                                                         <option value="{{ $uom->id }}">{{ $uom->name }}</option>
                                                     @endforeach
                                                 </select>
                                             </div>
-                                            <div class="col-md-2 text-left">
+
+                                            <div class="col-md-1 text-left">
                                                 <label for="status" class="form-label">Status</label>
-                                                <select name="status" id="status" class="form-control">
-                                                    <option value="all">All Status</option>
+                                                <select name="status" id="status" class="form-control text-sm px-0">
+                                                    <option value="all">All</option>
                                                     <option value="pending">Pending</option>
                                                     <option value="approved">Approved</option>
                                                     <option value="rejected">Rejected</option>
@@ -64,7 +66,19 @@
                                                 </select>
                                             </div>
                                             <div class="col-md-2">
-                                                <label for="customers" class="form-label">Search</label>
+                                                <label for="pr_no" class="form-label">PR No</label>
+                                                <input type="text" class="form-control" id="pr_no"
+                                                    placeholder="PR No" name="pr_no"
+                                                    value="{{ request('pr_no', '') }}">
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label for="pq_no" class="form-label">PQ No</label>
+                                                <input type="text" class="form-control" id="pq_no"
+                                                    placeholder="PQ No" name="pq_no"
+                                                    value="{{ request('pq_no', '') }}">
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label for="search" class="form-label">Search</label>
                                                 <input type="hidden" name="page" value="{{ request('page', 1) }}">
                                                 <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
                                                 <input type="text" class="form-control" id="search"

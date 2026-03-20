@@ -169,6 +169,20 @@ class PurchaseQuotationController extends Controller
             });
         }
 
+        if ($request->has('pr_no') && !empty($request->pr_no)) {
+            $pr_no = $request->pr_no;
+            $query->whereHas('purchase_quotation.purchase_request', function($q) use ($pr_no) {
+                $q->where('purchase_request_no', 'like', "%{$pr_no}%");
+            });
+        }
+
+        if ($request->has('pq_no') && !empty($request->pq_no)) {
+            $pq_no = $request->pq_no;
+            $query->whereHas('purchase_quotation', function($q) use ($pq_no) {
+                $q->where('purchase_quotation_no', 'like', "%{$pq_no}%");
+            });
+        }
+
         if ($request->has('supplier_id') && $request->supplier_id != 'all' && !empty($request->supplier_id)) {
             $query->where('supplier_id', $request->supplier_id);
         }
@@ -348,6 +362,20 @@ class PurchaseQuotationController extends Controller
                             $pr->where('purchase_request_no', 'like', "%{$search}%");
                         });
                   });
+            });
+        }
+
+        if ($request->has('pr_no') && !empty($request->pr_no)) {
+            $pr_no = $request->pr_no;
+            $query->whereHas('purchase_quotation.purchase_request', function($q) use ($pr_no) {
+                $q->where('purchase_request_no', 'like', "%{$pr_no}%");
+            });
+        }
+
+        if ($request->has('pq_no') && !empty($request->pq_no)) {
+            $pq_no = $request->pq_no;
+            $query->whereHas('purchase_quotation', function($q) use ($pq_no) {
+                $q->where('purchase_quotation_no', 'like', "%{$pq_no}%");
             });
         }
 
