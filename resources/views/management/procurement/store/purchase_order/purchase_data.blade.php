@@ -87,7 +87,7 @@
       
 
         <td style="min-width: 250px;">
-            <select id="category_id_{{ $key }}" onchange="filter_items(this.value,{{ $key }})"
+            <select id="category_id_{{ $key }}" disabled onchange="filter_items(this.value,{{ $key }})"
                 class="form-control item-select select2" data-index="{{ $key }}">
                 <option value="">Select Category</option>
                 @foreach ($categories ?? [] as $category)
@@ -110,7 +110,7 @@
         </td>
 
         <td style="min-width: 400px;">
-            <select id="item_id_{{ $key }}" onchange="get_uom({{ $key }})"
+            <select id="item_id_{{ $key }}" disabled onchange="get_uom({{ $key }})"
                 class="form-control item-select select2" data-index="{{ $key }}">
                 @foreach (get_product_by_id($data->item_id) as $item)
                     <option data-uom="{{ $item->unitOfMeasure->name ?? '' }}" value="{{ $item->id }}"
@@ -157,7 +157,7 @@
 </td>
         <td style="min-width: 150px;">
             <input 
-                 
+                {{ $isQuotationAvailable ? 'readonly' : '' }}
                 type="number"
                 onkeyup="calc({{ $key }}); calculatePercentage(this)"
                 onblur="calc({{ $key }})"
