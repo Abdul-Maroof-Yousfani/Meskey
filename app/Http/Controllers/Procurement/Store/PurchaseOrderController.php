@@ -65,6 +65,27 @@ class PurchaseOrderController extends Controller
             });
         }
 
+        if ($request->has('po_no') && !empty($request->po_no)) {
+            $po_no = $request->po_no;
+            $query->whereHas('purchase_order', function ($q) use ($po_no) {
+                $q->where('purchase_order_no', 'like', "%{$po_no}%");
+            });
+        }
+
+        if ($request->has('pr_no') && !empty($request->pr_no)) {
+            $pr_no = $request->pr_no;
+            $query->whereHas('purchase_order.purchase_request', function ($q) use ($pr_no) {
+                $q->where('purchase_request_no', 'like', "%{$pr_no}%");
+            });
+        }
+
+        if ($request->has('pq_no') && !empty($request->pq_no)) {
+            $pq_no = $request->pq_no;
+            $query->whereHas('purchase_order.purchase_quotation', function ($q) use ($pq_no) {
+                $q->where('purchase_quotation_no', 'like', "%{$pq_no}%");
+            });
+        }
+
         if ($request->has('status') && $request->status !== 'all' && !empty($request->status)) {
             $status = $request->status;
             $query->whereHas('purchase_order', function ($q) use ($status) {
