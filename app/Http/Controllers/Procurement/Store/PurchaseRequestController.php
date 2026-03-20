@@ -61,6 +61,13 @@ class PurchaseRequestController extends Controller
             });
         }
 
+        if ($request->has('pr_no') && !empty($request->pr_no)) {
+            $pr_no = $request->pr_no;
+            $query->whereHas('purchase_request', function($pr) use ($pr_no) {
+                $pr->where('purchase_request_no', 'like', "%{$pr_no}%");
+            });
+        }
+
         if ($request->has('category_id') && $request->category_id != 'all' && !empty($request->category_id)) {
             $query->where('category_id', $request->category_id);
         }
