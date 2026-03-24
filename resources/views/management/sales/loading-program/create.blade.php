@@ -84,8 +84,8 @@
         <style>
             #itemsTable {
                 table-layout: fixed !important;
-                min-width: 2010px !important;
-                width: 2010px !important;
+                min-width: 2210px !important;
+                width: 2210px !important;
             }
             #itemsTable th, #itemsTable td {
                 padding: 8px 4px !important;
@@ -105,9 +105,10 @@
                 right: -10px;
                 top: 5px;
             }
-            .table-responsive {
-                overflow-x: auto !important;
-                -webkit-overflow-scrolling: touch;
+            #itemsTable {
+                table-layout: fixed !important;
+                min-width: 2700px !important;
+                width: 2700px !important;
             }
         </style>
         <div class="col-12">
@@ -119,24 +120,25 @@
                 <table class="table table-bordered table-striped" id="itemsTable">
                     <thead class="thead-light">
                         <tr>
-                            <th style="width: 250px">Sale Order *</th>
-                            <th style="width: 250px">Delivery Order</th>
-                            <th style="width: 150px">Truck Number *</th>
-                            <th style="width: 150px">Container Number</th>
-                            <th style="width: 140px">Packing</th>
-                            <th style="width: 180px">Brand</th>
-                            <th style="width: 220px">Factory/Arrival Location *</th>
-                            <th style="width: 220px">Gala/Sub Arrival Location *</th>
-                            <th style="width: 180px">Driver Name</th>
-                            <th style="width: 180px">Contact Details</th>
-                            <th style="width: 90px">Sug. Qty</th>
-                            <th style="width: 90px">Actions</th>
+                            <th style="width: 300px">Sale Order *</th>
+                            <th style="width: 300px">Delivery Order</th>
+                            <th style="width: 200px">Truck Number *</th>
+                            <th style="width: 200px">Container Number</th>
+                            <th style="width: 180px">Packing</th>
+                            <th style="width: 250px">Brand</th>
+                            <th style="width: 280px">Factory/Arrival Location *</th>
+                            <th style="width: 280px">Gala/Sub Arrival Location *</th>
+                            <th style="width: 220px">Driver Name</th>
+                            <th style="width: 220px">Contact Details</th>
+                            <th style="width: 250px">Transporter</th>
+                            <th style="width: 120px">Sug. Qty</th>
+                            <th style="width: 100px">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="itemsList">
                         <!-- Items will be added here dynamically -->
                         <tr id="noItemsRow">
-                            <td colspan="11" class="text-center text-muted py-3">
+                            <td colspan="13" class="text-center text-muted py-3">
                                 No items added yet. Click "Add Item" to add loading program items.
                             </td>
                         </tr>
@@ -471,6 +473,10 @@
                             window.saleOrderData = response.sale_order_data;
                         }
 
+                        if (response.transporters_map) {
+                            window.transportersMap = response.transporters_map;
+                        }
+
                         
 
                         if (response.is_delivery_order_optional) {
@@ -571,6 +577,12 @@
                     </td>
                     <td><input type="text" name="loading_program_items[${index}][driver_name]" class="form-control_sm form-control"></td>
                     <td><input type="text" name="loading_program_items[${index}][contact_details]" class="form-control form-control-sm"></td>
+                    <td>
+                        <select name="loading_program_items[${index}][transporter_id]" class="form-control form-control-sm select2 transporter-select">
+                            <option value="">Select Transporter</option>
+                        </select>
+                        <span class="transporter-placeholder text-muted" style="display: none;">-</span>
+                    </td>
                     <td><input type="number" name="loading_program_items[${index}][qty]" class="form-control form-control-sm" step="0.01"></td>
                     <td class="text-center"><button type="button" class="btn btn-sm btn-danger remove-item-btn"><i class="ft-trash-2"></i></button></td>
                 </tr>
@@ -612,9 +624,16 @@
                                 const filteredDOs = response.delivery_orders.filter(d => selectedDoIds.includes(d.id.toString()));
                                 updateRowMetadata($row, filteredDOs);
 
+                                // Update global transporters map
+                                if (response.transporters_map) {
+                                    window.transportersMap = window.transportersMap || {};
+                                    Object.assign(window.transportersMap, response.transporters_map);
+                                }
+
                                 window.isUpdatingUI = false;
                                 updateItemLocations($row);
                                 updateRowDORequiredStatus($row);
+                                updateTransporterOptions($row);
                             }
                         },
                         error: function(xhr, status, error) {
@@ -633,6 +652,7 @@
                     window.isUpdatingUI = false;
                     updateItemLocations($row);
                     updateRowDORequiredStatus($row);
+                    updateTransporterOptions($row);
                 }
             });
 
@@ -648,6 +668,50 @@
             });
 
             updateItemLocations($newRow);
+            updateTransporterOptions($newRow);
+        }
+
+        function updateTransporterOptions($row) {
+            const selectedSOIds = $row.find('.row-so-select').val() || [];
+            const $transporterSelect = $row.find('.transporter-select');
+            const $transporterPlaceholder = $row.find('.transporter-placeholder');
+            
+            let allTransporters = [];
+            let isTransporterRequired = false;
+
+            selectedSOIds.forEach(soId => {
+                if (window.transportersMap && window.transportersMap[soId]) {
+                    const soData = window.transportersMap[soId];
+                    if (soData.transporter_used === 'yes') {
+                        isTransporterRequired = true;
+                        if (soData.transporters) {
+                            allTransporters = allTransporters.concat(soData.transporters);
+                        }
+                    }
+                }
+            });
+
+            // Unique transporters
+            const uniqueTransporters = Array.from(new Map(allTransporters.map(t => [t.id, t])).values());
+
+            const currentVal = $transporterSelect.val();
+            $transporterSelect.empty();
+
+            if (isTransporterRequired) {
+                $transporterSelect.parent().find('.select2-container').show();
+                $transporterPlaceholder.hide();
+
+                $transporterSelect.append('<option value="">Select Transporter</option>');
+                uniqueTransporters.forEach(t => {
+                    $transporterSelect.append(new Option(t.name, t.id, false, t.id.toString() === currentVal));
+                });
+            } else {
+                $transporterSelect.parent().find('.select2-container').hide();
+                $transporterPlaceholder.show();
+                $transporterSelect.val('');
+            }
+
+            $transporterSelect.trigger('change.select2');
         }
 
         function updateRowMetadata($row, deliveryOrders) {

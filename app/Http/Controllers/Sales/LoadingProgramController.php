@@ -234,6 +234,7 @@ class LoadingProgramController extends Controller
                         'sub_arrival_location_id' => $itemData['sub_arrival_location_id'],
                         'driver_name' => $itemData['driver_name'] ?? null,
                         'contact_details' => $itemData['contact_details'] ?? null,
+                        'transporter_id' => $itemData['transporter_id'] ?? null,
                         'qty' => $itemData['qty'] ?? 0,
                         'delivery_order_id' => $selected_do_ids[0] ?? null, // Backward compatibility
                     ]);
@@ -265,6 +266,7 @@ class LoadingProgramController extends Controller
             'loadingProgramItems.arrivalLocation',
             'loadingProgramItems.subArrivalLocation',
             'loadingProgramItems.brand',
+            'loadingProgramItems.transporter',
             'loadingProgramItems.saleOrders',
             'loadingProgramItems.deliveryOrders',
             'saleOrder.customer',
@@ -296,6 +298,7 @@ class LoadingProgramController extends Controller
         $data['LoadingProgram'] = LoadingProgram::with([
             'loadingProgramItems.arrivalLocation',
             'loadingProgramItems.subArrivalLocation',
+            'loadingProgramItems.transporter',
             'saleOrder.customer',
             'saleOrder.sales_order_data.item',
             'saleOrder.sales_order_data.brand',
@@ -566,6 +569,7 @@ class LoadingProgramController extends Controller
                         'sub_arrival_location_id' => $itemData['sub_arrival_location_id'],
                         'driver_name' => $itemData['driver_name'] ?? null,
                         'contact_details' => $itemData['contact_details'] ?? null,
+                        'transporter_id' => $itemData['transporter_id'] ?? null,
                         'qty' => $itemData['qty'] ?? 0,
                         'delivery_order_id' => $selected_do_ids[0] ?? null,
                     ]);
@@ -603,7 +607,36 @@ class LoadingProgramController extends Controller
         $sale_order_ids = is_array($request->sale_order_id) ? $request->sale_order_id : [$request->sale_order_id];
         $company_location_id = $request->company_location_id;
 
-        $SalesOrders = SalesOrder::with('customer', 'sales_order_data.item', 'sales_order_data.brand', 'locations')->whereIn('id', $sale_order_ids)->get();
+        $SalesOrders = SalesOrder::with([
+            'customer', 
+            'sales_order_data.item', 
+            'sales_order_data.brand', 
+            'locations',
+            'logistics' => function($q) {
+                $q->where('am_approval_status', 'approved');
+            },
+            'logistics.items.transporter'
+        ])->whereIn('id', $sale_order_ids)->get();
+
+        $transportersMap = [];
+        foreach ($SalesOrders as $so) {
+            $transporters = [];
+            foreach ($so->logistics as $logistics) {
+                foreach ($logistics->items as $item) {
+                    if ($item->transporter) {
+                        $transporters[] = [
+                            'id' => $item->transporter->id,
+                            'name' => $item->transporter->name,
+                        ];
+                    }
+                }
+            }
+            // Unique transporters
+            $transportersMap[$so->id] = [
+                'transporter_used' => $so->transporter_used,
+                'transporters' => collect($transporters)->unique('id')->values()->toArray()
+            ];
+        }
         
         $DeliveryOrders = DeliveryOrder::whereIn('so_id', $sale_order_ids)
             ->where('am_approval_status', 'approved')
@@ -649,7 +682,8 @@ class LoadingProgramController extends Controller
             'html' => $html,
             'is_delivery_order_optional' => $isAnyDeliveryOrderOptional,
             'pay_type_id' => $firstSo->pay_type_id,
-            'sale_order_data' => $saleOrderData
+            'sale_order_data' => $saleOrderData,
+            'transporters_map' => $transportersMap
         ]);
     }
 
@@ -683,25 +717,92 @@ class LoadingProgramController extends Controller
             return $deliveryOrder;
         });
         
+        $SalesOrders = SalesOrder::with(['logistics' => function($q) {
+            $q->where('am_approval_status', 'approved');
+        }, 'logistics.items.transporter'])
+        ->whereIn('id', $sale_order_ids)
+        ->get();
+
+        $transportersMap = [];
+        foreach ($SalesOrders as $so) {
+            $transporters = [];
+            foreach ($so->logistics as $logistics) {
+                foreach ($logistics->items as $item) {
+                    if ($item->transporter) {
+                        $transporters[] = [
+                            'id' => $item->transporter->id,
+                            'name' => $item->transporter->name,
+                        ];
+                    }
+                }
+            }
+            // Unique transporters
+            $transportersMap[$so->id] = [
+                'transporter_used' => $so->transporter_used,
+                'transporters' => collect($transporters)->unique('id')->values()->toArray()
+            ];
+        }
+
         return response()->json([
             'success' => true,
-            'delivery_orders' => $deliveryOrders->values()
+            'delivery_orders' => $deliveryOrders->values(),
+            'transporters_map' => $transportersMap
         ]);
     }
 
     public function getDeliveryOrdersBySaleOrderEdit(Request $request)
     {
         $sale_order_ids = is_array($request->sale_order_id) ? $request->sale_order_id : [$request->sale_order_id];
+        $company_location_id = $request->company_location_id;
 
         $deliveryOrders = DeliveryOrder::whereIn('so_id', $sale_order_ids)
             ->where('am_approval_status', 'approved')
+            ->when($company_location_id, function($q) use ($company_location_id) {
+                // Filter for strictly matching location_id (prevents multiple locations)
+                return $q->where('location_id', (string)$company_location_id);
+            })
             ->with('customer', 'delivery_order_data.item', 'delivery_order_data.brand')
             ->select('id', 'reference_no', 'customer_id', 'so_id', 'location_id', 'arrival_location_id', 'sub_arrival_location_id', 'am_approval_status')
             ->get();
 
+        $deliveryOrders = $deliveryOrders->map(function($deliveryOrder) {
+            $locationIds = explode(',', $deliveryOrder->location_id);
+            $locationNames = \App\Models\Master\CompanyLocation::whereIn('id', $locationIds)->pluck('name')->toArray();
+            $locationNameStr = implode(', ', $locationNames);
+            $deliveryOrder->reference_no = $deliveryOrder->reference_no . " - " . ($locationNameStr ?: 'N/A');
+            return $deliveryOrder;
+        });
+
+        $SalesOrders = SalesOrder::with(['logistics' => function($q) {
+            $q->where('am_approval_status', 'approved');
+        }, 'logistics.items.transporter'])
+        ->whereIn('id', $sale_order_ids)
+        ->get();
+
+        $transportersMap = [];
+        foreach ($SalesOrders as $so) {
+            $transporters = [];
+            foreach ($so->logistics as $logistics) {
+                foreach ($logistics->items as $item) {
+                    if ($item->transporter) {
+                        $transporters[] = [
+                            'id' => $item->transporter->id,
+                            'name' => $item->transporter->name,
+                        ];
+                    }
+                }
+            }
+            // Unique transporters
+            $transportersMap[$so->id] = [
+                'transporter_used' => $so->transporter_used,
+                'transporters' => collect($transporters)->unique('id')->values()->toArray()
+            ];
+        }
+
         return response()->json([
             'success' => true,
-            'delivery_orders' => $deliveryOrders
+            'delivery_orders' => $deliveryOrders,
+            'transporters_map' => $transportersMap
         ]);
     }
 

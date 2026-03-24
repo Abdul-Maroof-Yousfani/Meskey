@@ -55,9 +55,7 @@ class DeliveryOrderController extends Controller
             return $rv;
         });
         
-        $sale_order_of_delivery_order = $sales_orders->filter(function($sale_order) use ($delivery_order) {
-            return $delivery_order->so_id == $sale_order->id;
-        })->first();
+        $sale_order_of_delivery_order = SalesOrder::find($delivery_order->so_id);
 
         return view('management.sales.delivery-order.view', compact('sale_order_of_delivery_order', 'payment_terms', 'delivery_order', 'customers', 'sales_orders', 'receipt_vouchers'));
     }
@@ -67,6 +65,7 @@ class DeliveryOrderController extends Controller
         $sale_orders = SalesOrder::select('reference_no', 'id', 'transporter_used')
             ->where('am_approval_status', 'approved')
             ->get();
+            
             // ->filter(function ($so) {
             //     if ($so->transporter_used == 'yes') {
             //         return $so->logistics()->where('am_approval_status', 'approved')->exists();
@@ -319,15 +318,15 @@ class DeliveryOrderController extends Controller
             ->where('customer_id', $customer_id)
             ->get()
             ->filter(function ($saleOrder) {
-                if ($saleOrder->transporter_used == 'yes') {
-                    $hasApprovedLogistics = $saleOrder->logistics()
-                        ->where('am_approval_status', 'approved')
-                        ->exists();
+                // if ($saleOrder->transporter_used == 'yes') {
+                //     $hasApprovedLogistics = $saleOrder->logistics()
+                //         ->where('am_approval_status', 'approved')
+                //         ->exists();
 
-                    if (!$hasApprovedLogistics) {
-                        return false;
-                    }
-                }
+                //     if (!$hasApprovedLogistics) {
+                //         return false;
+                //     }
+                // }
 
                 foreach ($saleOrder->sales_order_data as $data) {
                     $balance = delivery_order_balance($data->id);
@@ -553,9 +552,7 @@ class DeliveryOrderController extends Controller
         $items = Product::all();
         $bag_types = BagType::select('id', 'name')->get();
            
-        $sale_order_of_delivery_order = $sale_orders->filter(function($sale_order) use ($delivery_order) {
-            return $delivery_order->so_id == $sale_order->id;
-        })->first();
+        $sale_order_of_delivery_order = SalesOrder::find($delivery_order->so_id);
 
 
         // 1. Fetch Advances for the customer
