@@ -34,10 +34,6 @@ class ExportOrderController extends Controller
 {
     public function index(Request $request): View
     {
-
-        // Temporary debugging for live server schema
-        dd(DB::select("DESCRIBE export_orders"));
-
         $export_orders = ExportOrder::orderBy('id', 'ASC')->paginate(0);
 
         return view('management.export.export-order.index', compact('export_orders'))->with('i', ($request->input('page', 1) - 1) * 5);
