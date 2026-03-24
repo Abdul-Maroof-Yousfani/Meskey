@@ -23,12 +23,10 @@ use App\Models\Master\Country;
 use App\Models\Master\HsCode;
 use App\Models\Master\Port;
 use App\Models\Master\ProductSlab;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use App\Models\Master\Customer;
 
@@ -36,6 +34,7 @@ class ExportOrderController extends Controller
 {
     public function index(Request $request): View
     {
+
         // Temporary debugging for live server schema
         dd(DB::select("DESCRIBE export_orders"));
 
@@ -119,17 +118,15 @@ class ExportOrderController extends Controller
                 }
             }
 
-            $extraData = [
+            $exportOrder = ExportOrder::create(array_merge(
+                $exportOrderData,
+                [
+                    'created_by' => auth()->user()->id,
                 'company_location_ids' => $request->company_location_ids ?? [],
                 'arrival_location_ids' => $request->arrival_location_ids ?? [],
                 'arrival_sub_location_ids' => $request->arrival_sub_location_ids ?? [],
-            ];
-
-            if (Schema::hasColumn('export_orders', 'created_by')) {
-                $extraData['created_by'] = auth()->user()->id;
-            }
-
-            $exportOrder = ExportOrder::create(array_merge($exportOrderData, $extraData));
+                ]
+            ));
 
             // product specifications
             if ($request->has('specifications')) {
@@ -294,16 +291,11 @@ class ExportOrderController extends Controller
                 'company_location_ids' => $request->company_location_ids ?? [],
                 'arrival_location_ids' => $request->arrival_location_ids ?? [],
                 'arrival_sub_location_ids' => $request->arrival_sub_location_ids ?? [],
+                'am_change_made' => 1,
             ]);
 
-            if (Schema::hasColumn('export_orders', 'am_change_made')) {
-                $updateData['am_change_made'] = 1;
-            }
-
-            if (Schema::hasColumn('export_orders', 'am_approval_status')) {
                 if ($exportOrder->am_approval_status === 'reverted') {
                     $updateData['am_approval_status'] = 'pending';
-                }
             }
 
             $exportOrder->update($updateData);

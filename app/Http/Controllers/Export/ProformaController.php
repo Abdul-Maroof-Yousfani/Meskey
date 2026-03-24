@@ -24,7 +24,6 @@ use App\Models\Product;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
 class ProformaController extends Controller
@@ -55,15 +54,10 @@ class ProformaController extends Controller
 
     public function selectExportOrder(): View
     {
-        $query = ExportOrder::with(['specifications', 'packingItems', 'product', 'modeOfTerm', 'buyer'])
-            ->whereDoesntHave('proforma');
-
-        // Check if am_approval_status column exists before filtering
-        if (Schema::hasColumn('export_orders', 'am_approval_status')) {
-            $query->where('am_approval_status', 'approved');
-        }
-
-        $export_orders = $query->orderBy('id', 'ASC')
+        $export_orders = ExportOrder::with(['specifications', 'packingItems', 'product', 'modeOfTerm', 'buyer'])
+            ->where('am_approval_status', 'approved')
+            ->whereDoesntHave('proforma')
+            ->orderBy('id', 'ASC')
             ->paginate(10);
 
         return view('management.export.proforma.select-export-order', compact('export_orders'));
@@ -267,17 +261,16 @@ class ProformaController extends Controller
                 'application_law', 'broker_id',
             ]);
 
-            $updateData = array_merge($exportOrderData, [
+            $updateData = [
+                ...$exportOrderData,
                 'company_location_ids' => $request->company_location_ids,
                 'arrival_location_ids' => $request->arrival_location_ids,
                 'arrival_sub_location_ids' => $request->arrival_sub_location_ids,
                 'am_change_made' => 1,
-            ]);
+            ];
 
-            if (Schema::hasColumn('export_orders', 'am_approval_status')) {
-                if ($exportOrder->am_approval_status === 'reverted') {
-                    $updateData['am_approval_status'] = 'pending';
-                }
+            if ($exportOrder->am_approval_status === 'reverted') {
+                $updateData['am_approval_status'] = 'pending';
             }
 
             $exportOrder->update($updateData);
