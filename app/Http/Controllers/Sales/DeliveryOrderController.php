@@ -66,13 +66,13 @@ class DeliveryOrderController extends Controller
     {
         $sale_orders = SalesOrder::select('reference_no', 'id', 'transporter_used')
             ->where('am_approval_status', 'approved')
-            ->get()
-            ->filter(function ($so) {
-                if ($so->transporter_used == 'yes') {
-                    return $so->logistics()->where('am_approval_status', 'approved')->exists();
-                }
-                return true;
-            });
+            ->get();
+            // ->filter(function ($so) {
+            //     if ($so->transporter_used == 'yes') {
+            //         return $so->logistics()->where('am_approval_status', 'approved')->exists();
+            //     }
+            //     return true;
+            // });
         $payment_terms = PaymentTerm::all();
         $customers = Customer::all();
         $items = Product::all();
@@ -541,13 +541,13 @@ class DeliveryOrderController extends Controller
         $sale_orders = SalesOrder::with("locations")
             ->select('reference_no', 'id', 'pay_type_id', 'transporter_used')
             ->where('am_approval_status', 'approved')
-            ->get()
-            ->filter(function ($so) {
-                if ($so->transporter_used == 'yes') {
-                    return $so->logistics()->where('am_approval_status', 'approved')->exists();
-                }
-                return true;
-            });
+            ->get();
+            // ->filter(function ($so) {
+            //     if ($so->transporter_used == 'yes') {
+            //         return $so->logistics()->where('am_approval_status', 'approved')->exists();
+            //     }
+            //     return true;
+            // });
         $payment_terms = PaymentTerm::all();
         $customers = Customer::all();
         $items = Product::all();
