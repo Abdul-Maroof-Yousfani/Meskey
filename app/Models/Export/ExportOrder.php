@@ -12,6 +12,8 @@ use App\Traits\HasApproval;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\CustomerOwnerBankDetail;
+use App\Models\CustomerCompanyBankDetail;
 
 class ExportOrder extends Model
 {
@@ -137,4 +139,19 @@ class ExportOrder extends Model
     //       $locations = $this->company_locations;
     //       return $locations->pluck('name')->implode(', ');
     //   }
+    public function getCustomerBankAttribute()
+    {
+        if ($this->customer_bank_type === 'owner') {
+            return CustomerOwnerBankDetail::find($this->customer_bank_id);
+        } elseif ($this->customer_bank_type === 'company') {
+            return CustomerCompanyBankDetail::find($this->customer_bank_id);
+        }
+
+        return null;
+    }
+
+    public function correspondentBank()
+    {
+        return $this->belongsTo(Bank::class, 'correspondent_bank_id');
+    }
 }
