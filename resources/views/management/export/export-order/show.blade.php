@@ -364,19 +364,19 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label>Other Condition:</label>
-                        <textarea name="other_condition" class="form-control" rows="3" readonly>{{ old('other_condition', $exportOrder->other_condition) }}</textarea>
+                        <textarea name="other_condition" id="other_condition" class="form-control" rows="3" readonly>{!! $exportOrder->other_condition !!}</textarea>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
                         <label>Force Majure:</label>
-                        <textarea name="force_majure" class="form-control" rows="3" readonly>{{ old('force_majure', $exportOrder->force_majure) }}</textarea>
+                        <textarea name="force_majure" id="force_majure" class="form-control" rows="3" readonly>{!! $exportOrder->force_majure !!}</textarea>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
                         <label>Application Law:</label>
-                        <textarea name="application_law" class="form-control" rows="3" readonly>{{ old('application_law', $exportOrder->application_law) }}</textarea>
+                        <textarea name="application_law" id="application_law" class="form-control" rows="3" readonly>{!! $exportOrder->application_law !!}</textarea>
                     </div>
                 </div>
             </div>
@@ -1061,7 +1061,7 @@
 <script>
     $(document).ready(function() {
 
-        $('#shipping_instructions, #documents_to_be_provided').summernote({
+        $('#shipping_instructions, #documents_to_be_provided, #other_condition, #force_majure, #application_law').summernote({
             tabsize: 2,
             height: 200,
             toolbar: [],
@@ -1070,6 +1070,9 @@
 
         $('#shipping_instructions').summernote('disable');
         $('#documents_to_be_provided').summernote('disable');
+        $('#other_condition').summernote('disable');
+        $('#force_majure').summernote('disable');
+        $('#application_law').summernote('disable');
 
     });
 </script>
