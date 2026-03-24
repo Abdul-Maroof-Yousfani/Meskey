@@ -236,54 +236,36 @@
                     <div class="p-3">
                         <h5 class="mb-3"><strong>Beneficiary Bank Details</strong></h5>
                         <div class="row">
-                            {{-- Bank Selector --}}
+                            {{-- Bank Display --}}
                             <div class="col-md-12 mb-2">
-                                <label>Select Bank:</label>
-                                <select name="bank_id" id="bankSelect" class="form-control select2" readonly>
-                                    <option value="">-- Select Bank --</option>
-                                    @foreach ($banks as $bank)
-                                        <option value="{{ $bank->id }}"
-                                            {{ old('bank_id', $exportOrder->bank_id) == $bank->id ? 'selected' : '' }}>
-                                            {{ $bank->account_title }} - {{ $bank->bank_name }}
-                                        </option>
-                                    @endforeach
-                                </select>
+                                <label>Beneficiary Bank:</label>
+                                <input type="text" class="form-control" value="{{ $exportOrder->customerBank ? $exportOrder->customerBank->bank_name . ' (' . ($exportOrder->customer_bank_type == 'owner' ? 'Owner' : 'Company') . ')' : 'N/A' }}" readonly>
                             </div>
 
                             {{-- Auto Filled Fields --}}
                             <div class="col-md-6 mt-2">
                                 <label>Account Title:</label>
-                                <input type="text" id="acc_title" class="form-control" readonly>
+                                <input type="text" id="acc_title" class="form-control" value="{{ $exportOrder->customerBank->account_title ?? '' }}" readonly>
                             </div>
 
                             <div class="col-md-6 mt-2">
                                 <label>Bank Name:</label>
-                                <input type="text" id="bank_name" class="form-control" readonly>
+                                <input type="text" id="bank_name" class="form-control" value="{{ $exportOrder->customerBank->bank_name ?? '' }}" readonly>
                             </div>
 
                             <div class="col-md-6 mt-2">
-                                <label>IBAN:</label>
-                                <input type="text" id="iban" class="form-control" readonly>
+                                <label>Branch Name:</label>
+                                <input type="text" id="branch_name" class="form-control" value="{{ $exportOrder->customerBank->branch_name ?? '' }}" readonly>
                             </div>
 
                             <div class="col-md-6 mt-2">
                                 <label>Account No:</label>
-                                <input type="text" id="account_no" class="form-control" readonly>
+                                <input type="text" id="account_no" class="form-control" value="{{ $exportOrder->customerBank->account_number ?? '' }}" readonly>
                             </div>
 
                             <div class="col-md-6 mt-2">
-                                <label>SWIFT Code:</label>
-                                <input type="text" id="swift_code" class="form-control" readonly>
-                            </div>
-
-                            <div class="col-md-6 mt-2">
-                                <label>Bank Address:</label>
-                                <input type="text" id="bank_address" class="form-control" readonly>
-                            </div>
-
-                            <div class="col-md-12 mt-2">
-                                <label>Description:</label>
-                                <textarea id="description" class="form-control" rows="2" readonly></textarea>
+                                <label>Branch Code:</label>
+                                <input type="text" id="branch_code" class="form-control" value="{{ $exportOrder->customerBank->branch_code ?? '' }}" readonly>
                             </div>
                         </div>
 
@@ -704,7 +686,7 @@
                                 <div class="form-group">
                                     <label>Bag Size (kg):</label>
                                     <input type="number" name="packing_items[{{ $index }}][bag_size]"
-                                        class="form-control bag-size" step="0.01" value="{{ $item->bag_size }}"
+                                        class="form-control bag-size" step="0.01" value="{{ number_format($item->bag_size, 2, '.', '') }}"
                                         min="0" readonly>
                                 </div>
                             </div>
@@ -714,7 +696,7 @@
                                     <label>Quantity (MTs):</label>
                                     <input type="number" name="packing_items[{{ $index }}][metric_tons]"
                                         class="form-control metric-tons" step="0.01"
-                                        value="{{ $item->metric_tons }}" min="0" readonly>
+                                        value="{{ number_format($item->metric_tons, 2, '.', '') }}" min="0" readonly>
                                 </div>
                             </div>
 
@@ -722,7 +704,7 @@
                                 <div class="form-group">
                                     <label>No. of Bags:</label>
                                     <input type="number" name="packing_items[{{ $index }}][no_of_bags]"
-                                        class="form-control no_of_bags" value="{{ $item->no_of_bags }}" readonly>
+                                        class="form-control no_of_bags" value="{{ number_format($item->no_of_bags, 2, '.', '') }}" readonly>
                                 </div>
                             </div>
 
@@ -730,7 +712,7 @@
                                 <div class="form-group">
                                     <label>Total KGs:</label>
                                     <input type="number" name="packing_items[{{ $index }}][total_kgs]"
-                                        class="form-control total-kgs" value="{{ $item->total_kgs }}" readonly>
+                                        class="form-control total-kgs" value="{{ number_format($item->total_kgs, 2, '.', '') }}" readonly>
                                 </div>
                             </div>
 
@@ -739,7 +721,7 @@
                                     <label>Stuffing (MTs):</label>
                                     <input type="number"
                                         name="packing_items[{{ $index }}][stuffing_in_container]"
-                                        class="form-control stuffing" value="{{ $item->stuffing_in_container }}"
+                                        class="form-control stuffing" value="{{ number_format($item->stuffing_in_container, 2, '.', '') }}"
                                         step="0.01" min="0" readonly>
                                 </div>
                             </div>
@@ -758,7 +740,7 @@
                                 <div class="form-group">
                                     <label>Rate Per Ton:</label>
                                     <input type="number" name="packing_items[{{ $index }}][rate]"
-                                        class="form-control rates" value="{{ $item->rate }}" step="0.01"
+                                        class="form-control rates" value="{{ number_format($item->rate, 2, '.', '') }}" step="0.01"
                                         min="0" readonly>
                                 </div>
                             </div>
@@ -767,7 +749,7 @@
                                 <div class="form-group">
                                     <label>Amount:</label>
                                     <input type="number" name="packing_items[{{ $index }}][amount]"
-                                        class="form-control amount" value="{{ $item->amount }}" min="0"
+                                        class="form-control amount" value="{{ number_format($item->amount, 2, '.', '') }}" min="0"
                                         readonly>
                                 </div>
                             </div>
@@ -776,7 +758,7 @@
                                 <div class="form-group">
                                     <label>Amount in (PKR):</label>
                                     <input type="number" name="packing_items[{{ $index }}][amount_pkr]"
-                                        class="form-control amount_pkr" value="{{ $item->amount_pkr }}"
+                                        class="form-control amount_pkr" value="{{ number_format($item->amount_pkr, 2, '.', '') }}"
                                         min="0" readonly>
                                 </div>
                             </div>

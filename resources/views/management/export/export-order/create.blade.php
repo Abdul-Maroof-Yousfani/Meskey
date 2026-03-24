@@ -164,19 +164,15 @@
                     <div class="p-3">
                         <h5 class="mb-3"><strong>Beneficiary Bank Details</strong></h5>
                         <div class="row">
-                            {{-- Bank Selector --}}
+                            {{-- Bank Selector (loaded dynamically based on selected Buyer) --}}
                             <div class="col-md-12 mb-2">
                                 <label>Select Bank:</label>
                                 <select name="bank_id" id="bankSelect" class="form-control select2">
                                     <option value="">-- Select Bank --</option>
-                                    @foreach ($banks as $bank)
-                                        <option value="{{ $bank->id }}">{{ $bank->account_title }} -
-                                            {{ $bank->bank_name }}</option>
-                                    @endforeach
                                 </select>
+                                <small class="text-muted">Select a Buyer first to see their bank accounts.</small>
                             </div>
 
-                            {{-- Auto Filled Fields --}}
                             <div class="col-md-6 mt-2">
                                 <label>Account Title:</label>
                                 <input type="text" id="acc_title" class="form-control" disabled>
@@ -188,28 +184,18 @@
                             </div>
 
                             <div class="col-md-6 mt-2">
-                                <label>IBAN:</label>
-                                <input type="text" id="iban" class="form-control" disabled>
+                                <label>Branch Name:</label>
+                                <input type="text" id="branch_name" class="form-control" disabled>
+                            </div>
+
+                            <div class="col-md-6 mt-2">
+                                <label>Branch Code:</label>
+                                <input type="text" id="branch_code" class="form-control" disabled>
                             </div>
 
                             <div class="col-md-6 mt-2">
                                 <label>Account No:</label>
                                 <input type="text" id="account_no" class="form-control" disabled>
-                            </div>
-
-                            <div class="col-md-6 mt-2">
-                                <label>SWIFT Code:</label>
-                                <input type="text" id="swift_code" class="form-control" disabled>
-                            </div>
-
-                            <div class="col-md-6 mt-2">
-                                <label>Bank Address:</label>
-                                <input type="text" id="bank_address" class="form-control" disabled>
-                            </div>
-
-                            <div class="col-md-12 mt-2">
-                                <label>Description:</label>
-                                <textarea id="description" class="form-control" rows="2" disabled></textarea>
                             </div>
                         </div>
 
@@ -304,19 +290,19 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label>Other Condition:</label>
-                        <textarea name="other_condition" class="form-control" rows="3"></textarea>
+                        <textarea name="other_condition" id="other_condition" class="form-control" rows="3"></textarea>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
                         <label>Force Majure:</label>
-                        <textarea name="force_majure" class="form-control" rows="3"></textarea>
+                        <textarea name="force_majure" id="force_majure" class="form-control" rows="3"></textarea>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
                         <label>Application Law:</label>
-                        <textarea name="application_law" class="form-control" rows="3"></textarea>
+                        <textarea name="application_law" id="application_law" class="form-control" rows="3"></textarea>
                     </div>
                 </div>
             </div>
@@ -644,6 +630,28 @@
     </div>
 </form>
 
+<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        $('#shipping_instructions, #documents_to_be_provided, #other_condition, #force_majure, #application_law').summernote({
+            placeholder: 'Enter details here...',
+            tabsize: 2,
+            height: 200,
+            toolbar: [
+                ['style', ['bold', 'italic', 'underline', 'clear']],
+                ['font', ['strikethrough', 'superscript', 'subscript']],
+                ['fontsize', ['fontsize']],
+                ['color', ['color']],
+                ['para', ['ul', 'ol', 'paragraph']],
+                ['insert', ['link', 'picture', 'video']],
+                ['view', ['fullscreen', 'codeview', 'help']]
+            ]
+        });
+    });
+</script>
+
 <script>
     $(document).ready(function() {
         // Initialize Select2 for all multi-selects
@@ -883,28 +891,50 @@
         calculateTotals($('.packing-item').first());
     });
 
-    $(document).ready(function() {
-        $('#bankSelect').on('change', function() {
-            let bankId = $(this).val();
+        // Load customer banks when buyer is selected
+        $('select[name="buyer_id"]').on('change', function() {
+            let customerId = $(this).val();
 
-            // Reset all fields if no bank selected
-            if (!bankId) {
-                $('#acc_title, #bank_name, #iban, #account_no, #swift_code, #bank_address, #description')
-                    .val('');
+            // Clear the bank select and all filled fields
+            $('#bankSelect').html('<option value="">-- Select Bank --</option>').trigger('change');
+            $('#acc_title, #bank_name, #branch_name, #branch_code, #account_no').val('');
+
+            if (!customerId) return;
+
+            $.get('{{ route('export-order.customer-banks', '') }}/' + customerId, function(response) {
+                let options = '<option value="">-- Select Bank --</option>';
+                response.forEach(function(bank) {
+                    let label = '[' + bank.type + '] ' + bank.account_title + ' - ' + bank.bank_name;
+                    options += `<option value="${bank.id}" 
+                        data-title="${bank.account_title}"
+                        data-bank="${bank.bank_name}"
+                        data-branch="${bank.branch_name}"
+                        data-branch-code="${bank.branch_code}"
+                        data-account="${bank.account_number}">
+                        ${label}
+                    </option>`;
+                });
+                $('#bankSelect').html(options);
+                if ($('#bankSelect').hasClass('select2-hidden-accessible')) {
+                    $('#bankSelect').select2();
+                }
+            });
+        });
+
+        $('#bankSelect').on('change', function() {
+            let selected = $(this).find(':selected');
+
+            if (!selected.val()) {
+                $('#acc_title, #bank_name, #branch_name, #branch_code, #account_no').val('');
                 return;
             }
 
-            $.get('/export/get-bank-details/' + bankId, function(bank) {
-                $('#acc_title').val(bank.account_title);
-                $('#bank_name').val(bank.bank_name);
-                $('#iban').val(bank.iban);
-                $('#account_no').val(bank.account_no);
-                $('#swift_code').val(bank.swift_code);
-                $('#bank_address').val(bank.bank_address);
-                $('#description').val(bank.description);
-            });
+            $('#acc_title').val(selected.data('title') || '');
+            $('#bank_name').val(selected.data('bank') || '');
+            $('#branch_name').val(selected.data('branch') || '');
+            $('#branch_code').val(selected.data('branch-code') || '');
+            $('#account_no').val(selected.data('account') || '');
         });
-    });
 
     $(document).ready(function() {
         // Correspondent Bank Auto-fill
@@ -1029,24 +1059,3 @@
     });
 </script>
 
-<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.js"></script>
-
-<script>
-    $(document).ready(function() {
-        $('#shipping_instructions, #documents_to_be_provided').summernote({
-            placeholder: 'Enter details here...',
-            tabsize: 2,
-            height: 200,
-            toolbar: [
-                ['style', ['bold', 'italic', 'underline', 'clear']],
-                ['font', ['strikethrough', 'superscript', 'subscript']],
-                ['fontsize', ['fontsize']],
-                ['color', ['color']],
-                ['para', ['ul', 'ol', 'paragraph']],
-                ['insert', ['link', 'picture', 'video']],
-                ['view', ['fullscreen', 'codeview', 'help']]
-            ]
-        });
-    });
-</script>
