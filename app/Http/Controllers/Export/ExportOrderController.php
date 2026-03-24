@@ -28,6 +28,7 @@ use Illuminate\Support\Facades\Schema;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 use App\Models\Master\Customer;
 
@@ -35,6 +36,10 @@ class ExportOrderController extends Controller
 {
     public function index(Request $request): View
     {
+        // Temporary debugging for live server schema
+        $columns = DB::select("DESCRIBE export_orders");
+        Log::info('Export Orders Table Structure on Live:', ['columns' => $columns]);
+
         $export_orders = ExportOrder::orderBy('id', 'ASC')->paginate(0);
 
         return view('management.export.export-order.index', compact('export_orders'))->with('i', ($request->input('page', 1) - 1) * 5);
