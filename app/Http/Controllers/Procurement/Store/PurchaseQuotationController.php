@@ -888,7 +888,7 @@ class PurchaseQuotationController extends Controller
         $approvedRequests = PurchaseRequest::with('PurchaseData')->where('am_approval_status', 'approved')->whereHas('PurchaseData', function ($q) {
             // $q->where('am_approval_status', 'approved');
             // ->where('quotation_status', 1);
-            $q->whereRaw('qty > (SELECT COALESCE(SUM(qty), 0) FROM purchase_order_data WHERE purchase_request_data_id = purchase_request_data.id)');
+            $q->whereRaw('qty > (SELECT COALESCE(SUM(pod.qty), 0) FROM purchase_order_data pod JOIN purchase_orders po ON po.id = pod.purchase_order_id WHERE pod.purchase_request_data_id = purchase_request_data.id AND pod.am_approval_status != "rejected" AND po.am_approval_status != "rejected")');
         })
             ->get();
         
