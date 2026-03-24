@@ -37,8 +37,7 @@ class ExportOrderController extends Controller
     public function index(Request $request): View
     {
         // Temporary debugging for live server schema
-        $columns = DB::select("DESCRIBE export_orders");
-        Log::info('Export Orders Table Structure on Live:', ['columns' => $columns]);
+        dd(DB::select("DESCRIBE export_orders"));
 
         $export_orders = ExportOrder::orderBy('id', 'ASC')->paginate(0);
 
