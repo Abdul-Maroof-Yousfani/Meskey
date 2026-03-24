@@ -12,6 +12,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use App\Models\Master\Customer;
 
 class ExportSodaFieldController extends Controller
 {
@@ -39,7 +40,7 @@ class ExportSodaFieldController extends Controller
 
     public function create(): View
     {
-        $users = User::get(); // buyer
+        $users = Customer::get(); // buyer
         $products = Product::where('status', 1)->get(); // commodity
         $bagPackings = BagPacking::where('status', 1)->get(); // packing
         $incoterms = IncoTerm::where('status', 1)->get(); // price 
@@ -98,7 +99,7 @@ class ExportSodaFieldController extends Controller
     public function show($id): View
     {
         $exportSodaField = ExportSodaField::with(['product', 'buyer', 'packing', 'incoterm', 'modeOfTerm'])->findOrFail($id);
-        $users = User::get(); 
+        $users = Customer::get(); 
         $products = Product::where('status', 1)->get(); 
         $bagPackings = BagPacking::where('status', 1)->get(); 
         $incoterms = IncoTerm::where('status', 1)->get();  
@@ -110,7 +111,7 @@ class ExportSodaFieldController extends Controller
     public function edit($id): View
     {
         $exportSodaField = ExportSodaField::findOrFail($id);
-        $users = User::get(); 
+        $users = Customer::get(); 
         $products = Product::where('status', 1)->get(); 
         $bagPackings = BagPacking::where('status', 1)->get(); 
         $incoterms = IncoTerm::where('status', 1)->get();  
