@@ -50,6 +50,7 @@ Route::post('/get-proforma', [ProformaController::class, 'getProformaTable'])->n
 Route::get('/select-export-order', [ProformaController::class, 'selectExportOrder'])->name('proforma.select.export-order');
 Route::get('/proforma/create/{exportOrderId}', [ProformaController::class, 'create'])->name('proforma.create');
 Route::post('/proforma/create/{exportOrderId}', [ProformaController::class, 'store'])->name('proforma.store');
+Route::get('/proforma/print/{id}', [ProformaController::class, 'print'])->name('proforma.print');
 
 // commerical invoice
 Route::resource('commercial-invoice', CommercialInvoiceController::class);

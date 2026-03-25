@@ -14,6 +14,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\CustomerOwnerBankDetail;
 use App\Models\CustomerCompanyBankDetail;
+use App\Models\Country;
+use App\Models\Master\Port;
+use App\Models\Master\HsCode;
 
 class ExportOrder extends Model
 {
@@ -153,5 +156,35 @@ class ExportOrder extends Model
     public function correspondentBank()
     {
         return $this->belongsTo(Bank::class, 'correspondent_bank_id');
+    }
+
+    public function originCountry()
+    {
+        return $this->belongsTo(Country::class, 'origin_country_id');
+    }
+
+    public function portOfLoading()
+    {
+        return $this->belongsTo(Port::class, 'port_of_loading_id');
+    }
+
+    public function portOfDischarge()
+    {
+        return $this->belongsTo(Port::class, 'port_of_discharge_id');
+    }
+
+    public function modeOfTransport()
+    {
+        return $this->belongsTo(ModeOfTransport::class, 'mode_of_transport_id');
+    }
+
+    public function hsCode()
+    {
+        return $this->belongsTo(HsCode::class, 'hs_code_id');
+    }
+
+    public function incoterm()
+    {
+        return $this->belongsTo(IncoTerm::class, 'incoterm_id');
     }
 }

@@ -40,6 +40,10 @@
                             onclick="openModal(this,'{{ route('proforma.edit', $proforma->id) }}','Edit Proforma',false,'90%')">
                             <i class="ft-edit font-medium-3"></i></a>
                         @endcanAccess
+
+                        <a href="{{ route('proforma.print', $proforma->id) }}" target="_blank" class="success p-1 text-center position-relative" title="Print Proforma">
+                            <i class="ft-printer font-medium-3"></i></a>
+
                         @canAccess('proforma-delete')
                         <a onclick="deletemodal('{{ route('proforma.destroy', $proforma->id) }}','{{ route('get.proforma') }}')"
                             class="danger p-1 text-center mr-2 position-relative ">
