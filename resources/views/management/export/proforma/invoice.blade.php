@@ -272,11 +272,14 @@
         @php $bank = $exportOrder->customer_bank; @endphp
         @if($bank)
         <div class="bank-details">
-            <h4>Beneficiary Bank Details:</h4>
+            <h4 style="text-decoration: none;">Beneficiary Bank Details:</h4>
             <table width="100%" style="border:none;">
-                <tr><td width="20%" style="border:none; padding:1px;">Bank:</td><td style="border:none; padding:1px;"><strong>{{ $bank->bank_name }}</strong></td><td width="20%" style="border:none; padding:1px;">SWIFT:</td><td style="border:none; padding:1px;">{{ $bank->swift_code ?? 'N/A' }}</td></tr>
-                <tr><td style="border:none; padding:1px;">A/C Title:</td><td style="border:none; padding:1px;">{{ $bank->account_title }}</td><td style="border:none; padding:1px;">IBAN:</td><td style="border:none; padding:1px;">{{ $bank->iban ?? 'N/A' }}</td></tr>
-                <tr><td style="border:none; padding:1px;">A/C No:</td><td style="border:none; padding:1px;">{{ $bank->account_number }}</td><td style="border:none; padding:1px;">Branch:</td><td style="border:none; padding:1px;">{{ $bank->branch_name }}</td></tr>
+                <tr><td width="30%" style="border:none; padding:2px;"><strong>Beneficiary Bank:</strong></td><td style="border:none; padding:2px;">{{ $bank->bank_name }}</td></tr>
+                <tr><td style="border:none; padding:2px;"><strong>Account Title:</strong></td><td style="border:none; padding:2px;">{{ $bank->account_title }}</td></tr>
+                <tr><td style="border:none; padding:2px;"><strong>Bank Name:</strong></td><td style="border:none; padding:2px;">{{ $bank->bank_name }}</td></tr>
+                <tr><td style="border:none; padding:2px;"><strong>Branch Name:</strong></td><td style="border:none; padding:2px;">{{ $bank->branch_name }}</td></tr>
+                <tr><td style="border:none; padding:2px;"><strong>Account No:</strong></td><td style="border:none; padding:2px;">{{ $bank->account_number }}</td></tr>
+                <tr><td style="border:none; padding:2px;"><strong>Branch Code:</strong></td><td style="border:none; padding:2px;">{{ $bank->branch_code }}</td></tr>
             </table>
         </div>
         @endif
