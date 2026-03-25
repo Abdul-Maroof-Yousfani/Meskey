@@ -283,14 +283,14 @@
             {{-- doucments to be povided --}}
             <div class="col-md-12 mb-3">
                 <label>Documents to be provided:</label>
-                <textarea name="documents_to_be_provided" id="documents_to_be_provided" class="form-control"></textarea>
+                <textarea name="documents_to_be_provided" id="documents_to_be_provided" class="form-control">{{ old('documents_to_be_provided', '<ol><li>SIGNED COMMERCIAL INVOICE IN 1 ORIGINALS AND 2 COPIES.</li><li>PACKING LIST IN 1 ORIGINALS SHOWING TOTAL NUMBER OF CONTAINERS, NUMBER OF BAGS IN EACH CONTAINER, NET WEIGHT OF EACH CONTAINER, TOTAL NUMBER OF BAGS OF THE SHIPMENT AND TOTAL NET WEIGHT OF EACH SHIPMENT.</li><li>FULL SET(S) 3/3 ORIGINAL CLEAN BILL OF LADING, MARKED FREIGHT PREPAID.</li><li>CERTIFICATE OF ORIGIN ISSUED BY CHAMBER OF COMMERCE OF PAKISTAN IN 1 ORIGINAL AND 2 COPIES.</li><li>CERTIFICATE OF PHYTOSANITARY ISSUED BY OFFICIAL GOVERNMENT AUTHORITY IN 1 ORIGINAL AND 2 COPIES.</li><li>CERTIFICATE OF FUMIGATION ISSUED BY COMPETENT AUTHORITY IN 1 ORIGINAL AND 2 COPIES.</li><li>CERTIFICATE OF QUALITY, QUANTITY & WEIGHT ISSUED BY SGS IN 1 ORIGINAL AND 2 COPIES.</li><li>CERTIFICATE OF ORIGIN CHINA- PAKISTAN FTA DUTY-FREE TREATMENT GRANTED BY CHINA (COMBINED DECLARATION AND CERTIFICATE) ISSUED BY PAKISTAN AUTHORITY IN 1 ORGINAL AND 2 COPIES</li><li>SHIPMENT ADVISE IN 1 ORIGINAL AND 2 COPIES.</li></ol>') }}</textarea>
             </div>
 
             <div class="row p-2">
                 <div class="col-md-4">
                     <div class="form-group">
                         <label>Other Condition:</label>
-                        <textarea name="other_condition" id="other_condition" class="form-control" rows="3"></textarea>
+                        <textarea name="other_condition" id="other_condition" class="form-control" rows="3">{{ old('other_condition', '<ol><li>PARTIAL - ALLOWED / TRANSSHIPMENT ALLOWED</li><li>ALL DISCHARGING COSTS INCLUDING TERMINAL HANDLING CHARGES, LEVIES, AND TAXES ON THE CARGO AT DISCHARGING PORT ARE FOR BUYER\'S ACCOUNT.</li><li>SELLER TO REMAIN OWNER OF THE GOODS UNTIL FULL PAYMENT IS AFFECTED. ALL BANKING CHARGES OUT SIDE CHINA FOR SELLER\'S ACCOUNT.</li><li>BUYER AND SELLER AGREE TO CONSIDER THE CONTRACT AS FULLY CONFIDENTIAL AND AGREE NOT TO DISCLOSE ANY OF ITS CONTENTS TO THIRD PARTY.</li><li>14 FREE DAYS DETENTION AT DESTINATION.</li><li>IF PAYMENT DELAYS, WE RESERVE THE RIGHT TO CHARGE INTEREST AND CLAIM PENALTY IMPOSED BY SBP (IF ANY)</li></ol>') }}</textarea>
                     </div>
                 </div>
                 <div class="col-md-4">

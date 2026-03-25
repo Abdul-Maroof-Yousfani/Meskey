@@ -79,7 +79,7 @@ class ExportOrderRequest extends FormRequest
             'marking_labeling' => ['required', 'string'],
             'shipping_instructions' => ['nullable', 'string'],
             'documents_to_be_provided' => ['required', 'string'],
-            'other_condition' => ['nullable', 'string'],
+            'other_condition' => ['required', 'string'],
             'force_majure' => ['nullable', 'string'],
             'application_law' => ['required', 'string'],
 
@@ -176,6 +176,7 @@ class ExportOrderRequest extends FormRequest
             // Text Areas
             'marking_labeling.required' => 'Marking & labeling is required',
             'documents_to_be_provided.required' => 'Documents details are required',
+            'other_condition.required' => 'Other conditions are required',
             'application_law.required' => 'Application law is required',
 
             // locations
