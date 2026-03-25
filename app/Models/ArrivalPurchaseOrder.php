@@ -80,6 +80,7 @@ class ArrivalPurchaseOrder extends Model
         'other_params',
         'payment_term',
         'truck_no',
+        'contract_status',
         'created_by',
     ];
 
@@ -87,6 +88,10 @@ class ArrivalPurchaseOrder extends Model
         'contract_date' => 'date',
         'delivery_date' => 'date',
     ];
+
+    public function hasExpired() {
+        return $this->status == 'draft' && $this->delivery_date < now();
+    }
 
     public function division()
     {
