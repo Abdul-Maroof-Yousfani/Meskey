@@ -26,6 +26,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use App\Models\Master\Customer;
+use App\Models\Export\ExportOrderPackingItem;
+use App\Http\Requests\Export\ExportOrderRequest;
+use App\Models\CustomerCompanyBankDetail;
+use App\Models\CustomerOwnerBankDetail;
+use App\Models\Master\ProductSlab;
 
 class ProformaController extends Controller
 {
@@ -85,6 +90,8 @@ class ProformaController extends Controller
         $ports = Port::where('status', 1)->get();
         $hscodes = HsCode::where('status', 1)->get();
         $currencies = Currency::where('status', 1)->get();
+        $companyBanks = CustomerCompanyBankDetail::where('customer_id', ($exportOrder->buyer_id ?? $proforma->exportOrder->buyer_id))->get();
+        $ownerBanks = CustomerOwnerBankDetail::where('customer_id', ($exportOrder->buyer_id ?? $proforma->exportOrder->buyer_id))->get();
 
         return view('management.export.proforma.create', compact(
             'exportOrder',
@@ -105,6 +112,8 @@ class ProformaController extends Controller
             'ports',
             'hscodes',
             'currencies',
+            'companyBanks',
+            'ownerBanks',
         ));
     }
 
@@ -113,20 +122,65 @@ class ProformaController extends Controller
         DB::beginTransaction();
 
         try {
-
             $exportOrder = ExportOrder::findOrFail($exportOrderId);
 
             $request->validate([
                 'consigned_details' => 'nullable|string|max:5000',
             ]);
 
+            // Update Export Order details if provided (matching update logic)
+            $exportOrderData = $request->only([
+                'company_id', 'buyer_id', 'product_id', 'voucher_no', 'contract_no',
+                'voucher_date', 'voucher_heading', 'shipment_delivery_date_from',
+                'shipment_delivery_date_to', 'other_specifications', 'customer_bank_id',
+                'customer_bank_type', 'correspondent_bank_id', 'incoterm_id', 'packing_type', 
+                'mode_of_term_id', 'mode_of_transport_id', 'origin_country_id', 
+                'port_of_discharge_id', 'port_of_loading_id', 'hs_code_id', 
+                'partial_payment', 'transhipment', 'part_shipment', 
+                'insurance_covered_by', 'advance_payment', 'payment_days',
+                'currency_id', 'currency_rate', 'marking_labeling', 'shipping_instructions',
+                'documents_to_be_provided', 'other_condition', 'force_majure',
+                'application_law', 'broker_id',
+            ]);
+
+            $exportOrder->update($exportOrderData);
+
+            // Update Packing Items
+            if ($request->has('packing_items')) {
+                foreach ($request->packing_items as $itemData) {
+                    if (isset($itemData['id'])) {
+                        $packingItem = ExportOrderPackingItem::find($itemData['id']);
+                        if ($packingItem) {
+                            $packingItem->update($itemData);
+                        }
+                    } else {
+                        $exportOrder->packingItems()->create($itemData);
+                    }
+                }
+            }
+
+            // Update Specifications
+            if ($request->has('specifications')) {
+                $exportOrder->specifications()->delete();
+                foreach ($request->specifications as $spec) {
+                    $exportOrder->specifications()->create([
+                        'product_slab_type_id' => $spec['product_slab_type_id'],
+                        'spec_name' => $spec['spec_name'],
+                        'spec_value' => $spec['spec_value'],
+                        'uom' => $spec['uom'] ?? null,
+                        'value_type' => $spec['value_type'] ?? null,
+                    ]);
+                }
+            }
+
+            // Create Proforma
             $proforma = Proforma::create([
                 'export_order_id' => $exportOrder->id,
                 'proforma_date' => $exportOrder->voucher_date,
                 'consigned_details' => $request->consigned_details,
             ]);
 
-            $proforma->proforma_no = $exportOrder->contract_no.'('.$proforma->id.')';
+            $proforma->proforma_no = $exportOrder->contract_no . '(' . $proforma->id . ')';
             $proforma->save();
 
             DB::commit();
@@ -154,7 +208,7 @@ class ProformaController extends Controller
     public function show($id): View
     {
         $proforma = Proforma::with(['exportOrder', 'exportOrder.modeOfTerm', 'exportOrder.buyer'])->findOrFail($id);
-        $exportOrder = ExportOrder::with(['specifications', 'packingItems', 'product'])->where('id', $proforma->export_order_id)->first();
+        $exportOrder = ExportOrder::with(['specifications', 'packingItems', 'product'])->findOrFail($proforma->export_order_id);
 
         $products = Product::where('status', 1)->get();
         $companyLocations = CompanyLocation::where('status', 'active')->get();
@@ -173,6 +227,8 @@ class ProformaController extends Controller
         $ports = Port::where('status', 1)->get();
         $hscodes = HsCode::where('status', 1)->get();
         $currencies = Currency::where('status', 1)->get();
+        $companyBanks = CustomerCompanyBankDetail::where('customer_id', ($exportOrder->buyer_id ?? $proforma->exportOrder->buyer_id))->get();
+        $ownerBanks = CustomerOwnerBankDetail::where('customer_id', ($exportOrder->buyer_id ?? $proforma->exportOrder->buyer_id))->get();
 
         return view('management.export.proforma.show', compact(
             'proforma',
@@ -194,12 +250,15 @@ class ProformaController extends Controller
             'ports',
             'hscodes',
             'currencies',
+            'companyBanks',
+            'ownerBanks',
         ));
     }
 
     public function edit($id): View
     {
-        $exportOrder = ExportOrder::with(['specifications', 'packingItems', 'product'])->findOrFail($id);
+        $proforma = Proforma::findOrFail($id);
+        $exportOrder = ExportOrder::with(['specifications', 'packingItems', 'product'])->findOrFail($proforma->export_order_id);
 
         $products = Product::where('status', 1)->get();
         $companyLocations = CompanyLocation::where('status', 'active')->get();
@@ -218,8 +277,11 @@ class ProformaController extends Controller
         $ports = Port::where('status', 1)->get();
         $hscodes = HsCode::where('status', 1)->get();
         $currencies = Currency::where('status', 1)->get();
+        $companyBanks = CustomerCompanyBankDetail::where('customer_id', ($exportOrder->buyer_id ?? $proforma->exportOrder->buyer_id))->get();
+        $ownerBanks = CustomerOwnerBankDetail::where('customer_id', ($exportOrder->buyer_id ?? $proforma->exportOrder->buyer_id))->get();
 
         return view('management.export.proforma.edit', compact(
+            'proforma',
             'exportOrder',
             'products',
             'companyLocations',
@@ -238,20 +300,25 @@ class ProformaController extends Controller
             'ports',
             'hscodes',
             'currencies',
+            'companyBanks',
+            'ownerBanks',
         ));
     }
 
-    public function update(ExportOrderRequest $request, ExportOrder $exportOrder)
+    public function update(ExportOrderRequest $request, $id)
     {
         DB::beginTransaction();
 
         try {
+            $proforma = Proforma::findOrFail($id);
+            $exportOrder = ExportOrder::findOrFail($proforma->export_order_id);
+
             // Update main export order
             $exportOrderData = $request->only([
                 'company_id', 'buyer_id', 'product_id', 'voucher_no', 'contract_no',
                 'voucher_date', 'voucher_heading', 'shipment_delivery_date_from',
-                'shipment_delivery_date_to', 'other_specifications', 'bank_id',
-                'correspondent_bank_id', 'incoterm_id', 'packing_type', 'mode_of_term_id',
+                'shipment_delivery_date_to', 'other_specifications', 'customer_bank_id',
+                'customer_bank_type', 'correspondent_bank_id', 'incoterm_id', 'packing_type',
                 'mode_of_transport_id', 'origin_country_id', 'port_of_discharge_id',
                 'port_of_loading_id', 'hs_code_id', 'partial_payment', 'transhipment',
                 'part_shipment', 'insurance_covered_by', 'advance_payment', 'payment_days',
@@ -318,11 +385,18 @@ class ProformaController extends Controller
                         'bag_packing_id' => $item['bag_packing_id'] ?? null,
                         'bag_condition_id' => $item['bag_condition_id'],
                         'bag_color_id' => $item['bag_color_id'],
-                        'bag_size' => $item['bag_size'],
-                        'metric_tons' => $item['metric_tons'],
+                        'bag_size' => $item['bag_size'] ?? 0,
+                        'metric_tons' => $item['metric_tons'] ?? 0,
+                        'maunds' => $item['maunds'] ?? 0,
+                        'no_of_bags' => $item['no_of_bags'] ?? 0,
+                        'total_kgs' => $item['total_kgs'] ?? 0,
                         'stuffing_in_container' => $item['stuffing_in_container'] ?? 0,
+                        'stuffing_maunds' => $item['stuffing_maunds'] ?? 0,
                         'no_of_containers' => $item['no_of_containers'] ?? 0,
-                        'rate' => $item['rate'],
+                        'rate' => $item['rate'] ?? 0,
+                        'rate_per_maund' => $item['rate_per_maund'] ?? 0,
+                        'amount' => $item['amount'] ?? 0,
+                        'amount_pkr' => $item['amount_pkr'] ?? 0,
                     ]);
                 }
             }

@@ -269,7 +269,7 @@
             @if($exportOrder->application_law)<tr><td><strong>Application Law:</strong></td><td>{!! $exportOrder->application_law !!}</td></tr>@endif
         </table>
 
-        @php $bank = $exportOrder->customer_bank; @endphp
+        @php $bank = $proforma->customer_bank; @endphp
         @if($bank)
         <div class="bank-details">
             <h4 style="text-decoration: none;">Beneficiary Bank Details:</h4>

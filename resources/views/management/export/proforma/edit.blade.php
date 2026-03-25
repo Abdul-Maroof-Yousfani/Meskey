@@ -17,7 +17,7 @@
     }
 </style>
 
-<form action="{{ route('export-order.update', $exportOrder->id) }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form action="{{ route('proforma.update', $proforma->id) }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
     @method('PUT')
     <input type="hidden" id="listRefresh" value="{{ route('get.export-order') }}" />
@@ -235,13 +235,23 @@
                     <div class="p-3">
                         <h5 class="mb-3"><strong>Beneficiary Bank Details</strong></h5>
                         <div class="row">
-                        {{-- Bank Selector (loaded dynamically based on selected Buyer) --}}
+                            {{-- Bank Selector --}}
                             <div class="col-md-12 mb-2">
-                                <label>Select Bank:</label>
-                                <select name="bank_id" id="bankSelect" class="form-control select2">
-                                    <option value="">-- Select Bank --</option>
+                                <label>Select Beneficiary Bank:</label>
+                                <select name="customer_bank_id" id="bankSelect" class="form-control select2" onchange="loadBankDetails(this)">
+                                    <option value="">Select Beneficiary Bank</option>
+                                    @foreach ($companyBanks as $bank)
+                                    <option value="{{ $bank->id }}" data-type="company" data-details="{{ json_encode($bank) }}"
+                                        {{ (old('customer_bank_id', $exportOrder->customer_bank_id) == $bank->id && $exportOrder->customer_bank_type == 'company') ? 'selected' : '' }}>
+                                        {{ $bank->bank_name }} (Company)</option>
+                                    @endforeach
+                                    @foreach ($ownerBanks as $bank)
+                                    <option value="{{ $bank->id }}" data-type="owner" data-details="{{ json_encode($bank) }}"
+                                        {{ (old('customer_bank_id', $exportOrder->customer_bank_id) == $bank->id && $exportOrder->customer_bank_type == 'owner') ? 'selected' : '' }}>
+                                        {{ $bank->bank_name }} (Owner)</option>
+                                    @endforeach
                                 </select>
-                                <small class="text-muted">Select a Buyer first to see their bank accounts.</small>
+                                <input type="hidden" name="customer_bank_type" id="bank_type_hidden" value="{{ old('customer_bank_type', $exportOrder->customer_bank_type) }}">
                             </div>
 
                             <div class="col-md-6 mt-2">
@@ -595,662 +605,161 @@
         <!-- Packing Details -->
         <div class="col-md-12">
             <h6 class="header-heading-sepration d-flex justify-content-between align-items-center">Packing Details
-                {{-- <button type="button" class="btn btn-sm btn-success" id="addPackingItem">Add More Packing
-                        Item</button> --}}
+                {{-- <button type="button" class="btn btn-sm btn-success" id="addPackingItem">Add More Packing Item</button> --}}
             </h6>
-
-            <div id="packingItems">
-                @if ($exportOrder->packingItems->count() > 0)
-                    @foreach ($exportOrder->packingItems as $index => $item)
-                        <div class="packing-item row border-bottom pb-3 mb-3 w-100 mx-auto">
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Brand:</label>
-                                    <select name="packing_items[{{ $index }}][brand_id]"
-                                        class="form-control select2">
-                                        <option value="">Select Brand</option>
-                                        @foreach ($brands as $brand)
-                                            <option value="{{ $brand->id }}"
-                                                {{ $brand->id == $item->brand_id ? 'selected' : '' }}>
-                                                {{ $brand->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Bag Type:</label>
-                                    <select name="packing_items[{{ $index }}][bag_type_id]"
-                                        class="form-control select2">
-                                        <option value="">Select Bag Type</option>
-                                        @foreach ($bagTypes as $bagType)
-                                            <option value="{{ $bagType->id }}"
-                                                {{ $bagType->id == $item->bag_type_id ? 'selected' : '' }}>
-                                                {{ $bagType->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Bag Packing:</label>
-                                    <select name="packing_items[{{ $index }}][bag_packing_id]"
-                                        class="form-control">
-                                        <option value="">Select Bag Packing</option>
-                                        @foreach ($bagPackings as $packing)
-                                            <option value="{{ $packing->id }}"
-                                                {{ $packing->id == $item->bag_packing_id ? 'selected' : '' }}>
-                                                {{ $packing->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Bag Condition:</label>
-                                    <select name="packing_items[{{ $index }}][bag_condition_id]"
-                                        class="form-control select2">
-                                        <option value="">Select Condition</option>
-                                        @foreach ($bagConditions as $condition)
-                                            <option value="{{ $condition->id }}"
-                                                {{ $condition->id == $item->bag_condition_id ? 'selected' : '' }}>
-                                                {{ $condition->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Bag Color:</label>
-                                    <select name="packing_items[{{ $index }}][bag_color_id]"
-                                        class="form-control select2">
-                                        <option value="">Select Color</option>
-                                        @foreach ($bagColors as $color)
-                                            <option value="{{ $color->id }}"
-                                                {{ $color->id == $item->bag_color_id ? 'selected' : '' }}>
-                                                {{ $color->color }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Bag Size (kg):</label>
-                                    <input type="number" name="packing_items[{{ $index }}][bag_size]"
-                                        class="form-control bag-size" step="0.01" value="{{ $item->bag_size }}"
-                                        min="0">
-                                </div>
-                            </div>
-
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Quantity (MTs):</label>
-                                    <input type="number" name="packing_items[{{ $index }}][metric_tons]"
-                                        class="form-control metric-tons" step="0.01"
-                                        value="{{ $item->metric_tons }}" min="0">
-                                </div>
-                            </div>
-
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>No. of Bags:</label>
-                                    <input type="number" name="packing_items[{{ $index }}][no_of_bags]"
-                                        class="form-control no_of_bags" value="{{ $item->no_of_bags }}" readonly>
-                                </div>
-                            </div>
-
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Total KGs:</label>
-                                    <input type="number" name="packing_items[{{ $index }}][total_kgs]"
-                                        class="form-control total-kgs" value="{{ $item->total_kgs }}" readonly>
-                                </div>
-                            </div>
-
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Stuffing (MTs):</label>
-                                    <input type="number"
-                                        name="packing_items[{{ $index }}][stuffing_in_container]"
-                                        class="form-control stuffing" value="{{ $item->stuffing_in_container }}"
-                                        step="0.01" min="0">
-                                </div>
-                            </div>
-
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>No. of Containers:</label>
-                                    <input type="number"
-                                        name="packing_items[{{ $index }}][no_of_containers]"
-                                        class="form-control containers" value="{{ $item->no_of_containers }}"
-                                        min="0">
-                                </div>
-                            </div>
-
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Rate Per Ton:</label>
-                                    <input type="number" name="packing_items[{{ $index }}][rate]"
-                                        class="form-control rates" value="{{ $item->rate }}" step="0.01"
-                                        min="0">
-                                </div>
-                            </div>
-
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label>Amount:</label>
-                                    <input type="number" name="packing_items[{{ $index }}][amount]"
-                                        class="form-control amount" value="{{ $item->amount }}" min="0"
-                                        readonly>
-                                </div>
-                            </div>
-
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label>Amount in (PKR):</label>
-                                    <input type="number" name="packing_items[{{ $index }}][amount_pkr]"
-                                        class="form-control amount_pkr" value="{{ $item->amount_pkr }}"
-                                        min="0" readonly>
-                                </div>
-                            </div>
-                            {{-- <div class="col-md-1">
-                            <div class="form-group">
-                                <label>&nbsp;</label>
-                                <button type="button"
-                                    class="btn btn-sm btn-danger remove-packing-item form-control">Remove</button>
-                            </div>
-                        </div> --}}
-                        </div>
-                    @endforeach
-                @endif
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th style="min-width: 150px;">Brand</th>
+                            <th style="min-width: 150px;">Bag Type</th>
+                            <th style="min-width: 130px;">Packing</th>
+                            <th style="min-width: 130px;">Condition</th>
+                            <th style="min-width: 110px;">Color</th>
+                            <th style="min-width: 100px;">Size (kg)</th>
+                            <th style="min-width: 100px;">Qty (MT)</th>
+                            <th style="min-width: 100px;">Maunds</th>
+                            <th style="min-width: 100px;">Bags</th>
+                            <th style="min-width: 110px;">Total KGs</th>
+                            <th style="min-width: 120px;">Stuffing (MT)</th>
+                            <th style="min-width: 120px;">Stuffing (Mnd)</th>
+                            <th style="min-width: 90px;">Containers</th>
+                            <th style="min-width: 110px;">Rate/Ton</th>
+                            <th style="min-width: 110px;">Rate/Mnd</th>
+                            <th style="min-width: 130px;">Amount</th>
+                            <th style="min-width: 130px;">Amount (PKR)</th>
+                            {{-- <th>Action</th> --}}
+                        </tr>
+                    </thead>
+                    <tbody id="packingItems">
+                        @foreach ($exportOrder->packingItems as $index => $item)
+                        <tr class="packing-item">
+                            <td class="p-2">
+                                <select name="packing_items[{{ $index }}][brand_id]" class="form-control select2" disabled>
+                                    <option value="">Select Brand</option>
+                                    @foreach ($brands as $brand)
+                                    <option value="{{ $brand->id }}" {{ $brand->id == $item->brand_id ? 'selected' : '' }}>
+                                        {{ $brand->name }}</option>
+                                    @endforeach
+                                </select>
+                                <input type="hidden" name="packing_items[{{ $index }}][brand_id]" value="{{ $item->brand_id }}">
+                            </td>
+                            <td class="p-2">
+                                <select name="packing_items[{{ $index }}][bag_type_id]" class="form-control select2" disabled>
+                                    <option value="">Select Bag Type</option>
+                                    @foreach ($bagTypes as $bagType)
+                                    <option value="{{ $bagType->id }}" {{ $bagType->id == $item->bag_type_id ? 'selected' : '' }}>
+                                        {{ $bagType->name }}</option>
+                                    @endforeach
+                                </select>
+                                <input type="hidden" name="packing_items[{{ $index }}][bag_type_id]" value="{{ $item->bag_type_id }}">
+                            </td>
+                            <td class="p-2">
+                                <select name="packing_items[{{ $index }}][bag_packing_id]" class="form-control" disabled>
+                                    <option value="">Select Bag Packing</option>
+                                    @foreach ($bagPackings as $packing)
+                                    <option value="{{ $packing->id }}" {{ $packing->id == $item->bag_packing_id ? 'selected' : '' }}>
+                                        {{ $packing->name }}</option>
+                                    @endforeach
+                                </select>
+                                <input type="hidden" name="packing_items[{{ $index }}][bag_packing_id]" value="{{ $item->bag_packing_id }}">
+                            </td>
+                            <td class="p-2">
+                                <select name="packing_items[{{ $index }}][bag_condition_id]" class="form-control select2" disabled>
+                                    <option value="">Select Condition</option>
+                                    @foreach ($bagConditions as $condition)
+                                    <option value="{{ $condition->id }}" {{ $condition->id == $item->bag_condition_id ? 'selected' : '' }}>
+                                        {{ $condition->name }}</option>
+                                    @endforeach
+                                </select>
+                                <input type="hidden" name="packing_items[{{ $index }}][bag_condition_id]" value="{{ $item->bag_condition_id }}">
+                            </td>
+                            <td class="p-2">
+                                <select name="packing_items[{{ $index }}][bag_color_id]" class="form-control select2" disabled>
+                                    <option value="">Select Color</option>
+                                    @foreach ($bagColors as $color)
+                                    <option value="{{ $color->id }}" {{ $color->id == $item->bag_color_id ? 'selected' : '' }}>
+                                        {{ $color->color }}</option>
+                                    @endforeach
+                                </select>
+                                <input type="hidden" name="packing_items[{{ $index }}][bag_color_id]" value="{{ $item->bag_color_id }}">
+                            </td>
+                            <td class="p-2">
+                                <input type="number" name="packing_items[{{ $index }}][bag_size]" class="form-control bag-size"
+                                    step="0.01" value="{{ $item->bag_size }}" min="0" readonly>
+                            </td>
+                            <td class="p-2">
+                                <input type="number" name="packing_items[{{ $index }}][metric_tons]"
+                                    class="form-control metric-tons" value="{{ $item->metric_tons }}" step="0.001" min="0" readonly>
+                            </td>
+                            <td class="p-2">
+                                <input type="number" name="packing_items[{{ $index }}][maunds]"
+                                    class="form-control maunds" value="{{ $item->maunds }}" step="0.01" min="0" readonly>
+                            </td>
+                            <td class="p-2">
+                                <input type="number" name="packing_items[{{ $index }}][no_of_bags]" class="form-control no_of_bags"
+                                    value="{{ $item->no_of_bags }}" readonly>
+                            </td>
+                            <td class="p-2">
+                                <input type="number" name="packing_items[{{ $index }}][total_kgs]" class="form-control total-kgs"
+                                    value="{{ $item->total_kgs }}" readonly>
+                            </td>
+                            <td class="p-2">
+                                <input type="number" name="packing_items[{{ $index }}][stuffing_in_container]"
+                                    class="form-control stuffing" value="{{ $item->stuffing_in_container }}" step="0.001" min="0" readonly>
+                            </td>
+                            <td class="p-2">
+                                <input type="number" name="packing_items[{{ $index }}][stuffing_maunds]"
+                                    class="form-control stuffing_maunds" value="{{ $item->stuffing_maunds }}" step="0.01" min="0" readonly>
+                            </td>
+                            <td class="p-2">
+                                <input type="number" name="packing_items[{{ $index }}][no_of_containers]"
+                                    class="form-control containers" value="{{ $item->no_of_containers }}" min="0" readonly>
+                            </td>
+                            <td class="p-2">
+                                <input type="number" name="packing_items[{{ $index }}][rate]" class="form-control rates"
+                                    value="{{ $item->rate }}" step="0.01" min="0" readonly>
+                            </td>
+                            <td class="p-2">
+                                <input type="number" name="packing_items[{{ $index }}][rate_per_maund]" class="form-control rates_mnd"
+                                    value="{{ $item->rate_per_maund }}" step="0.01" min="0" readonly>
+                            </td>
+                            <td class="p-2">
+                                <input type="number" name="packing_items[{{ $index }}][amount]" class="form-control amount"
+                                    value="{{ $item->amount }}" min="0" readonly>
+                            </td>
+                            <td class="p-2">
+                                <input type="number" name="packing_items[{{ $index }}][amount_pkr]" class="form-control amount_pkr" 
+                                    value="{{ $item->amount_pkr }}" readonly>
+                            </td>
+                            {{-- <td class="text-center p-2">
+                                <button type="button" class="btn btn-sm btn-danger remove-packing-item">
+                                    <i class="ft-trash-2"></i>
+                                </button>
+                            </td> --}}
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
             </div>
         </div>
+
     </div>
 
     <div class="row bottom-button-bar">
         <div class="col-12 mb-3">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
-            <button type="submit" class="btn btn-primary submitbutton">Update Export Order</button>
+            <button type="submit" class="btn btn-primary submitbutton">Update Proforma</button>
         </div>
     </div>
 </form>
-
-<script>
-    $(document).ready(function() {
-        // Initialize Select2 for all multi-selects
-        $('.select2').select2();
-
-        // Product selection change
-        $('#productSelect').change(function() {
-            var productId = $(this).val();
-            if (productId) {
-                $.get('{{ route('get.product_specs.export', '') }}/' + productId, function(data) {
-                    $('#productSpecs').html(data);
-                    $('#specificationsSection').show();
-                });
-            } else {
-                $('#specificationsSection').hide();
-            }
-        });
-
-        // // Add more packing items using clone
-        // $('#addPackingItem').click(function() {
-        //     addNewPackingItem();
-        // });
-
-        // // Add new packing item function
-        // function addNewPackingItem() {
-        //     var firstItem = $('.packing-item').first();
-        //     var newItem = firstItem.clone();
-
-        //     // Update indexes
-        //     var newIndex = $('.packing-item').length;
-        //     newItem.find('input, select').each(function() {
-        //         var name = $(this).attr('name');
-        //         if (name) {
-        //             name = name.replace(/\[\d+\]/, '[' + newIndex + ']');
-        //             $(this).attr('name', name);
-        //             $(this).val(''); // Clear values
-        //         }
-        //     });
-
-        //     // Clear specific values
-        //     newItem.find(
-        //             '.bag-size, .no-of-bags, .extra-bags, .empty-bags, .stuffing, .containers, .min-weight')
-        //         .val('');
-        //     newItem.find('.total-bags, .total-kgs, .metric-tons').val('0');
-        //     newItem.find('select').prop('selectedIndex', 0);
-
-        //     // Reset select fields
-        //     newItem.find('select').each(function() {
-        //         if ($(this).hasClass('select2-hidden-accessible')) {
-        //             // Remove Select2 initialization
-        //             $(this).siblings('.select2-container').remove();
-        //             $(this).show().removeClass('select2-hidden-accessible');
-        //             $(this).next('.select2-container').remove();
-        //         }
-        //         $(this).prop('selectedIndex', 0);
-        //     });
-
-        //     // Add to container
-        //     $('#packingItems').append(newItem);
-        //     newItem.find('select[name*="fumigation_company_id"]').val([]);
-
-        //     // Re-initialize Select2 for new selects
-        //     newItem.find('select').select2();
-        //     firstItem.find('select').select2();
-        // }
-
-        // // Duplicate packing item - PROPERLY FIXED VERSION
-        // $(document).on('click', '.duplicate-packing-item', function() {
-        //     var currentItem = $(this).closest('.packing-item');
-
-        //     // Pehle original item ki values capture karo BEFORE destroying Select2
-        //     var originalValues = {};
-        //     currentItem.find('select').each(function() {
-        //         var $select = $(this);
-        //         originalValues[$select.attr('name')] = $select.val();
-        //     });
-
-        //     // Ab clone karo WITHOUT destroying Select2 first
-        //     var newItem = currentItem.clone();
-
-        //     // Update indexes for new item
-        //     var newIndex = $('.packing-item').length;
-        //     newItem.find('input, select').each(function() {
-        //         var name = $(this).attr('name');
-        //         if (name) {
-        //             name = name.replace(/\[\d+\]/, '[' + newIndex + ']');
-        //             $(this).attr('name', name);
-        //         }
-        //     });
-
-        //     // New item ke Select2 containers ko properly handle karo
-        //     newItem.find('select').each(function() {
-        //         var $select = $(this);
-
-        //         // Select2 container remove karo
-        //         $select.siblings('.select2-container').remove();
-        //         $select.show().removeClass('select2-hidden-accessible');
-        //         $select.next('.select2-container').remove();
-        //     });
-
-        //     // Insert after current item
-        //     currentItem.after(newItem);
-
-        //     // Re-initialize Select2 for duplicated item with ORIGINAL values
-        //     newItem.find('select').each(function() {
-        //         var $select = $(this);
-        //         var originalName = $select.attr('name').replace(/\[\d+\]/,
-        //             '[0]'); // Get original name
-        //         var preservedValue = originalValues[originalName];
-
-        //         $select.select2();
-        //         if (preservedValue) {
-        //             $select.val(preservedValue).trigger('change');
-        //         }
-        //     });
-        //     currentItem.find('select').select2();
-
-        //     // Re-index all items
-        //     reindexPackingItems();
-        // });
-
-
-        // // Remove packing item
-        // $(document).on('click', '.remove-packing-item', function() {
-        //     if ($('.packing-item').length > 1) {
-        //         $(this).closest('.packing-item').remove();
-        //         // Re-index remaining items
-        //         reindexPackingItems();
-        //     }
-        // });
-
-        // Auto-calculate totals
-        $(document).on('input', '.bag-size, .metric-tons', function() {
-            let item = $(this).closest('.packing-item');
-            calculateTotals(item);
-        });
-
-        // Auto-calculate stuffing based on metric tons and containers
-        $(document).on('input', '.metric-tons, .containers', function() {
-            var item = $(this).closest('.packing-item');
-            calculateStuffing(item);
-        });
-
-        // Auto-calculate containers based on metric tons and stuffing
-        $(document).on('input', '.metric-tons, .stuffing', function() {
-            var item = $(this).closest('.packing-item');
-            calculateContainers(item);
-        });
-
-        $(document).on('input', '.rates, .metric-tons', function() {
-            let item = $(this).closest('.packing-item');
-            calculateAmount(item);
-        });
-
-
-        function calculateStuffing(item) {
-            var metricTons = parseFloat(item.find('.metric-tons').val()) || 0;
-            var containers = parseInt(item.find('.containers').val()) || 0;
-
-            if (containers > 0 && metricTons > 0) {
-                var stuffingPerContainer = metricTons / containers;
-                item.find('.stuffing').val(stuffingPerContainer.toFixed(3));
-            }
-        }
-
-        function calculateContainers(item) {
-            var metricTons = parseFloat(item.find('.metric-tons').val()) || 0;
-            var stuffing = parseFloat(item.find('.stuffing').val()) || 0;
-
-            if (stuffing > 0 && metricTons > 0) {
-                var containers = Math.ceil(metricTons / stuffing);
-                item.find('.containers').val(containers);
-            }
-        }
-
-        function calculateTotals(item) {
-            let bagSize = parseFloat(item.find('.bag-size').val()) || 0; // kg
-            let quantityMT = parseFloat(item.find('.metric-tons').val()) || 0; // MTs
-
-            // Total KGs
-            let totalKgs = quantityMT * 1000;
-
-            // No of Bags
-            let totalBags = 0;
-            if (bagSize > 0) {
-                totalBags = totalKgs / bagSize;
-            }
-
-            // Update fields
-            item.find('.no_of_bags').val(totalBags.toFixed(0));
-            item.find('.total-kgs').val(totalKgs.toFixed(2));
-
-            // Stuffing auto
-            let containers = parseInt(item.find('.containers').val()) || 0;
-            if (containers > 0) {
-                calculateStuffing(item);
-            }
-
-            calculateAmount(item);
-        }
-
-
-        function calculateAmount(item) {
-            let rate = parseFloat(item.find('.rates').val()) || 0;
-            let metricTons = parseFloat(item.find('.metric-tons').val()) || 0;
-
-            // keep 3 decimals
-            rate = parseFloat(rate.toFixed(3));
-            metricTons = parseFloat(metricTons.toFixed(3));
-
-            let amount = rate * metricTons;
-
-            item.find('.amount').val(amount.toFixed(2));
-
-            // PKR conversion
-            let currencyRate = parseFloat($('#currencyRate').val()) || 0;
-            if (currencyRate > 0) {
-                let amountPKR = amount * currencyRate;
-                item.find('.amount_pkr').val(amountPKR.toFixed(2));
-            }
-        }
-
-
-        function reindexPackingItems() {
-            $('.packing-item').each(function(index) {
-                $(this).find('input, select').each(function() {
-                    var name = $(this).attr('name');
-                    if (name) {
-                        name = name.replace(/\[\d+\]/, '[' + index + ']');
-                        $(this).attr('name', name);
-                    }
-                });
-            });
-        }
-
-        // Initial calculation for first item
-        calculateTotals($('.packing-item').first());
-    });
-
-    function loadBankDetails(bankId) {
-        if (!bankId) {
-            $('#acc_title, #bank_name, #iban, #account_no, #swift_code, #bank_address, #description').val('');
-            return;
-        }
-
-        $.get('/export/get-bank-details/' + bankId, function(bank) {
-            $('#acc_title').val(bank.account_title);
-            $('#bank_name').val(bank.bank_name);
-            $('#iban').val(bank.iban);
-            $('#account_no').val(bank.account_no);
-            $('#swift_code').val(bank.swift_code);
-            $('#bank_address').val(bank.bank_address);
-            $('#description').val(bank.description);
-        });
-    }
-
-    function loadCorrespondentBankDetails(bankId) {
-        if (!bankId) {
-            $('#cor_acc_title, #cor_bank_name, #cor_iban, #cor_account_no, #cor_swift_code, #cor_bank_address, #cor_description')
-                .val('');
-            return;
-        }
-
-        $.get('/export/get-bank-details/' + bankId, function(bank) {
-            $('#cor_acc_title').val(bank.account_title);
-            $('#cor_bank_name').val(bank.bank_name);
-            $('#cor_iban').val(bank.iban);
-            $('#cor_account_no').val(bank.account_no);
-            $('#cor_swift_code').val(bank.swift_code);
-            $('#cor_bank_address').val(bank.bank_address);
-            $('#cor_description').val(bank.description);
-        });
-    }
-
-    $(document).ready(function() {
-
-        // change events
-        $('#bankSelect').on('change', function() {
-            loadBankDetails($(this).val());
-        });
-
-        $('#correspondentBankSelect').on('change', function() {
-            loadCorrespondentBankDetails($(this).val());
-        });
-
-        let selectedBank = $('#bankSelect').val();
-        if (selectedBank) {
-            loadBankDetails(selectedBank);
-        }
-
-        let selectedCorBank = $('#correspondentBankSelect').val();
-        if (selectedCorBank) {
-            loadCorrespondentBankDetails(selectedCorBank);
-        }
-    });
-
-    $(document).ready(function() {
-        const savedBankId = "{{ $exportOrder->customer_bank_id }}";
-        const savedBankType = "{{ $exportOrder->customer_bank_type }}";
-
-        function loadBankDetails(bankId) {
-             if (!bankId) {
-                $('#acc_title, #bank_name, #branch_name, #branch_code, #account_no').val('');
-                return;
-            }
-
-            // The data is already in the <option> data attributes
-            let selected = $('#bankSelect').find(':selected');
-            $('#acc_title').val(selected.data('title') || '');
-            $('#bank_name').val(selected.data('bank') || '');
-            $('#branch_name').val(selected.data('branch') || '');
-            $('#branch_code').val(selected.data('branch-code') || '');
-            $('#account_no').val(selected.data('account') || '');
-        }
-
-        // On buyer change
-        $('select[name="buyer_id"]').on('change', function() {
-            let customerId = $(this).val();
-            if (!customerId) {
-                $('#bankSelect').html('<option value="">-- Select Bank --</option>');
-                loadBankDetails(null);
-                return;
-            }
-
-            $.get('{{ route('export-order.customer-banks', '') }}/' + customerId, function(response) {
-                let options = '<option value="">-- Select Bank --</option>';
-                response.forEach(function(bank) {
-                    let label = '[' + bank.type + '] ' + bank.account_title + ' - ' + bank.bank_name;
-                    options += `<option value="${bank.id}" 
-                        data-title="${bank.account_title}" 
-                        data-bank="${bank.bank_name}"
-                        data-branch="${bank.branch_name}"
-                        data-branch-code="${bank.branch_code}"
-                        data-account="${bank.account_number}">
-                        ${label}
-                    </option>`;
-                });
-                $('#bankSelect').html(options);
-                if ($('#bankSelect').hasClass('select2-hidden-accessible')) {
-                    $('#bankSelect').select2();
-                }
-            });
-        });
-
-        // On bank change
-        $('#bankSelect').on('change', function() {
-            loadBankDetails($(this).val());
-        });
-
-        // On page load: if buyer already selected, load their banks
-        let initialBuyer = $('select[name="buyer_id"]').val();
-        if (initialBuyer) {
-            $.get('{{ route('export-order.customer-banks', '') }}/' + initialBuyer, function(response) {
-                let options = '<option value="">-- Select Bank --</option>';
-                response.forEach(function(bank) {
-                    let label = '[' + bank.type + '] ' + bank.account_title + ' - ' + bank.bank_name;
-                    let selected = (bank.id === savedBankId) ? 'selected' : '';
-                    options += `<option value="${bank.id}" 
-                        ${selected}
-                        data-title="${bank.account_title}" 
-                        data-bank="${bank.bank_name}"
-                        data-branch="${bank.branch_name}"
-                        data-branch-code="${bank.branch_code}"
-                        data-account="${bank.account_number}">
-                        ${label}
-                    </option>`;
-                });
-                $('#bankSelect').html(options);
-                if ($('#bankSelect').hasClass('select2-hidden-accessible')) {
-                    $('#bankSelect').select2();
-                }
-                // Trigger change to autofill fields
-                if (savedBankId && $('#bankSelect').val() === savedBankId) {
-                    $('#bankSelect').trigger('change');
-                }
-            });
-        }
-
-        $('#currencySelect').on('change', function() {
-            let rate = $(this).find(':selected').data('rate') || '';
-            $('#currencyRate').val(rate);
-        });
-
-    });
-
-    $(document).ready(function() {
-        let selectedArrivalLocations = @json($exportOrder->arrival_location_ids ?? []);
-        let selectedArrivalSubLocations = @json($exportOrder->arrival_sub_location_ids ?? []);
-
-        // Convert saved IDs to strings for comparison
-        selectedArrivalLocations = selectedArrivalLocations.map(String);
-        selectedArrivalSubLocations = selectedArrivalSubLocations.map(String);
-
-        // Populate arrival locations on page load
-        let companyLocationIds = $('#companyLocationSelect').val();
-        if (companyLocationIds && companyLocationIds.length > 0) {
-            populateArrivalLocations(companyLocationIds, selectedArrivalLocations, selectedArrivalSubLocations);
-        }
-
-        // Company location change
-        $('#companyLocationSelect').on('change', function() {
-            selectedArrivalLocations = [];
-            selectedArrivalSubLocations = [];
-            populateArrivalLocations($(this).val(), [], []);
-        });
-
-        // Arrival location change
-        $('#arrivalLocationSelect').on('change', function() {
-            selectedArrivalSubLocations = [];
-            populateArrivalSubLocations($(this).val(), []);
-        });
-
-        // Functions
-        function populateArrivalLocations(companyLocationIds, selectedIds = [], selectedSubIds = []) {
-            $('#arrivalLocationSelect').empty().trigger('change');
-            $('#arrivalSubLocationSelect').empty().trigger('change');
-
-            if (!companyLocationIds || companyLocationIds.length === 0) return;
-
-            $.post('/export/get-arrival-locations', {
-                company_location_ids: companyLocationIds,
-                _token: $('meta[name="csrf-token"]').attr('content')
-            }, function(response) {
-                let options = '';
-                response.forEach(function(location) {
-                    let locId = String(location.id);
-                    options += `<option value="${locId}" ${selectedIds.includes(locId) ? 'selected' : ''}>
-                                ${location.name}
-                            </option>`;
-                });
-                $('#arrivalLocationSelect').html(options).trigger('change');
-
-                // Populate sub locations for selected arrival locations
-                if (selectedIds.length > 0) {
-                    populateArrivalSubLocations(selectedIds, selectedSubIds);
-                }
-            });
-        }
-
-        function populateArrivalSubLocations(arrivalLocationIds, selectedIds = []) {
-            $('#arrivalSubLocationSelect').empty().trigger('change');
-
-            if (!arrivalLocationIds || arrivalLocationIds.length === 0) return;
-
-            $.post('/export/get-arrival-sub-locations', {
-                arrival_location_ids: arrivalLocationIds,
-                _token: $('meta[name="csrf-token"]').attr('content')
-            }, function(response) {
-                let options = '';
-                response.forEach(function(sub) {
-                    let subId = String(sub.id);
-                    options += `<option value="${subId}" ${selectedIds.includes(subId) ? 'selected' : ''}>
-                                ${sub.name}
-                            </option>`;
-                });
-                $('#arrivalSubLocationSelect').html(options).trigger('change');
-            });
-        }
-    });
-</script>
 
 <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.js"></script>
 
 <script>
     $(document).ready(function() {
+        // Initialize Summernote
         $('#shipping_instructions, #documents_to_be_provided, #other_condition, #force_majure, #application_law, #other_specifications').summernote({
             placeholder: 'Enter details here...',
             tabsize: 2,
@@ -1265,5 +774,266 @@
                 ['view', ['fullscreen', 'codeview', 'help']]
             ]
         });
+
+        // Initialize Select2
+        $('.select2').each(function() {
+            $(this).select2({ width: '100%' });
+        });
+
+        // Product selection change
+        $('#productSelect').on('change', function() {
+            var productId = $(this).val();
+            if (productId) {
+                $.get('{{ route('get.product_specs.export', '') }}/' + productId, function(data) {
+                    $('#productSpecs').html(data);
+                    $('#specificationsSection').show();
+                });
+            } else {
+                $('#specificationsSection').hide();
+            }
+        });
+
+        // Add more packing items
+        $('#addPackingItem').click(function() {
+            addNewPackingItem();
+        });
+
+        function addNewPackingItem() {
+            var firstRow = $('#packingItems tr.packing-item').first();
+            var newRow = firstRow.clone();
+            newRow.find('.select2-container').remove();
+            newRow.find('select').removeClass('select2-hidden-accessible').removeAttr('data-select2-id').show();
+            newRow.find('input').val(0);
+            newRow.find('input[readonly]').val(0);
+            newRow.find('select').val('').trigger('change');
+            $('#packingItems').append(newRow);
+            $('.select2').select2({ width: '100%' });
+            reindexPackingItems();
+        }
+
+        $(document).on('click', '.remove-packing-item', function() {
+            if ($('#packingItems tr.packing-item').length > 1) {
+                $(this).closest('tr').remove();
+                reindexPackingItems();
+            } else {
+                alert('At least one packing item is required.');
+            }
+        });
+
+        // Conversion & Calculation Logic
+        $(document).on('input', '.metric-tons', function() {
+            let row = $(this).closest('tr');
+            let mt = parseFloat($(this).val()) || 0;
+            row.find('.maunds').val((mt * 25).toFixed(2));
+            calculateTotals(row);
+        });
+
+        $(document).on('input', '.maunds', function() {
+            let row = $(this).closest('tr');
+            let mnd = parseFloat($(this).val()) || 0;
+            row.find('.metric-tons').val((mnd / 25).toFixed(3));
+            calculateTotals(row);
+        });
+
+        $(document).on('input', '.stuffing', function() {
+            let row = $(this).closest('tr');
+            let mt = parseFloat($(this).val()) || 0;
+            row.find('.stuffing_maunds').val((mt * 25).toFixed(2));
+            calculateContainers(row);
+        });
+
+        $(document).on('input', '.stuffing_maunds', function() {
+            let row = $(this).closest('tr');
+            let mnd = parseFloat($(this).val()) || 0;
+            row.find('.stuffing').val((mnd / 25).toFixed(3));
+            calculateContainers(row);
+        });
+
+        $(document).on('input', '.rates', function() {
+            let row = $(this).closest('tr');
+            let rateTon = parseFloat($(this).val()) || 0;
+            row.find('.rates_mnd').val((rateTon / 25).toFixed(2));
+            calculateAmount(row);
+        });
+
+        $(document).on('input', '.rates_mnd', function() {
+            let row = $(this).closest('tr');
+            let rateMnd = parseFloat($(this).val()) || 0;
+            row.find('.rates').val((rateMnd * 25).toFixed(2));
+            calculateAmount(row);
+        });
+
+        $(document).on('input', '.bag-size', function() {
+            calculateTotals($(this).closest('tr'));
+        });
+
+        $(document).on('input', '.containers', function() {
+            calculateStuffing($(this).closest('tr'));
+        });
+
+        function calculateStuffing(row) {
+            var mt = parseFloat(row.find('.metric-tons').val()) || 0;
+            var containers = parseInt(row.find('.containers').val()) || 0;
+            if (containers > 0) {
+                var stuffingMT = mt / containers;
+                row.find('.stuffing').val(stuffingMT.toFixed(3));
+                row.find('.stuffing_maunds').val((stuffingMT * 25).toFixed(2));
+            }
+        }
+
+        function calculateContainers(row) {
+            var mt = parseFloat(row.find('.metric-tons').val()) || 0;
+            var stuffing = parseFloat(row.find('.stuffing').val()) || 0;
+            if (stuffing > 0) {
+                var containers = Math.ceil(mt / stuffing);
+                row.find('.containers').val(containers);
+            }
+        }
+
+        function calculateTotals(row) {
+            let bagSize = parseFloat(row.find('.bag-size').val()) || 0;
+            let mt = parseFloat(row.find('.metric-tons').val()) || 0;
+            let totalKgs = mt * 1000;
+            row.find('.total-kgs').val(totalKgs.toFixed(2));
+            if (bagSize > 0) {
+                row.find('.no_of_bags').val((totalKgs / bagSize).toFixed(0));
+            } else {
+                row.find('.no_of_bags').val(0);
+            }
+            calculateAmount(row);
+        }
+
+        function calculateAmount(row) {
+            let rate = parseFloat(row.find('.rates').val()) || 0;
+            let mt = parseFloat(row.find('.metric-tons').val()) || 0;
+            let amount = rate * mt;
+            row.find('.amount').val(amount.toFixed(2));
+            let currencyRate = parseFloat($('#currencyRate').val()) || 1;
+            row.find('.amount_pkr').val((amount * currencyRate).toFixed(2));
+        }
+
+        function reindexPackingItems() {
+            $('#packingItems tr.packing-item').each(function(index) {
+                $(this).find('input, select').each(function() {
+                    var name = $(this).attr('name');
+                    if (name) {
+                        name = name.replace(/\[\d+\]/, '[' + index + ']');
+                        $(this).attr('name', name);
+                    }
+                });
+            });
+        }
+
+        // Currency Rate Change
+        $('#currencySelect').on('change', function() {
+            let rate = $(this).find(':selected').data('rate') || '';
+            $('#currencyRate').val(rate);
+            $('.packing-item').each(function() {
+                calculateAmount($(this));
+            });
+        });
+
+        // Bank Details Section
+        function loadBankDetails(bankSelect) {
+            let selected = $(bankSelect).find(':selected');
+            if (!selected.val()) {
+                $('#acc_title, #bank_name, #branch_name, #branch_code, #account_no, #bank_type_hidden').val('');
+                return;
+            }
+            let data = selected.data('details');
+            if (data) {
+                $('#acc_title').val(data.account_title || '');
+                $('#bank_name').val(data.bank_name || '');
+                $('#branch_name').val(data.branch_name || '');
+                $('#branch_code').val(data.branch_code || '');
+                $('#account_no').val(data.account_number || '');
+                $('#bank_type_hidden').val(selected.data('type') || '');
+            }
+        }
+
+        $(document).ready(function() {
+            setTimeout(function() {
+                if ($('#bankSelect').val()) {
+                    loadBankDetails($('#bankSelect')[0]);
+                }
+            }, 100);
+        });
+
+        $('#bankSelect').on('change', function() {
+            loadBankDetails(this);
+        });
+
+        $('#correspondentBankSelect').on('change', function() {
+            let bankId = $(this).val();
+            if (!bankId) {
+                $('#cor_acc_title, #cor_bank_name, #cor_iban, #cor_account_no, #cor_swift_code, #cor_bank_address, #cor_description').val('');
+                return;
+            }
+            $.get('/export/get-bank-details/' + bankId, function(bank) {
+                $('#cor_acc_title').val(bank.account_title);
+                $('#cor_bank_name').val(bank.bank_name);
+                $('#cor_iban').val(bank.iban);
+                $('#cor_account_no').val(bank.account_no);
+                $('#cor_swift_code').val(bank.swift_code);
+                $('#cor_bank_address').val(bank.bank_address);
+                $('#cor_description').val(bank.description);
+            });
+        }).trigger('change');
+
+        // Arrival Locations Logic
+        let selectedArrivalLocations = @json($exportOrder->arrival_location_ids ?? []);
+        let selectedArrivalSubLocations = @json($exportOrder->arrival_sub_location_ids ?? []);
+        selectedArrivalLocations = selectedArrivalLocations.map(String);
+        selectedArrivalSubLocations = selectedArrivalSubLocations.map(String);
+
+        function populateArrivalLocations(companyLocationIds, selectedIds = [], selectedSubIds = []) {
+            $('#arrivalLocationSelect').empty().trigger('change');
+            $('#arrivalSubLocationSelect').empty().trigger('change');
+            if (!companyLocationIds || companyLocationIds.length === 0) return;
+            $.post('/export/get-arrival-locations', {
+                company_location_ids: companyLocationIds,
+                _token: $('meta[name="csrf-token"]').attr('content')
+            }, function(response) {
+                let options = '';
+                response.forEach(function(location) {
+                    let locId = String(location.id);
+                    options += `<option value="${locId}" ${selectedIds.includes(locId) ? 'selected' : ''}>${location.name}</option>`;
+                });
+                $('#arrivalLocationSelect').html(options).trigger('change');
+                if (selectedIds.length > 0) {
+                    populateArrivalSubLocations(selectedIds, selectedSubIds);
+                }
+            });
+        }
+
+        function populateArrivalSubLocations(arrivalLocationIds, selectedIds = []) {
+            $('#arrivalSubLocationSelect').empty().trigger('change');
+            if (!arrivalLocationIds || arrivalLocationIds.length === 0) return;
+            $.post('/export/get-arrival-sub-locations', {
+                arrival_location_ids: arrivalLocationIds,
+                _token: $('meta[name="csrf-token"]').attr('content')
+            }, function(response) {
+                let options = '';
+                response.forEach(function(sub) {
+                    let subId = String(sub.id);
+                    options += `<option value="${subId}" ${selectedIds.includes(subId) ? 'selected' : ''}>${sub.name}</option>`;
+                });
+                $('#arrivalSubLocationSelect').html(options).trigger('change');
+            });
+        }
+
+        let initialCompanyLocations = $('#companyLocationSelect').val();
+        if (initialCompanyLocations && initialCompanyLocations.length > 0) {
+            populateArrivalLocations(initialCompanyLocations, selectedArrivalLocations, selectedArrivalSubLocations);
+        }
+
+        $('#companyLocationSelect').on('change', function() {
+            populateArrivalLocations($(this).val(), [], []);
+        });
+
+        $('#arrivalLocationSelect').on('change', function() {
+            populateArrivalSubLocations($(this).val(), []);
+        });
+
     });
 </script>
