@@ -235,54 +235,36 @@
                     <div class="p-3">
                         <h5 class="mb-3"><strong>Beneficiary Bank Details</strong></h5>
                         <div class="row">
-                            {{-- Bank Selector --}}
+                            {{-- Bank Display --}}
                             <div class="col-md-12 mb-2">
-                                <label>Select Bank:</label>
-                                <select name="bank_id" id="bankSelect" class="form-control select2" disabled>
-                                    <option value="">-- Select Bank --</option>
-                                    @foreach ($banks as $bank)
-                                        <option value="{{ $bank->id }}"
-                                            {{ old('bank_id', $exportOrder->bank_id) == $bank->id ? 'selected' : '' }}>
-                                            {{ $bank->account_title }} - {{ $bank->bank_name }}
-                                        </option>
-                                    @endforeach
-                                </select>
+                                <label>Beneficiary Bank:</label>
+                                <input type="text" class="form-control" value="{{ $exportOrder->customerBank ? $exportOrder->customerBank->bank_name . ' (' . ($exportOrder->customer_bank_type == 'owner' ? 'Owner' : 'Company') . ')' : 'N/A' }}" disabled>
                             </div>
 
                             {{-- Auto Filled Fields --}}
                             <div class="col-md-6 mt-2">
                                 <label>Account Title:</label>
-                                <input type="text" id="acc_title" class="form-control" disabled>
+                                <input type="text" id="acc_title" class="form-control" value="{{ $exportOrder->customerBank->account_title ?? '' }}" disabled>
                             </div>
 
                             <div class="col-md-6 mt-2">
                                 <label>Bank Name:</label>
-                                <input type="text" id="bank_name" class="form-control" disabled>
+                                <input type="text" id="bank_name" class="form-control" value="{{ $exportOrder->customerBank->bank_name ?? '' }}" disabled>
                             </div>
 
                             <div class="col-md-6 mt-2">
-                                <label>IBAN:</label>
-                                <input type="text" id="iban" class="form-control" disabled>
+                                <label>Branch Name:</label>
+                                <input type="text" id="branch_name" class="form-control" value="{{ $exportOrder->customerBank->branch_name ?? '' }}" disabled>
                             </div>
 
                             <div class="col-md-6 mt-2">
                                 <label>Account No:</label>
-                                <input type="text" id="account_no" class="form-control" disabled>
+                                <input type="text" id="account_no" class="form-control" value="{{ $exportOrder->customerBank->account_number ?? '' }}" disabled>
                             </div>
 
                             <div class="col-md-6 mt-2">
-                                <label>SWIFT Code:</label>
-                                <input type="text" id="swift_code" class="form-control" disabled>
-                            </div>
-
-                            <div class="col-md-6 mt-2">
-                                <label>Bank Address:</label>
-                                <input type="text" id="bank_address" class="form-control" disabled>
-                            </div>
-
-                            <div class="col-md-12 mt-2">
-                                <label>Description:</label>
-                                <textarea id="description" class="form-control" rows="2" disabled></textarea>
+                                <label>Branch Code:</label>
+                                <input type="text" id="branch_code" class="form-control" value="{{ $exportOrder->customerBank->branch_code ?? '' }}" disabled>
                             </div>
                         </div>
 
@@ -1081,15 +1063,14 @@
 <script>
     $(document).ready(function() {
 
-        $('#shipping_instructions, #documents_to_be_provided').summernote({
+        $('#shipping_instructions, #documents_to_be_provided, #other_condition, #force_majure, #application_law, #other_specifications').summernote({
             tabsize: 2,
             height: 200,
             toolbar: [],
             airMode: false
         });
 
-        $('#shipping_instructions').summernote('disable');
-        $('#documents_to_be_provided').summernote('disable');
+        $('#shipping_instructions, #documents_to_be_provided, #other_condition, #force_majure, #application_law, #other_specifications').summernote('disable');
 
     });
 </script>

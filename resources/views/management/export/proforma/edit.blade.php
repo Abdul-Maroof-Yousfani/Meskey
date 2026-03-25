@@ -235,21 +235,15 @@
                     <div class="p-3">
                         <h5 class="mb-3"><strong>Beneficiary Bank Details</strong></h5>
                         <div class="row">
-                            {{-- Bank Selector --}}
+                        {{-- Bank Selector (loaded dynamically based on selected Buyer) --}}
                             <div class="col-md-12 mb-2">
                                 <label>Select Bank:</label>
                                 <select name="bank_id" id="bankSelect" class="form-control select2">
                                     <option value="">-- Select Bank --</option>
-                                    @foreach ($banks as $bank)
-                                        <option value="{{ $bank->id }}"
-                                            {{ old('bank_id', $exportOrder->bank_id) == $bank->id ? 'selected' : '' }}>
-                                            {{ $bank->account_title }} - {{ $bank->bank_name }}
-                                        </option>
-                                    @endforeach
                                 </select>
+                                <small class="text-muted">Select a Buyer first to see their bank accounts.</small>
                             </div>
 
-                            {{-- Auto Filled Fields --}}
                             <div class="col-md-6 mt-2">
                                 <label>Account Title:</label>
                                 <input type="text" id="acc_title" class="form-control" disabled>
@@ -261,28 +255,18 @@
                             </div>
 
                             <div class="col-md-6 mt-2">
-                                <label>IBAN:</label>
-                                <input type="text" id="iban" class="form-control" disabled>
+                                <label>Branch Name:</label>
+                                <input type="text" id="branch_name" class="form-control" disabled>
+                            </div>
+
+                            <div class="col-md-6 mt-2">
+                                <label>Branch Code:</label>
+                                <input type="text" id="branch_code" class="form-control" disabled>
                             </div>
 
                             <div class="col-md-6 mt-2">
                                 <label>Account No:</label>
                                 <input type="text" id="account_no" class="form-control" disabled>
-                            </div>
-
-                            <div class="col-md-6 mt-2">
-                                <label>SWIFT Code:</label>
-                                <input type="text" id="swift_code" class="form-control" disabled>
-                            </div>
-
-                            <div class="col-md-6 mt-2">
-                                <label>Bank Address:</label>
-                                <input type="text" id="bank_address" class="form-control" disabled>
-                            </div>
-
-                            <div class="col-md-12 mt-2">
-                                <label>Description:</label>
-                                <textarea id="description" class="form-control" rows="2" disabled></textarea>
                             </div>
                         </div>
 
@@ -381,19 +365,19 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label>Other Condition:</label>
-                        <textarea name="other_condition" class="form-control" rows="3">{{ old('other_condition', $exportOrder->other_condition) }}</textarea>
+                        <textarea name="other_condition" id="other_condition" class="form-control" rows="3">{{ old('other_condition', $exportOrder->other_condition) }}</textarea>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
                         <label>Force Majure:</label>
-                        <textarea name="force_majure" class="form-control" rows="3">{{ old('force_majure', $exportOrder->force_majure) }}</textarea>
+                        <textarea name="force_majure" id="force_majure" class="form-control" rows="3">{{ old('force_majure', $exportOrder->force_majure) }}</textarea>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
                         <label>Application Law:</label>
-                        <textarea name="application_law" class="form-control" rows="3">{{ old('application_law', $exportOrder->application_law) }}</textarea>
+                        <textarea name="application_law" id="application_law" class="form-control" rows="3">{{ old('application_law', $exportOrder->application_law) }}</textarea>
                     </div>
                 </div>
             </div>
@@ -1098,6 +1082,87 @@
     });
 
     $(document).ready(function() {
+        const savedBankId = "{{ $exportOrder->customer_bank_id }}";
+        const savedBankType = "{{ $exportOrder->customer_bank_type }}";
+
+        function loadBankDetails(bankId) {
+             if (!bankId) {
+                $('#acc_title, #bank_name, #branch_name, #branch_code, #account_no').val('');
+                return;
+            }
+
+            // The data is already in the <option> data attributes
+            let selected = $('#bankSelect').find(':selected');
+            $('#acc_title').val(selected.data('title') || '');
+            $('#bank_name').val(selected.data('bank') || '');
+            $('#branch_name').val(selected.data('branch') || '');
+            $('#branch_code').val(selected.data('branch-code') || '');
+            $('#account_no').val(selected.data('account') || '');
+        }
+
+        // On buyer change
+        $('select[name="buyer_id"]').on('change', function() {
+            let customerId = $(this).val();
+            if (!customerId) {
+                $('#bankSelect').html('<option value="">-- Select Bank --</option>');
+                loadBankDetails(null);
+                return;
+            }
+
+            $.get('{{ route('export-order.customer-banks', '') }}/' + customerId, function(response) {
+                let options = '<option value="">-- Select Bank --</option>';
+                response.forEach(function(bank) {
+                    let label = '[' + bank.type + '] ' + bank.account_title + ' - ' + bank.bank_name;
+                    options += `<option value="${bank.id}" 
+                        data-title="${bank.account_title}" 
+                        data-bank="${bank.bank_name}"
+                        data-branch="${bank.branch_name}"
+                        data-branch-code="${bank.branch_code}"
+                        data-account="${bank.account_number}">
+                        ${label}
+                    </option>`;
+                });
+                $('#bankSelect').html(options);
+                if ($('#bankSelect').hasClass('select2-hidden-accessible')) {
+                    $('#bankSelect').select2();
+                }
+            });
+        });
+
+        // On bank change
+        $('#bankSelect').on('change', function() {
+            loadBankDetails($(this).val());
+        });
+
+        // On page load: if buyer already selected, load their banks
+        let initialBuyer = $('select[name="buyer_id"]').val();
+        if (initialBuyer) {
+            $.get('{{ route('export-order.customer-banks', '') }}/' + initialBuyer, function(response) {
+                let options = '<option value="">-- Select Bank --</option>';
+                response.forEach(function(bank) {
+                    let label = '[' + bank.type + '] ' + bank.account_title + ' - ' + bank.bank_name;
+                    let selected = (bank.id === savedBankId) ? 'selected' : '';
+                    options += `<option value="${bank.id}" 
+                        ${selected}
+                        data-title="${bank.account_title}" 
+                        data-bank="${bank.bank_name}"
+                        data-branch="${bank.branch_name}"
+                        data-branch-code="${bank.branch_code}"
+                        data-account="${bank.account_number}">
+                        ${label}
+                    </option>`;
+                });
+                $('#bankSelect').html(options);
+                if ($('#bankSelect').hasClass('select2-hidden-accessible')) {
+                    $('#bankSelect').select2();
+                }
+                // Trigger change to autofill fields
+                if (savedBankId && $('#bankSelect').val() === savedBankId) {
+                    $('#bankSelect').trigger('change');
+                }
+            });
+        }
+
         $('#currencySelect').on('change', function() {
             let rate = $(this).find(':selected').data('rate') || '';
             $('#currencyRate').val(rate);
@@ -1186,7 +1251,7 @@
 
 <script>
     $(document).ready(function() {
-        $('#shipping_instructions, #documents_to_be_provided').summernote({
+        $('#shipping_instructions, #documents_to_be_provided, #other_condition, #force_majure, #application_law, #other_specifications').summernote({
             placeholder: 'Enter details here...',
             tabsize: 2,
             height: 200,
