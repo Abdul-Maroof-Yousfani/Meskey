@@ -86,6 +86,11 @@
                                 <i class="ft-trash"></i>
                             </button>
                             <button type="button" 
+                                onclick="openModal(this,'{{ route('job-orders.print', $job_order->id) }}','Job Order View',true,'85%')"
+                                class="btn btn-outline-dark position-relative" title="Print View">    
+                                <i class="ft-printer"></i>
+                            </button>
+                            <button type="button" 
                                 onclick="openModal(this,'{{ route('job-orders.edit', $job_order->id) }}','Edit Job Order',true,'99%')"
                                 class="btn btn-outline-info position-relative" title="View">    
                                 <i class="ft-eye"></i>

@@ -103,6 +103,37 @@ class JobOrderController extends Controller
         return view('management.production.job_orders.getList', compact('job_orders'));
     }
 
+    public function printJobOrder($id)
+    {
+        $jobOrder = JobOrder::with([
+            'product', 
+            'packingItems.companyLocation',
+            'packingItems.bagProduct',
+            'packingItems.bagCondition',
+            'packingItems.brand',
+            'packingItems.bagColor',
+            'packingItems.threadColor',
+            'packingItems.stitching',
+            'packingItems.subItems.bagProduct',
+            'packingItems.subItems.bagSize',
+            'packingItems.subItems.stitching',
+            'packingItems.subItems.bagColor',
+            'packingItems.subItems.brand',
+            'packingItems.subItems.threadColor',
+            'specifications'
+        ])->findOrFail($id);
+        
+        $attentionToIds = [];
+        if (is_string($jobOrder->attention_to)) {
+            $attentionToIds = json_decode($jobOrder->attention_to, true) ?? [];
+        } elseif (is_array($jobOrder->attention_to)) {
+            $attentionToIds = $jobOrder->attention_to;
+        }
+
+        $users = User::whereIn('id', $attentionToIds)->get();
+        return view('management.production.job_orders.view_job_order', compact('jobOrder', 'users'));
+    }
+
     public function create()
     {
         $products = Product::where('status', 1)->get();

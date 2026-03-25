@@ -104,6 +104,21 @@ class JobOrderPackingItem extends Model
         return $this->belongsTo(Brands::class, 'brand_id');
     }
 
+    public function bagColor()
+    {
+        return $this->belongsTo(\App\Models\Master\Color::class, 'bag_color_id');
+    }
+
+    public function threadColor()
+    {
+        return $this->belongsTo(\App\Models\Master\Color::class, 'thread_color_id');
+    }
+
+    public function stitching()
+    {
+        return $this->belongsTo(\App\Models\Master\Stitching::class, 'stitching_id');
+    }
+
     public function subItems()
     {
         return $this->hasMany(JobOrderPackingSubItem::class, 'job_order_packing_item_id');

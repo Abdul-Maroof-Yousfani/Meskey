@@ -13,6 +13,7 @@ use App\Http\Controllers\Production\PlantBreakdownController;
 
 
 Route::resource('job-orders', JobOrderController::class);
+Route::get('job-orders/{id}/print', [JobOrderController::class, 'printJobOrder'])->name('job-orders.print');
 Route::post('get-job-orders', [JobOrderController::class, 'getList'])->name('get.job_orders');
 Route::get('get-product-specs/{productId}', [JobOrderController::class, 'getProductSpecs'])->name('get.product_specs');
 
