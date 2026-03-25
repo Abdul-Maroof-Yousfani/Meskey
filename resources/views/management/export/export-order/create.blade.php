@@ -650,11 +650,47 @@
 
 <script>
     $(document).ready(function() {
-        // Initialize Select2 for all multi-selects
-        $('.select2').select2();
+        // Initialize Summernote
+        $('#shipping_instructions, #documents_to_be_provided, #other_condition, #force_majure, #application_law').summernote({
+            placeholder: 'Enter details here...',
+            tabsize: 2,
+            height: 200,
+            toolbar: [
+                ['style', ['bold', 'italic', 'underline', 'clear']],
+                ['font', ['strikethrough', 'superscript', 'subscript']],
+                ['fontsize', ['fontsize']],
+                ['color', ['color']],
+                ['para', ['ul', 'ol', 'paragraph']],
+                ['insert', ['link', 'picture', 'video']],
+                ['view', ['fullscreen', 'codeview', 'help']]
+            ]
+        });
+
+        // Initialize Select2
+        $('.select2').select2({ width: '100%' });
+
+        // Voucher Number based on date
+        $('input[name="voucher_date"]').on('change', function() {
+            let selectedDate = $(this).val();
+            if (!selectedDate) {
+                $('input[name="voucher_no"]').val('');
+                return;
+            }
+            getUniversalNumber({
+                table: 'export_orders',
+                prefix: 'EXPORT',
+                column: 'voucher_no',
+                with_date: 1,
+                custom_date: selectedDate,
+                date_format: 'm-Y',
+                serial_at_end: 1,
+            }, function(no) {
+                $('input[name="voucher_no"]').val(no);
+            });
+        });
 
         // Product selection change
-        $('#productSelect').change(function() {
+        $('#productSelect').on('change', function() {
             var productId = $(this).val();
             if (productId) {
                 $.get('{{ route('get.product_specs.export', '') }}/' + productId, function(data) {
@@ -674,29 +710,16 @@
         function addNewPackingItem() {
             var firstRow = $('#packingItems tr.packing-item').first();
             var newRow = firstRow.clone();
-
-            // Destroy Select2 before cloning if it exists (Select2 clones can be messy)
             newRow.find('.select2-container').remove();
             newRow.find('select').removeClass('select2-hidden-accessible').removeAttr('data-select2-id').show();
-
-            // Clear values
             newRow.find('input').val(0);
             newRow.find('input[readonly]').val(0);
             newRow.find('select').val('').trigger('change');
-
-            // Append to table
             $('#packingItems').append(newRow);
-
-            // Re-initialize Select2 for new and all rows
-            $('.select2').select2({
-                width: '100%'
-            });
-
-            // Re-index all items
+            $('.select2').select2({ width: '100%' });
             reindexPackingItems();
         }
 
-        // Remove packing item
         $(document).on('click', '.remove-packing-item', function() {
             if ($('#packingItems tr.packing-item').length > 1) {
                 $(this).closest('tr').remove();
@@ -706,7 +729,7 @@
             }
         });
 
-        // Conversion: Metric Tons -> Maunds
+        // Conversion & Calculation Logic
         $(document).on('input', '.metric-tons', function() {
             let row = $(this).closest('tr');
             let mt = parseFloat($(this).val()) || 0;
@@ -714,7 +737,6 @@
             calculateTotals(row);
         });
 
-        // Conversion: Maunds -> Metric Tons
         $(document).on('input', '.maunds', function() {
             let row = $(this).closest('tr');
             let mnd = parseFloat($(this).val()) || 0;
@@ -722,7 +744,6 @@
             calculateTotals(row);
         });
 
-        // Conversion: Stuffing (MT) -> Stuffing (Maunds)
         $(document).on('input', '.stuffing', function() {
             let row = $(this).closest('tr');
             let mt = parseFloat($(this).val()) || 0;
@@ -730,7 +751,6 @@
             calculateContainers(row);
         });
 
-        // Conversion: Stuffing (Maunds) -> Stuffing (MT)
         $(document).on('input', '.stuffing_maunds', function() {
             let row = $(this).closest('tr');
             let mnd = parseFloat($(this).val()) || 0;
@@ -738,7 +758,6 @@
             calculateContainers(row);
         });
 
-        // Conversion: Rate/Ton -> Rate/Maund
         $(document).on('input', '.rates', function() {
             let row = $(this).closest('tr');
             let rateTon = parseFloat($(this).val()) || 0;
@@ -746,7 +765,6 @@
             calculateAmount(row);
         });
 
-        // Conversion: Rate/Maund -> Rate/Ton
         $(document).on('input', '.rates_mnd', function() {
             let row = $(this).closest('tr');
             let rateMnd = parseFloat($(this).val()) || 0;
@@ -784,18 +802,13 @@
         function calculateTotals(row) {
             let bagSize = parseFloat(row.find('.bag-size').val()) || 0;
             let mt = parseFloat(row.find('.metric-tons').val()) || 0;
-            
-            // Total KGs
             let totalKgs = mt * 1000;
             row.find('.total-kgs').val(totalKgs.toFixed(2));
-            
-            // No of Bags
             if (bagSize > 0) {
                 row.find('.no_of_bags').val((totalKgs / bagSize).toFixed(0));
             } else {
                 row.find('.no_of_bags').val(0);
             }
-            
             calculateAmount(row);
         }
 
@@ -803,11 +816,8 @@
             let rate = parseFloat(row.find('.rates').val()) || 0;
             let mt = parseFloat(row.find('.metric-tons').val()) || 0;
             let amount = rate * mt;
-            
             row.find('.amount').val(amount.toFixed(2));
-
-            // PKR conversion
-            let currencyRate = parseFloat($('#currencyRate').val()) || 1; // Default to 1 if not set
+            let currencyRate = parseFloat($('#currencyRate').val()) || 1;
             row.find('.amount_pkr').val((amount * currencyRate).toFixed(2));
         }
 
@@ -823,46 +833,43 @@
             });
         }
 
-    });
+        // Currency Rate Change
+        $('#currencySelect').on('change', function() {
+            let rate = $(this).find(':selected').data('rate') || '';
+            $('#currencyRate').val(rate);
+            $('.packing-item').each(function() {
+                calculateAmount($(this));
+            });
+        });
 
-        // Load customer banks when buyer is selected
+        // Bank Details Section
         $('select[name="buyer_id"]').on('change', function() {
             let customerId = $(this).val();
-
-            // Clear the bank select and all filled fields
             $('#bankSelect').html('<option value="">-- Select Bank --</option>').trigger('change');
             $('#acc_title, #bank_name, #branch_name, #branch_code, #account_no').val('');
-
             if (!customerId) return;
-
             $.get('{{ route('export-order.customer-banks', '') }}/' + customerId, function(response) {
                 let options = '<option value="">-- Select Bank --</option>';
                 response.forEach(function(bank) {
-                    let label = '[' + bank.type + '] ' + bank.account_title + ' - ' + bank.bank_name;
                     options += `<option value="${bank.id}" 
                         data-title="${bank.account_title}"
                         data-bank="${bank.bank_name}"
                         data-branch="${bank.branch_name}"
                         data-branch-code="${bank.branch_code}"
                         data-account="${bank.account_number}">
-                        ${label}
+                        [${bank.type}] ${bank.account_title} - ${bank.bank_name}
                     </option>`;
                 });
-                $('#bankSelect').html(options);
-                if ($('#bankSelect').hasClass('select2-hidden-accessible')) {
-                    $('#bankSelect').select2();
-                }
+                $('#bankSelect').html(options).trigger('change');
             });
         });
 
         $('#bankSelect').on('change', function() {
             let selected = $(this).find(':selected');
-
             if (!selected.val()) {
                 $('#acc_title, #bank_name, #branch_name, #branch_code, #account_no').val('');
                 return;
             }
-
             $('#acc_title').val(selected.data('title') || '');
             $('#bank_name').val(selected.data('bank') || '');
             $('#branch_name').val(selected.data('branch') || '');
@@ -870,17 +877,12 @@
             $('#account_no').val(selected.data('account') || '');
         });
 
-    $(document).ready(function() {
-        // Correspondent Bank Auto-fill
         $('#correspondentBankSelect').on('change', function() {
             let bankId = $(this).val();
-
             if (!bankId) {
-                $('#cor_acc_title, #cor_bank_name, #cor_iban, #cor_account_no, #cor_swift_code, #cor_bank_address, #cor_description')
-                    .val('');
+                $('#cor_acc_title, #cor_bank_name, #cor_iban, #cor_account_no, #cor_swift_code, #cor_bank_address, #cor_description').val('');
                 return;
             }
-
             $.get('/export/get-bank-details/' + bankId, function(bank) {
                 $('#cor_acc_title').val(bank.account_title);
                 $('#cor_bank_name').val(bank.bank_name);
@@ -891,106 +893,37 @@
                 $('#cor_description').val(bank.description);
             });
         });
-    });
 
-    $(document).ready(function() {
-        $('#currencySelect').on('change', function() {
-            let rate = $(this).find(':selected').data('rate') || '';
-            $('#currencyRate').val(rate);
-            
-            // Recalculate all rows
-            $('#packingItems tr.packing-item').each(function() {
-                calculateAmount($(this));
-            });
-        });
-    });
-
-    $('input[name="voucher_date"]').on('change', function() {
-
-        let selectedDate = $(this).val();
-
-        if (!selectedDate) {
-            $('input[name="voucher_no"]').val('');
-            return;
-        }
-
-        getUniversalNumber({
-            table: 'export_orders',
-            prefix: 'EXPORT',
-            column: 'voucher_no',
-            with_date: 1,
-            custom_date: selectedDate,
-            date_format: 'm-Y',
-            serial_at_end: 1,
-        }, function(no) {
-            $('input[name="voucher_no"]').val(no);
-        });
-
-    });
-
-    // arrival locations 
-    $(document).ready(function() {
+        // Arrival Locations Logic
         $('#companyLocationSelect').on('change', function() {
             let companyLocationIds = $(this).val();
-
             $('#arrivalLocationSelect').empty().trigger('change');
-
-            if (!companyLocationIds || companyLocationIds.length === 0) {
-                return;
-            }
-            $.ajax({
-                url: '/export/get-arrival-locations',
-                type: 'POST',
-                data: {
-                    company_location_ids: companyLocationIds,
-                    _token: $('meta[name="csrf-token"]').attr('content')
-                },
-                success: function(response) {
-
-                    let options = '';
-
-                    response.forEach(function(location) {
-                        options += `<option value="${location.id}">
-                                    ${location.name}
-                               </option>`;
-                    });
-                    $('#arrivalLocationSelect').html(options).trigger('change');
-                }
+            if (!companyLocationIds || companyLocationIds.length === 0) return;
+            $.post('/export/get-arrival-locations', {
+                company_location_ids: companyLocationIds,
+                _token: $('meta[name="csrf-token"]').attr('content')
+            }, function(response) {
+                let options = '';
+                response.forEach(function(location) {
+                    options += `<option value="${location.id}">${location.name}</option>`;
+                });
+                $('#arrivalLocationSelect').html(options).trigger('change');
             });
         });
-    });
 
-    // arrival sub locations 
-    $(document).ready(function() {
         $('#arrivalLocationSelect').on('change', function() {
-
             let arrivalLocationIds = $(this).val();
-
             $('#arrivalSubLocationSelect').empty().trigger('change');
-
-            if (!arrivalLocationIds || arrivalLocationIds.length === 0) {
-                return;
-            }
-
-            $.ajax({
-                url: '/export/get-arrival-sub-locations',
-                type: 'POST',
-                data: {
-                    arrival_location_ids: arrivalLocationIds,
-                    _token: $('meta[name="csrf-token"]').attr('content')
-                },
-                success: function(response) {
-
-                    let options = '';
-
-                    response.forEach(function(sublocation) {
-                        options += `<option value="${sublocation.id}">
-                                    ${sublocation.name}
-                               </option>`;
-                    });
-
-                    $('#arrivalSubLocationSelect').html(options).trigger('change');
-                }
+            if (!arrivalLocationIds || arrivalLocationIds.length === 0) return;
+            $.post('/export/get-arrival-sub-locations', {
+                arrival_location_ids: arrivalLocationIds,
+                _token: $('meta[name="csrf-token"]').attr('content')
+            }, function(response) {
+                let options = '';
+                response.forEach(function(sublocation) {
+                    options += `<option value="${sublocation.id}">${sublocation.name}</option>`;
+                });
+                $('#arrivalSubLocationSelect').html(options).trigger('change');
             });
         });
 

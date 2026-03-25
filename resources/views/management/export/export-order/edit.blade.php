@@ -751,6 +751,7 @@
 
 <script>
     $(document).ready(function() {
+        // Initialize Summernote
         $('#shipping_instructions, #documents_to_be_provided, #other_condition, #force_majure, #application_law').summernote({
             placeholder: 'Enter details here...',
             tabsize: 2,
@@ -765,16 +766,12 @@
                 ['view', ['fullscreen', 'codeview', 'help']]
             ]
         });
-    });
-</script>
 
-<script>
-    $(document).ready(function() {
-        // Initialize Select2 for all multi-selects
-        $('.select2').select2();
+        // Initialize Select2 for all elements
+        $('.select2').select2({ width: '100%' });
 
         // Product selection change
-        $('#productSelect').change(function() {
+        $('#productSelect').on('change', function() {
             var productId = $(this).val();
             if (productId) {
                 $.get('{{ route('get.product_specs.export', '') }}/' + productId, function(data) {
@@ -783,7 +780,9 @@
                 });
             } else {
                 $('#specificationsSection').hide();
-            }    $(document).ready(function() {
+            }
+        });
+
         // Add more packing items
         $('#addPackingItem').click(function() {
             addNewPackingItem();
@@ -806,9 +805,7 @@
             $('#packingItems').append(newRow);
 
             // Re-initialize Select2
-            $('.select2').select2({
-                width: '100%'
-            });
+            $('.select2').select2({ width: '100%' });
 
             // Re-index all items
             reindexPackingItems();
@@ -824,7 +821,7 @@
             }
         });
 
-        // Conversion: Metric Tons -> Maunds
+        // Conversion Logic
         $(document).on('input', '.metric-tons', function() {
             let row = $(this).closest('tr');
             let mt = parseFloat($(this).val()) || 0;
@@ -832,7 +829,6 @@
             calculateTotals(row);
         });
 
-        // Conversion: Maunds -> Metric Tons
         $(document).on('input', '.maunds', function() {
             let row = $(this).closest('tr');
             let mnd = parseFloat($(this).val()) || 0;
@@ -840,7 +836,6 @@
             calculateTotals(row);
         });
 
-        // Conversion: Stuffing (MT) -> Stuffing (Maunds)
         $(document).on('input', '.stuffing', function() {
             let row = $(this).closest('tr');
             let mt = parseFloat($(this).val()) || 0;
@@ -848,7 +843,6 @@
             calculateContainers(row);
         });
 
-        // Conversion: Stuffing (Maunds) -> Stuffing (MT)
         $(document).on('input', '.stuffing_maunds', function() {
             let row = $(this).closest('tr');
             let mnd = parseFloat($(this).val()) || 0;
@@ -856,7 +850,6 @@
             calculateContainers(row);
         });
 
-        // Conversion: Rate/Ton -> Rate/Maund
         $(document).on('input', '.rates', function() {
             let row = $(this).closest('tr');
             let rateTon = parseFloat($(this).val()) || 0;
@@ -864,7 +857,6 @@
             calculateAmount(row);
         });
 
-        // Conversion: Rate/Maund -> Rate/Ton
         $(document).on('input', '.rates_mnd', function() {
             let row = $(this).closest('tr');
             let rateMnd = parseFloat($(this).val()) || 0;
@@ -902,18 +894,13 @@
         function calculateTotals(row) {
             let bagSize = parseFloat(row.find('.bag-size').val()) || 0;
             let mt = parseFloat(row.find('.metric-tons').val()) || 0;
-            
-            // Total KGs
             let totalKgs = mt * 1000;
             row.find('.total-kgs').val(totalKgs.toFixed(2));
-            
-            // No of Bags
             if (bagSize > 0) {
                 row.find('.no_of_bags').val((totalKgs / bagSize).toFixed(0));
             } else {
                 row.find('.no_of_bags').val(0);
             }
-            
             calculateAmount(row);
         }
 
@@ -921,10 +908,7 @@
             let rate = parseFloat(row.find('.rates').val()) || 0;
             let mt = parseFloat(row.find('.metric-tons').val()) || 0;
             let amount = rate * mt;
-            
             row.find('.amount').val(amount.toFixed(2));
-
-            // PKR conversion
             let currencyRate = parseFloat($('#currencyRate').val()) || 1;
             row.find('.amount_pkr').val((amount * currencyRate).toFixed(2));
         }
@@ -941,40 +925,30 @@
             });
         }
 
-        // Recalculate everything when currency rate changes
+        // Currency Rate Change
         $('#currencySelect').on('change', function() {
             let rate = $(this).find(':selected').data('rate') || '';
             $('#currencyRate').val(rate);
-            $('#packingItems tr.packing-item').each(function() {
+            $('.packing-item').each(function() {
                 calculateAmount($(this));
             });
         });
 
-    });
-
-        // Initial calculation for first item
-        calculateTotals($('.packing-item').first());
-    });
-
-        // Saved bank ID from database
+        // Bank Details Section
         let savedBankId = '{{ $exportOrder->customer_bank_type }}_{{ $exportOrder->customer_bank_id }}';
-
-        // Load customer banks when buyer is selected
-        $('select[name="buyer_id"]').on('change', function() {
-            let customerId = $(this).val();
-
-            $('#bankSelect').html('<option value="">-- Select Bank --</option>').trigger('change');
-            $('#acc_title, #bank_name, #branch_name, #branch_code, #account_no').val('');
-
-            if (!customerId) return;
+        
+        function loadCustomerBanks(customerId) {
+            if (!customerId) {
+                $('#bankSelect').html('<option value="">-- Select Bank --</option>').trigger('change');
+                return;
+            }
 
             $.get('{{ route('export-order.customer-banks', '') }}/' + customerId, function(response) {
                 let options = '<option value="">-- Select Bank --</option>';
                 response.forEach(function(bank) {
                     let label = '[' + bank.type + '] ' + bank.account_title + ' - ' + bank.bank_name;
                     let selected = (bank.id === savedBankId) ? 'selected' : '';
-                    options += `<option value="${bank.id}" 
-                        ${selected}
+                    options += `<option value="${bank.id}" ${selected}
                         data-title="${bank.account_title}"
                         data-bank="${bank.bank_name}"
                         data-branch="${bank.branch_name}"
@@ -983,26 +957,22 @@
                         ${label}
                     </option>`;
                 });
-                $('#bankSelect').html(options);
-                if ($('#bankSelect').hasClass('select2-hidden-accessible')) {
-                    $('#bankSelect').select2();
-                }
-                // Trigger change to autofill fields if a bank was selected
-                if (savedBankId && $('#bankSelect').val() === savedBankId) {
-                    $('#bankSelect').trigger('change');
-                }
+                $('#bankSelect').html(options).trigger('change');
             });
+        }
+
+        // Buyer change
+        $('select[name="buyer_id"]').on('change', function() {
+            loadCustomerBanks($(this).val());
         });
 
-        // Autofill on bank select
+        // Bank select change
         $('#bankSelect').on('change', function() {
             let selected = $(this).find(':selected');
-
             if (!selected.val()) {
                 $('#acc_title, #bank_name, #branch_name, #branch_code, #account_no').val('');
                 return;
             }
-
             $('#acc_title').val(selected.data('title') || '');
             $('#bank_name').val(selected.data('bank') || '');
             $('#branch_name').val(selected.data('branch') || '');
@@ -1010,117 +980,37 @@
             $('#account_no').val(selected.data('account') || '');
         });
 
-        // On page load: if buyer already selected, load their banks
-        let initialBuyer = $('select[name="buyer_id"]').val();
-        if (initialBuyer) {
-            $.get('{{ route('export-order.customer-banks', '') }}/' + initialBuyer, function(response) {
-                let options = '<option value="">-- Select Bank --</option>';
-                response.forEach(function(bank) {
-                    let label = '[' + bank.type + '] ' + bank.account_title + ' - ' + bank.bank_name;
-                    let selected = (bank.id === savedBankId) ? 'selected' : '';
-                    options += `<option value="${bank.id}"
-                        ${selected}
-                        data-title="${bank.account_title}"
-                        data-bank="${bank.bank_name}"
-                        data-branch="${bank.branch_name}"
-                        data-branch-code="${bank.branch_code}"
-                        data-account="${bank.account_number}">
-                        ${label}
-                    </option>`;
-                });
-                $('#bankSelect').html(options);
-                if ($('#bankSelect').hasClass('select2-hidden-accessible')) {
-                    $('#bankSelect').select2();
-                }
-                // Trigger change to autofill fields
-                if (savedBankId && $('#bankSelect').val() === savedBankId) {
-                    $('#bankSelect').trigger('change');
-                }
+        // Correspondent Bank
+        function loadCorrespondentBankDetails(bankId) {
+            if (!bankId) {
+                $('#cor_acc_title, #cor_bank_name, #cor_iban, #cor_account_no, #cor_swift_code, #cor_bank_address, #cor_description').val('');
+                return;
+            }
+            $.get('/export/get-bank-details/' + bankId, function(bank) {
+                $('#cor_acc_title').val(bank.account_title);
+                $('#cor_bank_name').val(bank.bank_name);
+                $('#cor_iban').val(bank.iban);
+                $('#cor_account_no').val(bank.account_no);
+                $('#cor_swift_code').val(bank.swift_code);
+                $('#cor_bank_address').val(bank.bank_address);
+                $('#cor_description').val(bank.description);
             });
         }
-
-    function loadCorrespondentBankDetails(bankId) {
-        if (!bankId) {
-            $('#cor_acc_title, #cor_bank_name, #cor_iban, #cor_account_no, #cor_swift_code, #cor_bank_address, #cor_description')
-                .val('');
-            return;
-        }
-
-        $.get('/export/get-bank-details/' + bankId, function(bank) {
-            $('#cor_acc_title').val(bank.account_title);
-            $('#cor_bank_name').val(bank.bank_name);
-            $('#cor_iban').val(bank.iban);
-            $('#cor_account_no').val(bank.account_no);
-            $('#cor_swift_code').val(bank.swift_code);
-            $('#cor_bank_address').val(bank.bank_address);
-            $('#cor_description').val(bank.description);
-        });
-    }
-
-    $(document).ready(function() {
-
-        // change events
-        $('#bankSelect').on('change', function() {
-            loadBankDetails($(this).val());
-        });
 
         $('#correspondentBankSelect').on('change', function() {
             loadCorrespondentBankDetails($(this).val());
         });
 
-        let selectedBank = $('#bankSelect').val();
-        if (selectedBank) {
-            loadBankDetails(selectedBank);
-        }
-
-        let selectedCorBank = $('#correspondentBankSelect').val();
-        if (selectedCorBank) {
-            loadCorrespondentBankDetails(selectedCorBank);
-        }
-    });
-
-    $(document).ready(function() {
-        $('#currencySelect').on('change', function() {
-            let rate = $(this).find(':selected').data('rate') || '';
-            $('#currencyRate').val(rate);
-        });
-
-    });
-
-    $(document).ready(function() {
+        // Arrival Locations Logic
         let selectedArrivalLocations = @json($exportOrder->arrival_location_ids ?? []);
         let selectedArrivalSubLocations = @json($exportOrder->arrival_sub_location_ids ?? []);
-
-        // Convert saved IDs to strings for comparison
         selectedArrivalLocations = selectedArrivalLocations.map(String);
         selectedArrivalSubLocations = selectedArrivalSubLocations.map(String);
 
-        // Populate arrival locations on page load
-        let companyLocationIds = $('#companyLocationSelect').val();
-        if (companyLocationIds && companyLocationIds.length > 0) {
-            populateArrivalLocations(companyLocationIds, selectedArrivalLocations, selectedArrivalSubLocations);
-        }
-
-        // Company location change
-        $('#companyLocationSelect').on('change', function() {
-            selectedArrivalLocations = [];
-            selectedArrivalSubLocations = [];
-            populateArrivalLocations($(this).val(), [], []);
-        });
-
-        // Arrival location change
-        $('#arrivalLocationSelect').on('change', function() {
-            selectedArrivalSubLocations = [];
-            populateArrivalSubLocations($(this).val(), []);
-        });
-
-        // Functions
         function populateArrivalLocations(companyLocationIds, selectedIds = [], selectedSubIds = []) {
             $('#arrivalLocationSelect').empty().trigger('change');
             $('#arrivalSubLocationSelect').empty().trigger('change');
-
             if (!companyLocationIds || companyLocationIds.length === 0) return;
-
             $.post('/export/get-arrival-locations', {
                 company_location_ids: companyLocationIds,
                 _token: $('meta[name="csrf-token"]').attr('content')
@@ -1128,13 +1018,9 @@
                 let options = '';
                 response.forEach(function(location) {
                     let locId = String(location.id);
-                    options += `<option value="${locId}" ${selectedIds.includes(locId) ? 'selected' : ''}>
-                                ${location.name}
-                            </option>`;
+                    options += `<option value="${locId}" ${selectedIds.includes(locId) ? 'selected' : ''}>${location.name}</option>`;
                 });
                 $('#arrivalLocationSelect').html(options).trigger('change');
-
-                // Populate sub locations for selected arrival locations
                 if (selectedIds.length > 0) {
                     populateArrivalSubLocations(selectedIds, selectedSubIds);
                 }
@@ -1143,9 +1029,7 @@
 
         function populateArrivalSubLocations(arrivalLocationIds, selectedIds = []) {
             $('#arrivalSubLocationSelect').empty().trigger('change');
-
             if (!arrivalLocationIds || arrivalLocationIds.length === 0) return;
-
             $.post('/export/get-arrival-sub-locations', {
                 arrival_location_ids: arrivalLocationIds,
                 _token: $('meta[name="csrf-token"]').attr('content')
@@ -1153,12 +1037,45 @@
                 let options = '';
                 response.forEach(function(sub) {
                     let subId = String(sub.id);
-                    options += `<option value="${subId}" ${selectedIds.includes(subId) ? 'selected' : ''}>
-                                ${sub.name}
-                            </option>`;
+                    options += `<option value="${subId}" ${selectedIds.includes(subId) ? 'selected' : ''}>${sub.name}</option>`;
                 });
                 $('#arrivalSubLocationSelect').html(options).trigger('change');
             });
         }
+
+        $('#companyLocationSelect').on('change', function() {
+            populateArrivalLocations($(this).val(), [], []);
+        });
+
+        $('#arrivalLocationSelect').on('change', function() {
+            populateArrivalSubLocations($(this).val(), []);
+        });
+
+        // --- Page Load Initializations ---
+        
+        // Load customer banks if buyer exists
+        let initialBuyer = $('select[name="buyer_id"]').val();
+        if (initialBuyer) {
+            loadCustomerBanks(initialBuyer);
+        }
+
+        // Load correspondent bank details if selected
+        let initialCorBank = $('#correspondentBankSelect').val();
+        if (initialCorBank) {
+            loadCorrespondentBankDetails(initialCorBank);
+        }
+
+        // Load arrival locations
+        let initialCompanyLocations = $('#companyLocationSelect').val();
+        if (initialCompanyLocations && initialCompanyLocations.length > 0) {
+            populateArrivalLocations(initialCompanyLocations, selectedArrivalLocations, selectedArrivalSubLocations);
+        }
+
+        // Initial calculations for all visible items
+        $('.packing-item').each(function() {
+            calculateTotals($(this));
+        });
+
     });
 </script>
+
