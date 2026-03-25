@@ -593,186 +593,92 @@
 
         <!-- Packing Details -->
         <div class="col-md-12">
-            <h6 class="header-heading-sepration d-flex justify-content-between align-items-center">Packing Details
-                {{-- <button type="button" class="btn btn-sm btn-success" id="addPackingItem">Add More Packing
-                        Item</button> --}}
-            </h6>
+            <h6 class="header-heading-sepration d-flex justify-content-between align-items-center">Packing Details</h6>
 
-            <div id="packingItems">
-                @if ($exportOrder->packingItems->count() > 0)
-                    @foreach ($exportOrder->packingItems as $index => $item)
-                        <div class="packing-item row border-bottom pb-3 mb-3 w-100 mx-auto">
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Brand:</label>
-                                    <select name="packing_items[{{ $index }}][brand_id]"
-                                        class="form-control select2" readonly>
-                                        <option value="">Select Brand</option>
-                                        @foreach ($brands as $brand)
-                                            <option value="{{ $brand->id }}"
-                                                {{ $brand->id == $item->brand_id ? 'selected' : '' }}>
-                                                {{ $brand->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Bag Type:</label>
-                                    <select name="packing_items[{{ $index }}][bag_type_id]"
-                                        class="form-control select2" readonly>
-                                        <option value="">Select Bag Type</option>
-                                        @foreach ($bagTypes as $bagType)
-                                            <option value="{{ $bagType->id }}"
-                                                {{ $bagType->id == $item->bag_type_id ? 'selected' : '' }}>
-                                                {{ $bagType->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Bag Packing:</label>
-                                    <select name="packing_items[{{ $index }}][bag_packing_id]"
-                                        class="form-control" readonly>
-                                        <option value="">Select Bag Packing</option>
-                                        @foreach ($bagPackings as $packing)
-                                            <option value="{{ $packing->id }}"
-                                                {{ $packing->id == $item->bag_packing_id ? 'selected' : '' }}>
-                                                {{ $packing->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Bag Condition:</label>
-                                    <select name="packing_items[{{ $index }}][bag_condition_id]"
-                                        class="form-control select2" readonly>
-                                        <option value="">Select Condition</option>
-                                        @foreach ($bagConditions as $condition)
-                                            <option value="{{ $condition->id }}"
-                                                {{ $condition->id == $item->bag_condition_id ? 'selected' : '' }}>
-                                                {{ $condition->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Bag Color:</label>
-                                    <select name="packing_items[{{ $index }}][bag_color_id]"
-                                        class="form-control select2" readonly>
-                                        <option value="">Select Color</option>
-                                        @foreach ($bagColors as $color)
-                                            <option value="{{ $color->id }}"
-                                                {{ $color->id == $item->bag_color_id ? 'selected' : '' }}>
-                                                {{ $color->color }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Bag Size (kg):</label>
-                                    <input type="number" name="packing_items[{{ $index }}][bag_size]"
-                                        class="form-control bag-size" step="0.01" value="{{ number_format($item->bag_size, 2, '.', '') }}"
-                                        min="0" readonly>
-                                </div>
-                            </div>
-
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Quantity (MTs):</label>
-                                    <input type="number" name="packing_items[{{ $index }}][metric_tons]"
-                                        class="form-control metric-tons" step="0.01"
-                                        value="{{ number_format($item->metric_tons, 2, '.', '') }}" min="0" readonly>
-                                </div>
-                            </div>
-
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>No. of Bags:</label>
-                                    <input type="number" name="packing_items[{{ $index }}][no_of_bags]"
-                                        class="form-control no_of_bags" value="{{ number_format($item->no_of_bags, 2, '.', '') }}" readonly>
-                                </div>
-                            </div>
-
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Total KGs:</label>
-                                    <input type="number" name="packing_items[{{ $index }}][total_kgs]"
-                                        class="form-control total-kgs" value="{{ number_format($item->total_kgs, 2, '.', '') }}" readonly>
-                                </div>
-                            </div>
-
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Stuffing (MTs):</label>
-                                    <input type="number"
-                                        name="packing_items[{{ $index }}][stuffing_in_container]"
-                                        class="form-control stuffing" value="{{ number_format($item->stuffing_in_container, 2, '.', '') }}"
-                                        step="0.01" min="0" readonly>
-                                </div>
-                            </div>
-
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>No. of Containers:</label>
-                                    <input type="number"
-                                        name="packing_items[{{ $index }}][no_of_containers]"
-                                        class="form-control containers" value="{{ $item->no_of_containers }}"
-                                        min="0" readonly>
-                                </div>
-                            </div>
-
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Rate Per Ton:</label>
-                                    <input type="number" name="packing_items[{{ $index }}][rate]"
-                                        class="form-control rates" value="{{ number_format($item->rate, 2, '.', '') }}" step="0.01"
-                                        min="0" readonly>
-                                </div>
-                            </div>
-
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label>Amount:</label>
-                                    <input type="number" name="packing_items[{{ $index }}][amount]"
-                                        class="form-control amount" value="{{ number_format($item->amount, 2, '.', '') }}" min="0"
-                                        readonly>
-                                </div>
-                            </div>
-
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label>Amount in (PKR):</label>
-                                    <input type="number" name="packing_items[{{ $index }}][amount_pkr]"
-                                        class="form-control amount_pkr" value="{{ number_format($item->amount_pkr, 2, '.', '') }}"
-                                        min="0" readonly>
-                                </div>
-                            </div>
-                            {{-- <div class="col-md-1">
-                            <div class="form-group">
-                                <label>&nbsp;</label>
-                                <button type="button"
-                                    class="btn btn-sm btn-danger remove-packing-item form-control">Remove</button>
-                            </div>
-                        </div> --}}
-                        </div>
-                    @endforeach
-                @endif
+            <div class="table-responsive">
+                <table class="table table-bordered mb-0">
+                    <thead>
+                        <tr>
+                            <th style="min-width: 150px;">Brand</th>
+                            <th style="min-width: 150px;">Bag Type</th>
+                            <th style="min-width: 130px;">Packing</th>
+                            <th style="min-width: 130px;">Condition</th>
+                            <th style="min-width: 110px;">Color</th>
+                            <th style="min-width: 100px;">Size (kg)</th>
+                            <th style="min-width: 100px;">Qty (MT)</th>
+                            <th style="min-width: 100px;">Maunds</th>
+                            <th style="min-width: 100px;">Bags</th>
+                            <th style="min-width: 110px;">Total KGs</th>
+                            <th style="min-width: 120px;">Stuffing (MT)</th>
+                            <th style="min-width: 120px;">Stuffing (Mnd)</th>
+                            <th style="min-width: 90px;">Containers</th>
+                            <th style="min-width: 110px;">Rate/Ton</th>
+                            <th style="min-width: 110px;">Rate/Mnd</th>
+                            <th style="min-width: 130px;">Amount</th>
+                            <th style="min-width: 130px;">Amount (PKR)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($exportOrder->packingItems as $index => $item)
+                        <tr>
+                            <td class="p-2">
+                                <input type="text" class="form-control" value="{{ $item->brand->name ?? 'N/A' }}" readonly>
+                            </td>
+                            <td class="p-2">
+                                <input type="text" class="form-control" value="{{ $item->bagType->name ?? 'N/A' }}" readonly>
+                            </td>
+                            <td class="p-2">
+                                <input type="text" class="form-control" value="{{ $item->bagPacking->name ?? 'N/A' }}" readonly>
+                            </td>
+                            <td class="p-2">
+                                <input type="text" class="form-control" value="{{ $item->bagCondition->name ?? 'N/A' }}" readonly>
+                            </td>
+                            <td class="p-2">
+                                <input type="text" class="form-control" value="{{ $item->bagColor->color ?? 'N/A' }}" readonly>
+                            </td>
+                            <td class="p-2">
+                                <input type="text" class="form-control" value="{{ number_format($item->bag_size, 2) }}" readonly>
+                            </td>
+                            <td class="p-2">
+                                <input type="text" class="form-control" value="{{ number_format($item->metric_tons, 3) }}" readonly>
+                            </td>
+                            <td class="p-2">
+                                <input type="text" class="form-control" value="{{ number_format($item->maunds, 2) }}" readonly>
+                            </td>
+                            <td class="p-2">
+                                <input type="text" class="form-control" value="{{ number_format($item->no_of_bags, 0) }}" readonly>
+                            </td>
+                            <td class="p-2">
+                                <input type="text" class="form-control" value="{{ number_format($item->total_kgs, 2) }}" readonly>
+                            </td>
+                            <td class="p-2">
+                                <input type="text" class="form-control" value="{{ number_format($item->stuffing_in_container, 3) }}" readonly>
+                            </td>
+                            <td class="p-2">
+                                <input type="text" class="form-control" value="{{ number_format($item->stuffing_maunds, 2) }}" readonly>
+                            </td>
+                            <td class="p-2">
+                                <input type="text" class="form-control" value="{{ $item->no_of_containers }}" readonly>
+                            </td>
+                            <td class="p-2">
+                                <input type="text" class="form-control" value="{{ number_format($item->rate, 2) }}" readonly>
+                            </td>
+                            <td class="p-2">
+                                <input type="text" class="form-control" value="{{ number_format($item->rate_per_maund, 2) }}" readonly>
+                            </td>
+                            <td class="p-2">
+                                <input type="text" class="form-control" value="{{ number_format($item->amount, 2) }}" readonly>
+                            </td>
+                            <td class="p-2">
+                                <input type="text" class="form-control" value="{{ number_format($item->amount_pkr, 2) }}" readonly>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
             </div>
+        </div>
+
         </div>
     </div>
 

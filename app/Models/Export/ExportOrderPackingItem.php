@@ -29,6 +29,9 @@ class ExportOrderPackingItem extends Model
         'stuffing_in_container',
         'no_of_containers',
         'rate',
+        'rate_per_maund',
+        'maunds',
+        'stuffing_maunds',
         'amount',
         'amount_pkr',
     ];
@@ -36,9 +39,12 @@ class ExportOrderPackingItem extends Model
     protected $casts = [
         'bag_size' => 'decimal:2',
         'metric_tons' => 'decimal:3',
-        'total_kgs' => 'decimal:2',
+        'maunds' => 'decimal:3',
         'stuffing_in_container' => 'decimal:3',
+        'stuffing_maunds' => 'decimal:3',
+        'total_kgs' => 'decimal:2',
         'rate' => 'decimal:2',
+        'rate_per_maund' => 'decimal:2',
         'amount' => 'decimal:2',
         'amount_pkr' => 'decimal:2',
     ];
@@ -50,14 +56,21 @@ class ExportOrderPackingItem extends Model
     {
         static::saving(function ($item) {
 
-            // Total KGs from MTs
+            // Total KGs & Bags
             $item->total_kgs = $item->metric_tons * 1000;
-
-            // No of Bags
             if ($item->bag_size > 0) {
-                $item->no_of_bags = (int) round($item->total_kgs / $item->bag_size);
-            } else {
-                $item->no_of_bags = 0;
+                $item->no_of_bags = $item->total_kgs / $item->bag_size;
+            }
+
+            // Maunds from MTs (1 MT = 25 Maunds)
+            $item->maunds = $item->metric_tons * 25;
+            $item->stuffing_maunds = $item->stuffing_in_container * 25;
+
+            // Rate Sync (if one is missing or for consistency)
+            if ($item->rate > 0 && (!$item->rate_per_maund || $item->rate_per_maund == 0)) {
+                $item->rate_per_maund = $item->rate / 25;
+            } elseif ($item->rate_per_maund > 0 && (!$item->rate || $item->rate == 0)) {
+                $item->rate = $item->rate_per_maund * 25;
             }
 
             // Amount (Rate per Ton)

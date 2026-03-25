@@ -107,6 +107,9 @@ class ExportOrderRequest extends FormRequest
             'packing_items.*.stuffing_in_container' => ['nullable', 'numeric', 'min:0'],
             'packing_items.*.no_of_containers' => ['nullable', 'integer', 'min:0'],
             'packing_items.*.rate' => ['required', 'numeric', 'min:0'],
+            'packing_items.*.rate_per_maund' => ['nullable', 'numeric', 'min:0'],
+            'packing_items.*.maunds' => ['nullable', 'numeric', 'min:0'],
+            'packing_items.*.stuffing_maunds' => ['nullable', 'numeric', 'min:0'],
         ];
     }
 
