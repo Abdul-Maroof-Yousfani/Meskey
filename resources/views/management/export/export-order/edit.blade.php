@@ -595,185 +595,146 @@
         <!-- Packing Details -->
         <div class="col-md-12">
             <h6 class="header-heading-sepration d-flex justify-content-between align-items-center">Packing Details
-                {{-- <button type="button" class="btn btn-sm btn-success" id="addPackingItem">Add More Packing
-                        Item</button> --}}
+                <button type="button" class="btn btn-sm btn-success" id="addPackingItem">Add Item</button>
             </h6>
 
-            <div id="packingItems">
-                @if ($exportOrder->packingItems->count() > 0)
-                    @foreach ($exportOrder->packingItems as $index => $item)
-                        <div class="packing-item row border-bottom pb-3 mb-3 w-100 mx-auto">
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Brand:</label>
-                                    <select name="packing_items[{{ $index }}][brand_id]"
-                                        class="form-control select2">
-                                        <option value="">Select Brand</option>
-                                        @foreach ($brands as $brand)
-                                            <option value="{{ $brand->id }}"
-                                                {{ $brand->id == $item->brand_id ? 'selected' : '' }}>
-                                                {{ $brand->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Bag Type:</label>
-                                    <select name="packing_items[{{ $index }}][bag_type_id]"
-                                        class="form-control select2">
-                                        <option value="">Select Bag Type</option>
-                                        @foreach ($bagTypes as $bagType)
-                                            <option value="{{ $bagType->id }}"
-                                                {{ $bagType->id == $item->bag_type_id ? 'selected' : '' }}>
-                                                {{ $bagType->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Bag Packing:</label>
-                                    <select name="packing_items[{{ $index }}][bag_packing_id]"
-                                        class="form-control">
-                                        <option value="">Select Bag Packing</option>
-                                        @foreach ($bagPackings as $packing)
-                                            <option value="{{ $packing->id }}"
-                                                {{ $packing->id == $item->bag_packing_id ? 'selected' : '' }}>
-                                                {{ $packing->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Bag Condition:</label>
-                                    <select name="packing_items[{{ $index }}][bag_condition_id]"
-                                        class="form-control select2">
-                                        <option value="">Select Condition</option>
-                                        @foreach ($bagConditions as $condition)
-                                            <option value="{{ $condition->id }}"
-                                                {{ $condition->id == $item->bag_condition_id ? 'selected' : '' }}>
-                                                {{ $condition->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Bag Color:</label>
-                                    <select name="packing_items[{{ $index }}][bag_color_id]"
-                                        class="form-control select2">
-                                        <option value="">Select Color</option>
-                                        @foreach ($bagColors as $color)
-                                            <option value="{{ $color->id }}"
-                                                {{ $color->id == $item->bag_color_id ? 'selected' : '' }}>
-                                                {{ $color->color }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Bag Size (kg):</label>
-                                    <input type="number" name="packing_items[{{ $index }}][bag_size]"
-                                        class="form-control bag-size" step="0.01" value="{{ number_format($item->bag_size, 2, '.', '') }}"
-                                        min="0">
-                                </div>
-                            </div>
-
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Quantity (MTs):</label>
-                                    <input type="number" name="packing_items[{{ $index }}][metric_tons]"
-                                        class="form-control metric-tons" step="0.01"
-                                        value="{{ number_format($item->metric_tons, 2, '.', '') }}" min="0">
-                                </div>
-                            </div>
-
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>No. of Bags:</label>
-                                    <input type="number" name="packing_items[{{ $index }}][no_of_bags]"
-                                        class="form-control no_of_bags" value="{{ number_format($item->no_of_bags, 2, '.', '') }}" readonly>
-                                </div>
-                            </div>
-
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Total KGs:</label>
-                                    <input type="number" name="packing_items[{{ $index }}][total_kgs]"
-                                        class="form-control total-kgs" value="{{ number_format($item->total_kgs, 2, '.', '') }}" readonly>
-                                </div>
-                            </div>
-
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Stuffing (MTs):</label>
-                                    <input type="number"
-                                        name="packing_items[{{ $index }}][stuffing_in_container]"
-                                        class="form-control stuffing" value="{{ number_format($item->stuffing_in_container, 2, '.', '') }}"
-                                        step="0.01" min="0">
-                                </div>
-                            </div>
-
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>No. of Containers:</label>
-                                    <input type="number"
-                                        name="packing_items[{{ $index }}][no_of_containers]"
-                                        class="form-control containers" value="{{ $item->no_of_containers }}"
-                                        min="0">
-                                </div>
-                            </div>
-
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Rate Per Ton:</label>
-                                    <input type="number" name="packing_items[{{ $index }}][rate]"
-                                        class="form-control rates" value="{{ number_format($item->rate, 2, '.', '') }}" step="0.01"
-                                        min="0">
-                                </div>
-                            </div>
-
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label>Amount:</label>
-                                    <input type="number" name="packing_items[{{ $index }}][amount]"
-                                        class="form-control amount" value="{{ number_format($item->amount, 2, '.', '') }}" min="0"
-                                        readonly>
-                                </div>
-                            </div>
-
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label>Amount in (PKR):</label>
-                                    <input type="number" name="packing_items[{{ $index }}][amount_pkr]"
-                                        class="form-control amount_pkr" value="{{ number_format($item->amount_pkr, 2, '.', '') }}"
-                                        min="0" readonly>
-                                </div>
-                            </div>
-                            {{-- <div class="col-md-1">
-                            <div class="form-group">
-                                <label>&nbsp;</label>
-                                <button type="button"
-                                    class="btn btn-sm btn-danger remove-packing-item form-control">Remove</button>
-                            </div>
-                        </div> --}}
-                        </div>
-                    @endforeach
-                @endif
+            <div class="table-responsive">
+                <table class="table table-bordered mb-0" id="packingTable">
+                    <thead>
+                        <tr>
+                            <th style="min-width: 150px;">Brand</th>
+                            <th style="min-width: 150px;">Bag Type</th>
+                            <th style="min-width: 130px;">Packing</th>
+                            <th style="min-width: 130px;">Condition</th>
+                            <th style="min-width: 110px;">Color</th>
+                            <th style="min-width: 100px;">Size (kg)</th>
+                            <th style="min-width: 100px;">Qty (MT)</th>
+                            <th style="min-width: 100px;">Maunds</th>
+                            <th style="min-width: 100px;">Bags</th>
+                            <th style="min-width: 110px;">Total KGs</th>
+                            <th style="min-width: 120px;">Stuffing (MT)</th>
+                            <th style="min-width: 120px;">Stuffing (Mnd)</th>
+                            <th style="min-width: 90px;">Containers</th>
+                            <th style="min-width: 110px;">Rate/Ton</th>
+                            <th style="min-width: 110px;">Rate/Mnd</th>
+                            <th style="min-width: 130px;">Amount</th>
+                            <th style="min-width: 130px;">Amount (PKR)</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="packingItems">
+                        @foreach ($exportOrder->packingItems as $index => $item)
+                        <tr class="packing-item">
+                            <td class="p-2">
+                                <select name="packing_items[{{ $index }}][brand_id]" class="form-control select2">
+                                    <option value="">Select Brand</option>
+                                    @foreach ($brands as $brand)
+                                        <option value="{{ $brand->id }}" {{ $brand->id == $item->brand_id ? 'selected' : '' }}>
+                                            {{ $brand->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </td>
+                            <td class="p-2">
+                                <select name="packing_items[{{ $index }}][bag_type_id]" class="form-control select2">
+                                    <option value="">Select Bag Type</option>
+                                    @foreach ($bagTypes as $bagType)
+                                        <option value="{{ $bagType->id }}" {{ $bagType->id == $item->bag_type_id ? 'selected' : '' }}>
+                                            {{ $bagType->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </td>
+                            <td class="p-2">
+                                <select class="form-control" name="packing_items[{{ $index }}][bag_packing_id]">
+                                    <option value="">Select Packing</option>
+                                    @foreach ($bagPackings as $packing)
+                                        <option value="{{ $packing->id }}" {{ $packing->id == $item->bag_packing_id ? 'selected' : '' }}>
+                                            {{ $packing->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </td>
+                            <td class="p-2">
+                                <select name="packing_items[{{ $index }}][bag_condition_id]" class="form-control select2">
+                                    <option value="">Select Condition</option>
+                                    @foreach ($bagConditions as $condition)
+                                        <option value="{{ $condition->id }}" {{ $condition->id == $item->bag_condition_id ? 'selected' : '' }}>
+                                            {{ $condition->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </td>
+                            <td class="p-2">
+                                <select name="packing_items[{{ $index }}][bag_color_id]" class="form-control select2">
+                                    <option value="">Select Color</option>
+                                    @foreach ($bagColors as $color)
+                                        <option value="{{ $color->id }}" {{ $color->id == $item->bag_color_id ? 'selected' : '' }}>
+                                            {{ $color->color }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </td>
+                            <td class="p-2">
+                                <input type="number" name="packing_items[{{ $index }}][bag_size]" class="form-control bag-size"
+                                    step="0.01" value="{{ $item->bag_size }}" min="0">
+                            </td>
+                            <td class="p-2">
+                                <input type="number" name="packing_items[{{ $index }}][metric_tons]"
+                                    class="form-control metric-tons" value="{{ $item->metric_tons }}" step="0.001" min="0">
+                            </td>
+                            <td class="p-2">
+                                <input type="number" name="packing_items[{{ $index }}][maunds]"
+                                    class="form-control maunds" value="{{ $item->maunds }}" step="0.01" min="0">
+                            </td>
+                            <td class="p-2">
+                                <input type="number" name="packing_items[{{ $index }}][no_of_bags]" class="form-control no_of_bags"
+                                    value="{{ $item->no_of_bags }}" readonly>
+                            </td>
+                            <td class="p-2">
+                                <input type="number" name="packing_items[{{ $index }}][total_kgs]" class="form-control total-kgs"
+                                    value="{{ $item->total_kgs }}" readonly>
+                            </td>
+                            <td class="p-2">
+                                <input type="number" name="packing_items[{{ $index }}][stuffing_in_container]"
+                                    class="form-control stuffing" value="{{ $item->stuffing_in_container }}" step="0.001" min="0">
+                            </td>
+                            <td class="p-2">
+                                <input type="number" name="packing_items[{{ $index }}][stuffing_maunds]"
+                                    class="form-control stuffing_maunds" value="{{ $item->stuffing_maunds }}" step="0.01" min="0">
+                            </td>
+                            <td class="p-2">
+                                <input type="number" name="packing_items[{{ $index }}][no_of_containers]"
+                                    class="form-control containers" value="{{ $item->no_of_containers }}" min="0">
+                            </td>
+                            <td class="p-2">
+                                <input type="number" name="packing_items[{{ $index }}][rate]" class="form-control rates"
+                                    value="{{ $item->rate }}" step="0.01" min="0">
+                            </td>
+                            <td class="p-2">
+                                <input type="number" name="packing_items[{{ $index }}][rate_per_maund]" class="form-control rates_mnd"
+                                    value="{{ $item->rate_per_maund }}" step="0.01" min="0">
+                            </td>
+                            <td class="p-2">
+                                <input type="number" name="packing_items[{{ $index }}][amount]" class="form-control amount"
+                                    value="{{ $item->amount }}" min="0" readonly>
+                            </td>
+                            <td class="p-2">
+                                <input type="number" name="packing_items[{{ $index }}][amount_pkr]" class="form-control amount_pkr" 
+                                    value="{{ $item->amount_pkr }}" readonly>
+                            </td>
+                            <td class="text-center p-2">
+                                <button type="button" class="btn btn-sm btn-danger remove-packing-item">
+                                    <i class="ft-trash-2"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
             </div>
+        </div>
+
         </div>
     </div>
 
@@ -822,216 +783,154 @@
                 });
             } else {
                 $('#specificationsSection').hide();
-            }
+            }    $(document).ready(function() {
+        // Add more packing items
+        $('#addPackingItem').click(function() {
+            addNewPackingItem();
         });
 
-        // // Add more packing items using clone
-        // $('#addPackingItem').click(function() {
-        //     addNewPackingItem();
-        // });
+        function addNewPackingItem() {
+            var firstRow = $('#packingItems tr.packing-item').first();
+            var newRow = firstRow.clone();
 
-        // // Add new packing item function
-        // function addNewPackingItem() {
-        //     var firstItem = $('.packing-item').first();
-        //     var newItem = firstItem.clone();
+            // Destroy Select2 before cloning
+            newRow.find('.select2-container').remove();
+            newRow.find('select').removeClass('select2-hidden-accessible').removeAttr('data-select2-id').show();
 
-        //     // Update indexes
-        //     var newIndex = $('.packing-item').length;
-        //     newItem.find('input, select').each(function() {
-        //         var name = $(this).attr('name');
-        //         if (name) {
-        //             name = name.replace(/\[\d+\]/, '[' + newIndex + ']');
-        //             $(this).attr('name', name);
-        //             $(this).val(''); // Clear values
-        //         }
-        //     });
+            // Clear values
+            newRow.find('input').val(0);
+            newRow.find('input[readonly]').val(0);
+            newRow.find('select').val('').trigger('change');
 
-        //     // Clear specific values
-        //     newItem.find(
-        //             '.bag-size, .no-of-bags, .extra-bags, .empty-bags, .stuffing, .containers, .min-weight')
-        //         .val('');
-        //     newItem.find('.total-bags, .total-kgs, .metric-tons').val('0');
-        //     newItem.find('select').prop('selectedIndex', 0);
+            // Append to table
+            $('#packingItems').append(newRow);
 
-        //     // Reset select fields
-        //     newItem.find('select').each(function() {
-        //         if ($(this).hasClass('select2-hidden-accessible')) {
-        //             // Remove Select2 initialization
-        //             $(this).siblings('.select2-container').remove();
-        //             $(this).show().removeClass('select2-hidden-accessible');
-        //             $(this).next('.select2-container').remove();
-        //         }
-        //         $(this).prop('selectedIndex', 0);
-        //     });
+            // Re-initialize Select2
+            $('.select2').select2({
+                width: '100%'
+            });
 
-        //     // Add to container
-        //     $('#packingItems').append(newItem);
-        //     newItem.find('select[name*="fumigation_company_id"]').val([]);
-
-        //     // Re-initialize Select2 for new selects
-        //     newItem.find('select').select2();
-        //     firstItem.find('select').select2();
-        // }
-
-        // // Duplicate packing item - PROPERLY FIXED VERSION
-        // $(document).on('click', '.duplicate-packing-item', function() {
-        //     var currentItem = $(this).closest('.packing-item');
-
-        //     // Pehle original item ki values capture karo BEFORE destroying Select2
-        //     var originalValues = {};
-        //     currentItem.find('select').each(function() {
-        //         var $select = $(this);
-        //         originalValues[$select.attr('name')] = $select.val();
-        //     });
-
-        //     // Ab clone karo WITHOUT destroying Select2 first
-        //     var newItem = currentItem.clone();
-
-        //     // Update indexes for new item
-        //     var newIndex = $('.packing-item').length;
-        //     newItem.find('input, select').each(function() {
-        //         var name = $(this).attr('name');
-        //         if (name) {
-        //             name = name.replace(/\[\d+\]/, '[' + newIndex + ']');
-        //             $(this).attr('name', name);
-        //         }
-        //     });
-
-        //     // New item ke Select2 containers ko properly handle karo
-        //     newItem.find('select').each(function() {
-        //         var $select = $(this);
-
-        //         // Select2 container remove karo
-        //         $select.siblings('.select2-container').remove();
-        //         $select.show().removeClass('select2-hidden-accessible');
-        //         $select.next('.select2-container').remove();
-        //     });
-
-        //     // Insert after current item
-        //     currentItem.after(newItem);
-
-        //     // Re-initialize Select2 for duplicated item with ORIGINAL values
-        //     newItem.find('select').each(function() {
-        //         var $select = $(this);
-        //         var originalName = $select.attr('name').replace(/\[\d+\]/,
-        //             '[0]'); // Get original name
-        //         var preservedValue = originalValues[originalName];
-
-        //         $select.select2();
-        //         if (preservedValue) {
-        //             $select.val(preservedValue).trigger('change');
-        //         }
-        //     });
-        //     currentItem.find('select').select2();
-
-        //     // Re-index all items
-        //     reindexPackingItems();
-        // });
-
-
-        // // Remove packing item
-        // $(document).on('click', '.remove-packing-item', function() {
-        //     if ($('.packing-item').length > 1) {
-        //         $(this).closest('.packing-item').remove();
-        //         // Re-index remaining items
-        //         reindexPackingItems();
-        //     }
-        // });
-
-        // Auto-calculate totals
-        $(document).on('input', '.bag-size, .metric-tons', function() {
-            let item = $(this).closest('.packing-item');
-            calculateTotals(item);
-        });
-
-        // Auto-calculate stuffing based on metric tons and containers
-        $(document).on('input', '.metric-tons, .containers', function() {
-            var item = $(this).closest('.packing-item');
-            calculateStuffing(item);
-        });
-
-        // Auto-calculate containers based on metric tons and stuffing
-        $(document).on('input', '.metric-tons, .stuffing', function() {
-            var item = $(this).closest('.packing-item');
-            calculateContainers(item);
-        });
-
-        $(document).on('input', '.rates, .metric-tons', function() {
-            let item = $(this).closest('.packing-item');
-            calculateAmount(item);
-        });
-
-
-        function calculateStuffing(item) {
-            var metricTons = parseFloat(item.find('.metric-tons').val()) || 0;
-            var containers = parseInt(item.find('.containers').val()) || 0;
-
-            if (containers > 0 && metricTons > 0) {
-                var stuffingPerContainer = metricTons / containers;
-                item.find('.stuffing').val(stuffingPerContainer.toFixed(3));
-            }
+            // Re-index all items
+            reindexPackingItems();
         }
 
-        function calculateContainers(item) {
-            var metricTons = parseFloat(item.find('.metric-tons').val()) || 0;
-            var stuffing = parseFloat(item.find('.stuffing').val()) || 0;
-
-            if (stuffing > 0 && metricTons > 0) {
-                var containers = Math.ceil(metricTons / stuffing);
-                item.find('.containers').val(containers);
+        // Remove packing item
+        $(document).on('click', '.remove-packing-item', function() {
+            if ($('#packingItems tr.packing-item').length > 1) {
+                $(this).closest('tr').remove();
+                reindexPackingItems();
+            } else {
+                alert('At least one packing item is required.');
             }
-        }
+        });
 
-        function calculateTotals(item) {
-            let bagSize = parseFloat(item.find('.bag-size').val()) || 0; // kg
-            let quantityMT = parseFloat(item.find('.metric-tons').val()) || 0; // MTs
+        // Conversion: Metric Tons -> Maunds
+        $(document).on('input', '.metric-tons', function() {
+            let row = $(this).closest('tr');
+            let mt = parseFloat($(this).val()) || 0;
+            row.find('.maunds').val((mt * 25).toFixed(2));
+            calculateTotals(row);
+        });
 
-            // Total KGs
-            let totalKgs = quantityMT * 1000;
+        // Conversion: Maunds -> Metric Tons
+        $(document).on('input', '.maunds', function() {
+            let row = $(this).closest('tr');
+            let mnd = parseFloat($(this).val()) || 0;
+            row.find('.metric-tons').val((mnd / 25).toFixed(3));
+            calculateTotals(row);
+        });
 
-            // No of Bags
-            let totalBags = 0;
-            if (bagSize > 0) {
-                totalBags = totalKgs / bagSize;
-            }
+        // Conversion: Stuffing (MT) -> Stuffing (Maunds)
+        $(document).on('input', '.stuffing', function() {
+            let row = $(this).closest('tr');
+            let mt = parseFloat($(this).val()) || 0;
+            row.find('.stuffing_maunds').val((mt * 25).toFixed(2));
+            calculateContainers(row);
+        });
 
-            // Update fields
-            item.find('.no_of_bags').val(totalBags.toFixed(0));
-            item.find('.total-kgs').val(totalKgs.toFixed(2));
+        // Conversion: Stuffing (Maunds) -> Stuffing (MT)
+        $(document).on('input', '.stuffing_maunds', function() {
+            let row = $(this).closest('tr');
+            let mnd = parseFloat($(this).val()) || 0;
+            row.find('.stuffing').val((mnd / 25).toFixed(3));
+            calculateContainers(row);
+        });
 
-            // Stuffing auto
-            let containers = parseInt(item.find('.containers').val()) || 0;
+        // Conversion: Rate/Ton -> Rate/Maund
+        $(document).on('input', '.rates', function() {
+            let row = $(this).closest('tr');
+            let rateTon = parseFloat($(this).val()) || 0;
+            row.find('.rates_mnd').val((rateTon / 25).toFixed(2));
+            calculateAmount(row);
+        });
+
+        // Conversion: Rate/Maund -> Rate/Ton
+        $(document).on('input', '.rates_mnd', function() {
+            let row = $(this).closest('tr');
+            let rateMnd = parseFloat($(this).val()) || 0;
+            row.find('.rates').val((rateMnd * 25).toFixed(2));
+            calculateAmount(row);
+        });
+
+        $(document).on('input', '.bag-size', function() {
+            calculateTotals($(this).closest('tr'));
+        });
+
+        $(document).on('input', '.containers', function() {
+            calculateStuffing($(this).closest('tr'));
+        });
+
+        function calculateStuffing(row) {
+            var mt = parseFloat(row.find('.metric-tons').val()) || 0;
+            var containers = parseInt(row.find('.containers').val()) || 0;
             if (containers > 0) {
-                calculateStuffing(item);
+                var stuffingMT = mt / containers;
+                row.find('.stuffing').val(stuffingMT.toFixed(3));
+                row.find('.stuffing_maunds').val((stuffingMT * 25).toFixed(2));
             }
-
-            calculateAmount(item);
         }
 
+        function calculateContainers(row) {
+            var mt = parseFloat(row.find('.metric-tons').val()) || 0;
+            var stuffing = parseFloat(row.find('.stuffing').val()) || 0;
+            if (stuffing > 0) {
+                var containers = Math.ceil(mt / stuffing);
+                row.find('.containers').val(containers);
+            }
+        }
 
-        function calculateAmount(item) {
-            let rate = parseFloat(item.find('.rates').val()) || 0;
-            let metricTons = parseFloat(item.find('.metric-tons').val()) || 0;
+        function calculateTotals(row) {
+            let bagSize = parseFloat(row.find('.bag-size').val()) || 0;
+            let mt = parseFloat(row.find('.metric-tons').val()) || 0;
+            
+            // Total KGs
+            let totalKgs = mt * 1000;
+            row.find('.total-kgs').val(totalKgs.toFixed(2));
+            
+            // No of Bags
+            if (bagSize > 0) {
+                row.find('.no_of_bags').val((totalKgs / bagSize).toFixed(0));
+            } else {
+                row.find('.no_of_bags').val(0);
+            }
+            
+            calculateAmount(row);
+        }
 
-            // keep 3 decimals
-            rate = parseFloat(rate.toFixed(3));
-            metricTons = parseFloat(metricTons.toFixed(3));
-
-            let amount = rate * metricTons;
-
-            item.find('.amount').val(amount.toFixed(2));
+        function calculateAmount(row) {
+            let rate = parseFloat(row.find('.rates').val()) || 0;
+            let mt = parseFloat(row.find('.metric-tons').val()) || 0;
+            let amount = rate * mt;
+            
+            row.find('.amount').val(amount.toFixed(2));
 
             // PKR conversion
-            let currencyRate = parseFloat($('#currencyRate').val()) || 0;
-            if (currencyRate > 0) {
-                let amountPKR = amount * currencyRate;
-                item.find('.amount_pkr').val(amountPKR.toFixed(2));
-            }
+            let currencyRate = parseFloat($('#currencyRate').val()) || 1;
+            row.find('.amount_pkr').val((amount * currencyRate).toFixed(2));
         }
 
-
         function reindexPackingItems() {
-            $('.packing-item').each(function(index) {
+            $('#packingItems tr.packing-item').each(function(index) {
                 $(this).find('input, select').each(function() {
                     var name = $(this).attr('name');
                     if (name) {
@@ -1041,6 +940,17 @@
                 });
             });
         }
+
+        // Recalculate everything when currency rate changes
+        $('#currencySelect').on('change', function() {
+            let rate = $(this).find(':selected').data('rate') || '';
+            $('#currencyRate').val(rate);
+            $('#packingItems tr.packing-item').each(function() {
+                calculateAmount($(this));
+            });
+        });
+
+    });
 
         // Initial calculation for first item
         calculateTotals($('.packing-item').first());

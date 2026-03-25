@@ -147,14 +147,20 @@ class ExportOrderController extends Controller
                         'bag_condition_id' => $item['bag_condition_id'],
                         'bag_color_id' => $item['bag_color_id'],
 
-                        'bag_size' => $item['bag_size'],
-                        'metric_tons' => $item['metric_tons'],
+                        'bag_size' => $item['bag_size'] ?? 0,
+                        'metric_tons' => $item['metric_tons'] ?? 0,
+                        'no_of_bags' => $item['no_of_bags'] ?? 0,
+                        'total_kgs' => $item['total_kgs'] ?? 0,
 
                         'stuffing_in_container' => $item['stuffing_in_container'] ?? 0,
                         'no_of_containers' => $item['no_of_containers'] ?? 0,
 
-                        'rate' => $item['rate'],
-                        // 'amount_pkr' => $item['amount_pkr'] ?? 0,
+                        'rate' => $item['rate'] ?? 0,
+                        'rate_per_maund' => $item['rate_per_maund'] ?? 0,
+                        'maunds' => $item['maunds'] ?? 0,
+                        'stuffing_maunds' => $item['stuffing_maunds'] ?? 0,
+                        'amount' => $item['amount'] ?? 0,
+                        'amount_pkr' => $item['amount_pkr'] ?? 0,
                     ]);
                 }
             }
@@ -340,11 +346,18 @@ class ExportOrderController extends Controller
                         'bag_packing_id' => $item['bag_packing_id'] ?? null,
                         'bag_condition_id' => $item['bag_condition_id'],
                         'bag_color_id' => $item['bag_color_id'],
-                        'bag_size' => $item['bag_size'],
-                        'metric_tons' => $item['metric_tons'],
+                        'bag_size' => $item['bag_size'] ?? 0,
+                        'metric_tons' => $item['metric_tons'] ?? 0,
+                        'no_of_bags' => $item['no_of_bags'] ?? 0,
+                        'total_kgs' => $item['total_kgs'] ?? 0,
                         'stuffing_in_container' => $item['stuffing_in_container'] ?? 0,
                         'no_of_containers' => $item['no_of_containers'] ?? 0,
-                        'rate' => $item['rate'],
+                        'rate' => $item['rate'] ?? 0,
+                        'rate_per_maund' => $item['rate_per_maund'] ?? 0,
+                        'maunds' => $item['maunds'] ?? 0,
+                        'stuffing_maunds' => $item['stuffing_maunds'] ?? 0,
+                        'amount' => $item['amount'] ?? 0,
+                        'amount_pkr' => $item['amount_pkr'] ?? 0,
                     ]);
                 }
             }
