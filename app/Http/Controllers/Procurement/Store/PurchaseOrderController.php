@@ -65,6 +65,27 @@ class PurchaseOrderController extends Controller
             });
         }
 
+        if ($request->has('po_no') && !empty($request->po_no)) {
+            $po_no = $request->po_no;
+            $query->whereHas('purchase_order', function ($q) use ($po_no) {
+                $q->where('purchase_order_no', 'like', "%{$po_no}%");
+            });
+        }
+
+        if ($request->has('pr_no') && !empty($request->pr_no)) {
+            $pr_no = $request->pr_no;
+            $query->whereHas('purchase_order.purchase_request', function ($q) use ($pr_no) {
+                $q->where('purchase_request_no', 'like', "%{$pr_no}%");
+            });
+        }
+
+        if ($request->has('pq_no') && !empty($request->pq_no)) {
+            $pq_no = $request->pq_no;
+            $query->whereHas('purchase_order.purchase_quotation', function ($q) use ($pq_no) {
+                $q->where('purchase_quotation_no', 'like', "%{$pq_no}%");
+            });
+        }
+
         if ($request->has('status') && $request->status !== 'all' && !empty($request->status)) {
             $status = $request->status;
             $query->whereHas('purchase_order', function ($q) use ($status) {
@@ -228,7 +249,7 @@ class PurchaseOrderController extends Controller
                 ->first();
 
             if ($quotation) {
-                $dataItems = PurchaseQuotationData::with(['purchase_order_data', 'purchase_request.purchase_order_data', 'purchase_quotation', 'item', 'category'])
+                $dataItems = PurchaseQuotationData::with(['purchase_order_data.purchase_order', 'purchase_request.purchase_order_data', 'purchase_quotation', 'item', 'category'])
                     ->where('purchase_quotation_id', $quotation->id)
                     ->where('am_approval_status', 'approved')
                     ->get();
@@ -236,7 +257,7 @@ class PurchaseOrderController extends Controller
         }
 
         if (!$quotation || $dataItems->isEmpty()) {
-            $dataItems = PurchaseRequestData::with(['purchase_request', 'item', 'category', 'purchase_order_data'])
+            $dataItems = PurchaseRequestData::with(['purchase_request', 'item', 'category', 'purchase_order_data.purchase_order'])
                 ->where('purchase_request_id', $requestId)
                 ->get();
         }
@@ -269,8 +290,8 @@ class PurchaseOrderController extends Controller
             }
         ])
             ->whereHas('PurchaseData', function ($q) {
-                $q->whereRaw('qty > (SELECT COALESCE(SUM(qty), 0) FROM purchase_order_data WHERE purchase_request_data_id = purchase_request_data.id)');
-            })
+            $q->whereRaw('qty > (SELECT COALESCE(SUM(pod.qty), 0) FROM purchase_order_data pod JOIN purchase_orders po ON po.id = pod.purchase_order_id WHERE pod.purchase_request_data_id = purchase_request_data.id AND pod.am_approval_status != "rejected" AND po.am_approval_status != "rejected")');
+        })
             ->get();
 
      
@@ -419,8 +440,8 @@ class PurchaseOrderController extends Controller
             'purchaseOrderData',
             'purchaseOrderData.category',
             'purchase_request.PurchaseData',
-            'purchaseOrderData.purchase_request_data.purchase_order_data',
-            'purchaseOrderData.purchase_quotation_data.purchase_order_data',
+            'purchaseOrderData.purchase_request_data.purchase_order_data.purchase_order',
+            'purchaseOrderData.purchase_quotation_data.purchase_order_data.purchase_order',
             'purchaseOrderData.item',
             'purchase_quotation.quotation_data'
         ])->findOrFail($id);
@@ -575,10 +596,12 @@ class PurchaseOrderController extends Controller
         
         $quotations = $quotations->filter(function($quotation) {
             $totalQty = $quotation->quotation_data->where("am_approval_status", 'approved')->sum("qty");
-            $po_qty = $quotation->quotation_data->sum(function ($qData) {
-                return $qData->purchase_order_data->sum('qty');
-            });
-            return $po_qty < $totalQty;
+        $po_qty = $quotation->quotation_data->sum(function ($qData) {
+            return $qData->purchase_order_data->filter(function ($poItem) {
+                return $poItem->am_approval_status != 'rejected' && $poItem->purchase_order->am_approval_status != 'rejected';
+            })->sum('qty');
+        });
+        return $po_qty < $totalQty;
         });
 
 

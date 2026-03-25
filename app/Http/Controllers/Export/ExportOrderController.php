@@ -28,6 +28,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use App\Models\Master\Customer;
 
 class ExportOrderController extends Controller
 {
@@ -64,7 +65,8 @@ class ExportOrderController extends Controller
         $bagPackings = BagPacking::where('status', 1)->get();
         $brands = Brands::where('status', 1)->get();
         $bagColors = Color::where('status', 1)->get();
-        $users = User::get(); // buyer
+        // $users = User::get(); // buyer
+        $users = Customer::get(); // buyer
         $banks = Bank::where('status', 1)->get();
         $brokers = Broker::where('status', 1)->get();
         $incoterms = IncoTerm::where('status', 1)->get();
@@ -101,51 +103,24 @@ class ExportOrderController extends Controller
         DB::beginTransaction();
 
         try {
-            $exportOrderData = $request->only([
-                'company_id',
-                'buyer_id',
-                'product_id',
-                'voucher_no',
-                'contract_no',
-                'voucher_date',
-                'voucher_heading',
-                'shipment_delivery_date_from',
-                'shipment_delivery_date_to',
-                'other_specifications',
-                'bank_id',
-                'correspondent_bank_id',
-                'incoterm_id',
-                'packing_type',
-                'mode_of_term_id',
-                'mode_of_transport_id',
-                'origin_country_id',
-                'port_of_discharge_id',
-                'port_of_loading_id',
-                'hs_code_id',
-                'partial_payment',
-                'transhipment',
-                'part_shipment',
-                'insurance_covered_by',
-                'advance_payment',
-                'payment_days',
-                'currency_id',
-                'currency_rate',
-                'marking_labeling',
-                'shipping_instructions',
-                'documents_to_be_provided',
-                'other_condition',
-                'force_majure',
-                'application_law',
-                'broker_id',
-            ]);
+            $exportOrderData = $request->except(['bank_id', 'specifications', 'packing_items']);
+
+            // Parse bank_id (e.g., owner_1, company_2)
+            if ($request->bank_id) {
+                $bankParts = explode('_', $request->bank_id);
+                if (count($bankParts) == 2) {
+                    $exportOrderData['customer_bank_type'] = $bankParts[0];
+                    $exportOrderData['customer_bank_id'] = $bankParts[1];
+                }
+            }
 
             $exportOrder = ExportOrder::create(array_merge(
                 $exportOrderData,
                 [
                     'created_by' => auth()->user()->id,
-                    'company_location_ids' => $request->company_location_ids,
-                    'arrival_location_ids' => $request->arrival_location_ids,
-                    'arrival_sub_location_ids' => $request->arrival_sub_location_ids,
+                'company_location_ids' => $request->company_location_ids ?? [],
+                'arrival_location_ids' => $request->arrival_location_ids ?? [],
+                'arrival_sub_location_ids' => $request->arrival_sub_location_ids ?? [],
                 ]
             ));
 
@@ -212,7 +187,7 @@ class ExportOrderController extends Controller
         $bagPackings = BagPacking::where('status', 1)->get();
         $brands = Brands::where('status', 1)->get();
         $bagColors = Color::where('status', 1)->get();
-        $users = User::get(); // buyer
+        $users = Customer::get(); // buyer
         $banks = Bank::where('status', 1)->get();
         $brokers = Broker::where('status', 1)->get();
         $incoterms = IncoTerm::where('status', 1)->get();
@@ -256,7 +231,7 @@ class ExportOrderController extends Controller
         $bagPackings = BagPacking::where('status', 1)->get();
         $brands = Brands::where('status', 1)->get();
         $bagColors = Color::where('status', 1)->get();
-        $users = User::get(); // buyer
+        $users = Customer::get(); // buyer
         $banks = Bank::where('status', 1)->get();
         $brokers = Broker::where('status', 1)->get();
         $incoterms = IncoTerm::where('status', 1)->get();
@@ -294,30 +269,29 @@ class ExportOrderController extends Controller
         DB::beginTransaction();
 
         try {
-            // Update main export order
-            $exportOrderData = $request->only([
-                'company_id', 'buyer_id', 'product_id', 'voucher_no', 'contract_no',
-                'voucher_date', 'voucher_heading', 'shipment_delivery_date_from',
-                'shipment_delivery_date_to', 'other_specifications', 'bank_id',
-                'correspondent_bank_id', 'incoterm_id', 'packing_type', 'mode_of_term_id',
-                'mode_of_transport_id', 'origin_country_id', 'port_of_discharge_id',
-                'port_of_loading_id', 'hs_code_id', 'partial_payment', 'transhipment',
-                'part_shipment', 'insurance_covered_by', 'advance_payment', 'payment_days',
-                'currency_id', 'currency_rate', 'marking_labeling', 'shipping_instructions',
-                'documents_to_be_provided', 'other_condition', 'force_majure',
-                'application_law', 'broker_id',
+            $exportOrderData = $request->except(['bank_id', 'specifications', 'packing_items']);
+
+            // Parse bank_id (e.g., owner_1, company_2)
+            if ($request->bank_id) {
+                $bankParts = explode('_', $request->bank_id);
+                if (count($bankParts) == 2) {
+                    $exportOrderData['customer_bank_type'] = $bankParts[0];
+                    $exportOrderData['customer_bank_id'] = $bankParts[1];
+                }
+            } else {
+                $exportOrderData['customer_bank_type'] = null;
+                $exportOrderData['customer_bank_id'] = null;
+            }
+
+            $updateData = array_merge($exportOrderData, [
+                'company_location_ids' => $request->company_location_ids ?? [],
+                'arrival_location_ids' => $request->arrival_location_ids ?? [],
+                'arrival_sub_location_ids' => $request->arrival_sub_location_ids ?? [],
+                'am_change_made' => 1,
             ]);
 
-            $updateData = [
-                ...$exportOrderData,
-                'company_location_ids' => $request->company_location_ids,
-                'arrival_location_ids' => $request->arrival_location_ids,
-                'arrival_sub_location_ids' => $request->arrival_sub_location_ids,
-                'am_change_made' => 1,
-            ];
-
-            if ($exportOrder->am_approval_status === 'reverted') {
-                $updateData['am_approval_status'] = 'pending';
+                if ($exportOrder->am_approval_status === 'reverted') {
+                    $updateData['am_approval_status'] = 'pending';
             }
 
             $exportOrder->update($updateData);
@@ -454,7 +428,6 @@ class ExportOrderController extends Controller
 
         return response()->json($arrivalLocations);
     }
-
     public function getArrivalSubLocationsByArrivalLocations(Request $request)
     {
         $arrivalLocationIds = $request->arrival_location_ids ?? [];
@@ -464,5 +437,38 @@ class ExportOrderController extends Controller
             ->get();
 
         return response()->json($subLocations);
+    }
+
+    public function getCustomerBanks($customerId)
+    {
+        $customer = Customer::with(['ownerBankDetails', 'companyBankDetails'])->findOrFail($customerId);
+
+        $banks = [];
+
+        foreach ($customer->ownerBankDetails as $bank) {
+            $banks[] = [
+                'id' => 'owner_' . $bank->id,
+                'type' => 'Owner',
+                'bank_name' => $bank->bank_name,
+                'branch_name' => $bank->branch_name,
+                'branch_code' => $bank->branch_code,
+                'account_title' => $bank->account_title,
+                'account_number' => $bank->account_number,
+            ];
+        }
+
+        foreach ($customer->companyBankDetails as $bank) {
+            $banks[] = [
+                'id' => 'company_' . $bank->id,
+                'type' => 'Company',
+                'bank_name' => $bank->bank_name,
+                'branch_name' => $bank->branch_name,
+                'branch_code' => $bank->branch_code,
+                'account_title' => $bank->account_title,
+                'account_number' => $bank->account_number,
+            ];
+        }
+
+        return response()->json($banks);
     }
 }

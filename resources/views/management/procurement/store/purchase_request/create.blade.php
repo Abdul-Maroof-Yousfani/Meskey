@@ -293,7 +293,6 @@
                                 <input type="hidden" name="module_type[]" value="" />
                                 <input type="hidden" name="index[]" value="${index}" />
                                 <input type="hidden" name="is_single_job_order[]" value="0" />
-         
                             </div>
                         </div>
                     </td>
@@ -323,12 +322,14 @@
                             </div>
                         </div>
                     </td>
-                    <td class="bag-only" style="min-width: 150px;"><select name="brands[]" id="brands_${index}" class="form-control item-select brand-select">
-                        <option value="">Select Brand</option>
-                        @foreach(getAllBrands() ?? [] as $brand)
-                            <option value="{{ $brand->id }}">{{ $brand->name }}</option>
-                        @endforeach
-                    </select></td>
+                    <td class="bag-only" style="min-width: 150px;">
+                        <select name="brands[]" id="brands_${index}" class="form-control item-select brand-select">
+                            <option value="">Select Brand</option>
+                            @foreach(getAllBrands() ?? [] as $brand)
+                                <option value="{{ $brand->id }}">{{ $brand->name }}</option>
+                            @endforeach
+                        </select>
+                    </td>
                     <td class="bag-only" style="min-width: 120px;">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
@@ -337,14 +338,14 @@
                             </div>
                         </div>
                     </td>
-                    <td class="bag-only" style="min-width: 150px;"><select name="color[]" id="color_${index}" class="form-control item-select color-select">
-                        <option value="">Select Color</option>
-                        @foreach(getAllColors() ?? [] as $color)
-                            <option value="{{ $color->id }}">{{ $color->color }}</option>
-                        @endforeach
-                    </select></td>
-                    
-
+                    <td class="bag-only" style="min-width: 150px;">
+                        <select name="color[]" id="color_${index}" class="form-control item-select color-select">
+                            <option value="">Select Color</option>
+                            @foreach(getAllColors() ?? [] as $color)
+                                <option value="{{ $color->id }}">{{ $color->color }}</option>
+                            @endforeach
+                        </select>
+                    </td>
                     <td class="bag-only" style="min-width: 150px;">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
@@ -354,14 +355,14 @@
                             </div>
                         </div>
                     </td>
-                    
-                    <td class="bag-only" style="width: 150px; min-width: 150px; max-width: 150px;"><select name="size[]" id="size_${index}" class="form-control item-select size-select" style="width: 100%;">
-                        <option value="">Select Size</option>
-                        @foreach(getAllSizes() ?? [] as $size)
-                            <option value="{{ $size->id }}">{{ $size->size }}</option>
-                        @endforeach
-                    </select></td>
-
+                    <td class="bag-only" style="width: 150px; min-width: 150px; max-width: 150px;">
+                        <select name="size[]" id="size_${index}" class="form-control item-select size-select" style="width: 100%;">
+                            <option value="">Select Size</option>
+                            @foreach(getAllSizes() ?? [] as $size)
+                                <option value="{{ $size->id }}">{{ $size->size }}</option>
+                            @endforeach
+                        </select>
+                    </td>
                     <td class="bag-only" style="min-width: 200px;">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
@@ -396,7 +397,7 @@
                             placeholder="line desc">
                     </td>
                     <td style="min-width: 80px;">
-                        <button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="removeRow(${index})">
+                        <button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="removeRow('${index}')" style="width:120px;">
                             <i class="fa fa-trash"></i>
                         </button>
                     </td>
@@ -426,19 +427,15 @@
 
 
         $('.removeRowBtn').prop('disabled', false);
-        $('#row_0 .removeRowBtn').prop('disabled', true);
-            $(".item-list").select2();
+        $(".item-list").select2();
         $(`#item_id_${index}`).trigger("change");
-    
     }
 
 
     function removeRow(index) {
         $('#row_' + index).remove();
-
-
         if ($('#purchaseRequestBody tr').length === 1) {
-            $('#row_0 .removeRowBtn').prop('disabled', true);
+            $('#purchaseRequestBody tr .removeRowBtn').prop('disabled', true);
         }
     }
 

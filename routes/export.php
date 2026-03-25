@@ -4,6 +4,7 @@ use App\Http\Controllers\Export\BankController;
 use App\Http\Controllers\Export\CommercialInvoiceController;
 use App\Http\Controllers\Export\CurrencyController;
 use App\Http\Controllers\Export\ExportOrderController;
+use App\Http\Controllers\Export\ExportSodaFieldController;
 use App\Http\Controllers\Export\IncoTermController;
 use App\Http\Controllers\Export\ModeOfTermController;
 use App\Http\Controllers\Export\ModeOfTransportController;
@@ -41,6 +42,7 @@ Route::get('/get-bank-details/{id}', function ($id) {
 Route::get('get-product-specs/{productId}', [ExportOrderController::class, 'getProductSpecs'])->name('get.product_specs.export');
 Route::post('/get-arrival-locations', [ExportOrderController::class, 'getArrivalLocationsByCompanyLocations']);
 Route::post('/get-arrival-sub-locations', [ExportOrderController::class, 'getArrivalSubLocationsByArrivalLocations']);
+Route::get('/export-order/customer-banks/{customerId}', [ExportOrderController::class, 'getCustomerBanks'])->name('export-order.customer-banks');
 
 // proforma
 Route::resource('proforma', ProformaController::class)->except(['create', 'store']);
@@ -52,3 +54,7 @@ Route::post('/proforma/create/{exportOrderId}', [ProformaController::class, 'sto
 // commerical invoice
 Route::resource('commercial-invoice', CommercialInvoiceController::class);
 Route::post('/get-commercial-invoice', [CommercialInvoiceController::class, 'getCommercialInvoiceTable'])->name('get.commercial-invoice');
+
+// export soda field 
+Route::resource('export-soda-field', ExportSodaFieldController::class);
+Route::post('/get-export-soda-field', [ExportSodaFieldController::class, 'getExportSodaFieldTable'])->name('get.export-soda-field');

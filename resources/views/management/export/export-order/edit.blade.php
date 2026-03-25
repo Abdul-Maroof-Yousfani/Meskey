@@ -235,21 +235,15 @@
                     <div class="p-3">
                         <h5 class="mb-3"><strong>Beneficiary Bank Details</strong></h5>
                         <div class="row">
-                            {{-- Bank Selector --}}
+                        {{-- Bank Selector (loaded dynamically based on selected Buyer) --}}
                             <div class="col-md-12 mb-2">
                                 <label>Select Bank:</label>
                                 <select name="bank_id" id="bankSelect" class="form-control select2">
                                     <option value="">-- Select Bank --</option>
-                                    @foreach ($banks as $bank)
-                                        <option value="{{ $bank->id }}"
-                                            {{ old('bank_id', $exportOrder->bank_id) == $bank->id ? 'selected' : '' }}>
-                                            {{ $bank->account_title }} - {{ $bank->bank_name }}
-                                        </option>
-                                    @endforeach
                                 </select>
+                                <small class="text-muted">Select a Buyer first to see their bank accounts.</small>
                             </div>
 
-                            {{-- Auto Filled Fields --}}
                             <div class="col-md-6 mt-2">
                                 <label>Account Title:</label>
                                 <input type="text" id="acc_title" class="form-control" disabled>
@@ -261,28 +255,18 @@
                             </div>
 
                             <div class="col-md-6 mt-2">
-                                <label>IBAN:</label>
-                                <input type="text" id="iban" class="form-control" disabled>
+                                <label>Branch Name:</label>
+                                <input type="text" id="branch_name" class="form-control" disabled>
+                            </div>
+
+                            <div class="col-md-6 mt-2">
+                                <label>Branch Code:</label>
+                                <input type="text" id="branch_code" class="form-control" disabled>
                             </div>
 
                             <div class="col-md-6 mt-2">
                                 <label>Account No:</label>
                                 <input type="text" id="account_no" class="form-control" disabled>
-                            </div>
-
-                            <div class="col-md-6 mt-2">
-                                <label>SWIFT Code:</label>
-                                <input type="text" id="swift_code" class="form-control" disabled>
-                            </div>
-
-                            <div class="col-md-6 mt-2">
-                                <label>Bank Address:</label>
-                                <input type="text" id="bank_address" class="form-control" disabled>
-                            </div>
-
-                            <div class="col-md-12 mt-2">
-                                <label>Description:</label>
-                                <textarea id="description" class="form-control" rows="2" disabled></textarea>
                             </div>
                         </div>
 
@@ -381,19 +365,19 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label>Other Condition:</label>
-                        <textarea name="other_condition" class="form-control" rows="3">{{ old('other_condition', $exportOrder->other_condition) }}</textarea>
+                        <textarea name="other_condition" id="other_condition" class="form-control" rows="3">{{ old('other_condition', $exportOrder->other_condition) }}</textarea>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
                         <label>Force Majure:</label>
-                        <textarea name="force_majure" class="form-control" rows="3">{{ old('force_majure', $exportOrder->force_majure) }}</textarea>
+                        <textarea name="force_majure" id="force_majure" class="form-control" rows="3">{{ old('force_majure', $exportOrder->force_majure) }}</textarea>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
                         <label>Application Law:</label>
-                        <textarea name="application_law" class="form-control" rows="3">{{ old('application_law', $exportOrder->application_law) }}</textarea>
+                        <textarea name="application_law" id="application_law" class="form-control" rows="3">{{ old('application_law', $exportOrder->application_law) }}</textarea>
                     </div>
                 </div>
             </div>
@@ -703,7 +687,7 @@
                                 <div class="form-group">
                                     <label>Bag Size (kg):</label>
                                     <input type="number" name="packing_items[{{ $index }}][bag_size]"
-                                        class="form-control bag-size" step="0.01" value="{{ $item->bag_size }}"
+                                        class="form-control bag-size" step="0.01" value="{{ number_format($item->bag_size, 2, '.', '') }}"
                                         min="0">
                                 </div>
                             </div>
@@ -713,7 +697,7 @@
                                     <label>Quantity (MTs):</label>
                                     <input type="number" name="packing_items[{{ $index }}][metric_tons]"
                                         class="form-control metric-tons" step="0.01"
-                                        value="{{ $item->metric_tons }}" min="0">
+                                        value="{{ number_format($item->metric_tons, 2, '.', '') }}" min="0">
                                 </div>
                             </div>
 
@@ -721,7 +705,7 @@
                                 <div class="form-group">
                                     <label>No. of Bags:</label>
                                     <input type="number" name="packing_items[{{ $index }}][no_of_bags]"
-                                        class="form-control no_of_bags" value="{{ $item->no_of_bags }}" readonly>
+                                        class="form-control no_of_bags" value="{{ number_format($item->no_of_bags, 2, '.', '') }}" readonly>
                                 </div>
                             </div>
 
@@ -729,7 +713,7 @@
                                 <div class="form-group">
                                     <label>Total KGs:</label>
                                     <input type="number" name="packing_items[{{ $index }}][total_kgs]"
-                                        class="form-control total-kgs" value="{{ $item->total_kgs }}" readonly>
+                                        class="form-control total-kgs" value="{{ number_format($item->total_kgs, 2, '.', '') }}" readonly>
                                 </div>
                             </div>
 
@@ -738,7 +722,7 @@
                                     <label>Stuffing (MTs):</label>
                                     <input type="number"
                                         name="packing_items[{{ $index }}][stuffing_in_container]"
-                                        class="form-control stuffing" value="{{ $item->stuffing_in_container }}"
+                                        class="form-control stuffing" value="{{ number_format($item->stuffing_in_container, 2, '.', '') }}"
                                         step="0.01" min="0">
                                 </div>
                             </div>
@@ -757,7 +741,7 @@
                                 <div class="form-group">
                                     <label>Rate Per Ton:</label>
                                     <input type="number" name="packing_items[{{ $index }}][rate]"
-                                        class="form-control rates" value="{{ $item->rate }}" step="0.01"
+                                        class="form-control rates" value="{{ number_format($item->rate, 2, '.', '') }}" step="0.01"
                                         min="0">
                                 </div>
                             </div>
@@ -766,7 +750,7 @@
                                 <div class="form-group">
                                     <label>Amount:</label>
                                     <input type="number" name="packing_items[{{ $index }}][amount]"
-                                        class="form-control amount" value="{{ $item->amount }}" min="0"
+                                        class="form-control amount" value="{{ number_format($item->amount, 2, '.', '') }}" min="0"
                                         readonly>
                                 </div>
                             </div>
@@ -775,7 +759,7 @@
                                 <div class="form-group">
                                     <label>Amount in (PKR):</label>
                                     <input type="number" name="packing_items[{{ $index }}][amount_pkr]"
-                                        class="form-control amount_pkr" value="{{ $item->amount_pkr }}"
+                                        class="form-control amount_pkr" value="{{ number_format($item->amount_pkr, 2, '.', '') }}"
                                         min="0" readonly>
                                 </div>
                             </div>
@@ -800,6 +784,28 @@
         </div>
     </div>
 </form>
+
+<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        $('#shipping_instructions, #documents_to_be_provided, #other_condition, #force_majure, #application_law').summernote({
+            placeholder: 'Enter details here...',
+            tabsize: 2,
+            height: 200,
+            toolbar: [
+                ['style', ['bold', 'italic', 'underline', 'clear']],
+                ['font', ['strikethrough', 'superscript', 'subscript']],
+                ['fontsize', ['fontsize']],
+                ['color', ['color']],
+                ['para', ['ul', 'ol', 'paragraph']],
+                ['insert', ['link', 'picture', 'video']],
+                ['view', ['fullscreen', 'codeview', 'help']]
+            ]
+        });
+    });
+</script>
 
 <script>
     $(document).ready(function() {
@@ -1040,22 +1046,88 @@
         calculateTotals($('.packing-item').first());
     });
 
-    function loadBankDetails(bankId) {
-        if (!bankId) {
-            $('#acc_title, #bank_name, #iban, #account_no, #swift_code, #bank_address, #description').val('');
-            return;
-        }
+        // Saved bank ID from database
+        let savedBankId = '{{ $exportOrder->customer_bank_type }}_{{ $exportOrder->customer_bank_id }}';
 
-        $.get('/export/get-bank-details/' + bankId, function(bank) {
-            $('#acc_title').val(bank.account_title);
-            $('#bank_name').val(bank.bank_name);
-            $('#iban').val(bank.iban);
-            $('#account_no').val(bank.account_no);
-            $('#swift_code').val(bank.swift_code);
-            $('#bank_address').val(bank.bank_address);
-            $('#description').val(bank.description);
+        // Load customer banks when buyer is selected
+        $('select[name="buyer_id"]').on('change', function() {
+            let customerId = $(this).val();
+
+            $('#bankSelect').html('<option value="">-- Select Bank --</option>').trigger('change');
+            $('#acc_title, #bank_name, #branch_name, #branch_code, #account_no').val('');
+
+            if (!customerId) return;
+
+            $.get('{{ route('export-order.customer-banks', '') }}/' + customerId, function(response) {
+                let options = '<option value="">-- Select Bank --</option>';
+                response.forEach(function(bank) {
+                    let label = '[' + bank.type + '] ' + bank.account_title + ' - ' + bank.bank_name;
+                    let selected = (bank.id === savedBankId) ? 'selected' : '';
+                    options += `<option value="${bank.id}" 
+                        ${selected}
+                        data-title="${bank.account_title}"
+                        data-bank="${bank.bank_name}"
+                        data-branch="${bank.branch_name}"
+                        data-branch-code="${bank.branch_code}"
+                        data-account="${bank.account_number}">
+                        ${label}
+                    </option>`;
+                });
+                $('#bankSelect').html(options);
+                if ($('#bankSelect').hasClass('select2-hidden-accessible')) {
+                    $('#bankSelect').select2();
+                }
+                // Trigger change to autofill fields if a bank was selected
+                if (savedBankId && $('#bankSelect').val() === savedBankId) {
+                    $('#bankSelect').trigger('change');
+                }
+            });
         });
-    }
+
+        // Autofill on bank select
+        $('#bankSelect').on('change', function() {
+            let selected = $(this).find(':selected');
+
+            if (!selected.val()) {
+                $('#acc_title, #bank_name, #branch_name, #branch_code, #account_no').val('');
+                return;
+            }
+
+            $('#acc_title').val(selected.data('title') || '');
+            $('#bank_name').val(selected.data('bank') || '');
+            $('#branch_name').val(selected.data('branch') || '');
+            $('#branch_code').val(selected.data('branch-code') || '');
+            $('#account_no').val(selected.data('account') || '');
+        });
+
+        // On page load: if buyer already selected, load their banks
+        let initialBuyer = $('select[name="buyer_id"]').val();
+        if (initialBuyer) {
+            $.get('{{ route('export-order.customer-banks', '') }}/' + initialBuyer, function(response) {
+                let options = '<option value="">-- Select Bank --</option>';
+                response.forEach(function(bank) {
+                    let label = '[' + bank.type + '] ' + bank.account_title + ' - ' + bank.bank_name;
+                    let selected = (bank.id === savedBankId) ? 'selected' : '';
+                    options += `<option value="${bank.id}"
+                        ${selected}
+                        data-title="${bank.account_title}"
+                        data-bank="${bank.bank_name}"
+                        data-branch="${bank.branch_name}"
+                        data-branch-code="${bank.branch_code}"
+                        data-account="${bank.account_number}">
+                        ${label}
+                    </option>`;
+                });
+                $('#bankSelect').html(options);
+                if ($('#bankSelect').hasClass('select2-hidden-accessible')) {
+                    $('#bankSelect').select2();
+                }
+                // Trigger change to autofill fields
+                if (savedBankId && $('#bankSelect').val() === savedBankId) {
+                    $('#bankSelect').trigger('change');
+                }
+            });
+        }
 
     function loadCorrespondentBankDetails(bankId) {
         if (!bankId) {
@@ -1178,27 +1250,5 @@
                 $('#arrivalSubLocationSelect').html(options).trigger('change');
             });
         }
-    });
-</script>
-
-<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.js"></script>
-
-<script>
-    $(document).ready(function() {
-        $('#shipping_instructions, #documents_to_be_provided').summernote({
-            placeholder: 'Enter details here...',
-            tabsize: 2,
-            height: 200,
-            toolbar: [
-                ['style', ['bold', 'italic', 'underline', 'clear']],
-                ['font', ['strikethrough', 'superscript', 'subscript']],
-                ['fontsize', ['fontsize']],
-                ['color', ['color']],
-                ['para', ['ul', 'ol', 'paragraph']],
-                ['insert', ['link', 'picture', 'video']],
-                ['view', ['fullscreen', 'codeview', 'help']]
-            ]
-        });
     });
 </script>

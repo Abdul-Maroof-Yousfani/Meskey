@@ -22,6 +22,19 @@
                 </select>
             </div>
         </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label class="form-label">Quotation</label>
+                <select id="quotation_no" name="quotation_no" class="form-control select2">
+                    <option value="">Select Quotation</option>
+                    @if($purchaseOrder->purchase_quotation_id)
+                        <option value="{{ $purchaseOrder->purchase_quotation_id }}" selected>
+                            {{ optional($purchaseOrder->purchase_quotation)->purchase_quotation_no }}
+                        </option>
+                    @endif
+                </select>
+            </div>
+        </div>
         @php  
             $locations = $purchaseOrder?->purchase_request?->locations?->pluck("location_id")?->toArray() ?? [];
         @endphp
@@ -107,7 +120,7 @@
         <div class="col-md-12">
 
             <div style="overflow-x: auto; white-space: nowrap; width: 100%;">
-                <table class="table table-bordered" id="purchaseRequestTable" style="min-width: 2000px;">
+                <table class="table table-bordered" id="purchaseRequestTable" style="min-width: 4000px;">
                     @php
                         $isBag = optional($purchaseOrder->purchase_request)->category_id == 38;
                     @endphp
@@ -116,6 +129,7 @@
                             <th>Category</th>
                             <th>Item</th>
                             <th>Item UOM</th>
+                            <th>Job Order</th>
                             {{-- <th>Vendor</th> --}}
                             <th>Qty</th>
                             <th>Rate</th>
@@ -143,8 +157,8 @@
                         @foreach ($purchaseOrder->purchaseOrderData ?? [] as $key => $data)
                             
                             <tr id="row_{{ $key }}">
-                                <td style="min-width: 120px;">
-                                    <select  id="category_id_{{ $key }}" 
+                                <td style="min-width: 250px;">
+                                    <select  id="category_id_{{ $key }}" disabled
                                         onchange="filter_items(this.value,{{ $key }})"
                                         class="form-control item-select select2" data-index="{{ $key }}">
                                         <option value="">Select Category</option>
@@ -158,8 +172,8 @@
                                     <input type="hidden" name="data_id[]" value="{{ $data->id }}">
                                     <input type="hidden" name="purchase_request_data_id[]" value="{{ $data->purchase_request_data_id }}">
                                 </td>
-                                <td style="min-width: 120px;">
-                                    <select  id="item_id_{{ $key }}"
+                                <td style="min-width: 400px;">
+                                    <select  id="item_id_{{ $key }}" disabled
                                         onchange="get_uom({{ $key }})" 
                                         class="form-control item-select select2" data-index="{{ $key }}">
                                         @foreach (get_product_by_id($data->item_id) as $item)
@@ -172,11 +186,21 @@
                                     </select>
                                     <input type="hidden" name="item_id[]" value="{{ $data->item_id }}">
                                 </td>
-                                <td style="min-width: 120px;">
+                                <td style="min-width: 150px;">
                                     <input  type="text" id="uom_{{ $key }}"
                                         class="form-control uom" value="{{ get_uom($data->item_id) }}" disabled
                                         readonly>
                                     <input type="hidden" name="uom[]" value="{{ get_uom($data->item_id) }}">
+                                </td>
+
+                                <td style="min-width: 250px;">
+                                    <select class="form-control select2" multiple disabled>
+                                        @if($data->purchase_request_data && $data->purchase_request_data->JobOrder)
+                                            @foreach($data->purchase_request_data->JobOrder as $pajo)
+                                                <option selected>{{ $pajo->job_order_data->job_order_no ?? 'N/A' }}</option>
+                                            @endforeach
+                                        @endif
+                                    </select>
                                 </td>
                                 {{-- <td style="width: 20%">
                                 <select id="supplier_id_{{ $key }}" name="supplier_id[]"
@@ -188,13 +212,41 @@
                                     @endforeach
                                 </select>
                             </td> --}}
-                                <td style="min-width: 120px;">
+                                <td style="min-width: 200px;">
                                     @php
-                                        $sourceData = $data->purchase_request_data;
-                                        $sourceQty = $sourceData->qty ?? 0;
-                                        $otherPOsQty = optional($sourceData->purchase_order_data ?? null)->where('id', '!=', $data->id)->sum('qty') ?? 0;
-                                        $maxAllowed = $sourceQty - $otherPOsQty;
-                                        $currentBalance = $sourceQty - (optional($sourceData->purchase_order_data ?? null)->sum('qty') ?? 0);
+                                        $prSource = $data->purchase_request_data;
+                                        $pqSource = $data->purchase_quotation_data;
+                                        $prTotal = (float)($prSource->qty ?? 0);
+                                        $pqTotal = (float)($pqSource->qty ?? 0);
+
+                                        $sumOrderedPR = (float)(optional($prSource->purchase_order_data ?? null)->filter(function($poItem){
+                                            return ($poItem->am_approval_status != 'rejected') && (optional($poItem->purchase_order)->am_approval_status != 'rejected');
+                                        })->sum('qty') ?? 0);
+                                        $otherPOsPR = (float)(optional($prSource->purchase_order_data ?? null)->where('id', '!=', $data->id)->filter(function($poItem){
+                                            return ($poItem->am_approval_status != 'rejected') && (optional($poItem->purchase_order)->am_approval_status != 'rejected');
+                                        })->sum('qty') ?? 0);
+                                        
+                                        $sumOrderedPQ = $pqSource ? (float)(optional($pqSource->purchase_order_data ?? null)->filter(function($poItem){
+                                            return ($poItem->am_approval_status != 'rejected') && (optional($poItem->purchase_order)->am_approval_status != 'rejected');
+                                        })->sum('qty') ?? 0) : 0;
+                                        $otherPOsPQ = $pqSource ? (float)(optional($pqSource->purchase_order_data ?? null)->where('id', '!=', $data->id)->filter(function($poItem){
+                                            return ($poItem->am_approval_status != 'rejected') && (optional($poItem->purchase_order)->am_approval_status != 'rejected');
+                                        })->sum('qty') ?? 0) : 0;
+
+                                        // Current balance for display
+                                        $currentBalance = $prTotal - $sumOrderedPR;
+                                        if ($pqSource) {
+                                            $currentBalance = min($currentBalance, $pqTotal - $sumOrderedPQ);
+                                        }
+
+                                        // Logical limit for input
+                                        $maxAllowed = $prTotal - $otherPOsPR;
+                                        if ($pqSource) {
+                                            $maxAllowed = min($maxAllowed, $pqTotal - $otherPOsPQ);
+                                        }
+
+                                        $currentBalance = max(0, $currentBalance);
+                                        $maxAllowed = max(0, $maxAllowed);
                                     @endphp
                                     <input  type="number"
                                         onkeyup="calc({{ $key }}); calculatePercentage(this)"
@@ -208,23 +260,24 @@
                                     </div>
 
                                     <div class="d-flex align-items-center">
-                                        total qty: {{ $sourceQty }}
+                                        total qty: {{ $pqSource ? $pqTotal : $prTotal }}
                                     </div>
                                 </td>
-                                <td style="min-width: 120px;">
+                                <td style="min-width: 150px;">
                                     <input  type="number"
+                                        {{ $purchaseOrder->purchase_quotation_id ? 'readonly' : '' }}
                                         onkeyup="calc({{ $key }}); calculatePercentage(this)"
                                         onblur="calc({{ $key }})" name="rate[]"
                                         value="{{ $data->rate }}" id="rate_{{ $key }}"
                                         class="form-control rate" step="0.01" min="{{ $key }}">
                                 </td>
-                                <td style="min-width: 120px;">
+                                <td style="min-width: 150px;">
                                     <input  type="number" readonly
                                         value="{{ $data->rate * $data->qty }}" id="total_{{ $key }}"
                                         class="form-control gross_amount" step="0.01" min="0" readonly
                                         name="total[]">
                                 </td>
-                                <td style="min-width: 120px;">
+                                <td style="min-width: 200px;">
                                     <select  id="tax_id_{{ $key }}" name="tax_id[]"
                                         onchange="calc({{ $key }}); calculatePercentage(this)"
                                         class="form-control item-select select2 taxes">
@@ -246,14 +299,14 @@
                                         @endforeach
                                     </select>
                                 </td>
-                                <td style="min-width: 120px;">
+                                <td style="min-width: 150px;">
                                     <input  type="number" readonly
                                         oninput="calc({{ $key }})" name="tax_amount[]"
                                         value="{{ ((int) $tax_percentage / 100) * ($data->rate * $data->qty) }}"
                                         id="tax_amount_{{ $key }}" class="form-control percent_amount"
                                         step="0.01" min="0">
                                 </td>
-                                <td style="min-width: 120px;">
+                                <td style="min-width: 150px;">
                                     <input  type="number" onkeyup="calc({{ $key }}); calculatePercentage(this)"
                                         name="excise_duty[]" value="{{ $data->excise_duty }}"
                                         id="excise_duty_{{ $key }}" class="form-control excise_duty" step="0.01"
@@ -261,34 +314,34 @@
                                 </td>
 
                                 @if($isBag)
-                                <td style="min-width: 150px;" class="bag-only">
+                                <td style="min-width: 200px;" class="bag-only">
                                     <input  type="number" readonly name="min_weight[]"
                                         value="{{ $data->min_weight }}" id="min_weight_{{ $key }}"
                                         class="form-control" step="0.01" min="0">
                                 </td>
-                                <td style="min-width: 150px;" class="bag-only">
+                                <td style="min-width: 200px;" class="bag-only">
                                     <input  type="text" readonly name="brand[]"
                                         value="{{ $data->brand }}" id="brand_{{ $key }}"
                                         class="form-control" step="0.01" min="0">
                                 </td>
-                                <td style="min-width: 150px;" class="bag-only">
+                                <td style="min-width: 200px;" class="bag-only">
                                     <input  type="text" readonly name="color[]"
                                         value="{{ $data->color }}" id="color_{{ $key }}"
                                         class="form-control" step="0.01" min="0">
                                 </td>
-                                <td style="min-width: 150px;" class="bag-only">
+                                <td style="min-width: 200px;" class="bag-only">
                                     <input  type="text" readonly
                                         name="construction_per_square_inch[]"
                                         value="{{ $data->construction_per_square_inch }}"
                                         id="construction_per_square_inch_{{ $key }}" class="form-control"
                                         step="0.01" min="0">
                                 </td>
-                                <td style="min-width: 150px;" class="bag-only">
+                                <td style="min-width: 200px;" class="bag-only">
                                     <input  type="text" readonly name="size[]"
                                         value="{{ $data->size }}" id="size_{{ $key }}"
                                         class="form-control" step="0.01" min="0">
                                 </td>
-                                <td style="min-width: 150px;" class="bag-only">
+                                <td style="min-width: 200px;" class="bag-only">
                                       <select class="form-control select2" multiple disabled>
                                             @foreach(getStitchingsByIds($data?->purchase_request_data?->stitching ?? "") as $stitching)
                                                 <option value="{{ $stitching->id }}" selected>{{ $stitching->name }}</option>
@@ -299,12 +352,12 @@
                                         class="form-control" step="0.01" min="0">
                                 </td>
 
-                                <td style="min-width: 150px;" class="bag-only">
+                                <td style="min-width: 200px;" class="bag-only">
                                     <input  type="text" readonly name="micron[]"
                                         value="{{ $data->micron }}" id="micron_{{ $key }}"
                                         class="form-control">
                                 </td>
-                                <td style="min-width: 150px;" class="bag-only">
+                                <td style="min-width: 200px;" class="bag-only">
                                     <div class="loop-fields">
                                         <div class="form-group mb-0">
                                             <input type="hidden" style="display: none;" name="printing_sample[]"
@@ -325,14 +378,14 @@
                                     </div>
                                 </td>
                                 @endif
-                                <td style="min-width: 250px;">
+                                <td style="min-width: 400px;">
                                     <input  name="remarks[]" type="text"
                                         value="{{ $data->remarks }}" id="remark_{{ $key }}"
                                         class="form-control">
                                     {{-- <input type="hidden" name="remarks[]" value="{{ $data->remarks }}"> --}}
                                 </td>
 
-                                <td style="min-width: 120px;">
+                                <td style="min-width: 150px;">
                                     <input  type="number"
                                         value="{{ ($data->rate * $data->qty + ((int) $tax_percentage / 100) * ($data->rate * $data->qty)) + $data->excise_duty }}"
                                         id="total_{{ $key }}" class="form-control net_amount"
@@ -377,11 +430,70 @@
         let purchaseOrderId = $('select[name="purchase_order_id"]').val();
 
         // Call your function if an ID exists
-        // Call your function if an ID exists
         @if($purchaseOrder->purchaseOrderData->isNotEmpty())
             toggleVisibility({{ $purchaseOrder->purchaseOrderData->first()->category_id }});
         @endif
+
+        // Trigger loading of quotations for the current PR
+        const purchaseRequestId = $('select[name="purchase_request_id"]').val();
+        if (purchaseRequestId) {
+            fetch_quotations(purchaseRequestId);
+        }
+
+        $(document).on('change', '#quotation_no', function() {
+            const prId = $('select[name="purchase_request_id"]').val();
+            if (prId) {
+                const quotationNo = $(this).val();
+                if (quotationNo) {
+                    // When changing to a NEW quotation in edit mode, 
+                    // we use approve-item logic to potentially load NEW items
+                    // unless you want to keep existing PO items.
+                    // Usually edit is more restrictive, but matching create's logic for now.
+                    get_purchase_with_quotation(prId, quotationNo);
+                }
+            }
+        });
     });
+
+    function fetch_quotations(pr_id) {
+        $.ajax({
+            url: "{{ route('store.get.quotations') }}",
+            type: 'GET',
+            data: { pr_id: pr_id },
+            success: function(response) {
+                const $dropdown = $("#quotation_no");
+                const currentVal = $dropdown.val();
+                $dropdown.empty();
+                $dropdown.select2({ data: response });
+                if (currentVal) {
+                    $dropdown.val(currentVal).trigger('change.select2');
+                }
+            }
+        });
+    }
+
+    function get_purchase_with_quotation(purchaseRequestId, quotationNo) {
+        $.ajax({
+            url: "{{ route('store.purchase-order.approve-item') }}",
+            type: "GET",
+            data: {
+                id: purchaseRequestId,
+                quotation_no: quotationNo,
+                supplier_id: $('#supplier_id').val()
+            },
+            beforeSend: function() {
+                $('#purchaseRequestBody').html('<p>Loading...</p>');
+            },
+            success: function(response) {
+                $('#purchaseRequestBody').html(response.html);
+                toggleVisibility(response.category_id);
+                $('.select2').select2({
+                    placeholder: 'Please Select',
+                    width: '100%'
+                });
+            }
+        });
+    }
     $('.select2').select2({
         placeholder: 'Please Select',
         width: '100%'
@@ -394,15 +506,15 @@
         let row = `
             <tr id="row_${index}">
                 <td style="min-width: 250px;">
-                    <select name="category_id[]" onchange="filter_items(this.value,${index})" id="category_id_${index}" class="form-control item-select" data-index="0">
+                    <select name="category_id[]" onchange="filter_items(this.value,${index})" id="category_id_${index}" class="form-control item-select select2" data-index="0">
                         <option value="">Select Category</option>
                         @foreach ($categories ?? [] as $category)
                             <option value="{{ $category->id }}">{{ $category->name }}</option>
                         @endforeach
                     </select>
                 </td>
-                <td style="min-width: 250px;">
-                    <select name="item_id[]" id="item_id_${index}" onchange="get_uom(${index})" class="form-control item-select" data-index="0">
+                <td style="min-width: 400px;">
+                    <select name="item_id[]" id="item_id_${index}" onchange="get_uom(${index})" class="form-control item-select select2" data-index="0">
                         <option value="">Select Item</option>
                     
                         @foreach ($items ?? [] as $item)
@@ -411,9 +523,10 @@
                     </select>
                     <input type="hidden" name="data_id[]" value="0">
                 </td>
-                <td style="width: 15%"><input type="text" name="uom[]" id="uom_${index}" class="form-control uom" readonly></td>
-                 <td style="width: 20%">
-                    <select name="supplier_id[]" id="supplier_id_${index}" onchange="get_uom(${index})" class="form-control item-select" data-index="0">
+                <td style="min-width: 150px;"><input type="text" name="uom[]" id="uom_${index}" class="form-control uom" readonly></td>
+                <td style="min-width: 250px;"><select class="form-control select2" multiple disabled></select></td>
+                 <td style="min-width: 300px;">
+                    <select name="supplier_id[]" id="supplier_id_${index}" onchange="get_uom(${index})" class="form-control item-select select2" data-index="0">
                         <option value="">Select Vendor</option>
                         @foreach (get_supplier() as $supplier)
                             <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
@@ -421,9 +534,9 @@
                     </select>
                 </td>
                 {{-- <td style="width: 10%"><input  onkeyup="calc(${index})" onblur="calc(${index})"  type="number" name="qty[]" id="qty_${index}" class="form-control" step="0.01" min="0"></td> --}}
-                <td style="width: 20%"><input  onkeyup="calc(${index})" onblur="calc(${index})"  type="number" name="rate[]" id="rate_${index}" class="form-control" step="0.01" min="0"></td>
+                <td style="min-width: 150px;"><input  onkeyup="calc(${index})" onblur="calc(${index})"  type="number" name="rate[]" id="rate_${index}" class="form-control" step="0.01" min="0"></td>
                 {{-- <td style="width: 20%"><input  type="number" readonly name="total[]" id="total_${index}" class="form-control" step="0.01" min="0"></td> --}}
-                <td style="min-width: 250px;"><input  type="text" name="remarks[]" id="remark_${index}" class="form-control"></td>
+                <td style="min-width: 400px;"><input  type="text" name="remarks[]" id="remark_${index}" class="form-control"></td>
                 
                 <td><button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="remove(${index})">Remove</button></td>
             </tr>`;

@@ -25,7 +25,7 @@
                                 <div class="row ">
                                     <div class="col-md-12 my-1 ">
                                         <div class="row justify-content-end text-right">
-                                            <div class="col-md-2">
+                                            <div class="col px-1 text-left">
                                                 <label for="item_id" class="form-label">Item</label>
                                                 <select name="item_id" id="item_id" class="form-control select2">
                                                     <option value="all">All Items</option>
@@ -36,7 +36,7 @@
                                                     @endforeach
                                                 </select>
                                             </div>
-                                            <div class="col-md-2">
+                                            <div class="col px-1 text-left">
                                                 <label for="category_id" class="form-label">Category</label>
                                                 <select name="category_id" id="category_id" class="form-control select2">
                                                     <option value="all">All Categories</option>
@@ -47,7 +47,7 @@
                                                     @endforeach
                                                 </select>
                                             </div>
-                                            <div class="col-md-2">
+                                            <div class="col px-1 text-left">
                                                 <label for="status" class="form-label">Status</label>
                                                 <select name="status" id="status" class="form-control">
                                                     <option value="all" {{ request('status') == 'all' ? 'selected' : '' }}>All Status</option>
@@ -57,8 +57,13 @@
                                                     <option value="reverted" {{ request('status') == 'reverted' ? 'selected' : '' }}>Reverted</option>
                                                 </select>
                                             </div>
-
-                                            <div class="col-md-2">
+                                            <div class="col px-1 text-left">
+                                                <label for="pr_no" class="form-label">PR No</label>
+                                                <input type="text" class="form-control" id="pr_no"
+                                                    placeholder="PR No" name="pr_no"
+                                                    value="{{ request('pr_no', '') }}">
+                                            </div>
+                                            <div class="col px-1 text-left">
                                                 <label for="search" class="form-label">Search</label>
                                                 <input type="hidden" name="page" value="{{ request('page', 1) }}">
                                                 <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">

@@ -25,6 +25,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use App\Models\Master\Customer;
 
 class ProformaController extends Controller
 {
@@ -74,7 +75,7 @@ class ProformaController extends Controller
         $bagPackings = BagPacking::where('status', 1)->get();
         $brands = Brands::where('status', 1)->get();
         $bagColors = Color::where('status', 1)->get();
-        $users = User::get(); // buyer
+        $users = Customer::get(); // buyer
         $banks = Bank::where('status', 1)->get();
         $brokers = Broker::where('status', 1)->get();
         $incoterms = IncoTerm::where('status', 1)->get();
@@ -131,8 +132,7 @@ class ProformaController extends Controller
             DB::commit();
 
             return response()->json([
-                'success' => true,
-                'message' => 'Proforma created successfully',
+                'success' => 'Proforma created successfully',
                 'data' => [
                     'proforma_id' => $proforma->id,
                     'proforma_no' => $proforma->proforma_no,
@@ -145,9 +145,8 @@ class ProformaController extends Controller
             DB::rollBack();
 
             return response()->json([
-                'success' => false,
-                'message' => 'Something went wrong',
-                'error' => $e->getMessage(),
+                'error' => 'Something went wrong',
+                'message' => $e->getMessage(),
             ], 500);
         }
     }
@@ -164,7 +163,7 @@ class ProformaController extends Controller
         $bagPackings = BagPacking::where('status', 1)->get();
         $brands = Brands::where('status', 1)->get();
         $bagColors = Color::where('status', 1)->get();
-        $users = User::get(); // buyer
+        $users = Customer::get(); // buyer
         $banks = Bank::where('status', 1)->get();
         $brokers = Broker::where('status', 1)->get();
         $incoterms = IncoTerm::where('status', 1)->get();
@@ -209,7 +208,7 @@ class ProformaController extends Controller
         $bagPackings = BagPacking::where('status', 1)->get();
         $brands = Brands::where('status', 1)->get();
         $bagColors = Color::where('status', 1)->get();
-        $users = User::get(); // buyer
+        $users = Customer::get(); // buyer
         $banks = Bank::where('status', 1)->get();
         $brokers = Broker::where('status', 1)->get();
         $incoterms = IncoTerm::where('status', 1)->get();
@@ -356,17 +355,15 @@ class ProformaController extends Controller
             DB::commit();
 
             return response()->json([
-                'success' => true,
-                'message' => 'Proforma deleted successfully.',
+                'success' => 'Proforma deleted successfully.',
             ], 200);
 
         } catch (\Throwable $e) {
             DB::rollBack();
 
             return response()->json([
-                'success' => false,
-                'message' => 'Failed to delete Proforma',
-                'error' => $e->getMessage(),
+                'error' => 'Failed to delete Proforma',
+                'message' => $e->getMessage(),
             ], 500);
         }
     }

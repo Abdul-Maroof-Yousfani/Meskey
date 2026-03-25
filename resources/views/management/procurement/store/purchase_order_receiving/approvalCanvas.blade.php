@@ -103,6 +103,7 @@
                      <th>Category</th>
                      <th>Item</th>
                      <th>Item UOM</th>
+                     <th>Job Order</th>
                      <th>Qty</th>
 @if(optional($purchaseOrderReceiving->purchase_request)->category_id == 38)
                     <th>Recieve Weight</th>
@@ -169,6 +170,16 @@
                id="uom_{{ $key }}" class="form-control uom"
                value="{{ get_uom($data->item_id) }}" disabled readonly>
         <input type="hidden" name="uom[]" value="{{ get_uom($data->item_id) }}">
+    </td>
+
+    <td style="width: 150px; min-width: 150px;">
+        <select class="form-control select2" multiple disabled>
+            @if($data->purchase_order_data && $data->purchase_order_data->job_orders)
+                @foreach($data->purchase_order_data->job_orders as $pajo)
+                    <option selected>{{ $pajo->job_order_data->job_order_no ?? 'N/A' }}</option>
+                @endforeach
+            @endif
+        </select>
     </td>
 
     <td style="width: 140px; min-width: 140px;">
@@ -453,6 +464,11 @@
                     <input type="hidden" name="data_id[]" value="0">
                 </td>
                 <td style="width: 15%"><input type="text" name="uom[]" id="uom_${index}" class="form-control uom" readonly></td>
+                <td style="width: 15%">
+                    <select class="form-control select2" multiple disabled>
+                        {{-- New Job Order select for dynamic rows --}}
+                    </select>
+                </td>
                  <td style="width: 20%">
                     <select name="supplier_id[]" id="supplier_id_${index}" onchange="get_uom(${index})" class="form-control item-select" data-index="0">
                         <option value="">Select Vendor</option>

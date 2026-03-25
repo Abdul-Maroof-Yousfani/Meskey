@@ -656,56 +656,57 @@
             if (isAddingItem) return;
             isAddingItem = true;
 
-            const $firstItem = $('.packing-item').first();
-            // 1. Clone **without events & data** → cleanest start
-            const $newItem = $firstItem.clone(false); // false = no data, no events
+            var $firstItem = $('.packing-item').first();
+            // 1. Clone without events & data to get a clean DOM copy
+            var $newItem = $firstItem.clone(false); 
 
-            const newIndex = $('.packing-item').length;
+            var newIndex = $('.packing-item').length;
 
             // 2. Fix names & clear values
             $newItem.find('input, select').each(function () {
-                const $this = $(this);
-                let name = $this.attr('name');
+                var $this = $(this);
+                var name = $this.attr('name');
                 if (name) {
+                    // Update index in name attribute (e.g., packing_items[0] -> packing_items[1])
                     name = name.replace(/\[\d+\]/, '[' + newIndex + ']');
                     $this.attr('name', name);
                 }
-                $this.val(''); // safe for both input & select
+                
+                // Clear values
+                if ($this.is('select')) {
+                    $this.prop('selectedIndex', 0);
+                } else {
+                    $this.val('');
+                }
+
+                // IMPORTANT: Remove all Select2 internal attributes and markers
+                $this.removeClass('select2-hidden-accessible');
+                $this.removeAttr('data-select2-id');
+                $this.find('option').removeAttr('data-select2-id');
             });
 
+            // 3. Remove any Select2 UI elements that were cloned
+            $newItem.find('.select2-container').remove();
 
-            // 3. Update data-index attributes
+            // 4. Update data-index attributes for sub-items
             $newItem.find('.sub-packing-items-container').attr('data-index', newIndex);
             $newItem.find('.add-sub-packing-item').attr('data-index', newIndex);
 
-            // 4. Clean sub-items
+            // 5. Clean sub-items container
             $newItem.find('.sub-packing-items-container').empty();
 
-            // 5. Reset specific fields (optional - val('') already did most)
+            // 6. Reset calculation fields
             $newItem.find('.total-bags, .total-kgs, .metric-tons').val('0');
-            $newItem.find('select').prop('selectedIndex', 0);
 
-            // 6. Very important: Completely destroy any possible leftover Select2
-            //    (even if clone(false) was used, sometimes browser weirdness happens)
-            $newItem.find('select').each(function () {
-                const $select = $(this);
-                if ($select.data('select2')) {              // ← best way to check
-                    $select.select2('destroy');             // official destroy
-                }
-                // Clean up DOM remnants (sometimes destroy misses something)
-                $select.removeClass('select2-hidden-accessible');
-                $select.siblings('.select2-container').remove();
-            });
-
-            // 7. Finally append
+            // 7. Finally append to the DOM
             $('#packingItems').append($newItem);
 
-
-            // 8. Initialize fresh Select2 **only after** append
-            $newItem.find('select').select2();
-
-            // Optional: re-init first item if you really modified it
-            // $firstItem.find('select').select2(); // ← usually not needed
+            // 8. Initialize fresh Select2 ONLY for the NEW item
+            $newItem.find('select.select2').each(function() {
+                $(this).select2({
+                    width: '100%'
+                });
+            });
 
             isAddingItem = false;
         }

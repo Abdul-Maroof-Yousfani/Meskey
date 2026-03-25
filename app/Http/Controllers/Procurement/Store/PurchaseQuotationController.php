@@ -169,6 +169,20 @@ class PurchaseQuotationController extends Controller
             });
         }
 
+        if ($request->has('pr_no') && !empty($request->pr_no)) {
+            $pr_no = $request->pr_no;
+            $query->whereHas('purchase_quotation.purchase_request', function($q) use ($pr_no) {
+                $q->where('purchase_request_no', 'like', "%{$pr_no}%");
+            });
+        }
+
+        if ($request->has('pq_no') && !empty($request->pq_no)) {
+            $pq_no = $request->pq_no;
+            $query->whereHas('purchase_quotation', function($q) use ($pq_no) {
+                $q->where('purchase_quotation_no', 'like', "%{$pq_no}%");
+            });
+        }
+
         if ($request->has('supplier_id') && $request->supplier_id != 'all' && !empty($request->supplier_id)) {
             $query->where('supplier_id', $request->supplier_id);
         }
@@ -348,6 +362,20 @@ class PurchaseQuotationController extends Controller
                             $pr->where('purchase_request_no', 'like', "%{$search}%");
                         });
                   });
+            });
+        }
+
+        if ($request->has('pr_no') && !empty($request->pr_no)) {
+            $pr_no = $request->pr_no;
+            $query->whereHas('purchase_quotation.purchase_request', function($q) use ($pr_no) {
+                $q->where('purchase_request_no', 'like', "%{$pr_no}%");
+            });
+        }
+
+        if ($request->has('pq_no') && !empty($request->pq_no)) {
+            $pq_no = $request->pq_no;
+            $query->whereHas('purchase_quotation', function($q) use ($pq_no) {
+                $q->where('purchase_quotation_no', 'like', "%{$pq_no}%");
             });
         }
 
@@ -860,7 +888,7 @@ class PurchaseQuotationController extends Controller
         $approvedRequests = PurchaseRequest::with('PurchaseData')->where('am_approval_status', 'approved')->whereHas('PurchaseData', function ($q) {
             // $q->where('am_approval_status', 'approved');
             // ->where('quotation_status', 1);
-            $q->whereRaw('qty > (SELECT COALESCE(SUM(qty), 0) FROM purchase_order_data WHERE purchase_request_data_id = purchase_request_data.id)');
+            $q->whereRaw('qty > (SELECT COALESCE(SUM(pod.qty), 0) FROM purchase_order_data pod JOIN purchase_orders po ON po.id = pod.purchase_order_id WHERE pod.purchase_request_data_id = purchase_request_data.id AND pod.am_approval_status != "rejected" AND po.am_approval_status != "rejected")');
         })
             ->get();
         

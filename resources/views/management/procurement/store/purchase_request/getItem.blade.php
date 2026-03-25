@@ -13,8 +13,8 @@
         <tr id="row_pre_{{ $i }}" class="jo-{{ $job_order->id }}">
 
             <td style="min-width: 250px;">
-                <select name="item_id[]" id="item_id_{{ $i }}" onchange="get_uom('{{ $i }}')"
-                    class="form-control item-select select2Dropdown" data-index="{{ $i }}" style="width: 100%;">
+                <select id="item_id_{{ $i }}" onchange="get_uom('{{ $i }}')"
+                    class="form-control item-select select2Dropdown" data-index="{{ $i }}" style="width: 100%;" disabled>
                     <option value="">Select Item</option>
                     @foreach($items as $item)
                         <option value="{{ $item->id }}" data-uom="{{ $item->unitOfMeasure->name }}" @selected($packing_item->bag_product_id == $item->id)>{{ $item->name }}</option>
@@ -23,7 +23,7 @@
 
                 <input type="hidden" name="module_type[]" value="packing" />
                 <input type="hidden" name="packing_id[]" value="{{ $packing_item->id }}" />
-                {{-- <input type="hidden" name="item_id[]" value="{{ $packing_item->bag_product_id }}" /> --}}
+                <input type="hidden" name="item_id[]" value="{{ $packing_item->bag_product_id }}" />
                 <input type="hidden" name="index[]" value="{{ $i }}" />
                 <input type="hidden" name="is_single_job_order[]" value="1" />
             </td>
@@ -141,8 +141,8 @@
         <tr id="row_pre_{{ $i }}" class="jo-{{ $job_order->id }}">
 
             <td style="min-width: 250px;">
-                <select name="item_id[]" id="item_id_{{ $i }}" onchange="get_uom('{{ $i }}')"
-                    class="form-control item-select select2Dropdown" data-index="{{ $i }}" style="width: 100%;">
+                <select id="item_id_{{ $i }}" onchange="get_uom('{{ $i }}')"
+                    class="form-control item-select select2Dropdown" data-index="{{ $i }}" style="width: 100%;" disabled>
                     <option value="">Select Item</option>
                     @foreach($items as $item)
                         <option value="{{ $item->id }}" data-uom="{{ $item->unitOfMeasure->name }}" @selected($sub_packing_item->bag_product_id == $item->id)>{{ $item->name }}</option>
@@ -151,7 +151,7 @@
 
                 <input type="hidden" name="module_type[]" value="subpacking" />
                 <input type="hidden" name="packing_id[]" value="{{ $sub_packing_item->id }}" />
-                {{-- <input type="hidden" name="item_id[]" value="{{ $sub_packing_item->bag_product_id }}" /> --}}
+                <input type="hidden" name="item_id[]" value="{{ $sub_packing_item->bag_product_id }}" />
                 <input type="hidden" name="index[]" value="{{ $i }}" />
                 <input type="hidden" name="is_single_job_order[]" value="1" />
             </td>

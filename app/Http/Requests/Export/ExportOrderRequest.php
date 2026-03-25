@@ -48,9 +48,9 @@ class ExportOrderRequest extends FormRequest
             /* ================= FOREIGN KEYS ================= */
 
             'company_id' => ['required', 'exists:companies,id'],
-            'buyer_id' => ['required', 'exists:users,id'],
+            'buyer_id' => ['required', 'exists:customers,id'],
             'product_id' => ['required', 'exists:products,id'],
-            'bank_id' => ['required', 'exists:banks,id'],
+            'bank_id' => ['required', 'string'],
             'correspondent_bank_id' => ['required', 'exists:banks,id'],
             'incoterm_id' => ['required', 'exists:inco_terms,id'],
             'mode_of_term_id' => ['required', 'exists:mode_of_terms,id'],
