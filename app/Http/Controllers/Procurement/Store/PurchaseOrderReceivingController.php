@@ -28,6 +28,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class PurchaseOrderReceivingController extends Controller
 {
@@ -335,7 +336,11 @@ class PurchaseOrderReceivingController extends Controller
      */
     public function store(PurchaseOrderReceivingRequest $request)
     {
-        // dd($request->all());
+        $v = $this->validateQty($request);
+        if ($v->errors()->any()) {
+            return response()->json(['errors' => $v->errors()], 422);
+        }
+
         DB::beginTransaction();
         
         try {
@@ -510,6 +515,11 @@ class PurchaseOrderReceivingController extends Controller
 
     public function update(Request $request, $id)
     {
+        $v = $this->validateQty($request, $id);
+        if ($v->errors()->any()) {
+            return response()->json(['errors' => $v->errors()], 422);
+        }
+
         $validated = $request->validate([
             'truck_no' => "required",
             "dc_no" => "required",
@@ -717,5 +727,35 @@ class PurchaseOrderReceivingController extends Controller
         }
 
         return $grn;
+    }
+
+    private function validateQty(Request $request, $receivingId = null)
+    {
+        $validator = Validator::make([], []);
+        
+        foreach ($request->qty ?? [] as $index => $qty) {
+            $poDataId = $request->purchase_order_data_id[$index] ?? null;
+            if (!$poDataId) continue;
+
+            $poData = PurchaseOrderData::find($poDataId);
+            if (!$poData) continue;
+            
+            // Calculate sum of quantities already received for this PO item
+            $alreadyReceived = PurchaseOrderReceivingData::where('purchase_order_data_id', $poDataId)
+                ->when($receivingId, function($q) use ($receivingId) {
+                    $q->where('purchase_order_receiving_id', '!=', $receivingId);
+                })
+                ->sum('qty');
+            
+            $orderedQty = (float)$poData->qty;
+            $maxAllowed = $orderedQty - (float)$alreadyReceived;
+            
+            if ((float)$qty > $maxAllowed + 0.001) {
+                $itemName = $poData->item->name ?? "Item " . ($index + 1);
+                $validator->errors()->add("qty.$index", "Received quantity for '{$itemName}' exceeds the remaining Purchase Order balance. Remaining: " . round($maxAllowed, 2));
+            }
+        }
+        
+        return $validator;
     }
 }
