@@ -146,7 +146,7 @@
                         @if($item->extra_bags > 0)
                         <tr>
                             <th class="text-uppercase bg-light">Extra Bags</th>
-                            <td>{{ number_format($item->extra_bags) }}</td>
+                            <td>{{ number_format($item->extra_bags) }} @if($item->extra_bags_percentage > 0) ({{ $item->extra_bags_percentage }}%) @endif</td>
                         </tr>
                         @endif
                         @if($item->empty_bags > 0)
@@ -272,7 +272,7 @@
                                 @if($sub->total_bags)
                                 <tr>
                                     <th class="text-uppercase bg-light small pl-3">Total MP Bags</th>
-                                    <td class="small font-weight-bold">{{ number_format($sub->total_bags) }}</td>
+                                    <td class="small font-weight-bold">{{ number_format($sub->total_bags) }} @if($sub->extra_bags_percentage > 0) ({{ $sub->extra_bags_percentage }}% Extra) @endif</td>
                                 </tr>
                                 @endif
                                 @if($sub->empty_bag_weight)

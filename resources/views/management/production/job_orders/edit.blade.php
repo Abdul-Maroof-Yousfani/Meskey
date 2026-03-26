@@ -308,6 +308,13 @@
                         </div>
                         <div class="col-md-1">
                             <div class="form-group">
+                                <label>Extra Bags %:</label>
+                                <input type="number" name="packing_items[{{ $packingIndex }}][extra_bags_percentage]"
+                                    class="form-control extra-bags-percentage" step="0.01" value="{{ $packingItem->extra_bags_percentage ?? 0 }}">
+                            </div>
+                        </div>
+                        <div class="col-md-1">
+                            <div class="form-group">
                                 <label>Empty Bags:</label>
                                 <input type="number" name="packing_items[{{ $packingIndex }}][empty_bags]"
                                     class="form-control empty-bags" value="{{ $packingItem->empty_bags }}">
@@ -402,6 +409,7 @@
                                                     <th>No. of Bags</th>
                                                     <th>Empty Bags</th>
                                                     <th>Extra Bags</th>
+                                                    <th>Extra Bags %</th>
                                                     <th>Empty Bag Weight (g)</th>
                                                     <th>Total Bags</th>
                                                     <th class="col-1">Stitching</th>
@@ -447,6 +455,10 @@
                                                         <td>
                                                             <input type="number" name="packing_items[{{ $packingIndex }}][sub_items][{{ $subIndex }}][extra_bags]" 
                                                                 class="form-control form-control-sm sub-extra-bags" value="{{ $subItem->extra_bags ?? 0 }}" min="0">
+                                                        </td>
+                                                        <td>
+                                                            <input type="number" name="packing_items[{{ $packingIndex }}][sub_items][{{ $subIndex }}][extra_bags_percentage]" 
+                                                                class="form-control form-control-sm sub-extra-bags-percentage" value="{{ $subItem->extra_bags_percentage ?? 0 }}" min="0">
                                                         </td>
                                                         <td>
                                                             <input type="number" name="packing_items[{{ $packingIndex }}][sub_items][{{ $subIndex }}][empty_bag_weight]" 
@@ -700,6 +712,10 @@
                     class="form-control form-control-sm sub-extra-bags" value="0" min="0">
             </td>
             <td>
+                <input type="number" name="packing_items[INDEX][sub_items][SUB_INDEX][extra_bags_percentage]" 
+                    class="form-control form-control-sm sub-extra-bags-percentage" value="0" min="0">
+            </td>
+            <td>
                 <input type="number" name="packing_items[INDEX][sub_items][SUB_INDEX][empty_bag_weight]" 
                     class="form-control form-control-sm sub-empty-bag-weight" value="0" min="0" step="0.01">
             </td>
@@ -951,8 +967,47 @@
             var noOfBags = parseInt(subRow.find('.sub-no-of-bags').val()) || 0;
             var emptyBags = parseInt(subRow.find('.sub-empty-bags').val()) || 0;
             var extraBags = parseInt(subRow.find('.sub-extra-bags').val()) || 0;
+
+            // If no-of-bags changed, update extra bags from percentage
+            if ($(this).hasClass('sub-no-of-bags')) {
+                var percentageVal = subRow.find('.sub-extra-bags-percentage').val();
+                if (percentageVal !== '' && noOfBags > 0) {
+                    var percentage = parseFloat(percentageVal) || 0;
+                    extraBags = Math.round((percentage / 100) * noOfBags);
+                    subRow.find('.sub-extra-bags').val(extraBags);
+                }
+            }
+
+            // Update percentage only if extra-bags was changed directly
+            if ($(this).hasClass('sub-extra-bags') && noOfBags > 0 && !$(this).hasClass('is-calculating')) {
+                if ($(this).val() === '') {
+                    subRow.find('.sub-extra-bags-percentage').val('');
+                } else {
+                    var percentage = (extraBags / noOfBags) * 100;
+                    subRow.find('.sub-extra-bags-percentage').val(percentage.toFixed(2));
+                }
+            }
+
             var totalBags = noOfBags + emptyBags + extraBags;
             subRow.find('.sub-total-bags').val(totalBags);
+        });
+
+        // Calculate extra bags for sub item from percentage
+        $(document).off('input.jobOrderEdit', '.sub-extra-bags-percentage').on('input.jobOrderEdit', '.sub-extra-bags-percentage', function () {
+            var subRow = $(this).closest('.sub-packing-item-row');
+            var noOfBags = parseInt(subRow.find('.sub-no-of-bags').val()) || 0;
+            var val = $(this).val();
+
+            if (val === '') {
+                subRow.find('.sub-extra-bags').addClass('is-calculating').val('').trigger('input').removeClass('is-calculating');
+                return;
+            }
+
+            var percentage = parseFloat(val) || 0;
+            if (noOfBags > 0) {
+                var extraBags = Math.round((percentage / 100) * noOfBags);
+                subRow.find('.sub-extra-bags').addClass('is-calculating').val(extraBags).trigger('input').removeClass('is-calculating');
+            }
         });
 
         // Function to calculate no of bags from packing item's total_bags / no_of_primary_bags
@@ -973,7 +1028,51 @@
         // Auto-calculate totals
         $(document).off('input.jobOrderEdit', '.bag-size, .no-of-bags, .extra-bags, .empty-bags').on('input.jobOrderEdit', '.bag-size, .no-of-bags, .extra-bags, .empty-bags', function () {
             var item = $(this).closest('.packing-item');
+
+            // If no-of-bags changed, update extra-bags from percentage if percentage exists
+            if ($(this).hasClass('no-of-bags')) {
+                var noOfBags = parseInt($(this).val()) || 0;
+                var percentageVal = item.find('.extra-bags-percentage').val();
+                if (percentageVal !== '' && noOfBags > 0) {
+                    var percentage = parseFloat(percentageVal) || 0;
+                    var extraBags = Math.round((percentage / 100) * noOfBags);
+                    item.find('.extra-bags').addClass('is-calculating').val(extraBags).removeClass('is-calculating');
+                }
+            }
+
+            // If extra-bags changed, update percentage
+            if ($(this).hasClass('extra-bags') && !$(this).hasClass('is-calculating')) {
+                var noOfBags = parseInt(item.find('.no-of-bags').val()) || 0;
+                var extraBags = parseInt($(this).val());
+                if (noOfBags > 0) {
+                    if ($(this).val() === '') {
+                        item.find('.extra-bags-percentage').val('');
+                    } else {
+                        var percentage = (extraBags / noOfBags) * 100;
+                        item.find('.extra-bags-percentage').val(percentage.toFixed(2));
+                    }
+                }
+            }
+
             calculateTotals(item);
+        });
+
+        // Calculate extra bags from percentage
+        $(document).off('input.jobOrderEdit', '.extra-bags-percentage').on('input.jobOrderEdit', '.extra-bags-percentage', function () {
+            var item = $(this).closest('.packing-item');
+            var noOfBags = parseInt(item.find('.no-of-bags').val()) || 0;
+            var val = $(this).val();
+
+            if (val === '') {
+                item.find('.extra-bags').addClass('is-calculating').val('').trigger('input').removeClass('is-calculating');
+                return;
+            }
+
+            var percentage = parseFloat(val) || 0;
+            if (noOfBags > 0) {
+                var extraBags = Math.round((percentage / 100) * noOfBags);
+                item.find('.extra-bags').addClass('is-calculating').val(extraBags).trigger('input').removeClass('is-calculating');
+            }
         });
 
         // Update master packing items when packing item's bag type changes

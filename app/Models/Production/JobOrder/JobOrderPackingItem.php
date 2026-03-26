@@ -35,6 +35,7 @@ class JobOrderPackingItem extends Model
         'delivery_date',
         'fumigation_company_id',
         'min_weight_empty_bags',
+        'extra_bags_percentage',
         'description',
         'location_instruction'
     ];
