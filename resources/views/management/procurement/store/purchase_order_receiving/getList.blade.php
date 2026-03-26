@@ -222,8 +222,8 @@
                                                 $requestGroup['has_approved_item'] && !$isCurrentApproved;
                                         @endphp
                                         <a onclick="openModal(this, '{{ route('store.purchase-order-receiving.approvals', $supplierRow['data']->purchase_order_receiving->id) }}', 'View GRN', false, '100%')"
-                                            class="bg-info text-white p-1 text-center position-relative" title="Approval" style="border-radius: 4px; min-width: 60px;">
-                                            Approval
+                                            class="bg-info text-white p-1 text-center position-relative" title="View" style="border-radius: 4px; min-width: 60px;">
+                                            View
                                         </a>
 
                                         @if($requestGroup['created_by_id'] == auth()->user()->id)
