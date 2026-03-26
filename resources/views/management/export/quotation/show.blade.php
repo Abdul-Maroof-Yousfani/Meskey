@@ -6,7 +6,7 @@
             <div class="table-responsive">
                 <table class="table table-bordered">
                     <tr>
-                        <th style="width:30%;">Export Soda</th>
+                        <th style="width:30%;">Export Sauda</th>
                         <td>{{ $quotation->exportSoda ? '#' . $quotation->exportSoda->id : 'N/A' }}</td>
                     </tr>
                     <tr>

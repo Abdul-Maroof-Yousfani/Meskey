@@ -12,9 +12,9 @@
                 <div class="row">
                     <div class="col-md-4">
                         <div class="form-group">
-                            <label>Export Soda</label>
+                            <label>Export Sauda</label>
                             <select name="export_soda_id" class="form-control select2">
-                                <option value="">Select Soda</option>
+                                <option value="">Select Sauda</option>
                                 @foreach ($exportSodas as $soda)
                                     <option value="{{ $soda->id }}">#{{ $soda->id }} - {{ $soda->product->name ?? '' }}</option>
                                 @endforeach

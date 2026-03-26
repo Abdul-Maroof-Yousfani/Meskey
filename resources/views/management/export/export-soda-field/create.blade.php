@@ -3,7 +3,7 @@
     <input type="hidden" id="listRefresh" value="{{ route('get.export-soda-field') }}" />
 
     <div class="row form-mar p-2">
-        <div class="col-md-12">
+        <div class="col-md-8">
             <h6 class="header-heading-sepration">Basic Information</h6>
             <div class="row mt-2">
                 <div class="col-md-6">
@@ -37,7 +37,7 @@
                     </div>
                 </div>
 
-                <div class="col-md-6">
+                <div class="col-md-6 mt-2">
                     <div class="form-group">
                         <label>Inco Term:</label>
                         <select name="incoterm_id" class="form-control select2">
@@ -49,9 +49,9 @@
                     </div>
                 </div>
 
-                <div class="col-md-6">
+                <div class="col-md-6 mt-2">
                     <div class="form-group">
-                        <label>Payment Term (Optional):</label>
+                        <label>Payment Term:</label>
                         <select name="mode_of_term_id" class="form-control select2">
                             <option value="">Select Payment Term</option>
                             @foreach ($modeofterms as $term)
@@ -61,138 +61,136 @@
                     </div>
                 </div>
 
-                <div class="col-md-6">
+                <div class="col-md-6 mt-2">
                     <div class="form-group">
                         <label>Shipment Period:</label>
                         <input type="date" name="shipment_period" class="form-control">
                     </div>
                 </div>
 
-                <div class="col-md-6">
+                <div class="col-md-6 mt-2">
                     <div class="form-group">
                         <label>Commission:</label>
                         <input type="number" name="commission" class="form-control" step="0.01">
                     </div>
                 </div>
             </div>
+        </div>
 
-            {{-- ====== PACKING DETAILS ====== --}}
-            <div class="col-12 mt-4 px-0">
-                <h6 class="header-heading-sepration d-flex justify-content-between align-items-center">
-                    Packing Details
-                    <button type="button" class="btn btn-sm btn-success" id="addPackingItem">
-                        <i class="ft-plus"></i> Add Item
-                    </button>
-                </h6>
-                <div class="table-responsive">
-                    <table class="table table-bordered mb-0" id="packingTable">
-                        <thead>
-                            <tr>
-                                <th style="min-width:150px;">Brand</th>
-                                <th style="min-width:150px;">Bag Type</th>
-                                <th style="min-width:130px;">Packing</th>
-                                <th style="min-width:130px;">Condition</th>
-                                <th style="min-width:110px;">Color</th>
-                                <th style="min-width:100px;">Size (kg)</th>
-                                <th style="min-width:100px;">Qty (MT)</th>
-                                <th style="min-width:100px;">Qty (Mnds)</th>
-                                <th style="min-width:110px;">Qty (KGs)</th>
-                                <th style="min-width:100px;">Bags</th>
-                                <th style="min-width:110px;">Rate/Ton</th>
-                                <th style="min-width:110px;">Rate/Mnd</th>
-                                <th style="min-width:130px;">Amount</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="packingItems">
-                            <tr class="packing-item">
-                                <td class="p-2">
-                                    <select name="packing_items[0][brand_id]" class="form-control select2">
-                                        <option value="">Brand</option>
-                                        @foreach ($brands as $brand)
-                                            <option value="{{ $brand->id }}">Brand</option>
-                                        @endforeach
-                                    </select>
-                                </td>
-                                <td class="p-2">
-                                    <select name="packing_items[0][bag_type_id]" class="form-control select2">
-                                        <option value="">Bag Type</option>
-                                        @foreach ($bagTypes as $bagType)
-                                            <option value="{{ $bagType->id }}">{{ $bagType->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </td>
-                                <td class="p-2">
-                                    <select name="packing_items[0][bag_packing_id]" class="form-control select2">
-                                        <option value="">Packing</option>
-                                        @foreach ($bagPackings as $packing)
-                                            <option value="{{ $packing->id }}">{{ $packing->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </td>
-                                <td class="p-2">
-                                    <select name="packing_items[0][bag_condition_id]" class="form-control select2">
-                                        <option value="">Condition</option>
-                                        @foreach ($bagConditions as $condition)
-                                            <option value="{{ $condition->id }}">{{ $condition->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </td>
-                                <td class="p-2">
-                                    <select name="packing_items[0][bag_color_id]" class="form-control select2">
-                                        <option value="">Color</option>
-                                        @foreach ($bagColors as $color)
-                                            <option value="{{ $color->id }}">{{ $color->color }}</option>
-                                        @endforeach
-                                    </select>
-                                </td>
-                                <td class="p-2">
-                                    <input type="number" name="packing_items[0][bag_size]" class="form-control bag-size" step="0.01" value="0" min="0">
-                                </td>
-                                <td class="p-2">
-                                    <input type="number" name="packing_items[0][metric_tons]" class="form-control metric-tons" value="0" step="0.001" min="0">
-                                </td>
-                                <td class="p-2">
-                                    <input type="number" name="packing_items[0][maunds]" class="form-control maunds" value="0" step="0.01" min="0">
-                                </td>
-                                <td class="p-2">
-                                    <input type="number" name="packing_items[0][total_kgs]" class="form-control total-kgs" value="0" readonly>
-                                </td>
-                                <td class="p-2">
-                                    <input type="number" name="packing_items[0][no_of_bags]" class="form-control no_of_bags" value="0" readonly>
-                                </td>
-                                <td class="p-2">
-                                    <input type="number" name="packing_items[0][rate]" class="form-control rates" value="0" step="0.01" min="0">
-                                </td>
-                                <td class="p-2">
-                                    <input type="number" name="packing_items[0][rate_per_maund]" class="form-control rates_mnd" value="0" step="0.01" min="0">
-                                </td>
-                                <td class="p-2">
-                                    <input type="number" name="packing_items[0][amount]" class="form-control amount" value="0" min="0" readonly>
-                                </td>
-                                <td class="text-center p-2">
-                                    <button type="button" class="btn btn-sm btn-danger remove-packing-item">
-                                        <i class="ft-trash-2"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+        <div class="col-md-4">
+            <h6 class="header-heading-sepration">Additional Information</h6>
+            <div class="form-group mt-2">
+                <textarea name="additional_info" class="form-control" rows="12" placeholder="Enter any additional details here..."></textarea>
+            </div>
+        </div>
 
-                <div class="row mt-2 pr-2">
-                    <div class="col-md-12 text-right">
-                        <strong>Total Quantity (MT): <span id="display_total_mt">0.000</span></strong>
-                    </div>
-                </div>
+        {{-- ====== PACKING DETAILS ====== --}}
+        <div class="col-12 mt-4 px-0">
+            <h6 class="header-heading-sepration d-flex justify-content-between align-items-center">
+                Packing Details
+                <button type="button" class="btn btn-sm btn-success" id="addPackingItem">
+                    <i class="ft-plus"></i> Add Item
+                </button>
+            </h6>
+            <div class="table-responsive">
+                <table class="table table-bordered mb-0" id="packingTable">
+                    <thead>
+                        <tr>
+                            <th style="min-width:150px;">Brand</th>
+                            <th style="min-width:150px;">Bag Type</th>
+                            <th style="min-width:130px;">Packing</th>
+                            <th style="min-width:130px;">Condition</th>
+                            <th style="min-width:110px;">Color</th>
+                            <th style="min-width:100px;">Size (kg)</th>
+                            <th style="min-width:100px;">Qty (MT)</th>
+                            <th style="min-width:100px;">Qty (Mnds)</th>
+                            <th style="min-width:110px;">Qty (KGs)</th>
+                            <th style="min-width:100px;">Bags</th>
+                            <th style="min-width:110px;">Rate/Ton</th>
+                            <th style="min-width:110px;">Rate/Mnd</th>
+                            <th style="min-width:130px;">Amount</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="packingItems">
+                        <tr class="packing-item">
+                            <td class="p-2">
+                                <select name="packing_items[0][brand_id]" class="form-control select2">
+                                    <option value="">Brand</option>
+                                    @foreach ($brands as $brand)
+                                        <option value="{{ $brand->id }}">{{ $brand->name }}</option>
+                                    @endforeach
+                                </select>
+                            </td>
+                            <td class="p-2">
+                                <select name="packing_items[0][bag_type_id]" class="form-control select2">
+                                    <option value="">Bag Type</option>
+                                    @foreach ($bagTypes as $bagType)
+                                        <option value="{{ $bagType->id }}">{{ $bagType->name }}</option>
+                                    @endforeach
+                                </select>
+                            </td>
+                            <td class="p-2">
+                                <select name="packing_items[0][bag_packing_id]" class="form-control select2">
+                                    <option value="">Packing</option>
+                                    @foreach ($bagPackings as $packing)
+                                        <option value="{{ $packing->id }}">{{ $packing->name }}</option>
+                                    @endforeach
+                                </select>
+                            </td>
+                            <td class="p-2">
+                                <select name="packing_items[0][bag_condition_id]" class="form-control select2">
+                                    <option value="">Condition</option>
+                                    @foreach ($bagConditions as $condition)
+                                        <option value="{{ $condition->id }}">{{ $condition->name }}</option>
+                                    @endforeach
+                                </select>
+                            </td>
+                            <td class="p-2">
+                                <select name="packing_items[0][bag_color_id]" class="form-control select2">
+                                    <option value="">Color</option>
+                                    @foreach ($bagColors as $color)
+                                        <option value="{{ $color->id }}">{{ $color->color }}</option>
+                                    @endforeach
+                                </select>
+                            </td>
+                            <td class="p-2">
+                                <input type="number" name="packing_items[0][bag_size]" class="form-control bag-size" step="0.01" value="0" min="0">
+                            </td>
+                            <td class="p-2">
+                                <input type="number" name="packing_items[0][metric_tons]" class="form-control metric-tons" value="0" step="0.001" min="0">
+                            </td>
+                            <td class="p-2">
+                                <input type="number" name="packing_items[0][maunds]" class="form-control maunds" value="0" step="0.01" min="0">
+                            </td>
+                            <td class="p-2">
+                                <input type="number" name="packing_items[0][total_kgs]" class="form-control total-kgs" value="0" readonly>
+                            </td>
+                            <td class="p-2">
+                                <input type="number" name="packing_items[0][no_of_bags]" class="form-control no_of_bags" value="0" readonly>
+                            </td>
+                            <td class="p-2">
+                                <input type="number" name="packing_items[0][rate]" class="form-control rates" value="0" step="0.01" min="0">
+                            </td>
+                            <td class="p-2">
+                                <input type="number" name="packing_items[0][rate_per_maund]" class="form-control rates_mnd" value="0" step="0.01" min="0">
+                            </td>
+                            <td class="p-2">
+                                <input type="number" name="packing_items[0][amount]" class="form-control amount" value="0" min="0" readonly>
+                            </td>
+                            <td class="text-center p-2">
+                                <button type="button" class="btn btn-sm btn-danger remove-packing-item">
+                                    <i class="ft-trash-2"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
 
-            <div class="row mt-2">
-                <div class="col-md-12">
-                    <div class="form-group">
-                        <label>Additional Info:</label>
-                        <textarea name="additional_info" class="form-control" rows="4"></textarea>
-                    </div>
+            <div class="row mt-2 pr-2">
+                <div class="col-md-12 text-right">
+                    <strong>Total Quantity (MT): <span id="display_total_mt">0.000</span></strong>
                 </div>
             </div>
         </div>
@@ -201,14 +199,14 @@
     <div class="row bottom-button-bar">
         <div class="col-12 mb-3 text-right">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
-            <button type="submit" class="btn btn-primary submitbutton">Save Export Soda Field</button>
+            <button type="submit" class="btn btn-primary submitbutton">Save Export Sauda Field</button>
         </div>
     </div>
 </form>
 
 <script>
 $(document).ready(function() {
-    $('.select2').select2({ width: '100%' });
+    $('.select2').select2({ width: '100%'});
 
     // ---- ROW LEVEL CALCULATIONS ----
     $(document).on('input', '.metric-tons, .bag-size', function() {
@@ -293,7 +291,7 @@ $(document).ready(function() {
         newRow.find('input').val('0');
         newRow.find('select').val('').trigger('change');
         $('#packingItems').append(newRow);
-        $('.select2').select2({ width: '100%' });
+        $('.select2').select2({ width: '100%'});
         reindexPackingItems();
     }
     $(document).on('click', '.remove-packing-item', function() {

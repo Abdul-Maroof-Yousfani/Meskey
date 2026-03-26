@@ -1,6 +1,6 @@
 @extends('management.layouts.master')
 @section('title')
-    Export Soda   
+    Export Sauda   
 @endsection
 @section('content')
     <div class="content-wrapper">
@@ -8,12 +8,12 @@
         <section id="extended">
             <div class="row w-100 mx-auto">
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-                    <h2 class="page-title">Export Soda</h2>
+                    <h2 class="page-title">Export Sauda</h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
-                    <button onclick="openModal(this,'{{ route('export-soda-field.create') }}','Add Export Soda')"
+                    <button onclick="openModal(this,'{{ route('export-soda-field.create') }}','Add Export Sauda',false,'90%')"
                         type="button" class="btn btn-primary position-relative ">
-                        Create Export Soda
+                        Create Export Sauda
                     </button>
                 </div>
             </div>
