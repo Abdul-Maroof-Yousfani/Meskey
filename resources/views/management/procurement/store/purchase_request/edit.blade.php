@@ -111,24 +111,24 @@
         </div>
 
         <div class="col-md-12">
-            <div class="table-responsive">
-                <table class="table table-bordered" id="purchaseRequestTable" style="width: 100%; min-width: 100%;">
+   <div style="overflow-x: auto; width: 100%;">
+    <table class="table table-bordered" id="purchaseRequestTable" style="width:100%;">
                     <thead>
             <tr>
-                <th style="min-width: 250px;">Item</th>
-                <th style="min-width: 100px;">Item UOM</th>
-                <th style="min-width: 100px;">Qty</th>
-                <th class="bag-only" style="min-width: 250px;">Job Orders</th>
-                <th class="bag-only" style="min-width: 150px;">Brands</th>
-                <th class="bag-only" style="min-width: 120px;">Min Weight (KG)</th>
-                <th class="bag-only" style="min-width: 150px;">Color</th>
-                <th class="bag-only" style="min-width: 150px;">Cons./sq. in.</th>
-                <th class="bag-only" style="width: 150px; min-width: 150px; max-width: 150px;">Size</th>
-                <th class="bag-only" style="min-width: 200px;">Stitching</th>
-                <th class="bag-only" style="min-width: 120px;">Micron</th>
-                <th class="bag-only" style="min-width: 250px;">Printing Sample</th>
-                <th style="min-width: 200px;">line desc</th>
-                <th style="min-width: 80px;">Action</th>
+                <th style="min-width: 450px;">Item</th>
+                <th style="min-width: 200px;">Item UOM</th>
+                <th style="min-width: 150px;">Qty</th>
+                <th class="bag-only" style="min-width: 450px;">Job Orders</th>
+                <th class="bag-only" style="min-width: 300px;">Brands</th>
+                <th class="bag-only" style="min-width: 200px;">Min Weight (KG)</th>
+                <th class="bag-only" style="min-width: 300px;">Color</th>
+                <th class="bag-only" style="min-width: 300px;">Cons./sq. in.</th>
+                <th class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">Size</th>
+                <th class="bag-only" style="min-width: 350px;">Stitching</th>
+                <th class="bag-only" style="min-width: 200px;">Micron</th>
+                <th class="bag-only" style="min-width: 450px;">Printing Sample</th>
+                <th style="min-width: 400px;">line desc</th>
+                <th style="min-width: 150px;">Action</th>
             </tr>
         </thead>
         <tbody id="purchaseRequestBody">
@@ -139,7 +139,7 @@
             <tr id="row_{{ $rowId }}" class="{{ $item->is_single_job_order ? 'jo-' . $item->JobOrder->pluck("job_order_id")->toArray()[0] : '' }}">
                 <input type="hidden" name="item_row_id[]" value="{{ $item->id }}">
 
-                <td style="min-width: 250px;">
+                <td style="min-width: 450px;">
                         @if($item->is_single_job_order == 1)
                             <input type="hidden" name="item_id[]" value="{{ $item->item->id }}" />
                         @endif
@@ -159,14 +159,14 @@
                     <input type="hidden" name="is_single_job_order[]" value="{{ $item->is_single_job_order }}" />
                 </td>
 
-                <td style="min-width: 100px;"><input type="text" name="uom[]" id="uom_{{ $rowId }}" class="form-control uom" readonly
+                <td style="min-width: 200px;"><input type="text" name="uom[]" id="uom_{{ $rowId }}" class="form-control uom" readonly
                         value="{{ $item->item->unitOfMeasure->name ?? '' }}"></td>
 
-                <td style="min-width: 100px;"><input type="number" name="qty[]" id="qty_{{ $rowId }}" class="form-control {{ $item->is_single_job_order == 1 ? '' : 'bg-white' }}"
-                        step="0.01" min="0" placeholder="Qty" value="{{ $item->qty }}" @readonly($item->is_single_job_order == 1)></td>
+                <td style="min-width: 150px;"><input type="number" name="qty[]" id="qty_{{ $rowId }}" class="form-control {{ $item->is_single_job_order == 1 ? '' : 'bg-white' }}"
+                                        step="0.01" min="0" placeholder="Qty" value="{{ $item->qty }}" @readonly($item->is_single_job_order == 1)></td>
 
                 
-                <td class="bag-only" style="min-width: 250px;">
+                <td class="bag-only" style="min-width: 450px;">
                     @if($item->is_single_job_order)
                         <input type="hidden" name="job_order_id[{{ $rowId }}][]" value="{{ $item->JobOrder->pluck("job_order_id")->toArray()[0] }}" />
                     @endif
@@ -183,7 +183,7 @@
                     </select>
                 </td>
 
-                 <td class="bag-only" style="min-width: 150px;">
+                 <td class="bag-only" style="min-width: 300px;">
                     @if($item->is_single_job_order)
                         <input type="hidden" name="brands[]" value="{{ $item->brand_id }}" />
                     @endif
@@ -196,11 +196,11 @@
                     </select>
                 </td>
                
-                <td class="bag-only" style="min-width: 120px;"><input type="number" name="min_weight[]" id="min_weight_{{ $rowId }}" class="form-control"
+                <td class="bag-only" style="min-width: 200px;"><input type="number" name="min_weight[]" id="min_weight_{{ $rowId }}" class="form-control"
                         step="0.01" min="0" value="{{ $item->min_weight }}" placeholder="Min Weight" @readonly($item->is_single_job_order == 1)></td>
 
            
-                <td class="bag-only" style="min-width: 150px;">
+                <td class="bag-only" style="min-width: 300px;">
                     @if($item->is_single_job_order)
                         <input type="hidden" name="color[]" value="{{ $item->color }}" />
                     @endif
@@ -213,11 +213,11 @@
                     </select>
                 </td>
 
-                <td class="bag-only" style="min-width: 150px;"><input type="text" name="construction_per_square_inch[]" id="construction_per_square_inch_{{ $rowId }}"
+                <td class="bag-only" style="min-width: 300px;"><input type="text" name="construction_per_square_inch[]" id="construction_per_square_inch_{{ $rowId }}"
                         class="form-control" step="0.01" min="0" value="{{ $item->construction_per_square_inch }}"
                         placeholder="Cons./sq. in."></td>
 
-                <td class="bag-only" style="width: 150px; min-width: 150px; max-width: 150px;">
+                <td class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">
                     <select id="size_{{ $rowId }}" name="size[]" class="form-control item-select size-select">
                         <option value="">Select Size</option>
                         @foreach(getAllSizes() ?? [] as $size)
@@ -227,7 +227,7 @@
                     </select>
                 </td>
 
-                <td class="bag-only" style="min-width: 200px;">
+                <td class="bag-only" style="min-width: 350px;">
                     @php
                         $selectedStitchings = $item->stitching ? array_filter(array_map('trim', explode(',', $item->stitching))) : [];
                     @endphp
@@ -247,10 +247,10 @@
                 </td>
 
 
-                <td class="bag-only" style="min-width: 120px;"><input type="text" name="micron[]" id="micron_{{ $rowId }}" class="form-control" 
+                <td class="bag-only" style="min-width: 200px;"><input type="text" name="micron[]" id="micron_{{ $rowId }}" class="form-control" 
                         min="0" value="{{ $item->micron }}" placeholder="Micron"></td>
 
-                <td class="bag-only" style="min-width: 250px;">
+                <td class="bag-only" style="min-width: 450px;">
                 <input type="file" name="printing_sample[{{ $rowId }}][]" id="printing_sample_{{ $rowId }}"
                     class="form-control" accept="image/*,application/pdf" multiple>
             @if (!empty($item->printing_sample))
@@ -262,10 +262,10 @@
                     @endif
                 </td>
 
-                <td style="min-width: 200px;"><input type="text" name="remarks[]" id="remark_{{ $rowId }}" class="form-control bg-white"
+                <td style="min-width: 400px;"><input type="text" name="remarks[]" id="remark_{{ $rowId }}" class="form-control bg-white"
                         placeholder="line desc" value="{{ $item->remarks }}"></td>
 
-                <td style="min-width: 80px;"><button type="button" class="btn btn-danger btn-sm removeRowBtn"
+                <td style="min-width: 150px;"><button type="button" class="btn btn-danger btn-sm removeRowBtn"
                         onclick="removeRow('{{ $rowId }}')" style="width:120px;"><i class="fa fa-trash"></i></button></td>
             </tr>
             @endforeach
@@ -362,7 +362,7 @@
         if (categoryId == 38) { // 38 is "Bags"
             $('.bag-only').show();
             $('.job-order-section').show();
-            $('#purchaseRequestTable').css('min-width', '2200px');
+            $('#purchaseRequestTable').css('min-width', '4000px');
         } else {
             $('.bag-only').hide();
             if (categoryId) {
@@ -426,7 +426,7 @@
 
         let index = `${purchaseRequestRowIndex++}0`;
         let row = `<tr id="row_${index}">
-                    <td style="min-width: 250px;">
+                    <td style="min-width: 450px;">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
                                 <select name="item_id[]" id="item_id_${index}"  onchange="get_uom('${index}')"
@@ -436,14 +436,13 @@
                                 <input type="hidden" name="module_type[]" value="" />
                                 <input type="hidden" name="index[]" value="${index}" />
                                 <input type="hidden" name="is_single_job_order[]" value="0" />
-         
                             </div>
                         </div>
                     </td>
-                    <td style="min-width: 100px;">
+                    <td style="min-width: 200px;">
                         <input type="text" name="uom[]" id="uom_${index}" class="form-control uom" readonly>
                     </td>
-                    <td style="min-width: 100px;">
+                    <td style="min-width: 150px;">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
                                 <input type="number" name="qty[]" id="qty_${index}" class="form-control bg-white" step="0.01"
@@ -451,7 +450,7 @@
                             </div>
                         </div>
                     </td>
-                    <td style="min-width: 250px;" class="bag-only">
+                    <td style="min-width: 450px;" class="bag-only">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
                                 <select name="job_order_id[${index}][]" id="job_order_id_${index}" multiple
@@ -466,13 +465,13 @@
                             </div>
                         </div>
                     </td>
-                    <td class="bag-only" style="min-width: 150px;"><select name="brands[]" id="brands_${index}" class="form-control item-select brand-select">
+                    <td class="bag-only" style="min-width: 300px;"><select name="brands[]" id="brands_${index}" class="form-control item-select brand-select">
                         <option value="">Select Brand</option>
                         @foreach(getAllBrands() ?? [] as $brand)
                             <option value="{{ $brand->id }}">{{ $brand->name }}</option>
                         @endforeach
                     </select></td>
-                    <td style="min-width: 120px;" class="bag-only">
+                    <td style="min-width: 200px;" class="bag-only">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
                                 <input type="number" name="min_weight[]" id="min_weight_${index}" class="form-control"
@@ -480,15 +479,13 @@
                             </div>
                         </div>
                     </td>
-                    <td class="bag-only" style="min-width: 150px;"><select name="color[]" id="color_${index}" class="form-control item-select color-select">
+                    <td class="bag-only" style="min-width: 300px;"><select name="color[]" id="color_${index}" class="form-control item-select color-select">
                         <option value="">Select Color</option>
                         @foreach(getAllColors() ?? [] as $color)
                             <option value="{{ $color->id }}">{{ $color->color }}</option>
                         @endforeach
                     </select></td>
-                    
-
-                    <td class="bag-only" style="min-width: 200px;">
+                    <td class="bag-only" style="min-width: 300px;">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
                                 <input type="text" name="construction_per_square_inch[]"
@@ -497,15 +494,13 @@
                             </div>
                         </div>
                     </td>
-                    
-                    <td class="bag-only" style="width: 150px; min-width: 150px; max-width: 150px;"><select name="size[]" id="size_${index}" class="form-control item-select size-select" style="width: 100%;">
+                    <td class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;"><select name="size[]" id="size_${index}" class="form-control item-select size-select" style="width: 100%;">
                         <option value="">Select Size</option>
                         @foreach(getAllSizes() ?? [] as $size)
                             <option value="{{ $size->id }}">{{ $size->size }}</option>
                         @endforeach
                     </select></td>
-
-                   <td class="bag-only" style="min-width: 150px;">
+                   <td class="bag-only" style="min-width: 350px;">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
                                 <select name="stitching[${index}][]" id="stitching_${index}" class="form-control item-select stitching-select" style="width:100%;" multiple>
@@ -517,7 +512,7 @@
                             </div>
                         </div>
                     </td>
-                    <td style="min-width: 120px;" class="bag-only">
+                    <td style="min-width: 200px;" class="bag-only">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
                                 <input type="text" name="micron[]" id="micron_${index}" class="form-control"
@@ -525,7 +520,7 @@
                             </div>
                         </div>
                     </td>
-                    <td style="min-width: 250px;" class="bag-only">
+                    <td style="min-width: 450px;" class="bag-only">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
                                 <input type="file" name="printing_sample[]" id="printing_sample_${index}"
@@ -534,11 +529,11 @@
                             </div>
                         </div>
                     </td>
-                    <td style="min-width: 200px;">
+                    <td style="min-width: 400px;">
                         <input type="text" name="remarks[]" id="remark_${index}" class="form-control"
                             placeholder="line desc">
                     </td>
-                    <td style="min-width: 80px;">
+                    <td style="min-width: 150px;">
                         <button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="removeRow('${index}')" style="width:120px;">
                             <i class="fa fa-trash"></i>
                         </button>
