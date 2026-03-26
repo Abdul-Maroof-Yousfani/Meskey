@@ -1,4 +1,5 @@
 <form action="{{ route('store.qc.update') }}" id="ajaxSubmit">
+    <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-order-receiving') }}">
     <input type="hidden" name="purchase_receiving_data_id" value="{{ $id }}">
     <div style="padding-left: 10px; padding-right: 10px;">
         <div class="row">
