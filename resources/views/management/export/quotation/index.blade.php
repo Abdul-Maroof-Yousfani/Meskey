@@ -40,7 +40,7 @@
                                 <thead>
                                     <tr>
                                         <th width="5%">S no.</th>
-                                        <th width="10%">Exp. Soda</th>
+                                        <th width="10%">Exp. Sauda</th>
                                         <th width="15%">Buyer</th>
                                         <th width="15%">Company</th>
                                         <th width="15%">Product</th>

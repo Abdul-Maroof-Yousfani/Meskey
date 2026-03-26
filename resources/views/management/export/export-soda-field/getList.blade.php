@@ -29,19 +29,17 @@
                     </td>
                     <td>
                         <a class="info p-1 text-center position-relative"
-                            onclick="openModal(this,'{{ route('export-soda-field.show', $exportSoda->id) }}','Show Export Soda')">
-                            <i class="ft-eye font-medium-3"></i></a>
-
-                        @if (auth()->user()->id == $exportSoda->created_by)
-                            <a class="info p-1 text-center position-relative "
-                                onclick="openModal(this,'{{ route('export-soda-field.edit', $exportSoda->id) }}','Edit Export Soda')">
-                                <i class="ft-edit font-medium-3"></i></a>
-                            
-                            <a onclick="deletemodal('{{ route('export-soda-field.destroy', $exportSoda->id) }}','{{ route('get.export-soda-field') }}')"
-                                class="danger p-1 text-center mr-2 position-relative ">
-                                <i class="ft-x font-medium-3"></i>
-                            </a>
-                        @endif
+                            onclick="openModal(this,'{{ route('export-soda-field.show', $exportSoda->id) }}','Show Export Sauda',false,'90%')">
+                            <i class="ft-eye font-medium-3"></i>
+                        </a>
+                        <a class="info p-1 text-center position-relative"
+                            onclick="openModal(this,'{{ route('export-soda-field.edit', $exportSoda->id) }}','Edit Export Sauda',false,'90%')">
+                            <i class="ft-edit font-medium-3"></i>
+                        </a>
+                        <a onclick="deletemodal('{{ route('export-soda-field.destroy', $exportSoda->id) }}','{{ route('get.export-soda-field') }}')"
+                            class="danger p-1 text-center mr-2 position-relative">
+                            <i class="ft-x font-medium-3"></i>
+                        </a>
                     </td>
                 </tr>
             @endforeach

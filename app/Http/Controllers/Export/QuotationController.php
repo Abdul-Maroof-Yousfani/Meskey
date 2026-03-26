@@ -26,6 +26,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Illuminate\Database\QueryException;
+use App\Models\Export\ExportSodaField;
 
 class QuotationController extends Controller
 {
@@ -82,7 +83,7 @@ class QuotationController extends Controller
             $countries = Country::get();
             $ports     = Port::where('status', 1)->get();
             $currencies = Currency::where('status', 1)->get();
-            $exportSodas = \App\Models\Export\ExportSodaField::latest()->get();
+            $exportSodas = ExportSodaField::latest()->get();
         } catch (QueryException $e) {
             $products = $buyers = $companies = $companyLocations = $arrivalLocations = $arrivalSubLocations = collect();
             $bagTypes = $bagConditions = $bagPackings = $brands = $bagColors = $incoterms = $modeofterms = collect();
@@ -206,7 +207,7 @@ class QuotationController extends Controller
             $countries = Country::get();
             $ports     = Port::where('status', 1)->get();
             $currencies = Currency::where('status', 1)->get();
-            $exportSodas = \App\Models\Export\ExportSodaField::latest()->get();
+            $exportSodas = ExportSodaField::latest()->get();
         } catch (QueryException $e) {
             $products = $bagTypes = $bagConditions = $bagPackings = $brands = $bagColors = $incoterms = $modeofterms = collect();
             $modeoftransport = $countries = $ports = $currencies = $exportSodas = collect();
@@ -260,7 +261,7 @@ class QuotationController extends Controller
             $countries = Country::get();
             $ports     = Port::where('status', 1)->get();
             $currencies = Currency::where('status', 1)->get();
-            $exportSodas = \App\Models\Export\ExportSodaField::latest()->get();
+            $exportSodas = ExportSodaField::latest()->get();
         } catch (QueryException $e) {
             $products = $buyers = $companies = $companyLocations = $arrivalLocations = $arrivalSubLocations = collect();
             $bagTypes = $bagConditions = $bagPackings = $brands = $bagColors = collect();

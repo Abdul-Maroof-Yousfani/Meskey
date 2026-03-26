@@ -14,7 +14,7 @@
                 <div class="row">
                     <div class="col-md-4">
                         <div class="form-group">
-                            <label>Export Soda</label>
+                            <label>Export Sauda</label>
                             <input type="text" class="form-control" value="{{ $quotation->exportSoda ? '#' . $quotation->exportSoda->id . ' - ' . ($quotation->exportSoda->product->name ?? '') : 'N/A' }}" readonly>
                         </div>
                     </div>
