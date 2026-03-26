@@ -14,13 +14,15 @@ use App\Models\Procurement\Store\PurchaseOrderReceiving;
 use App\Models\Procurement\Store\PurchaseOrderReceivingData;
 use App\Models\Procurement\Store\PurchaseBagQC;
 use App\Models\Sales\JobOrder;
+use App\Models\Master\Supplier;
 use DB;
 use Illuminate\Http\Request;
 
 class QcController extends Controller
 {
     public function index() {
-        return view("management.procurement.store.qc.index");
+        $suppliers = Supplier::all();
+        return view("management.procurement.store.qc.index", compact('suppliers'));
     }
     public function deleteQc(Request $request) {
         $id = $request->id;
@@ -40,10 +42,47 @@ class QcController extends Controller
         return response()->json("Qc has been updated");
     }
     public function getList(Request $request) {
-        $PurchaseOrderRaw = PurchaseOrderReceivingData::whereHas("qc", function($query) {
-            // return $query->filter();
-        })
-            ->latest()
+        $query = PurchaseOrderReceivingData::whereHas("qc");
+
+        if ($request->has('purchase_order_receiving_no') && !empty($request->purchase_order_receiving_no)) {
+            $no = $request->purchase_order_receiving_no;
+            $query->whereHas('purchase_order_receiving', function ($q) use ($no) {
+                $q->where('purchase_order_receiving_no', 'like', "%{$no}%");
+            });
+        }
+
+        if ($request->has('purchase_order_no') && !empty($request->purchase_order_no)) {
+            $no = $request->purchase_order_no;
+            $query->whereHas('purchase_order_receiving.purchase_order', function ($q) use ($no) {
+                $q->where('purchase_order_no', 'like', "%{$no}%");
+            });
+        }
+
+        if ($request->has('purchase_request_no') && !empty($request->purchase_request_no)) {
+            $no = $request->purchase_request_no;
+            $query->whereHas('purchase_order_receiving.purchase_request', function ($q) use ($no) {
+                $q->where('purchase_request_no', 'like', "%{$no}%");
+            });
+        }
+
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('item', function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%");
+                })
+                ->orWhereHas('supplier', function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%");
+                })
+                ->orWhere('qty', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->has('supplier_id') && $request->supplier_id !== 'all' && !empty($request->supplier_id)) {
+            $query->where('purchase_order_receiving_data.supplier_id', $request->supplier_id);
+        }
+
+        $PurchaseOrderRaw = $query->latest()
             ->paginate(request("per_page", 25));
         
 
