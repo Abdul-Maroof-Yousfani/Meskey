@@ -23,6 +23,32 @@ class PurchaseBill extends Model
     ];
 
 
+    public static function booted() {
+        static::updated(function($bill) {
+            $column = $bill->getApprovalModule()->approval_column ?? 'am_approval_status';
+            if ($bill->isDirty($column) && $bill->{$column} === 'approved') {
+                foreach($bill->bill_data as $data) {
+                    $supplier = Supplier::select("id", "account_id")->find($bill->supplier_id);
+                    if ($supplier && $supplier->account_id) {
+                         createTransaction(
+                            $data->final_amount,
+                            $supplier->account_id,
+                            5,
+                            $bill->bill_no,
+                            'credit',
+                            'no',
+                            [
+                                'payment_against' => "Purchase Bill",
+                                'remarks' => $data->description ?? "Purchase Bill"
+                            ] 
+                        );
+                    }
+                }
+            }
+        });
+    }
+
+
     protected $table = "purchase_bills";
 
     public function grn() {
