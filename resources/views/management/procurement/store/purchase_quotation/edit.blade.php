@@ -88,6 +88,7 @@
                     <thead>
                         <tr>
                             <th>Category</th>
+                            <th>Status</th>
                             <th>Supplier</th>
                             <th>Item</th>
                             <th>Qty</th>
@@ -127,6 +128,20 @@
                                         value="{{ $data->purchase_request?->id ?? null }}">
                                     <input type="hidden" name="purchase_request_data_id[]"
                                         value="{{ $data->purchase_request_data_id }}">
+                                </td>
+
+                                <td style="min-width: 150px; vertical-align: middle;">
+                                    @php
+                                        $status = $data->am_approval_status ?? 'pending';
+                                        $badgeClass = match (strtolower($status)) {
+                                            'approved' => 'badge-success',
+                                            'rejected' => 'badge-danger',
+                                            'reverted' => 'badge-info',
+                                            'pending' => 'badge-warning',
+                                            default => 'badge-secondary',
+                                        };
+                                    @endphp
+                                    <span style="width: 100%;" class="badge {{ $badgeClass }}">{{ ucwords($status) }}</span>
                                 </td>
 
                                  <td style="min-width: 300px;">
@@ -316,6 +331,9 @@
                             <option value="{{ $category->id }}">{{ $category->name }}</option>
                         @endforeach
                     </select>
+                </td>
+                <td style="min-width: 150px; vertical-align: middle; text-align: center;">
+                    <span class="badge badge-warning">New</span>
                 </td>
                 <td style="min-width: 300px;">
                     <select name="supplier_id[]" id="supplier_id_${index}" onchange="get_uom(${index})" class="form-control item-select select2" data-index="0">
