@@ -63,6 +63,27 @@ class PurchaseOrderReceivingController extends Controller
             });
         }
 
+        if ($request->has('purchase_order_receiving_no') && !empty($request->purchase_order_receiving_no)) {
+            $no = $request->purchase_order_receiving_no;
+            $query->whereHas('purchase_order_receiving', function ($q) use ($no) {
+                $q->where('purchase_order_receiving_no', 'like', "%{$no}%");
+            });
+        }
+
+        if ($request->has('purchase_order_no') && !empty($request->purchase_order_no)) {
+            $no = $request->purchase_order_no;
+            $query->whereHas('purchase_order_receiving.purchase_order', function ($q) use ($no) {
+                $q->where('purchase_order_no', 'like', "%{$no}%");
+            });
+        }
+
+        if ($request->has('purchase_request_no') && !empty($request->purchase_request_no)) {
+            $no = $request->purchase_request_no;
+            $query->whereHas('purchase_order_receiving.purchase_request', function ($q) use ($no) {
+                $q->where('purchase_request_no', 'like', "%{$no}%");
+            });
+        }
+
         if ($request->has('supplier_id') && $request->supplier_id !== 'all' && !empty($request->supplier_id)) {
             $query->where('supplier_id', $request->supplier_id);
         }

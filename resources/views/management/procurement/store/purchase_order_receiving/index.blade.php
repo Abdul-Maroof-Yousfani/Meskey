@@ -34,8 +34,26 @@
                                                     @endforeach
                                                 </select>
                                             </div>
-                                            <div class="col-md-2">
-                                                <label for="search" class="form-label">Search</label>
+                                            <div class="col-md-2 text-left">
+                                                <label for="purchase_order_receiving_no" class="form-label">PO Receiving No.</label>
+                                                <input type="text" class="form-control" id="purchase_order_receiving_no"
+                                                    placeholder="Search Receive No." name="purchase_order_receiving_no"
+                                                    value="{{ request('purchase_order_receiving_no', '') }}">
+                                            </div>
+                                            <div class="col-md-2 text-left">
+                                                <label for="purchase_order_no" class="form-label">Order No.</label>
+                                                <input type="text" class="form-control" id="purchase_order_no"
+                                                    placeholder="Search Order No." name="purchase_order_no"
+                                                    value="{{ request('purchase_order_no', '') }}">
+                                            </div>
+                                            <div class="col-md-2 text-left">
+                                                <label for="purchase_request_no" class="form-label">Request No.</label>
+                                                <input type="text" class="form-control" id="purchase_request_no"
+                                                    placeholder="Search Request No." name="purchase_request_no"
+                                                    value="{{ request('purchase_request_no', '') }}">
+                                            </div>
+                                            <div class="col-md-2 text-left">
+                                                <label for="search" class="form-label">General Search</label>
                                                 <input type="hidden" name="page" value="{{ request('page', 1) }}">
                                                 <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
                                                 <input type="text" class="form-control" id="search"
