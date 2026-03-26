@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Export;
 
 use App\Http\Controllers\Controller;
+use App\Models\BagCondition;
 use App\Models\BagPacking;
+use App\Models\BagType;
 use App\Models\Export\ExportSodaField;
 use App\Models\Export\IncoTerm;
 use App\Models\Export\ModeOfTerm;
@@ -13,6 +15,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use App\Models\Master\Customer;
+use App\Models\Master\Brands;
+use App\Models\Master\Color;
 
 class ExportSodaFieldController extends Controller
 {
@@ -46,12 +50,21 @@ class ExportSodaFieldController extends Controller
         $incoterms = IncoTerm::where('status', 1)->get(); // price 
         $modeofterms = ModeOfTerm::where('status', 1)->get(); // optional payment term
 
+        $bagTypes = BagType::where('status', 1)->get();
+        $bagConditions = BagCondition::where('status', 1)->get();
+        $brands = Brands::where('status', 1)->get();
+        $bagColors = Color::where('status', 1)->get();
+
         return view('management.export.export-soda-field.create', compact(
             'users',
             'products',
             'bagPackings',
             'incoterms',
-            'modeofterms'
+            'modeofterms',
+            'bagTypes',
+            'bagConditions',
+            'brands',
+            'bagColors'
         ));
     }
 
@@ -105,7 +118,12 @@ class ExportSodaFieldController extends Controller
         $incoterms = IncoTerm::where('status', 1)->get();  
         $modeofterms = ModeOfTerm::where('status', 1)->get(); 
 
-        return view('management.export.export-soda-field.show', compact('exportSodaField', 'users', 'products', 'bagPackings', 'incoterms', 'modeofterms'));
+        $bagTypes = BagType::where('status', 1)->get();
+        $bagConditions = BagCondition::where('status', 1)->get();
+        $brands = Brands::where('status', 1)->get();
+        $bagColors = Color::where('status', 1)->get();
+
+        return view('management.export.export-soda-field.show', compact('exportSodaField', 'users', 'products', 'bagPackings', 'incoterms', 'modeofterms', 'bagTypes', 'bagConditions', 'brands', 'bagColors'));
     }
 
     public function edit($id): View
@@ -117,13 +135,22 @@ class ExportSodaFieldController extends Controller
         $incoterms = IncoTerm::where('status', 1)->get();  
         $modeofterms = ModeOfTerm::where('status', 1)->get(); 
 
+        $bagTypes = BagType::where('status', 1)->get();
+        $bagConditions = BagCondition::where('status', 1)->get();
+        $brands = Brands::where('status', 1)->get();
+        $bagColors = Color::where('status', 1)->get();
+
         return view('management.export.export-soda-field.edit', compact(
             'exportSodaField',
             'users',
             'products',
             'bagPackings',
             'incoterms',
-            'modeofterms'
+            'modeofterms',
+            'bagTypes',
+            'bagConditions',
+            'brands',
+            'bagColors'
         ));
     }
 

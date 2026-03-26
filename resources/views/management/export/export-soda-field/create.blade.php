@@ -25,25 +25,13 @@
                     </div>
                 </div>
 
-                <div class="col-md-6">
+                <div class="col-md-12">
                     <div class="form-group">
                         <label>Commodity:</label>
                         <select name="product_id" class="form-control select2" required>
                             <option value="">Select Product</option>
                             @foreach ($products as $product)
                                 <option value="{{ $product->id }}">{{ $product->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label>Packing:</label>
-                        <select name="bag_packing_id" class="form-control select2">
-                            <option value="">Select Packing</option>
-                            @foreach ($bagPackings as $packing)
-                                <option value="{{ $packing->id }}">{{ $packing->name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -88,40 +76,113 @@
                 </div>
             </div>
 
-            <h6 class="header-heading-sepration mt-3">Rate Calculation</h6>
-            <div class="row">
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label>Rate Per KG:</label>
-                        <input type="number" step="0.01" name="price_per_kg" placeholder="Rate Per KG" class="form-control" />
-                    </div>
+            {{-- ====== PACKING DETAILS ====== --}}
+            <div class="col-12 mt-4 px-0">
+                <h6 class="header-heading-sepration d-flex justify-content-between align-items-center">
+                    Packing Details
+                    <button type="button" class="btn btn-sm btn-success" id="addPackingItem">
+                        <i class="ft-plus"></i> Add Item
+                    </button>
+                </h6>
+                <div class="table-responsive">
+                    <table class="table table-bordered mb-0" id="packingTable">
+                        <thead>
+                            <tr>
+                                <th style="min-width:150px;">Brand</th>
+                                <th style="min-width:150px;">Bag Type</th>
+                                <th style="min-width:130px;">Packing</th>
+                                <th style="min-width:130px;">Condition</th>
+                                <th style="min-width:110px;">Color</th>
+                                <th style="min-width:100px;">Size (kg)</th>
+                                <th style="min-width:100px;">Qty (MT)</th>
+                                <th style="min-width:100px;">Qty (Mnds)</th>
+                                <th style="min-width:110px;">Qty (KGs)</th>
+                                <th style="min-width:100px;">Bags</th>
+                                <th style="min-width:110px;">Rate/Ton</th>
+                                <th style="min-width:110px;">Rate/Mnd</th>
+                                <th style="min-width:130px;">Amount</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="packingItems">
+                            <tr class="packing-item">
+                                <td class="p-2">
+                                    <select name="packing_items[0][brand_id]" class="form-control select2">
+                                        <option value="">Brand</option>
+                                        @foreach ($brands as $brand)
+                                            <option value="{{ $brand->id }}">Brand</option>
+                                        @endforeach
+                                    </select>
+                                </td>
+                                <td class="p-2">
+                                    <select name="packing_items[0][bag_type_id]" class="form-control select2">
+                                        <option value="">Bag Type</option>
+                                        @foreach ($bagTypes as $bagType)
+                                            <option value="{{ $bagType->id }}">{{ $bagType->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </td>
+                                <td class="p-2">
+                                    <select name="packing_items[0][bag_packing_id]" class="form-control select2">
+                                        <option value="">Packing</option>
+                                        @foreach ($bagPackings as $packing)
+                                            <option value="{{ $packing->id }}">{{ $packing->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </td>
+                                <td class="p-2">
+                                    <select name="packing_items[0][bag_condition_id]" class="form-control select2">
+                                        <option value="">Condition</option>
+                                        @foreach ($bagConditions as $condition)
+                                            <option value="{{ $condition->id }}">{{ $condition->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </td>
+                                <td class="p-2">
+                                    <select name="packing_items[0][bag_color_id]" class="form-control select2">
+                                        <option value="">Color</option>
+                                        @foreach ($bagColors as $color)
+                                            <option value="{{ $color->id }}">{{ $color->color }}</option>
+                                        @endforeach
+                                    </select>
+                                </td>
+                                <td class="p-2">
+                                    <input type="number" name="packing_items[0][bag_size]" class="form-control bag-size" step="0.01" value="0" min="0">
+                                </td>
+                                <td class="p-2">
+                                    <input type="number" name="packing_items[0][metric_tons]" class="form-control metric-tons" value="0" step="0.001" min="0">
+                                </td>
+                                <td class="p-2">
+                                    <input type="number" name="packing_items[0][maunds]" class="form-control maunds" value="0" step="0.01" min="0">
+                                </td>
+                                <td class="p-2">
+                                    <input type="number" name="packing_items[0][total_kgs]" class="form-control total-kgs" value="0" readonly>
+                                </td>
+                                <td class="p-2">
+                                    <input type="number" name="packing_items[0][no_of_bags]" class="form-control no_of_bags" value="0" readonly>
+                                </td>
+                                <td class="p-2">
+                                    <input type="number" name="packing_items[0][rate]" class="form-control rates" value="0" step="0.01" min="0">
+                                </td>
+                                <td class="p-2">
+                                    <input type="number" name="packing_items[0][rate_per_maund]" class="form-control rates_mnd" value="0" step="0.01" min="0">
+                                </td>
+                                <td class="p-2">
+                                    <input type="number" name="packing_items[0][amount]" class="form-control amount" value="0" min="0" readonly>
+                                </td>
+                                <td class="text-center p-2">
+                                    <button type="button" class="btn btn-sm btn-danger remove-packing-item">
+                                        <i class="ft-trash-2"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label>Rate Per Mound:</label>
-                        <input type="number" step="0.01" name="price_per_mound" placeholder="Rate Per Mound" class="form-control" />
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label>Rate Per 100KG:</label>
-                        <input type="number" step="0.01" name="price_per_100_kg" placeholder="Rate Per 100KG" class="form-control" />
-                    </div>
-                </div>
-            </div>
 
-            <h6 class="header-heading-sepration mt-3">Quantity Calculation</h6>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label>Quantity in KG:</label>
-                        <input type="number" step="0.01" name="quantity_in_kg" id="quantity_in_kg" placeholder="Quantity in KG" class="form-control" />
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label>Quantity in Ton:</label>
-                        <input type="number" step="0.01" name="quantity_in_ton" id="quantity_in_ton" placeholder="Quantity in Ton" class="form-control" />
+                <div class="row mt-2 pr-2">
+                    <div class="col-md-12 text-right">
+                        <strong>Total Quantity (MT): <span id="display_total_mt">0.000</span></strong>
                     </div>
                 </div>
             </div>
@@ -146,62 +207,109 @@
 </form>
 
 <script>
-    $(document).ready(function() {
-        $('.select2').select2({
-            width: '100%'
-        });
+$(document).ready(function() {
+    $('.select2').select2({ width: '100%' });
 
-        // --- Rate Calculations ---
-        const KG_PER_MOUND = 40;
-        const KG_PER_100KG = 100;
-
-        function calculateRates(changedField) {
-            const ratePerKg = parseFloat($('[name="price_per_kg"]').val()) || 0;
-            const ratePerMound = parseFloat($('[name="price_per_mound"]').val()) || 0;
-            const ratePer100kg = parseFloat($('[name="price_per_100_kg"]').val()) || 0;
-
-            switch (changedField) {
-                case 'price_per_kg':
-                    $('[name="price_per_mound"]').val((ratePerKg * KG_PER_MOUND).toFixed(4));
-                    $('[name="price_per_100_kg"]').val((ratePerKg * KG_PER_100KG).toFixed(4));
-                    break;
-
-                case 'price_per_mound':
-                    $('[name="price_per_kg"]').val((ratePerMound / KG_PER_MOUND).toFixed(4));
-                    $('[name="price_per_100_kg"]').val((ratePerMound / KG_PER_MOUND * KG_PER_100KG).toFixed(4));
-                    break;
-
-                case 'price_per_100_kg':
-                    $('[name="price_per_kg"]').val((ratePer100kg / KG_PER_100KG).toFixed(4));
-                    $('[name="price_per_mound"]').val((ratePer100kg / KG_PER_100KG * KG_PER_MOUND).toFixed(4));
-                    break;
-            }
-        }
-
-        $('[name="price_per_kg"]').on('input', function() {
-            calculateRates('price_per_kg');
-        });
-
-        $('[name="price_per_mound"]').on('input', function() {
-            calculateRates('price_per_mound');
-        });
-
-        $('[name="price_per_100_kg"]').on('input', function() {
-            calculateRates('price_per_100_kg');
-        });
-
-
-        // --- Quantity Calculations ---
-        const KG_PER_TON = 1000;
-
-        $('#quantity_in_kg').on('input', function() {
-            let kg = parseFloat($(this).val()) || 0;
-            $('#quantity_in_ton').val((kg / KG_PER_TON).toFixed(4));
-        });
-
-        $('#quantity_in_ton').on('input', function() {
-            let ton = parseFloat($(this).val()) || 0;
-            $('#quantity_in_kg').val((ton * KG_PER_TON).toFixed(4));
-        });
+    // ---- ROW LEVEL CALCULATIONS ----
+    $(document).on('input', '.metric-tons, .bag-size', function() {
+        let row = $(this).closest('tr');
+        calculateRowFromMT(row);
+        calculateOverallTotals();
     });
+
+    $(document).on('input', '.maunds', function() {
+        let row = $(this).closest('tr');
+        calculateRowFromMaunds(row);
+        calculateOverallTotals();
+    });
+
+    $(document).on('input', '.rates', function() {
+        let row = $(this).closest('tr');
+        calculateRowFromRate(row);
+    });
+
+    $(document).on('input', '.rates_mnd', function() {
+        let row = $(this).closest('tr');
+        calculateRowFromRateMnd(row);
+    });
+
+    function calculateRowFromMT(row) {
+        let mt = parseFloat(row.find('.metric-tons').val()) || 0;
+        let totalKgs = mt * 1000;
+        let bagSize = parseFloat(row.find('.bag-size').val()) || 0;
+        let bags = bagSize > 0 ? (totalKgs / bagSize) : 0;
+        row.find('.maunds').val((mt * 25).toFixed(2));
+        row.find('.total-kgs').val(totalKgs.toFixed(2));
+        row.find('.no_of_bags').val(Math.ceil(bags));
+        calculateRowAmount(row);
+    }
+
+    function calculateRowFromMaunds(row) {
+        let maunds = parseFloat(row.find('.maunds').val()) || 0;
+        let mt = maunds / 25;
+        let totalKgs = mt * 1000;
+        let bagSize = parseFloat(row.find('.bag-size').val()) || 0;
+        let bags = bagSize > 0 ? (totalKgs / bagSize) : 0;
+        row.find('.metric-tons').val(mt.toFixed(3));
+        row.find('.total-kgs').val(totalKgs.toFixed(2));
+        row.find('.no_of_bags').val(Math.ceil(bags));
+        calculateRowAmount(row);
+    }
+
+    function calculateRowFromRate(row) {
+        let rateMt = parseFloat(row.find('.rates').val()) || 0;
+        row.find('.rates_mnd').val((rateMt / 25).toFixed(2));
+        calculateRowAmount(row);
+    }
+
+    function calculateRowFromRateMnd(row) {
+        let rateMnd = parseFloat(row.find('.rates_mnd').val()) || 0;
+        row.find('.rates').val((rateMnd * 25).toFixed(2));
+        calculateRowAmount(row);
+    }
+
+    function calculateRowAmount(row) {
+        let mt = parseFloat(row.find('.metric-tons').val()) || 0;
+        let rateMt = parseFloat(row.find('.rates').val()) || 0;
+        let amount = mt * rateMt;
+        row.find('.amount').val(amount.toFixed(2));
+    }
+
+    function calculateOverallTotals() {
+        let totalMt = 0;
+        $('#packingItems tr.packing-item').each(function() {
+            totalMt += parseFloat($(this).find('.metric-tons').val()) || 0;
+        });
+        $('#display_total_mt').text(totalMt.toFixed(3));
+    }
+
+    // Packing items dynamic rows
+    $('#addPackingItem').click(function() { addNewPackingItem(); });
+    function addNewPackingItem() {
+        var firstRow = $('#packingItems tr.packing-item').first();
+        var newRow = firstRow.clone();
+        newRow.find('.select2-container').remove();
+        newRow.find('select').removeClass('select2-hidden-accessible').removeAttr('data-select2-id').show();
+        newRow.find('input').val('0');
+        newRow.find('select').val('').trigger('change');
+        $('#packingItems').append(newRow);
+        $('.select2').select2({ width: '100%' });
+        reindexPackingItems();
+    }
+    $(document).on('click', '.remove-packing-item', function() {
+        if ($('#packingItems tr.packing-item').length > 1) {
+            $(this).closest('tr').remove();
+            reindexPackingItems();
+            calculateOverallTotals();
+        }
+    });
+    function reindexPackingItems() {
+        $('#packingItems tr.packing-item').each(function(i) {
+            $(this).find('select, input').each(function() {
+                var name = $(this).attr('name');
+                if (name) { $(this).attr('name', name.replace(/\[\d+\]/, '[' + i + ']')); }
+            });
+        });
+    }
+});
 </script>

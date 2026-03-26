@@ -10,6 +10,7 @@ use App\Http\Controllers\Export\ModeOfTermController;
 use App\Http\Controllers\Export\ModeOfTransportController;
 use App\Http\Controllers\Export\ProformaController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Export\QuotationController;
 
 // mode of terms
 Route::resource('modeofterms', ModeOfTermController::class);
@@ -34,6 +35,12 @@ Route::post('/get-bank', [BankController::class, 'getBankTable'])->name('get.ban
 // export order
 Route::resource('export-order', ExportOrderController::class);
 Route::post('/get-export-order', [ExportOrderController::class, 'getExportOrderTable'])->name('get.export-order');
+
+// quotation
+Route::resource('quotation', QuotationController::class);
+Route::post('/get-quotation', [QuotationController::class, 'getQuotationTable'])->name('get.quotation');
+Route::get('get-product-specs-quotation/{productId}', [QuotationController::class, 'getProductSpecs'])->name('get.product_specs.quotation');
+Route::get('get-buyer-details-quotation/{id}', [QuotationController::class, 'getBuyerDetails'])->name('get.buyer_details.quotation');
 
 Route::get('/get-bank-details/{id}', function ($id) {
     return \App\Models\Export\Bank::findOrFail($id);

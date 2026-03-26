@@ -5,130 +5,115 @@
             <div class="col-md-6">
                 <div class="form-group">
                     <label>Reference #:</label>
-                    <input type="text" name="reference" class="form-control" value="{{ $exportSodaField->reference }}" readonly>
+                    <input type="text" value="{{ $exportSodaField->reference }}" class="form-control" readonly>
                 </div>
             </div>
 
             <div class="col-md-6">
                 <div class="form-group">
                     <label>Party Name (Buyer):</label>
-                    <select name="buyer_id" class="form-control select2" disabled>
-                        <option value="">Select Buyer</option>
-                        @foreach ($users as $user)
-                            <option value="{{ $user->id }}" {{ $exportSodaField->buyer_id == $user->id ? 'selected' : '' }}>
-                                {{ $user->name }}
-                            </option>
-                        @endforeach
-                    </select>
+                    <input type="text" value="{{ $exportSodaField->buyer->name ?? 'N/A' }}" class="form-control" readonly>
                 </div>
             </div>
 
-            <div class="col-md-6">
+            <div class="col-md-12">
                 <div class="form-group">
                     <label>Commodity:</label>
-                    <select name="product_id" class="form-control select2" disabled>
-                        <option value="">Select Product</option>
-                        @foreach ($products as $product)
-                            <option value="{{ $product->id }}" {{ $exportSodaField->product_id == $product->id ? 'selected' : '' }}>
-                                {{ $product->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
-
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label>Packing:</label>
-                    <select name="bag_packing_id" class="form-control select2" disabled>
-                        <option value="">Select Packing</option>
-                        @foreach ($bagPackings as $packing)
-                            <option value="{{ $packing->id }}" {{ $exportSodaField->bag_packing_id == $packing->id ? 'selected' : '' }}>
-                                {{ $packing->name }}
-                            </option>
-                        @endforeach
-                    </select>
+                    <input type="text" value="{{ $exportSodaField->product->name ?? 'N/A' }}" class="form-control" readonly>
                 </div>
             </div>
 
             <div class="col-md-6">
                 <div class="form-group">
                     <label>Inco Term:</label>
-                    <select name="incoterm_id" class="form-control select2" disabled>
-                        <option value="">Select IncoTerm</option>
-                        @foreach ($incoterms as $incoterm)
-                            <option value="{{ $incoterm->id }}" {{ $exportSodaField->incoterm_id == $incoterm->id ? 'selected' : '' }}>
-                                {{ $incoterm->name }}
-                            </option>
-                        @endforeach
-                    </select>
+                    <input type="text" value="{{ $exportSodaField->incoterm->name ?? 'N/A' }}" class="form-control" readonly>
                 </div>
             </div>
 
             <div class="col-md-6">
                 <div class="form-group">
-                    <label>Payment Term (Optional):</label>
-                    <select name="mode_of_term_id" class="form-control select2" disabled>
-                        <option value="">Select Payment Term</option>
-                        @foreach ($modeofterms as $term)
-                            <option value="{{ $term->id }}" {{ $exportSodaField->mode_of_term_id == $term->id ? 'selected' : '' }}>
-                                {{ $term->name }}
-                            </option>
-                        @endforeach
-                    </select>
+                    <label>Payment Term:</label>
+                    <input type="text" value="{{ $exportSodaField->modeOfTerm->name ?? 'N/A' }}" class="form-control" readonly>
                 </div>
             </div>
 
             <div class="col-md-6">
                 <div class="form-group">
                     <label>Shipment Period:</label>
-                    <input type="date" name="shipment_period" class="form-control" value="{{ $exportSodaField->shipment_period }}" readonly>
+                    <input type="text" value="{{ $exportSodaField->shipment_period }}" class="form-control" readonly>
                 </div>
             </div>
 
             <div class="col-md-6">
                 <div class="form-group">
                     <label>Commission:</label>
-                    <input type="number" name="commission" class="form-control" step="0.01" value="{{ $exportSodaField->commission }}" readonly>
+                    <input type="text" value="{{ $exportSodaField->commission }}" class="form-control" readonly>
                 </div>
             </div>
         </div>
 
-        <h6 class="header-heading-sepration mt-3">Rate Details</h6>
-        <div class="row">
-            <div class="col-md-4">
-                <div class="form-group">
-                    <label>Rate Per KG:</label>
-                    <input type="number" step="0.01" name="price_per_kg" placeholder="Rate Per KG" class="form-control" value="{{ number_format($exportSodaField->price_per_kg, 2, '.', '') }}" readonly />
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="form-group">
-                    <label>Rate Per Mound:</label>
-                    <input type="number" step="0.01" name="price_per_mound" placeholder="Rate Per Mound" class="form-control" value="{{ number_format($exportSodaField->price_per_mound, 2, '.', '') }}" readonly />
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="form-group">
-                    <label>Rate Per 100KG:</label>
-                    <input type="number" step="0.01" name="price_per_100_kg" placeholder="Rate Per 100KG" class="form-control" value="{{ number_format($exportSodaField->price_per_100_kg, 2, '.', '') }}" readonly />
-                </div>
-            </div>
-        </div>
-
-        <h6 class="header-heading-sepration mt-3">Quantity Details</h6>
-        <div class="row">
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label>Quantity in KG:</label>
-                    <input type="number" step="0.01" name="quantity_in_kg" id="quantity_in_kg" placeholder="Quantity in KG" class="form-control" value="{{ number_format($exportSodaField->quantity_in_kg, 2, '.', '') }}" readonly />
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label>Quantity in Ton:</label>
-                    <input type="number" step="0.01" name="quantity_in_ton" id="quantity_in_ton" placeholder="Quantity in Ton" class="form-control" value="{{ number_format($exportSodaField->quantity_in_ton, 2, '.', '') }}" readonly />
-                </div>
+        {{-- ====== PACKING DETAILS ====== --}}
+        <div class="col-12 mt-4 px-0">
+            <h6 class="header-heading-sepration">Packing Details</h6>
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr class="bg-light">
+                            <th>Brand</th>
+                            <th>Bag Type</th>
+                            <th>Packing</th>
+                            <th>Condition</th>
+                            <th>Color</th>
+                            <th>Size (kg)</th>
+                            <th>Qty (MT)</th>
+                            <th>Qty (Mnds)</th>
+                            <th>Qty (KGs)</th>
+                            <th>Bags</th>
+                            <th>Rate/Ton</th>
+                            <th>Rate/Mnd</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @php 
+                            $items = method_exists($exportSodaField, 'packingItems') ? $exportSodaField->packingItems : collect();
+                        @endphp
+                        @forelse ($items as $item)
+                        <tr>
+                            <td>{{ $item->brand->name ?? 'N/A' }}</td>
+                            <td>{{ $item->bagType->name ?? 'N/A' }}</td>
+                            <td>{{ $item->bagPacking->name ?? 'N/A' }}</td>
+                            <td>{{ $item->bagCondition->name ?? 'N/A' }}</td>
+                            <td>{{ $item->bagColor->color ?? 'N/A' }}</td>
+                            <td>{{ number_format($item->bag_size, 2) }}</td>
+                            <td>{{ number_format($item->metric_tons, 3) }}</td>
+                            <td>{{ number_format($item->maunds, 2) }}</td>
+                            <td>{{ number_format($item->total_kgs, 2) }}</td>
+                            <td>{{ number_format($item->no_of_bags) }}</td>
+                            <td>{{ number_format($item->rate, 2) }}</td>
+                            <td>{{ number_format($item->rate_per_maund, 2) }}</td>
+                            <td>{{ number_format($item->amount, 2) }}</td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="13" class="text-center">No packing details available yet.</td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                    <tfoot>
+                        @if($items->count() > 0)
+                        <tr class="font-weight-bold bg-light">
+                            <td colspan="6" class="text-right">Totals:</td>
+                            <td>{{ number_format($items->sum('metric_tons'), 3) }}</td>
+                            <td>{{ number_format($items->sum('maunds'), 2) }}</td>
+                            <td>{{ number_format($items->sum('total_kgs'), 2) }}</td>
+                            <td>{{ number_format($items->sum('no_of_bags')) }}</td>
+                            <td colspan="2"></td>
+                            <td>{{ number_format($items->sum('amount'), 2) }}</td>
+                        </tr>
+                        @endif
+                    </tfoot>
+                </table>
             </div>
         </div>
 
@@ -136,7 +121,7 @@
             <div class="col-md-12">
                 <div class="form-group">
                     <label>Additional Info:</label>
-                    <textarea name="additional_info" class="form-control" rows="4" readonly>{{ $exportSodaField->additional_info }}</textarea>
+                    <textarea class="form-control" rows="4" readonly>{{ $exportSodaField->additional_info }}</textarea>
                 </div>
             </div>
         </div>
@@ -148,12 +133,3 @@
         <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
     </div>
 </div>
-
-<script>
-    $(document).ready(function() {
-        $('.select2').select2({
-            width: '100%',
-            disabled: true
-        });
-    });
-</script>

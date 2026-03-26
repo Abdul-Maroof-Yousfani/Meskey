@@ -90,8 +90,8 @@ class ProformaController extends Controller
         $ports = Port::where('status', 1)->get();
         $hscodes = HsCode::where('status', 1)->get();
         $currencies = Currency::where('status', 1)->get();
-        $companyBanks = CustomerCompanyBankDetail::where('customer_id', ($exportOrder->buyer_id ?? $proforma->exportOrder->buyer_id))->get();
-        $ownerBanks = CustomerOwnerBankDetail::where('customer_id', ($exportOrder->buyer_id ?? $proforma->exportOrder->buyer_id))->get();
+        $companyBanks = CustomerCompanyBankDetail::where('customer_id', $exportOrder->buyer_id)->get();
+        $ownerBanks = CustomerOwnerBankDetail::where('customer_id', $exportOrder->buyer_id)->get();
 
         return view('management.export.proforma.create', compact(
             'exportOrder',
@@ -227,8 +227,8 @@ class ProformaController extends Controller
         $ports = Port::where('status', 1)->get();
         $hscodes = HsCode::where('status', 1)->get();
         $currencies = Currency::where('status', 1)->get();
-        $companyBanks = CustomerCompanyBankDetail::where('customer_id', ($exportOrder->buyer_id ?? $proforma->exportOrder->buyer_id))->get();
-        $ownerBanks = CustomerOwnerBankDetail::where('customer_id', ($exportOrder->buyer_id ?? $proforma->exportOrder->buyer_id))->get();
+        $companyBanks = CustomerCompanyBankDetail::where('customer_id', $exportOrder->buyer_id)->get();
+        $ownerBanks = CustomerOwnerBankDetail::where('customer_id', $exportOrder->buyer_id)->get();
 
         return view('management.export.proforma.show', compact(
             'proforma',
@@ -277,8 +277,8 @@ class ProformaController extends Controller
         $ports = Port::where('status', 1)->get();
         $hscodes = HsCode::where('status', 1)->get();
         $currencies = Currency::where('status', 1)->get();
-        $companyBanks = CustomerCompanyBankDetail::where('customer_id', ($exportOrder->buyer_id ?? $proforma->exportOrder->buyer_id))->get();
-        $ownerBanks = CustomerOwnerBankDetail::where('customer_id', ($exportOrder->buyer_id ?? $proforma->exportOrder->buyer_id))->get();
+        $companyBanks = CustomerCompanyBankDetail::where('customer_id', $exportOrder->buyer_id)->get();
+        $ownerBanks = CustomerOwnerBankDetail::where('customer_id', $exportOrder->buyer_id)->get();
 
         return view('management.export.proforma.edit', compact(
             'proforma',
