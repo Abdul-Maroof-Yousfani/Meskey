@@ -48,7 +48,7 @@ class PurchaseRequestController extends Controller
      */
     public function getList(Request $request)
     {
-        $query = PurchaseRequestData::with('purchase_request', 'category', 'item', 'approval')
+        $query = PurchaseRequestData::has('purchase_request')->with('purchase_request', 'category', 'item', 'approval')
             ->whereStatus(true);
 
         if ($request->has('search') && !empty($request->search)) {
