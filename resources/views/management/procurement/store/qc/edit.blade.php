@@ -305,6 +305,9 @@
                         icon: "success"
                     });
                     $(".modal-sidebar-close").trigger("click");
+                    if (typeof filterationCommon === 'function' && '{{ $refresh_url }}') {
+                        filterationCommon('{{ $refresh_url }}');
+                    }
                 },
                 
                 error: function(xhr) {

@@ -38,7 +38,7 @@
                             @endphp
 
                                       <button style="visibility: hidden;" id="modalButton{{ $itemGroup['item_data']->id }}" onclick="openModal(this, '{{ route('store.qc.show-create', ['id' => $itemGroup['item_data']->id, 'grn' => get_grn($itemGroup['item_data']->purchase_order_receiving_id)]) }}', 'Add QC', false, '100%')">{{ $itemGroup['item_data']->id }}</button>
-                          <button style="visibility: hidden;" id="modalButtonQc{{ $itemGroup['item_data']->id }}" onclick="openModal(this, '{{ route('store.qc.edit', ['id' => $itemGroup['item_data']->id, 'grn' => get_grn($itemGroup['item_data']->purchase_order_receiving_id)]) }}', 'Edit QC', false, '100%')">{{ $itemGroup['item_data']->id }}</button>
+                          <button style="visibility: hidden;" id="modalButtonQc{{ $itemGroup['item_data']->id }}" onclick="openModal(this, '{{ route('store.qc.edit', ['id' => $itemGroup['item_data']->id, 'grn' => get_grn($itemGroup['item_data']->purchase_order_receiving_id), 'refresh_url' => route('store.get.purchase-order-receiving')]) }}', 'Edit QC', false, '100%')">{{ $itemGroup['item_data']->id }}</button>
                       
                         <tr>
                             {{-- Purchase Order No --}}
