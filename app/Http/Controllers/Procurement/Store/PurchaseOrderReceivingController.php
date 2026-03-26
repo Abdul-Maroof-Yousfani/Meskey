@@ -240,7 +240,7 @@ class PurchaseOrderReceivingController extends Controller
 
 
         if ($dataItems->isEmpty()) {
-         $dataItems = PurchaseOrderData::with(['purchase_order', 'item', 'category', 'purchase_request_data'])
+         $dataItems = PurchaseOrderData::with(['purchase_order', 'item', 'category', 'purchase_request_data', 'job_orders.job_order_data'])
                 ->where('purchase_order_id', $requestId)
                 ->get();
 
@@ -435,7 +435,7 @@ class PurchaseOrderReceivingController extends Controller
     public function edit($id)
     {
         $purchaseOrderReceiving = PurchaseOrderReceiving::with([
-            'purchaseOrderReceivingData',
+            'purchaseOrderReceivingData.purchase_order_data.job_orders.job_order_data',
             'purchaseOrderReceivingData.qc',
             'purchaseOrderReceivingData.category',
             'purchaseOrderReceivingData.item',
@@ -620,7 +620,7 @@ class PurchaseOrderReceivingController extends Controller
         // $job_orders = JobOrder::get();
         // dd($job_orders);
         $purchaseOrderReceiving = PurchaseOrderReceiving::with([
-            'purchaseOrderReceivingData',
+            'purchaseOrderReceivingData.purchase_order_data.job_orders.job_order_data',
             'purchaseOrderReceivingData.category',
             'purchaseOrderReceivingData.item',
             'purchaseOrderReceivingData.supplier'

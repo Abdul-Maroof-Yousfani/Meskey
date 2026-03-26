@@ -249,7 +249,7 @@ class PurchaseOrderController extends Controller
                 ->first();
 
             if ($quotation) {
-                $dataItems = PurchaseQuotationData::with(['purchase_order_data.purchase_order', 'purchase_request.purchase_order_data', 'purchase_quotation', 'item', 'category'])
+                $dataItems = PurchaseQuotationData::with(['purchase_order_data.purchase_order', 'purchase_request.purchase_order_data', 'purchase_quotation', 'item', 'category', 'purchase_request.JobOrder.job_order_data'])
                     ->where('purchase_quotation_id', $quotation->id)
                     ->where('am_approval_status', 'approved')
                     ->get();
@@ -257,7 +257,7 @@ class PurchaseOrderController extends Controller
         }
 
         if (!$quotation || $dataItems->isEmpty()) {
-            $dataItems = PurchaseRequestData::with(['purchase_request', 'item', 'category', 'purchase_order_data.purchase_order'])
+            $dataItems = PurchaseRequestData::with(['purchase_request', 'item', 'category', 'purchase_order_data.purchase_order', 'JobOrder.job_order_data'])
                 ->where('purchase_request_id', $requestId)
                 ->get();
         }
@@ -443,7 +443,8 @@ class PurchaseOrderController extends Controller
             'purchaseOrderData.purchase_request_data.purchase_order_data.purchase_order',
             'purchaseOrderData.purchase_quotation_data.purchase_order_data.purchase_order',
             'purchaseOrderData.item',
-            'purchase_quotation.quotation_data'
+            'purchase_quotation.quotation_data',
+            'purchaseOrderData.purchase_request_data.JobOrder.job_order_data'
         ])->findOrFail($id);
         $purchaseRequest = $purchaseOrder->purchase_request;
         $purchaseQuotation = $purchaseOrder->purchase_quotation;
@@ -553,10 +554,10 @@ class PurchaseOrderController extends Controller
         $data = PurchaseOrder::with(['purchaseOrderData', 'purchaseOrderData.item.unitOfMeasure'])->where('id', $id)->first();
 
         $purchaseOrder = PurchaseOrder::with([
-            'purchaseOrderData',
             'purchaseOrderData.category',
             'purchaseOrderData.item',
             'purchaseOrderData.supplier',
+            'purchaseOrderData.purchase_request_data.JobOrder.job_order_data',
             'purchase_quotation'
         ])->findOrFail($id);
 

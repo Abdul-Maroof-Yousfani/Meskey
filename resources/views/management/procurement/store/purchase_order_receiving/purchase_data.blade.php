@@ -53,8 +53,8 @@
 
     <td style="width: 300px; min-width: 300px;">
         <select class="form-control select2" multiple disabled>
-            @if($data->purchase_order_data && $data->purchase_order_data->job_orders)
-                @foreach($data->purchase_order_data->job_orders as $pajo)
+            @if($data->job_orders && $data->job_orders->count() > 0)
+                @foreach($data->job_orders as $pajo)
                     <option selected>{{ $pajo->job_order_data->job_order_no ?? 'N/A' }}</option>
                 @endforeach
             @endif
