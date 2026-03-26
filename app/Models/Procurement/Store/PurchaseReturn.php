@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Traits\HasApproval;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Master\Account\Stock;
 
 
 class PurchaseReturn extends Model
@@ -20,6 +21,59 @@ class PurchaseReturn extends Model
         "created_at",
         "updated_at"
     ];
+    public static function booted() {
+        static::updated(function($return) {
+            $column = $return->getApprovalModule()->approval_column ?? 'am_approval_status';
+            if ($return->isDirty($column) && $return->{$column} === 'approved') {
+                foreach($return->purchase_return_data as $data) {
+                    $supplier = Supplier::select("id", "account_id")->find($return->supplier_id);
+                    $product = Product::select("id", "account_id")->find($data->item_id);
+                    $amount = $data->net_amount;
+
+                    if ($supplier && $supplier->account_id) {
+                         createTransaction(
+                            $amount,
+                            $supplier->account_id,
+                            6,
+                            $return->pr_no,
+                            'debit',
+                            'no',
+                            [
+                                'payment_against' => "Purchase Return",
+                                'remarks' => "Purchase Return"
+                            ] 
+                        );
+                    }
+
+                    if ($product && $product->account_id) {
+                        createTransaction(
+                            $amount,
+                            $product->account_id,
+                            6,
+                            $return->pr_no,
+                            'credit',
+                            'no',
+                            [
+                                'payment_against' => "Purchase Return",
+                                'remarks' => "Product is Returned"
+                            ] 
+                        );
+                    }
+
+                    Stock::create([
+                        'product_id' => $data->item_id,
+                        'voucher_type' => 'purchase_return',
+                        'voucher_no' => $return->pr_no,
+                        'qty' => $data->quantity,
+                        'type' => 'stock-out',
+                        'narration' => 'Purchase Return',
+                        'price' => $amount,
+                        'avg_price_per_kg' => $amount,
+                    ]);
+                }
+            }
+        });
+    }
 
 
 
