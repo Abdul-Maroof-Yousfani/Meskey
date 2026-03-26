@@ -199,7 +199,7 @@
                     <div class="col-md-2">
                             <div class="form-group">
                                 <label>Brand:</label>
-                                <select name="packing_items[{{ $packingIndex }}][brand_id]" class="form-control">
+                                <select name="packing_items[{{ $packingIndex }}][brand_id]" class="form-control select2">
                                     <option value="">Select Brand</option>
                                     @foreach($brands as $brand)
                                         <option value="{{ $brand->id }}" {{ $packingItem->brand_id == $brand->id ? 'selected' : '' }}>
@@ -225,7 +225,7 @@
                         <div class="col-md-2">
                             <div class="form-group">
                                 <label>Bag Product:</label>
-                                <select name="packing_items[{{ $packingIndex }}][bag_product_id]" class="form-control">
+                                <select name="packing_items[{{ $packingIndex }}][bag_product_id]" class="form-control select2">
                                     <option value="">Select Bag Product</option>
                                     @foreach($bagProducts as $bagProduct)
                                         <option value="{{ $bagProduct->id }}" {{ $packingItem->bag_product_id == $bagProduct->id ? 'selected' : '' }}>
@@ -238,7 +238,7 @@
                         <div class="col-md-2">
                             <div class="form-group">
                                 <label>Bag Condition:</label>
-                                <select name="packing_items[{{ $packingIndex }}][bag_condition_id]" class="form-control">
+                                <select name="packing_items[{{ $packingIndex }}][bag_condition_id]" class="form-control select2">
                                     <option value="">Select Condition</option>
                                     @foreach($bagConditions as $condition)
                                         <option value="{{ $condition->id }}" {{ $packingItem->bag_condition_id == $condition->id ? 'selected' : '' }}>
@@ -251,7 +251,7 @@
                         <div class="col-md-2">
                             <div class="form-group">
                                 <label>Bag Color:</label>
-                                <select name="packing_items[{{ $packingIndex }}][bag_color_id]" class="form-control">
+                                <select name="packing_items[{{ $packingIndex }}][bag_color_id]" class="form-control select2">
                                     <option value="">Select Color</option>
                                     @foreach($bagColors as $color)
                                         <option value="{{ $color->id }}" {{ $packingItem->bag_color_id == $color->id ? 'selected' : '' }}>
@@ -264,7 +264,7 @@
                         <div class="col-md-2">
                             <div class="form-group">
                                 <label>Thread Color:</label>
-                                <select name="packing_items[{{ $packingIndex }}][thread_color_id]" class="form-control">
+                                <select name="packing_items[{{ $packingIndex }}][thread_color_id]" class="form-control select2">
                                     <option value="">Select Color</option>
                                     @foreach($bagColors as $color)
                                         <option value="{{ $color->id }}" {{ $packingItem->thread_color_id == $color->id ? 'selected' : '' }}>
@@ -277,7 +277,7 @@
                         <div class="col-md-1">
                             <div class="form-group">
                                 <label>Stitching:</label>
-                                <select name="packing_items[0][stitching_id]" class="form-control select2">
+                                <select name="packing_items[{{ $packingIndex }}][stitching_id]" class="form-control select2">
                                     <option value="">Select Stitching</option>
                                     @foreach($stitchings as $stitching)
                                         <option value="{{ $stitching->id }}" {{ $packingItem->stitching_id == $stitching->id ? 'selected' : '' }}>{{ $stitching->name }}</option>
@@ -822,18 +822,32 @@
         // Add new packing item function
         var isAddingItem = false;
         function addNewPackingItem() {
-            if (isAddingItem) return; // Prevent multiple simultaneous additions
+            if (isAddingItem) return;
             isAddingItem = true;
             
             var firstItem = $('.packing-item').first();
-            var newItem = firstItem.clone(true); // Clone with data but not event handlers
+            if (!firstItem.length) {
+                isAddingItem = false;
+                return;
+            }
+
+            // Capture original values before cloning
+            var originalValues = {};
+            firstItem.find('select').each(function () {
+                var $select = $(this);
+                // Temporarily uninitialize Select2 to get clean value
+                originalValues[$select.attr('name')] = $select.val();
+            });
+
+            // Clone the item
+            var newItem = firstItem.clone(); 
 
             // Update indexes
             var newIndex = $('.packing-item').length;
             newItem.find('input, select').each(function () {
                 var name = $(this).attr('name');
                 if (name) {
-                    name = name.replace(/\[\d+\]/, '[' + newIndex + ']');
+                    name = name.replace(/\[\d+\]/g, '[' + newIndex + ']'); // Use global flag for nested replaces
                     $(this).attr('name', name);
                     $(this).val(''); // Clear values
                 }
@@ -846,29 +860,36 @@
             // Clear sub items container
             newItem.find('.sub-packing-items-container').empty();
 
-            // Clear specific values
+            // Clear specific values and IDs
+            newItem.find('input[type="hidden"].packing-item-ref').remove(); // Important: remove the ID of the cloned item
             newItem.find('.bag-size, .no-of-bags, .extra-bags, .empty-bags, .stuffing, .containers, .min-weight').val('');
             newItem.find('.total-bags, .total-kgs, .metric-tons').val('0');
-            newItem.find('select').prop('selectedIndex', 0);
 
-            // Reset select fields
+            // Handle Select2 in the new item
             newItem.find('select').each(function () {
-                if ($(this).hasClass('select2-hidden-accessible')) {
-                    // Remove Select2 initialization
-                    $(this).siblings('.select2-container').remove();
-                    $(this).show().removeClass('select2-hidden-accessible');
-                    $(this).next('.select2-container').remove();
-                }
-                $(this).prop('selectedIndex', 0);
+                var $select = $(this);
+                // Remove existing Select2 structure if any was cloned
+                $select.siblings('.select2-container').remove();
+                $select.next('.select2-container').remove();
+                $select.removeClass('select2-hidden-accessible').show();
+                $select.prop('selectedIndex', 0);
+                $select.val('');
             });
 
             // Add to container
             $('#packingItems').append(newItem);
-            newItem.find('select[name*="fumigation_company_id"]').val([]);
 
-            // Re-initialize Select2 for new selects
-            newItem.find('select').select2();
-            firstItem.find('select').select2();
+            // Re-initialize Select2 for the cloned item
+            newItem.find('select.select2').each(function () {
+                $(this).select2();
+            });
+
+            // Re-initialize Select2 for the original item (if it was destroyed or affected)
+            firstItem.find('select.select2').each(function () {
+                if (!$(this).data('select2')) {
+                    $(this).select2();
+                }
+            });
             
             isAddingItem = false;
         }
