@@ -12,6 +12,7 @@ use App\Models\Export\IncoTerm;
 use App\Models\Export\ModeOfTerm;
 use App\Models\Export\ModeOfTransport;
 use App\Models\Export\Quotation;
+use App\Models\Acl\Company;
 use App\Models\Export\QuotationPackingItem;
 use App\Models\Export\QuotationSpecification;
 use App\Models\Master\Brands;
@@ -27,6 +28,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Illuminate\Database\QueryException;
 use App\Models\Export\ExportSodaField;
+use App\Models\Master\CompanyLocation;
+use App\Models\Master\ArrivalLocation;
+use App\Models\Master\ArrivalSubLocation;
 
 class QuotationController extends Controller
 {
@@ -67,10 +71,10 @@ class QuotationController extends Controller
         try {
             $products  = Product::where('status', 1)->get();
             $buyers    = Customer::where('status', 'active')->get();
-            $companies = \App\Models\Acl\Company::get();
-            $companyLocations = \App\Models\Master\CompanyLocation::where('status', 'active')->get();
-            $arrivalLocations = \App\Models\Master\ArrivalLocation::where('status', 1)->get();
-            $arrivalSubLocations = \App\Models\Master\ArrivalSubLocation::where('status', 1)->get();
+            $companies = Company::get();
+            $companyLocations = CompanyLocation::where('status', 'active')->get();
+            $arrivalLocations = ArrivalLocation::where('status', 1)->get();
+            $arrivalSubLocations = ArrivalSubLocation::where('status', 1)->get();
 
             $bagTypes  = BagType::where('status', 1)->get();
             $bagConditions = BagCondition::where('status', 1)->get();
@@ -186,9 +190,9 @@ class QuotationController extends Controller
     {
         try {
             $quotation = Quotation::with(['packingItems', 'product', 'buyer', 'company', 'incoterm', 'modeOfTerm', 'modeOfTransport', 'currency', 'originCountry', 'portOfLoading', 'portOfDischarge'])->findOrFail($id);
-            $companyLocationsSelected = \App\Models\Master\CompanyLocation::whereIn('id', $quotation->company_location_ids ?? [])->pluck('name')->toArray();
-            $arrivalLocationsSelected = \App\Models\Master\ArrivalLocation::whereIn('id', $quotation->arrival_location_ids ?? [])->pluck('name')->toArray();
-            $arrivalSubLocationsSelected = \App\Models\Master\ArrivalSubLocation::whereIn('id', $quotation->arrival_sub_location_ids ?? [])->pluck('name')->toArray();
+            $companyLocationsSelected = CompanyLocation::whereIn('id', $quotation->company_location_ids ?? [])->pluck('name')->toArray();
+            $arrivalLocationsSelected = ArrivalLocation::whereIn('id', $quotation->arrival_location_ids ?? [])->pluck('name')->toArray();
+            $arrivalSubLocationsSelected = ArrivalSubLocation::whereIn('id', $quotation->arrival_sub_location_ids ?? [])->pluck('name')->toArray();
         } catch (QueryException $e) {
             $quotation = new Quotation();
             $companyLocationsSelected = $arrivalLocationsSelected = $arrivalSubLocationsSelected = [];
@@ -245,10 +249,10 @@ class QuotationController extends Controller
         try {
             $products  = Product::where('status', 1)->get();
             $buyers    = Customer::where('status', 'active')->get();
-            $companies = \App\Models\Acl\Company::get();
-            $companyLocations = \App\Models\Master\CompanyLocation::where('status', 'active')->get();
-            $arrivalLocations = \App\Models\Master\ArrivalLocation::where('status', 1)->get();
-            $arrivalSubLocations = \App\Models\Master\ArrivalSubLocation::where('status', 1)->get();
+            $companies = Company::get();
+            $companyLocations = CompanyLocation::where('status', 'active')->get();
+            $arrivalLocations = ArrivalLocation::where('status', 1)->get();
+            $arrivalSubLocations = ArrivalSubLocation::where('status', 1)->get();
 
             $bagTypes  = BagType::where('status', 1)->get();
             $bagConditions = BagCondition::where('status', 1)->get();

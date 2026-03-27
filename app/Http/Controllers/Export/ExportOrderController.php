@@ -29,6 +29,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use App\Models\Master\Customer;
+use App\Models\Export\ExportSodaField;
+use App\Models\Export\Quotation;
 
 class ExportOrderController extends Controller
 {
@@ -76,6 +78,8 @@ class ExportOrderController extends Controller
         $ports = Port::where('status', 1)->get();
         $hscodes = HsCode::where('status', 1)->get();
         $currencies = Currency::where('status', 1)->get();
+        $exportSodas = ExportSodaField::latest()->get();
+        $quotations = Quotation::latest()->get();
 
         return view('management.export.export-order.create', compact(
             'products',
@@ -95,6 +99,8 @@ class ExportOrderController extends Controller
             'ports',
             'hscodes',
             'currencies',
+            'exportSodas',
+            'quotations',
         ));
     }
 
@@ -203,6 +209,8 @@ class ExportOrderController extends Controller
         $ports = Port::where('status', 1)->get();
         $hscodes = HsCode::where('status', 1)->get();
         $currencies = Currency::where('status', 1)->get();
+        $exportSodas = ExportSodaField::latest()->get();
+        $quotations = Quotation::latest()->get();
 
         return view('management.export.export-order.show', compact(
             'exportOrder',
@@ -223,6 +231,8 @@ class ExportOrderController extends Controller
             'ports',
             'hscodes',
             'currencies',
+            'exportSodas',
+            'quotations',
         ));
     }
 
@@ -247,6 +257,8 @@ class ExportOrderController extends Controller
         $ports = Port::where('status', 1)->get();
         $hscodes = HsCode::where('status', 1)->get();
         $currencies = Currency::where('status', 1)->get();
+        $exportSodas = ExportSodaField::latest()->get();
+        $quotations = Quotation::latest()->get();
 
         return view('management.export.export-order.edit', compact(
             'exportOrder',
@@ -267,6 +279,8 @@ class ExportOrderController extends Controller
             'ports',
             'hscodes',
             'currencies',
+            'exportSodas',
+            'quotations',
         ));
     }
 
