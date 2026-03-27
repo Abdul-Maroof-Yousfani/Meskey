@@ -14,6 +14,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use Illuminate\Database\QueryException;
 use App\Models\Master\Customer;
 use App\Models\Master\Brands;
 use App\Models\Master\Color;
@@ -22,7 +23,11 @@ class ExportSodaFieldController extends Controller
 {
     public function index(Request $request): View
     {
-        $export_soda_fields = ExportSodaField::orderBy('id', 'ASC')->paginate(0);
+        try {
+            $export_soda_fields = ExportSodaField::orderBy('id', 'ASC')->paginate(0);
+        } catch (QueryException $e) {
+            $export_soda_fields = collect();
+        }
 
         return view('management.export.export-soda-field.index', compact('export_soda_fields'))->with('i', ($request->input('page', 1) - 1) * 5);
     }
@@ -44,16 +49,21 @@ class ExportSodaFieldController extends Controller
 
     public function create(): View
     {
-        $users = Customer::get(); // buyer
-        $products = Product::where('status', 1)->get(); // commodity
-        $bagPackings = BagPacking::where('status', 1)->get(); // packing
-        $incoterms = IncoTerm::where('status', 1)->get(); // price 
-        $modeofterms = ModeOfTerm::where('status', 1)->get(); // optional payment term
+        try {
+            $users = Customer::get(); // buyer
+            $products = Product::where('status', 1)->get(); // commodity
+            $bagPackings = BagPacking::where('status', 1)->get(); // packing
+            $incoterms = IncoTerm::where('status', 1)->get(); // price 
+            $modeofterms = ModeOfTerm::where('status', 1)->get(); // optional payment term
 
-        $bagTypes = BagType::where('status', 1)->get();
-        $bagConditions = BagCondition::where('status', 1)->get();
-        $brands = Brands::where('status', 1)->get();
-        $bagColors = Color::where('status', 1)->get();
+            $bagTypes = BagType::where('status', 1)->get();
+            $bagConditions = BagCondition::where('status', 1)->get();
+            $brands = Brands::where('status', 1)->get();
+            $bagColors = Color::where('status', 1)->get();
+        } catch (QueryException $e) {
+            $users = $products = $bagPackings = $incoterms = $modeofterms = collect();
+            $bagTypes = $bagConditions = $brands = $bagColors = collect();
+        }
 
         return view('management.export.export-soda-field.create', compact(
             'users',
@@ -111,34 +121,46 @@ class ExportSodaFieldController extends Controller
 
     public function show($id): View
     {
-        $exportSodaField = ExportSodaField::with(['product', 'buyer', 'packing', 'incoterm', 'modeOfTerm'])->findOrFail($id);
-        $users = Customer::get(); 
-        $products = Product::where('status', 1)->get(); 
-        $bagPackings = BagPacking::where('status', 1)->get(); 
-        $incoterms = IncoTerm::where('status', 1)->get();  
-        $modeofterms = ModeOfTerm::where('status', 1)->get(); 
+        try {
+            $exportSodaField = ExportSodaField::with(['product', 'buyer', 'packing', 'incoterm', 'modeOfTerm'])->findOrFail($id);
+            $users = Customer::get(); 
+            $products = Product::where('status', 1)->get(); 
+            $bagPackings = BagPacking::where('status', 1)->get(); 
+            $incoterms = IncoTerm::where('status', 1)->get();  
+            $modeofterms = ModeOfTerm::where('status', 1)->get(); 
 
-        $bagTypes = BagType::where('status', 1)->get();
-        $bagConditions = BagCondition::where('status', 1)->get();
-        $brands = Brands::where('status', 1)->get();
-        $bagColors = Color::where('status', 1)->get();
+            $bagTypes = BagType::where('status', 1)->get();
+            $bagConditions = BagCondition::where('status', 1)->get();
+            $brands = Brands::where('status', 1)->get();
+            $bagColors = Color::where('status', 1)->get();
+        } catch (QueryException $e) {
+            $exportSodaField = new ExportSodaField();
+            $users = $products = $bagPackings = $incoterms = $modeofterms = collect();
+            $bagTypes = $bagConditions = $brands = $bagColors = collect();
+        }
 
         return view('management.export.export-soda-field.show', compact('exportSodaField', 'users', 'products', 'bagPackings', 'incoterms', 'modeofterms', 'bagTypes', 'bagConditions', 'brands', 'bagColors'));
     }
 
     public function edit($id): View
     {
-        $exportSodaField = ExportSodaField::findOrFail($id);
-        $users = Customer::get(); 
-        $products = Product::where('status', 1)->get(); 
-        $bagPackings = BagPacking::where('status', 1)->get(); 
-        $incoterms = IncoTerm::where('status', 1)->get();  
-        $modeofterms = ModeOfTerm::where('status', 1)->get(); 
+        try {
+            $exportSodaField = ExportSodaField::findOrFail($id);
+            $users = Customer::get(); 
+            $products = Product::where('status', 1)->get(); 
+            $bagPackings = BagPacking::where('status', 1)->get(); 
+            $incoterms = IncoTerm::where('status', 1)->get();  
+            $modeofterms = ModeOfTerm::where('status', 1)->get(); 
 
-        $bagTypes = BagType::where('status', 1)->get();
-        $bagConditions = BagCondition::where('status', 1)->get();
-        $brands = Brands::where('status', 1)->get();
-        $bagColors = Color::where('status', 1)->get();
+            $bagTypes = BagType::where('status', 1)->get();
+            $bagConditions = BagCondition::where('status', 1)->get();
+            $brands = Brands::where('status', 1)->get();
+            $bagColors = Color::where('status', 1)->get();
+        } catch (QueryException $e) {
+            $exportSodaField = new ExportSodaField();
+            $users = $products = $bagPackings = $incoterms = $modeofterms = collect();
+            $bagTypes = $bagConditions = $brands = $bagColors = collect();
+        }
 
         return view('management.export.export-soda-field.edit', compact(
             'exportSodaField',
