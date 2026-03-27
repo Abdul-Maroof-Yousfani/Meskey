@@ -30,6 +30,7 @@ use App\Models\Arrival\ArrivalSlip;
 use App\Models\Arrival\ArrivalTicket;
 use App\Models\Arrival\PurchaseSamplingResultForCompulsury;
 use App\Models\Master\Vendor;
+use App\Models\Master\Supplier;
 use App\Models\Procurement\FreightPaymentRequest;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -56,6 +57,7 @@ class FreightRequestController extends Controller
             'broker',
             'product',
             'qcProduct',
+            'arrivalSlip',
             'freight',
             'paymentRequestData' => function ($query) {
                 $query->with([
@@ -66,7 +68,7 @@ class FreightRequestController extends Controller
                 ]);
             }
         ])
-            ->where('is_ticket_verified', 1)
+            // ->where('is_ticket_verified', 1)
             ->when($request->filled('company_location_id'), function ($q) use ($request) {
                 return $q->where('location_id', $request->company_location_id);
             })
@@ -75,14 +77,14 @@ class FreightRequestController extends Controller
             })
             ->when($request->filled('daterange'), function ($q) use ($request) {
                 $dates = explode(' - ', $request->daterange);
-                $startDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[0]))->format('Y-m-d');
-                $endDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[1]))->format('Y-m-d');
+                $startDate = \Carbon\Carbon::parse(trim($dates[0]))->format('Y-m-d');
+                $endDate = \Carbon\Carbon::parse(trim($dates[1]))->format('Y-m-d');
 
                 return $q->whereDate('created_at', '>=', $startDate)
                     ->whereDate('created_at', '<=', $endDate);
             })
-            ->where('first_qc_status', '!=', 'rejected')
-            ->whereHas('purchaseOrder');
+            ->where('first_qc_status', '!=', 'rejected');
+            // ->whereHas('purchaseOrder');
 
         if ($request->has('broker_id') && $request->broker_id != '') {
             $arrivalQuery->whereHas('purchaseOrder', function ($q) use ($request) {
@@ -116,6 +118,11 @@ class FreightRequestController extends Controller
 
         $arrivalTickets = $arrivalQuery->get();
 
+        $arrivalTickets = $arrivalTickets->map(function($ticket) {
+            $ticket->has_slip = $ticket->arrivalSlip()->exists();
+            return $ticket;
+        });
+
         $arrivalTickets->transform(function ($ticket) {
             $approvedPaymentSum = 0;
             $approvedFreightSum = 0;
@@ -127,6 +134,7 @@ class FreightRequestController extends Controller
             $totalRequestsCount = 0;
             $requestStatus = NULL;
 
+            $isWithoutContract = false;
             foreach ($ticket->paymentRequestData->where('module_type', 'freight_payment') as $data) {
                 $totalAmount = $data->total_amount ?? 0;
                 $paidAmount = $data->paid_amount ?? 0;
@@ -135,6 +143,9 @@ class FreightRequestController extends Controller
                 $totalRequestsCount += $data->paymentRequests->count();
 
                 foreach ($data->paymentRequests as $pRequest) {
+                    if ($pRequest->is_without_contract) {
+                        $isWithoutContract = true;
+                    }
                     $requestStatus = $pRequest->status;
                     if ($pRequest->request_type == 'payment') {
                         $totalPaymentSum += $pRequest->total_amount;
@@ -153,8 +164,9 @@ class FreightRequestController extends Controller
             $remainingAmount = ($totalAmount - $approvedPaymentSum);
 
             return [
-                'type' => $ticket->saudaType->name,
+                'type' => $ticket?->saudaType?->name ?? null,
                 'model' => $ticket,
+                'is_without_contract' => $isWithoutContract,
                 'unique_no' => $ticket->unique_no ?? 'N/A',
                 'purchaseOrder' => $ticket->purchaseOrder,
                 'requestStatus' => $requestStatus,
@@ -195,18 +207,93 @@ class FreightRequestController extends Controller
         ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-        $data['tickets'] = PurchaseTicket::where('freight_status', 'completed')
-            ->with(['purchaseOrder', 'purchaseFreight'])
+        $tickets = ArrivalTicket::whereHas('arrivalSlip')
+            ->where('is_ticket_verified', 0)
+            ->with('arrivalSlip')
             ->get();
-        $data['truckSizeRanges'] = TruckSizeRange::where('status', 'active')->get();
-        $data['products'] = Product::where('product_type', 'raw_material')->get();
+            
+        return view('management.procurement.raw_material.freight_request.initial_create', compact('tickets'));
+    }
 
-        return view('management.procurement.raw_material.freight_request.create', $data);
+    public function getFreightRequestForm(Request $request)
+    {
+        $id = $request->arrival_ticket_id;
+        $arrivalTicket = ArrivalTicket::with([
+            'purchaseOrder', 
+            'purchaseOrder.supplier', 
+            'broker', 
+            'product', 
+            'qcProduct', 
+            'location', 
+            'station', 
+            'saudaType',
+            'freight',
+            'arrivalSlip',
+            'accountsOf'
+        ])->findOrFail($id);
+
+        $requestedAmount = PaymentRequest::whereHas('paymentRequestData', function ($q) use ($arrivalTicket, $id) {
+            $q->where('ticket_id', $id)
+                ->where('module_type', 'freight_payment')
+                ->where('purchase_order_id', $arrivalTicket->arrival_purchase_order_id);
+        })
+            ->where('status', '!=', 'rejected')
+            ->where('module_type', 'freight_payment')
+            ->sum('amount');
+        
+
+        $approvedAmount = PaymentRequest::whereHas('paymentRequestData', function ($q) use ($arrivalTicket) {
+            $q->where('ticket_id', $arrivalTicket->id)
+                ->where('module_type', 'freight_payment')
+                ->where('purchase_order_id', $arrivalTicket->arrival_purchase_order_id);
+        })
+            ->where('module_type', 'freight_payment')
+            ->where('status', 'approved')
+            ->sum('amount');
+
+        $paymentRequestData = PaymentRequestData::where('ticket_id', $arrivalTicket->id)
+            ->where('module_type', 'freight_payment')
+            ->where('purchase_order_id', $arrivalTicket->arrival_purchase_order_id)
+            ->latest()
+            ->first();
+
+        $paymentRequests = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($arrivalTicket) {
+            $query->where('ticket_id', $arrivalTicket->id);
+        })->with(['approval'])->get();
+
+        $data = [
+            'purchaseOrder' => $arrivalTicket->purchaseOrder,
+            'arrivalTicket' => $arrivalTicket,
+            'ticket' => $arrivalTicket,
+            'requestedAmount' => $requestedAmount,
+            'approvedAmount' => $approvedAmount,
+            'isRequestApprovalPage' => false,
+            'isTicketApprovalPage' => false,
+            'isTicketPage' => true,
+            'isCreateFlow' => true,
+            'paymentRequestData' => $paymentRequestData,
+            'paymentRequests' => $paymentRequests,
+        ];
+        $data['vendors'] = Vendor::get();
+        $data['suppliers'] = Supplier::get();
+        
+        // Suggest a vendor if not already set
+        if (!$paymentRequestData || !$paymentRequestData->payment_to) {
+            $supplierName = $arrivalTicket->accountsOf->name ?? ($arrivalTicket->accounts_of_name ?? '');
+            $suggestedVendor = $data['vendors']->where('name', $supplierName)->first();
+            if ($suggestedVendor) {
+                $data['suggested_vendor_id'] = $suggestedVendor->id;
+            }
+        }
+
+        $html = view('management.procurement.raw_material.freight_request.create', $data)->render();
+
+        return response()->json([
+            'success' => true,
+            'html' => $html
+        ]);
     }
 
     /**
@@ -217,14 +304,20 @@ class FreightRequestController extends Controller
         //dd($request);
         return DB::transaction(function () use ($request) {
             $requestData = $request->all();
+            $requestData['is_paid_by_supplier'] = $request->has('is_paid_by_supplier') ? 1 : 0;
+            
             $requestData['module_type'] = 'freight_payment';
             $requestData['total_amount'] = $requestData['net_amount'];
+            
+            if ($requestData["is_paid_by_supplier"] == 1 && $request->net_amount < 0) {
+                throw new \Exception("Net amount cannot be negative. Please check your additions and deductions.");
+            }
 
 
             $ticketID = $requestData['ticket_id'];
             $purchaseOrderID = $requestData['purchase_order_id'];
 
-            $purchaseOrder = ArrivalPurchaseOrder::where('id', $purchaseOrderID)->first();
+            $purchaseOrder = ArrivalPurchaseOrder::with('supplier')->where('id', $purchaseOrderID)->first();
 
             $vendor = Vendor::where('id', $request->vendor_id)->first();
             $accountId = $vendor->account_id ?? null;
@@ -232,7 +325,9 @@ class FreightRequestController extends Controller
             $requestData['account_id'] = $accountId;
             $requestData['payment_to_type'] = 'vendors';
             $requestData['payment_to'] = $request->vendor_id;
-            $requestData['supplier_name'] = $purchaseOrder->supplier->name;
+            
+            // Allow manual supplier name if provided
+            $requestData['supplier_name'] = $request->supplier_name ?? ($purchaseOrder->supplier->name ?? '');
 
 
             $existing = PaymentRequestData::where('ticket_id', $request->arrival_ticket_id)
@@ -606,7 +701,12 @@ class FreightRequestController extends Controller
             $paymentRequestData = PaymentRequestData::findOrFail($id);
 
             $requestData = $request->all();
+            $requestData['is_paid_by_supplier'] = $request->has('is_paid_by_supplier') ? 1 : 0;
             $requestData['is_loading'] = $request->loading_type === 'loading';
+
+            if ($request->net_amount < 0) {
+                throw new \Exception("Net amount cannot be negative. Please check your additions and deductions.");
+            }
 
             $requestData['remaining_amount'] = $requestData['total_amount'] -
                 ($requestData['paid_amount'] ?? 0) -
@@ -636,7 +736,8 @@ class FreightRequestController extends Controller
                 'account_id' => $accountId,
                 'payment_to_type' => $paymentRequestData->payment_to_type,
                 'payment_to' => $paymentRequestData->payment_to,
-                'amount' => $request->request_amount ?? 0
+                'amount' => $request->request_amount ?? 0,
+                'is_without_contract' => $request->is_without_contract ?? false
             ]);
         }
     }
@@ -647,27 +748,38 @@ class FreightRequestController extends Controller
 
         $requestedAmount = PaymentRequest::whereHas('paymentRequestData', function ($q) use ($arrivalTicket, $id) {
             $q->where('ticket_id', $id)
-                ->where('module_type', 'freight_payment')
-                ->where('purchase_order_id', $arrivalTicket->arrival_purchase_order_id);
+                ->where('module_type', 'freight_payment');
+                // ->where('purchase_order_id', $arrivalTicket->arrival_purchase_order_id);
         })
             ->where('status', '!=', 'rejected')
             ->where('module_type', 'freight_payment')
             ->sum('amount');
 
-        $approvedAmount = PaymentRequest::whereHas('paymentRequestData', function ($q) use ($arrivalTicket) {
+        $paymentRequest = PaymentRequest::whereHas('paymentRequestData', function ($q) use ($arrivalTicket) {
             $q->where('ticket_id', $arrivalTicket->id)
                 ->where('module_type', 'freight_payment')
                 ->where('purchase_order_id', $arrivalTicket->arrival_purchase_order_id);
         })
             ->where('module_type', 'freight_payment')
-            ->where('status', 'approved')
-            ->sum('amount');
+            ->where('status', 'approved');
+
+            $has_pending_or_approved = $paymentRequest->orWhere('status', 'pending')->exists();
+
+        
+            $approvedAmount = $paymentRequest->sum("amount");
+        
 
         $paymentRequestData = PaymentRequestData::where('ticket_id', $arrivalTicket->id)
             ->where('module_type', 'freight_payment')
-            ->where('purchase_order_id', $arrivalTicket->arrival_purchase_order_id)
+            ->when($paymentRequest->first() && ($paymentRequest->first())->is_without_contract == 0, function ($query) use ($arrivalTicket) {
+                $query->where('purchase_order_id', $arrivalTicket->arrival_purchase_order_id);
+            })
             ->latest()
             ->first();
+
+        $paymentRequests = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($arrivalTicket) {
+            $query->where('ticket_id', $arrivalTicket->id);
+        })->with(['approval'])->get();
 
         $data = [
             'purchaseOrder' => $arrivalTicket->purchaseOrder,
@@ -679,9 +791,10 @@ class FreightRequestController extends Controller
             'isTicketApprovalPage' => false,
             'isTicketPage' => true,
             'paymentRequestData' => $paymentRequestData,
+            "has_pending_or_approved" => $has_pending_or_approved,
+            'paymentRequests' => $paymentRequests,
         ];
         $data['vendors'] = Vendor::get();
-
         return view('management.procurement.raw_material.freight_request.create', $data);
     }
 
@@ -784,9 +897,9 @@ class FreightRequestController extends Controller
                 'amount' => $paymentRequest->amount,
                 'request_type' => $paymentRequest->request_type
             ]);
-
+            
             $paymentRequest->update(['status' => $request->status]);
-
+            
 
 
             $ticket = ArrivalTicket::where('id', $request->ticket_id)->first();
@@ -804,13 +917,13 @@ class FreightRequestController extends Controller
                 $saudaType = "thadda";
             }
 
-
+            
             $amount = $paymentDetails['calculations']['supplier_net_amount'] ?? 0;
             $inventoryAmount = $paymentDetails['calculations']['inventory_amount'] ?? 0;
 
             $inventoryAmountwithFreight = $inventoryAmount + $request->net_amount + $request->godown_penalty;
 
-
+            
             if ($request->godown_penalty == 'Commit') {
                 $txnInv = Transaction::where('grn_no', $grnNo)
                     ->where('purpose', 'arrival-slip')
@@ -847,12 +960,16 @@ class FreightRequestController extends Controller
             }
             $counterAccount = $saudaType == "pohouch" ? $purchaseOrder->supplier->account_id : $qcAccountId;
             if ($saudaType == "pohouch") {
+
+                $paid_by_supplier_value = $request->penalty + $request->total_labour + $request->total_commision;
                 $supplierDebitFreight = Transaction::where('grn_no', $grnNo)
                     ->where('purpose', "{$saudaType}-freight-paid-to-vendor")
                     ->first();
+                $paid_by_supplier_value = $request->penalty + $request->total_labour + $request->total_commision;
+                if($paid_by_supplier_value > 0) {
                 if ($supplierDebitFreight) {
                     $supplierDebitFreight->update([
-                        'amount' => $request->gross_amount,
+                        'amount' => $request->is_paid_by_supplier == 1 ? $paid_by_supplier_value : $request->gross_amount,
                         'account_id' => $purchaseOrder->supplier->account_id,
                         'counter_account_id' => $qcAccountId,
                         'type' => 'debit',
@@ -862,7 +979,7 @@ class FreightRequestController extends Controller
                     ]);
                 } else {
                     createTransaction(
-                        $request->gross_amount,
+                        $request->is_paid_by_supplier == 1 ? $paid_by_supplier_value : $request->gross_amount,
                         $purchaseOrder->supplier->account_id,
                         1,
                         $purchaseOrder->contract_no,
@@ -877,6 +994,7 @@ class FreightRequestController extends Controller
                             'remarks' => "Adjusted freight amount ({$request->gross_amount}) on behalf of the supplier against GRN #{$grnNo}."
                         ]
                     );
+                    }
                 }
             }
             if ($saudaType == "thadda") {
@@ -923,35 +1041,37 @@ class FreightRequestController extends Controller
                 ->where('purpose', "{$saudaType}-freight")
                 ->first();
 
-            if ($txnVendor) {
-                $txnVendor->update([
-                    'amount' => $request->net_amount,
-                    'account_id' => $vendorAccId,
-                    'counter_account_id' => $counterAccount,
-                    'type' => 'credit',
-                    'voucher_no' => $purchaseOrder->contract_no,
-                    'grn_no' => $grnNo,
-                    'remarks' => "Recording accounts payable for Pohouch freight related to raw material arrival (weight: {$ticket->arrived_net_weight} kg at rate {$rate}/kg). Total freight amount of {$request->net_amount}  to be paid to vendor."
-                ]);
-            } else {
-                createTransaction(
-                    $request->net_amount,
-                    $vendorAccId,
-                    1,
-                    $purchaseOrder->contract_no,
-                    'credit',
-                    'no',
-                    [
-                        'grn_no' => $grnNo,
+            if($request->is_paid_by_supplier != 1){
+                if ($txnVendor) {
+                    $txnVendor->update([
+                        'amount' => $request->net_amount,
+                        'account_id' => $vendorAccId,
                         'counter_account_id' => $counterAccount,
-                        'purpose' => "{$saudaType}-freight",
-                        'payment_against' => "{$saudaType}-freight",
-                        'against_reference_no' => "{$truckNo}/{$biltyNo}",
+                        'type' => 'credit',
+                        'voucher_no' => $purchaseOrder->contract_no,
+                        'grn_no' => $grnNo,
                         'remarks' => "Recording accounts payable for Pohouch freight related to raw material arrival (weight: {$ticket->arrived_net_weight} kg at rate {$rate}/kg). Total freight amount of {$request->net_amount}  to be paid to vendor."
-                    ]
-                );
-            }
+                    ]);
+                } else {
+                    createTransaction(
+                        $request->net_amount,
+                        $vendorAccId,
+                        1,
+                        $purchaseOrder->contract_no,
+                        'credit',
+                        'no',
+                        [
+                            'grn_no' => $grnNo,
+                            'counter_account_id' => $counterAccount,
+                            'purpose' => "{$saudaType}-freight",
+                            'payment_against' => "{$saudaType}-freight",
+                            'against_reference_no' => "{$truckNo}/{$biltyNo}",
+                            'remarks' => "Recording accounts payable for Pohouch freight related to raw material arrival (weight: {$ticket->arrived_net_weight} kg at rate {$rate}/kg). Total freight amount of {$request->net_amount}  to be paid to vendor."
+                        ]
+                    );
+                }
 
+            }
 
             if ($request->total_labour != 0) {
 
@@ -1010,7 +1130,7 @@ class FreightRequestController extends Controller
                 }
 
             }
-
+            
             if ($request->total_commision != 0) {
 
                 $txnComm = Transaction::where('grn_no', $grnNo)
@@ -1095,6 +1215,363 @@ class FreightRequestController extends Controller
         });
 
     }
+
+    public function pohouch_freight_payment_request_approval_wo_contract(Request $request)
+    {
+
+        return DB::transaction(function () use ($request) {
+            $paymentRequest = PaymentRequest::findOrFail($request->payment_request_id);
+
+            $paymentRequestData = $paymentRequest->paymentRequestData;
+            $vendorAccId = $paymentRequest->account_id;
+            $purchaseOrder = $paymentRequestData->purchaseOrder;
+            $paymentRequestData->update([
+                'penalty_adjust_to' => $request->penalty_adjust_to ?? null,
+                'labour_vendor_id' => $request->labour_vendor_id ?? null,
+            ]);
+
+
+            if ($request->has('payment_request_amount')) {
+                $paymentRequest->update(['amount' => $request->payment_request_amount]);
+            }
+
+            PaymentRequestApproval::create([
+                'payment_request_id' => $request->payment_request_id,
+                'payment_request_data_id' => $paymentRequest->payment_request_data_id,
+                'ticket_id' => $request->ticket_id,
+                'purchase_order_id' => $purchaseOrder?->id ?? null,
+                'approver_id' => auth()->user()->id,
+                'status' => $request->status,
+                'remarks' => $request->remarks,
+                'amount' => $paymentRequest->amount,
+                'request_type' => $paymentRequest->request_type
+            ]);
+            
+
+            
+            $paymentRequest->update(['status' => $request->status]);
+            
+
+            $ticket = ArrivalTicket::where('id', $request->ticket_id)->first();
+            $supplier_name = $ticket->accountsOf->name;
+            $supplier_id = $ticket->accountsOf->id;
+            $paymentDetails =  $purchaseOrder?->contract_no && $ticket->is_ticket_verified ? calculatePohaunchPayment($ticket->id) : null;
+            $qcAccountId = $ticket->qcProduct->account_id;
+            $truckNo = $ticket->truck_no ?? 'N/A';
+            $biltyNo = $ticket->bilty_no ?? 'N/A';
+            $rate = $request->contract_rate;
+            $grnNo = $ticket->arrivalSlip->unique_no;
+
+            if ($ticket->sauda_type_id == 1) {
+                $saudaType = "pohouch";   // pohouch | bilti | etc
+            } else if ($ticket->sauda_type_id == 2) {
+                $saudaType = "thadda";
+            }
+
+            
+            $inventoryAmount = 0;
+            $inventoryAmountwithFreight = 0;
+
+            if($paymentDetails){
+                $amount = $paymentDetails['calculations']['supplier_net_amount'] ?? 0;
+                $inventoryAmount = $paymentDetails['calculations']['inventory_amount'] ?? 0;
+                $inventoryAmountwithFreight = $inventoryAmount + $request->net_amount + $request->godown_penalty;
+            }
+
+
+            
+            if ($request->godown_penalty == 'Commit' && $inventoryAmountwithFreight > 0) {
+                $txnInv = Transaction::where('grn_no', $grnNo)
+                    ->where('purpose', 'arrival-slip')
+                    ->first();
+                if ($txnInv) {
+                    $txnInv->update([
+                        'amount' => $inventoryAmountwithFreight,
+                        'account_id' => $qcAccountId,
+                        'counter_account_id' => $purchaseOrder?->supplier->account_id ?? $ticket->accounts_of_id,
+                        'type' => 'debit',
+                        'voucher_no' => $purchaseOrder?->contract_no ?? "-",
+                        'grn_no' => $grnNo,
+                        'remarks' => "Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: $ticket->arrived_net_weight kg) at rate $rate/kg. Total amount: $inventoryAmountwithFreight to be paid to supplier."
+                    ]);
+                } else {
+                    createTransaction(
+                        $inventoryAmountwithFreight,
+                        $qcAccountId,
+                        1,
+                        $purchaseOrder?->contract_no ?? "-",
+                        'debit',
+                        'no',
+                        [
+                            'grn_no' => $grnNo,
+                            'counter_account_id' => $purchaseOrder?->supplier->account_id ?? $ticket->accounts_of_id,
+                            'purpose' => "arrival-slip",
+                            'payment_against' => "pohouch-purchase",
+                            'against_reference_no' => "$truckNo/$biltyNo",
+                            'remarks' => "Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: $ticket->arrived_net_weight kg) at rate $rate/kg. Total amount: $inventoryAmountwithFreight to be paid to supplier."
+                        ]
+                    );
+                }
+
+            }
+            
+            // $purchaseOrder?->supplier->account_id ?? $ticket->accounts_of_id
+            $counterAccount = $saudaType == "pohouch" ? ($purchaseOrder?->supplier->account_id ?? $ticket->accounts_of_id) : $qcAccountId;
+            if ($saudaType == "pohouch") {
+                $supplierDebitFreight = Transaction::where('grn_no', $grnNo)
+                    ->where('purpose', "{$saudaType}-freight-paid-to-vendor")
+                    ->first();
+                $paid_by_supplier_value = $request->penalty + $request->total_labour + $request->total_commision;
+                $grossfreightamount = $request->is_paid_by_supplier == 1 ? $paid_by_supplier_value : $request->gross_amount;
+                if($grossfreightamount > 0) {
+                    if ($supplierDebitFreight) {
+                        $supplierDebitFreight->update([
+                            'amount' => $grossfreightamount,
+                            'account_id' => $purchaseOrder?->supplier->account_id ?? $ticket->accounts_of_id,
+                            'counter_account_id' => $qcAccountId,
+                            'type' => 'debit',
+                            'voucher_no' => $purchaseOrder?->contract_no ?? "-",
+                            'grn_no' => $grnNo,
+                            'remarks' => "Adjusted freight amount ({$request->gross_amount}) on behalf of the supplier against GRN #{$grnNo}."
+                        ]);
+                    } else {
+                        createTransaction(
+                            $grossfreightamount,
+                            $purchaseOrder?->supplier->account_id ?? $ticket->accounts_of_id,
+                            1,
+                            $purchaseOrder?->contract_no ?? "-",
+                            'debit',
+                            'no',
+                            [
+                                'grn_no' => $grnNo,
+                                'counter_account_id' => $qcAccountId,
+                                'purpose' => "{$saudaType}-freight-paid-to-vendor",
+                                'payment_against' => "pohouch-freight",
+                                'against_reference_no' => "$truckNo/$biltyNo",
+                                'remarks' => "Adjusted freight amount ({$request->gross_amount}) on behalf of the supplier against GRN #{$grnNo}."
+                            ]
+                        );
+                    }
+                }
+            }
+            
+            if ($saudaType == "thadda") {
+                $supplierDebitFreight = Transaction::where('grn_no', $grnNo)
+                    ->where('purpose', "{$saudaType}-freight-paid-to-vendor")
+                    ->first();
+                if ($supplierDebitFreight) {
+                    $supplierDebitFreight->update([
+                        'amount' => $request->gross_amount,
+                        'account_id' => $qcAccountId,
+                        'counter_account_id' => $vendorAccId,
+                        'type' => 'debit',
+                        'voucher_no' => $purchaseOrder?->contract_no ?? "-",
+                        'grn_no' => $grnNo,
+                        'remarks' => "Updated Inventory with remaining freight amount ({$request->gross_amount}) for the purchased goods against GRN #{$grnNo}."
+                    ]);
+                } else {
+                    createTransaction(
+                        $request->gross_amount,
+                        $purchaseOrder?->supplier->account_id ?? $ticket->accounts_of_id,
+                        1,
+                        $purchaseOrder?->contract_no ?? "-",
+                        'debit',
+                        'no',
+                        [
+                            'grn_no' => $grnNo,
+                            'counter_account_id' => $qcAccountId,
+                            'purpose' => "{$saudaType}-freight-paid-to-vendor",
+                            'payment_against' => "pohouch-freight",
+                            'against_reference_no' => "$truckNo/$biltyNo",
+                            'remarks' => "Updated Inventory with remaining freight amount ({$request->gross_amount}) for the purchased goods against GRN #{$grnNo}."
+                        ]
+                    );
+                }
+            }
+
+
+
+
+
+
+
+            $txnVendor = Transaction::where('grn_no', $grnNo)
+                ->where('purpose', "{$saudaType}-freight")
+                ->first();
+
+            if($request->is_paid_by_supplier != 1){
+                if ($txnVendor) {
+                    $txnVendor->update([
+                        'amount' => $request->net_amount,
+                        'account_id' => $vendorAccId,
+                        'counter_account_id' => $counterAccount,
+                        'type' => 'credit',
+                        'voucher_no' => $purchaseOrder?->contract_no ?? "-",
+                        'grn_no' => $grnNo,
+                        'remarks' => "Recording accounts payable for Pohouch freight related to raw material arrival (weight: {$ticket->arrived_net_weight} kg at rate {$rate}/kg). Total freight amount of {$request->net_amount}  to be paid to vendor."
+                    ]);
+                } else {
+                    createTransaction(
+                        $request->net_amount,
+                        $vendorAccId,
+                        1,
+                        $purchaseOrder?->contract_no ?? "-",
+                        'credit',
+                        'no',
+                        [
+                            'grn_no' => $grnNo,
+                            'counter_account_id' => $counterAccount,
+                            'purpose' => "{$saudaType}-freight",
+                            'payment_against' => "{$saudaType}-freight",
+                            'against_reference_no' => "{$truckNo}/{$biltyNo}",
+                            'remarks' => "Recording accounts payable for Pohouch freight related to raw material arrival (weight: {$ticket->arrived_net_weight} kg at rate {$rate}/kg). Total freight amount of {$request->net_amount}  to be paid to vendor."
+                        ]
+                    );
+                }
+            }
+            if ($request->total_labour != 0) {
+
+
+                $vendorLabourAcc = Vendor::where("id", $request->labour_vendor_id)->first();
+
+                PaymentRequest::create([
+
+                    'payment_request_data_id' => $paymentRequestData->id,
+                    'other_deduction_kg' => 0,
+                    'other_deduction_value' => 0,
+                    'request_type' => 'freight_labour_payment',
+                    'module_type' => 'freight_payment',
+                    'status' => 'approved',
+                    'account_id' => $vendorLabourAcc->account_id,
+                    'payment_to_type' => $paymentRequestData->payment_to_type,
+                    'payment_to' => $paymentRequestData->payment_to,
+                    'amount' => $request->total_labour ?? 0
+                ]);
+
+
+
+
+
+                $txnLabour = Transaction::where('grn_no', $grnNo)
+                    ->where('purpose', "{$saudaType}-freight-labour")
+                    ->first();
+
+                if ($txnLabour) {
+                    $txnLabour->update([
+                        'amount' => $request->total_labour,
+                        //  'account_id' => $request->labour_vendor_id,
+                        'counter_account_id' => $counterAccount,
+                        'type' => 'credit',
+                        'voucher_no' => $purchaseOrder?->contract_no ?? "-",
+                        'grn_no' => $grnNo,
+                        'remarks' => "Recording accounts payable for labour charges related to {$saudaType} freight during raw material arrival (weight: {$ticket->arrived_net_weight} kg at rate {$rate}/kg). Total labour amount of {$request->total_labour} to be paid to the labour vendor."
+                    ]);
+                } else {
+                    createTransaction(
+                        $request->total_labour,
+                        $vendorLabourAcc->account_id,
+                        1,
+                        $purchaseOrder?->contract_no ?? "-",
+                        'credit',
+                        'no',
+                        [
+                            'grn_no' => $grnNo,
+                            'counter_account_id' => $counterAccount,
+                            'purpose' => "{$saudaType}-freight-labour",
+                            'payment_against' => "{$saudaType}-freight",
+                            'against_reference_no' => "{$truckNo}/{$biltyNo}",
+                            'remarks' => "Recording accounts payable for labour charges related to {$saudaType} freight during raw material arrival (weight: {$ticket->arrived_net_weight} kg at rate {$rate}/kg). Total labour amount of {$request->total_labour} to be paid to the labour vendor."
+                        ]
+                    );
+                }
+
+            }
+
+            
+            if ($request->total_commision != 0) {
+
+                $txnComm = Transaction::where('grn_no', $grnNo)
+                    ->where('purpose', "{$saudaType}-freight-commision")
+                    ->first();
+
+                if ($txnComm) {
+
+                    $txnComm->update([
+                        'amount' => $request->total_commision,
+                        'account_id' => getAccountDetailsByHierarchyPath('4-1-3')->id,
+                        'counter_account_id' => $counterAccount,
+                        'type' => 'credit',
+                        'voucher_no' => $purchaseOrder?->contract_no ?? "-",
+                        'grn_no' => $grnNo,
+                        'remarks' => "Recording income for commission earned on {$saudaType} freight during raw material arrival (weight: {$ticket->arrived_net_weight} kg at rate {$rate}/kg). Total commission of {$request->total_commision} credited as other income."
+                    ]);
+
+                } else {
+
+                    createTransaction(
+                        $request->total_commision,
+                        getAccountDetailsByHierarchyPath('4-1-3')->id,
+                        1,
+                        $purchaseOrder?->contract_no ?? "-",
+                        'credit',
+                        'no',
+                        [
+                            'grn_no' => $grnNo,
+                            'counter_account_id' => $counterAccount,
+                            'purpose' => "{$saudaType}-freight-commision",
+                            'payment_against' => "{$saudaType}-freight",
+                            'against_reference_no' => "{$truckNo}/{$biltyNo}",
+                            'remarks' => "Recording income for commission earned on {$saudaType} freight during raw material arrival (weight: {$ticket->arrived_net_weight} kg at rate {$rate}/kg). Total commission of {$request->total_commision} credited as other income."
+                        ]
+                    );
+                }
+            }
+
+
+            if ($request->godown_penalty != 0) {
+                $txnExtraIncome = Transaction::where('grn_no', $grnNo)
+                    ->where('purpose', "{$saudaType}-freight-penalty")
+                    ->first();
+
+                if ($txnExtraIncome) {
+                    $txnExtraIncome->update([
+                        'amount' => $request->godown_penalty,
+                        // 'account_id' => $request->penalty_adjust_to,
+                        'counter_account_id' => $counterAccount,
+                        'type' => 'credit',
+                        'voucher_no' => $purchaseOrder?->contract_no ?? "-",
+                        'grn_no' => $grnNo,
+                        'remarks' => "Recording extra income for {$saudaType} freight penalty related to raw material arrival (weight: {$ticket->arrived_net_weight} kg at rate {$rate}/kg)."
+                    ]);
+                } else {
+                    createTransaction(
+                        $request->godown_penalty,
+                        $request->penalty_adjust_to,
+                        1,
+                        $purchaseOrder?->contract_no ?? "-",
+                        'credit',
+                        'no',
+                        [
+                            'grn_no' => $grnNo,
+                            'counter_account_id' => $counterAccount,
+                            'purpose' => "{$saudaType}-freight-penalty",
+                            'payment_against' => "{$saudaType}-freight",
+                            'against_reference_no' => "{$truckNo}/{$biltyNo}",
+                            'remarks' => "Recording extra income for {$saudaType} freight penalty related to raw material arrival (weight: {$ticket->arrived_net_weight} kg at rate {$rate}/kg)."
+                        ]
+                    );
+                }
+            }
+
+
+
+            return response()->json([
+                'success' => 'Payment request ' . $request->status . ' successfully!'
+            ]);
+        });
+
+    }
+
     public function getSlabsByPaymentRequestParams(Request $request)
     {
         $ticket = PurchaseTicket::with(['purchaseOrder', 'purchaseFreight'])->findOrFail($request->ticket_id);

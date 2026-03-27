@@ -71,8 +71,8 @@ class PaymentRequestController extends Controller
             })
             ->when($request->filled('daterange'), function ($q) use ($request) {
                 $dates = explode(' - ', $request->daterange);
-                $startDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[0]))->format('Y-m-d');
-                $endDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[1]))->format('Y-m-d');
+                $startDate = \Carbon\Carbon::parse( trim($dates[0]))->format('Y-m-d');
+                $endDate = \Carbon\Carbon::parse( trim($dates[1]))->format('Y-m-d');
 
                 return $q->whereDate('created_at', '>=', $startDate)
                     ->whereDate('created_at', '<=', $endDate);
@@ -173,7 +173,7 @@ class PaymentRequestController extends Controller
             ->get();
         $data['truckSizeRanges'] = TruckSizeRange::where('status', 'active')->get();
         $data['products'] = Product::where('product_type', 'raw_material')->get();
-
+        
         return view('management.procurement.raw_material.payment_request.create', $data);
     }
 
@@ -727,7 +727,7 @@ class PaymentRequestController extends Controller
         }
 
         $brokers = Broker::all();
-
+        
         $data['html'] = view('management.procurement.raw_material.payment_request.snippets.requestPurchaseForm', [
             'ticket' => $ticket,
             'brokers' => $brokers,
@@ -742,7 +742,6 @@ class PaymentRequestController extends Controller
             'approvedAmount' => $approvedAmount,
             'isRequestApprovalPage' => false
         ])->render();
-
         return view('management.procurement.raw_material.payment_request.create', $data);
     }
 

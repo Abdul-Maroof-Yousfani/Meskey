@@ -25,35 +25,8 @@
                                 <div class="row ">
                                     <div class="col-md-12 my-1 ">
                                         <div class="row justify-content-end text-right">
-                                            <div class="col-md-2 text-left">
-                                                <label for="customers" class="form-label">Supplier</label>
-                                                <select name="supplier_id" id="customers" class="form-control selectWithoutAjax">
-                                                    <option value="all">All Suppliers</option>
-                                                    @foreach($suppliers as $supplier)
-                                                        <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                            <div class="col-md-2 text-left">
-                                                <label for="purchase_order_receiving_no" class="form-label">PO Receiving No.</label>
-                                                <input type="text" class="form-control" id="purchase_order_receiving_no"
-                                                    placeholder="Search Receive No." name="purchase_order_receiving_no"
-                                                    value="{{ request('purchase_order_receiving_no', '') }}">
-                                            </div>
-                                            <div class="col-md-2 text-left">
-                                                <label for="purchase_order_no" class="form-label">Order No.</label>
-                                                <input type="text" class="form-control" id="purchase_order_no"
-                                                    placeholder="Search Order No." name="purchase_order_no"
-                                                    value="{{ request('purchase_order_no', '') }}">
-                                            </div>
-                                            <div class="col-md-2 text-left">
-                                                <label for="purchase_request_no" class="form-label">Request No.</label>
-                                                <input type="text" class="form-control" id="purchase_request_no"
-                                                    placeholder="Search Request No." name="purchase_request_no"
-                                                    value="{{ request('purchase_request_no', '') }}">
-                                            </div>
-                                            <div class="col-md-2 text-left">
-                                                <label for="search" class="form-label">General Search</label>
+                                            <div class="col-md-2">
+                                                <label for="customers" class="form-label">Search</label>
                                                 <input type="hidden" name="page" value="{{ request('page', 1) }}">
                                                 <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
                                                 <input type="text" class="form-control" id="search"
@@ -100,9 +73,6 @@
 @section('script')
     <script>
         $(document).ready(function () {
-            $('.selectWithoutAjax').select2().on('select2:select', function (e) {
-                $(this).trigger('change');
-            });
             filterationCommon(`{{ route('store.qc.getList') }}`)
         });
     </script>

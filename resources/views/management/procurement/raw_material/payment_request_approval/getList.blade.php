@@ -3,6 +3,7 @@
         <tr>
             <th class="col-sm-2">Ticket No / Contract No</th>
             <th class="col-sm-2">Supplier</th>
+            <th class="col-sm-2">Sauda Type</th>
             <th class="col-sm-2">Type</th>
             <th class="col-sm-1">Amount</th>
             <th class="col-sm-2">Status</th>
@@ -29,6 +30,7 @@
                     </td>
                     <td>{{ $request->paymentRequestData->supplier_name ?? ($request->purchaseOrder->purchaseOrderData[0]->supplier->name ?? 'N/A') }}
                     </td>
+                    <td>{{ $request->sauda_type }}</td>
                     <td>
                         @if ($request->payment_type !== null)
                             @if ($request->payment_type == 'advance')

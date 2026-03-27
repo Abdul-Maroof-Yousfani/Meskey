@@ -3,6 +3,7 @@
         <tr>
             <th class="col-sm-2">Ticket No / Contract No</th>
             <th class="col-sm-2">Supplier</th>
+            <th class="col-sm-2">Sauda Type</th>
             <th class="col-sm-2">Truck No</th>
 
             <th class="col-sm-2">Builty No</th>
@@ -21,13 +22,16 @@
                     <td>
                         <strong>Ticket:</strong> #{{ $ticket['unique_no'] ?? 'N/A' }}<br>
                         <strong>Contract:</strong> #{{ $ticket['purchaseOrder']->contract_no ?? 'N/A' }}<br>
+              
 
                     </td>
 
-                    <td>{{ $ticket['purchaseOrder']->supplier->name ?? 'N/A' }}</td>
+                    <td>{{ $ticket['purchaseOrder']->supplier?->name ?? 'N/A' }}</td>
+                    <td>{{ $ticket["model"]->saudaType->name ?? "N/A" }}</td>
                     <td>{{ $ticket['model']->truck_no ?? 'N/A' }}</td>
                     <td>{{ $ticket['model']->bilty_no ?? 'N/A' }}</td>
-                    <td>{{ $ticket['purchaseOrder']->qcProduct->name ?? ($ticket['qcProduct']->name ?? 'N/A') }}</td>
+                    <td>{{ $ticket['purchaseOrder']->qcProduct?->name ?? ($ticket['qcProduct']?->name ?? 'N/A') }}</td>
+                    
                     <td>
                         @if ($ticket['type'] == 'thadda')
                             {{ $ticket['purchaseFreight'] ? \Carbon\Carbon::parse($ticket['purchaseFreight']->loading_date)->format('Y-m-d') : 'N/A' }}
@@ -89,17 +93,10 @@
                         {{ \Carbon\Carbon::parse($ticket['calculated_values']['created_at'])->format('H:i A') }}
                     </td>
                     <td>
-                        @if ($ticket['total_requests_count'] > 0)
-                            <a onclick="openModal(this,'{{ route('raw-material.freight-request.edit', $ticket['model']->id) }}','Manage Freight Payment Request', false, '80%')"
-                                class="info p-1 text-center mr-2 position-relative">
-                                <i class="ft-eye font-medium-3"></i>
-                            </a>
-                        @else
                             <a onclick="openModal(this,'{{ route('raw-material.freight-request.edit', $ticket['model']->id) }}','Manage Freight Payment Request', false, '80%')"
                                 class="info p-1 text-center mr-2 position-relative">
                                 <i class="ft-edit font-medium-3"></i>
                             </a>
-                        @endif
                     </td>
                 </tr>
             @endforeach

@@ -37,9 +37,10 @@ class PaymentRequestApprovalController extends Controller
     public function getList(Request $request)
     {
         $paymentRequests = PaymentRequest::with([
-            'paymentRequestData.purchaseOrder',
-            'paymentRequestData.purchaseTicket.purchaseOrder',
+            'paymentRequestData.purchaseOrder.saudaType',
+            'paymentRequestData.purchaseTicket.purchaseOrder.saudaType',
             'paymentRequestData.purchaseTicket.purchaseFreight',
+            'paymentRequestData.arrivalTicket.saudaType',
             'paymentRequestData.arrivalTicket.freight',
             'approvals.approver'
         ])
@@ -75,6 +76,26 @@ class PaymentRequestApprovalController extends Controller
             }
 
             $request->freight_data = $freightData;
+
+            // Set Sauda Type logic as requested: $ticket->saudaType->name
+            $moduleType = optional($request->paymentRequestData)->module_type;
+            $ticket = ($moduleType === 'purchase_order') 
+                ? $request->paymentRequestData?->purchaseTicket 
+                : $request->paymentRequestData?->arrivalTicket;
+            
+            $saudaType = optional($ticket?->saudaType)->name;
+            
+            // Fallback to Purchase Order if ticket doesn't have its own sauda type
+            if (!$saudaType) {
+                $saudaType = optional($ticket?->purchaseOrder?->saudaType)->name;
+            }
+            
+            // Final fallback to module type detection
+            if (!$saudaType) {
+                $saudaType = (in_array($moduleType, ['ticket', 'freight_payment'])) ? 'pohanch' : 'thadda';
+            }
+            
+            $request->sauda_type = $saudaType;
 
             return $request;
         });

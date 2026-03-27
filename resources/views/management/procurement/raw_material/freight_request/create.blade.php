@@ -1,13 +1,25 @@
 @php
     $param = isset($isRequestApprovalPage) && $isRequestApprovalPage ? 'readonly' : '';
     //  $param0 = isset($isRequestApprovalPage) && $isRequestApprovalPage ? 'disabled' : '';
-    $param0 = isset($paymentRequestData) && $paymentRequestData->payment_to ? 'disabled' : '';
+    $param0 = (isset($paymentRequestData) && $paymentRequestData->payment_to && !isset($isCreateFlow)) ? 'disabled' : '';
     $parampenalty_adjust_to = isset($paymentRequestData) && $paymentRequestData->penalty_adjust_to ? 'disabled' : '';
     $paramlabour_vendor_id = isset($paymentRequestData) && $paymentRequestData->labour_vendor_id ? 'disabled' : '';
-    $param0 = isset($paymentRequestData) && $paymentRequestData->payment_to ? 'disabled' : '';
+    $param0 = (isset($paymentRequestData) && $paymentRequestData->payment_to && !isset($isCreateFlow)) ? 'disabled' : '';
     $paymentRequest = isset($paymentRequest) ? $paymentRequest : null;
     $isUpdated = isset($isUpdated) ? $isUpdated : null;
     $approval = isset($approval) ? $approval : null;
+
+@endphp
+<style>
+    .togglehistorytable {
+        display: none;
+    }
+
+    .togglehistory {
+        cursor: pointer;
+    }
+</style>
+@php
 
     // Use paymentRequestData if available, otherwise use existing logic
     $exempt = $paymentRequestData->exempt ?? $freightPaymentRequest?->exempt ?? ($ticket->freight->exempted_weight ?? '0');
@@ -19,15 +31,22 @@
     $dehari_plus_extra = $paymentRequestData->dehari_plus_extra ?? $freightPaymentRequest?->dehari_plus_extra ?? ($ticket->freight->other_labour_charges ?? '0');
     $market_comm = $paymentRequestData->market_comm ?? $freightPaymentRequest?->market_comm ?? 0;
     $over_weight_ded = $paymentRequestData->over_weight_ded ?? $freightPaymentRequest?->over_weight_ded ?? 0;
-    $godown_penalty = $paymentRequestData->godown_penalty ?? $ticket->freight->other_deduction;
+    $godown_penalty = $paymentRequestData->godown_penalty ?? $ticket->freight?->other_deduction ?? 0;
     $other_minus_labour = $paymentRequestData->other_minus_labour ?? $freightPaymentRequest?->other_minus_labour ?? ($ticket->freight->unpaid_labor_charges ?? '0');
     $extra_minus_ded = $paymentRequestData->extra_minus_ded ?? $freightPaymentRequest?->extra_minus_ded ?? 0;
     $commission_percent_ded = $paymentRequestData->commission_percent_ded ?? $freightPaymentRequest?->commission_percent_ded ?? 0;
     $commission_amount = $paymentRequestData->commission_amount ?? $freightPaymentRequest?->commission_amount ?? 0;
     $weightDifference = ($ticket->arrived_net_weight ?? 0) - ($ticket->net_weight ?? 0);
+    
+@endphp
+@php
+    $hasContract = isset($purchaseOrder) && !empty($purchaseOrder->id);
+    $targetRoute = $isRequestApprovalPage 
+        ? ($hasContract ? 'raw-material.pohouch-freight-payment-request-approval' : 'raw-material.pohouch-freight-payment-request-approval-wo-contract')
+        : 'raw-material.freight-request.store';
 @endphp
 <form
-    action="{{ route($isRequestApprovalPage ? 'raw-material.pohouch-freight-payment-request-approval' : 'raw-material.freight-request.store') }}"
+    action="{{ route($targetRoute) }}"
     method="POST" id="ajaxSubmit" class="needs-validation" novalidate>
     @csrf
     <input type="hidden" name="arrival_slip_no" value="{{ $ticket->arrivalSlip->unique_no ?? '' }}">
@@ -37,9 +56,11 @@
     <input type="hidden" name="arrival_ticket_id" value="{{ $ticket->id ?? '' }}">
     <input type="hidden" name="ticket_type" value="{{ $ticketType ?? '' }}">
     <input type="hidden" name="payment_request_id" value="{{ $paymentRequest?->id ?? null }}">
-
+    <input type="hidden" name="is_without_contract" value="{{ !$ticket->purchaseOrder?->contract_no }}">
+    
     @if (isset($isRequestApprovalPage, $paymentRequestData->payment_to))
-        <input type="hidden" id="listRefresh" value="{{ route('raw-material.get.payment-request-approval') }}" />
+        <!-- <input type="hidden" id="listRefresh" value="{{ route('raw-material.get.payment-request-approval') }}" /> -->
+        <input type="hidden" id="listRefresh" value="{{ route('raw-material.get.freight-request') }}" />
     @else
         <input type="hidden" id="listRefresh" value="{{ route('raw-material.get.freight-request') }}" />
     @endif
@@ -89,13 +110,15 @@
                     readonly placeholder="GRN No.">
             </div>
         </div>
-        <div class="col-md-6">
-            <div class="form-group">
-                <label class="font-weight-bold">Contract No.</label>
-                <input type="text" class="form-control bg-light"
-                    value="{{ $ticket->purchaseOrder->contract_no ?? 'N/A' }}" readonly placeholder="Contract No.">
+        @if($ticket->purchaseOrder?->contract_no)
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="font-weight-bold">Contract No.</label>
+                    <input type="text" class="form-control bg-light"
+                        value="{{ $ticket->purchaseOrder->contract_no ?? 'N/A' }}" readonly placeholder="Contract No.">
+                </div>
             </div>
-        </div>
+        @endif
     </div>
 
     <div class="row">
@@ -107,15 +130,27 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label class="font-weight-bold">Supplier Name</label>
-                <input type="text" class="form-control bg-light"
-                    value="{{ $ticket->purchaseOrder->supplier->name ?? 'N/A' }}" readonly placeholder="Supplier Name">
+                @if (isset($isCreateFlow))
+                    <select class="form-control select2" name="supplier_name" required>
+                        <option value="">Select Supplier</option>
+                        @foreach ($suppliers as $supplier)
+                            <option value="{{ $supplier->name }}" 
+                                @selected((isset($ticket->accountsOf->name) && $ticket->accountsOf->name == $supplier->name) || (isset($ticket->accounts_of_name) && $ticket->accounts_of_name == $supplier->name))>
+                                {{ $supplier->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                @else
+                    <input type="text" class="form-control bg-light" name="supplier_name"
+                        value="{{ $paymentRequestData->supplier_name ?? ($ticket->accountsOf->name ?? ($ticket->accounts_of_name ?? 'N/A')) }}" readonly placeholder="Supplier Name">
+                @endif
             </div>
         </div>
         <div class="col-md-4">
             <div class="form-group">
                 <label class="font-weight-bold">Broker Name</label>
                 <input type="text" class="form-control bg-light"
-                    value="{{ $ticket->broker->name ?? ($ticket->purchaseOrder->broker->name ?? 'N/A') }}" readonly
+                    value="{{ $ticket->broker_name ?? ($ticket->broker->name ?? ($ticket->purchaseOrder->broker->name ?? 'N/A')) }}" readonly
                     placeholder="Broker Name">
             </div>
         </div>
@@ -125,7 +160,8 @@
                 <select class="form-control editable-field select2" name="vendor_id" @disabled($param0)>
                     <option value="">Select Freight Party</option>
                     @foreach ($vendors as $vendor)
-                        <option value="{{ $vendor->id }}" @selected(isset($paymentRequestData) && $paymentRequestData->payment_to == $vendor->id)>
+                        <option value="{{ $vendor->id }}" 
+                            @selected((isset($paymentRequestData) && $paymentRequestData->payment_to == $vendor->id) || (isset($suggested_vendor_id) && $suggested_vendor_id == $vendor->id))>
                             {{ $vendor->name }}
                         </option>
                     @endforeach
@@ -136,6 +172,71 @@
             </div>
         </div>
     </div>
+
+    @php
+        $has_pendings = isset($paymentRequests)
+        ? $paymentRequests->whereIn('status', ['pending', 'approved'])->count()
+        : 0;
+    @endphp
+    @if($ticket->saudaType?->name == 'Pohanch' && $has_pendings == 0)
+        <div class="row">
+            <div class="col-md-12">
+                <div class="form-group">
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" onchange="isPaidBySupplier()" class="custom-control-input" id="paid_by_supplier" name="is_paid_by_supplier" value="1" {{ (isset($paymentRequestData) && $paymentRequestData->is_paid_by_supplier) ? 'checked' : '' }}>
+                        <label class="custom-control-label font-weight-bold" for="paid_by_supplier">Paid By Supplier</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @if(isset($paymentRequests) && count($paymentRequests) != 0)
+        <div class="row">
+            <div class="col-md-12">
+                <h6 class="header-heading-sepration togglehistory">
+                    Request History ({{ count($paymentRequests) }})
+                </h6>
+                <table class="table m-0 togglehistorytable">
+                    <thead>
+                        <tr>
+                            <th>Request Date</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>Remarks</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($paymentRequests as $paymentRequest)
+                            <tr>
+                                <td>{{ $paymentRequest->created_at }}</td>
+                                <td>
+                                    @if($paymentRequest->is_without_contract)
+                                        <span class="badge badge-danger">Without Contract</span>
+                                    @else
+                                        <span class="badge badge-success">With Contract</span>
+                                    @endif
+                                </td>
+                                <td>{{ number_format($paymentRequest->amount, 2) }}</td>
+                                <td>{{ $paymentRequest->approval->remarks ?? 'N/A' }}</td>
+                                <td>
+                                    @if($paymentRequest->status == 'pending')
+                                        <label class="badge badge-warning">Pending</label>
+                                    @elseif($paymentRequest->status == 'approved')
+                                        <label class="badge badge-success">Approved</label>
+                                    @elseif($paymentRequest->status == 'rejected')
+                                        <label class="badge badge-danger">Rejected</label>
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    @endif
+
 
     <div class="row">
         <div class="col-12">
@@ -162,7 +263,7 @@
             <div class="form-group">
                 <label class="font-weight-bold">Station</label>
                 <input type="text" class="form-control bg-light"
-                    value="{{ $ticket->station->name ?? ($ticket->purchaseOrder->station_name ?? 'N/A') }}" readonly
+                    value="{{ $ticket->station_name ?? ($ticket->station->name ?? ($ticket->purchaseOrder->station_name ?? 'N/A')) }}" readonly
                     placeholder="Station">
             </div>
         </div>
@@ -176,6 +277,7 @@
                     readonly placeholder="Sauda Term">
             </div>
         </div>
+        @if($ticket->purchaseOrder?->contract_no)
         <div class="col-md-4">
             <div class="form-group">
                 <label class="font-weight-bold">Contract Rate</label>
@@ -183,12 +285,13 @@
                     value="{{ $ticket->purchaseOrder->rate_per_kg ?? '0' }}" placeholder="Contract Rate" readonly>
             </div>
         </div>
+        @endif
         <div class="col-md-4">
             <div class="form-group">
                 <label class="font-weight-bold">Deduction Rate</label>
                 <input type="text" class="form-control editable-field deduction-rate"
                     name="deduction_contract_rate_for_freight" id="deduction_rate"
-                    value="{{ $paymentRequestData->deduction_contract_rate_for_freight ?? $ticket->purchaseOrder->rate_per_kg ?? '0' }}"
+                    value="{{ $paymentRequestData->deduction_contract_rate_for_freight ?? ($ticket->freight->po_rate ?? ($ticket->purchaseOrder->rate_per_kg ?? '0')) }}"
                     placeholder="Contract Rate">
             </div>
         </div>
@@ -464,7 +567,8 @@
             <div class="col-md-3">
                 <div class="form-group">
                     <label class="font-weight-bold">Percentage</label>
-                    <input type="number" min="0" max="100" step="0.01" class="form-control percentage-input" value="0"
+                    <input type="number" min="0" max="100" step="0.01" class="form-control percentage-input" 
+                        value="{{ isset($isCreateFlow) && $isCreateFlow ? 100 : 0 }}"
                         placeholder="Enter percentage">
                 </div>
             </div>
@@ -549,7 +653,30 @@
     </div>
 </form>
 <script>
+
+
     $(document).ready(function () {
+        window.isPaidBySupplier = function() {
+            const isChecked = $('#paid_by_supplier').is(':checked');
+            const percentageInput = $('.percentage-input');
+            const requestAmountInput = $('[name="request_amount"]');
+
+            if (isChecked) {
+                percentageInput.val(100).prop('readonly', true).addClass('bg-light');
+                requestAmountInput.prop('readonly', true).addClass('bg-light');
+                // Force a calculation update
+                if (typeof CalPercentageINput === 'function') {
+                    CalPercentageINput();
+                }
+            } else {
+                percentageInput.prop('readonly', false).removeClass('bg-light');
+                requestAmountInput.prop('readonly', false).removeClass('bg-light');
+            }
+        };
+
+        // Initialize state
+        isPaidBySupplier();
+
         calculateNetShortageDeduction()
         $('.editable-field').on('input', calculatePaymentSummary);
 
@@ -654,8 +781,6 @@
             let commissionAmount = parseFloat($('[name="commission_amount"]').val()) || 0;
 
             let netShortage = parseFloat(document.getElementById('netShortage').value) || 0;
-            let contractRate = parseFloat($('.contract-rate').val()) || 0;
-            let netShortageDeduction = netShortage * contractRate;
 
 
             // let totalDeductions = overWeightDed + godownPenalty + otherMinusLabour + extraMinusDed + commissionAmount + netShortageDeduction;
@@ -784,6 +909,11 @@
 
             calculateCommission();
         }
+
+        // Request History Toggle
+        $(document).on('click', '.togglehistory', function() {
+            $('.togglehistorytable').toggle();
+        });
 
         // Run initialization
         initializeCalculations();

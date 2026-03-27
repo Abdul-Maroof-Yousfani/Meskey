@@ -17,7 +17,8 @@ class FreightPaymentRequestRequest extends FormRequest
             'arrival_ticket_id' => 'required|exists:arrival_tickets,id',
             'arrival_slip_no' => 'nullable|string|max:255',
             'vendor_id' => 'required|exists:vendors,id',
-            'contract_rate' => 'required|numeric|min:0',
+            'supplier_name' => 'required|string|max:255',
+            'contract_rate' => 'nullable|numeric|min:0',
             'exempt' => 'required|numeric|min:0',
 
             // Freight & Charges
@@ -57,7 +58,6 @@ class FreightPaymentRequestRequest extends FormRequest
             'arrival_ticket_id.exists' => 'Selected arrival ticket does not exist.',
             'vendor_id.required' => 'Vendor is required.',
             'vendor_id.exists' => 'Selected vendor does not exist.',
-            'contract_rate.required' => 'Contract rate is required.',
             'contract_rate.numeric' => 'Contract rate must be a number.',
             'contract_rate.min' => 'Contract rate must be at least 0.',
             'exempt.required' => 'Exempt amount is required.',
