@@ -965,11 +965,12 @@ class FreightRequestController extends Controller
                 $supplierDebitFreight = Transaction::where('grn_no', $grnNo)
                     ->where('purpose', "{$saudaType}-freight-paid-to-vendor")
                     ->first();
-                $paid_by_supplier_value = $request->penalty + $request->total_labour + $request->total_commision;
-                if($paid_by_supplier_value > 0) {
+                $grossfreightamount = $request->is_paid_by_supplier == 1 ? $paid_by_supplier_value : $request->gross_amount;
+            
+                if($grossfreightamount > 0) {
                 if ($supplierDebitFreight) {
                     $supplierDebitFreight->update([
-                        'amount' => $request->is_paid_by_supplier == 1 ? $paid_by_supplier_value : $request->gross_amount,
+                        'amount' => $grossfreightamount,
                         'account_id' => $purchaseOrder->supplier->account_id,
                         'counter_account_id' => $qcAccountId,
                         'type' => 'debit',
