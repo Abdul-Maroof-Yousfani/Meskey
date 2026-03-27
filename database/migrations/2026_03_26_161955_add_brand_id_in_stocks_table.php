@@ -16,7 +16,7 @@ return new class extends Migration
             // $table->foreignId("arrival_id")->nulllable()->constrained("arrival_locations");
             // $table->foreignId("subarrival_id")->nullable()->constrained("sub_arrival_locations");
             $table->foreignId("brand_id")->nullable()->constrained("brands");
-            $table->integer("bag_packing")->nullable();
+            $table->integer("bag_packing_id")->nullable();
             $table->foreignId("parentable_type")->nullable();
             $table->foreignId("parentable_id")->nullable();
 
