@@ -58,9 +58,8 @@
     <input type="hidden" name="payment_request_id" value="{{ $paymentRequest?->id ?? null }}">
     <input type="hidden" name="is_without_contract" value="{{ !$ticket->purchaseOrder?->contract_no }}">
     
-    @if (isset($isRequestApprovalPage, $paymentRequestData->payment_to))
-        <!-- <input type="hidden" id="listRefresh" value="{{ route('raw-material.get.payment-request-approval') }}" /> -->
-        <input type="hidden" id="listRefresh" value="{{ route('raw-material.get.freight-request') }}" />
+    @if (isset($isRequestApprovalPage) && $isRequestApprovalPage)
+        <input type="hidden" id="listRefresh" value="{{ route('raw-material.get.payment-request-approval') }}" />
     @else
         <input type="hidden" id="listRefresh" value="{{ route('raw-material.get.freight-request') }}" />
     @endif
