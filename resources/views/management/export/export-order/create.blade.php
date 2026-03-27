@@ -27,34 +27,57 @@
             <div class="col-md-12">
                 <h6 class="header-heading-sepration">Basic Information</h6>
                 <div class="row">
-                    <div class="col-md-3">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label>Quotation#:</label>
+                            <select name="quotation_id" class="form-control select2">
+                                <option value="">Select Quotation</option>
+                                @foreach ($quotations as $quotation)
+                                    <option value="{{ $quotation->id }}">#{{ $quotation->id }} - {{ $quotation->product->name ?? '' }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
                         <fieldset>
-                            <label>Voucher No#</label>
+                            <label>Sauda#:</label>
+                            <select name="export_soda_id" class="form-control select2">
+                                <option value="">Select Sauda</option>
+                                @foreach ($exportSodas as $soda)
+                                    <option value="{{ $soda->id }}">#{{ $soda->id }} - {{ $soda->product->name ?? '' }}</option>
+                                @endforeach
+                            </select>
+                        </fieldset>
+                    </div>
+                    <div class="col-md-4">
+                        <fieldset>
+                            <label>Voucher No#:</label>
                             <div class="input-group">
-                                {{-- <div class="input-group-prepend">
+                                <div class="input-group-prepend">
                                     <button class="btn btn-primary" type="button">Voucher No#</button>
-                                </div> --}}
+                                </div>
                                 <input type="text" readonly name="voucher_no" class="form-control">
-
+    
                             </div>
                         </fieldset>
                     </div>
-
-                    <div class="col-md-3">
+                </div>
+                <div class="row">
+                    <div class="col-md-4">
                         <div class="form-group">
                             <label>Contract No#:</label>
                             <input type="text" name="contract_no" class="form-control">
                         </div>
                     </div>
 
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <div class="form-group">
                             <label>Voucher Date:</label>
                             <input type="date" name="voucher_date" class="form-control">
                         </div>
                     </div>
 
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <div class="form-group">
                             <label>Voucher Heading:</label>
                             <input type="text" name="voucher_heading" class="form-control">
@@ -498,11 +521,11 @@
                             <th style="min-width: 130px;">Packing</th>
                             <th style="min-width: 130px;">Condition</th>
                             <th style="min-width: 110px;">Color</th>
-                            <th style="min-width: 100px;">Size (kg)</th>
+                            <th style="min-width: 100px;">Packing Size (kg)</th>
                             <th style="min-width: 100px;">Qty (MT)</th>
-                            <th style="min-width: 100px;">Maunds</th>
+                            <th style="min-width: 100px;">Qty (Mnds)</th>
+                            <th style="min-width: 110px;">Qty (KGs)</th>
                             <th style="min-width: 100px;">Bags</th>
-                            <th style="min-width: 110px;">Total KGs</th>
                             <th style="min-width: 120px;">Stuffing (MT)</th>
                             <th style="min-width: 120px;">Stuffing (Mnd)</th>
                             <th style="min-width: 90px;">Containers</th>
@@ -568,11 +591,11 @@
                                     class="form-control maunds" value="0" step="0.01" min="0">
                             </td>
                             <td class="p-2">
-                                <input type="number" name="packing_items[0][no_of_bags]" class="form-control no_of_bags"
-                                    value="0" readonly>
+                                <input type="number" name="packing_items[0][total_kgs]" class="form-control total-kgs"
+                                value="0" readonly>
                             </td>
                             <td class="p-2">
-                                <input type="number" name="packing_items[0][total_kgs]" class="form-control total-kgs"
+                                <input type="number" name="packing_items[0][no_of_bags]" class="form-control no_of_bags"
                                     value="0" readonly>
                             </td>
                             <td class="p-2">
