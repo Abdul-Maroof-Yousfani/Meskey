@@ -26,7 +26,7 @@
 
                     </td>
 
-                    <td>{{ $ticket['purchaseOrder']->supplier?->name ?? 'N/A' }}</td>
+                    <td>{{ $ticket['purchaseOrder']->supplier?->name ?? ($ticket['model']->accountsOf?->name ?? 'N/A') }}</td>
                     <td>{{ $ticket["model"]->saudaType->name ?? "N/A" }}</td>
                     <td>{{ $ticket['model']->truck_no ?? 'N/A' }}</td>
                     <td>{{ $ticket['model']->bilty_no ?? 'N/A' }}</td>
