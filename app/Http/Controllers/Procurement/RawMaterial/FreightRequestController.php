@@ -1051,7 +1051,7 @@ class FreightRequestController extends Controller
                         'type' => 'credit',
                         'voucher_no' => $purchaseOrder->contract_no,
                         'grn_no' => $grnNo,
-                        'remarks' => "Recording accounts payable for Pohouch freight related to raw material arrival (weight: {$ticket->arrived_net_weight} kg at rate {$rate}/kg). Total freight amount of {$request->net_amount}  to be paid to vendor."
+                        'remarks' => "Recording accounts payable for {$saudaType} freight related to raw material arrival (weight: {$ticket->arrived_net_weight} kg at rate {$rate}/kg). Total freight amount of {$request->net_amount}  to be paid to vendor."
                     ]);
                 } else {
                     createTransaction(
@@ -1067,7 +1067,7 @@ class FreightRequestController extends Controller
                             'purpose' => "{$saudaType}-freight",
                             'payment_against' => "{$saudaType}-freight",
                             'against_reference_no' => "{$truckNo}/{$biltyNo}",
-                            'remarks' => "Recording accounts payable for Pohouch freight related to raw material arrival (weight: {$ticket->arrived_net_weight} kg at rate {$rate}/kg). Total freight amount of {$request->net_amount}  to be paid to vendor."
+                            'remarks' => "Recording accounts payable for {$saudaType} freight related to raw material arrival (weight: {$ticket->arrived_net_weight} kg at rate {$rate}/kg). Total freight amount of {$request->net_amount}  to be paid to vendor."
                         ]
                     );
                 }
@@ -1409,7 +1409,7 @@ class FreightRequestController extends Controller
                         'type' => 'credit',
                         'voucher_no' => $purchaseOrder?->contract_no ?? "-",
                         'grn_no' => $grnNo,
-                        'remarks' => "Recording accounts payable for Pohouch freight related to raw material arrival (weight: {$ticket->arrived_net_weight} kg at rate {$rate}/kg). Total freight amount of {$request->net_amount}  to be paid to vendor."
+                        'remarks' => "Recording accounts payable for {$saudaType} freight related to raw material arrival (weight: {$ticket->arrived_net_weight} kg at rate {$rate}/kg). Total freight amount of {$request->net_amount}  to be paid to vendor."
                     ]);
                 } else {
                     createTransaction(
@@ -1425,7 +1425,7 @@ class FreightRequestController extends Controller
                             'purpose' => "{$saudaType}-freight",
                             'payment_against' => "{$saudaType}-freight",
                             'against_reference_no' => "{$truckNo}/{$biltyNo}",
-                            'remarks' => "Recording accounts payable for Pohouch freight related to raw material arrival (weight: {$ticket->arrived_net_weight} kg at rate {$rate}/kg). Total freight amount of {$request->net_amount}  to be paid to vendor."
+                            'remarks' => "Recording accounts payable for {$saudaType} freight related to raw material arrival (weight: {$ticket->arrived_net_weight} kg at rate {$rate}/kg). Total freight amount of {$request->net_amount}  to be paid to vendor."
                         ]
                     );
                 }
