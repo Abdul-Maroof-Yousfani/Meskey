@@ -1,4 +1,4 @@
-<form action="{{ route('quotation.update', $quotation->id ?? 0) }}" id="ajaxSubmit" method="POST" autocomplete="off">
+<form action="{{ route('quotation.update', $quotation->id) }}" id="ajaxSubmit" method="POST" autocomplete="off">
     @csrf
     @method('PUT')
     <input type="hidden" id="listRefresh" value="{{ route('get.quotation') }}" />
