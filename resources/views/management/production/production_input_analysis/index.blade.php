@@ -26,7 +26,7 @@
                                         <div class="row">
                                             <div class="col-md-2 text-left">
                                                 <label for="job_order_ids" class="form-label">Job Order Filter</label>
-                                                <select name="job_order_ids[]" id="job_order_ids" class="form-control select2" multiple data-placeholder="Select Job Order(s)">
+                                                <select name="job_order_ids[]" id="job_order_ids" class="form-control select2-filter" multiple data-placeholder="Select Job Order(s)">
                                                     @foreach($jobOrders as $jobOrder)
                                                         <option value="{{ $jobOrder->id }}">{{ $jobOrder->job_order_no }}</option>
                                                     @endforeach
@@ -34,7 +34,7 @@
                                             </div>
                                             <div class="col-md-2 text-left">
                                                 <label for="brand_ids" class="form-label">Brand Filter</label>
-                                                <select name="brand_ids[]" id="brand_ids" class="form-control select2" multiple data-placeholder="Select Brand(s)">
+                                                <select name="brand_ids[]" id="brand_ids" class="form-control select2-filter" multiple data-placeholder="Select Brand(s)">
                                                     @foreach($brands as $brand)
                                                         <option value="{{ $brand->id }}">{{ $brand->name }}</option>
                                                     @endforeach
@@ -42,7 +42,7 @@
                                             </div>
                                             <div class="col-md-2 text-left">
                                                 <label for="location_ids" class="form-label">Location Filter</label>
-                                                <select name="location_ids[]" id="location_ids" class="form-control select2" multiple data-placeholder="Select Location(s)">
+                                                <select name="location_ids[]" id="location_ids" class="form-control select2-filter" multiple data-placeholder="Select Location(s)">
                                                     @foreach($locations as $location)
                                                         <option value="{{ $location->id }}">{{ $location->name }}</option>
                                                     @endforeach
@@ -94,9 +94,12 @@
 @section('script')
     <script>
         $(document).ready(function () {
-            $('.select2').select2({
+            filterationCommon(`{{ route('get.production-input-analysis') }}`)
+            
+            $('.select2-filter').select2({
                 width: '100%'
             });
+
             $('#custom_date_range').daterangepicker({
                 locale: { format: 'YYYY-MM-DD' },
                 autoUpdateInput: true
@@ -104,7 +107,6 @@
                 $(this).val(picker.startDate.format('YYYY-MM-DD') + ' - ' + picker.endDate.format('YYYY-MM-DD'));
                 $('#variety_search').trigger('change').trigger('keyup');
             });
-            filterationCommon(`{{ route('get.production-input-analysis') }}`)
         });
     </script>
 @endsection
