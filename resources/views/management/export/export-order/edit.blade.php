@@ -122,39 +122,6 @@
                         </div>
                     </div>
 
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label>Company Locations:</label>
-                            <select name="company_location_ids[]" id="companyLocationSelect"
-                                class="form-control select2" multiple>
-                                @foreach ($companyLocations as $location)
-                                    <option value="{{ $location->id }}"
-                                        {{ in_array($location->id, $exportOrder->company_location_ids ?? []) ? 'selected' : '' }}>
-                                        {{ $location->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label>Arrival Locations:</label>
-                            <select name="arrival_location_ids[]" id="arrivalLocationSelect"
-                                class="form-control select2" multiple>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label>Arrival Sub Locations:</label>
-                            <select name="arrival_sub_location_ids[]" id="arrivalSubLocationSelect"
-                                class="form-control select2" multiple>
-                            </select>
-                        </div>
-                    </div>
-
                 </div>
             </div>
 
@@ -628,18 +595,17 @@
                             <th style="min-width: 150px;">Brand</th>
                             <th style="min-width: 150px;">Bag Type</th>
                             <th style="min-width: 130px;">Packing</th>
-                            <th style="min-width: 130px;">Condition</th>
                             <th style="min-width: 110px;">Color</th>
                             <th style="min-width: 100px;">Packing Size (kg)</th>
                             <th style="min-width: 100px;">Qty (MT)</th>
-                            <th style="min-width: 100px;">Qty (Mnds)</th>
+                            <th style="min-width: 100px; display: none;">Qty (Mnds)</th>
                             <th style="min-width: 110px;">Qty (KGs)</th>
                             <th style="min-width: 100px;">Bags</th>
                             <th style="min-width: 120px;">Stuffing (MT)</th>
-                            <th style="min-width: 120px;">Stuffing (Mnd)</th>
+                            <th style="min-width: 120px; display: none;">Stuffing (Mnd)</th>
                             <th style="min-width: 90px;">Containers</th>
                             <th style="min-width: 110px;">Rate/Ton</th>
-                            <th style="min-width: 110px;">Rate/Mnd</th>
+                            <th style="min-width: 110px; display: none;">Rate/Mnd</th>
                             <th style="min-width: 130px;">Amount</th>
                             <th style="min-width: 130px;">Amount (PKR)</th>
                             <th>Action</th>
@@ -679,16 +645,6 @@
                                 </select>
                             </td>
                             <td class="p-2">
-                                <select name="packing_items[{{ $index }}][bag_condition_id]" class="form-control select2">
-                                    <option value="">Select Condition</option>
-                                    @foreach ($bagConditions as $condition)
-                                        <option value="{{ $condition->id }}" {{ $condition->id == $item->bag_condition_id ? 'selected' : '' }}>
-                                            {{ $condition->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </td>
-                            <td class="p-2">
                                 <select name="packing_items[{{ $index }}][bag_color_id]" class="form-control select2">
                                     <option value="">Select Color</option>
                                     @foreach ($bagColors as $color)
@@ -706,7 +662,7 @@
                                 <input type="number" name="packing_items[{{ $index }}][metric_tons]"
                                     class="form-control metric-tons" value="{{ $item->metric_tons }}" step="0.001" min="0">
                             </td>
-                            <td class="p-2">
+                            <td class="p-2" style="display: none;">
                                 <input type="number" name="packing_items[{{ $index }}][maunds]"
                                     class="form-control maunds" value="{{ $item->maunds }}" step="0.01" min="0">
                             </td>
@@ -722,7 +678,7 @@
                                 <input type="number" name="packing_items[{{ $index }}][stuffing_in_container]"
                                     class="form-control stuffing" value="{{ $item->stuffing_in_container }}" step="0.001" min="0">
                             </td>
-                            <td class="p-2">
+                            <td class="p-2" style="display: none;">
                                 <input type="number" name="packing_items[{{ $index }}][stuffing_maunds]"
                                     class="form-control stuffing_maunds" value="{{ $item->stuffing_maunds }}" step="0.01" min="0">
                             </td>
@@ -734,7 +690,7 @@
                                 <input type="number" name="packing_items[{{ $index }}][rate]" class="form-control rates"
                                     value="{{ $item->rate }}" step="0.01" min="0">
                             </td>
-                            <td class="p-2">
+                            <td class="p-2" style="display: none;">
                                 <input type="number" name="packing_items[{{ $index }}][rate_per_maund]" class="form-control rates_mnd"
                                     value="{{ $item->rate_per_maund }}" step="0.01" min="0">
                             </td>

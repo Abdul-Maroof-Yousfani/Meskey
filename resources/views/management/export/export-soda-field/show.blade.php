@@ -1,62 +1,45 @@
 <div class="row form-mar p-2">
     <div class="col-8">
         <h6 class="header-heading-sepration">Basic Information</h6>
-        <div class="row mt-2">
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label>Reference #:</label>
-                    <input type="text" value="{{ $exportSodaField->reference }}" class="form-control" readonly>
-                </div>
-            </div>
-
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label>Party Name (Buyer):</label>
-                    <input type="text" value="{{ $exportSodaField->buyer->name ?? 'N/A' }}" class="form-control" readonly>
-                </div>
-            </div>
-
-            <div class="col-md-12">
-                <div class="form-group">
-                    <label>Commodity:</label>
-                    <input type="text" value="{{ $exportSodaField->product->name ?? 'N/A' }}" class="form-control" readonly>
-                </div>
-            </div>
-
-            <div class="col-md-6 mt-2">
-                <div class="form-group">
-                    <label>Inco Term:</label>
-                    <input type="text" value="{{ $exportSodaField->incoterm->name ?? 'N/A' }}" class="form-control" readonly>
-                </div>
-            </div>
-
-            <div class="col-md-6 mt-2">
-                <div class="form-group">
-                    <label>Payment Term:</label>
-                    <input type="text" value="{{ $exportSodaField->modeOfTerm->name ?? 'N/A' }}" class="form-control" readonly>
-                </div>
-            </div>
-
-            <div class="col-md-6 mt-2">
-                <div class="form-group">
-                    <label>Shipment Period:</label>
-                    <input type="text" value="{{ $exportSodaField->shipment_period ?? 'N/A' }}" class="form-control" readonly>
-                </div>
-            </div>
-
-            <div class="col-md-6 mt-2">
-                <div class="form-group">
-                    <label>Commission:</label>
-                    <input type="text" value="{{ $exportSodaField->commission ?? '0.00' }}" class="form-control" readonly>
-                </div>
-            </div>
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <tr>
+                    <th style="width:30%;">Reference #</th>
+                    <td>{{ $exportSodaField->reference }}</td>
+                </tr>
+                <tr>
+                    <th>Party Name (Buyer)</th>
+                    <td>{{ $exportSodaField->buyer->name ?? 'N/A' }}</td>
+                </tr>
+                <tr>
+                    <th>Commodity</th>
+                    <td>{{ $exportSodaField->product->name ?? 'N/A' }}</td>
+                </tr>
+                <tr>
+                    <th>Shipment Period</th>
+                    <td>{{ $exportSodaField->shipment_period ?? 'N/A' }}</td>
+                </tr>
+                <tr>
+                    <th>Commission</th>
+                    <td>{{ $exportSodaField->commission ?? '0.00' }}</td>
+                </tr>
+            </table>
         </div>
     </div>
 
     <div class="col-4">
-        <h6 class="header-heading-sepration">Additional Information</h6>
-        <div class="form-group mt-2">
-            <textarea class="form-control" rows="12" readonly>{{ $exportSodaField->additional_info }}</textarea>
+        <h6 class="header-heading-sepration">Export Details</h6>
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <tr>
+                    <th style="width:50%;">INCO TERM</th>
+                    <td>{{ $exportSodaField->incoterm->name ?? 'N/A' }}</td>
+                </tr>
+                <tr>
+                    <th>PAYMENT TERM</th>
+                    <td>{{ $exportSodaField->modeOfTerm->name ?? 'N/A' }}</td>
+                </tr>
+            </table>
         </div>
     </div>
 
@@ -66,17 +49,16 @@
         <div class="table-responsive">
             <table class="table table-bordered mb-0">
                 <thead>
-                    <tr>
-                        <th>Brand</th>
+                    <tr class="bg-light">
                         <th>Bag Type</th>
                         <th>Packing</th>
-                        <th>Condition</th>
                         <th>Color</th>
                         <th>Size (kg)</th>
                         <th>Qty (MT)</th>
-                        <th>Qty (Mnds)</th>
+                        <th style="display: none;">Qty (Mnds)</th>
                         <th>Bags</th>
                         <th>Rate/Ton</th>
+                        <th style="display: none;">Rate/Mnd</th>
                         <th>Amount</th>
                     </tr>
                 </thead>
@@ -86,31 +68,42 @@
                     @endphp
                     @forelse ($items as $item)
                     <tr>
-                        <td>{{ $item->brand->name ?? 'N/A' }}</td>
                         <td>{{ $item->bagType->name ?? 'N/A' }}</td>
                         <td>{{ $item->bagPacking->name ?? 'N/A' }}</td>
-                        <td>{{ $item->bagCondition->name ?? 'N/A' }}</td>
                         <td>{{ $item->bagColor->color ?? 'N/A' }}</td>
                         <td>{{ $item->bag_size }}</td>
                         <td>{{ number_format($item->metric_tons, 3) }}</td>
-                        <td>{{ number_format($item->maunds, 2) }}</td>
+                        <td style="display: none;">{{ number_format($item->maunds, 2) }}</td>
                         <td>{{ number_format($item->no_of_bags) }}</td>
                         <td>{{ number_format($item->rate, 2) }}</td>
+                        <td style="display: none;">{{ number_format($item->rate_per_maund, 2) }}</td>
                         <td>{{ number_format($item->amount, 2) }}</td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="11" class="text-center">No packing items found.</td>
+                        <td colspan="9" class="text-center">No packing items found.</td>
                     </tr>
                     @endforelse
                 </tbody>
+                <tfoot>
+                    <tr class="font-weight-bold bg-light">
+                        <td colspan="4" class="text-right">Totals:</td>
+                        <td>{{ number_format($items->sum('metric_tons'), 3) }}</td>
+                        <td style="display: none;">{{ number_format($items->sum('maunds'), 2) }}</td>
+                        <td>{{ number_format($items->sum('no_of_bags')) }}</td>
+                        <td></td>
+                        <td style="display: none;">{{ number_format($items->sum('rate_per_maund'), 2) }}</td>
+                        <td>{{ number_format($items->sum('amount'), 2) }}</td>
+                    </tr>
+                </tfoot>
             </table>
         </div>
+    </div>
 
-        <div class="row mt-2 pr-2">
-            <div class="col-md-12 text-right">
-                <strong>Total Quantity (MT): {{ number_format($items->sum('metric_tons'), 3) }}</strong>
-            </div>
+    <div class="col-md-12 mt-3">
+        <h6 class="header-heading-sepration">Additional Information</h6>
+        <div class="card p-2 bg-light">
+            {!! nl2br(e($exportSodaField->additional_info)) !!}
         </div>
     </div>
 </div>
