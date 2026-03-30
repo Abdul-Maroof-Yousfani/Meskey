@@ -124,38 +124,6 @@
                         </div>
                     </div>
 
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label>Company Locations:</label>
-                            <select name="company_location_ids[]" id="companyLocationSelect"
-                                class="form-control select2" multiple readonly>
-                                @foreach ($companyLocations as $location)
-                                    <option value="{{ $location->id }}"
-                                        {{ in_array($location->id, $exportOrder->company_location_ids ?? []) ? 'selected' : '' }}>
-                                        {{ $location->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label>Arrival Locations:</label>
-                            <select name="arrival_location_ids[]" id="arrivalLocationSelect"
-                                class="form-control select2" multiple readonly>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label>Arrival Sub Locations:</label>
-                            <select name="arrival_sub_location_ids[]" id="arrivalSubLocationSelect"
-                                class="form-control select2" multiple readonly>
-                            </select>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -625,18 +593,17 @@
                             <th style="min-width: 150px;">Brand</th>
                             <th style="min-width: 150px;">Bag Type</th>
                             <th style="min-width: 130px;">Packing</th>
-                            <th style="min-width: 130px;">Condition</th>
                             <th style="min-width: 110px;">Color</th>
                             <th style="min-width: 100px;">Packing Size (kg)</th>
                             <th style="min-width: 100px;">Qty (MT)</th>
-                            <th style="min-width: 100px;">Qty (Mnds)</th>
+                            <th style="min-width: 100px; display: none;">Qty (Mnds)</th>
                             <th style="min-width: 110px;">Qty (KGs)</th>
                             <th style="min-width: 100px;">Bags</th>
                             <th style="min-width: 120px;">Stuffing (MT)</th>
-                            <th style="min-width: 120px;">Stuffing (Mnd)</th>
+                            <th style="min-width: 120px; display: none;">Stuffing (Mnd)</th>
                             <th style="min-width: 90px;">Containers</th>
                             <th style="min-width: 110px;">Rate/Ton</th>
-                            <th style="min-width: 110px;">Rate/Mnd</th>
+                            <th style="min-width: 110px; display: none;">Rate/Mnd</th>
                             <th style="min-width: 130px;">Amount</th>
                             <th style="min-width: 130px;">Amount (PKR)</th>
                         </tr>
@@ -654,9 +621,6 @@
                                 <input type="text" class="form-control" value="{{ $item->bagPacking->name ?? 'N/A' }}" readonly>
                             </td>
                             <td class="p-2">
-                                <input type="text" class="form-control" value="{{ $item->bagCondition->name ?? 'N/A' }}" readonly>
-                            </td>
-                            <td class="p-2">
                                 <input type="text" class="form-control" value="{{ $item->bagColor->color ?? 'N/A' }}" readonly>
                             </td>
                             <td class="p-2">
@@ -665,7 +629,7 @@
                             <td class="p-2">
                                 <input type="text" class="form-control" value="{{ number_format($item->metric_tons, 3) }}" readonly>
                             </td>
-                            <td class="p-2">
+                            <td class="p-2" style="display: none;">
                                 <input type="text" class="form-control" value="{{ number_format($item->maunds, 2) }}" readonly>
                             </td>
                             <td class="p-2">
@@ -677,7 +641,7 @@
                             <td class="p-2">
                                 <input type="text" class="form-control" value="{{ number_format($item->stuffing_in_container, 3) }}" readonly>
                             </td>
-                            <td class="p-2">
+                            <td class="p-2" style="display: none;">
                                 <input type="text" class="form-control" value="{{ number_format($item->stuffing_maunds, 2) }}" readonly>
                             </td>
                             <td class="p-2">
@@ -686,7 +650,7 @@
                             <td class="p-2">
                                 <input type="text" class="form-control" value="{{ number_format($item->rate, 2) }}" readonly>
                             </td>
-                            <td class="p-2">
+                            <td class="p-2" style="display: none;">
                                 <input type="text" class="form-control" value="{{ number_format($item->rate_per_maund, 2) }}" readonly>
                             </td>
                             <td class="p-2">

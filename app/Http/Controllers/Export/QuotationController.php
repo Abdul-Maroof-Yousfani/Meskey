@@ -72,14 +72,9 @@ class QuotationController extends Controller
             $products  = Product::where('status', 1)->get();
             $buyers    = Customer::where('status', 'active')->get();
             $companies = Company::get();
-            $companyLocations = CompanyLocation::where('status', 'active')->get();
-            $arrivalLocations = ArrivalLocation::where('status', 1)->get();
-            $arrivalSubLocations = ArrivalSubLocation::where('status', 1)->get();
 
             $bagTypes  = BagType::where('status', 1)->get();
-            $bagConditions = BagCondition::where('status', 1)->get();
             $bagPackings   = BagPacking::where('status', 1)->get();
-            $brands    = Brands::where('status', 1)->get();
             $bagColors = Color::where('status', 1)->get();
             $incoterms      = IncoTerm::where('status', 1)->get();
             $modeofterms    = ModeOfTerm::where('status', 1)->get();
@@ -89,8 +84,8 @@ class QuotationController extends Controller
             $currencies = Currency::where('status', 1)->get();
             $exportSodas = ExportSodaField::latest()->get();
         } catch (QueryException $e) {
-            $products = $buyers = $companies = $companyLocations = $arrivalLocations = $arrivalSubLocations = collect();
-            $bagTypes = $bagConditions = $bagPackings = $brands = $bagColors = $incoterms = $modeofterms = collect();
+            $products = $buyers = $companies = collect();
+            $bagTypes = $bagPackings = $bagColors = $incoterms = $modeofterms = collect();
             $modeoftransport = $countries = $ports = $currencies = $exportSodas = collect();
         }
 
@@ -99,13 +94,8 @@ class QuotationController extends Controller
             'products',
             'buyers',
             'companies',
-            'companyLocations',
-            'arrivalLocations',
-            'arrivalSubLocations',
             'bagTypes',
-            'bagConditions',
             'bagPackings',
-            'brands',
             'bagColors',
             'incoterms',
             'modeofterms',
@@ -121,13 +111,10 @@ class QuotationController extends Controller
         DB::beginTransaction();
 
         try {
-            $quotationData = $request->except(['specifications', 'packing_items', 'company_location_ids', 'arrival_location_ids', 'arrival_sub_location_ids']);
+            $quotationData = $request->except(['specifications', 'packing_items']);
 
             $quotation = Quotation::create(array_merge($quotationData, [
                 'created_by' => auth()->user()->id,
-                'company_location_ids'     => $request->company_location_ids ?? [],
-                'arrival_location_ids'     => $request->arrival_location_ids ?? [],
-                'arrival_sub_location_ids' => $request->arrival_sub_location_ids ?? [],
             ]));
 
             // Product specifications
@@ -149,10 +136,8 @@ class QuotationController extends Controller
                 foreach ($request->packing_items as $item) {
                     $totalAmount += $item['amount'] ?? 0;
                     $quotation->packingItems()->create([
-                        'brand_id'        => $item['brand_id'] ?? null,
                         'bag_type_id'     => $item['bag_type_id'] ?? null,
                         'bag_packing_id'  => $item['bag_packing_id'] ?? null,
-                        'bag_condition_id'=> $item['bag_condition_id'] ?? null,
                         'bag_color_id'    => $item['bag_color_id'] ?? null,
                         'bag_size'        => $item['bag_size'] ?? 0,
                         'metric_tons'     => $item['metric_tons'] ?? 0,
@@ -190,20 +175,14 @@ class QuotationController extends Controller
     {
         try {
             $quotation = Quotation::with(['packingItems', 'product', 'buyer', 'company', 'incoterm', 'modeOfTerm', 'modeOfTransport', 'currency', 'originCountry', 'portOfLoading', 'portOfDischarge'])->findOrFail($id);
-            $companyLocationsSelected = CompanyLocation::whereIn('id', $quotation->company_location_ids ?? [])->pluck('name')->toArray();
-            $arrivalLocationsSelected = ArrivalLocation::whereIn('id', $quotation->arrival_location_ids ?? [])->pluck('name')->toArray();
-            $arrivalSubLocationsSelected = ArrivalSubLocation::whereIn('id', $quotation->arrival_sub_location_ids ?? [])->pluck('name')->toArray();
         } catch (QueryException $e) {
             $quotation = new Quotation();
-            $companyLocationsSelected = $arrivalLocationsSelected = $arrivalSubLocationsSelected = [];
         }
 
         try {
             $products  = Product::where('status', 1)->get();
             $bagTypes  = BagType::where('status', 1)->get();
-            $bagConditions = BagCondition::where('status', 1)->get();
             $bagPackings   = BagPacking::where('status', 1)->get();
-            $brands    = Brands::where('status', 1)->get();
             $bagColors = Color::where('status', 1)->get();
             $incoterms      = IncoTerm::where('status', 1)->get();
             $modeofterms    = ModeOfTerm::where('status', 1)->get();
@@ -213,21 +192,16 @@ class QuotationController extends Controller
             $currencies = Currency::where('status', 1)->get();
             $exportSodas = ExportSodaField::latest()->get();
         } catch (QueryException $e) {
-            $products = $bagTypes = $bagConditions = $bagPackings = $brands = $bagColors = $incoterms = $modeofterms = collect();
+            $products = $bagTypes = $bagPackings = $bagColors = $incoterms = $modeofterms = collect();
             $modeoftransport = $countries = $ports = $currencies = $exportSodas = collect();
         }
 
         return view('management.export.quotation.show', compact(
             'quotation',
             'exportSodas',
-            'companyLocationsSelected',
-            'arrivalLocationsSelected',
-            'arrivalSubLocationsSelected',
             'products',
             'bagTypes',
-            'bagConditions',
             'bagPackings',
-            'brands',
             'bagColors',
             'incoterms',
             'modeofterms',
@@ -250,14 +224,9 @@ class QuotationController extends Controller
             $products  = Product::where('status', 1)->get();
             $buyers    = Customer::where('status', 'active')->get();
             $companies = Company::get();
-            $companyLocations = CompanyLocation::where('status', 'active')->get();
-            $arrivalLocations = ArrivalLocation::where('status', 1)->get();
-            $arrivalSubLocations = ArrivalSubLocation::where('status', 1)->get();
 
             $bagTypes  = BagType::where('status', 1)->get();
-            $bagConditions = BagCondition::where('status', 1)->get();
             $bagPackings   = BagPacking::where('status', 1)->get();
-            $brands    = Brands::where('status', 1)->get();
             $bagColors = Color::where('status', 1)->get();
             $incoterms      = IncoTerm::where('status', 1)->get();
             $modeofterms    = ModeOfTerm::where('status', 1)->get();
@@ -267,8 +236,8 @@ class QuotationController extends Controller
             $currencies = Currency::where('status', 1)->get();
             $exportSodas = ExportSodaField::latest()->get();
         } catch (QueryException $e) {
-            $products = $buyers = $companies = $companyLocations = $arrivalLocations = $arrivalSubLocations = collect();
-            $bagTypes = $bagConditions = $bagPackings = $brands = $bagColors = collect();
+            $products = $buyers = $companies = collect();
+            $bagTypes = $bagPackings = $bagColors = collect();
             $incoterms = $modeofterms = $modeoftransport = $countries = $ports = $currencies = $exportSodas = collect();
         }
 
@@ -278,13 +247,8 @@ class QuotationController extends Controller
             'products',
             'buyers',
             'companies',
-            'companyLocations',
-            'arrivalLocations',
-            'arrivalSubLocations',
             'bagTypes',
-            'bagConditions',
             'bagPackings',
-            'brands',
             'bagColors',
             'incoterms',
             'modeofterms',
@@ -305,12 +269,9 @@ class QuotationController extends Controller
         DB::beginTransaction();
 
         try {
-            $quotationData = $request->except(['specifications', 'packing_items', 'company_location_ids', 'arrival_location_ids', 'arrival_sub_location_ids']);
+            $quotationData = $request->except(['specifications', 'packing_items']);
 
             $quotation->update(array_merge($quotationData, [
-                'company_location_ids'     => $request->company_location_ids ?? [],
-                'arrival_location_ids'     => $request->arrival_location_ids ?? [],
-                'arrival_sub_location_ids' => $request->arrival_sub_location_ids ?? [],
             ]));
 
             // Update specifications
@@ -336,10 +297,8 @@ class QuotationController extends Controller
                 foreach ($request->packing_items as $item) {
                     $totalAmount += $item['amount'] ?? 0;
                     $quotation->packingItems()->create([
-                        'brand_id'        => $item['brand_id'] ?? null,
                         'bag_type_id'     => $item['bag_type_id'] ?? null,
                         'bag_packing_id'  => $item['bag_packing_id'] ?? null,
-                        'bag_condition_id'=> $item['bag_condition_id'] ?? null,
                         'bag_color_id'    => $item['bag_color_id'] ?? null,
                         'bag_size'        => $item['bag_size'] ?? 0,
                         'metric_tons'     => $item['metric_tons'] ?? 0,

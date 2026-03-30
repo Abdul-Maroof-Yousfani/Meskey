@@ -3,9 +3,9 @@
     <input type="hidden" id="listRefresh" value="{{ route('get.export-soda-field') }}" />
 
     <div class="row form-mar p-2">
-        <div class="col-md-8">
+        <div class="col-8">
             <h6 class="header-heading-sepration">Basic Information</h6>
-            <div class="row mt-2">
+            <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
                         <label>Reference #:</label>
@@ -39,30 +39,6 @@
 
                 <div class="col-md-6 mt-2">
                     <div class="form-group">
-                        <label>Inco Term:</label>
-                        <select name="incoterm_id" class="form-control select2">
-                            <option value="">Select IncoTerm</option>
-                            @foreach ($incoterms as $incoterm)
-                                <option value="{{ $incoterm->id }}">{{ $incoterm->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-
-                <div class="col-md-6 mt-2">
-                    <div class="form-group">
-                        <label>Payment Term:</label>
-                        <select name="mode_of_term_id" class="form-control select2">
-                            <option value="">Select Payment Term</option>
-                            @foreach ($modeofterms as $term)
-                                <option value="{{ $term->id }}">{{ $term->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-
-                <div class="col-md-6 mt-2">
-                    <div class="form-group">
                         <label>Shipment Period:</label>
                         <input type="date" name="shipment_period" class="form-control">
                     </div>
@@ -77,15 +53,38 @@
             </div>
         </div>
 
-        <div class="col-md-4">
-            <h6 class="header-heading-sepration">Additional Information</h6>
-            <div class="form-group mt-2">
-                <textarea name="additional_info" class="form-control" rows="12" placeholder="Enter any additional details here..."></textarea>
+        <div class="col-4">
+            <h6 class="header-heading-sepration">Export Details</h6>
+            <div class="table-responsive">
+                <table class="table table-bordered spacing-table" style="margin-bottom:0;">
+                    <tr>
+                        <td style="width: 40%; font-weight: bold; vertical-align: middle;">INCO TERM</td>
+                        <td>
+                            <select name="incoterm_id" class="form-control select2">
+                                <option value="">Select IncoTerm</option>
+                                @foreach ($incoterms as $incoterm)
+                                    <option value="{{ $incoterm->id }}">{{ $incoterm->name }}</option>
+                                @endforeach
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: bold; vertical-align: middle;">PAYMENT TERM</td>
+                        <td>
+                            <select name="mode_of_term_id" class="form-control select2">
+                                <option value="">Select Payment Term</option>
+                                @foreach ($modeofterms as $term)
+                                    <option value="{{ $term->id }}">{{ $term->name }}</option>
+                                @endforeach
+                            </select>
+                        </td>
+                    </tr>
+                </table>
             </div>
         </div>
 
         {{-- ====== PACKING DETAILS ====== --}}
-        <div class="col-12 mt-4 px-0">
+        <div class="col-12 mt-4">
             <h6 class="header-heading-sepration d-flex justify-content-between align-items-center">
                 Packing Details
                 <button type="button" class="btn btn-sm btn-success" id="addPackingItem">
@@ -96,32 +95,22 @@
                 <table class="table table-bordered mb-0" id="packingTable">
                     <thead>
                         <tr>
-                            <th style="min-width:150px;">Brand</th>
                             <th style="min-width:150px;">Bag Type</th>
                             <th style="min-width:130px;">Packing</th>
-                            <th style="min-width:130px;">Condition</th>
                             <th style="min-width:110px;">Color</th>
                             <th style="min-width:100px;">Size (kg)</th>
                             <th style="min-width:100px;">Qty (MT)</th>
-                            <th style="min-width:100px;">Qty (Mnds)</th>
+                            <th style="min-width:100px; display: none;">Qty (Mnds)</th>
                             <th style="min-width:110px;">Qty (KGs)</th>
                             <th style="min-width:100px;">Bags</th>
                             <th style="min-width:110px;">Rate/Ton</th>
-                            <th style="min-width:110px;">Rate/Mnd</th>
+                            <th style="min-width:110px; display: none;">Rate/Mnd</th>
                             <th style="min-width:130px;">Amount</th>
                             <th>Action</th>
                         </tr>
                     </thead>
                     <tbody id="packingItems">
                         <tr class="packing-item">
-                            <td class="p-2">
-                                <select name="packing_items[0][brand_id]" class="form-control select2">
-                                    <option value="">Brand</option>
-                                    @foreach ($brands as $brand)
-                                        <option value="{{ $brand->id }}">{{ $brand->name }}</option>
-                                    @endforeach
-                                </select>
-                            </td>
                             <td class="p-2">
                                 <select name="packing_items[0][bag_type_id]" class="form-control select2">
                                     <option value="">Bag Type</option>
@@ -139,14 +128,6 @@
                                 </select>
                             </td>
                             <td class="p-2">
-                                <select name="packing_items[0][bag_condition_id]" class="form-control select2">
-                                    <option value="">Condition</option>
-                                    @foreach ($bagConditions as $condition)
-                                        <option value="{{ $condition->id }}">{{ $condition->name }}</option>
-                                    @endforeach
-                                </select>
-                            </td>
-                            <td class="p-2">
                                 <select name="packing_items[0][bag_color_id]" class="form-control select2">
                                     <option value="">Color</option>
                                     @foreach ($bagColors as $color)
@@ -160,7 +141,7 @@
                             <td class="p-2">
                                 <input type="number" name="packing_items[0][metric_tons]" class="form-control metric-tons" value="0" step="0.001" min="0">
                             </td>
-                            <td class="p-2">
+                            <td class="p-2" style="display: none;">
                                 <input type="number" name="packing_items[0][maunds]" class="form-control maunds" value="0" step="0.01" min="0">
                             </td>
                             <td class="p-2">
@@ -172,7 +153,7 @@
                             <td class="p-2">
                                 <input type="number" name="packing_items[0][rate]" class="form-control rates" value="0" step="0.01" min="0">
                             </td>
-                            <td class="p-2">
+                            <td class="p-2" style="display: none;">
                                 <input type="number" name="packing_items[0][rate_per_maund]" class="form-control rates_mnd" value="0" step="0.01" min="0">
                             </td>
                             <td class="p-2">
@@ -192,6 +173,13 @@
                 <div class="col-md-12 text-right">
                     <strong>Total Quantity (MT): <span id="display_total_mt">0.000</span></strong>
                 </div>
+            </div>
+        </div>
+
+        <div class="col-md-12 mt-3">
+            <h6 class="header-heading-sepration">Additional Information</h6>
+            <div class="form-group">
+                <textarea name="additional_info" class="form-control" rows="4" placeholder="Enter any additional details here..."></textarea>
             </div>
         </div>
     </div>

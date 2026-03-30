@@ -71,9 +71,7 @@ class ExportOrderController extends Controller
     {
         try {
             $products = Product::where('status', 1)->get();
-            $companyLocations = CompanyLocation::where('status', 'active')->get();
             $bagTypes = BagType::where('status', 1)->get();
-            $bagConditions = BagCondition::where('status', 1)->get();
             $bagPackings = BagPacking::where('status', 1)->get();
             $brands = Brands::where('status', 1)->get();
             $bagColors = Color::where('status', 1)->get();
@@ -90,7 +88,7 @@ class ExportOrderController extends Controller
             $exportSodas = ExportSodaField::latest()->get();
             $quotations = Quotation::latest()->get();
         } catch (QueryException $e) {
-            $products = $companyLocations = $bagTypes = $bagConditions = $bagPackings = collect();
+            $products = $bagTypes = $bagPackings = collect();
             $brands = $bagColors = $users = $banks = $brokers = $incoterms = collect();
             $modeofterms = $modeoftransport = $countries = $ports = $hscodes = $currencies = collect();
             $exportSodas = $quotations = collect();
@@ -98,9 +96,7 @@ class ExportOrderController extends Controller
 
         return view('management.export.export-order.create', compact(
             'products',
-            'companyLocations',
             'bagTypes',
-            'bagConditions',
             'bagPackings',
             'brands',
             'bagColors',
@@ -139,9 +135,6 @@ class ExportOrderController extends Controller
                 $exportOrderData,
                 [
                     'created_by' => auth()->user()->id,
-                'company_location_ids' => $request->company_location_ids ?? [],
-                'arrival_location_ids' => $request->arrival_location_ids ?? [],
-                'arrival_sub_location_ids' => $request->arrival_sub_location_ids ?? [],
                 ]
             ));
 
@@ -165,7 +158,6 @@ class ExportOrderController extends Controller
                         'brand_id' => $item['brand_id'],
                         'bag_type_id' => $item['bag_type_id'],
                         'bag_packing_id' => $item['bag_packing_id'],
-                        'bag_condition_id' => $item['bag_condition_id'],
                         'bag_color_id' => $item['bag_color_id'],
 
                         'bag_size' => $item['bag_size'] ?? 0,
@@ -209,9 +201,7 @@ class ExportOrderController extends Controller
             $exportOrder = ExportOrder::with(['specifications', 'packingItems', 'product'])->findOrFail($id);
 
             $products = Product::where('status', 1)->get();
-            $companyLocations = CompanyLocation::where('status', 'active')->get();
             $bagTypes = BagType::where('status', 1)->get();
-            $bagConditions = BagCondition::where('status', 1)->get();
             $bagPackings = BagPacking::where('status', 1)->get();
             $brands = Brands::where('status', 1)->get();
             $bagColors = Color::where('status', 1)->get();
@@ -229,7 +219,7 @@ class ExportOrderController extends Controller
             $quotations = Quotation::latest()->get();
         } catch (QueryException $e) {
             $exportOrder = new ExportOrder();
-            $products = $companyLocations = $bagTypes = $bagConditions = $bagPackings = collect();
+            $products = $bagTypes = $bagPackings = collect();
             $brands = $bagColors = $users = $banks = $brokers = $incoterms = collect();
             $modeofterms = $modeoftransport = $countries = $ports = $hscodes = $currencies = collect();
             $exportSodas = $quotations = collect();
@@ -238,9 +228,7 @@ class ExportOrderController extends Controller
         return view('management.export.export-order.show', compact(
             'exportOrder',
             'products',
-            'companyLocations',
             'bagTypes',
-            'bagConditions',
             'bagPackings',
             'brands',
             'bagColors',
@@ -265,9 +253,7 @@ class ExportOrderController extends Controller
             $exportOrder = ExportOrder::with(['specifications', 'packingItems', 'product'])->findOrFail($id);
 
             $products = Product::where('status', 1)->get();
-            $companyLocations = CompanyLocation::where('status', 'active')->get();
             $bagTypes = BagType::where('status', 1)->get();
-            $bagConditions = BagCondition::where('status', 1)->get();
             $bagPackings = BagPacking::where('status', 1)->get();
             $brands = Brands::where('status', 1)->get();
             $bagColors = Color::where('status', 1)->get();
@@ -285,7 +271,7 @@ class ExportOrderController extends Controller
             $quotations = Quotation::latest()->get();
         } catch (QueryException $e) {
             $exportOrder = new ExportOrder();
-            $products = $companyLocations = $bagTypes = $bagConditions = $bagPackings = collect();
+            $products = $bagTypes = $bagPackings = collect();
             $brands = $bagColors = $users = $banks = $brokers = $incoterms = collect();
             $modeofterms = $modeoftransport = $countries = $ports = $hscodes = $currencies = collect();
             $exportSodas = $quotations = collect();
@@ -294,9 +280,7 @@ class ExportOrderController extends Controller
         return view('management.export.export-order.edit', compact(
             'exportOrder',
             'products',
-            'companyLocations',
             'bagTypes',
-            'bagConditions',
             'bagPackings',
             'brands',
             'bagColors',
@@ -335,9 +319,6 @@ class ExportOrderController extends Controller
             }
 
             $updateData = array_merge($exportOrderData, [
-                'company_location_ids' => $request->company_location_ids ?? [],
-                'arrival_location_ids' => $request->arrival_location_ids ?? [],
-                'arrival_sub_location_ids' => $request->arrival_sub_location_ids ?? [],
                 'am_change_made' => 1,
             ]);
 
@@ -389,7 +370,6 @@ class ExportOrderController extends Controller
                         'brand_id' => $item['brand_id'],
                         'bag_type_id' => $item['bag_type_id'],
                         'bag_packing_id' => $item['bag_packing_id'] ?? null,
-                        'bag_condition_id' => $item['bag_condition_id'],
                         'bag_color_id' => $item['bag_color_id'],
                         'bag_size' => $item['bag_size'] ?? 0,
                         'metric_tons' => $item['metric_tons'] ?? 0,

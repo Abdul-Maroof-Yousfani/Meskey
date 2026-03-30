@@ -8,7 +8,7 @@
         <div class="col-8">
             {{-- ====== BUYER & LOCATION INFO ====== --}}
             <div class="col-md-12">
-                <h6 class="header-heading-sepration">Buyer & Location Information</h6>
+                <h6 class="header-heading-sepration">Buyer & Information</h6>
                 <div class="row">
                     <div class="col-md-4">
                         <div class="form-group">
@@ -45,33 +45,10 @@
                             <input type="text" id="buyer_email" class="form-control" readonly>
                         </div>
                     </div>
-                    <div class="col-md-12">
+                    <div class="col-md-8">
                         <div class="form-group">
                             <label>Buyer Address</label>
                             <input type="text" id="buyer_address" class="form-control" readonly>
-                        </div>
-                    </div>
-
-                    <div class="col-md-4 mt-2">
-                        <div class="form-group">
-                            <label>Company Locations</label>
-                            <select name="company_location_ids[]" id="companyLocationSelect" class="form-control select2" multiple>
-                                @foreach ($companyLocations as $location)
-                                    <option value="{{ $location->id }}">{{ $location->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mt-2">
-                        <div class="form-group">
-                            <label>Arrival Locations</label>
-                            <select name="arrival_location_ids[]" id="arrivalLocationSelect" class="form-control select2" multiple></select>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mt-2">
-                        <div class="form-group">
-                            <label>Arrival Sub Locations</label>
-                            <select name="arrival_sub_location_ids[]" id="arrivalSubLocationSelect" class="form-control select2" multiple></select>
                         </div>
                     </div>
                 </div>
@@ -227,18 +204,16 @@
                 <table class="table table-bordered mb-0" id="packingTable">
                     <thead>
                         <tr>
-                            <th style="min-width:150px;">Brand</th>
                             <th style="min-width:150px;">Bag Type</th>
                             <th style="min-width:130px;">Packing</th>
-                            <th style="min-width:130px;">Condition</th>
                             <th style="min-width:110px;">Color</th>
                             <th style="min-width:100px;">Packing Size (kg)</th>
                             <th style="min-width:100px;">Qty (MT)</th>
-                            <th style="min-width:100px;">Qty (Mnds)</th>
+                            <th style="min-width:100px; display: none;">Qty (Mnds)</th>
                             <th style="min-width:110px;">Qty (KGs)</th>
                             <th style="min-width:100px;">Bags</th>
                             <th style="min-width:110px;">Rate/Ton</th>
-                            <th style="min-width:110px;">Rate/Mnd</th>
+                            <th style="min-width:110px; display: none;">Rate/Mnd</th>
                             <th style="min-width:130px;">Amount</th>
                             <th style="min-width:130px;">Amount (PKR)</th>
                             <th>Action</th>
@@ -247,16 +222,8 @@
                     <tbody id="packingItems">
                         <tr class="packing-item">
                             <td class="p-2">
-                                <select name="packing_items[0][brand_id]" class="form-control select2">
-                                    <option value="">Brand</option>
-                                    @foreach ($brands as $brand)
-                                        <option value="{{ $brand->id }}">{{ $brand->name }}</option>
-                                    @endforeach
-                                </select>
-                            </td>
-                            <td class="p-2">
                                 <select name="packing_items[0][bag_type_id]" class="form-control select2">
-                                    <option value="">Bag Type</option>
+                                    <option value="">Select Bag Type</option>
                                     @foreach ($bagTypes as $bagType)
                                         <option value="{{ $bagType->id }}">{{ $bagType->name }}</option>
                                     @endforeach
@@ -267,14 +234,6 @@
                                     <option value="">Packing</option>
                                     @foreach ($bagPackings as $packing)
                                         <option value="{{ $packing->id }}">{{ $packing->name }}</option>
-                                    @endforeach
-                                </select>
-                            </td>
-                            <td class="p-2">
-                                <select name="packing_items[0][bag_condition_id]" class="form-control select2">
-                                    <option value="">Condition</option>
-                                    @foreach ($bagConditions as $condition)
-                                        <option value="{{ $condition->id }}">{{ $condition->name }}</option>
                                     @endforeach
                                 </select>
                             </td>
@@ -292,7 +251,7 @@
                             <td class="p-2">
                                 <input type="number" name="packing_items[0][metric_tons]" class="form-control metric-tons" value="0" step="0.001" min="0">
                             </td>
-                            <td class="p-2">
+                            <td class="p-2" style="display: none;">
                                 <input type="number" name="packing_items[0][maunds]" class="form-control maunds" value="0" step="0.01" min="0">
                             </td>
                             <td class="p-2">
@@ -304,7 +263,7 @@
                             <td class="p-2">
                                 <input type="number" name="packing_items[0][rate]" class="form-control rates" value="0" step="0.01" min="0">
                             </td>
-                            <td class="p-2">
+                            <td class="p-2" style="display: none;">
                                 <input type="number" name="packing_items[0][rate_per_maund]" class="form-control rates_mnd" value="0" step="0.01" min="0">
                             </td>
                             <td class="p-2">
@@ -341,7 +300,7 @@
                             <small class="text-danger" id="stuffing_error" style="display:none;">Stuffing cannot exceed Total Packing MT.</small>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-4" style="display: none;">
                         <div class="form-group">
                             <label>Stuffing (Maunds)</label>
                             <input type="number" name="stuffing_maunds" id="qty_stuffing_mnd" class="form-control" step="0.01" value="0" min="0">
@@ -382,43 +341,6 @@ $(document).ready(function() {
         } else {
             $('#buyer_phone, #buyer_email, #buyer_address').val('');
         }
-    });
-
-    // Arrival Locations Logic
-    $('#companyLocationSelect').on('change', function() {
-        let companyLocationIds = $(this).val();
-        if (!companyLocationIds || companyLocationIds.length === 0) {
-            $('#arrivalLocationSelect').empty().trigger('change');
-            return;
-        }
-        $.post('/export/get-arrival-locations', {
-            company_location_ids: companyLocationIds,
-            _token: $('meta[name="csrf-token"]').attr('content')
-        }, function(response) {
-            let options = '';
-            response.forEach(function(location) {
-                options += `<option value="${location.id}">${location.name}</option>`;
-            });
-            $('#arrivalLocationSelect').html(options).trigger('change');
-        });
-    });
-
-    $('#arrivalLocationSelect').on('change', function() {
-        let arrivalLocationIds = $(this).val();
-        if (!arrivalLocationIds || arrivalLocationIds.length === 0) {
-            $('#arrivalSubLocationSelect').empty().trigger('change');
-            return;
-        }
-        $.post('/export/get-arrival-sub-locations', {
-            arrival_location_ids: arrivalLocationIds,
-            _token: $('meta[name="csrf-token"]').attr('content')
-        }, function(response) {
-            let options = '';
-            response.forEach(function(sublocation) {
-                options += `<option value="${sublocation.id}">${sublocation.name}</option>`;
-            });
-            $('#arrivalSubLocationSelect').html(options).trigger('change');
-        });
     });
 
     $('#currencySelect').on('change', function() {

@@ -1,8 +1,8 @@
 <div class="row">
     <div class="col-8">
-        {{-- ====== BUYER & LOCATION INFO ====== --}}
+        {{-- ====== BUYER & INFO ====== --}}
         <div class="col-md-12">
-            <h6 class="header-heading-sepration">Buyer & Location Information</h6>
+            <h6 class="header-heading-sepration">Buyer & Information</h6>
             <div class="table-responsive">
                 <table class="table table-bordered">
                     <tr>
@@ -94,17 +94,16 @@
             <table class="table table-bordered">
                 <thead>
                     <tr class="bg-light">
-                        <th>Brand</th>
                         <th>Bag Type</th>
                         <th>Packing</th>
-                        <th>Condition</th>
                         <th>Color</th>
                         <th>Size (kg)</th>
                         <th>Qty (MT)</th>
-                        <th>Maunds</th>
+                        <th style="display: none;">Maunds</th>
                         <th>Bags</th>
                         <th>Total KGs</th>
                         <th>Rate/Ton</th>
+                        <th style="display: none;">Rate/Mnd</th>
                         <th>Amount</th>
                     </tr>
                 </thead>
@@ -113,26 +112,25 @@
                     @foreach ($quotation->packingItems as $item)
                         @php $totalAmount += $item->amount; @endphp
                         <tr>
-                            <td>{{ $item->brand->name ?? 'N/A' }}</td>
                             <td>{{ $item->bagType->name ?? 'N/A' }}</td>
                             <td>{{ $item->bagPacking->name ?? 'N/A' }}</td>
-                            <td>{{ $item->bagCondition->name ?? 'N/A' }}</td>
                             <td>{{ $item->bagColor->color ?? 'N/A' }}</td>
                             <td>{{ number_format($item->bag_size, 2) }}</td>
                             <td>{{ number_format($item->metric_tons, 3) }}</td>
-                            <td>{{ number_format($item->maunds, 2) }}</td>
+                            <td style="display: none;">{{ number_format($item->maunds, 2) }}</td>
                             <td>{{ number_format($item->no_of_bags) }}</td>
                             <td>{{ number_format($item->total_kgs, 2) }}</td>
                             <td>{{ number_format($item->rate, 2) }}</td>
+                            <td style="display: none;">{{ number_format($item->rate_per_maund, 2) }}</td>
                             <td>{{ number_format($item->amount, 2) }}</td>
                         </tr>
                     @endforeach
                 </tbody>
                 <tfoot>
                     <tr class="font-weight-bold bg-light">
-                        <td colspan="6" class="text-right">Totals:</td>
+                        <td colspan="4" class="text-right">Totals:</td>
                         <td>{{ number_format($quotation->packingItems->sum('metric_tons'), 3) }}</td>
-                        <td>{{ number_format($quotation->packingItems->sum('maunds'), 2) }}</td>
+                        <td style="display: none;">{{ number_format($quotation->packingItems->sum('maunds'), 2) }}</td>
                         <td>{{ number_format($quotation->packingItems->sum('no_of_bags')) }}</td>
                         <td>{{ number_format($quotation->packingItems->sum('total_kgs'), 2) }}</td>
                         <td></td>
@@ -149,7 +147,7 @@
                 <div class="col-md-4">
                     <strong>Stuffing (MT):</strong> {{ number_format($quotation->stuffing_in_container, 3) }}
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-4" style="display: none;">
                     <strong>Stuffing (Maunds):</strong> {{ number_format($quotation->stuffing_maunds, 2) }}
                 </div>
                 <div class="col-md-4">
