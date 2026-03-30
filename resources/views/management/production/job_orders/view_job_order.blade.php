@@ -352,6 +352,7 @@
     .section-header th{background-color:#cdcdcd !important;color:#000000 !important;font-size:12px;letter-spacing:1px;}
     .sub-section-header th{background-color:#666 !important;color:#fff !important;font-size:10px;}
     .footer-paragargh{background:#599364 !important;color:#fff !important;padding:10px 0px !important;border-radius:4px !important;text-align:center !important;width:100% !important;}
+    .logo-img img{width:17%;}
     @media print{
     .d-print-none{display:none !important;}
     body *{visibility:hidden;}
@@ -379,6 +380,7 @@ function printDiv(divId) {
                 .row{display:flex !important;flex-wrap:wrap !important;width:100% !important;margin:0 !important;padding:0 !important;}
                 [class*="col-"]{flex:0 0 50% !important;/* for col-6 */
                 max-width:50% !important;box-sizing:border-box;padding:0 10px !important;}
+                .logo-img img{width:17% !important;}
                 .print-container{width:100%;}
                 .job-info-table{border:2px solid #cdcdcd !important;border-collapse:collapse;width:100% !important;}
                 .job-info-table th,.job-info-table td{border:1px solid #000 !important;line-height:1.25;padding:4px 10px !important;}
