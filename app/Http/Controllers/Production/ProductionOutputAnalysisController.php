@@ -84,13 +84,15 @@ class ProductionOutputAnalysisController extends Controller
 
             // Store Line Items
             if($request->has('items')) {
-                foreach ($request->items as $row) {
+                foreach ($request->items as $rowKey => $row) {
                     if (isset($row['params']) && is_array($row['params'])) {
+                        // Append seconds based on row index to distinguish multiple observations at the same HH:mm
+                        $analysisTime = $row['time'] . ":" . str_pad($rowKey % 60, 2, '0', STR_PAD_LEFT);
                         foreach ($row['params'] as $index => $value) {
                             if (isset($productSlabTypes[$index]) && $value !== null && $value !== '') {
                                 ProductionAnalysisData::create([
                                     'production_analysis_id' => $analysis->id,
-                                    'analysis_time' => $row['time'],
+                                    'analysis_time' => $analysisTime,
                                     'slab_type_id' => $productSlabTypes[$index]->id,
                                     'production_analysis_value' => $value,
                                 ]);
@@ -192,13 +194,15 @@ class ProductionOutputAnalysisController extends Controller
                                                 ->get();
 
             if($request->has('items')) {
-                foreach ($request->items as $row) {
+                foreach ($request->items as $rowKey => $row) {
                     if (isset($row['params']) && is_array($row['params'])) {
+                        // Append seconds based on row index to distinguish multiple observations at the same HH:mm
+                        $analysisTime = $row['time'] . ":" . str_pad($rowKey % 60, 2, '0', STR_PAD_LEFT);
                         foreach ($row['params'] as $index => $value) {
                             if (isset($productSlabTypes[$index]) && $value !== null && $value !== '') {
                                 ProductionAnalysisData::create([
                                     'production_analysis_id' => $analysis->id,
-                                    'analysis_time' => $row['time'],
+                                    'analysis_time' => $analysisTime,
                                     'slab_type_id' => $productSlabTypes[$index]->id,
                                     'production_analysis_value' => $value,
                                 ]);
