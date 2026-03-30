@@ -317,7 +317,7 @@ p{margin-bottom:0;padding-bottom:2px}
                 .row{display:flex !important;flex-wrap:wrap !important;width:100% !important;margin:0 !important;padding:0 !important;}
                 [class*="col-"]{flex:0 0 50% !important;/* for col-6 */
                 max-width:50% !important;box-sizing:border-box;padding:0 10px !important;}
-                .logo-img img{width:17% !important;}
+                .logo-img img{width:12% !important;}
                 .voucher-header,.payment-voucher-print{width:100% !important;margin:0 !important;padding:0 !important;}
                 .text-right{text-align:right !important;}
                 .no-print{display:none !important;}
