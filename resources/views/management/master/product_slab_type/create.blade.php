@@ -16,6 +16,7 @@
                 <textarea name="description" placeholder="Description" class="form-control"></textarea>
             </div>
         </div>
+
         <!-- Status -->
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
@@ -24,6 +25,16 @@
                     <option value="active">Active</option>
                     <option value="inactive">Inactive</option>
                 </select>
+            </div>
+        </div>
+        <!-- Slab type for general item -->
+        <div class="col-xs-12 col-sm-12 col-md-12" style="margin-top: 20px;">
+            <div class="form-group d-flex align-items-center">
+                <label class="mr-2 mb-0">Slab type for general item:</label>
+                <div class="custom-control custom-switch">
+                    <input type="checkbox" class="custom-control-input" id="for_general_item" name="for_general_item" value="1">
+                    <label class="custom-control-label" for="for_general_item"></label>
+                </div>
             </div>
         </div>
     </div>

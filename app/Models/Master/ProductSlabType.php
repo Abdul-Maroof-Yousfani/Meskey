@@ -16,6 +16,7 @@ class ProductSlabType extends Model
         'description',
         'calculation_base_type',
         'status',
+        'for_general_item',
         
     ];
 

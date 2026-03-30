@@ -3,6 +3,8 @@
 use App\Http\Controllers\Finance\PaymentVoucherController;
 use App\Http\Controllers\Production\JobOrderController;
 use App\Http\Controllers\Production\JobOrderRawMaterialQcController;
+use App\Http\Controllers\Production\ProductionInputAnalysisController;
+use App\Http\Controllers\Production\ProductionOutputAnalysisController;
 use App\Http\Controllers\Production\ProductionQualityCheckController;
 use App\Http\Controllers\Production\ProductionVoucherController;
 use App\Models\Production\JobOrder\JobOrderRawMaterialQc;
@@ -68,3 +70,8 @@ Route::post('get-plant-breakdown', [PlantBreakdownController::class, 'getList'])
 // Plant Breakdown Routes
 Route::resource('production-quality-check', ProductionQualityCheckController::class);
 Route::post('get-production-quality-check', [ProductionQualityCheckController::class, 'getList'])->name('get.production-quality-check');
+
+Route::resource("production-input-analysis", ProductionInputAnalysisController::class);
+Route::post('get-production-input-analysis', [ProductionInputAnalysisController::class, 'getList'])->name('get.production-input-analysis');
+Route::resource("production-output-analysis", ProductionOutputAnalysisController::class);
+Route::post('get-production-output-analysis', [ProductionOutputAnalysisController::class, 'getList'])->name('get.production-output-analysis');
