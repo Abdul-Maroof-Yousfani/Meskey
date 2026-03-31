@@ -75,3 +75,4 @@ Route::resource("production-input-analysis", ProductionInputAnalysisController::
 Route::post('get-production-input-analysis', [ProductionInputAnalysisController::class, 'getList'])->name('get.production-input-analysis');
 Route::resource("production-output-analysis", ProductionOutputAnalysisController::class);
 Route::post('get-production-output-analysis', [ProductionOutputAnalysisController::class, 'getList'])->name('get.production-output-analysis');
+Route::get('get-slabs-by-product', [ProductionOutputAnalysisController::class, 'getSlabsByProduct'])->name('production-output-analysis.get-slabs');

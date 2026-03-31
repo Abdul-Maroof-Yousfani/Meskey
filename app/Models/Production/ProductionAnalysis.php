@@ -27,6 +27,7 @@ class ProductionAnalysis extends Model
         'inner_stitching',
         'outer_stitching',
         'remarks',
+        'product_id',
         'production_analysis_type',
     ];
 
@@ -49,6 +50,11 @@ class ProductionAnalysis extends Model
         return $this->belongsTo(CompanyLocation::class, 'location_id');
     }
 
+    public function product()
+    {
+        return $this->belongsTo(\App\Models\Product::class, 'product_id');
+    }
+
     public function cropYear()
     {
         return $this->belongsTo(CropYear::class, 'crop_year_id');
@@ -62,5 +68,20 @@ class ProductionAnalysis extends Model
     public function analysisData()
     {
         return $this->hasMany(ProductionAnalysisData::class, 'production_analysis_id');
+    }
+
+    public function items()
+    {
+        return $this->hasMany(ProductionAnalysisItem::class, 'production_analysis_id');
+    }
+
+    public function allItemSlabs()
+    {
+        return $this->hasManyThrough(
+            ProductionAnalysisItemSlab::class, 
+            ProductionAnalysisItem::class, 
+            'production_analysis_id', // Foreign key on items table
+            'production_analysis_item_id' // Foreign key on slabs table
+        );
     }
 }

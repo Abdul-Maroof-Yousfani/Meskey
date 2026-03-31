@@ -60,18 +60,20 @@
                 <thead>
                     <tr>
                         <th style="min-width: 150px;">Time</th>
+                        <th style="min-width: 150px;">Unit</th>
                         @foreach($productSlabTypes as $productSlabType)
                             <th style="min-width: 250px;">{{ $productSlabType->name }} {{ $productSlabType->qc_symbol }}</th>
                         @endforeach
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($groupedData as $time => $dataRows)
+                    @foreach($item->items as $analysisItem)
                         <tr>
-                            <td>{{ \Carbon\Carbon::parse($time)->format('h:i A') }}</td>
+                            <td>{{ \Carbon\Carbon::parse($analysisItem->analysis_time)->format('h:i A') }}</td>
+                            <td>{{ $analysisItem->unit->name ?? '-' }}</td>
                             @foreach($productSlabTypes as $productSlabType)
                                 <td>
-                                    {{ $dataRows->where('slab_type_id', $productSlabType->id)->first()->production_analysis_value ?? '-' }}
+                                    {{ $analysisItem->slabs->where('slab_type_id', $productSlabType->id)->first()->production_analysis_value ?? '-' }}
                                 </td>
                             @endforeach
                         </tr>

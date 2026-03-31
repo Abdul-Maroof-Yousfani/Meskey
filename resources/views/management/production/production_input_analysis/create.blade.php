@@ -80,7 +80,6 @@
             <h6 class="header-heading-sepration d-flex justify-content-between align-items-center">
                 Line Items
                 <div>
-                    <!-- <button type="button" class="btn btn-sm btn-info" id="addColumn">Add Column</button> -->
                     <button type="button" class="btn btn-sm btn-success" id="addLineItem">Add Row</button>
                 </div>
             </h6>
@@ -89,8 +88,9 @@
                     <thead>
                         <tr id="headerRow">
                             <th style="min-width: 150px;">Time</th>
+                            <th style="min-width: 150px;">Unit</th>
                             @foreach($productSlabTypes as $productSlabType)
-                                <th class="dynamic-col" style="min-width: 250px;">{{ $productSlabType->name }} {{ $productSlabType->qc_symbol }}</th>
+                                <th class="dynamic-col" data-slab-id="{{ $productSlabType->id }}" style="min-width: 250px;">{{ $productSlabType->name }} {{ $productSlabType->qc_symbol }}</th>
                             @endforeach
                             <th style="width: 50px;">Action</th>
                         </tr>
@@ -100,9 +100,17 @@
                             <td>
                                 <input type="time" name="items[0][time]" class="form-control" value="{{ date('H:i') }}">
                             </td>
+                            <td>
+                                <select name="items[0][unit_id]" class="form-control select2">
+                                    <option value="">Select Unit</option>
+                                    @foreach($units as $unit)
+                                        <option value="{{ $unit->id }}">{{ $unit->name }}</option>
+                                    @endforeach
+                                </select>
+                            </td>
                             @foreach($productSlabTypes as $productSlabType)
                                 <td class="dynamic-col">
-                                    <input type="text" name="items[0][params][]" class="form-control">
+                                    <input type="text" name="items[0][params][{{ $productSlabType->id }}]" class="form-control">
                                 </td>
                             @endforeach
                             <td>
@@ -134,45 +142,43 @@
 <script>
     $(document).ready(function() {
         // Initialize Select2
-        if ($.fn.select2) {
-            $('.select2').select2({
-                width: '100%'
-            });
+        function initSelect2(el) {
+            if ($.fn.select2) {
+                $(el).select2({ width: '100%' });
+            }
         }
+        initSelect2('.select2');
 
-        // Add Row
-        $('#addLineItem').on('click', function() {
+        function addRow() {
             let rowCount = $('#lineItemsBody tr').length;
-            let colCount = $('#headerRow th.dynamic-col').length;
             let currentTime = new Date().getHours().toString().padStart(2, '0') + ':' + new Date().getMinutes().toString().padStart(2, '0');
             
             let newRow = `<tr>
-                <td><input type="time" name="items[${rowCount}][time]" class="form-control" value="${currentTime}"></td>`;
+                <td><input type="time" name="items[${rowCount}][time]" class="form-control" value="${currentTime}"></td>
+                <td>
+                    <select name="items[${rowCount}][unit_id]" class="form-control select2-row">
+                        <option value="">Select Unit</option>
+                        @foreach($units as $unit)
+                            <option value="{{ $unit->id }}">{{ $unit->name }}</option>
+                        @endforeach
+                    </select>
+                </td>`;
             
-            for(let i=0; i<colCount; i++) {
-                newRow += `<td class="dynamic-col"><input type="text" name="items[${rowCount}][params][]" class="form-control"></td>`;
-            }
+            $('#headerRow th.dynamic-col').each(function() {
+                let slabId = $(this).data('slab-id');
+                newRow += `<td class="dynamic-col"><input type="text" name="items[${rowCount}][params][${slabId}]" class="form-control"></td>`;
+            });
             
             newRow += `<td><button type="button" class="btn btn-sm btn-danger remove-row"><i class="ft-trash"></i></button></td></tr>`;
-            $('#lineItemsBody').append(newRow);
-        });
+            
+            let $row = $(newRow);
+            $('#lineItemsBody').append($row);
+            initSelect2($row.find('.select2-row'));
+        }
 
-        // Add Column
-        $('#addColumn').on('click', function() {
-            let colName = prompt("Enter Column Name:", "New Parameter");
-            if (colName) {
-                // Add header before the last 'Action' column
-                $(`<th class="dynamic-col" style="min-width: 250px;">${colName}</th>`).insertBefore('#headerRow th:last-child');
-                
-                // Add cell to each row before the last 'Action' column
-                $('#lineItemsBody tr').each(function() {
-                    $(`<td class="dynamic-col"><input type="text" name="items[${$(this).index()}][params][]" class="form-control"></td>`).insertBefore($(this).find('td:last-child'));
-                });
-                
-                // Adjust table min-width to maintain broad fields
-                let currentWidth = parseInt($('#lineItemsTable').css('min-width'));
-                $('#lineItemsTable').css('min-width', (currentWidth + 250) + 'px');
-            }
+        // Add Row Button
+        $('#addLineItem').on('click', function() {
+            addRow();
         });
 
         // Remove Row
@@ -185,3 +191,10 @@
         });
     });
 </script>
+
+<style>
+    .custom-control-label::before, 
+    .custom-control-label::after {
+        top: 0.25rem !important;
+    }
+</style>

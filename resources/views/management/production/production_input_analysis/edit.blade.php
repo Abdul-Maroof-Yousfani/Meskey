@@ -76,9 +76,7 @@
                         <select name="crop_year_id" class="form-control select2" required>
                             <option value="">Select Crop Year</option>
                             @foreach($cropYears as $cropYear)
-                                <option value="{{ $cropYear->id }}" {{ $item->crop_year_id == $cropYear->id ? 'selected' : '' }}>
-                                    {{ $cropYear->name }}
-                                </option>
+                                <option value="{{ $cropYear->id }}" {{ $item->crop_year_id == $cropYear->id ? 'selected' : '' }}>{{ $cropYear->name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -99,50 +97,40 @@
                     <thead>
                         <tr id="headerRow">
                             <th style="min-width: 150px;">Time</th>
+                            <th style="min-width: 150px;">Unit</th>
                             @foreach($productSlabTypes as $productSlabType)
-                                <th class="dynamic-col" style="min-width: 250px;">{{ $productSlabType->name }} {{ $productSlabType->qc_symbol }}</th>
+                                <th class="dynamic-col" data-slab-id="{{ $productSlabType->id }}" style="min-width: 250px;">{{ $productSlabType->name }} {{ $productSlabType->qc_symbol }}</th>
                             @endforeach
                             <th style="width: 50px;">Action</th>
                         </tr>
                     </thead>
                     <tbody id="lineItemsBody">
-                        @php $rowCount = 0; @endphp
-                        @forelse($groupedData as $time => $dataRows)
+                        @foreach($item->items as $index => $analysisItem)
                             <tr>
                                 <td>
-                                    @php 
-                                        $formattedTime = \Carbon\Carbon::parse($time)->format('H:i');
-                                    @endphp
-                                    <input type="time" name="items[{{ $rowCount }}][time]" class="form-control" value="{{ $formattedTime }}">
+                                    <input type="time" name="items[{{ $index }}][time]" class="form-control" value="{{ \Carbon\Carbon::parse($analysisItem->analysis_time)->format('H:i') }}">
+                                </td>
+                                <td>
+                                    <select name="items[{{ $index }}][unit_id]" class="form-control select2">
+                                        <option value="">Select Unit</option>
+                                        @foreach($units as $unit)
+                                            <option value="{{ $unit->id }}" {{ $analysisItem->unit_id == $unit->id ? 'selected' : '' }}>{{ $unit->name }}</option>
+                                        @endforeach
+                                    </select>
                                 </td>
                                 @foreach($productSlabTypes as $productSlabType)
                                     @php
-                                        $value = $dataRows->where('slab_type_id', $productSlabType->id)->first()->production_analysis_value ?? '';
+                                        $slabValue = $analysisItem->slabs->where('slab_type_id', $productSlabType->id)->first()->production_analysis_value ?? '';
                                     @endphp
                                     <td class="dynamic-col">
-                                        <input type="text" name="items[{{ $rowCount }}][params][]" class="form-control" value="{{ $value }}">
+                                        <input type="text" name="items[{{ $index }}][params][{{ $productSlabType->id }}]" class="form-control" value="{{ $slabValue }}">
                                     </td>
                                 @endforeach
                                 <td>
                                     <button type="button" class="btn btn-sm btn-danger remove-row"><i class="ft-trash"></i></button>
                                 </td>
                             </tr>
-                            @php $rowCount++; @endphp
-                        @empty
-                            <tr>
-                                <td>
-                                    <input type="time" name="items[0][time]" class="form-control" value="{{ date('H:i') }}">
-                                </td>
-                                @foreach($productSlabTypes as $productSlabType)
-                                    <td class="dynamic-col">
-                                        <input type="text" name="items[0][params][]" class="form-control">
-                                    </td>
-                                @endforeach
-                                <td>
-                                    <button type="button" class="btn btn-sm btn-danger remove-row"><i class="ft-trash"></i></button>
-                                </td>
-                            </tr>
-                        @endforelse
+                        @endforeach
                     </tbody>
                 </table>
             </div>
@@ -168,27 +156,43 @@
 <script>
     $(document).ready(function() {
         // Initialize Select2
-        if ($.fn.select2) {
-            $('.select2').select2({
-                width: '100%'
-            });
+        function initSelect2(el) {
+            if ($.fn.select2) {
+                $(el).select2({ width: '100%' });
+            }
         }
+        initSelect2('.select2');
 
-        // Add Row
-        $('#addLineItem').on('click', function() {
+        function addRow() {
             let rowCount = $('#lineItemsBody tr').length;
-            let colCount = $('#headerRow th.dynamic-col').length;
             let currentTime = new Date().getHours().toString().padStart(2, '0') + ':' + new Date().getMinutes().toString().padStart(2, '0');
             
             let newRow = `<tr>
-                <td><input type="time" name="items[${rowCount}][time]" class="form-control" value="${currentTime}"></td>`;
+                <td><input type="time" name="items[${rowCount}][time]" class="form-control" value="${currentTime}"></td>
+                <td>
+                    <select name="items[${rowCount}][unit_id]" class="form-control select2-row">
+                        <option value="">Select Unit</option>
+                        @foreach($units as $unit)
+                            <option value="{{ $unit->id }}">{{ $unit->name }}</option>
+                        @endforeach
+                    </select>
+                </td>`;
             
-            for(let i=0; i<colCount; i++) {
-                newRow += `<td class="dynamic-col"><input type="text" name="items[${rowCount}][params][]" class="form-control"></td>`;
-            }
+            $('#headerRow th.dynamic-col').each(function() {
+                let slabId = $(this).data('slab-id');
+                newRow += `<td class="dynamic-col"><input type="text" name="items[${rowCount}][params][${slabId}]" class="form-control"></td>`;
+            });
             
             newRow += `<td><button type="button" class="btn btn-sm btn-danger remove-row"><i class="ft-trash"></i></button></td></tr>`;
-            $('#lineItemsBody').append(newRow);
+            
+            let $row = $(newRow);
+            $('#lineItemsBody').append($row);
+            initSelect2($row.find('.select2-row'));
+        }
+
+        // Add Row Button
+        $('#addLineItem').on('click', function() {
+            addRow();
         });
 
         // Remove Row
@@ -201,3 +205,10 @@
         });
     });
 </script>
+
+<style>
+    .custom-control-label::before, 
+    .custom-control-label::after {
+        top: 0.25rem !important;
+    }
+</style>

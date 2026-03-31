@@ -11,7 +11,9 @@ use App\Models\Master\CompanyLocation;
 use App\Models\Master\CropYear;
 use App\Models\Master\ProductSlabType;
 use App\Models\Production\ProductionAnalysis;
-use App\Models\Production\ProductionAnalysisData;
+use App\Models\Production\ProductionAnalysisItem;
+use App\Models\Production\ProductionAnalysisItemSlab;
+use App\Models\UnitOfMeasure;
 use App\Http\Requests\Production\StoreProductionInputAnalysisRequest;
 use Illuminate\Support\Facades\DB;
 
@@ -32,6 +34,7 @@ class ProductionInputAnalysisController extends Controller
         $packings = BagPacking::all();
         $companyLocations = CompanyLocation::all();
         $cropYears = CropYear::all();
+        $units = UnitOfMeasure::all();
         $productSlabTypes = ProductSlabType::select("id", "name", "qc_symbol")
                                             ->where("for_general_item", 1)
                                             ->where("status", "active")
@@ -43,7 +46,8 @@ class ProductionInputAnalysisController extends Controller
             'packings', 
             'productSlabTypes',
             'companyLocations', 
-            'cropYears'
+            'cropYears',
+            'units'
         ));
     }
 
@@ -76,24 +80,26 @@ class ProductionInputAnalysisController extends Controller
                 }
             }
 
-            // Fetch slab types in the same order as in create view to match indexing of params[]
-            $productSlabTypes = ProductSlabType::where("for_general_item", 1)
-                                                ->where("status", "active")
-                                                ->get();
+            // Store New Line Items
+            if ($request->has('items')) {
+                foreach ($request->items as $row) {
+                    // Create the Row Metadata (Item)
+                    $item = ProductionAnalysisItem::create([
+                        'production_analysis_id' => $analysis->id,
+                        'analysis_time' => $row['time'],
+                        'unit_id' => $row['unit_id'] ?? null,
+                    ]);
 
-            // Store Line Items
-            foreach ($request->items as $rowKey => $row) {
-                if (isset($row['params']) && is_array($row['params'])) {
-                    // Append seconds based on row index to distinguish multiple observations at the same HH:mm
-                    $analysisTime = $row['time'] . ":" . str_pad($rowKey % 60, 2, '0', STR_PAD_LEFT);
-                    foreach ($row['params'] as $index => $value) {
-                        if (isset($productSlabTypes[$index]) && $value !== null && $value !== '') {
-                            ProductionAnalysisData::create([
-                                'production_analysis_id' => $analysis->id,
-                                'analysis_time' => $analysisTime,
-                                'slab_type_id' => $productSlabTypes[$index]->id,
-                                'production_analysis_value' => $value,
-                            ]);
+                    // Save the Slab Values for this Item (Pivot)
+                    if (isset($row['params']) && is_array($row['params'])) {
+                        foreach ($row['params'] as $slabTypeId => $value) {
+                            if ($value !== null && $value !== '') {
+                                ProductionAnalysisItemSlab::create([
+                                    'production_analysis_item_id' => $item->id,
+                                    'slab_type_id' => $slabTypeId,
+                                    'production_analysis_value' => $value,
+                                ]);
+                            }
                         }
                     }
                 }
@@ -109,33 +115,35 @@ class ProductionInputAnalysisController extends Controller
 
     public function show($id)
     {
-        $item = ProductionAnalysis::with(['brand', 'location', 'jobOrders', 'analysisData.slabType'])
+        $item = ProductionAnalysis::with(['brand', 'location', 'product', 'jobOrders', 'items.unit', 'items.slabs.slabType'])
             ->findOrFail($id);
             
+        // Get general slab types
         $productSlabTypes = ProductSlabType::where("for_general_item", 1)
                                             ->where("status", "active")
                                             ->get();
 
-        $groupedData = $item->analysisData->groupBy('analysis_time');
-
-        return view('management.production.production_input_analysis.show', compact('item', 'productSlabTypes', 'groupedData'));
+        return view('management.production.production_input_analysis.show', compact('item', 'productSlabTypes'));
     }
 
     public function edit($id)
     {
-        $item = ProductionAnalysis::with(['jobOrders', 'analysisData'])->findOrFail($id);
+        $item = ProductionAnalysis::with(['jobOrders', 'items.slabs'])
+                                    ->findOrFail($id);
+        
         $jobOrders = JobOrder::all();
         $brands = Brands::all();
         $packings = BagPacking::all();
         $companyLocations = CompanyLocation::all();
         $cropYears = CropYear::all();
+        $units = UnitOfMeasure::all();
+
         $productSlabTypes = ProductSlabType::select("id", "name", "qc_symbol")
                                             ->where("for_general_item", 1)
                                             ->where("status", "active")
-                                            ->get(); 
+                                            ->get();
         
         $selectedJobOrderIds = $item->jobOrders->pluck('id')->toArray();
-        $groupedData = $item->analysisData->groupBy('analysis_time');
 
         return view('management.production.production_input_analysis.edit', compact(
             'item',
@@ -145,8 +153,8 @@ class ProductionInputAnalysisController extends Controller
             'productSlabTypes',
             'companyLocations', 
             'cropYears',
-            'selectedJobOrderIds',
-            'groupedData'
+            'units',
+            'selectedJobOrderIds'
         ));
     }
 
@@ -175,26 +183,26 @@ class ProductionInputAnalysisController extends Controller
                 $analysis->jobOrders()->sync([]);
             }
 
-            // Delete old line items
-            ProductionAnalysisData::where('production_analysis_id', $analysis->id)->delete();
-
-            // Fetch slab types to match indexing
-            $productSlabTypes = ProductSlabType::where("for_general_item", 1)
-                                                ->where("status", "active")
-                                                ->get();
+            // Delete old items (which will cascade to slabs)
+            $analysis->items()->delete();
 
             // Store New Line Items
             if ($request->has('items')) {
-                foreach ($request->items as $rowKey => $row) {
+                foreach ($request->items as $row) {
+                    // Create the Row Metadata (Item)
+                    $item = ProductionAnalysisItem::create([
+                        'production_analysis_id' => $analysis->id,
+                        'analysis_time' => $row['time'],
+                        'unit_id' => $row['unit_id'] ?? null,
+                    ]);
+
+                    // Save the Slab Values for this Item (Pivot)
                     if (isset($row['params']) && is_array($row['params'])) {
-                        // Append seconds based on row index to distinguish multiple observations at the same HH:mm
-                        $analysisTime = $row['time'] . ":" . str_pad($rowKey % 60, 2, '0', STR_PAD_LEFT);
-                        foreach ($row['params'] as $index => $value) {
-                            if (isset($productSlabTypes[$index]) && $value !== null && $value !== '') {
-                                ProductionAnalysisData::create([
-                                    'production_analysis_id' => $analysis->id,
-                                    'analysis_time' => $analysisTime,
-                                    'slab_type_id' => $productSlabTypes[$index]->id,
+                        foreach ($row['params'] as $slabTypeId => $value) {
+                            if ($value !== null && $value !== '') {
+                                ProductionAnalysisItemSlab::create([
+                                    'production_analysis_item_id' => $item->id,
+                                    'slab_type_id' => $slabTypeId,
                                     'production_analysis_value' => $value,
                                 ]);
                             }
