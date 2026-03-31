@@ -904,8 +904,9 @@ class FreightRequestController extends Controller
 
 
             $ticket = ArrivalTicket::where('id', $request->ticket_id)->first();
-            $paymentDetails = calculatePaymentDetails($ticket->id, 1);
             dd('dddd');
+            $paymentDetails = calculatePaymentDetails($ticket->id, 1);
+
             $qcAccountId = $ticket->qcProduct->account_id;
             $truckNo = $ticket->truck_no ?? 'N/A';
             $biltyNo = $ticket->bilty_no ?? 'N/A';
