@@ -19,12 +19,38 @@
                     <th>Shipment Period</th>
                     <td>{{ $exportSodaField->shipment_period ?? 'N/A' }}</td>
                 </tr>
-                <tr>
-                    <th>Commission</th>
-                    <td>{{ $exportSodaField->commission ?? '0.00' }}</td>
-                </tr>
+                @php
+                    $totalAmount = method_exists($exportSodaField, 'packingItems') ? $exportSodaField->packingItems->sum('amount') : 0;
+                    $totalMt = method_exists($exportSodaField, 'packingItems') ? $exportSodaField->packingItems->sum('metric_tons') : 0;
+                    $commission = $exportSodaField->commission ?? 0;
+                    $perc = $totalAmount > 0 ? ($commission / $totalAmount) * 100 : 0;
+                    $amtPerTon = $totalMt > 0 ? ($commission / $totalMt) : 0;
+                @endphp
+
             </table>
         </div>
+
+        {{-- Commission Section --}}
+        <div class="mt-4">
+            <h6 class="header-heading-sepration">Commission</h6>
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <tr>
+                        <th style="width:30%;">Commission (%)</th>
+                        <td>{{ number_format($perc, 2) }}%</td>
+                    </tr>
+                    <tr>
+                        <th>Amt/Ton</th>
+                        <td>{{ number_format($amtPerTon, 2) }}</td>
+                    </tr>
+                    <tr>
+                        <th>Total Commission</th>
+                        <td>{{ number_format($commission, 2) }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
     </div>
 
     <div class="col-4">

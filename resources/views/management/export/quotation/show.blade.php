@@ -32,6 +32,32 @@
                 </table>
             </div>
         </div>
+        <div class="col-md-12 mt-3">
+            <h6 class="header-heading-sepration">Commission</h6>
+            @php
+                $totalMt = $quotation->packingItems->sum('metric_tons');
+                $totalAmount = $quotation->packingItems->sum('amount');
+                $commission = $quotation->commission ?? 0;
+                $commissionPercentage = $totalAmount > 0 ? ($commission / $totalAmount) * 100 : 0;
+                $amtPerTon = $totalMt > 0 ? ($commission / $totalMt) : 0;
+            @endphp
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <tr>
+                        <th style="width:30%;">Commission (%)</th>
+                        <td>{{ number_format($commissionPercentage, 2) }}%</td>
+                    </tr>
+                    <tr>
+                        <th>Amt/Ton</th>
+                        <td>{{ number_format($amtPerTon, 2) }}</td>
+                    </tr>
+                    <tr>
+                        <th>Total Commission</th>
+                        <td>{{ number_format($commission, 2) }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
     </div>
 
     <div class="col-4">
