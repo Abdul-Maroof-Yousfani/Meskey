@@ -869,7 +869,7 @@ class FreightRequestController extends Controller
     public function pohouch_freight_payment_request_approval(Request $request)
     {
 
-
+        dd('dddd');
 
         return DB::transaction(function () use ($request) {
             $paymentRequest = PaymentRequest::findOrFail($request->payment_request_id);
@@ -904,7 +904,7 @@ class FreightRequestController extends Controller
 
 
             $ticket = ArrivalTicket::where('id', $request->ticket_id)->first();
-            dd('dddd');
+
             $paymentDetails = calculatePaymentDetails($ticket->id, 1);
 
             $qcAccountId = $ticket->qcProduct->account_id;
