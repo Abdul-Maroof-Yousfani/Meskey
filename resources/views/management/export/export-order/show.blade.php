@@ -28,10 +28,10 @@
             <div class="col-md-12">
                 <h6 class="header-heading-sepration">Basic Information</h6>
                 <div class="row">
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <div class="form-group">
                             <label>Quotation#:</label>
-                            <select name="quotation_id" class="form-control select2" readonly>
+                            <select name="quotation_id" class="form-control select2" readonly disabled>
                                 <option value="">Select Quotation</option>
                                 @foreach ($quotations as $quotation)
                                     <option value="{{ $quotation->id }}" {{ old('quotation_id', $exportOrder->quotation_id) == $quotation->id ? 'selected' : '' }}>#{{ $quotation->id }} - {{ $quotation->product->name ?? '' }}</option>
@@ -39,10 +39,10 @@
                             </select>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <fieldset>
                             <label>Sauda#:</label>
-                            <select name="export_soda_id" class="form-control select2" readonly>
+                            <select name="export_soda_id" class="form-control select2" readonly disabled>
                                 <option value="">Select Sauda</option>
                                 @foreach ($exportSodas as $soda)
                                     <option value="{{ $soda->id }}" {{ old('export_soda_id', $exportOrder->export_soda_id) == $soda->id ? 'selected' : '' }}>#{{ $soda->id }} - {{ $soda->product->name ?? '' }}</option>
@@ -50,18 +50,25 @@
                             </select>
                         </fieldset>
                     </div>
-                    <div class="col-md-4">
-                        <fieldset>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
                             <label>Contract No#:</label>
-                            <div class="input-group">
-                                <input type="text" name="voucher_no" class="form-control"
-                                    value="{{ old('voucher_no', $exportOrder->voucher_no) }}" readonly>
-                            </div>
-                        </fieldset>
+                            <input type="text" name="voucher_no" class="form-control"
+                                value="{{ old('voucher_no', $exportOrder->voucher_no) }}" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Contract Date:</label>
+                            <input type="date" name="voucher_date" class="form-control"
+                                value="{{ old('voucher_date', $exportOrder->voucher_date) }}" readonly>
+                        </div>
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <div class="form-group">
                             <label>Reference No#:</label>
                             <input type="text" name="contract_no" class="form-control"
@@ -69,25 +76,21 @@
                         </div>
                     </div>
 
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <div class="form-group">
-                            <label>Contract Date:</label>
-                            <input type="date" name="voucher_date" class="form-control"
-                                value="{{ old('contract_no', $exportOrder->voucher_date) }}" readonly>
+                            <label>Reference Date:</label>
+                            <input type="date" name="voucher_heading" class="form-control"
+                                value="{{ old('voucher_heading', (is_string($exportOrder->voucher_heading) && strtotime($exportOrder->voucher_heading)) ? date('Y-m-d', strtotime($exportOrder->voucher_heading)) : $exportOrder->voucher_heading) }}" readonly>
                         </div>
                     </div>
+                </div>
 
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label>Contract Heading:</label>
-                            <input type="text" name="voucher_heading" class="form-control"
-                                value="{{ old('voucher_heading', $exportOrder->voucher_heading) }}" readonly>
-                        </div>
-                    </div>
+
+                <div class="row">
                     <div class="col-md-4">
                         <div class="form-group">
                             <label>Buyer's Name:</label>
-                            <select name="buyer_id" class="form-control select2" readonly>
+                            <select name="buyer_id" class="form-control select2" readonly disabled>
                                 <option value="">Select Buyer</option>
                                 @foreach ($users as $user)
                                     <option value="{{ $user->id }}"
@@ -123,15 +126,16 @@
                                 value="{{ old('marking_labeling', $exportOrder->marking_labeling) }}" readonly>
                         </div>
                     </div>
-
+                    
                 </div>
+
             </div>
 
             <!-- Product Selection -->
             <div class="col-md-12">
                 <div class="form-group">
                     <label>Commodity/Product:</label>
-                    <select name="product_id" class="form-control select2" id="productSelect" readonly>
+                    <select name="product_id" class="form-control select2" id="productSelect" readonly disabled>
                         <option value="">Select Product</option>
                         @foreach ($products as $product)
                             <option value="{{ $product->id }}"
@@ -141,7 +145,12 @@
                         @endforeach
                     </select>
                 </div>
+                <div class="form-group mt-2">
+                    <label>Visual Name:</label>
+                    <input type="text" class="form-control" value="{{ $exportOrder->visual_name }}" readonly>
+                </div>
             </div>
+
 
             <!-- Specifications Section -->
             <div class="col-md-12" id="specificationsSection"
@@ -371,6 +380,40 @@
                     </div>
                 </div>
             </div>
+            {{-- Commission Section --}}
+            @php
+                $totalMt = $exportOrder->packingItems->sum('metric_tons');
+                $totalAmount = $exportOrder->packingItems->sum('amount');
+                $commission = $exportOrder->commission ?? 0;
+                $commissionPercentage = $totalAmount > 0 ? ($commission / $totalAmount) * 100 : 0;
+                $amtPerTon = $totalMt > 0 ? ($commission / $totalMt) : 0;
+            @endphp
+            <div class="mt-4">
+                <h6 class="header-heading-sepration">Commission</h6>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label>Commission (%):</label>
+                            <input type="text" class="form-control"
+                                value="{{ number_format($commissionPercentage, 2) }}%" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label>Amt/Ton:</label>
+                            <input type="text" class="form-control" value="{{ number_format($amtPerTon, 2) }}"
+                                readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label>Total Commission:</label>
+                            <input type="text" class="form-control" value="{{ number_format($commission, 2) }}"
+                                readonly>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="col-4">
@@ -580,10 +623,11 @@
                 </table>
             </div>
 
+
         </div>
 
         <!-- Packing Details -->
-        <div class="col-md-12">
+        <div class="col-md-12 mt-4">
             <h6 class="header-heading-sepration d-flex justify-content-between align-items-center">Packing Details</h6>
 
             <div class="table-responsive">
