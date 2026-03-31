@@ -877,7 +877,7 @@ class FreightRequestController extends Controller
             $paymentRequestData = $paymentRequest->paymentRequestData;
             $vendorAccId = $paymentRequest->account_id;
             $purchaseOrder = $paymentRequestData->purchaseOrder;
-            dd('fffffh');
+            // dd($purchaseOrder);
             $paymentRequestData->update([
                 'penalty_adjust_to' => $request->penalty_adjust_to ?? null,
                 'labour_vendor_id' => $request->labour_vendor_id ?? null,
@@ -892,7 +892,7 @@ class FreightRequestController extends Controller
                 'payment_request_id' => $request->payment_request_id,
                 'payment_request_data_id' => $paymentRequest->payment_request_data_id,
                 'ticket_id' => $request->ticket_id,
-                'purchase_order_id' => $purchaseOrder->id,
+                'purchase_order_id' => $purchaseOrder->id ?? null,
                 'approver_id' => auth()->user()->id,
                 'status' => $request->status,
                 'remarks' => $request->remarks,
