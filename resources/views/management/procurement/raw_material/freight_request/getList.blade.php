@@ -1,13 +1,13 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-2">Ticket No / Contract No</th>
-            <th class="col-sm-2">Supplier</th>
-            <th class="col-sm-2">Sauda Type</th>
-            <th class="col-sm-2">Truck No</th>
+            <th class="col-sm-3">Ticket No / Contract No</th>
+            <th class="col-sm-3">Supplier</th>
+            <th class="col-sm-1">Sauda Type</th>
+            <th class="col-sm-1">Truck No</th>
 
-            <th class="col-sm-2">Builty No</th>
-            <th class="col-sm-1">Commodity</th>
+            <th class="col-sm-1">Builty No</th>
+            <th class="col-sm-2">Commodity</th>
             <th class="col-sm-1">Loading date</th>
             <th class="col-sm-2">Amounts</th>
             <th class="col-sm-2">Total Requested Amount</th>
