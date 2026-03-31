@@ -11,6 +11,7 @@
 
 @endphp
 <style>
+    .hide,
     .togglehistorytable {
         display: none;
     }
@@ -541,7 +542,7 @@
 
     </div>
 
-    <div class="row">
+    <div class="row @if($paymentRequestData?->is_paid_by_supplier) hide @endif">
         <div class="col-12">
             <h6 class="header-heading-sepration">
                 Payment Summary
@@ -592,28 +593,28 @@
         </div>
 
         <div class="row">
-            <div class="{{ 'col-md-6' }}">
+            <div class="{{ 'col-md-6' }} @if($paymentRequestData?->is_paid_by_supplier) hide @endif">
                 <div class="form-group">
                     <label>Contract No</label>
-                    <input type="text" class="form-control"
+                    <input type="text" class="form-control "
                         value="#{{ $paymentRequest->paymentRequestData->purchaseOrder->contract_no ?? 'N/A' }}" readonly>
                 </div>
             </div>
-            <div class="{{ 'col-md-6' }}">
+            <div class="{{ 'col-md-6' }} @if($paymentRequestData?->is_paid_by_supplier) hide @endif">
                 <div class="form-group">
                     <label>Supplier</label>
                     <input type="text" class="form-control"
                         value="{{ $paymentRequest->paymentRequestData->supplier_name ?? 'N/A' }}" readonly>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-3 @if($paymentRequestData?->is_paid_by_supplier) hide @endif">
                 <div class="form-group">
                     <label>Request Type</label>
                     <input type="text" class="form-control"
                         value="{{ isset($paymentRequest) ? formatEnumValue($paymentRequest->request_type) : '' }}" readonly>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-3 @if($paymentRequestData?->is_paid_by_supplier) hide @endif">
                 <div class="form-group">
                     <label>Original Amount</label>
                     <input type="text" class="form-control" name="payment_request_amount" readonly
