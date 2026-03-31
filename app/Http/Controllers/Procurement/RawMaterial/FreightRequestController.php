@@ -1224,7 +1224,6 @@ class FreightRequestController extends Controller
 
     public function pohouch_freight_payment_request_approval_wo_contract(Request $request)
     {
-        dd("test");
         return DB::transaction(function () use ($request) {
             $paymentRequest = PaymentRequest::findOrFail($request->payment_request_id);
 
