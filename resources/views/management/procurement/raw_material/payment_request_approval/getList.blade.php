@@ -14,6 +14,7 @@
     <tbody>
         @if (count($paymentRequests) != 0)
             @foreach ($paymentRequests as $request)
+                
                 <tr>
                     <td>
                         @if ($request->payment_type !== null)
@@ -63,8 +64,8 @@
                                 <span class="badge badge-yellow mt-1">Arrival Freight</span>
                             @endif
                         @endif
-                    </td>
-                    <td>{{ number_format($request->amount, 2) }}</td>
+                    </td>   
+                    <td>{{ !$request->paymentRequestData->is_paid_by_supplier ? number_format($request->amount, 2) : "Paid by supplier" }}</td>
                     <td>
                         @if ($request->status == 'approved')
                             <span class="badge badge-success">Approved</span>
