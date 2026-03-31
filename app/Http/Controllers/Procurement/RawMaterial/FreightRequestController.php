@@ -869,7 +869,7 @@ class FreightRequestController extends Controller
     public function pohouch_freight_payment_request_approval(Request $request)
     {
 
-        dd('dddd');
+
 
         return DB::transaction(function () use ($request) {
             $paymentRequest = PaymentRequest::findOrFail($request->payment_request_id);
@@ -877,6 +877,7 @@ class FreightRequestController extends Controller
             $paymentRequestData = $paymentRequest->paymentRequestData;
             $vendorAccId = $paymentRequest->account_id;
             $purchaseOrder = $paymentRequestData->purchaseOrder;
+            dd('fffffh');
             $paymentRequestData->update([
                 'penalty_adjust_to' => $request->penalty_adjust_to ?? null,
                 'labour_vendor_id' => $request->labour_vendor_id ?? null,
