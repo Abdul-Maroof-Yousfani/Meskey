@@ -56,7 +56,7 @@
     <input type="hidden" name="ticket_id" value="{{ $ticket->id ?? '' }}">
     <input type="hidden" name="arrival_ticket_id" value="{{ $ticket->id ?? '' }}">
     <input type="hidden" name="ticket_type" value="{{ $ticketType ?? '' }}">
-    <input type="hidden" name="payment_request_id" value="{{ $paymentRequest?->id ?? null }}">
+    <input type="text" name="payment_request_id" value="{{ $paymentRequest?->id ?? null }}">
     <input type="hidden" name="is_without_contract" value="{{ !$ticket->purchaseOrder?->contract_no }}">
     
     @if (isset($isRequestApprovalPage) && $isRequestApprovalPage)
