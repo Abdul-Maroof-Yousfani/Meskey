@@ -542,7 +542,7 @@
 
     </div>
 
-    <div class="row @if($paymentRequestData?->is_paid_by_supplier) hide @endif">
+    <div class="row @if($paymentRequestData?->is_paid_by_supplier && isset($isRequestApprovalPage) && $isRequestApprovalPage) hide @endif">
         <div class="col-12">
             <h6 class="header-heading-sepration">
                 Payment Summary

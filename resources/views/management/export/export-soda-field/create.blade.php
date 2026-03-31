@@ -43,11 +43,32 @@
                         <input type="date" name="shipment_period" class="form-control">
                     </div>
                 </div>
+            </div>
 
-                <div class="col-md-6 mt-2">
-                    <div class="form-group">
-                        <label>Commission:</label>
-                        <input type="number" name="commission" class="form-control" step="0.01">
+            {{-- Commission Section --}}
+            <div class="mt-4">
+                <h6 class="header-heading-sepration">Commission</h6>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label>Commission (%):</label>
+                            <input type="number" id="commission_percentage" min="0" name="commission_percentage"
+                                class="form-control" step="0.01">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label>Amt/Ton:</label>
+                            <input type="number" id="commission_amount_per_ton" min="0" name="commission_amount_per_ton"
+                                class="form-control" step="0.01">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label>Total Commission:</label>
+                            <input type="number" id="commission" name="commission" class="form-control" step="0.01"
+                                readonly>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -263,11 +284,67 @@ $(document).ready(function() {
 
     function calculateOverallTotals() {
         let totalMt = 0;
+        let totalAmount = 0;
         $('#packingItems tr.packing-item').each(function() {
             totalMt += parseFloat($(this).find('.metric-tons').val()) || 0;
+            totalAmount += parseFloat($(this).find('.amount').val()) || 0;
         });
         $('#display_total_mt').text(totalMt.toFixed(3));
+        
+        // Recalculate commission if percentage or amt/ton is present
+        calculateCommissionFields(totalAmount, totalMt);
     }
+
+    // ---- COMMISSION CALCULATIONS ----
+    $(document).on('input', '#commission_percentage', function() {
+        let totalAmount = 0;
+        let totalMt = 0;
+        $('#packingItems tr.packing-item').each(function() {
+            totalAmount += parseFloat($(this).find('.amount').val()) || 0;
+            totalMt += parseFloat($(this).find('.metric-tons').val()) || 0;
+        });
+        
+        let percentage = parseFloat($(this).val()) || 0;
+        let commission = (totalAmount * percentage) / 100;
+        let amtPerTon = totalMt > 0 ? (commission / totalMt) : 0;
+        
+        $('#commission').val(commission.toFixed(2));
+        $('#commission_amount_per_ton').val(amtPerTon.toFixed(2));
+    });
+
+    $(document).on('input', '#commission_amount_per_ton', function() {
+        let totalAmount = 0;
+        let totalMt = 0;
+        $('#packingItems tr.packing-item').each(function() {
+            totalAmount += parseFloat($(this).find('.amount').val()) || 0;
+            totalMt += parseFloat($(this).find('.metric-tons').val()) || 0;
+        });
+        
+        let amtPerTon = parseFloat($(this).val()) || 0;
+        let commission = totalMt * amtPerTon;
+        let percentage = totalAmount > 0 ? (commission / totalAmount) * 100 : 0;
+        
+        $('#commission').val(commission.toFixed(2));
+        $('#commission_percentage').val(percentage.toFixed(2));
+    });
+
+    function calculateCommissionFields(totalAmount, totalMt) {
+        let percentage = parseFloat($('#commission_percentage').val());
+        let amtPerTon = parseFloat($('#commission_amount_per_ton').val());
+        
+        if (!isNaN(percentage) && percentage > 0) {
+            let commission = (totalAmount * percentage) / 100;
+            let calculatedAmtPerTon = totalMt > 0 ? (commission / totalMt) : 0;
+            $('#commission').val(commission.toFixed(2));
+            $('#commission_amount_per_ton').val(calculatedAmtPerTon.toFixed(2));
+        } else if (!isNaN(amtPerTon) && amtPerTon > 0) {
+            let commission = totalMt * amtPerTon;
+            let calculatedPercentage = totalAmount > 0 ? (commission / totalAmount) * 100 : 0;
+            $('#commission').val(commission.toFixed(2));
+            $('#commission_percentage').val(calculatedPercentage.toFixed(2));
+        }
+    }
+
 
     // Packing items dynamic rows
     $('#addPackingItem').click(function() { addNewPackingItem(); });

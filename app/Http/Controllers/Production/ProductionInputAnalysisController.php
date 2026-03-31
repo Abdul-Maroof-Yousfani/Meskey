@@ -228,9 +228,6 @@ class ProductionInputAnalysisController extends Controller
             // Delete pivot table records
             $analysis->jobOrders()->detach();
             
-            // Delete related data
-            ProductionAnalysisData::where('production_analysis_id', $analysis->id)->delete();
-            
             // Delete parent
             $analysis->delete();
             

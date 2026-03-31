@@ -305,6 +305,7 @@ class FreightRequestController extends Controller
         //dd($request);
         return DB::transaction(function () use ($request) {
             $requestData = $request->all();
+            $is_paid_by_supplier = $request->has('is_paid_by_supplier') ? 1 : 0;
             $requestData['is_paid_by_supplier'] = $request->has('is_paid_by_supplier') ? 1 : 0;
 
             $requestData['module_type'] = 'freight_payment';
@@ -316,6 +317,11 @@ class FreightRequestController extends Controller
 
 
             $ticketID = $requestData['ticket_id'];
+            $arrivalTicket = ArrivalTicket::where('id', $ticketID)->first();
+            
+            $arrivalTicket->freight_paid_by_supplier = $is_paid_by_supplier;
+            $arrivalTicket->save();
+            
             $purchaseOrderID = $requestData['purchase_order_id'];
 
             $purchaseOrder = ArrivalPurchaseOrder::with('supplier')->where('id', $purchaseOrderID)->first();

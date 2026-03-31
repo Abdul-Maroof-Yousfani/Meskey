@@ -28,7 +28,7 @@
             <div class="col-md-12">
                 <h6 class="header-heading-sepration">Basic Information</h6>
                 <div class="row">
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <div class="form-group">
                             <label>Quotation#:</label>
                             <select name="quotation_id" class="form-control select2">
@@ -39,7 +39,7 @@
                             </select>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <fieldset>
                             <label>Sauda#:</label>
                             <select name="export_soda_id" class="form-control select2">
@@ -50,40 +50,42 @@
                             </select>
                         </fieldset>
                     </div>
-                    <div class="col-md-4">
-                        <fieldset>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
                             <label>Contract No#:</label>
-                            <div class="input-group">
-                                <input type="text" readonly name="voucher_no" class="form-control"
-                                    value="{{ old('voucher_no', $exportOrder->voucher_no) }}">
-                            </div>
-                        </fieldset>
+                            <input type="text" readonly name="voucher_no" class="form-control"
+                                value="{{ old('voucher_no', $exportOrder->voucher_no) }}">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Contract Date:</label>
+                            <input type="date" name="voucher_date" class="form-control" max="{{ date('Y-m-d') }}"
+                                value="{{ old('voucher_date', $exportOrder->voucher_date) }}">
+                        </div>
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <div class="form-group">
                             <label>Reference No#:</label>
                             <input type="text" name="contract_no" class="form-control"
                                 value="{{ old('contract_no', $exportOrder->contract_no) }}">
                         </div>
                     </div>
-
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <div class="form-group">
-                            <label>Contract Date:</label>
-                            <input type="date" name="voucher_date" class="form-control"
-                                value="{{ old('contract_no', $exportOrder->voucher_date) }}">
+                            <label>Reference Date:</label>
+                            <input type="date" name="voucher_heading" class="form-control"
+                                value="{{ old('voucher_heading', (is_string($exportOrder->voucher_heading) && strtotime($exportOrder->voucher_heading)) ? date('Y-m-d', strtotime($exportOrder->voucher_heading)) : $exportOrder->voucher_heading) }}">
                         </div>
                     </div>
+                </div>
 
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label>Contract Heading:</label>
-                            <input type="text" name="voucher_heading" class="form-control"
-                                value="{{ old('voucher_heading', $exportOrder->voucher_heading) }}">
-                        </div>
-                    </div>
+
+                <div class="row">
                     <div class="col-md-4">
                         <div class="form-group">
                             <label>Buyer's Name:</label>
@@ -121,8 +123,9 @@
                                 value="{{ old('marking_labeling', $exportOrder->marking_labeling) }}">
                         </div>
                     </div>
-
+                    
                 </div>
+
             </div>
 
             <!-- Product Selection -->
@@ -139,7 +142,12 @@
                         @endforeach
                     </select>
                 </div>
+                <div class="form-group mt-2">
+                    <label>Visual Name:</label>
+                    <input type="text" name="visual_name" id="visualName" class="form-control" value="{{ old('visual_name', $exportOrder->visual_name) }}" placeholder="Enter visual name for product...">
+                </div>
             </div>
+
 
             <!-- Specifications Section -->
             <div class="col-md-12" id="specificationsSection"
@@ -371,6 +379,33 @@
                     </div>
                 </div>
             </div>
+            {{-- Commission Section --}}
+            <div class="mt-4">
+                <h6 class="header-heading-sepration">Commission</h6>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label>Commission (%):</label>
+                            <input type="number" id="commission_percentage" name="commission_percentage"
+                                class="form-control" step="0.01" min="0">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label>Amt/Ton:</label>
+                            <input type="number" id="commission_amount_per_ton" name="commission_amount_per_ton"
+                                class="form-control" step="0.01" min="0">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label>Total Commission:</label>
+                            <input type="number" id="commission" name="commission" class="form-control"
+                                step="0.01" value="{{ old('commission', $exportOrder->commission) }}" readonly>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="col-4">
@@ -580,10 +615,11 @@
                 </table>
             </div>
 
+
         </div>
 
         <!-- Packing Details -->
-        <div class="col-md-12">
+        <div class="col-md-12 mt-4">
             <h6 class="header-heading-sepration d-flex justify-content-between align-items-center">Packing Details
                 <button type="button" class="btn btn-sm btn-success" id="addPackingItem">Add Item</button>
             </h6>
@@ -752,15 +788,23 @@
         // Product selection change
         $('#productSelect').on('change', function() {
             var productId = $(this).val();
+            var productName = $(this).find(':selected').text();
+            
             if (productId) {
-                $.get('{{ route('get.product_specs.export', '') }}/' + productId, function(data) {
+                 // Auto-fill visual name
+                 $('#visualName').val(productName);
+                 
+                var url = "{{ url('get-product-specs') }}/" + productId;
+                $.get(url, function(data) {
                     $('#productSpecs').html(data);
                     $('#specificationsSection').show();
                 });
             } else {
+                $('#visualName').val('');
                 $('#specificationsSection').hide();
             }
         });
+
 
         // Add more packing items
         $('#addPackingItem').click(function() {
@@ -890,7 +934,73 @@
             row.find('.amount').val(amount.toFixed(2));
             let currencyRate = parseFloat($('#currencyRate').val()) || 1;
             row.find('.amount_pkr').val((amount * currencyRate).toFixed(2));
+            
+            // Trigger commission recalculation
+            calculateOverallTotals();
         }
+
+        function calculateOverallTotals() {
+            let totalMt = 0;
+            let totalAmount = 0;
+            $('#packingItems tr.packing-item').each(function() {
+                totalMt += parseFloat($(this).find('.metric-tons').val()) || 0;
+                totalAmount += parseFloat($(this).find('.amount').val()) || 0;
+            });
+            
+            // Recalculate commission if percentage or amt/ton is present
+            calculateCommissionFields(totalAmount, totalMt);
+        }
+
+        // ---- COMMISSION CALCULATIONS ----
+        $(document).on('input', '#commission_percentage', function() {
+            let totalAmount = 0;
+            let totalMt = 0;
+            $('#packingItems tr.packing-item').each(function() {
+                totalAmount += parseFloat($(this).find('.amount').val()) || 0;
+                totalMt += parseFloat($(this).find('.metric-tons').val()) || 0;
+            });
+            
+            let percentage = parseFloat($(this).val()) || 0;
+            let commission = (totalAmount * percentage) / 100;
+            let amtPerTon = totalMt > 0 ? (commission / totalMt) : 0;
+            
+            $('#commission').val(commission.toFixed(2));
+            $('#commission_amount_per_ton').val(amtPerTon.toFixed(2));
+        });
+
+        $(document).on('input', '#commission_amount_per_ton', function() {
+            let totalAmount = 0;
+            let totalMt = 0;
+            $('#packingItems tr.packing-item').each(function() {
+                totalAmount += parseFloat($(this).find('.amount').val()) || 0;
+                totalMt += parseFloat($(this).find('.metric-tons').val()) || 0;
+            });
+            
+            let amtPerTon = parseFloat($(this).val()) || 0;
+            let commission = totalMt * amtPerTon;
+            let percentage = totalAmount > 0 ? (commission / totalAmount) * 100 : 0;
+            
+            $('#commission').val(commission.toFixed(2));
+            $('#commission_percentage').val(percentage.toFixed(2));
+        });
+
+        function calculateCommissionFields(totalAmount, totalMt) {
+            let percentage = parseFloat($('#commission_percentage').val());
+            let amtPerTon = parseFloat($('#commission_amount_per_ton').val());
+            
+            if (!isNaN(percentage) && percentage > 0) {
+                let commission = (totalAmount * percentage) / 100;
+                let calculatedAmtPerTon = totalMt > 0 ? (commission / totalMt) : 0;
+                $('#commission').val(commission.toFixed(2));
+                $('#commission_amount_per_ton').val(calculatedAmtPerTon.toFixed(2));
+            } else if (!isNaN(amtPerTon) && amtPerTon > 0) {
+                let commission = totalMt * amtPerTon;
+                let calculatedPercentage = totalAmount > 0 ? (commission / totalAmount) * 100 : 0;
+                $('#commission').val(commission.toFixed(2));
+                $('#commission_percentage').val(calculatedPercentage.toFixed(2));
+            }
+        }
+
 
         function reindexPackingItems() {
             $('#packingItems tr.packing-item').each(function(index) {
@@ -1051,9 +1161,25 @@
         }
 
         // Initial calculations for all visible items
+        let totalMt = 0;
+        let totalAmount = 0;
         $('.packing-item').each(function() {
             calculateTotals($(this));
+            totalMt += parseFloat($(this).find('.metric-tons').val()) || 0;
+            totalAmount += parseFloat($(this).find('.amount').val()) || 0;
         });
+        
+        // Initial reverse-calculation of commission on page load
+        let initialCommission = parseFloat($('#commission').val()) || 0;
+        if (initialCommission > 0) {
+            if (totalAmount > 0) {
+                $('#commission_percentage').val(((initialCommission / totalAmount) * 100).toFixed(2));
+            }
+            if (totalMt > 0) {
+                $('#commission_amount_per_ton').val((initialCommission / totalMt).toFixed(2));
+            }
+        }
+
 
     });
 </script>
