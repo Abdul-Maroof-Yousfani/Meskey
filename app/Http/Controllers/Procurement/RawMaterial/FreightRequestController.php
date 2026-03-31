@@ -83,7 +83,8 @@ class FreightRequestController extends Controller
                 return $q->whereDate('created_at', '>=', $startDate)
                     ->whereDate('created_at', '<=', $endDate);
             })
-            ->where('first_qc_status', '!=', 'rejected');
+            ->where('first_qc_status', '!=', 'rejected')
+            ->where("arrival_slip_status", "=", "generated");
             // ->whereHas('purchaseOrder');
 
         if ($request->has('broker_id') && $request->broker_id != '') {
