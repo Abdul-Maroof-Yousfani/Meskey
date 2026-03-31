@@ -650,11 +650,11 @@ class TicketPaymentRequestController extends Controller
         // ->value('gross_amount');
 
 
-        dd($freightPaymentRequestgrossAmount, $freightPaymentRequestgrossAmount->value('godown_penalty'));
+        // dd($freightPaymentRequestgrossAmount, $freightPaymentRequestgrossAmount->godown_penalty);
         if ($freightPaymentRequestgrossAmount->is_paid_by_supplier == 1) {
-            $freightPaymentRequestgrossAmount = $freightPaymentRequestgrossAmount->value('godown_penalty') + $freightPaymentRequestgrossAmount->value('other_minus_labour') + $freightPaymentRequestgrossAmount->value('commission_amount');
+            $freightPaymentRequestgrossAmount = $freightPaymentRequestgrossAmount->godown_penalty + $freightPaymentRequestgrossAmount->other_minus_labour + $freightPaymentRequestgrossAmount->commission_amount;
         } else {
-            $freightPaymentRequestgrossAmount = $freightPaymentRequestgrossAmount->value('gross_amount');
+            $freightPaymentRequestgrossAmount = $freightPaymentRequestgrossAmount->gross_amount;
         }
 
 
