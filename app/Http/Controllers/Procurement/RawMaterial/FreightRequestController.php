@@ -873,15 +873,17 @@ class FreightRequestController extends Controller
 
         return DB::transaction(function () use ($request) {
             $paymentRequest = PaymentRequest::findOrFail($request->payment_request_id);
+            $ticket = ArrivalTicket::where('id', $request->ticket_id)->first();
 
             $paymentRequestData = $paymentRequest->paymentRequestData;
             $vendorAccId = $paymentRequest->account_id;
-            $purchaseOrder = $paymentRequestData->purchaseOrder;
             // dd($purchaseOrder);
             $paymentRequestData->update([
                 'penalty_adjust_to' => $request->penalty_adjust_to ?? null,
                 'labour_vendor_id' => $request->labour_vendor_id ?? null,
+                'purchase_order_id' => $ticket->arrival_purchase_order_id ?? null,
             ]);
+            $purchaseOrder = $paymentRequestData->purchaseOrder;
 
 
             if ($request->has('payment_request_amount')) {
@@ -904,7 +906,6 @@ class FreightRequestController extends Controller
 
 
 
-            $ticket = ArrivalTicket::where('id', $request->ticket_id)->first();
 
             $paymentDetails = calculatePaymentDetails($ticket->id, 1);
 
