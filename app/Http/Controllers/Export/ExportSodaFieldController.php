@@ -17,7 +17,7 @@ use Illuminate\View\View;
 use Illuminate\Database\QueryException;
 use App\Models\Master\Customer;
 use App\Models\Master\Brands;
-use App\Models\Master\Color;
+// use App\Models\Master\Color;
 
 class ExportSodaFieldController extends Controller
 {
@@ -56,10 +56,10 @@ class ExportSodaFieldController extends Controller
             $incoterms = IncoTerm::where('status', 1)->get(); // price 
             $modeofterms = ModeOfTerm::where('status', 1)->get(); // optional payment term
             $bagTypes = BagType::where('status', 1)->get();
-            $bagColors = Color::where('status', 1)->get();
+            // $bagColors = Color::where('status', 1)->get();
         } catch (QueryException $e) {
             $users = $products = $bagPackings = $incoterms = $modeofterms = collect();
-            $bagTypes = $bagColors = collect();
+            $bagTypes = collect();
         }
 
         return view('management.export.export-soda-field.create', compact(
@@ -69,7 +69,7 @@ class ExportSodaFieldController extends Controller
             'incoterms',
             'modeofterms',
             'bagTypes',
-            'bagColors'
+            // 'bagColors'
         ));
     }
 
@@ -125,14 +125,14 @@ class ExportSodaFieldController extends Controller
             $modeofterms = ModeOfTerm::where('status', 1)->get(); 
 
             $bagTypes = BagType::where('status', 1)->get();
-            $bagColors = Color::where('status', 1)->get();
+            // $bagColors = Color::where('status', 1)->get();
         } catch (QueryException $e) {
             $exportSodaField = new ExportSodaField();
             $users = $products = $bagPackings = $incoterms = $modeofterms = collect();
-            $bagTypes = $bagColors = collect();
+            $bagTypes = collect();
         }
 
-        return view('management.export.export-soda-field.show', compact('exportSodaField', 'users', 'products', 'bagPackings', 'incoterms', 'modeofterms', 'bagTypes', 'bagColors'));
+        return view('management.export.export-soda-field.show', compact('exportSodaField', 'users', 'products', 'bagPackings', 'incoterms', 'modeofterms', 'bagTypes'));
     }
 
     public function edit($id): View
@@ -146,11 +146,11 @@ class ExportSodaFieldController extends Controller
             $modeofterms = ModeOfTerm::where('status', 1)->get(); 
 
             $bagTypes = BagType::where('status', 1)->get();
-            $bagColors = Color::where('status', 1)->get();
+            // $bagColors = Color::where('status', 1)->get();
         } catch (QueryException $e) {
             $exportSodaField = new ExportSodaField();
             $users = $products = $bagPackings = $incoterms = $modeofterms = collect();
-            $bagTypes = $bagColors = collect();
+            $bagTypes = collect();
         }
 
         return view('management.export.export-soda-field.edit', compact(
@@ -161,7 +161,7 @@ class ExportSodaFieldController extends Controller
             'incoterms',
             'modeofterms',
             'bagTypes',
-            'bagColors'
+            // 'bagColors'
         ));
     }
 

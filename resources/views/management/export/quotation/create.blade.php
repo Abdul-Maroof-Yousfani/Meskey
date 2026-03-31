@@ -206,11 +206,11 @@
                         <tr>
                             <th style="min-width:150px;">Bag Type</th>
                             <th style="min-width:130px;">Packing</th>
-                            <th style="min-width:110px;">Color</th>
+                            {{-- <th style="min-width:110px;">Color</th> --}}
                             <th style="min-width:100px;">Packing Size (kg)</th>
                             <th style="min-width:100px;">Qty (MT)</th>
                             <th style="min-width:100px; display: none;">Qty (Mnds)</th>
-                            <th style="min-width:110px;">Qty (KGs)</th>
+                            <th style="min-width:110px; display: none;">Qty (KGs)</th>
                             <th style="min-width:100px;">Bags</th>
                             <th style="min-width:110px;">Rate/Ton</th>
                             <th style="min-width:110px; display: none;">Rate/Mnd</th>
@@ -237,14 +237,14 @@
                                     @endforeach
                                 </select>
                             </td>
-                            <td class="p-2">
+                            {{-- <td class="p-2">
                                 <select name="packing_items[0][bag_color_id]" class="form-control select2">
                                     <option value="">Color</option>
                                     @foreach ($bagColors as $color)
                                         <option value="{{ $color->id }}">{{ $color->color }}</option>
                                     @endforeach
                                 </select>
-                            </td>
+                            </td> --}}
                             <td class="p-2">
                                 <input type="number" name="packing_items[0][bag_size]" class="form-control bag-size" step="0.01" value="0" min="0">
                             </td>
@@ -254,7 +254,7 @@
                             <td class="p-2" style="display: none;">
                                 <input type="number" name="packing_items[0][maunds]" class="form-control maunds" value="0" step="0.01" min="0">
                             </td>
-                            <td class="p-2">
+                            <td class="p-2" style="display: none;">
                                 <input type="number" name="packing_items[0][total_kgs]" class="form-control total-kgs" value="0" readonly>
                             </td>
                             <td class="p-2">
