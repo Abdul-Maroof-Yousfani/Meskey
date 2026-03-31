@@ -49,18 +49,17 @@ class ExportSodaFieldController extends Controller
 
     public function create(): View
     {
-        try {
-            $users = Customer::get(); // buyer
-            $products = Product::where('status', 1)->get(); // commodity
-            $bagPackings = BagPacking::where('status', 1)->get(); // packing
-            $incoterms = IncoTerm::where('status', 1)->get(); // price 
-            $modeofterms = ModeOfTerm::where('status', 1)->get(); // optional payment term
-            $bagTypes = BagType::where('status', 1)->get();
-            // $bagColors = Color::where('status', 1)->get();
-        } catch (QueryException $e) {
-            $users = $products = $bagPackings = $incoterms = $modeofterms = collect();
-            $bagTypes = collect();
-        }
+        // Initialize variables
+        $users = $products = $bagPackings = $incoterms = $modeofterms = $bagTypes = collect();
+
+        // Fetch data (risky queries isolated)
+        try { $users = Customer::get(); } catch (QueryException $e) {}
+        try { $products = Product::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $bagPackings = BagPacking::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $incoterms = IncoTerm::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $modeofterms = ModeOfTerm::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $bagTypes = BagType::where('status', 1)->get(); } catch (QueryException $e) {}
+
 
         return view('management.export.export-soda-field.create', compact(
             'users',
@@ -116,42 +115,48 @@ class ExportSodaFieldController extends Controller
 
     public function show($id): View
     {
+        // Initialize variables
+        $users = $products = $bagPackings = $incoterms = $modeofterms = $bagTypes = collect();
+
         try {
             $exportSodaField = ExportSodaField::with(['product', 'buyer', 'packing', 'incoterm', 'modeOfTerm'])->findOrFail($id);
-            $users = Customer::get(); 
-            $products = Product::where('status', 1)->get(); 
-            $bagPackings = BagPacking::where('status', 1)->get(); 
-            $incoterms = IncoTerm::where('status', 1)->get();  
-            $modeofterms = ModeOfTerm::where('status', 1)->get(); 
 
-            $bagTypes = BagType::where('status', 1)->get();
-            // $bagColors = Color::where('status', 1)->get();
+            // Fetch data (risky queries isolated)
+            try { $users = Customer::get(); } catch (QueryException $e) {}
+            try { $products = Product::where('status', 1)->get(); } catch (QueryException $e) {}
+            try { $bagPackings = BagPacking::where('status', 1)->get(); } catch (QueryException $e) {}
+            try { $incoterms = IncoTerm::where('status', 1)->get(); } catch (QueryException $e) {}
+            try { $modeofterms = ModeOfTerm::where('status', 1)->get(); } catch (QueryException $e) {}
+            try { $bagTypes = BagType::where('status', 1)->get(); } catch (QueryException $e) {}
+
         } catch (QueryException $e) {
             $exportSodaField = new ExportSodaField();
-            $users = $products = $bagPackings = $incoterms = $modeofterms = collect();
-            $bagTypes = collect();
         }
+
 
         return view('management.export.export-soda-field.show', compact('exportSodaField', 'users', 'products', 'bagPackings', 'incoterms', 'modeofterms', 'bagTypes'));
     }
 
     public function edit($id): View
     {
+        // Initialize variables
+        $users = $products = $bagPackings = $incoterms = $modeofterms = $bagTypes = collect();
+
         try {
             $exportSodaField = ExportSodaField::findOrFail($id);
-            $users = Customer::get(); 
-            $products = Product::where('status', 1)->get(); 
-            $bagPackings = BagPacking::where('status', 1)->get(); 
-            $incoterms = IncoTerm::where('status', 1)->get();  
-            $modeofterms = ModeOfTerm::where('status', 1)->get(); 
 
-            $bagTypes = BagType::where('status', 1)->get();
-            // $bagColors = Color::where('status', 1)->get();
+            // Fetch data (risky queries isolated)
+            try { $users = Customer::get(); } catch (QueryException $e) {}
+            try { $products = Product::where('status', 1)->get(); } catch (QueryException $e) {}
+            try { $bagPackings = BagPacking::where('status', 1)->get(); } catch (QueryException $e) {}
+            try { $incoterms = IncoTerm::where('status', 1)->get(); } catch (QueryException $e) {}
+            try { $modeofterms = ModeOfTerm::where('status', 1)->get(); } catch (QueryException $e) {}
+            try { $bagTypes = BagType::where('status', 1)->get(); } catch (QueryException $e) {}
+
         } catch (QueryException $e) {
             $exportSodaField = new ExportSodaField();
-            $users = $products = $bagPackings = $incoterms = $modeofterms = collect();
-            $bagTypes = collect();
         }
+
 
         return view('management.export.export-soda-field.edit', compact(
             'exportSodaField',
