@@ -1259,6 +1259,14 @@ if (!function_exists('createStockTransaction')) {
     }
 }
 
+function getTruckWeighbridgeAmount($truck_id, $location_id) {
+    $amount = \DB::table("truck_type_weighbridge_amounts")
+        ->where("truck_type_id", $truck_id)
+        ->where("company_location_id", $location_id)
+        ->value("amount");
+    return $amount;
+}
+
 if (!function_exists("get_grn")) {
     function get_grn($grn_id)
     {
