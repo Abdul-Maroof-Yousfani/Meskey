@@ -69,30 +69,28 @@ class ExportOrderController extends Controller
 
     public function create(): View
     {
-        try {
-            $products = Product::where('status', 1)->get();
-            $bagTypes = BagType::where('status', 1)->get();
-            $bagPackings = BagPacking::where('status', 1)->get();
-            $brands = Brands::where('status', 1)->get();
-            $bagColors = Color::where('status', 1)->get();
-            $users = Customer::get(); // buyer
-            $banks = Bank::where('status', 1)->get();
-            $brokers = Broker::where('status', 1)->get();
-            $incoterms = IncoTerm::where('status', 1)->get();
-            $modeofterms = ModeOfTerm::where('status', 1)->get();
-            $modeoftransport = ModeOfTransport::where('status', 1)->get();
-            $countries = Country::get();
-            $ports = Port::where('status', 1)->get();
-            $hscodes = HsCode::where('status', 1)->get();
-            $currencies = Currency::where('status', 1)->get();
-            $exportSodas = ExportSodaField::latest()->get();
-            $quotations = Quotation::latest()->get();
-        } catch (QueryException $e) {
-            $products = $bagTypes = $bagPackings = collect();
-            $brands = $bagColors = $users = $banks = $brokers = $incoterms = collect();
-            $modeofterms = $modeoftransport = $countries = $ports = $hscodes = $currencies = collect();
-            $exportSodas = $quotations = collect();
-        }
+        // Initialize all variables to empty collections first
+        $products = $bagTypes = $bagPackings = $brands = $bagColors = $users = $banks = $brokers = $incoterms = $modeofterms = $modeoftransport = $countries = $ports = $hscodes = $currencies = $exportSodas = $quotations = collect();
+
+        // Fetch core data (risky queries isolated)
+        try { $products = Product::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $bagTypes = BagType::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $bagPackings = BagPacking::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $brands = Brands::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $bagColors = Color::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $users = Customer::get(); } catch (QueryException $e) {}
+        try { $banks = Bank::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $brokers = Broker::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $incoterms = IncoTerm::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $modeofterms = ModeOfTerm::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $modeoftransport = ModeOfTransport::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $countries = Country::get(); } catch (QueryException $e) {}
+        try { $ports = Port::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $hscodes = HsCode::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $currencies = Currency::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $exportSodas = ExportSodaField::latest()->get(); } catch (QueryException $e) {}
+        try { $quotations = Quotation::latest()->get(); } catch (QueryException $e) {}
+
 
         return view('management.export.export-order.create', compact(
             'products',
@@ -197,33 +195,35 @@ class ExportOrderController extends Controller
 
     public function show($id): View
     {
+        // Initialize variables
+        $products = $bagTypes = $bagPackings = $brands = $bagColors = $users = $banks = $brokers = $incoterms = $modeofterms = $modeoftransport = $countries = $ports = $hscodes = $currencies = $exportSodas = $quotations = collect();
+
         try {
             $exportOrder = ExportOrder::with(['specifications', 'packingItems', 'product'])->findOrFail($id);
 
-            $products = Product::where('status', 1)->get();
-            $bagTypes = BagType::where('status', 1)->get();
-            $bagPackings = BagPacking::where('status', 1)->get();
-            $brands = Brands::where('status', 1)->get();
-            $bagColors = Color::where('status', 1)->get();
-            $users = Customer::get(); // buyer
-            $banks = Bank::where('status', 1)->get();
-            $brokers = Broker::where('status', 1)->get();
-            $incoterms = IncoTerm::where('status', 1)->get();
-            $modeofterms = ModeOfTerm::where('status', 1)->get();
-            $modeoftransport = ModeOfTransport::where('status', 1)->get();
-            $countries = Country::get();
-            $ports = Port::where('status', 1)->get();
-            $hscodes = HsCode::where('status', 1)->get();
-            $currencies = Currency::where('status', 1)->get();
-            $exportSodas = ExportSodaField::latest()->get();
-            $quotations = Quotation::latest()->get();
+            // Fetch data (risky queries isolated)
+            try { $products = Product::where('status', 1)->get(); } catch (QueryException $e) {}
+            try { $bagTypes = BagType::where('status', 1)->get(); } catch (QueryException $e) {}
+            try { $bagPackings = BagPacking::where('status', 1)->get(); } catch (QueryException $e) {}
+            try { $brands = Brands::where('status', 1)->get(); } catch (QueryException $e) {}
+            try { $bagColors = Color::where('status', 1)->get(); } catch (QueryException $e) {}
+            try { $users = Customer::get(); } catch (QueryException $e) {}
+            try { $banks = Bank::where('status', 1)->get(); } catch (QueryException $e) {}
+            try { $brokers = Broker::where('status', 1)->get(); } catch (QueryException $e) {}
+            try { $incoterms = IncoTerm::where('status', 1)->get(); } catch (QueryException $e) {}
+            try { $modeofterms = ModeOfTerm::where('status', 1)->get(); } catch (QueryException $e) {}
+            try { $modeoftransport = ModeOfTransport::where('status', 1)->get(); } catch (QueryException $e) {}
+            try { $countries = Country::get(); } catch (QueryException $e) {}
+            try { $ports = Port::where('status', 1)->get(); } catch (QueryException $e) {}
+            try { $hscodes = HsCode::where('status', 1)->get(); } catch (QueryException $e) {}
+            try { $currencies = Currency::where('status', 1)->get(); } catch (QueryException $e) {}
+            try { $exportSodas = ExportSodaField::latest()->get(); } catch (QueryException $e) {}
+            try { $quotations = Quotation::latest()->get(); } catch (QueryException $e) {}
+
         } catch (QueryException $e) {
             $exportOrder = new ExportOrder();
-            $products = $bagTypes = $bagPackings = collect();
-            $brands = $bagColors = $users = $banks = $brokers = $incoterms = collect();
-            $modeofterms = $modeoftransport = $countries = $ports = $hscodes = $currencies = collect();
-            $exportSodas = $quotations = collect();
         }
+
 
         return view('management.export.export-order.show', compact(
             'exportOrder',
@@ -249,33 +249,35 @@ class ExportOrderController extends Controller
 
     public function edit($id): View
     {
+        // Initialize variables
+        $products = $bagTypes = $bagPackings = $brands = $bagColors = $users = $banks = $brokers = $incoterms = $modeofterms = $modeoftransport = $countries = $ports = $hscodes = $currencies = $exportSodas = $quotations = collect();
+
         try {
             $exportOrder = ExportOrder::with(['specifications', 'packingItems', 'product'])->findOrFail($id);
 
-            $products = Product::where('status', 1)->get();
-            $bagTypes = BagType::where('status', 1)->get();
-            $bagPackings = BagPacking::where('status', 1)->get();
-            $brands = Brands::where('status', 1)->get();
-            $bagColors = Color::where('status', 1)->get();
-            $users = Customer::get(); // buyer
-            $banks = Bank::where('status', 1)->get();
-            $brokers = Broker::where('status', 1)->get();
-            $incoterms = IncoTerm::where('status', 1)->get();
-            $modeofterms = ModeOfTerm::where('status', 1)->get();
-            $modeoftransport = ModeOfTransport::where('status', 1)->get();
-            $countries = Country::get();
-            $ports = Port::where('status', 1)->get();
-            $hscodes = HsCode::where('status', 1)->get();
-            $currencies = Currency::where('status', 1)->get();
-            $exportSodas = ExportSodaField::latest()->get();
-            $quotations = Quotation::latest()->get();
+            // Fetch data (risky queries isolated)
+            try { $products = Product::where('status', 1)->get(); } catch (QueryException $e) {}
+            try { $bagTypes = BagType::where('status', 1)->get(); } catch (QueryException $e) {}
+            try { $bagPackings = BagPacking::where('status', 1)->get(); } catch (QueryException $e) {}
+            try { $brands = Brands::where('status', 1)->get(); } catch (QueryException $e) {}
+            try { $bagColors = Color::where('status', 1)->get(); } catch (QueryException $e) {}
+            try { $users = Customer::get(); } catch (QueryException $e) {}
+            try { $banks = Bank::where('status', 1)->get(); } catch (QueryException $e) {}
+            try { $brokers = Broker::where('status', 1)->get(); } catch (QueryException $e) {}
+            try { $incoterms = IncoTerm::where('status', 1)->get(); } catch (QueryException $e) {}
+            try { $modeofterms = ModeOfTerm::where('status', 1)->get(); } catch (QueryException $e) {}
+            try { $modeoftransport = ModeOfTransport::where('status', 1)->get(); } catch (QueryException $e) {}
+            try { $countries = Country::get(); } catch (QueryException $e) {}
+            try { $ports = Port::where('status', 1)->get(); } catch (QueryException $e) {}
+            try { $hscodes = HsCode::where('status', 1)->get(); } catch (QueryException $e) {}
+            try { $currencies = Currency::where('status', 1)->get(); } catch (QueryException $e) {}
+            try { $exportSodas = ExportSodaField::latest()->get(); } catch (QueryException $e) {}
+            try { $quotations = Quotation::latest()->get(); } catch (QueryException $e) {}
+
         } catch (QueryException $e) {
             $exportOrder = new ExportOrder();
-            $products = $bagTypes = $bagPackings = collect();
-            $brands = $bagColors = $users = $banks = $brokers = $incoterms = collect();
-            $modeofterms = $modeoftransport = $countries = $ports = $hscodes = $currencies = collect();
-            $exportSodas = $quotations = collect();
         }
+
 
         return view('management.export.export-order.edit', compact(
             'exportOrder',

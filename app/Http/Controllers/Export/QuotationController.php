@@ -68,26 +68,23 @@ class QuotationController extends Controller
 
     public function create(): View
     {
-        try {
-            $products  = Product::where('status', 1)->get();
-            $buyers    = Customer::where('status', 'active')->get();
-            $companies = Company::get();
+        // Initialize all variables
+        $products = $buyers = $companies = $bagTypes = $bagPackings = $incoterms = $modeofterms = $modeoftransport = $countries = $ports = $currencies = $exportSodas = collect();
 
-            $bagTypes  = BagType::where('status', 1)->get();
-            $bagPackings   = BagPacking::where('status', 1)->get();
-            // $bagColors = Color::where('status', 1)->get();
-            $incoterms      = IncoTerm::where('status', 1)->get();
-            $modeofterms    = ModeOfTerm::where('status', 1)->get();
-            $modeoftransport = ModeOfTransport::where('status', 1)->get();
-            $countries = Country::get();
-            $ports     = Port::where('status', 1)->get();
-            $currencies = Currency::where('status', 1)->get();
-            $exportSodas = ExportSodaField::latest()->get();
-        } catch (QueryException $e) {
-            $products = $buyers = $companies = collect();
-            $bagTypes = $bagPackings = $incoterms = $modeofterms = collect();
-            $modeoftransport = $countries = $ports = $currencies = $exportSodas = collect();
-        }
+        // Fetch data (risky queries isolated)
+        try { $products = Product::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $buyers = Customer::where('status', 'active')->get(); } catch (QueryException $e) {}
+        try { $companies = Company::get(); } catch (QueryException $e) {}
+        try { $bagTypes = BagType::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $bagPackings = BagPacking::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $incoterms = IncoTerm::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $modeofterms = ModeOfTerm::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $modeoftransport = ModeOfTransport::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $countries = Country::get(); } catch (QueryException $e) {}
+        try { $ports = Port::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $currencies = Currency::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $exportSodas = ExportSodaField::latest()->get(); } catch (QueryException $e) {}
+
 
         return view('management.export.quotation.create', compact(
             'exportSodas',
@@ -179,22 +176,21 @@ class QuotationController extends Controller
             $quotation = new Quotation();
         }
 
-        try {
-            $products  = Product::where('status', 1)->get();
-            $bagTypes  = BagType::where('status', 1)->get();
-            $bagPackings   = BagPacking::where('status', 1)->get();
-            // $bagColors = Color::where('status', 1)->get();
-            $incoterms      = IncoTerm::where('status', 1)->get();
-            $modeofterms    = ModeOfTerm::where('status', 1)->get();
-            $modeoftransport = ModeOfTransport::where('status', 1)->get();
-            $countries = Country::get();
-            $ports     = Port::where('status', 1)->get();
-            $currencies = Currency::where('status', 1)->get();
-            $exportSodas = ExportSodaField::latest()->get();
-        } catch (QueryException $e) {
-            $products = $bagTypes = $bagPackings = $incoterms = $modeofterms = collect();
-            $modeoftransport = $countries = $ports = $currencies = $exportSodas = collect();
-        }
+        // Initialize variables
+        $products = $bagTypes = $bagPackings = $incoterms = $modeofterms = $modeoftransport = $countries = $ports = $currencies = $exportSodas = collect();
+
+        // Fetch data (risky queries isolated)
+        try { $products = Product::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $bagTypes = BagType::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $bagPackings = BagPacking::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $incoterms = IncoTerm::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $modeofterms = ModeOfTerm::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $modeoftransport = ModeOfTransport::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $countries = Country::get(); } catch (QueryException $e) {}
+        try { $ports = Port::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $currencies = Currency::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $exportSodas = ExportSodaField::latest()->get(); } catch (QueryException $e) {}
+
 
         return view('management.export.quotation.show', compact(
             'quotation',
@@ -220,26 +216,23 @@ class QuotationController extends Controller
             $quotation = new Quotation();
         }
 
-        try {
-            $products  = Product::where('status', 1)->get();
-            $buyers    = Customer::where('status', 'active')->get();
-            $companies = Company::get();
+        // Initialize variables
+        $products = $buyers = $companies = $bagTypes = $bagPackings = $incoterms = $modeofterms = $modeoftransport = $countries = $ports = $currencies = $exportSodas = collect();
 
-            $bagTypes  = BagType::where('status', 1)->get();
-            $bagPackings   = BagPacking::where('status', 1)->get();
-            // $bagColors = Color::where('status', 1)->get();
-            $incoterms      = IncoTerm::where('status', 1)->get();
-            $modeofterms    = ModeOfTerm::where('status', 1)->get();
-            $modeoftransport = ModeOfTransport::where('status', 1)->get();
-            $countries = Country::get();
-            $ports     = Port::where('status', 1)->get();
-            $currencies = Currency::where('status', 1)->get();
-            $exportSodas = ExportSodaField::latest()->get();
-        } catch (QueryException $e) {
-            $products = $buyers = $companies = collect();
-            $bagTypes = $bagPackings = collect();
-            $incoterms = $modeofterms = $modeoftransport = $countries = $ports = $currencies = $exportSodas = collect();
-        }
+        // Fetch data (risky queries isolated)
+        try { $products = Product::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $buyers = Customer::where('status', 'active')->get(); } catch (QueryException $e) {}
+        try { $companies = Company::get(); } catch (QueryException $e) {}
+        try { $bagTypes = BagType::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $bagPackings = BagPacking::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $incoterms = IncoTerm::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $modeofterms = ModeOfTerm::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $modeoftransport = ModeOfTransport::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $countries = Country::get(); } catch (QueryException $e) {}
+        try { $ports = Port::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $currencies = Currency::where('status', 1)->get(); } catch (QueryException $e) {}
+        try { $exportSodas = ExportSodaField::latest()->get(); } catch (QueryException $e) {}
+
 
         return view('management.export.quotation.edit', compact(
             'quotation',
