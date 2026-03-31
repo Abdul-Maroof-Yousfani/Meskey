@@ -62,7 +62,7 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label>Contract Date:</label>
-                            <input type="date" name="voucher_date" class="form-control"
+                            <input type="date" name="voucher_date" class="form-control" max="{{ date('Y-m-d') }}"
                                 value="{{ old('voucher_date', $exportOrder->voucher_date) }}">
                         </div>
                     </div>

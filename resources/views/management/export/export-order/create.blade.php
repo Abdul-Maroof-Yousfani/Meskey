@@ -52,15 +52,20 @@
                 </div>
                 <div class="row">
                     <div class="col-md-6">
-                        <div class="form-group">
-                            <label>Contract No# (Auto-Generated):</label>
-                            <input type="text" readonly name="voucher_no" class="form-control" placeholder="Select date to generate...">
-                        </div>
+                        <fieldset>
+                            <label>Contract No#:</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <button class="btn btn-primary" type="button">Contract No#</button>
+                                </div>
+                                <input type="text" readonly name="voucher_no" class="form-control" placeholder="Select date to generate...">
+                            </div>
+                        </fieldset>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
                             <label>Contract Date:</label>
-                            <input type="date" name="voucher_date" value="{{ date('Y-m-d') }}" class="form-control">
+                            <input type="date" name="voucher_date" max="{{ date('Y-m-d') }}" class="form-control">
                         </div>
                     </div>
                 </div>
