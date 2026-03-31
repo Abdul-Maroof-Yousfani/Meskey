@@ -84,8 +84,16 @@
                             @if ($ticket['calculated_values']['total_freight_sum'] > 0)
                                 <span class="badge badge-warning">
                                     Freight: {{ number_format($ticket['calculated_values']['total_freight_sum'], 2) }}
+
                                 </span>
                             @endif
+                        @endif
+                        @if($ticket["model"]->paymentRequestData?->isNotEmpty())
+                            <span class="badge badge-primary mt-2">
+                                {{ $ticket["model"]->paymentRequestData?->contains('is_paid_by_supplier', true) 
+                                    ? 'Paid by Supplier' 
+                                    : 'Not Paid by Supplier' }}
+                            </span>
                         @endif
                     </td>
                     <td>
