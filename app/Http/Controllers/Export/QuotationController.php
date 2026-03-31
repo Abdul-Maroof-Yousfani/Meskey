@@ -16,7 +16,7 @@ use App\Models\Acl\Company;
 use App\Models\Export\QuotationPackingItem;
 use App\Models\Export\QuotationSpecification;
 use App\Models\Master\Brands;
-use App\Models\Master\Color;
+// use App\Models\Master\Color;
 use App\Models\Master\Country;
 use App\Models\Master\HsCode;
 use App\Models\Master\Port;
@@ -75,7 +75,7 @@ class QuotationController extends Controller
 
             $bagTypes  = BagType::where('status', 1)->get();
             $bagPackings   = BagPacking::where('status', 1)->get();
-            $bagColors = Color::where('status', 1)->get();
+            // $bagColors = Color::where('status', 1)->get();
             $incoterms      = IncoTerm::where('status', 1)->get();
             $modeofterms    = ModeOfTerm::where('status', 1)->get();
             $modeoftransport = ModeOfTransport::where('status', 1)->get();
@@ -85,7 +85,7 @@ class QuotationController extends Controller
             $exportSodas = ExportSodaField::latest()->get();
         } catch (QueryException $e) {
             $products = $buyers = $companies = collect();
-            $bagTypes = $bagPackings = $bagColors = $incoterms = $modeofterms = collect();
+            $bagTypes = $bagPackings = $incoterms = $modeofterms = collect();
             $modeoftransport = $countries = $ports = $currencies = $exportSodas = collect();
         }
 
@@ -96,7 +96,7 @@ class QuotationController extends Controller
             'companies',
             'bagTypes',
             'bagPackings',
-            'bagColors',
+            // 'bagColors',
             'incoterms',
             'modeofterms',
             'modeoftransport',
@@ -138,7 +138,7 @@ class QuotationController extends Controller
                     $quotation->packingItems()->create([
                         'bag_type_id'     => $item['bag_type_id'] ?? null,
                         'bag_packing_id'  => $item['bag_packing_id'] ?? null,
-                        'bag_color_id'    => $item['bag_color_id'] ?? null,
+                        // 'bag_color_id'    => $item['bag_color_id'] ?? null,
                         'bag_size'        => $item['bag_size'] ?? 0,
                         'metric_tons'     => $item['metric_tons'] ?? 0,
                         'maunds'          => $item['maunds'] ?? 0,
@@ -183,7 +183,7 @@ class QuotationController extends Controller
             $products  = Product::where('status', 1)->get();
             $bagTypes  = BagType::where('status', 1)->get();
             $bagPackings   = BagPacking::where('status', 1)->get();
-            $bagColors = Color::where('status', 1)->get();
+            // $bagColors = Color::where('status', 1)->get();
             $incoterms      = IncoTerm::where('status', 1)->get();
             $modeofterms    = ModeOfTerm::where('status', 1)->get();
             $modeoftransport = ModeOfTransport::where('status', 1)->get();
@@ -192,7 +192,7 @@ class QuotationController extends Controller
             $currencies = Currency::where('status', 1)->get();
             $exportSodas = ExportSodaField::latest()->get();
         } catch (QueryException $e) {
-            $products = $bagTypes = $bagPackings = $bagColors = $incoterms = $modeofterms = collect();
+            $products = $bagTypes = $bagPackings = $incoterms = $modeofterms = collect();
             $modeoftransport = $countries = $ports = $currencies = $exportSodas = collect();
         }
 
@@ -202,7 +202,7 @@ class QuotationController extends Controller
             'products',
             'bagTypes',
             'bagPackings',
-            'bagColors',
+            // 'bagColors',
             'incoterms',
             'modeofterms',
             'modeoftransport',
@@ -227,7 +227,7 @@ class QuotationController extends Controller
 
             $bagTypes  = BagType::where('status', 1)->get();
             $bagPackings   = BagPacking::where('status', 1)->get();
-            $bagColors = Color::where('status', 1)->get();
+            // $bagColors = Color::where('status', 1)->get();
             $incoterms      = IncoTerm::where('status', 1)->get();
             $modeofterms    = ModeOfTerm::where('status', 1)->get();
             $modeoftransport = ModeOfTransport::where('status', 1)->get();
@@ -237,7 +237,7 @@ class QuotationController extends Controller
             $exportSodas = ExportSodaField::latest()->get();
         } catch (QueryException $e) {
             $products = $buyers = $companies = collect();
-            $bagTypes = $bagPackings = $bagColors = collect();
+            $bagTypes = $bagPackings = collect();
             $incoterms = $modeofterms = $modeoftransport = $countries = $ports = $currencies = $exportSodas = collect();
         }
 
@@ -249,7 +249,7 @@ class QuotationController extends Controller
             'companies',
             'bagTypes',
             'bagPackings',
-            'bagColors',
+            // 'bagColors',
             'incoterms',
             'modeofterms',
             'modeoftransport',
@@ -299,7 +299,7 @@ class QuotationController extends Controller
                     $quotation->packingItems()->create([
                         'bag_type_id'     => $item['bag_type_id'] ?? null,
                         'bag_packing_id'  => $item['bag_packing_id'] ?? null,
-                        'bag_color_id'    => $item['bag_color_id'] ?? null,
+                        // 'bag_color_id'    => $item['bag_color_id'] ?? null,
                         'bag_size'        => $item['bag_size'] ?? 0,
                         'metric_tons'     => $item['metric_tons'] ?? 0,
                         'maunds'          => $item['maunds'] ?? 0,

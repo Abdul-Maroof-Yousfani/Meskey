@@ -52,8 +52,8 @@
                     <tr class="bg-light">
                         <th>Bag Type</th>
                         <th>Packing</th>
-                        <th>Color</th>
-                        <th>Size (kg)</th>
+
+                        <th>Packing Size (kg)</th>
                         <th>Qty (MT)</th>
                         <th style="display: none;">Qty (Mnds)</th>
                         <th>Bags</th>
@@ -70,7 +70,7 @@
                     <tr>
                         <td>{{ $item->bagType->name ?? 'N/A' }}</td>
                         <td>{{ $item->bagPacking->name ?? 'N/A' }}</td>
-                        <td>{{ $item->bagColor->color ?? 'N/A' }}</td>
+
                         <td>{{ $item->bag_size }}</td>
                         <td>{{ number_format($item->metric_tons, 3) }}</td>
                         <td style="display: none;">{{ number_format($item->maunds, 2) }}</td>

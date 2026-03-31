@@ -96,12 +96,12 @@
                     <tr class="bg-light">
                         <th>Bag Type</th>
                         <th>Packing</th>
-                        <th>Color</th>
+                        {{-- <th>Color</th> --}}
                         <th>Size (kg)</th>
                         <th>Qty (MT)</th>
                         <th style="display: none;">Maunds</th>
                         <th>Bags</th>
-                        <th>Total KGs</th>
+                        <th style="display: none;">Total KGs</th>
                         <th>Rate/Ton</th>
                         <th style="display: none;">Rate/Mnd</th>
                         <th>Amount</th>
@@ -114,12 +114,12 @@
                         <tr>
                             <td>{{ $item->bagType->name ?? 'N/A' }}</td>
                             <td>{{ $item->bagPacking->name ?? 'N/A' }}</td>
-                            <td>{{ $item->bagColor->color ?? 'N/A' }}</td>
+                            {{-- <td>{{ $item->bagColor->color ?? 'N/A' }}</td> --}}
                             <td>{{ number_format($item->bag_size, 2) }}</td>
                             <td>{{ number_format($item->metric_tons, 3) }}</td>
                             <td style="display: none;">{{ number_format($item->maunds, 2) }}</td>
                             <td>{{ number_format($item->no_of_bags) }}</td>
-                            <td>{{ number_format($item->total_kgs, 2) }}</td>
+                            <td style="display: none;">{{ number_format($item->total_kgs, 2) }}</td>
                             <td>{{ number_format($item->rate, 2) }}</td>
                             <td style="display: none;">{{ number_format($item->rate_per_maund, 2) }}</td>
                             <td>{{ number_format($item->amount, 2) }}</td>

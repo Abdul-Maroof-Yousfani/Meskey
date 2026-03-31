@@ -52,7 +52,7 @@
                     </div>
                     <div class="col-md-4">
                         <fieldset>
-                            <label>Voucher No#:</label>
+                            <label>Contract No#:</label>
                             <div class="input-group">
                                 <input type="text" name="voucher_no" class="form-control"
                                     value="{{ old('voucher_no', $exportOrder->voucher_no) }}" readonly>
@@ -61,25 +61,25 @@
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <div class="form-group">
-                            <label>Contract No#:</label>
+                            <label>Reference No#:</label>
                             <input type="text" name="contract_no" class="form-control"
                                 value="{{ old('contract_no', $exportOrder->contract_no) }}" readonly>
                         </div>
                     </div>
 
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <div class="form-group">
-                            <label>Voucher Date:</label>
+                            <label>Contract Date:</label>
                             <input type="date" name="voucher_date" class="form-control"
                                 value="{{ old('contract_no', $exportOrder->voucher_date) }}" readonly>
                         </div>
                     </div>
 
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <div class="form-group">
-                            <label>Voucher Heading:</label>
+                            <label>Contract Heading:</label>
                             <input type="text" name="voucher_heading" class="form-control"
                                 value="{{ old('voucher_heading', $exportOrder->voucher_heading) }}" readonly>
                         </div>
@@ -597,7 +597,7 @@
                             <th style="min-width: 100px;">Packing Size (kg)</th>
                             <th style="min-width: 100px;">Qty (MT)</th>
                             <th style="min-width: 100px; display: none;">Qty (Mnds)</th>
-                            <th style="min-width: 110px;">Qty (KGs)</th>
+                            <th style="min-width: 110px; display: none;">Qty (KGs)</th>
                             <th style="min-width: 100px;">Bags</th>
                             <th style="min-width: 120px;">Stuffing (MT)</th>
                             <th style="min-width: 120px; display: none;">Stuffing (Mnd)</th>
@@ -632,7 +632,7 @@
                             <td class="p-2" style="display: none;">
                                 <input type="text" class="form-control" value="{{ number_format($item->maunds, 2) }}" readonly>
                             </td>
-                            <td class="p-2">
+                            <td class="p-2" style="display: none;">
                                 <input type="text" class="form-control" value="{{ number_format($item->total_kgs, 2) }}" readonly>
                             </td>
                             <td class="p-2">

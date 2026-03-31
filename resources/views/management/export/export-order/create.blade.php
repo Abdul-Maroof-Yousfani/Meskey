@@ -51,10 +51,10 @@
                     </div>
                     <div class="col-md-4">
                         <fieldset>
-                            <label>Voucher No#:</label>
+                            <label>Contract No#:</label>
                             <div class="input-group">
                                 <div class="input-group-prepend">
-                                    <button class="btn btn-primary" type="button">Voucher No#</button>
+                                    <button class="btn btn-primary" type="button">Contract No#</button>
                                 </div>
                                 <input type="text" readonly name="voucher_no" class="form-control">
     
@@ -65,21 +65,21 @@
                 <div class="row">
                     <div class="col-md-4">
                         <div class="form-group">
-                            <label>Contract No#:</label>
+                            <label>Reference No#:</label>
                             <input type="text" name="contract_no" class="form-control">
                         </div>
                     </div>
 
                     <div class="col-md-4">
                         <div class="form-group">
-                            <label>Voucher Date:</label>
-                            <input type="date" name="voucher_date" class="form-control">
+                            <label>Contract Date:</label>
+                            <input type="date" name="voucher_date" value="{{ date('Y-m-d') }}" class="form-control">
                         </div>
                     </div>
 
                     <div class="col-md-4">
                         <div class="form-group">
-                            <label>Voucher Heading:</label>
+                            <label>Contract Heading:</label>
                             <input type="text" name="voucher_heading" class="form-control">
                         </div>
                     </div>
@@ -492,7 +492,7 @@
                             <th style="min-width: 100px;">Packing Size (kg)</th>
                             <th style="min-width: 100px;">Qty (MT)</th>
                             <th style="min-width: 100px; display: none;">Qty (Mnds)</th>
-                            <th style="min-width: 110px;">Qty (KGs)</th>
+                            <th style="min-width: 110px; display: none;">Qty (KGs)</th>
                             <th style="min-width: 100px;">Bags</th>
                             <th style="min-width: 120px;">Stuffing (MT)</th>
                             <th style="min-width: 120px; display: none;">Stuffing (Mnd)</th>
@@ -550,7 +550,7 @@
                                 <input type="number" name="packing_items[0][maunds]"
                                     class="form-control maunds" value="0" step="0.01" min="0">
                             </td>
-                            <td class="p-2">
+                            <td class="p-2" style="display: none;">
                                 <input type="number" name="packing_items[0][total_kgs]" class="form-control total-kgs"
                                 value="0" readonly>
                             </td>

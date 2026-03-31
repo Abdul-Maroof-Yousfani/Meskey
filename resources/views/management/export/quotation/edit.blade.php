@@ -203,12 +203,12 @@
                         <tr>
                             <th style="min-width:150px;">Bag Type</th>
                             <th style="min-width:130px;">Packing</th>
-                            <th style="min-width:110px;">Color</th>
+                            {{-- <th style="min-width:110px;">Color</th> --}}
                             <th style="min-width:100px;">Size (kg)</th>
                             <th style="min-width:100px;">Qty (MT)</th>
                             <th style="min-width:100px; display: none;">Maunds</th>
                             <th style="min-width:100px;">Bags</th>
-                            <th style="min-width:110px;">Total KGs</th>
+                            <th style="min-width:110px; display: none;">Total KGs</th>
                             <th style="min-width:110px;">Rate/Ton</th>
                             <th style="min-width:110px; display: none;">Rate/Mnd</th>
                             <th style="min-width:130px;">Amount</th>
@@ -235,14 +235,14 @@
                                     @endforeach
                                 </select>
                             </td>
-                            <td class="p-2">
+                            {{-- <td class="p-2">
                                 <select name="packing_items[{{ $i }}][bag_color_id]" class="form-control select2">
                                     <option value="">Color</option>
                                     @foreach ($bagColors as $color)
                                         <option value="{{ $color->id }}" {{ $item->bag_color_id == $color->id ? 'selected' : '' }}>{{ $color->color }}</option>
                                     @endforeach
                                 </select>
-                            </td>
+                            </td> --}}
                             <td class="p-2">
                                 <input type="number" name="packing_items[{{ $i }}][bag_size]" class="form-control bag-size" step="0.01" value="{{ $item->bag_size }}" min="0">
                             </td>
@@ -255,7 +255,7 @@
                             <td class="p-2">
                                 <input type="number" name="packing_items[{{ $i }}][no_of_bags]" class="form-control no_of_bags" value="{{ $item->no_of_bags }}" readonly>
                             </td>
-                            <td class="p-2">
+                            <td class="p-2" style="display: none;">
                                 <input type="number" name="packing_items[{{ $i }}][total_kgs]" class="form-control total-kgs" value="{{ $item->total_kgs }}" readonly>
                             </td>
                             <td class="p-2">
@@ -294,14 +294,14 @@
                                     @endforeach
                                 </select>
                             </td>
-                            <td class="p-2">
+                            {{-- <td class="p-2">
                                 <select name="packing_items[0][bag_color_id]" class="form-control select2">
                                     <option value="">Color</option>
                                     @foreach ($bagColors as $color)
                                         <option value="{{ $color->id }}">{{ $color->color }}</option>
                                     @endforeach
                                 </select>
-                            </td>
+                            </td> --}}
                             <td class="p-2">
                                 <input type="number" name="packing_items[0][bag_size]" class="form-control bag-size" step="0.01" value="0" min="0">
                             </td>
