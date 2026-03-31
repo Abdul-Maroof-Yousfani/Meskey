@@ -49,7 +49,7 @@
     $arrivalFreightAmount = $arrivalTicket->freight->gross_freight_amount ?? 0;
     $grossFreightAmount = $freightPaymentRequestgrossAmount ?? $arrivalTicket->freight->gross_freight_amount ?? 0;
     
-    dd($grossFreightAmount);
+    // dd($grossFreightAmount);
     $netWeight = $loadingWeight - $bagWeight * $noOfBags;
 
     foreach ($samplingRequestCompulsuryResults as $slab) {

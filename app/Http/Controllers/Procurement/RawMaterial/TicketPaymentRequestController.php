@@ -648,6 +648,9 @@ class TicketPaymentRequestController extends Controller
             ->where('module_type', 'freight_payment')
             ->latest()->first(); // id ya created_at ke hisaab se last record
         // ->value('gross_amount');
+
+
+        dd($freightPaymentRequestgrossAmount, $freightPaymentRequestgrossAmount->value('godown_penalty'));
         if ($freightPaymentRequestgrossAmount->is_paid_by_supplier == 1) {
             $freightPaymentRequestgrossAmount = $freightPaymentRequestgrossAmount->value('godown_penalty') + $freightPaymentRequestgrossAmount->value('other_minus_labour') + $freightPaymentRequestgrossAmount->value('commission_amount');
         } else {
