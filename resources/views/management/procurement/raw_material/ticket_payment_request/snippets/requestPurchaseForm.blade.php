@@ -48,6 +48,8 @@
     $kantaCharges = $arrivalTicket->freight->karachi_kanta_charges ?? 0;
     $arrivalFreightAmount = $arrivalTicket->freight->gross_freight_amount ?? 0;
     $grossFreightAmount = $freightPaymentRequestgrossAmount ?? $arrivalTicket->freight->gross_freight_amount ?? 0;
+    
+    dd($grossFreightAmount);
     $netWeight = $loadingWeight - $bagWeight * $noOfBags;
 
     foreach ($samplingRequestCompulsuryResults as $slab) {
@@ -693,9 +695,9 @@
                             <td>
                                 <input type="text" class="form-control" name="freight_deduction_amount_display"
                                     id="freight_deduction_amount_display"
-                                    value="{{ number_format($grossFreightAmount ?? 0, 2) }}" readonly>
+                                    value="{{ number_format($grossFreightAmount, 2) }}" readonly>
                                 <input type="hidden" class="form-control" name="loading_weighbridge_amount1"
-                                    id="freight_deduction_amount" value="{{ $grossFreightAmount ?? 0 }}" readonly>
+                                    id="freight_deduction_amount" value="{{ $grossFreightAmount }}" readonly>
                             </td>
                         </tr>
                         <tr>
