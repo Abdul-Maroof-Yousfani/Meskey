@@ -44,23 +44,45 @@
             @if ($module === 'arrival')
                 <div class="col-12">
                     <div class="dashboard-cards-grid">
+ <div class="dashboard-card">
+                            <div class="card-icon">
+                                <i class="ft-grid"></i>
+                            </div>
+                            <div class="card-number">{{ $data['old_pending_trucks'] ?? 0 }}</div>
+                            <div class="card-title">Old Pending Trucks</div>
+                            <div class="card-subtitle">Old Pending Trucks</div>
+
+                            <button class="view-btn"
+                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=old_pending_trucks&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Old Pending Trucks', true, '70%')">
+                                View
+                            </button>
+                        </div>
+
+
                         <div class="dashboard-card">
                             <div class="card-icon">
                                 <i class="ft-grid"></i>
                             </div>
                             <div class="card-number">{{ $data['total_tickets'] ?? 0 }}</div>
-                            <div class="card-title">Total Tickets</div>
-                            <div class="card-subtitle">Total Tickets</div>
+                            <div class="card-title m-0">Total Tickets</div>
+                            <!-- <div class="card-subtitle">Total Tickets</div> -->
                             @if (($data['rejected_tickets'] ?? 0) > 0)
-                                <div class="status-badge status-danger cursor-pointer"
+                                <div class="status-badge status-danger cursor-pointer mb-1"
                                     onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=rejected_tickets&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Rejected Tickets - Bilty Return Pending', true, '70%')">
                                     {{ $data['rejected_tickets'] ?? 0 }} Rejected</div>
                             @else
                                 <div class="status-badge status-neutral">No Rejections</div>
                             @endif
 
-                            @if (($data['completed_tickets'] ?? 0) > 0)
-                                <div class="status-badge status-success cursor-pointer"
+                           
+                            @if (($data['inprocess_tickets'] ?? 0) > 0)
+                                <div class="status-badge status-warning cursor-pointer mb-1">{{ $data['inprocess_tickets'] ?? 0 }} In Process</div>
+                            @else
+                                <div class="status-badge status-neutral">No In Process Yet!</div>
+                            @endif
+                            <br>
+                             @if (($data['completed_tickets'] ?? 0) > 0)
+                                <div class="status-badge status-success cursor-pointer mb-1"
                                     onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=completed_tickets&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Completed Tickets - Arrival Slip Generated', true, '70%')">
                                     {{ $data['completed_tickets'] ?? 0 }} Completed</div>
                             @else
@@ -71,6 +93,152 @@
                                 View
                             </button>
                         </div>
+
+                        <div class="dashboard-card">
+                            <div class="card-icon">
+                                <i class="ft-grid"></i>
+                            </div>
+                            <div class="card-number">{{ $data['total_tickets_kgs'] ?? 0 }}</div>
+                            <div class="card-title">Total Tickets In Kgs</div>
+                            <div class="card-subtitle">Total Kgs Received (Tickets Net Weight)</div>
+                            
+                            <button class="view-btn"
+                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=total_tickets&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Total Tickets in Kgs', true, '70%')">
+                                View
+                            </button>
+                        </div>
+
+
+                       
+
+                        
+
+                        <div class="dashboard-card">
+                            <div class="card-icon">
+                                <i class="ft-x-circle"></i>
+                            </div>
+                            <div class="card-number">{{ $data['half_rejected_tickets'] ?? 0 }}</div>
+                            <div class="card-title">Truck Half Rejected</div>
+                            <div class="card-subtitle">Truck Half Rejected</div>
+                            
+                            <button class="view-btn"
+                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=half_rejected_tickets&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Truck Half Rejected', true, '70%')">
+                                View
+                            </button>
+                        </div>
+
+
+                         <div class="dashboard-card">
+                            <div class="card-icon">
+                                <i class="ft-x-circle text-danger"></i>
+                            </div>
+                            <div class="card-number text-danger">{{ $data['rejected_tickets'] ?? 0 }}</div>
+                            <div class="card-title">Truck Full Rejected</div>
+                            <div class="card-subtitle">Truck Full Rejected</div>
+                           
+
+                           
+                            <button class="view-btn" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=rejected_tickets&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Truck Full Rejected', true, '70%')">
+                                View
+                            </button>
+                        </div>
+
+
+                        
+                         <div class="dashboard-card">
+                            <div class="card-icon">
+                                <i class="ft-home text-warning"></i>
+                            </div>
+                            <div class="card-number text-warning">{{ $data['truck_at_ho'] ?? 0 }}</div>
+                            <div class="card-title">Truck at HO</div>
+                            <div class="card-subtitle">Truck at HO (Unverified)</div>
+                           
+
+                           
+                            <button class="view-btn" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=truck_at_ho&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Truck at HO', true, '70%')">
+                                View
+                            </button>
+                        </div>
+     <div class="dashboard-card">
+                            <div class="card-icon">
+                                <i class="ft-file-plus"></i>
+                            </div>
+                            <div class="card-number">{{ $data['initial_sampling_requested'] ?? 0 }}</div>
+                            <div class="card-title">Truck at QC (Initial Sampling)</div>
+                            <div class="card-subtitle">Pending Initial Sampling</div>
+                            @if (($data['new_tickets'] ?? 0) > 0)
+                                <div class="status-badge status-pending">+{{ $data['initial_sampling_requested'] ?? 0 }}
+                                    Pending</div>
+                            @else
+                                <div class="status-badge status-neutral">All Completed</div>
+                            @endif
+                            <button class="view-btn"
+                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=initial_sampling_requested&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Initial Sampling Requested - Pending Initial Sampling', true, '70%')">
+                                View
+                            </button>
+                        </div>
+
+                        <div class="dashboard-card">
+                            <div class="card-icon">
+                                <i class="ft-file-plus"></i>
+                            </div>
+                            <div class="card-number">{{ $data['initial_re_sampling_requested'] ?? 0 }}</div>
+                            <div class="card-title">Truck at QC (Initial Re-Sampling)</div>
+                            <div class="card-subtitle">Pending Initial Re-Sampling</div>
+                            @if (($data['new_tickets'] ?? 0) > 0)
+                                <div class="status-badge status-pending">+{{ $data['initial_re_sampling_requested'] ?? 0 }}
+                                    Pending</div>
+                            @else
+                                <div class="status-badge status-neutral">All Completed</div>
+                            @endif
+                            <button class="view-btn"
+                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=initial_re_sampling_requested&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Initial Re-Sampling Requested - Pending Initial Re-Sampling', true, '70%')">
+                                View
+                            </button>
+                        </div>
+
+                        
+                        <div class="dashboard-card">
+                            <div class="card-icon">
+                                <i class="ft-layers"></i>
+                            </div>
+                            <div class="card-number">{{ $data['inner_sampling_requested'] ?? 0 }}</div>
+                            <div class="card-title">Truck at QC (Inner Sampling)</div>
+                            <div class="card-subtitle">Requested Not Done</div>
+                            @if (($data['inner_sampling_requested'] ?? 0) > 0)
+                                <div class="status-badge status-warning">+{{ $data['inner_sampling_requested'] ?? 0 }}
+                                    Pending
+                                </div>
+                            @else
+                                <div class="status-badge status-neutral">All Completed</div>
+                            @endif
+                            <button class="view-btn"
+                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=inner_sampling_requested&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id }}','Inner Sampling Requested - Pending Inner Sampling', true, '70%')">
+                                View
+                            </button>
+                        </div>
+
+                        <div class="dashboard-card">
+                            <div class="card-icon">
+                                <i class="ft-layers"></i>
+                            </div>
+                            <div class="card-number">{{ $data['inner_re_sampling_requested'] ?? 0 }}</div>
+                            <div class="card-title">Truck at QC (Inner Resampling)</div>
+                            <div class="card-subtitle">Requested Not Done</div>
+                            @if (($data['inner_re_sampling_requested'] ?? 0) > 0)
+                                <div class="status-badge status-warning">+{{ $data['inner_re_sampling_requested'] ?? 0 }}
+                                    Pending
+                                </div>
+                            @else
+                                <div class="status-badge status-neutral">All Completed</div>
+                            @endif
+                            <button class="view-btn"
+                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=inner_re_sampling_requested&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id }}','Inner Re-Sampling Requested - Pending Inner Re-Sampling', true, '70%')">
+                                View
+                            </button>
+                        </div>
+
+
 
                         <div class="dashboard-card d-none">
                             <div class="card-icon">
@@ -91,26 +259,57 @@
                             </button>
                         </div>
 
-                        <div class="dashboard-card">
+                   @foreach ($purchasers as $purchaser)
+              <div class="dashboard-card">
                             <div class="card-icon">
-                                <i class="ft-file-plus"></i>
+                                <i class="ft-clipboard"></i>
                             </div>
-                            <div class="card-number">{{ $data['initial_sampling_requested'] ?? 0 }}</div>
-                            <div class="card-title">Initial Sampling</div>
-                            <div class="card-subtitle">Pending Initial Sampling</div>
-                            @if (($data['new_tickets'] ?? 0) > 0)
-                                <div class="status-badge status-pending">+{{ $data['initial_sampling_requested'] ?? 0 }}
-                                    Pending</div>
+                   
+                            <div class="card-number">    {{ initialSamplingDonePurchaserwise($purchaser->id, $fromDate, $toDate, $location_id ?? null) }}
+</div>
+                            <div class="card-title">Truckt At {{ $purchaser->name }} (Initial Sampling)</div>
+                            <div class="card-subtitle">Truckt At {{ $purchaser->name }} Pending Approval</div>
+                            @if (initialSamplingDonePurchaserwise($purchaser->id, $fromDate, $toDate, $location_id ?? null) > 0)
+                                <div class="status-badge status-warning">+{{ initialSamplingDonePurchaserwise($purchaser->id, $fromDate, $toDate, $location_id ?? null) }}
+                                    Awaiting
+                                    Approval</div>
                             @else
-                                <div class="status-badge status-neutral">All Completed</div>
+                                <div class="status-badge status-neutral">All Approved</div>
                             @endif
                             <button class="view-btn"
-                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=initial_sampling_requested&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Initial Sampling Requested - Pending Initial Sampling', true, '70%')">
+                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=initial_sampling_done&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}&purchaser_id={{ $purchaser->id ?? '' }}','Initial Sampling Done - Pending Approval', true, '70%')">
                                 View
                             </button>
                         </div>
+                        @endforeach
 
+
+                        @foreach ($purchasers as $purchaser)
                         <div class="dashboard-card">
+                            <div class="card-icon">
+                                <i class="ft-clipboard"></i>
+                            </div>
+                            <div class="card-number">    
+                                {{ innerSamplingDonePurchaserwise($purchaser->id, $fromDate, $toDate, $location_id ?? null) }}
+                            </div>
+                            <div class="card-title">Truckt At {{ $purchaser->name }} (Inner Sampling)</div>
+                            <div class="card-subtitle">Truckt At {{ $purchaser->name }} Pending Approval</div>
+                            @if (innerSamplingDonePurchaserwise($purchaser->id, $fromDate, $toDate, $location_id ?? null) > 0)
+                                <div class="status-badge status-warning">+{{ innerSamplingDonePurchaserwise($purchaser->id, $fromDate, $toDate, $location_id ?? null) }}
+                                    Awaiting
+                                    Approval</div>
+                            @else
+                                <div class="status-badge status-neutral">All Approved</div>
+                            @endif
+                            <button class="view-btn"
+                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=inner_sampling_pending_approval&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}&purchaser_id={{ $purchaser->id ?? '' }}','Inner Sampling Done - Pending Approval', true, '70%')">
+                                View
+                            </button>
+                        </div>
+                        @endforeach
+
+
+                        <div class="dashboard-card d-none">
                             <div class="card-icon">
                                 <i class="ft-clipboard"></i>
                             </div>
@@ -129,6 +328,9 @@
                                 View
                             </button>
                         </div>
+
+
+
 
                         <div class="dashboard-card d-none">
                             <div class="card-icon">
@@ -171,7 +373,106 @@
                             </button>
                         </div>
 
+
                         <div class="dashboard-card">
+                            <div class="card-icon">
+                                <i class="ft-dollar-sign"></i>
+                            </div>
+                            <div class="card-number">{{ $data['freight_ready'] ?? 0 }}</div>
+                            <div class="card-title">Freight Pending</div>
+                            <div class="card-subtitle">Ready for Freight</div>
+                            @if (($data['decision_on_average_enabled'] ?? 0) > 0)
+                                <div class="status-badge status-warning">{{ $data['decision_on_average_enabled'] ?? 0 }}
+                                    Decision
+                                    on Average Enabled</div>
+                            @elseif(($data['freight_ready'] ?? 0) > 0)
+                                <div class="status-badge status-success">+{{ $data['freight_ready'] ?? 0 }} Ready</div>
+                            @else
+                                <div class="status-badge status-neutral">All Completed</div>
+                            @endif
+                            <button class="view-btn"
+                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=freight_ready&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id }}','Freight Ready', true, '70%')">
+                                View
+                            </button>
+                        </div>
+
+
+                         <div class="dashboard-card">
+                            <div class="card-icon">
+                                <i class="ft-dollar-sign"></i>
+                            </div>
+                            <div class="card-number">{{ $data['truck_for_built_return'] ?? 0 }}</div>
+                            <div class="card-title">Truck For Bilty Return</div>
+                            <div class="card-subtitle">Waiting for Confirmation</div>
+
+                            <button class="view-btn"
+                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=truck_for_built_return&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id }}','Truck For Bilty Return', true, '70%')">
+                                View
+                            </button>
+                        </div>
+                         <div class="dashboard-card">
+                            <div class="card-icon">
+                                <i class="ft-dollar-sign"></i>
+                            </div>
+                            <div class="card-number">{{ $data['truck_out'] ?? 0 }}</div>
+                            <div class="card-title">Truck Out</div>
+                            <div class="card-subtitle">Arrival Slip Generated</div>
+
+                            <button class="view-btn"
+                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=truck_out&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id }}','Truck Out', true, '70%')">
+                                View
+                            </button>
+                        </div>
+
+@foreach ($data['weighbridge_pending_locationwise'] as $location)
+                        <div class="dashboard-card">
+                            <div class="card-icon">
+                                <i class="ft-truck"></i>
+                            </div>
+                            <div class="card-number">{{ $location->first_count ?? 0 }}</div>
+                            <div class="card-title">Truck at Weighbridge {{ $location->location_name }} <br> (1st Weighing)</div>
+                            <div class="card-subtitle">Pending Weighing</div>
+                            @if (($location->first_count ?? 0) > 0)
+                                <div class="status-badge status-success">+{{ $location->first_count ?? 0 }}
+                                    Ready
+                                    for
+                                    Weighing</div>
+                            @else
+                                <div class="status-badge status-neutral">All Weighed</div>
+                            @endif
+                            <button class="view-btn"
+                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=first_weighbridge_pending&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id }}&arrival_location_id={{ $location->location_id }}','First Weighbridge Pending', true, '70%')">
+                                View
+                            </button>
+                        </div>
+
+                         <div class="dashboard-card">
+                            <div class="card-icon">
+                                <i class="ft-truck"></i>
+                            </div>
+                            <div class="card-number">{{ $location->second_count ?? 0 }}</div>
+                            <div class="card-title">Truck at Weighbridge {{ $location->location_name }} <br> (2nd Weighing)</div>
+                            <div class="card-subtitle">Pending Weighing</div>
+                            @if (($location->second_count ?? 0) > 0)
+                                <div class="status-badge status-success">+{{ $location->second_count ?? 0 }}
+                                    Ready
+                                    for
+                                    Weighing</div>
+                            @else
+                                <div class="status-badge status-neutral">All Weighed</div>
+                            @endif
+                            <button class="view-btn"
+                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=second_weighbridge_pending&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id }}&arrival_location_id={{ $location->location_id }}','Second Weighbridge Pending', true, '70%')">
+                                View
+                            </button>
+                        </div>
+
+                        @endforeach
+
+
+
+                        
+                        <div class="dashboard-card d-none">
                             <div class="card-icon">
                                 <i class="ft-truck"></i>
                             </div>
@@ -197,8 +498,8 @@
                                 <i class="ft-layers"></i>
                             </div>
                             <div class="card-number">{{ $data['inner_sampling_requested'] ?? 0 }}</div>
-                            <div class="card-title">Inner Sampling</div>
-                            <div class="card-subtitle">Requested Not Done</div>
+                            <div class="card-title">Request For (Inner Sampling)</div>
+                            <div class="card-subtitle">Inner Sampling Requested Not Done</div>
                             @if (($data['inner_sampling_requested'] ?? 0) > 0)
                                 <div class="status-badge status-warning">+{{ $data['inner_sampling_requested'] ?? 0 }}
                                     Pending
@@ -212,7 +513,8 @@
                             </button>
                         </div>
 
-                        <div class="dashboard-card">
+                      
+                        <div class="dashboard-card d-none">
                             <div class="card-icon">
                                 <i class="ft-check-circle"></i>
                             </div>
@@ -232,7 +534,29 @@
                             </button>
                         </div>
 
+@foreach ($data['unloading_pending_locationwise'] as $location)
                         <div class="dashboard-card">
+                            <div class="card-icon">
+                                <i class="ft-thumbs-up"></i>
+                            </div>
+                            <div class="card-number">{{ $location->unloading_count ?? 0 }}</div>
+                            <div class="card-title">Truck at Unloading (Warehouse {{ $location->location_name }})</div>
+                            <div class="card-subtitle">Pending</div>
+                            @if (($location->unloading_count ?? 0) > 0)
+                                <div class="status-badge status-success">+{{ $location->unloading_count ?? 0 }}
+                                    Ready
+                                    for
+                                    Approval</div>
+                            @else
+                                <div class="status-badge status-neutral">All Approved</div>
+                            @endif
+                            <button class="view-btn"
+                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=half_full_approve_pending&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id }}&arrival_location_id={{ $location->location_id }}','Half/Full Approve Pending', true, '70%')">
+                                View
+                            </button>
+                        </div>
+                        @endforeach
+                        <div class="dashboard-card d-none">
                             <div class="card-icon">
                                 <i class="ft-thumbs-up"></i>
                             </div>
@@ -253,7 +577,7 @@
                             </button>
                         </div>
 
-                        <div class="dashboard-card">
+                        <div class="dashboard-card d-none">
                             <div class="card-icon">
                                 <i class="ft-truck"></i>
                             </div>
@@ -269,28 +593,6 @@
                             @endif
                             <button class="view-btn"
                                 onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=second_weighbridge_pending&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id }}','Second Weighbridge Pending', true, '70%')">
-                                View
-                            </button>
-                        </div>
-
-                        <div class="dashboard-card">
-                            <div class="card-icon">
-                                <i class="ft-dollar-sign"></i>
-                            </div>
-                            <div class="card-number">{{ $data['freight_ready'] ?? 0 }}</div>
-                            <div class="card-title">Freight Pending</div>
-                            <div class="card-subtitle">Ready for Freight</div>
-                            @if (($data['decision_on_average_enabled'] ?? 0) > 0)
-                                <div class="status-badge status-warning">{{ $data['decision_on_average_enabled'] ?? 0 }}
-                                    Decision
-                                    on Average Enabled</div>
-                            @elseif(($data['freight_ready'] ?? 0) > 0)
-                                <div class="status-badge status-success">+{{ $data['freight_ready'] ?? 0 }} Ready</div>
-                            @else
-                                <div class="status-badge status-neutral">All Completed</div>
-                            @endif
-                            <button class="view-btn"
-                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=freight_ready&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id }}','Freight Ready', true, '70%')">
                                 View
                             </button>
                         </div>
@@ -551,7 +853,7 @@ console.log("Realtime Arrival Stats Updated ✅", stats);
             color: #26499b;
             line-height: 1;
             margin-bottom: 8px;
-            margin-top: 12px;
+            /* margin-top: 12px; */
         }
 
         .card-title {

@@ -3,6 +3,7 @@
     <table class="table table-striped table-hover">
         <thead class="thead-dark">
             <tr>
+                <th>S.No</th>
                 @if (in_array($type, [
                         'new_tickets',
                         'total_tickets',
@@ -10,6 +11,12 @@
                         'location_transfer_pending',
                         'rejected_tickets',
                         'freight_ready',
+                        'truck_out',
+                        'half_rejected_tickets',
+                        'truck_at_ho',
+                        'truck_for_built_return',
+                        'old_pending_trucks',
+
                     ]))
                     <th>Ticket #</th>
                     <th>Product</th>
@@ -28,7 +35,9 @@
                         'initial_sampling_done',
                         'resampling_required',
                         'initial_sampling_requested',
+                        'initial_re_sampling_requested',
                         'inner_sampling_requested',
+                        'inner_re_sampling_requested',
                         'inner_sampling_pending_approval',
                     ]))
                     <th>Ticket #</th>
@@ -58,6 +67,7 @@
                     <th>Product</th>
                     <th>Truck No</th>
                     <th>Approval Status</th>
+                    <th>Arrival Location</th>
                     <th>Station</th>
                     <th>Bags</th>
                     <th>Created</th>
@@ -65,8 +75,9 @@
             </tr>
         </thead>
         <tbody>
-            @forelse($data as $item)
+            @forelse($data as $key => $item)
                 <tr>
+                    <td>{{ $key + 1 }}</td>
                     @if (in_array($type, [
                             'new_tickets',
                             'total_tickets',
@@ -74,6 +85,11 @@
                             'completed_tickets',
                             'rejected_tickets',
                             'freight_ready',
+                            'truck_out',
+                            'half_rejected_tickets',
+                            'truck_at_ho',
+                            'truck_for_built_return',
+                            'old_pending_trucks',
                         ]))
                         <td>{{ $item->unique_no ?? 'N/A' }}</td>
                         <td>{{ $item->product->name ?? 'N/A' }}</td>
@@ -113,7 +129,9 @@
                             'initial_sampling_done',
                             'resampling_required',
                             'inner_sampling_requested',
+                            'inner_re_sampling_requested',
                             'initial_sampling_requested',
+                            'initial_re_sampling_requested',
                             'inner_sampling_pending_approval',
                         ]))
                         <td>{{ $item->arrivalTicket->unique_no ?? 'N/A' }}</td>
@@ -147,6 +165,7 @@
                         <td>{{ $item->unique_no ?? 'N/A' }}</td>
                         <td>{{ $item->product->name ?? 'N/A' }}</td>
                         <td>{{ $item->truck_no ?? 'N/A' }}</td>
+                        <td>{{ $item->unloadingLocation?->arrivalLocation?->name ?? 'N/A' }}</td>
                         <td>
                             <span
                                 class="badge badge-{{ $item->document_approval_status === 'half_approved' ? 'warning' : 'success' }}">

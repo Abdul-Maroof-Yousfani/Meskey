@@ -838,11 +838,11 @@ function get_second_weighbridge_balance(LoadingSlip $loadingSlip, $delivery_orde
 {
     $item = $loadingSlip->loadingProgramItem;
     $deliveryOrders = collect();
-    
+
     // If a specific DO is requested, use it
     if ($delivery_order_id) {
         $deliveryOrders->push(DeliveryOrder::with(['delivery_order_data', 'saleSecondWeighbridge'])->find($delivery_order_id));
-    } 
+    }
     // Otherwise, if the ticket (item) has multiple DOs, use all of them (Aggregate Balance)
     elseif ($item && $item->deliveryOrders->isNotEmpty()) {
         $deliveryOrders = $item->deliveryOrders->loadMissing(['delivery_order_data', 'saleSecondWeighbridge']);
@@ -860,7 +860,8 @@ function get_second_weighbridge_balance(LoadingSlip $loadingSlip, $delivery_orde
     $spent_quantities = 0;
 
     foreach ($deliveryOrders as $do) {
-        if (!$do) continue;
+        if (!$do)
+            continue;
         $overall_quantities += $do->delivery_order_data->sum("qty");
         $spent_quantities += $do->saleSecondWeighbridge->sum("net_weight");
     }
@@ -871,11 +872,12 @@ function get_second_weighbridge_balance(LoadingSlip $loadingSlip, $delivery_orde
 function get_second_weighbridge_balance_by_delivery_order($delivery_order_id)
 {
     $delivery_order = DeliveryOrder::with(['delivery_order_data', 'saleSecondWeighbridge'])->find($delivery_order_id);
-    if (!$delivery_order) return 0;
-    
+    if (!$delivery_order)
+        return 0;
+
     $overall_quantities = $delivery_order->delivery_order_data->sum("qty");
     $spent_quantities = $delivery_order->saleSecondWeighbridge->sum("net_weight");
-    
+
     return $overall_quantities - $spent_quantities;
 }
 
@@ -895,7 +897,7 @@ function receipt_voucher_balance($reference_id, $type = "sale_order")
     }
 
     $balance = round($total_overall_amount - $total_spent, 2);
-    
+
     if (abs($balance) < 0.01) {
         $balance = 0;
     }
@@ -1259,7 +1261,8 @@ if (!function_exists('createStockTransaction')) {
     }
 }
 
-function getTruckWeighbridgeAmount($truck_id, $location_id) {
+function getTruckWeighbridgeAmount($truck_id, $location_id)
+{
     $amount = \DB::table("truck_type_weighbridge_amounts")
         ->where("truck_type_id", $truck_id)
         ->where("company_location_id", $location_id)
@@ -1469,7 +1472,7 @@ if (!function_exists('getQcRequestExceptResampling')) {
             ->where('approved_remarks', '!=', null)
             ->latest()
             ->first();
-// dd($samplingRequest);
+        // dd($samplingRequest);
         return $samplingRequest;
     }
 }
@@ -1952,3 +1955,46 @@ function getProductCategory($product_id)
 //     }
 // })
 
+function initialSamplingDonePurchaserwise($purchase_id, $from_date, $to_date, $location_id = null)
+{
+    $dateRange = [$from_date, $to_date];
+    // dd($dateRange);
+    return ArrivalSamplingRequest::whereHas('arrivalTicket', function ($q) use ($dateRange) {
+        $q->whereBetween('created_at', $dateRange);
+    })
+
+        ->where('sampling_type', 'initial')
+        ->where('is_done', 'yes')
+        ->where('approved_status', 'pending')
+        ->when($location_id != '', function ($q) use ($location_id) {
+            return $q->whereHas('arrivalTicket', function ($sq) use ($location_id) {
+                $sq->where('location_id', $location_id);
+            });
+        })
+        ->whereHas('arrivalTicket', function ($q) use ($purchase_id) {
+            $q->whereIn('location_id', getUserCurrentCompanyLocations())
+                ->where('decision_id', $purchase_id);
+        })->count();
+}
+
+function innerSamplingDonePurchaserwise($purchase_id, $from_date, $to_date, $location_id = null)
+{
+    $dateRange = [$from_date, $to_date];
+    // dd($dateRange);
+    return ArrivalSamplingRequest::whereHas('arrivalTicket', function ($q) use ($dateRange) {
+        $q->whereBetween('created_at', $dateRange);
+    })
+
+        ->where('sampling_type', 'inner')
+        ->where('is_done', 'yes')
+        ->where('approved_status', 'pending')
+        ->when($location_id != '', function ($q) use ($location_id) {
+            return $q->whereHas('arrivalTicket', function ($sq) use ($location_id) {
+                $sq->where('location_id', $location_id);
+            });
+        })
+        ->whereHas('arrivalTicket', function ($q) use ($purchase_id) {
+            $q->whereIn('location_id', getUserCurrentCompanyLocations())
+                ->where('decision_id', $purchase_id);
+        })->count();
+}

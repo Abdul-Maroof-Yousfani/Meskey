@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Arrival\ArrivalSamplingRequest;
 use App\Models\Arrival\ArrivalTicket;
+use App\Models\Master\ArrivalLocation;
 use App\Models\Master\CompanyLocation;
 use App\Models\Procurement\Store\PurchaseOrderData;
 use App\Services\ArrivalDashboardService;
@@ -11,7 +12,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-
+use App\Models\User;
 class HomeController extends Controller
 {
     public function __construct()
@@ -222,6 +223,25 @@ class HomeController extends Controller
         $title = '';
 
         switch ($type) {
+            case 'old_pending_trucks':
+                $title = 'Old Pending Trucks';
+                $data = ArrivalTicket::where('company_id', $request->company_id)
+                    // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                    //     return $q->where('location_id', auth()->user()->company_location_id);
+                    // })
+                    ->whereIn('location_id', getUserCurrentCompanyLocations())
+                    ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
+                        return $q->where('location_id', $request->location_id);
+                    })
+                    ->where(function ($q) {
+                        $q->whereNull('arrival_slip_status')
+                            ->orWhere('arrival_slip_status', '!=', 'generated');
+                    })->where('created_at', '<', Carbon::parse($fromDate)->startOfDay())
+                    ->where('first_qc_status', '!=', 'rejected')
+                    ->with(['product', 'station', 'accountsOf'])
+                    ->latest()
+                    ->paginate(1000);
+                break;
             case 'total_tickets':
                 $title = 'Total Tickets';
                 $data = ArrivalTicket::where('company_id', $request->company_id)
@@ -256,6 +276,44 @@ class HomeController extends Controller
                     ->latest()
                     ->paginate(1000);
                 break;
+            case 'half_rejected_tickets':
+                $title = 'New Tickets (Pending Initial Sampling)';
+                $data = ArrivalTicket::where('company_id', $request->company_id)
+
+                    ->where('document_approval_status', 'half_approved')
+                    ->whereBetween('created_at', $dateRange)
+                    ->with(['product', 'station', 'accountsOf'])
+                    ->whereIn('location_id', getUserCurrentCompanyLocations())
+                    ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
+                        return $q->where('location_id', $request->location_id);
+                    })
+                    ->whereHas('unloadingLocation', function ($q) {
+                        return $q->whereIn('arrival_location_id', getUserCurrentCompanyArrivalLocations());
+                    })
+                    ->latest()
+                    ->paginate(1000);
+                // dd($data);
+                break;
+            case 'truck_at_ho':
+                $title = 'Truck at HO';
+                $data = ArrivalTicket::where('company_id', $request->company_id)
+
+                    ->where('arrival_slip_status', 'generated')
+                    ->whereNotNull('arrival_purchase_order_id')
+                    ->where('is_ticket_verified', 0)
+                    ->whereBetween('created_at', $dateRange)
+                    ->with(['product', 'station', 'accountsOf'])
+                    ->whereIn('location_id', getUserCurrentCompanyLocations())
+                    ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
+                        return $q->where('location_id', $request->location_id);
+                    })
+                    ->whereHas('unloadingLocation', function ($q) {
+                        return $q->whereIn('arrival_location_id', getUserCurrentCompanyArrivalLocations());
+                    })
+                    ->latest()
+                    ->paginate(1000);
+                // dd($data);
+                break;
             case 'initial_sampling_requested':
                 $title = 'Initial Sampling Requested (Not Done)';
                 $data = ArrivalSamplingRequest::whereHas('arrivalTicket', function ($q) use ($request, $dateRange) {
@@ -264,6 +322,31 @@ class HomeController extends Controller
                 })
                     ->where('sampling_type', 'initial')
                     ->where('is_done', 'no')
+                    ->where('is_re_sampling', 'no')
+                    ->with(['arrivalTicket.product', 'arrivalTicket.station'])
+
+                    ->whereHas('arrivalTicket', function ($q) {
+                        $q->whereIn('location_id', getUserCurrentCompanyLocations());
+                    })
+                    ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
+                        return $q->whereHas('arrivalTicket', function ($sq) use ($request) {
+                            $sq->where('location_id', $request->location_id);
+                        });
+                    })
+
+                    ->latest()
+                    ->paginate(1000);
+                break;
+
+            case 'initial_re_sampling_requested':
+                $title = 'Initial Re-Sampling Requested (Not Done)';
+                $data = ArrivalSamplingRequest::whereHas('arrivalTicket', function ($q) use ($request, $dateRange) {
+                    $q->where('company_id', $request->company_id)
+                        ->whereBetween('created_at', $dateRange);
+                })
+                    ->where('sampling_type', 'initial')
+                    ->where('is_done', 'no')
+                    ->where('is_re_sampling', 'yes')
                     ->with(['arrivalTicket.product', 'arrivalTicket.station'])
 
                     ->whereHas('arrivalTicket', function ($q) {
@@ -314,6 +397,11 @@ class HomeController extends Controller
                     ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                         return $q->whereHas('arrivalTicket', function ($sq) use ($request) {
                             $sq->where('location_id', $request->location_id);
+                        });
+                    })
+                    ->when($request->has('purchaser_id') && $request->purchaser_id != '', function ($q) use ($request) {
+                        return $q->whereHas('arrivalTicket', function ($sq) use ($request) {
+                            $sq->where('decision_id', $request->purchaser_id);
                         });
                     })
                     ->latest()
@@ -380,6 +468,13 @@ class HomeController extends Controller
                     ->whereHas('unloadingLocation', function ($q) {
                         $q->whereIn('arrival_location_id', getUserCurrentCompanyArrivalLocations());
                     })
+
+
+                    ->when($request->has('arrival_location_id') && $request->arrival_location_id != '', function ($q) use ($request) {
+                        return $q->whereHas('unloadingLocation', function ($sq) use ($request) {
+                            $sq->where('arrival_location_id', $request->arrival_location_id);
+                        });
+                    })
                     ->with(['product', 'station', 'accountsOf', 'unloadingLocation'])
                     ->latest()
                     ->paginate(1000);
@@ -401,6 +496,30 @@ class HomeController extends Controller
                     })
                     ->where('sampling_type', 'inner')
                     ->where('is_done', 'no')
+                    ->where('is_re_sampling', 'no')
+                    ->with(['arrivalTicket.product', 'arrivalTicket.station'])
+                    ->latest()
+                    ->paginate(1000);
+                break;
+
+
+            case 'inner_re_sampling_requested':
+                $title = 'Inner Re-Sampling Requested (Not Done)';
+                $data = ArrivalSamplingRequest::whereHas('arrivalTicket', function ($q) use ($request, $dateRange) {
+                    $q->where('company_id', $request->company_id)
+                        ->whereBetween('created_at', $dateRange);
+                })
+                    ->whereHas('arrivalTicket', function ($q) {
+                        $q->whereIn('location_id', getUserCurrentCompanyLocations());
+                    })
+                    ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
+                        return $q->whereHas('arrivalTicket', function ($sq) use ($request) {
+                            $sq->where('location_id', $request->location_id);
+                        });
+                    })
+                    ->where('sampling_type', 'inner')
+                    ->where('is_done', 'no')
+                    ->where('is_re_sampling', 'yes')
                     ->with(['arrivalTicket.product', 'arrivalTicket.station'])
                     ->latest()
                     ->paginate(1000);
@@ -412,6 +531,19 @@ class HomeController extends Controller
                     $q->where('company_id', $request->company_id)
                         ->whereBetween('created_at', $dateRange);
                 })
+                    ->whereHas('arrivalTicket', function ($q) {
+                        $q->whereIn('location_id', getUserCurrentCompanyLocations());
+                    })
+                    ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
+                        return $q->whereHas('arrivalTicket', function ($sq) use ($request) {
+                            $sq->where('location_id', $request->location_id);
+                        });
+                    })
+                    ->when($request->has('purchaser_id') && $request->purchaser_id != '', function ($q) use ($request) {
+                        return $q->whereHas('arrivalTicket', function ($sq) use ($request) {
+                            $sq->where('decision_id', $request->purchaser_id);
+                        });
+                    })
                     ->where('sampling_type', 'inner')
                     ->where('is_done', 'yes')
                     ->where('approved_status', 'pending')
@@ -443,6 +575,11 @@ class HomeController extends Controller
                     ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                         return $q->where('location_id', $request->location_id);
                     })
+                    ->when($request->has('arrival_location_id') && $request->arrival_location_id != '', function ($q) use ($request) {
+                        return $q->whereHas('unloadingLocation', function ($sq) use ($request) {
+                            $sq->where('arrival_location_id', $request->arrival_location_id);
+                        });
+                    })
                     ->whereBetween('created_at', $dateRange)
                     ->with(['product', 'station', 'accountsOf', 'firstWeighbridge'])
                     ->latest()
@@ -452,11 +589,16 @@ class HomeController extends Controller
             case 'second_weighbridge_pending':
                 $title = 'Second Weighbridge Pending';
                 $data = ArrivalTicket::where('company_id', $request->company_id)
-                    ->whereIn('document_approval_status', ['half_approved', 'fully_approved'])
+                    // ->whereIn('document_approval_status', ['half_approved', 'fully_approved'])
                     ->where('second_weighbridge_status', 'pending')
                     ->whereIn('location_id', getUserCurrentCompanyLocations())
                     ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                         return $q->where('location_id', $request->location_id);
+                    })
+                    ->when($request->has('arrival_location_id') && $request->arrival_location_id != '', function ($q) use ($request) {
+                        return $q->whereHas('unloadingLocation', function ($sq) use ($request) {
+                            $sq->where('arrival_location_id', $request->arrival_location_id);
+                        });
                     })
                     ->whereBetween('created_at', $dateRange)
                     ->with(['product', 'station', 'accountsOf', 'approvals'])
@@ -468,6 +610,34 @@ class HomeController extends Controller
                 $data = ArrivalTicket::where('company_id', $request->company_id)
                     ->where('second_weighbridge_status', 'completed')
                     ->where('freight_status', 'pending')
+                    ->whereBetween('created_at', $dateRange)
+                    ->whereIn('location_id', getUserCurrentCompanyLocations())
+                    ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
+                        return $q->where('location_id', $request->location_id);
+                    })
+                    ->with(['product', 'station', 'accountsOf', 'secondWeighbridge'])
+                    ->latest()
+                    ->paginate(1000);
+                break;
+
+            case 'truck_for_built_return':
+                $data = ArrivalTicket::where('company_id', $request->company_id)
+                    ->where('first_qc_status', 'rejected')
+                    ->where('bilty_return_confirmation', 0)
+                    ->whereBetween('created_at', $dateRange)
+                    ->whereIn('location_id', getUserCurrentCompanyLocations())
+                    ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
+                        return $q->where('location_id', $request->location_id);
+                    })
+                    ->with(['product', 'station', 'accountsOf', 'secondWeighbridge'])
+                    ->latest()
+                    ->paginate(1000);
+                break;
+
+            case 'truck_out':
+                $data = ArrivalTicket::where('company_id', $request->company_id)
+                    ->where('arrival_slip_status', 'generated')
+                    // ->where('freight_status', 'pending')
                     ->whereBetween('created_at', $dateRange)
                     ->whereIn('location_id', getUserCurrentCompanyLocations())
                     ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
@@ -494,17 +664,30 @@ class HomeController extends Controller
                     ->paginate(1000);
                 break;
         }
+
         return view('management.dashboard.snippets.list_data', compact('data', 'type'));
     }
 
     public function index(Request $request, ArrivalDashboardService $service)
     {
+
+        $purchasers = User::role('Purchaser')
+            ->where('parent_user_id', null)
+            ->whereHas('companies', function ($q) use ($request) {
+                $q->where('companies.id', $request->company_id);
+            })
+            ->get();
+
         $module = $request->get('module', 'arrival');
         $fromDate = $request->get('from_date', Carbon::today()->format('Y-m-d'));
         $location_id = $request->get('location_id', null);
         $toDate = $request->get('to_date', Carbon::today()->format('Y-m-d'));
         $companylocations = CompanyLocation::where('company_id', $request->company_id)
             ->whereIn('id', getUserCurrentCompanyLocations())->where('status', 'active')->get();
+
+
+        $arrivallocations = ArrivalLocation::where('company_id', $request->company_id)
+            ->where('company_location_id', $location_id)->where('status', 'active')->get();
         $data = [];
 
         if ($module === 'arrival') {
@@ -516,7 +699,7 @@ class HomeController extends Controller
             );
         }
 
-        return view('management.dashboard.index', compact('data', 'module', 'fromDate', 'toDate', 'companylocations', 'location_id'));
+        return view('management.dashboard.index', compact('data', 'module', 'fromDate', 'toDate', 'companylocations', 'location_id', 'purchasers', 'arrivallocations'));
     }
 
     public function getCitiesByState(Request $request)
