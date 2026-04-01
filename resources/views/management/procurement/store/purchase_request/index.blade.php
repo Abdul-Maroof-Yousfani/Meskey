@@ -43,12 +43,6 @@
                                                 </select>
                                             </div>
                                             <div class="col-md-2 col-sm-6 px-1 text-left">
-                                                <label for="qty" class="form-label">Qty</label>
-                                                <input type="text" class="form-control" id="qty"
-                                                    placeholder="Qty" name="qty"
-                                                    value="{{ request('qty', '') }}">
-                                            </div>
-                                            <div class="col-md-2 col-sm-6 px-1 text-left">
                                                 <label for="item_id" class="form-label">Item</label>
                                                 <select name="item_id" id="item_id" class="form-control select2">
                                                     <option value="all">All Items</option>
@@ -58,6 +52,12 @@
                                                         </option>
                                                     @endforeach
                                                 </select>
+                                            </div>
+                                            <div class="col-md-2 col-sm-6 px-1 text-left">
+                                                <label for="qty" class="form-label">Qty</label>
+                                                <input type="text" class="form-control" id="qty"
+                                                    placeholder="Qty" name="qty"
+                                                    value="{{ request('qty', '') }}">
                                             </div>
                                             <div class="col-md-2 col-sm-6 px-1 text-left">
                                                 <label for="status" class="form-label">Status</label>

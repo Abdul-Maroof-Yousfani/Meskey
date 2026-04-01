@@ -5,9 +5,8 @@
             <th class="col-1">Purchase Request No</th>
             {{-- <th class="col-2">Location</th> --}}
             <th class="col-1">Category</th>
-            {{-- <th class="col-2 text-right">Qty</th> --}}
+            <th class="col-1">Item</th>
             <th class="col-1 text-right">Qty</th>
-            <th class="col-1">PR Date</th>
             <th class="col-1">Status</th>
             <th class="col-1">Action</th>
         </tr>
@@ -37,7 +36,12 @@
 
                         <td style="background-color: #e8f5e8; vertical-align: middle;">
                             <p class="m-0 font-weight-bold">
-                                {{ optional($itemGroup['item_data']->category)->name ?? 'N/A' }} -
+                                {{ optional($itemGroup['item_data']->category)->name ?? 'N/A' }}
+                            </p>
+                        </td>
+
+                        <td>
+                            <p class="m-0 font-weight-bold">
                                 {{ optional($itemGroup['item_data']->item)->name ?? 'N/A' }}
                             </p>
                         </td>
@@ -54,11 +58,7 @@
                                 {{ $itemGroup['item_data']->qty }}
                             </p>
                         </td> --}}
-                        <td>
-                            <p class="m-0 white-nowrap">
-                                {{ optional($itemGroup['item_data']->purchase_request)->purchase_date }}
-                            </p>
-                        </td>
+
 
                         @if ($isFirstRequestRow)
 
