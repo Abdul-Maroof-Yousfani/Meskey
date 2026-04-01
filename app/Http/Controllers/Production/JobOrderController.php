@@ -238,6 +238,7 @@ class JobOrderController extends Controller
                 $item['total_bags'] = $item['total_bags'] ?? 0;
                 $item['total_kgs'] = $item['total_kgs'] ?? 0;
                 $item['metric_tons'] = $item['metric_tons'] ?? 0;
+                $item['stuffing_in_container'] = $item['stuffing_in_container'] ?? 0;
 
                 // Merge location details if exists
                 $locationId = $item['company_location_id'] ?? null;
@@ -429,6 +430,7 @@ class JobOrderController extends Controller
                 $item['total_bags'] = $item['total_bags'] ?? 0;
                 $item['total_kgs'] = $item['total_kgs'] ?? 0;
                 $item['metric_tons'] = $item['metric_tons'] ?? 0;
+                $item['stuffing_in_container'] = $item['stuffing_in_container'] ?? 0;
 
                 // Merge location details if exists
                 $locationId = $item['company_location_id'] ?? null;
