@@ -224,10 +224,26 @@ class PurchaseOrderRequest extends FormRequest
 
             $orderId = $this->route('purchase_order'); // Get ID if it's an update route
 
+            // Pre-calculate item occurrences to check for duplicates
+            $itemIds = $this->input('item_id', []);
+            $filteredItemIds = array_filter($itemIds, function($id) {
+                return !is_null($id) && $id !== '';
+            });
+            $occurrences = array_count_values($filteredItemIds);
+
             foreach ($this->qty as $index => $qty) {
                 $prDataId = $this->purchase_request_data_id[$index] ?? null;
                 $pqDataId = $this->purchase_quotation_data_id[$index] ?? null;
+                $itemId = $this->item_id[$index] ?? null;
                 
+                // 1. Check for duplicate items
+                if ($itemId && isset($occurrences[$itemId]) && $occurrences[$itemId] > 1) {
+                    $validator->errors()->add(
+                        "item_id.{$index}",
+                        'The same item cannot be added multiple times.'
+                    );
+                }
+
                 if (!$prDataId) continue;
 
                 $prData = \App\Models\Procurement\Store\PurchaseRequestData::find($prDataId);
@@ -236,7 +252,7 @@ class PurchaseOrderRequest extends FormRequest
                     continue;
                 }
 
-                // 1. Calculate PR Remaining Balance
+                // 2. Calculate PR Remaining Balance
                 $prTotal = (float)$prData->qty;
                 $prOrderedQuery = \App\Models\Procurement\Store\PurchaseOrderData::where('purchase_request_data_id', $prDataId)
                                     ->where('am_approval_status', '!=', 'rejected')
@@ -249,7 +265,7 @@ class PurchaseOrderRequest extends FormRequest
                 $prOrdered = (float)$prOrderedQuery->sum('qty');
                 $prRemaining = $prTotal - $prOrdered;
 
-                // 2. Calculate PQ Remaining Balance (if applicable)
+                // 3. Calculate PQ Remaining Balance (if applicable)
                 $pqRemaining = 999999999; // Default to large number if no PQ
                 if ($pqDataId && $pqDataId != 0 && $pqDataId != "") {
                     $pqData = \App\Models\Procurement\Store\PurchaseQuotationData::find($pqDataId);
@@ -268,7 +284,7 @@ class PurchaseOrderRequest extends FormRequest
                     }
                 }
 
-                // 3. Final Limit (Minimum of both)
+                // 4. Final Limit (Minimum of both)
                 $remaining = min($prRemaining, $pqRemaining);
                 
                 // Using a small epsilon for float comparison to avoid precision issues
