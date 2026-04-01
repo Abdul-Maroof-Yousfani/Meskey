@@ -48,7 +48,7 @@
                             $approvalStatus = strtolower($export->{$approvalColumn} ?? '');
                         @endphp
 
-                        @if (auth()->user()->id == $export->created_by && $approvalStatus === 'pending' || $approvalStatus === 'reverted')
+                        @if ($approvalStatus === 'pending' || $approvalStatus === 'reverted')
                             {{-- @canAccess('export-order-edit') --}}
                             <a class="info p-1 text-center position-relative "
                                 onclick="openModal(this,'{{ route('export-order.edit', $export->id) }}','Edit Export Order',false,'90%')">
