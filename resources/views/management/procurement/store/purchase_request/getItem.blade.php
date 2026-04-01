@@ -32,8 +32,12 @@
             </td>
 
             <td style="min-width: 150px;">
-                <input type="number" name="qty[]" id="qty_{{ $i }}" class="form-control" step="0.01"
-                    min="0" placeholder="Qty" value="{{ $balance }}">
+                <input type="number" name="qty[]" id="qty_{{ $i }}" class="form-control qty-input-check" step="0.01"
+                    min="0" placeholder="Qty" value="{{ $balance }}" data-balance="{{ $balance }}">
+                <div class="mt-1" style="font-size: 11px;">
+                    <strong>Limit:</strong> {{ $balance }} <br>
+                    <strong>Remaining:</strong> <span class="balance-span">0.00</span>
+                </div>
             </td>
 
             <td class="bag-only" style="min-width: 450px;">
@@ -158,8 +162,12 @@
             </td>
 
             <td style="min-width: 150px;">
-                <input type="number" name="qty[]" id="qty_{{ $i }}" class="form-control" step="0.01"
-                    min="0" placeholder="Qty" style="width:100%;" value="{{ $balance }}">
+                <input type="number" name="qty[]" id="qty_{{ $i }}" class="form-control qty-input-check" step="0.01"
+                    min="0" placeholder="Qty" style="width:100%;" value="{{ $balance }}" data-balance="{{ $balance }}">
+                <div class="mt-1" style="font-size: 11px;">
+                    <strong>Limit:</strong> {{ $balance }} <br>
+                    <strong>Remaining:</strong> <span class="balance-span">0.00</span>
+                </div>
             </td>
 
             <td class="bag-only" style="min-width: 450px;">

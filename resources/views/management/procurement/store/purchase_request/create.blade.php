@@ -300,12 +300,8 @@
                         <input type="text" name="uom[]" id="uom_${index}" class="form-control uom" readonly>
                     </td>
                     <td style="min-width: 150px;">
-                        <div class="loop-fields">
-                            <div class="form-group mb-0">
-                                <input type="number" name="qty[]" id="qty_${index}" class="form-control bg-white" step="0.01"
-                                    min="0" placeholder="Qty">
-                            </div>
-                        </div>
+                        <input type="number" name="qty[]" id="qty_${index}" class="form-control bg-white" step="0.01"
+                            min="0" placeholder="Qty">
                     </td>
                     <td class="bag-only" style="min-width: 450px;">
                         <div class="loop-fields">
@@ -479,4 +475,18 @@
             }
         });
     }
+    $(document).on('input', '.qty-input-check', function () {
+        let input = $(this);
+        let val = parseFloat(input.val()) || 0;
+        let balance = parseFloat(input.data('balance')) || 0;
+
+        if (val > balance) {
+            alert("Quantity cannot exceed available Job Order balance (" + balance + ")");
+            input.val(balance);
+        }
+        
+        // Update live balance display
+        let remaining = (balance - input.val()).toFixed(2);
+        input.closest('td').find('.balance-span').text(remaining);
+    });
 </script>

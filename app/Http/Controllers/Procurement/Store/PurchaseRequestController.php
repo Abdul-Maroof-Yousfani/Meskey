@@ -163,31 +163,16 @@ class PurchaseRequestController extends Controller
     public function create()
     {
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
-        $job_orders = JobOrder::select('id', 'job_order_no')
-                                ->get();
-                                // ->reject(function($job_order) {
-                                //     $packings = $job_order->packing_items;
-                                    
-                                //     $any_item_has_balance = false;
-
-                                //     foreach($packings as $packing) {
-                                //         if (jobOrderPackingBalanceAgainstPurchaseRequest($packing->id) > 0) {
-                                //             $any_item_has_balance = true;
-                                //             break;
-                                //         }
-
-                                //         foreach($packing->subItems as $subpacking) {
-                                //             if (jobOrderSubPackingBalanceAgainstPurchaseRequest($subpacking->id) > 0) {
-                                //                 $any_item_has_balance = true;
-                                //                 break;
-                                //             }
-                                //         }
-
-                                //         if ($any_item_has_balance) break;
-                                //     }
-
-                                //     return !$any_item_has_balance;
-                                // });
+        $job_orders = JobOrder::with(['packing_items', 'packing_items.subItems'])->get()
+            ->reject(function ($job_order) {
+                foreach ($job_order->packing_items as $packing) {
+                    if (jobOrderPackingBalanceAgainstPurchaseRequest($packing->id) > 0) return false;
+                    foreach ($packing->subItems as $subpacking) {
+                        if (jobOrderSubPackingBalanceAgainstPurchaseRequest($subpacking->id) > 0) return false;
+                    }
+                }
+                return true;
+            });
         $items = Product::with("unitOfMeasure")->where("product_type", "general_items")->where("status", "active")->get();
         $departments = Department::where('status', 'active')->get();
         $request_bies = RequestBy::where('status', 'active')->get();
@@ -335,7 +320,31 @@ class PurchaseRequestController extends Controller
         }
         $items = Product::with("unitOfMeasure")->where("product_type", "general_items")->where("status", "active")->get();
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
-        $job_orders = JobOrder::select('id', 'job_order_no')->get();
+        $job_orders = JobOrder::with(['packing_items', 'packing_items.subItems'])->get()
+            ->reject(function ($job_order) use ($id) {
+                // If the JO is already associated with this PR, we should show it
+                $isAssociated = PurchaseAgainstJobOrder::where('purchase_request_id', $id)
+                    ->where('job_order_id', $job_order->id)
+                    ->exists();
+
+                if ($isAssociated) return false;
+
+                $any_item_has_balance = false;
+                foreach ($job_order->packing_items as $packing) {
+                    if (jobOrderPackingBalanceAgainstPurchaseRequest($packing->id) > 0) {
+                        $any_item_has_balance = true;
+                        break;
+                    }
+                    foreach ($packing->subItems as $subpacking) {
+                        if (jobOrderSubPackingBalanceAgainstPurchaseRequest($subpacking->id) > 0) {
+                            $any_item_has_balance = true;
+                            break;
+                        }
+                    }
+                    if ($any_item_has_balance) break;
+                }
+                return !$any_item_has_balance;
+            });
         $locations = CompanyLocation::all();
         $departments = Department::where('status', 'active')->get();
         $request_bies = RequestBy::where('status', 'active')->get();

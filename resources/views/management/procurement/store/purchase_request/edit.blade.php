@@ -140,11 +140,9 @@
                 <input type="hidden" name="item_row_id[]" value="{{ $item->id }}">
 
                 <td style="min-width: 450px;">
-                        @if($item->is_single_job_order == 1)
-                            <input type="hidden" name="item_id[]" value="{{ $item->item->id }}" />
-                        @endif
-                        <select id="item_id_{{ $rowId }}" @if($item->is_single_job_order != 1) name="item_id[]" @endif onchange="get_uom('{{ $rowId }}')"
-                            class="form-control item-select select2Dropdown" data-index="{{ $rowId }}" style="width: 100%;" @disabled($item->is_single_job_order == 1)>
+
+                        <select name="item_id[]" id="item_id_{{ $rowId }}" onchange="get_uom('{{ $rowId }}')"
+                            class="form-control item-select select2Dropdown" data-index="{{ $rowId }}" style="width: 100%;">
                             <option value="">Select Item</option>
                             @foreach($items as $product)
                                 <option value="{{ $product->id }}" data-uom="{{ $product->unitOfMeasure->name }}" @selected($product->id == $item->item->id)>{{ $product->name }}</option>
@@ -162,8 +160,32 @@
                 <td style="min-width: 200px;"><input type="text" name="uom[]" id="uom_{{ $rowId }}" class="form-control uom" readonly
                         value="{{ $item->item->unitOfMeasure->name ?? '' }}"></td>
 
-                <td style="min-width: 150px;"><input type="number" name="qty[]" id="qty_{{ $rowId }}" class="form-control {{ $item->is_single_job_order == 1 ? '' : 'bg-white' }}"
-                                        step="0.01" min="0" placeholder="Qty" value="{{ $item->qty }}" @readonly($item->is_single_job_order == 1)></td>
+                <td style="min-width: 150px;">
+                    <input type="number" name="qty[]" id="qty_{{ $rowId }}" class="form-control qty-input-check {{ $item->is_single_job_order == 1 ? '' : 'bg-white' }}"
+                                        step="0.01" min="0" placeholder="Qty" value="{{ $item->qty }}" 
+                                        @if($item->is_single_job_order == 1)
+                                            data-balance="{{ $item->qty + (float)jobOrderPackingBalanceAgainstPurchaseRequest($item->packing_id) }}"
+                                        @endif>
+                    @if($item->is_single_job_order == 1)
+                        @php
+                            $jo_total = 0;
+                            $jo_balance = 0;
+                            if($item->module_type == 'packing') {
+                                $packing = \App\Models\Production\JobOrder\JobOrderPackingItem::find($item->packing_id);
+                                $jo_total = $packing->total_bags ?? 0;
+                                $jo_balance = jobOrderPackingBalanceAgainstPurchaseRequest($item->packing_id);
+                            } else if($item->module_type == 'subpacking') {
+                                $subpacking = \App\Models\Production\JobOrder\JobOrderPackingSubItem::find($item->packing_id);
+                                $jo_total = $subpacking->total_bags ?? 0;
+                                $jo_balance = jobOrderSubPackingBalanceAgainstPurchaseRequest($item->packing_id);
+                            }
+                        @endphp
+                        <div class="mt-1" style="font-size: 11px;">
+                            <strong>Limit:</strong> {{ $item->qty + (float)$jo_balance }} <br>
+                            <strong>Remaining:</strong> <span class="balance-span">{{ $jo_balance }}</span>
+                        </div>
+                    @endif
+                </td>
 
                 
                 <td class="bag-only" style="min-width: 450px;">
@@ -184,10 +206,8 @@
                 </td>
 
                  <td class="bag-only" style="min-width: 300px;">
-                    @if($item->is_single_job_order)
-                        <input type="hidden" name="brands[]" value="{{ $item->brand_id }}" />
-                    @endif
-                    <select id="brands_{{ $rowId }}" name="brands[]" class="form-control item-select color-select" @disabled($item->is_single_job_order == 1)>
+
+                    <select id="brands_{{ $rowId }}" name="brands[]" class="form-control item-select color-select">
                         <option value="">Select Brand</option>
                         @foreach(getAllBrands() ?? [] as $brand)
                         <option @selected($brand->id == $item->brand_id) value="{{ $brand->id }}">
@@ -197,14 +217,12 @@
                 </td>
                
                 <td class="bag-only" style="min-width: 200px;"><input type="number" name="min_weight[]" id="min_weight_{{ $rowId }}" class="form-control"
-                        step="0.01" min="0" value="{{ $item->min_weight }}" placeholder="Min Weight" @readonly($item->is_single_job_order == 1)></td>
+                        step="0.01" min="0" value="{{ $item->min_weight }}" placeholder="Min Weight"></td>
 
            
                 <td class="bag-only" style="min-width: 300px;">
-                    @if($item->is_single_job_order)
-                        <input type="hidden" name="color[]" value="{{ $item->color }}" />
-                    @endif
-                    <select id="color_{{ $rowId }}" name="color[]" class="form-control item-select color-select" @disabled($item->is_single_job_order == 1)>
+
+                    <select id="color_{{ $rowId }}" name="color[]" class="form-control item-select color-select">
                         <option value="">Select Color</option>
                         @foreach(getAllColors() ?? [] as $color)
                         <option @selected($color->id == $item->color) value="{{ $color->id }}">
@@ -231,12 +249,8 @@
                     @php
                         $selectedStitchings = $item->stitching ? array_filter(array_map('trim', explode(',', $item->stitching))) : [];
                     @endphp
-                    @if($item->is_single_job_order)
-                        @foreach($selectedStitchings as $stitchingId)
-                            <input type="hidden" name="stitching[{{ $rowId }}][]" value="{{ $stitchingId }}" />
-                        @endforeach
-                    @endif
-                    <select id="stitching_{{ $rowId }}" name="stitching[{{ $rowId }}][]" class="form-control item-select stitching-select select2" multiple @disabled($item->is_single_job_order == 1)>
+
+                    <select id="stitching_{{ $rowId }}" name="stitching[{{ $rowId }}][]" class="form-control item-select stitching-select select2" multiple>
                         <option value="">Select Stitching</option>
                         @foreach(getAllStitchings() ?? [] as $stitching)
                             <option value="{{ $stitching->id }}" @selected(in_array($stitching->id, $selectedStitchings))>
@@ -610,4 +624,18 @@
             }
         });
     }
+    $(document).on('input', '.qty-input-check', function () {
+        let input = $(this);
+        let val = parseFloat(input.val()) || 0;
+        let balance = parseFloat(input.data('balance')) || 0;
+
+        if (val > balance) {
+            alert("Quantity cannot exceed available Job Order balance (" + balance + ")");
+            input.val(balance);
+        }
+
+        // Update live balance display
+        let remaining = (balance - input.val()).toFixed(2);
+        input.closest('td').find('.balance-span').text(remaining);
+    });
 </script>
