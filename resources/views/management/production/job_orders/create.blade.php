@@ -688,7 +688,11 @@
                 if ($this.is('select')) {
                     $this.prop('selectedIndex', 0);
                 } else {
-                    $this.val('');
+                    if($this.hasClass('empty-bags') || $this.hasClass('extra-bags') || $this.hasClass('extra-bags-percentage') || $this.hasClass('min-weight')){
+                        $this.val('0');
+                    } else {
+                        $this.val('');
+                    }
                 }
 
                 // IMPORTANT: Remove all Select2 internal attributes and markers
@@ -822,6 +826,8 @@
 
             // Clear values
             newRow.find('input[type="text"], input[type="number"]').not('[readonly]').val('');
+            // Default sub item numeric fields to 0
+            newRow.find('.sub-empty-bags, .sub-extra-bags, .sub-extra-bags-percentage, .sub-empty-bag-weight').val('0');
             newRow.find('input[type="number"][readonly]').val('0');
             newRow.find('select').prop('selectedIndex', 0);
             newRow.find('input[type="file"]').val('');

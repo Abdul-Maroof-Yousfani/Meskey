@@ -230,6 +230,15 @@ class JobOrderController extends Controller
                 $subItems = $item['sub_items'] ?? [];
                 unset($item['sub_items']);
 
+                // Fallback numeric fields to 0
+                $item['extra_bags'] = $item['extra_bags'] ?? 0;
+                $item['empty_bags'] = $item['empty_bags'] ?? 0;
+                $item['extra_bags_percentage'] = $item['extra_bags_percentage'] ?? 0;
+                $item['min_weight_empty_bags'] = $item['min_weight_empty_bags'] ?? 0;
+                $item['total_bags'] = $item['total_bags'] ?? 0;
+                $item['total_kgs'] = $item['total_kgs'] ?? 0;
+                $item['metric_tons'] = $item['metric_tons'] ?? 0;
+
                 // Merge location details if exists
                 $locationId = $item['company_location_id'] ?? null;
                 if ($locationId && isset($locationDetails[$locationId])) {
@@ -261,6 +270,10 @@ class JobOrderController extends Controller
                 // Create sub-items
                 if (!empty($subItems)) {
                     foreach ($subItems as $subItem) {
+                        $subItem['empty_bags'] = $subItem['empty_bags'] ?? 0;
+                        $subItem['extra_bags'] = $subItem['extra_bags'] ?? 0;
+                        $subItem['extra_bags_percentage'] = $subItem['extra_bags_percentage'] ?? 0;
+                        $subItem['empty_bag_weight'] = $subItem['empty_bag_weight'] ?? 0;
                         $packingItem->subItems()->create($subItem);
                     }
                 }
@@ -408,6 +421,15 @@ class JobOrderController extends Controller
                 $subItems = $item['sub_items'] ?? [];
                 unset($item['sub_items']);
 
+                // Fallback numeric fields to 0
+                $item['extra_bags'] = $item['extra_bags'] ?? 0;
+                $item['empty_bags'] = $item['empty_bags'] ?? 0;
+                $item['extra_bags_percentage'] = $item['extra_bags_percentage'] ?? 0;
+                $item['min_weight_empty_bags'] = $item['min_weight_empty_bags'] ?? 0;
+                $item['total_bags'] = $item['total_bags'] ?? 0;
+                $item['total_kgs'] = $item['total_kgs'] ?? 0;
+                $item['metric_tons'] = $item['metric_tons'] ?? 0;
+
                 // Merge location details if exists
                 $locationId = $item['company_location_id'] ?? null;
                 if ($locationId && isset($locationDetails[$locationId])) {
@@ -439,6 +461,10 @@ class JobOrderController extends Controller
                 // Create sub-items
                 if (!empty($subItems)) {
                     foreach ($subItems as $subItem) {
+                        $subItem['empty_bags'] = $subItem['empty_bags'] ?? 0;
+                        $subItem['extra_bags'] = $subItem['extra_bags'] ?? 0;
+                        $subItem['extra_bags_percentage'] = $subItem['extra_bags_percentage'] ?? 0;
+                        $subItem['empty_bag_weight'] = $subItem['empty_bag_weight'] ?? 0;
                         $packingItem->subItems()->create($subItem);
                     }
                 }
