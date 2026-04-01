@@ -11,6 +11,7 @@ use App\Http\Controllers\Export\ModeOfTransportController;
 use App\Http\Controllers\Export\ProformaController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Export\QuotationController;
+use App\Http\Controllers\Export\ExportDeliveryOrderController;
 
 // mode of terms
 Route::resource('modeofterms', ModeOfTermController::class);
@@ -35,6 +36,19 @@ Route::post('/get-bank', [BankController::class, 'getBankTable'])->name('get.ban
 // export order
 Route::resource('export-order', ExportOrderController::class);
 Route::post('/get-export-order', [ExportOrderController::class, 'getExportOrderTable'])->name('get.export-order');
+
+// export delivery order
+Route::resource('export-delivery-order', ExportDeliveryOrderController::class);
+Route::post('/get-export-delivery-order', [ExportDeliveryOrderController::class, 'getExportDeliveryOrderTable'])->name('get.export-delivery-order');
+Route::get('/get-export-order-details/{id}', [ExportDeliveryOrderController::class, 'getExportOrderDetails'])->name('export.get-export-order-details');
+Route::get('/get-orders-by-buyer/{buyerId}', [ExportDeliveryOrderController::class, 'getOrdersByBuyer'])->name('export.get-orders-by-buyer');
+
+// export form-e
+Route::resource('export-form-e', App\Http\Controllers\Export\ExportFormEController::class);
+Route::post('/get-export-form-e', [App\Http\Controllers\Export\ExportFormEController::class, 'getExportFormETable'])->name('get.export-form-e');
+Route::get('/get-export-order-details-form-e/{id}', [App\Http\Controllers\Export\ExportFormEController::class, 'getExportOrderDetails'])->name('export.get-export-order-details-form-e');
+Route::get('/get-orders-by-buyer-form-e/{buyerId}', [App\Http\Controllers\Export\ExportFormEController::class, 'getOrdersByBuyer'])->name('export.get-orders-by-buyer-form-e');
+Route::get('/get-form-es-by-order/{orderId}', [App\Http\Controllers\Export\ExportFormEController::class, 'getFormEsByOrder'])->name('export.get-form-es-by-order');
 
 // quotation
 Route::resource('quotation', QuotationController::class);

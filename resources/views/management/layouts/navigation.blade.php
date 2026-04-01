@@ -786,6 +786,26 @@
                             </a>
                         </li>
                         @endcanAccess
+
+                        @canAccess('export-form-e')
+                        <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                href="{{ route('export-form-e.index') }}"
+                                onclick="loadPageContent('{{ route('export-form-e.index') }}')"
+                                data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                    data-i18n="Extended">Form-E</span></a>
+                        </li>
+                        @endcanAccess
+
+                        @canAccess('export-delivery-order')
+                        <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                href="{{ route('export-delivery-order.index') }}"
+                                onclick="loadPageContent('{{ route('export-delivery-order.index') }}')"
+                                data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                    data-i18n="Extended">Delivery
+                                    Order</span></a>
+                        </li>
+                        @endcanAccess
+
                         {{-- @canAccess('commercial-invoice')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('commercial-invoice.index') }}" onclick="loadPageContent('{{ route('commercial-invoice.index') }}')"
