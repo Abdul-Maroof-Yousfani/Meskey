@@ -789,7 +789,7 @@ console.log("Realtime Arrival Stats Updated ✅", stats);
         .dashboard-cards-grid {
             display: grid;
             grid-template-columns: repeat(1, 1fr);
-            gap: 20px;
+            gap: 10px;
             max-width: 100%;
         }
 
@@ -811,9 +811,18 @@ console.log("Realtime Arrival Stats Updated ✅", stats);
             }
         }
 
+
+        
         @media (min-width: 1200px) {
             .dashboard-cards-grid {
-                grid-template-columns: repeat(5, 1fr);
+                grid-template-columns: repeat(6, 1fr);
+            }
+            .card-number {
+                /* font-size: 1rem !important; */
+            }
+
+            .card-title {
+                /* font-size: 12px !important; */
             }
         }
 
@@ -850,7 +859,7 @@ console.log("Realtime Arrival Stats Updated ✅", stats);
         }
 
         .card-number {
-            font-size: 2.3rem;
+            font-size: 1.8rem;
             font-weight: 700;
             color: #26499b;
             line-height: 1;
@@ -859,7 +868,7 @@ console.log("Realtime Arrival Stats Updated ✅", stats);
         }
 
         .card-title {
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 600;
             color: #1f2937;
             margin-bottom: 12px;
