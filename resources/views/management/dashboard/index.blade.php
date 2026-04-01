@@ -43,8 +43,8 @@
 
             @if ($module === 'arrival')
                 <div class="col-12">
-                    <div class="dashboard-cards-grid">
- <div class="dashboard-card">
+                    <div class="dashboard-cards-grid" >
+ <div class="dashboard-card" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=old_pending_trucks&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Old Pending Trucks', true, '70%')">
                             <div class="card-icon">
                                 <i class="ft-grid"></i>
                             </div>
@@ -59,7 +59,7 @@
                         </div>
 
 
-                        <div class="dashboard-card">
+                        <div class="dashboard-card" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=total_tickets&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Total Tickets', true, '70%')">
                             <div class="card-icon">
                                 <i class="ft-grid"></i>
                             </div>
@@ -94,7 +94,7 @@
                             </button>
                         </div>
 
-                        <div class="dashboard-card">
+                        <div class="dashboard-card" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=total_tickets&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Total Tickets in Kgs', true, '70%')">
                             <div class="card-icon">
                                 <i class="ft-grid"></i>
                             </div>
@@ -113,7 +113,7 @@
 
                         
 
-                        <div class="dashboard-card">
+                        <div class="dashboard-card" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=half_rejected_tickets&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Truck Half Rejected', true, '70%')">
                             <div class="card-icon">
                                 <i class="ft-x-circle"></i>
                             </div>
@@ -128,7 +128,7 @@
                         </div>
 
 
-                         <div class="dashboard-card">
+                         <div class="dashboard-card" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=rejected_tickets&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Truck Full Rejected', true, '70%')">
                             <div class="card-icon">
                                 <i class="ft-x-circle text-danger"></i>
                             </div>
@@ -145,7 +145,7 @@
 
 
                         
-                         <div class="dashboard-card">
+                         <div class="dashboard-card" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=truck_at_ho&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Truck at HO', true, '70%')">
                             <div class="card-icon">
                                 <i class="ft-home text-warning"></i>
                             </div>
@@ -159,7 +159,7 @@
                                 View
                             </button>
                         </div>
-     <div class="dashboard-card">
+     <div class="dashboard-card" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=initial_sampling_requested&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Initial Sampling Requested - Pending Initial Sampling', true, '70%')">
                             <div class="card-icon">
                                 <i class="ft-file-plus"></i>
                             </div>
@@ -178,7 +178,7 @@
                             </button>
                         </div>
 
-                        <div class="dashboard-card">
+                        <div class="dashboard-card" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=initial_re_sampling_requested&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Initial Re-Sampling Requested - Pending Initial Re-Sampling', true, '70%')">
                             <div class="card-icon">
                                 <i class="ft-file-plus"></i>
                             </div>
@@ -198,7 +198,7 @@
                         </div>
 
                         
-                        <div class="dashboard-card">
+                        <div class="dashboard-card" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=inner_sampling_requested&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Inner Sampling Requested - Pending Inner Sampling', true, '70%')">
                             <div class="card-icon">
                                 <i class="ft-layers"></i>
                             </div>
@@ -218,7 +218,7 @@
                             </button>
                         </div>
 
-                        <div class="dashboard-card">
+                        <div class="dashboard-card" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=inner_re_sampling_requested&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id }}','Inner Re-Sampling Requested - Pending Inner Re-Sampling', true, '70%')">
                             <div class="card-icon">
                                 <i class="ft-layers"></i>
                             </div>
@@ -260,7 +260,7 @@
                         </div>
 
                    @foreach ($purchasers as $purchaser)
-              <div class="dashboard-card">
+              <div class="dashboard-card" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=initial_sampling_done&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}&purchaser_id={{ $purchaser->id ?? '' }}','Initial Sampling Done - Pending Approval', true, '70%')">
                             <div class="card-icon">
                                 <i class="ft-clipboard"></i>
                             </div>
@@ -285,7 +285,7 @@
 
 
                         @foreach ($purchasers as $purchaser)
-                        <div class="dashboard-card">
+                        <div class="dashboard-card" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=inner_sampling_pending_approval&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}&purchaser_id={{ $purchaser->id ?? '' }}','Inner Sampling Done - Pending Approval', true, '70%')">
                             <div class="card-icon">
                                 <i class="ft-clipboard"></i>
                             </div>
@@ -309,7 +309,7 @@
                         @endforeach
 
 
-                        <div class="dashboard-card d-none">
+                        <div class="dashboard-card d-none" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=initial_sampling_done&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Initial Sampling Done - Pending Approval', true, '70%')">
                             <div class="card-icon">
                                 <i class="ft-clipboard"></i>
                             </div>
@@ -332,7 +332,7 @@
 
 
 
-                        <div class="dashboard-card d-none">
+                        <div class="dashboard-card d-none" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=resampling_required&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Resampling Required - Pending Resampling', true, '70%')">
                             <div class="card-icon">
                                 <i class="ft-refresh-cw"></i>
                             </div>
@@ -352,7 +352,7 @@
                             </button>
                         </div>
 
-                        <div class="dashboard-card">
+                        <div class="dashboard-card" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=location_transfer_pending&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Location Transfer - Pending Transfer', true, '70%')">
                             <div class="card-icon">
                                 <i class="ft-map-pin"></i>
                             </div>
@@ -374,7 +374,7 @@
                         </div>
 
 
-                        <div class="dashboard-card">
+                        <div class="dashboard-card" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=freight_ready&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Freight Pending', true, '70%')">
                             <div class="card-icon">
                                 <i class="ft-dollar-sign"></i>
                             </div>
@@ -397,7 +397,7 @@
                         </div>
 
 
-                         <div class="dashboard-card">
+                         <div class="dashboard-card" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=truck_for_built_return&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Truck For Bilty Return - Pending Confirmation', true, '70%')">
                             <div class="card-icon">
                                 <i class="ft-dollar-sign"></i>
                             </div>
@@ -410,7 +410,7 @@
                                 View
                             </button>
                         </div>
-                         <div class="dashboard-card">
+                         <div class="dashboard-card" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=truck_out&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Truck Out - Pending Confirmation', true, '70%')">
                             <div class="card-icon">
                                 <i class="ft-dollar-sign"></i>
                             </div>
@@ -425,7 +425,7 @@
                         </div>
 
 @foreach ($data['weighbridge_pending_locationwise'] as $location)
-                        <div class="dashboard-card">
+                        <div class="dashboard-card" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=first_weighbridge_pending&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}&arrival_location_id={{ $location->location_id ?? '' }}','Weighbridge Pending - {{ $location->location_name }}', true, '70%')">
                             <div class="card-icon">
                                 <i class="ft-truck"></i>
                             </div>
@@ -446,7 +446,7 @@
                             </button>
                         </div>
 
-                         <div class="dashboard-card">
+                         <div class="dashboard-card" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=second_weighbridge_pending&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}&arrival_location_id={{ $location->location_id ?? '' }}','Weighbridge Pending - {{ $location->location_name }}', true, '70%')">
                             <div class="card-icon">
                                 <i class="ft-truck"></i>
                             </div>
@@ -472,7 +472,7 @@
 
 
                         
-                        <div class="dashboard-card d-none">
+                        <div class="dashboard-card d-none" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=first_weighbridge_pending&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','First Weighbridge Pending', true, '70%')">
                             <div class="card-icon">
                                 <i class="ft-truck"></i>
                             </div>
@@ -493,7 +493,7 @@
                             </button>
                         </div>
 
-                        <div class="dashboard-card">
+                        <div class="dashboard-card" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=inner_sampling_requested&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Request For (Inner Sampling) - Pending Approval', true, '70%')">
                             <div class="card-icon">
                                 <i class="ft-layers"></i>
                             </div>
@@ -514,7 +514,7 @@
                         </div>
 
                       
-                        <div class="dashboard-card d-none">
+                        <div class="dashboard-card d-none" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=inner_sampling_pending_approval&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Purchaser Approval (Inner Sampling) - Pending Approval', true, '70%')">
                             <div class="card-icon">
                                 <i class="ft-check-circle"></i>
                             </div>
@@ -534,8 +534,8 @@
                             </button>
                         </div>
 
-@foreach ($data['unloading_pending_locationwise'] as $location)
-                        <div class="dashboard-card">
+                    @foreach ($data['unloading_pending_locationwise'] as $location)
+                        <div class="dashboard-card" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=half_full_approve_pending&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}&arrival_location_id={{ $location->location_id ?? '' }}','Unloading Pending - {{ $location->location_name }}', true, '70%')">
                             <div class="card-icon">
                                 <i class="ft-thumbs-up"></i>
                             </div>
@@ -818,9 +818,11 @@ console.log("Realtime Arrival Stats Updated ✅", stats);
         }
 
         .dashboard-card {
+            cursor: pointer;
             background: #ffffff;
             border-radius: 12px;
-            padding: 24px;
+            /* padding: 24px; */
+            padding: 15px 20px;
             position: relative;
             transition: all 0.2s ease;
             border: 1px solid #e5e7eb;
@@ -834,7 +836,7 @@ console.log("Realtime Arrival Stats Updated ✅", stats);
 
         .card-icon {
             position: absolute;
-            top: 20px;
+            top: 14px;
             right: 20px;
             width: 40px;
             height: 40px;
@@ -848,7 +850,7 @@ console.log("Realtime Arrival Stats Updated ✅", stats);
         }
 
         .card-number {
-            font-size: 2.5rem;
+            font-size: 2.3rem;
             font-weight: 700;
             color: #26499b;
             line-height: 1;
@@ -869,6 +871,7 @@ console.log("Realtime Arrival Stats Updated ✅", stats);
             color: #6b7280;
             margin-bottom: 16px;
             line-height: 1.3;
+            display: none;
         }
 
         .status-badge {
@@ -878,6 +881,7 @@ console.log("Realtime Arrival Stats Updated ✅", stats);
             font-size: 12px;
             font-weight: 500;
             margin-bottom: 16px;
+            display: none;
         }
 
         .status-success {
@@ -918,6 +922,7 @@ console.log("Realtime Arrival Stats Updated ✅", stats);
             font-weight: 500;
             cursor: pointer;
             transition: all 0.2s ease;
+            display: none;
         }
 
         .view-btn:hover {
