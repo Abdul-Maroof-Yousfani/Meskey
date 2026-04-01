@@ -3,8 +3,8 @@
         <tr>
             <th class="col-2">Purchase Request</th>
             <th class="col-2">Purchase Quotation No</th>
-            <th class="col-3">Category - Item</th>
-            <th class="col-3">Suppliers</th>
+            <th class="col-2">Category - Item</th>
+            <th class="col-2">Suppliers</th>
             <th class="col-1 text-right">UOM</th>
             <th class="col-1 text-right">Qty</th>
             <th class="col-1 text-right">Rate</th>
