@@ -128,7 +128,7 @@
                         </div>
 
 
-                         <div class="dashboard-card" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=rejected_tickets&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Truck Full Rejected', true, '70%')">
+                         <div class="dashboard-card bg-danger-light" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=rejected_tickets&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Truck Full Rejected', true, '70%')">
                             <div class="card-icon">
                                 <i class="ft-x-circle text-danger"></i>
                             </div>
@@ -145,7 +145,7 @@
 
 
                         
-                         <div class="dashboard-card" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=truck_at_ho&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Truck at HO', true, '70%')">
+                         <div class="dashboard-card bg-warning-light" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=truck_at_ho&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Truck at HO', true, '70%')">
                             <div class="card-icon">
                                 <i class="ft-home text-warning"></i>
                             </div>

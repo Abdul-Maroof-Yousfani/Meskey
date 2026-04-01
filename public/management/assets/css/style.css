@@ -1070,7 +1070,15 @@ th {
 .select2-selection__rendered.select2-selection__rendered {
   line-height: 26px !important;
 }
-
+.bg-danger-light{
+  background: #ff03030f !important;
+}
+.bg-success-light{
+  background: #03ff030f !important; 
+}
+.bg-warning-light{
+  background: #ffc10726 !important;
+}
 @media (max-width: 575.98px) {
   .sticky-table th,
   .sticky-table td {
