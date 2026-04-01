@@ -322,10 +322,10 @@ class ArrivalDashboardService
 
         // Get the counts for locations with data
         $countsQuery = ArrivalTicket::selectRaw("
-        arrival_locations.id as location_id,
-        COUNT(CASE WHEN arrival_tickets.first_weighbridge_status = 'pending' THEN 1 END) as first_count,
-        COUNT(CASE WHEN arrival_tickets.second_weighbridge_status = 'pending' THEN 1 END) as second_count
-    ")
+    arrival_locations.id as location_id,
+    COUNT(DISTINCT CASE WHEN arrival_tickets.first_weighbridge_status = 'pending' THEN arrival_tickets.id END) as first_count,
+    COUNT(DISTINCT CASE WHEN arrival_tickets.second_weighbridge_status = 'pending' THEN arrival_tickets.id END) as second_count
+")
             ->join('arrival_location_transfers', 'arrival_tickets.id', '=', 'arrival_location_transfers.arrival_ticket_id')
             ->join('arrival_locations', 'arrival_location_transfers.arrival_location_id', '=', 'arrival_locations.id')
             ->where('arrival_tickets.company_id', $companyId)
@@ -342,15 +342,15 @@ class ArrivalDashboardService
 
         $counts = $countsQuery->groupBy('arrival_locations.id')
             ->get()
-            ->keyBy('location_id'); // Key by location_id for easy merging
-        // dd($locations);
-        // Merge the data
+            ->keyBy('location_id');
+
+        // Merge the data with proper null checking
         $weighbridgePendingLocationwise = $locations->map(function ($location) use ($counts) {
             return (object) [
                 'location_name' => $location->name,
                 'location_id' => $location->id,
-                'first_count' => $counts[$location->id]->first_count ?? 0,
-                'second_count' => $counts[$location->id]->second_count ?? 0,
+                'first_count' => isset($counts[$location->id]) ? $counts[$location->id]->first_count : 0,
+                'second_count' => isset($counts[$location->id]) ? $counts[$location->id]->second_count : 0,
             ];
         });
 
