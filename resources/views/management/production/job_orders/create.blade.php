@@ -858,8 +858,8 @@
             calculateSubItemNoOfBags(subRow, packingItem);
         });
 
-        // Calculate No. of Bags for sub item when packing item's total bags changes
-        $(document).off('input.jobOrderCreate', '.total-bags').on('input.jobOrderCreate', '.total-bags', function () {
+        // Calculate No. of Bags for sub item when packing item's no_of_bags changes
+        $(document).off('input.jobOrderCreate', '.no-of-bags').on('input.jobOrderCreate', '.no-of-bags', function () {
             var packingItem = $(this).closest('.packing-item');
             packingItem.find('.sub-packing-item-row').each(function () {
                 calculateSubItemNoOfBags($(this), packingItem);
@@ -915,13 +915,13 @@
             }
         });
 
-        // Function to calculate no of bags from packing item's total_bags / no_of_primary_bags
+        // Function to calculate no of bags from packing item's no_of_bags / no_of_primary_bags
         function calculateSubItemNoOfBags(subRow, packingItem) {
-            var totalBags = parseInt(packingItem.find('.total-bags').val()) || 0;
+            var noOfBagsPrimary = parseInt(packingItem.find('.no-of-bags').val()) || 0;
             var noOfPrimaryBags = parseInt(subRow.find('.sub-no-of-primary-bags').val()) || 0;
 
-            if (totalBags > 0 && noOfPrimaryBags > 0) {
-                var noOfBags = Math.floor(totalBags / noOfPrimaryBags);
+            if (noOfBagsPrimary > 0 && noOfPrimaryBags > 0) {
+                var noOfBags = Math.floor(noOfBagsPrimary / noOfPrimaryBags);
                 subRow.find('.sub-no-of-bags').val(noOfBags);
                 // Trigger total bags calculation
                 subRow.find('.sub-no-of-bags').trigger('input');
