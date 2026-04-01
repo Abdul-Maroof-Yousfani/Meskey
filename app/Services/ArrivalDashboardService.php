@@ -329,7 +329,7 @@ class ArrivalDashboardService
             ->join('arrival_location_transfers', 'arrival_tickets.id', '=', 'arrival_location_transfers.arrival_ticket_id')
             ->join('arrival_locations', 'arrival_location_transfers.arrival_location_id', '=', 'arrival_locations.id')
             ->where('arrival_tickets.company_id', $companyId)
-            ->whereIn('arrival_tickets.document_approval_status', ['half_approved', 'fully_approved'])
+            // ->whereIn('arrival_tickets.document_approval_status', ['half_approved', 'fully_approved'])
             ->where('arrival_tickets.location_transfer_status', 'transfered')
             ->whereIn('arrival_tickets.location_id', getUserCurrentCompanyLocations())
             ->whereIn('arrival_locations.id', getUserCurrentCompanyArrivalLocations())
