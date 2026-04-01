@@ -98,7 +98,7 @@
                             <div class="card-icon">
                                 <i class="ft-grid"></i>
                             </div>
-                            <div class="card-number">{{ $data['total_tickets_kgs'] ?? 0 }}</div>
+                            <div class="card-number">{{ $data['total_tickets_kgs'] ?? 0 }} Kgs</div>
                             <div class="card-title">Total Tickets In Kgs</div>
                             <div class="card-subtitle">Total Kgs Received (Tickets Net Weight)</div>
                             
