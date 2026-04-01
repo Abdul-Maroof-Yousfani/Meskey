@@ -24,23 +24,35 @@
                             <form id="filterForm" class="form">
                                 <div class="row ">
                                     <div class="col-md-12 my-1 ">
-                                        <div class="row justify-content-end text-right">
+                                        <div class="row">
                                             <div class="col-md-2 text-left">
-                                                <label for="filter_supplier_id" class="form-label">Supplier</label>
-                                                <select name="supplier_id" id="filter_supplier_id" class="form-control select2">
-                                                    <option value="all">All Suppliers</option>
-                                                    @foreach($suppliers as $supplier)
-                                                        <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
-                                                    @endforeach
-                                                </select>
+                                                <label for="pq_no" class="form-label">PQ No</label>
+                                                <input type="text" class="form-control" id="pq_no"
+                                                    placeholder="PQ No" name="pq_no"
+                                                    value="{{ request('pq_no', '') }}">
                                             </div>
-
+                                            <div class="col-md-2 text-left">
+                                                <label for="pr_no" class="form-label">PR No</label>
+                                                <input type="text" class="form-control" id="pr_no"
+                                                    placeholder="PR No" name="pr_no"
+                                                    value="{{ request('pr_no', '') }}">
+                                            </div>
                                             <div class="col-md-2 text-left">
                                                 <label for="item_id" class="form-label">Item</label>
                                                 <select name="item_id" id="item_id" class="form-control select2">
                                                     <option value="all">All Items</option>
                                                     @foreach($items as $item)
                                                         <option value="{{ $item->id }}">{{ $item->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+
+                                            <div class="col-md-2 text-left">
+                                                <label for="filter_supplier_id" class="form-label">Supplier</label>
+                                                <select name="supplier_id" id="filter_supplier_id" class="form-control select2">
+                                                    <option value="all">All Suppliers</option>
+                                                    @foreach($suppliers as $supplier)
+                                                        <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
                                                     @endforeach
                                                 </select>
                                             </div>
@@ -65,19 +77,8 @@
                                                     <option value="reverted">Reverted</option>
                                                 </select>
                                             </div>
-                                            <div class="col-md-2">
-                                                <label for="pr_no" class="form-label">PR No</label>
-                                                <input type="text" class="form-control" id="pr_no"
-                                                    placeholder="PR No" name="pr_no"
-                                                    value="{{ request('pr_no', '') }}">
-                                            </div>
-                                            <div class="col-md-2">
-                                                <label for="pq_no" class="form-label">PQ No</label>
-                                                <input type="text" class="form-control" id="pq_no"
-                                                    placeholder="PQ No" name="pq_no"
-                                                    value="{{ request('pq_no', '') }}">
-                                            </div>
-                                            <div class="col-md-2">
+                                            
+                                            <div class="col-md-2 text-left">
                                                 <label for="search" class="form-label">Search</label>
                                                 <input type="hidden" name="page" value="{{ request('page', 1) }}">
                                                 <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
