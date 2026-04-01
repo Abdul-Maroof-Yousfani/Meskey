@@ -73,7 +73,7 @@ class PurchaseRequestController extends Controller
         }
 
         if ($request->has('qty') && !empty($request->qty)) {
-            $query->where('qty', 'like', "%{$request->qty}%");
+            $query->where('qty', $request->qty);
         }
 
         if ($request->has('item_id') && $request->item_id != 'all' && !empty($request->item_id)) {
