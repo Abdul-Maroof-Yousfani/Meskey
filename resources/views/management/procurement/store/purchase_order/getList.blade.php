@@ -1,7 +1,7 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-2">Purchase Order No </th>
+            <th class="col-3">Purchase Order No </th>
             <th class="col-2">Purchase Request No</th>
             <th class="col-3">Purchase Quotation No</th>
             {{-- <th class="col-sm-2">Location</th> --}}
