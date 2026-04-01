@@ -1,13 +1,13 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-2">Ticket No / Contract No</th>
-            <th class="col-sm-2">Supplier</th>
-            <th class="col-sm-2">Sauda Type</th>
-            <th class="col-sm-2">Truck No</th>
+            <th class="col-sm-3">Ticket No / Contract No</th>
+            <th class="col-sm-3">Supplier</th>
+            <th class="col-sm-1">Sauda Type</th>
+            <th class="col-sm-1">Truck No</th>
 
-            <th class="col-sm-2">Builty No</th>
-            <th class="col-sm-1">Commodity</th>
+            <th class="col-sm-1">Builty No</th>
+            <th class="col-sm-2">Commodity</th>
             <th class="col-sm-1">Loading date</th>
             <th class="col-sm-2">Amounts</th>
             <th class="col-sm-2">Total Requested Amount</th>
@@ -84,8 +84,16 @@
                             @if ($ticket['calculated_values']['total_freight_sum'] > 0)
                                 <span class="badge badge-warning">
                                     Freight: {{ number_format($ticket['calculated_values']['total_freight_sum'], 2) }}
+
                                 </span>
                             @endif
+                        @endif
+                        @if($ticket["model"]->paymentRequestData?->isNotEmpty())
+                            <span class="badge badge-primary mt-2">
+                                {{ $ticket["model"]->paymentRequestData?->contains('is_paid_by_supplier', true) 
+                                    ? 'Paid by Supplier' 
+                                    : 'Not Paid by Supplier' }}
+                            </span>
                         @endif
                     </td>
                     <td>
