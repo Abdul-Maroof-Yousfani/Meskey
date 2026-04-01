@@ -80,7 +80,7 @@
 
 
                             <td rowspan="{{ $requestGroup['request_rowspan'] }}">
-                                <div class="d-flex" style="gap: 10px;">
+                                <div class="d-flex flex-column align-items-start" style="gap: 5px;">
                                     @php
                                         $currentApprovalStatus = $itemGroup['item_data']
                                             ?->{$itemGroup['item_data']->getApprovalModule()->approval_column ?? 'am_approval_status'} ?? 'pending';
@@ -89,25 +89,24 @@
                                     @endphp
 
                                     @if ($shouldDisableApproval)
-                                        <span class="bg-info text-white p-1 text-center position-relative" style="opacity: 0.5; cursor: not-allowed; border-radius: 4px; min-width: 50px;"
+                                        <span class="bg-info text-white p-1 text-center position-relative" style="opacity: 0.5; cursor: not-allowed; border-radius: 4px; width: 90px;"
                                             title="Approval disabled - Another item in this request is already approved">
                                             Approval
                                         </span>
                                     @else
                                         <a onclick="openModal(this, '{{ route('store.purchase-request.approvals', $itemGroup['item_data']->id) }}', 'Approval Voucher', false, '100%')"
-                                            class="bg-info text-white p-1 text-center position-relative" title="Approval" style="border-radius: 4px; min-width: 50px;">
+                                            class="bg-info text-white p-1 text-center position-relative" title="Approval" style="border-radius: 4px; width: 90px;">
                                             Approval
                                         </a>
                                     @endif
                                     @if($requestGroup['created_by_id'] == auth()->user()->id)
                                         @if($requestGroup['request_status'] == 'pending' || $requestGroup['request_status'] == 'reverted')
                                             <a onclick="openModal(this,'{{ route('store.purchase-request.edit', $itemGroup['item_data']->id) }}','Edit Purchase Request',false,'100%')"
-                                                class="bg-warning text-white p-1 text-center position-relative" style="border-radius: 4px; min-width: 50px;">
+                                                class="bg-warning text-white p-1 text-center position-relative" style="border-radius: 4px; width: 90px;">
                                                 Edit
                                             </a>
-
                                             <a onclick="deletemodal('{{ route('store.purchase-request.destroy', $requestGroup['request_data']->id) }}','{{ route('store.get.purchase-request') }}')"
-                                                class="bg-danger text-white p-1 text-center position-relative" style="border-radius: 4px; min-width: 50px;">
+                                                class="bg-danger text-white p-1 text-center position-relative" style="border-radius: 4px; width: 90px;">
                                                 Delete
                                             </a>
                                         @endif
