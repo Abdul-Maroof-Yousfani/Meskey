@@ -564,23 +564,23 @@ class HomeController extends Controller
 
             case 'half_full_approve_pending':
                 $title = 'Half/Full Approve Pending';
-                $data = ArrivalTicket::where('company_id', $request->company_id)
+                $data = ArrivalTicket::where('arrival_tickets.company_id', $request->company_id)
                     ->where('first_weighbridge_status', 'completed')
                     ->whereNull('document_approval_status')
-                    ->whereDoesntHave('arrivalSamplingRequests', function ($q) {
-                        $q->where('sampling_type', 'inner')
+                    ->whereIn('arrival_tickets.location_id', getUserCurrentCompanyLocations())
+                    ->whereDoesntHave('arrivalSamplingRequests', function ($query) {
+                        $query->where('sampling_type', 'inner')
                             ->where('approved_status', 'pending');
                     })
-                    ->whereIn('location_id', getUserCurrentCompanyLocations())
                     ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
-                        return $q->where('location_id', $request->location_id);
+                        return $q->where('arrival_tickets.location_id', $request->location_id);
                     })
                     ->when($request->has('arrival_location_id') && $request->arrival_location_id != '', function ($q) use ($request) {
                         return $q->whereHas('unloadingLocation', function ($sq) use ($request) {
                             $sq->where('arrival_location_id', $request->arrival_location_id);
                         });
                     })
-                    ->whereBetween('created_at', $dateRange)
+                    ->whereBetween('arrival_tickets.created_at', $dateRange)
                     ->with(['product', 'station', 'accountsOf', 'firstWeighbridge'])
                     ->latest()
                     ->paginate(1000);
