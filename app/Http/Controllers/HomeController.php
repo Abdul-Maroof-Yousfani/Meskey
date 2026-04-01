@@ -568,10 +568,13 @@ class HomeController extends Controller
                     ->where('first_weighbridge_status', 'completed')
                     ->whereNull('document_approval_status')
                     ->whereIn('arrival_tickets.location_id', getUserCurrentCompanyLocations())
-                    ->whereDoesntHave('arrivalSamplingRequests', function ($query) {
-                        $query->where('sampling_type', 'inner')
-                            ->where('approved_status', 'pending');
+                    ->leftJoin('arrival_sampling_requests', function ($join) {
+                        $join->on('arrival_tickets.id', '=', 'arrival_sampling_requests.arrival_ticket_id')
+                            ->where('sampling_type', 'inner')
+                            ->where('approved_status', 'pending')
+                            ->whereNull('arrival_sampling_requests.deleted_at');
                     })
+                    ->whereNull('arrival_sampling_requests.id') // Only get tickets with NO pending requests
                     ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                         return $q->where('arrival_tickets.location_id', $request->location_id);
                     })
@@ -581,7 +584,9 @@ class HomeController extends Controller
                         });
                     })
                     ->whereBetween('arrival_tickets.created_at', $dateRange)
+                    ->select('arrival_tickets.*') // Select only arrival_tickets columns to avoid ambiguity
                     ->with(['product', 'station', 'accountsOf', 'firstWeighbridge'])
+                    ->distinct() // Add distinct to avoid duplicates
                     ->latest()
                     ->paginate(1000);
                 break;
