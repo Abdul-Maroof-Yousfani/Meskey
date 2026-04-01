@@ -238,6 +238,7 @@ class JobOrderController extends Controller
                 $item['total_bags'] = $item['total_bags'] ?? 0;
                 $item['total_kgs'] = $item['total_kgs'] ?? 0;
                 $item['metric_tons'] = $item['metric_tons'] ?? 0;
+                $item['no_of_containers'] = $item['no_of_containers'] ?? 0;
                 $item['stuffing_in_container'] = $item['stuffing_in_container'] ?? 0;
 
                 // Merge location details if exists
@@ -275,6 +276,7 @@ class JobOrderController extends Controller
                         $subItem['extra_bags'] = $subItem['extra_bags'] ?? 0;
                         $subItem['extra_bags_percentage'] = $subItem['extra_bags_percentage'] ?? 0;
                         $subItem['empty_bag_weight'] = $subItem['empty_bag_weight'] ?? 0;
+                        $subItem['no_of_primary_bags'] = $subItem['no_of_primary_bags'] ?? 0;
                         $packingItem->subItems()->create($subItem);
                     }
                 }
@@ -430,6 +432,7 @@ class JobOrderController extends Controller
                 $item['total_bags'] = $item['total_bags'] ?? 0;
                 $item['total_kgs'] = $item['total_kgs'] ?? 0;
                 $item['metric_tons'] = $item['metric_tons'] ?? 0;
+                $item['no_of_containers'] = $item['no_of_containers'] ?? 0;
                 $item['stuffing_in_container'] = $item['stuffing_in_container'] ?? 0;
 
                 // Merge location details if exists
@@ -467,6 +470,7 @@ class JobOrderController extends Controller
                         $subItem['extra_bags'] = $subItem['extra_bags'] ?? 0;
                         $subItem['extra_bags_percentage'] = $subItem['extra_bags_percentage'] ?? 0;
                         $subItem['empty_bag_weight'] = $subItem['empty_bag_weight'] ?? 0;
+                        $subItem['no_of_primary_bags'] = $subItem['no_of_primary_bags'] ?? 0;
                         $packingItem->subItems()->create($subItem);
                     }
                 }
