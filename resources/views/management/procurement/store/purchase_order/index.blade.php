@@ -24,44 +24,7 @@
                             <form id="filterForm" class="form">
                                 <div class="row ">
                                     <div class="col-md-12 my-1 ">
-                                        <div class="row justify-content-end text-right">
-                                            <div class="col px-1 text-left">
-                                                <label for="filter_supplier_id" class="form-label">Supplier</label>
-                                                <select name="supplier_id" id="filter_supplier_id" class="form-control select2">
-                                                    <option value="all">All Suppliers</option>
-                                                    @foreach($suppliers as $supplier)
-                                                        <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                            <div class="col px-1 text-left">
-                                                <label for="item_id" class="form-label">Item</label>
-                                                <select name="item_id" id="item_id" class="form-control select2">
-                                                    <option value="all">All</option>
-                                                    @foreach($items as $item)
-                                                        <option value="{{ $item->id }}">{{ $item->name }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                            <div class="col px-1 text-left">
-                                                <label for="category_id" class="form-label">Category</label>
-                                                <select name="category_id" id="category_id" class="form-control select2">
-                                                    <option value="all">All</option>
-                                                    @foreach($categories as $category)
-                                                        <option value="{{ $category->id }}">{{ $category->name }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                            <div class="col px-1 text-left">
-                                                <label for="status" class="form-label">Status</label>
-                                                <select name="status" id="status" class="form-control p-0">
-                                                    <option value="all">All Status</option>
-                                                    <option value="pending">Pending</option>
-                                                    <option value="approved">Approved</option>
-                                                    <option value="rejected">Rejected</option>
-                                                    <option value="reverted">Reverted</option>
-                                                </select>
-                                            </div>
+                                        <div class="row">
                                             <div class="col px-1 text-left">
                                                 <label for="po_no" class="form-label">PO No</label>
                                                 <input type="text" class="form-control" id="po_no"
@@ -79,6 +42,43 @@
                                                 <input type="text" class="form-control" id="pq_no"
                                                     placeholder="PQ No" name="pq_no"
                                                     value="{{ request('pq_no', '') }}">
+                                            </div>
+                                            <div class="col px-1 text-left">
+                                                <label for="category_id" class="form-label">Category</label>
+                                                <select name="category_id" id="category_id" class="form-control select2">
+                                                    <option value="all">All</option>
+                                                    @foreach($categories as $category)
+                                                        <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div class="col px-1 text-left">
+                                                <label for="item_id" class="form-label">Item</label>
+                                                <select name="item_id" id="item_id" class="form-control select2">
+                                                    <option value="all">All</option>
+                                                    @foreach($items as $item)
+                                                        <option value="{{ $item->id }}">{{ $item->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div class="col px-1 text-left">
+                                                <label for="filter_supplier_id" class="form-label">Supplier</label>
+                                                <select name="supplier_id" id="filter_supplier_id" class="form-control select2">
+                                                    <option value="all">All Suppliers</option>
+                                                    @foreach($suppliers as $supplier)
+                                                        <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div class="col px-1 text-left">
+                                                <label for="status" class="form-label">Status</label>
+                                                <select name="status" id="status" class="form-control p-0">
+                                                    <option value="all">All Status</option>
+                                                    <option value="pending">Pending</option>
+                                                    <option value="approved">Approved</option>
+                                                    <option value="rejected">Rejected</option>
+                                                    <option value="reverted">Reverted</option>
+                                                </select>
                                             </div>
                                             <div class="col px-1 text-left">
                                                 <label for="search" class="form-label">Search</label>
