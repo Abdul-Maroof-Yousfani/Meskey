@@ -25,25 +25,25 @@
                                 <div class="row ">
                                     <div class="col-md-12 my-1 ">
                                         <div class="row">
-                                            <div class="col px-1 text-left">
+                                            <div class="px-1 text-left" style="width: 15%;">
                                                 <label for="po_no" class="form-label">PO No</label>
                                                 <input type="text" class="form-control" id="po_no"
                                                     placeholder="PO No" name="po_no"
                                                     value="{{ request('po_no', '') }}">
                                             </div>
-                                            <div class="col px-1 text-left">
+                                            <div class="px-1 text-left" style="width: 11%;">
                                                 <label for="pr_no" class="form-label">PR No</label>
                                                 <input type="text" class="form-control" id="pr_no"
                                                     placeholder="PR No" name="pr_no"
                                                     value="{{ request('pr_no', '') }}">
                                             </div>
-                                            <div class="col px-1 text-left">
+                                            <div class="px-1 text-left" style="width: 16%;">
                                                 <label for="pq_no" class="form-label">PQ No</label>
                                                 <input type="text" class="form-control" id="pq_no"
                                                     placeholder="PQ No" name="pq_no"
                                                     value="{{ request('pq_no', '') }}">
                                             </div>
-                                            <div class="col px-1 text-left">
+                                            <div class="px-1 text-left" style="width: 15%;">
                                                 <label for="category_id" class="form-label">Category</label>
                                                 <select name="category_id" id="category_id" class="form-control select2">
                                                     <option value="all">All</option>
@@ -52,16 +52,7 @@
                                                     @endforeach
                                                 </select>
                                             </div>
-                                            <div class="col px-1 text-left">
-                                                <label for="item_id" class="form-label">Item</label>
-                                                <select name="item_id" id="item_id" class="form-control select2">
-                                                    <option value="all">All</option>
-                                                    @foreach($items as $item)
-                                                        <option value="{{ $item->id }}">{{ $item->name }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                            <div class="col px-1 text-left">
+                                            <div class="px-1 text-left" style="width: 14%;">
                                                 <label for="filter_supplier_id" class="form-label">Supplier</label>
                                                 <select name="supplier_id" id="filter_supplier_id" class="form-control select2">
                                                     <option value="all">All Suppliers</option>
@@ -70,6 +61,36 @@
                                                     @endforeach
                                                 </select>
                                             </div>
+
+                                            <div class="px-1 text-left" style="width: 5%;">
+                                                <label for="qty" class="form-label">Qty</label>
+                                                <input type="text" class="form-control" id="qty"
+                                                    placeholder="Qty" name="qty"
+                                                    value="{{ request('qty', '') }}">
+                                            </div>
+
+                                            <div class="col px-1 text-left">
+                                                <label for="rate" class="form-label">Rate</label>
+                                                <input type="text" class="form-control" id="rate"
+                                                    placeholder="Rate" name="rate"
+                                                    value="{{ request('rate', '') }}">
+                                            </div>
+
+                                            <div class="col px-1 text-left">
+                                                <label for="amount" class="form-label">Amount</label>
+                                                <input type="text" class="form-control" id="amount"
+                                                    placeholder="Amount" name="amount"
+                                                    value="{{ request('amount', '') }}">
+                                            </div>
+                                            <!-- <div class="col px-1 text-left">
+                                                <label for="item_id" class="form-label">Item</label>
+                                                <select name="item_id" id="item_id" class="form-control select2">
+                                                    <option value="all">All</option>
+                                                    @foreach($items as $item)
+                                                        <option value="{{ $item->id }}">{{ $item->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div> -->
                                             <div class="col px-1 text-left">
                                                 <label for="status" class="form-label">Status</label>
                                                 <select name="status" id="status" class="form-control p-0">
@@ -99,7 +120,7 @@
                                 <table class="table m-0">
                                     <thead>
                                         <tr>
-                                            <th class="col-sm-3">Purchase Order No </th>
+                                            <th class="col-sm-1">Purchase Order No </th>
                                             <th class="col-sm-3">Purchase Request No</th>
                                             <th class="col-sm-3">Purchase Quotation No</th>
                                             {{-- <th class="col-sm-2">Location</th> --}}

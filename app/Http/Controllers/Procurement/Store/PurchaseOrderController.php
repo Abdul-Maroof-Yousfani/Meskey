@@ -105,6 +105,18 @@ class PurchaseOrderController extends Controller
             $query->where('supplier_id', $request->supplier_id);
         }
 
+        if ($request->filled('qty')) {
+            $query->where('qty', $request->qty);
+        }
+
+        if ($request->filled('rate')) {
+            $query->where('rate', $request->rate);
+        }
+
+        if ($request->filled('amount')) {
+            $query->where('total', $request->amount);
+        }
+
         $PurchaseOrderRaw = $query->with(
             'purchase_order.purchase_quotation.purchase_request',
             'category',
