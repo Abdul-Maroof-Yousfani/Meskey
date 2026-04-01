@@ -218,7 +218,7 @@
                     </div>
                     <div class="col-md-1">
                         <div class="form-group">
-                            <label>Bag Size (kg):</label>
+                            <label>Packing Size (kg):</label>
                             <input type="number" name="packing_items[0][bag_size]" class="form-control bag-size"
                                 step="0.01">
                         </div>
