@@ -13,8 +13,8 @@
         <tr id="row_pre_{{ $i }}" class="jo-{{ $job_order->id }}">
 
             <td style="min-width: 450px;">
-                <select id="item_id_{{ $i }}" onchange="get_uom('{{ $i }}')"
-                    class="form-control item-select select2Dropdown" data-index="{{ $i }}" style="width: 100%;" disabled>
+                <select name="item_id[]" id="item_id_{{ $i }}" onchange="get_uom('{{ $i }}')"
+                    class="form-control item-select select2Dropdown" data-index="{{ $i }}" style="width: 100%;">
                     <option value="">Select Item</option>
                     @foreach($items as $item)
                         <option value="{{ $item->id }}" data-uom="{{ $item->unitOfMeasure->name }}" @selected($packing_item->bag_product_id == $item->id)>{{ $item->name }}</option>
@@ -23,7 +23,6 @@
 
                 <input type="hidden" name="module_type[]" value="packing" />
                 <input type="hidden" name="packing_id[]" value="{{ $packing_item->id }}" />
-                <input type="hidden" name="item_id[]" value="{{ $packing_item->bag_product_id }}" />
                 <input type="hidden" name="index[]" value="{{ $i }}" />
                 <input type="hidden" name="is_single_job_order[]" value="1" />
             </td>
@@ -34,7 +33,7 @@
 
             <td style="min-width: 150px;">
                 <input type="number" name="qty[]" id="qty_{{ $i }}" class="form-control" step="0.01"
-                    min="0" placeholder="Qty" value="{{ $balance }}" readonly>
+                    min="0" placeholder="Qty" value="{{ $balance }}">
             </td>
 
             <td class="bag-only" style="min-width: 450px;">
@@ -45,8 +44,7 @@
             </td>
 
             <td class="bag-only" style="min-width: 300px;">
-                <select id="brands_{{ $i }}" class="form-control item-select select2Dropdown"
-                    disabled>
+                <select name="brands[]" id="brands_{{ $i }}" class="form-control item-select select2Dropdown">
                     <option value="">Select Brand</option>
                     @foreach (getAllBrands() ?? [] as $brand)
                         <option value="{{ $brand->id }}" @selected($packing_item->brand_id == $brand->id)>
@@ -54,18 +52,17 @@
                         </option>
                     @endforeach
                 </select>
-                <input type="hidden" name="brands[]" value="{{ $packing_item->brand_id }}" />
+
             </td>
 
             <td class="bag-only" style="min-width: 200px;">
                 <input type="number" name="min_weight[]" id="min_weight_{{ $i }}" class="form-control"
                     step="0.01" min="0" value="{{ $packing_item->min_weight_empty_bags }}"
-                    placeholder="Min Weight" readonly>
+                    placeholder="Min Weight">
             </td>
 
             <td class="bag-only" style="min-width: 300px;">
-                <select id="colors_{{ $i }}" class="form-control item-select select2Dropdown"
-                    disabled>
+                <select name="color[]" id="colors_{{ $i }}" class="form-control item-select select2Dropdown">
                     <option value="">Select Color</option>
                     @foreach (getAllColors() ?? [] as $color)
                         <option value="{{ $color->id }}" @selected($packing_item->bag_color_id == $color->id)>
@@ -73,7 +70,7 @@
                         </option>
                     @endforeach
                 </select>
-                <input type="hidden"  name="color[]"  value="{{ $packing_item->bag_color_id }}"/>
+
             </td>
 
             <td class="bag-only" style="min-width: 300px;">
@@ -141,8 +138,8 @@
         <tr id="row_pre_{{ $i }}" class="jo-{{ $job_order->id }}">
 
             <td style="min-width: 450px;">
-                <select id="item_id_{{ $i }}" onchange="get_uom('{{ $i }}')"
-                    class="form-control item-select select2Dropdown" data-index="{{ $i }}" style="width: 100%;" disabled>
+                <select name="item_id[]" id="item_id_{{ $i }}" onchange="get_uom('{{ $i }}')"
+                    class="form-control item-select select2Dropdown" data-index="{{ $i }}" style="width: 100%;">
                     <option value="">Select Item</option>
                     @foreach($items as $item)
                         <option value="{{ $item->id }}" data-uom="{{ $item->unitOfMeasure->name }}" @selected($sub_packing_item->bag_product_id == $item->id)>{{ $item->name }}</option>
@@ -151,7 +148,6 @@
 
                 <input type="hidden" name="module_type[]" value="subpacking" />
                 <input type="hidden" name="packing_id[]" value="{{ $sub_packing_item->id }}" />
-                <input type="hidden" name="item_id[]" value="{{ $sub_packing_item->bag_product_id }}" />
                 <input type="hidden" name="index[]" value="{{ $i }}" />
                 <input type="hidden" name="is_single_job_order[]" value="1" />
             </td>
@@ -163,7 +159,7 @@
 
             <td style="min-width: 150px;">
                 <input type="number" name="qty[]" id="qty_{{ $i }}" class="form-control" step="0.01"
-                    min="0" placeholder="Qty" style="width:100%;" value="{{ $balance }}" readonly>
+                    min="0" placeholder="Qty" style="width:100%;" value="{{ $balance }}">
             </td>
 
             <td class="bag-only" style="min-width: 450px;">
@@ -174,8 +170,8 @@
             </td>
 
             <td class="bag-only" style="min-width: 300px;">
-                <select id="brands_{{ $i }}" class="form-control item-select select2Dropdown"
-                    style="width:100%;" disabled>
+                <select name="brands[]" id="brands_{{ $i }}" class="form-control item-select select2Dropdown"
+                    style="width:100%;">
                     <option value="">Select Brand</option>
                     @foreach (getAllBrands() ?? [] as $brand)
                         <option value="{{ $brand->id }}" @selected($sub_packing_item->brand_id == $brand->id)>
@@ -183,18 +179,18 @@
                         </option>
                     @endforeach
                 </select>
-                <input type="hidden" name="brands[]" value="{{ $sub_packing_item->brand_id }}" />
+
             </td>
 
             <td class="bag-only" style="min-width: 200px;">
                 <input type="number" name="min_weight[]" id="min_weight_{{ $i }}" class="form-control"
                     step="0.01" min="0" value="{{ $sub_packing_item->empty_bag_weight }}"
-                    placeholder="Min Weight" style="width:100%;" readonly>
+                    placeholder="Min Weight" style="width:100%;">
             </td>
 
             <td class="bag-only" style="min-width: 300px;">
-                <select id="colors_{{ $i }}" class="form-control item-select select2Dropdown"
-                    style="width:100%;" disabled>
+                <select name="color[]" id="colors_{{ $i }}" class="form-control item-select select2Dropdown"
+                    style="width:100%;">
                     <option value="">Select Color</option>
                     @foreach (getAllColors() ?? [] as $color)
                         <option value="{{ $color->id }}" @selected($sub_packing_item->bag_color_id == $color->id)>
@@ -202,7 +198,7 @@
                         </option>
                     @endforeach
                 </select>
-                <input type="hidden"  name="color[]"  value="{{ $sub_packing_item->bag_color_id }}"/>
+
             </td>
 
             <td class="bag-only" style="min-width: 300px;">
@@ -226,13 +222,13 @@
                     placeholder="Stitching" style="width:120px;"> --}}
 
                <select name="stitching[{{ $i }}][]" id="stitching_{{ $i }}"
-                    class="form-control item-select stitching-select select2Dropdown" style="width:100%;" multiple disabled>
+                    class="form-control item-select stitching-select select2Dropdown" style="width:100%;" multiple>
                     <option value="">Select Stitching</option>
                     @foreach (getAllStitchings() ?? [] as $stitching)
                         <option value="{{ $stitching->id }}" @selected($stitching->id == $sub_packing_item->stitching_id)>{{ $stitching->name }}</option>
                     @endforeach
                 </select>
-                <input type="hidden" name="stitching[{{ $i }}][]" value="{{ $sub_packing_item->stitching_id }}" />
+
             </td>
 
             <td class="bag-only" style="min-width: 200px;">
