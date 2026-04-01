@@ -383,6 +383,18 @@ class PurchaseQuotationController extends Controller
             $query->where('supplier_id', $request->supplier_id);
         }
 
+        if ($request->has('qty') && !empty($request->qty)) {
+            $query->where('qty', $request->qty);
+        }
+
+        if ($request->has('rate') && !empty($request->rate)) {
+            $query->where('rate', $request->rate);
+        }
+
+        if ($request->has('amount') && !empty($request->amount)) {
+            $query->where('total', $request->amount);
+        }
+
 
 
         if ($request->has('item_id') && $request->item_id != 'all' && !empty($request->item_id)) {
