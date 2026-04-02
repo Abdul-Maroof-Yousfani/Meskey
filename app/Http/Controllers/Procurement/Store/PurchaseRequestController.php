@@ -70,6 +70,18 @@ class PurchaseRequestController extends Controller
             });
         }
 
+        if ($request->has('date_range') && !empty($request->date_range)) {
+            $parts = explode(' - ', $request->date_range);
+            if (count($parts) == 2) {
+                $from = trim($parts[0]);
+                $to = trim($parts[1]);
+                $query->whereHas('purchase_request', function($pr) use ($from, $to) {
+                    $pr->whereDate('purchase_date', '>=', $from)
+                       ->whereDate('purchase_date', '<=', $to);
+                });
+            }
+        }
+
         if ($request->has('category_id') && $request->category_id != 'all' && !empty($request->category_id)) {
             $query->where('category_id', $request->category_id);
         }
