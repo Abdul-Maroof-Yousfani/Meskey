@@ -30,6 +30,17 @@
             </select>
             <input type="hidden" name="item_id[]" value="{{ $data->item_id }}">
         </td>
+
+        <td style="min-width: 250px;">
+            <select class="form-control select2" multiple disabled style="width: 100%">
+                @foreach($data->JobOrder ?? [] as $jo)
+                    <option selected>{{ $jo->job_order_data->job_order_no ?? '' }}</option>
+                @endforeach
+            </select>
+        </td>
+
+
+
         <td style="min-width: 150px;">
             <input  type="number" onkeyup="calc({{ $key }})"
                 onblur="calc({{ $key }})" name="qty[]" value="{{ $data->qty }}" id="qty_{{ $key }}"

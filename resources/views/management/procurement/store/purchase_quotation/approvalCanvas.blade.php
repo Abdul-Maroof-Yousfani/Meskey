@@ -77,7 +77,9 @@
                     </th>
                     <th>Category</th>
                     <th>Item</th>
+                    <th>Job Order</th>
                     <th>Qty</th>
+
                     <th>Rate</th>
                     <th>Total Amount</th>
                     <th>Item UOM</th>
@@ -129,6 +131,17 @@
                 </select>
                 <input type="hidden" name="item_id[]" value="{{ $data->item_id }}">
             </td>
+
+            <td style="width: 25%">
+                <select class="form-control select2" multiple disabled style="width: 100%">
+                    @foreach($data->purchase_request?->JobOrder ?? [] as $jo)
+                        <option selected>{{ $jo->job_order_data->job_order_no ?? '' }}</option>
+                    @endforeach
+                </select>
+            </td>
+
+
+
 
             <td style="width: 10%">
                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})" disabled
@@ -268,6 +281,11 @@
                     </select>
                     <input type="hidden" name="data_id[]" value="0">
                 </td>
+                <td style="width: 20%">
+                    <select class="form-control select2" multiple disabled style="width: 100%"></select>
+                </td>
+
+
                 <td style="width: 20%">
                     <select name="supplier_id[]" id="supplier_id_${index}" onchange="get_uom(${index})" class="form-control item-select" data-index="0">
                         <option value="">Select Vendor</option>

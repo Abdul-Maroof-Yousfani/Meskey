@@ -83,7 +83,9 @@
                     <tr>
                         <th>Category</th>
                         <th>Item</th>
+                        <th>Job Order</th>
                         <th>Qty</th>
+
                         <th>Rate</th>
                         <th>Total Amount</th>
                         <th>Item UOM</th>
@@ -207,6 +209,11 @@
                             class="form-control item-select select2"></select>
                     <input type="hidden" name="data_id[]" value="0">
                 </td>
+                <td style="min-width: 250px;">
+                    <select class="form-control select2" multiple disabled style="width: 100%"></select>
+                </td>
+
+
                 <td style="min-width: 150px;"><input onkeyup="calc(${index})" onblur="calc(${index})" style="width: 100%" type="number" name="qty[]" id="qty_${index}" class="form-control" step="0.01" min="0"></td>
                 <td style="min-width: 150px;"><input onkeyup="calc(${index})" onblur="calc(${index})" style="width: 100%" type="number" name="rate[]" id="rate_${index}" class="form-control" step="0.01" min="0"></td>
                 <td style="min-width: 150px;"><input style="width: 100%" type="number" readonly name="total[]" id="total_${index}" class="form-control" step="0.01" min="0"></td>

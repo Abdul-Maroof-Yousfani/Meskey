@@ -619,8 +619,9 @@ class PurchaseQuotationController extends Controller
         $PurchaseQuotationIds2 = PurchaseQuotation::where('purchase_request_id', $purchase_request_id)
             ->pluck('id');
 
-        $PurchaseQuotationData = PurchaseQuotationData::with(['purchase_request', 'purchase_quotation', 'supplier', 'item', 'category'])
+        $PurchaseQuotationData = PurchaseQuotationData::with(['purchase_request.JobOrder.job_order_data', 'purchase_quotation', 'supplier', 'item', 'category'])
             ->whereIn('purchase_quotation_id', $PurchaseQuotationIds)
+
             // ->where('am_approval_status', 'pending')
             //     ->whereHas('purchase_quotation', function ($query) {
             //     $query->whereNotIn('am_approval_status', ['partial_approved']);
@@ -670,8 +671,9 @@ class PurchaseQuotationController extends Controller
         $PurchaseQuotationIds2 = PurchaseQuotation::where('purchase_request_id', $purchase_request_id)
             ->pluck('id');
 
-        $PurchaseQuotationData = PurchaseQuotationData::with(['purchase_request', 'purchase_quotation', 'supplier', 'item', 'category'])
+        $PurchaseQuotationData = PurchaseQuotationData::with(['purchase_request.JobOrder.job_order_data', 'purchase_quotation', 'supplier', 'item', 'category'])
             ->whereIn('purchase_quotation_id', $PurchaseQuotationIds)
+
             ->whereNotIn("am_approval_status", ["rejected", "approved", "reverted"])
             // ->where('am_approval_status', 'pending')
             //     ->whereHas('purchase_quotation', function ($query) {
@@ -717,10 +719,11 @@ class PurchaseQuotationController extends Controller
         $PurchaseQuotationIds = PurchaseQuotation::where('purchase_request_id', $purchase_request_id)
             ->pluck('id');
 
-        $PurchaseQuotationData = PurchaseQuotationData::with(['purchase_quotation', 'supplier', 'item', 'category'])
-            ->whereIn('purchase_quotation_id', $PurchaseQuotationIds)
-            ->where('am_approval_status', operator: 'approved')
-            ->get();
+        $PurchaseQuotationData = PurchaseQuotationData::with(['purchase_request.JobOrder.job_order_data', 'purchase_quotation', 'supplier', 'item', 'category'])
+        ->whereIn('purchase_quotation_id', $PurchaseQuotationIds)
+        ->where('am_approval_status', operator: 'approved')
+        ->get();
+
 
         $data = PurchaseQuotationData::with(['purchase_quotation', 'supplier', 'item', 'category'])
             ->whereIn('purchase_quotation_id', $PurchaseQuotationIds)
@@ -760,21 +763,10 @@ class PurchaseQuotationController extends Controller
         ])->findOrFail($id);
 
 
-        $purchaseQuotationData = PurchaseQuotationData::where('purchase_quotation_id', $id)
-            // ->when(
-            //     $purchaseQuotation->am_approval_status === 'approved',
-            //     function ($query) {
-            //         $query->where('am_approval_status', 'approved');
-            //     }
-            // )
-            // ->when(
-            //     in_array($purchaseQuotation->am_approval_status, ['approved', 'partial approved']),
-            //     function ($query) {
-            //         $query->where('am_approval_status', 'approved');
-            //     }
-            // )
+        $purchaseQuotationData = PurchaseQuotationData::with(['purchase_request.JobOrder.job_order_data', 'category', 'item', 'supplier'])
+        ->where('purchase_quotation_id', $id)
+        ->get();
 
-            ->get();
 
         $pendingData = PurchaseQuotationData::where('purchase_quotation_id', $id)
             ->where('am_approval_status', 'pending')
@@ -827,9 +819,10 @@ class PurchaseQuotationController extends Controller
             $location_names[] = get_location_name_by_id($location_id);
         }
 
-        $dataItems = PurchaseRequestData::with(['purchase_request', 'item', 'category'])
+        $dataItems = PurchaseRequestData::with(['purchase_request', 'item', 'category', 'JobOrder.job_order_data'])
             ->where('purchase_request_id', $requestId)
             ->get();
+
 
         $purchaseRequestDataIds = $dataItems->pluck('id');
 
@@ -990,8 +983,9 @@ class PurchaseQuotationController extends Controller
         $PurchaseQuotationIds2 = PurchaseQuotation::where('purchase_request_id', $purchase_request_id)
             ->pluck('id');
 
-        $PurchaseQuotationData = PurchaseQuotationData::with(['purchase_request', 'purchase_quotation', 'supplier', 'item', 'category'])
+        $PurchaseQuotationData = PurchaseQuotationData::with(['purchase_request.JobOrder.job_order_data', 'purchase_quotation', 'supplier', 'item', 'category'])
             ->whereIn('purchase_quotation_id', $PurchaseQuotationIds)
+
             ->whereIn("am_approval_status", ["pending", "reverted"])
             // ->where('am_approval_status', 'pending')
             //     ->whereHas('purchase_quotation', function ($query) {
