@@ -191,16 +191,16 @@
         // Cascading Dropdowns
         $('#company_location_id').on('change', function() {
             let companyId = $(this).val();
-            $('#arrival_location_id').html('<option value="">Select Arrival Location</option>').trigger('change');
-            $('#plant_id').html('<option value="">Select Plant</option>').trigger('change');
-            $('#production_machine_id').html('<option value="">Select Machine</option>').trigger('change');
+            $('#arrival_location_id').html('<option value="">Select Arrival Location</option>').prop('disabled', true).trigger('change');
+            $('#plant_id').html('<option value="">Select Plant</option>').prop('disabled', true).trigger('change');
+            $('#production_machine_id').html('<option value="">Select Machine</option>').prop('disabled', true).trigger('change');
             
             if (companyId) {
                 $('#arrival_location_id').html('<option value="">Loading...</option>').trigger('change');
                 let url = '{{ route("production-machine-analysis.get-arrival-locations", ":id") }}';
                 url = url.replace(':id', companyId);
                 $.get(url, function(data) {
-                    $('#arrival_location_id').html('<option value="">Select Arrival Location</option>');
+                    $('#arrival_location_id').html('<option value="">Select Arrival Location</option>').prop('disabled', false);
                     $.each(data, function(i, item) {
                         $('#arrival_location_id').append(`<option value="${item.id}">${item.name}</option>`);
                     });
@@ -212,15 +212,15 @@
         $('#arrival_location_id').on('change', function() {
             let companyId = $('#company_location_id').val();
             let arrivalId = $(this).val();
-            $('#plant_id').html('<option value="">Select Plant</option>').trigger('change');
-            $('#production_machine_id').html('<option value="">Select Machine</option>').trigger('change');
+            $('#plant_id').html('<option value="">Select Plant</option>').prop('disabled', true).trigger('change');
+            $('#production_machine_id').html('<option value="">Select Machine</option>').prop('disabled', true).trigger('change');
             
             if (companyId && arrivalId) {
                 $('#plant_id').html('<option value="">Loading...</option>').trigger('change');
                 let url = '{{ route("production-machine-analysis.get-plants", [":companyId", ":arrivalId"]) }}';
                 url = url.replace(':companyId', companyId).replace(':arrivalId', arrivalId);
                 $.get(url, function(data) {
-                    $('#plant_id').html('<option value="">Select Plant</option>');
+                    $('#plant_id').html('<option value="">Select Plant</option>').prop('disabled', false);
                     $.each(data, function(i, item) {
                         $('#plant_id').append(`<option value="${item.id}">${item.name}</option>`);
                     });
@@ -232,14 +232,14 @@
         $('#plant_id').on('change', function() {
             let arrivalId = $('#arrival_location_id').val();
             let plantId = $(this).val();
-            $('#production_machine_id').html('<option value="">Select Machine</option>').trigger('change');
+            $('#production_machine_id').html('<option value="">Select Machine</option>').prop('disabled', true).trigger('change');
             
             if (arrivalId && plantId) {
                 $('#production_machine_id').html('<option value="">Loading...</option>').trigger('change');
                 let url = '{{ route("production-machine-analysis.get-machines", [":arrivalId", ":plantId"]) }}';
                 url = url.replace(':arrivalId', arrivalId).replace(':plantId', plantId);
                 $.get(url, function(data) {
-                    $('#production_machine_id').html('<option value="">Select Machine</option>');
+                    $('#production_machine_id').html('<option value="">Select Machine</option>').prop('disabled', false);
                     $.each(data, function(i, item) {
                         $('#production_machine_id').append(`<option value="${item.id}">${item.name}</option>`);
                     });
