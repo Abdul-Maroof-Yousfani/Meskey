@@ -7,11 +7,26 @@
         @php
             $i = $job_order->id . '-' . $index;
             $balance = jobOrderPackingBalanceAgainstPurchaseRequest($packing_item->id);
+            $is_associated = false;
+            if (isset($purchase_request_id) && $purchase_request_id != '') {
+                $is_associated = \App\Models\Procurement\Store\PurchaseAgainstJobOrder::where('purchase_request_id', $purchase_request_id)
+                    ->where('job_order_id', $job_order->id)
+                    ->exists();
+            }
         @endphp
 
-        @if ($balance > 0)
+        @if ($balance > 0 || $is_associated)
         <tr id="row_pre_{{ $i }}" class="jo-{{ $job_order->id }}">
-
+            @php
+                $this_pr_usage = 0;
+                if (isset($purchase_request_id) && $purchase_request_id != '') {
+                    $this_pr_usage = \App\Models\Procurement\Store\PurchaseRequestData::where('purchase_request_id', $purchase_request_id)
+                        ->where('packing_id', $packing_item->id)
+                        ->where('module_type', 'packing')
+                        ->sum('qty');
+                }
+                $display_balance = $balance + $this_pr_usage;
+            @endphp
             <td style="min-width: 450px;">
                 <select name="item_id[]" id="item_id_{{ $i }}" onchange="get_uom('{{ $i }}')"
                     class="form-control item-select select2Dropdown" data-index="{{ $i }}" style="width: 100%;">
@@ -33,12 +48,13 @@
 
             <td style="min-width: 150px;">
                 <input type="number" name="qty[]" id="qty_{{ $i }}" class="form-control qty-input-check" step="0.01"
-                    min="0" placeholder="Qty" value="{{ $balance }}" data-balance="{{ $balance }}">
+                    min="0" placeholder="Qty" value="{{ $display_balance }}" data-balance="{{ $display_balance }}">
                 <div class="mt-1" style="font-size: 11px;">
-                    <strong>Limit:</strong> {{ $balance }} <br>
+                    <strong>Limit:</strong> {{ $display_balance }} <br>
                     <strong>Remaining:</strong> <span class="balance-span">0.00</span>
                 </div>
             </td>
+
 
             <td class="bag-only" style="min-width: 450px;">
                 <select class="form-control select2Dropdown" multiple disabled>
@@ -135,12 +151,21 @@
         @php
             $i = $job_order->id . '-' . $sub_packing_item->id;
             $balance = jobOrderSubPackingBalanceAgainstPurchaseRequest($sub_packing_item->id);
-            if($balance <= 0) {
+            if ($balance <= 0 && !$is_associated) {
                 continue;
             }
         @endphp
         <tr id="row_pre_{{ $i }}" class="jo-{{ $job_order->id }}">
-
+            @php
+                $this_pr_sub_usage = 0;
+                if (isset($purchase_request_id) && $purchase_request_id != '') {
+                    $this_pr_sub_usage = \App\Models\Procurement\Store\PurchaseRequestData::where('purchase_request_id', $purchase_request_id)
+                        ->where('packing_id', $sub_packing_item->id)
+                        ->where('module_type', 'subpacking')
+                        ->sum('qty');
+                }
+                $display_sub_balance = $balance + $this_pr_sub_usage;
+            @endphp
             <td style="min-width: 450px;">
                 <select name="item_id[]" id="item_id_{{ $i }}" onchange="get_uom('{{ $i }}')"
                     class="form-control item-select select2Dropdown" data-index="{{ $i }}" style="width: 100%;">
@@ -163,12 +188,13 @@
 
             <td style="min-width: 150px;">
                 <input type="number" name="qty[]" id="qty_{{ $i }}" class="form-control qty-input-check" step="0.01"
-                    min="0" placeholder="Qty" style="width:100%;" value="{{ $balance }}" data-balance="{{ $balance }}">
+                    min="0" placeholder="Qty" style="width:100%;" value="{{ $display_sub_balance }}" data-balance="{{ $display_sub_balance }}">
                 <div class="mt-1" style="font-size: 11px;">
-                    <strong>Limit:</strong> {{ $balance }} <br>
+                    <strong>Limit:</strong> {{ $display_sub_balance }} <br>
                     <strong>Remaining:</strong> <span class="balance-span">0.00</span>
                 </div>
             </td>
+
 
             <td class="bag-only" style="min-width: 450px;">
                 <select class="form-control select2Dropdown" multiple disabled>

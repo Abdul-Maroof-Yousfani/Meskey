@@ -40,7 +40,9 @@ class PurchaseRequestController extends Controller
         $items = Product::with("unitOfMeasure")->where("product_type", "general_items")->where("status", "active")->get();
 
 
-        return view('management.procurement.store.purchase_request.getItem', compact('job_orders', 'categories', 'items'));
+        $purchase_request_id = request()->purchase_request_id;
+    return view('management.procurement.store.purchase_request.getItem', compact('job_orders', 'categories', 'items', 'purchase_request_id'));
+
     }
 
     /**
@@ -321,11 +323,12 @@ class PurchaseRequestController extends Controller
         $items = Product::with("unitOfMeasure")->where("product_type", "general_items")->where("status", "active")->get();
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $job_orders = JobOrder::with(['packing_items', 'packing_items.subItems'])->get()
-            ->reject(function ($job_order) use ($id) {
+            ->reject(function ($job_order) use ($purchaseRequest) {
                 // If the JO is already associated with this PR, we should show it
-                $isAssociated = PurchaseAgainstJobOrder::where('purchase_request_id', $id)
+                $isAssociated = PurchaseAgainstJobOrder::where('purchase_request_id', $purchaseRequest->id)
                     ->where('job_order_id', $job_order->id)
                     ->exists();
+
 
                 if ($isAssociated) return false;
 
