@@ -10,54 +10,16 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label>Date:</label>
-                        <input type="date" name="date" class="form-control" value="{{ $item->analysis_date->format('Y-m-d') }}" readonly>
+                        <input type="date" name="date" class="form-control" value="{{ \Carbon\Carbon::parse($item->analysis_date)->format('Y-m-d') }}" readonly>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Job Order:</label>
-                        <select name="job_order_ids[]" class="form-control select2" multiple required>
-                            @foreach($jobOrders as $jobOrder)
-                                <option value="{{ $jobOrder->id }}" {{ $item->jobOrders->contains($jobOrder->id) ? 'selected' : '' }}>
-                                    {{ $jobOrder->job_order_no }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>Brand:</label>
-                        <select name="brand_id" class="form-control select2" required>
-                            <option value="">Select Brand</option>
-                            @foreach($brands as $brand)
-                                <option value="{{ $brand->id }}" {{ $item->brand_id == $brand->id ? 'selected' : '' }}>
-                                    {{ $brand->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>Packing:</label>
-                        <select name="packing_id" class="form-control select2" required>
-                            <option value="">Select Packing</option>
-                            @foreach($packings as $packing)
-                                <option value="{{ $packing->id }}" {{ $item->bag_packing_id == $packing->id ? 'selected' : '' }}>
-                                    {{ $packing->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>Location:</label>
-                        <select name="location_id" class="form-control select2" required>
+                        <label>Company Location:</label>
+                        <select name="location_id" id="location_id" class="form-control select2" required>
                             <option value="">Select Location</option>
                             @foreach($companyLocations as $location)
-                                <option value="{{ $location->id }}" {{ $item->location_id == $location->id ? 'selected' : '' }}>
+                                <option value="{{ $location->id }}" @selected($item->location_id == $location->id)>
                                     {{ $location->name }}
                                 </option>
                             @endforeach
@@ -66,18 +28,38 @@
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Variety:</label>
-                        <input type="text" name="variety" class="form-control" placeholder="Enter Variety" value="{{ $item->variety }}">
+                        <label>Arrival Location:</label>
+                        <select name="arrival_location_id" id="arrival_location_id" class="form-control select2" required>
+                            <option value="">Select Arrival Location</option>
+                            @foreach($arrivalLocations as $loc)
+                                <option value="{{ $loc->id }}" @selected($item->arrival_location_id == $loc->id)>
+                                    {{ $loc->name }}
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Crop Year:</label>
-                        <select name="crop_year_id" class="form-control select2" required>
-                            <option value="">Select Crop Year</option>
-                            @foreach($cropYears as $cropYear)
-                                <option value="{{ $cropYear->id }}" {{ $item->crop_year_id == $cropYear->id ? 'selected' : '' }}>
-                                    {{ $cropYear->name }}
+                        <label>Plant:</label>
+                        <select name="plant_id" id="plant_id" class="form-control select2" required>
+                            <option value="">Select Plant</option>
+                            @foreach($plants as $pl)
+                                <option value="{{ $pl->id }}" @selected($item->plant_id == $pl->id)>
+                                    {{ $pl->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Product (Commodity):</label>
+                        <select name="product_id" id="product_id" class="form-control select2" required>
+                            <option value="">Select Product</option>
+                            @foreach($products as $product)
+                                <option value="{{ $product->id }}" @selected($item->product_id == $product->id)>
+                                    {{ $product->name }}
                                 </option>
                             @endforeach
                         </select>
@@ -91,22 +73,12 @@
                     <div class="form-group">
                         <label class="d-block">Milling Degree:</label>
                         <div class="d-flex flex-column" style="gap: 5px;">
-                            <div class="custom-control custom-radio">
-                                <input type="radio" id="milling1" name="milling_degree" value="silky polish" class="custom-control-input" {{ $item->milling_degree == 'silky polish' ? 'checked' : '' }}>
-                                <label class="custom-control-label" for="milling1">Silky Polish</label>
-                            </div>
-                            <div class="custom-control custom-radio">
-                                <input type="radio" id="milling2" name="milling_degree" value="double polish" class="custom-control-input" {{ $item->milling_degree == 'double polish' ? 'checked' : '' }}>
-                                <label class="custom-control-label" for="milling2">Double Polish</label>
-                            </div>
-                            <div class="custom-control custom-radio">
-                                <input type="radio" id="milling3" name="milling_degree" value="single mill polish" class="custom-control-input" {{ $item->milling_degree == 'single mill polish' ? 'checked' : '' }}>
-                                <label class="custom-control-label" for="milling3">Single Mill Polish</label>
-                            </div>
-                            <div class="custom-control custom-radio">
-                                <input type="radio" id="milling4" name="milling_degree" value="reasonably well milled" class="custom-control-input" {{ $item->milling_degree == 'reasonably well milled' ? 'checked' : '' }}>
-                                <label class="custom-control-label" for="milling4">Reasonably Well Milled</label>
-                            </div>
+                            @foreach(['silky polish', 'double polish', 'single mill polish', 'reasonably well milled'] as $degree)
+                                <div class="custom-control custom-radio">
+                                    <input type="radio" id="milling_{{ str_replace(' ', '_', $degree) }}" name="milling_degree" value="{{ $degree }}" class="custom-control-input" @checked($item->milling_degree == $degree)>
+                                    <label class="custom-control-label" for="milling_{{ str_replace(' ', '_', $degree) }}">{{ ucwords($degree) }}</label>
+                                </div>
+                            @endforeach
                         </div>
                     </div>
                 </div>
@@ -115,11 +87,11 @@
                         <label class="d-block">Stitching:</label>
                         <div class="d-flex flex-column" style="gap: 5px;">
                             <div class="custom-control custom-radio">
-                                <input type="radio" id="stitch1" name="inner_stitching" value="double" class="custom-control-input" {{ $item->inner_stitching == 'double' ? 'checked' : '' }}>
+                                <input type="radio" id="stitch1" name="inner_stitching" value="double" class="custom-control-input" @checked($item->inner_stitching == 'double')>
                                 <label class="custom-control-label" for="stitch1">Double</label>
                             </div>
                             <div class="custom-control custom-radio">
-                                <input type="radio" id="stitch2" name="inner_stitching" value="single" class="custom-control-input" {{ $item->inner_stitching == 'single' ? 'checked' : '' }}>
+                                <input type="radio" id="stitch2" name="inner_stitching" value="single" class="custom-control-input" @checked($item->inner_stitching == 'single')>
                                 <label class="custom-control-label" for="stitch2">Single</label>
                             </div>
                         </div>
@@ -130,11 +102,11 @@
                         <label class="d-block">Outer Stitching:</label>
                         <div class="d-flex flex-column" style="gap: 5px;">
                             <div class="custom-control custom-radio">
-                                <input type="radio" id="outer_stitch1" name="outer_stitching" value="double" class="custom-control-input" {{ $item->outer_stitching == 'double' ? 'checked' : '' }}>
+                                <input type="radio" id="outer_stitch1" name="outer_stitching" value="double" class="custom-control-input" @checked($item->outer_stitching == 'double')>
                                 <label class="custom-control-label" for="outer_stitch1">Double</label>
                             </div>
                             <div class="custom-control custom-radio">
-                                <input type="radio" id="outer_stitch2" name="outer_stitching" value="single" class="custom-control-input" {{ $item->outer_stitching == 'single' ? 'checked' : '' }}>
+                                <input type="radio" id="outer_stitch2" name="outer_stitching" value="single" class="custom-control-input" @checked($item->outer_stitching == 'single')>
                                 <label class="custom-control-label" for="outer_stitch2">Single</label>
                             </div>
                         </div>
@@ -156,41 +128,43 @@
                     <thead>
                         <tr id="headerRow">
                             <th style="min-width: 150px;">Time</th>
+                            <th style="min-width: 150px;">Unit</th>
                             @foreach($productSlabTypes as $productSlabType)
-                                <th class="dynamic-col" style="min-width: 250px;">{{ $productSlabType->name }} {{ $productSlabType->qc_symbol }}</th>
+                                <th class="dynamic-col" data-slab-id="{{ $productSlabType->id }}" style="min-width: 150px;">{{ $productSlabType->name }} {{ $productSlabType->qc_symbol }}</th>
                             @endforeach
                             <th style="width: 50px;">Action</th>
                         </tr>
                     </thead>
                     <tbody id="lineItemsBody">
-                        @php $rowCount = 0; @endphp
-                        @forelse($groupedData as $time => $dataRows)
+                        @foreach($item->items as $index => $analysisItem)
                             <tr>
                                 <td>
-                                    <input type="time" name="items[{{ $rowCount }}][time]" class="form-control" value="{{ \Carbon\Carbon::parse($time)->format('H:i') }}">
+                                    <input type="time" name="items[{{ $index }}][time]" class="form-control" value="{{ \Carbon\Carbon::parse($analysisItem->analysis_time)->format('H:i') }}">
+                                </td>
+                                <td>
+                                    <select name="items[{{ $index }}][unit_id]" class="form-control select2">
+                                        <option value="">Select Unit</option>
+                                        @foreach($units as $unit)
+                                            <option value="{{ $unit->id }}" @selected($analysisItem->unit_id == $unit->id)>
+                                                {{ $unit->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
                                 </td>
                                 @foreach($productSlabTypes as $productSlabType)
+                                    @php
+                                        $slabValue = $analysisItem->slabs->where('slab_type_id', $productSlabType->id)->first();
+                                    @endphp
                                     <td class="dynamic-col">
-                                        @php
-                                            $val = $dataRows->where('slab_type_id', $productSlabType->id)->first()->production_analysis_value ?? '';
-                                        @endphp
-                                        <input type="text" name="items[{{ $rowCount }}][params][]" class="form-control" value="{{ $val }}">
+                                        <input type="text" name="items[{{ $index }}][params][{{ $productSlabType->id }}]" 
+                                               class="form-control" value="{{ $slabValue->production_analysis_value ?? '' }}">
                                     </td>
                                 @endforeach
                                 <td>
                                     <button type="button" class="btn btn-sm btn-danger remove-row"><i class="ft-trash"></i></button>
                                 </td>
                             </tr>
-                            @php $rowCount++; @endphp
-                        @empty
-                            <tr>
-                                <td><input type="time" name="items[0][time]" class="form-control" value="{{ date('H:i') }}"></td>
-                                @foreach($productSlabTypes as $productSlabType)
-                                    <td class="dynamic-col"><input type="text" name="items[0][params][]" class="form-control"></td>
-                                @endforeach
-                                <td><button type="button" class="btn btn-sm btn-danger remove-row"><i class="ft-trash"></i></button></td>
-                            </tr>
-                        @endforelse
+                        @endforeach
                     </tbody>
                 </table>
             </div>
@@ -208,45 +182,81 @@
     <div class="row bottom-button-bar">
         <div class="col-12 text-right">
             <a type="button" class="btn btn-danger modal-sidebar-close closebutton">Close</a>
-            @if(!$viewonly)
-                <button type="submit" class="btn btn-primary submitbutton">Update Analysis</button>
-            @endif
+            <button type="submit" class="btn btn-primary submitbutton">Update Analysis</button>
         </div>
     </div>
 </form>
 
 <script>
     $(document).ready(function() {
-        // Initialize Select2
-        if ($.fn.select2) {
-            $('.select2').select2({
-                width: '100%'
-            });
+        function initSelect2(el) {
+            if ($.fn.select2) {
+                $(el).select2({ width: '100%' });
+            }
         }
+        initSelect2('.select2');
 
-        @if($viewonly)
-            $('#ajaxSubmit :input').prop('disabled', true);
-            $('.closebutton').prop('disabled', false); // Ensure close button is still clickable
-        @endif
+        $('#product_id').on('change', function() {
+            let productId = $(this).val();
+            if(!productId) return;
 
-        // Add Row
-        $('#addLineItem').on('click', function() {
+            $.ajax({
+                url: "{{ route('production-output-analysis.get-slabs') }}",
+                type: "GET",
+                data: { product_id: productId },
+                success: function(response) {
+                    let headerRow = $('#headerRow');
+                    headerRow.find('.dynamic-col').remove();
+                    
+                    let actionTh = headerRow.find('th:last-child');
+                    response.forEach(slab => {
+                        $(`<th class="dynamic-col" data-slab-id="${slab.id}" style="min-width: 150px;">${slab.name} ${slab.qc_symbol || ''}</th>`)
+                            .insertBefore(actionTh);
+                    });
+
+                    $('#lineItemsBody').html('');
+                    addRow(response);
+                }
+            });
+        });
+
+        function addRow(slabs = null) {
             let rowCount = $('#lineItemsBody tr').length;
-            let colCount = $('#headerRow th.dynamic-col').length;
             let currentTime = new Date().getHours().toString().padStart(2, '0') + ':' + new Date().getMinutes().toString().padStart(2, '0');
             
             let newRow = `<tr>
-                <td><input type="time" name="items[${rowCount}][time]" class="form-control" value="${currentTime}"></td>`;
+                <td><input type="time" name="items[${rowCount}][time]" class="form-control" value="${currentTime}"></td>
+                <td>
+                    <select name="items[${rowCount}][unit_id]" class="form-control select2-row">
+                        <option value="">Select Unit</option>
+                        @foreach($units as $unit)
+                            <option value="{{ $unit->id }}">{{ $unit->name }}</option>
+                        @endforeach
+                    </select>
+                </td>`;
             
-            for(let i=0; i<colCount; i++) {
-                newRow += `<td class="dynamic-col"><input type="text" name="items[${rowCount}][params][]" class="form-control"></td>`;
+            if (slabs) {
+                slabs.forEach(slab => {
+                    newRow += `<td class="dynamic-col"><input type="text" name="items[${rowCount}][params][${slab.id}]" class="form-control"></td>`;
+                });
+            } else {
+                $('#headerRow th.dynamic-col').each(function() {
+                    let slabId = $(this).data('slab-id');
+                    newRow += `<td class="dynamic-col"><input type="text" name="items[${rowCount}][params][${slabId}]" class="form-control"></td>`;
+                });
             }
             
             newRow += `<td><button type="button" class="btn btn-sm btn-danger remove-row"><i class="ft-trash"></i></button></td></tr>`;
-            $('#lineItemsBody').append(newRow);
+            
+            let $row = $(newRow);
+            $('#lineItemsBody').append($row);
+            initSelect2($row.find('.select2-row'));
+        }
+
+        $('#addLineItem').on('click', function() {
+            addRow();
         });
 
-        // Remove Row
         $(document).on('click', '.remove-row', function() {
             if ($('#lineItemsBody tr').length > 1) {
                 $(this).closest('tr').remove();
@@ -254,15 +264,40 @@
                 alert('At least one row is required.');
             }
         });
+
+        // Cascading Dropdowns
+        $('#location_id').on('change', function() {
+            let companyId = $(this).val();
+            $('#arrival_location_id').html('<option value="">Select Arrival Location</option>').trigger('change');
+            $('#plant_id').html('<option value="">Select Plant</option>').trigger('change');
+            
+            if (companyId) {
+                let url = '{{ route("production-machine-analysis.get-arrival-locations", ":id") }}';
+                url = url.replace(':id', companyId);
+                $.get(url, function(data) {
+                    $.each(data, function(i, item) {
+                        $('#arrival_location_id').append(`<option value="${item.id}">${item.name}</option>`);
+                    });
+                    $('#arrival_location_id').trigger('change');
+                });
+            }
+        });
+
+        $('#arrival_location_id').on('change', function() {
+            let companyId = $('#location_id').val();
+            let arrivalId = $(this).val();
+            $('#plant_id').html('<option value="">Select Plant</option>').trigger('change');
+            
+            if (companyId && arrivalId) {
+                let url = '{{ route("production-machine-analysis.get-plants", [":companyId", ":arrivalId"]) }}';
+                url = url.replace(':companyId', companyId).replace(':arrivalId', arrivalId);
+                $.get(url, function(data) {
+                    $.each(data, function(i, item) {
+                        $('#plant_id').append(`<option value="${item.id}">${item.name}</option>`);
+                    });
+                    $('#plant_id').trigger('change');
+                });
+            }
+        });
     });
 </script>
-
-<style>
-    .custom-control-label::before, 
-    .custom-control-label::after {
-        top: 0.25rem !important;
-    }
-    .custom-radio .custom-control-label::after {
-        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e") !important;
-    }
-</style>
