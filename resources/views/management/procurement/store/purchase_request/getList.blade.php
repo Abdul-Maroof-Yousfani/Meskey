@@ -1,15 +1,14 @@
-<table class="table m-0">
+<table class="table m-0" style="table-layout: fixed; width: 100%;">
     <thead>
 
         <tr>
-            <th class="col-1">Purchase Request No</th>
-            {{-- <th class="col-2">Location</th> --}}
-            <th class="col-1">Category</th>
-            <th class="col-1">Item</th>
-            <th class="col-1">Qty</th>
-            <th class="col-1">PR Date</th>
-            <th class="col-1">Status</th>
-            <th class="col-1">Action</th>
+            <th style="width: 13%;">Purchase Request No</th>
+            <th style="width: 15%;">Category</th>
+            <th style="width: 22%;">Item</th>
+            <th style="width: 10%;">Qty</th>
+            <th style="width: 13%;">PR Date</th>
+            <th style="width: 15%;">Status</th>
+            <th style="width: 12%;">Action</th>
         </tr>
     </thead>
     <tbody>
