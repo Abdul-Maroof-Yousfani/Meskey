@@ -159,6 +159,33 @@
                                 View
                             </button>
                         </div>
+                        
+                         <div class="dashboard-card bg-warning-light" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=truck_for_built_return&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Truck For Bilty Return - Pending Confirmation', true, '70%')">
+                            <div class="card-icon">
+                                <i class="ft-dollar-sign text-warning"></i>
+                            </div>
+                            <div class="card-number text-warning">{{ $data['truck_for_built_return'] ?? 0 }}</div>
+                            <div class="card-title">Truck For Bilty Return</div>
+                            <div class="card-subtitle">Waiting for Confirmation</div>
+
+                            <button class="view-btn"
+                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=truck_for_built_return&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id }}','Truck For Bilty Return', true, '70%')">
+                                View
+                            </button>
+                        </div>
+                         <div class="dashboard-card bg-success-light" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=truck_out&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Truck Out - Pending Confirmation', true, '70%')">
+                            <div class="card-icon">
+                                <i class="ft-dollar-sign text-success"></i>
+                            </div>
+                            <div class="card-number text-success">{{ $data['truck_out'] ?? 0 }}</div>
+                            <div class="card-title">Truck Out</div>
+                            <div class="card-subtitle">Arrival Slip Generated</div>
+
+                            <button class="view-btn"
+                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=truck_out&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id }}','Truck Out', true, '70%')">
+                                View
+                            </button>
+                        </div>
      <div class="dashboard-card" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=initial_sampling_requested&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Initial Sampling Requested - Pending Initial Sampling', true, '70%')">
                             <div class="card-icon">
                                 <i class="ft-file-plus"></i>
@@ -397,32 +424,6 @@
                         </div>
 
 
-                         <div class="dashboard-card" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=truck_for_built_return&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Truck For Bilty Return - Pending Confirmation', true, '70%')">
-                            <div class="card-icon">
-                                <i class="ft-dollar-sign"></i>
-                            </div>
-                            <div class="card-number">{{ $data['truck_for_built_return'] ?? 0 }}</div>
-                            <div class="card-title">Truck For Bilty Return</div>
-                            <div class="card-subtitle">Waiting for Confirmation</div>
-
-                            <button class="view-btn"
-                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=truck_for_built_return&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id }}','Truck For Bilty Return', true, '70%')">
-                                View
-                            </button>
-                        </div>
-                         <div class="dashboard-card" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=truck_out&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Truck Out - Pending Confirmation', true, '70%')">
-                            <div class="card-icon">
-                                <i class="ft-dollar-sign"></i>
-                            </div>
-                            <div class="card-number">{{ $data['truck_out'] ?? 0 }}</div>
-                            <div class="card-title">Truck Out</div>
-                            <div class="card-subtitle">Arrival Slip Generated</div>
-
-                            <button class="view-btn"
-                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=truck_out&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id }}','Truck Out', true, '70%')">
-                                View
-                            </button>
-                        </div>
 
 @foreach ($data['weighbridge_pending_locationwise'] as $location)
                         <div class="dashboard-card" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=first_weighbridge_pending&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}&arrival_location_id={{ $location->location_id ?? '' }}','Weighbridge Pending - {{ $location->location_name }}', true, '70%')">
