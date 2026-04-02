@@ -99,7 +99,6 @@
                          <th class="col-sm-3 bag-only">Printing Sample</th>
                          <th>Remarks</th>
                          <th>Status</th>
-                         <th>Action</th>
                      </tr>
                  </thead>
                  <tbody id="purchaseRequestBody">
@@ -275,10 +274,6 @@
                                          {{ $data->am_approval_status }}
                                      </span>
                              </td>
-                             <td>
-                                 <button type="button" class="btn btn-danger btn-sm removeRowBtn"
-                                     onclick="remove({{ $key }})"
-                                     data-id="{{ $key }}">Remove</button>
                              </td>
                          </tr>
                      @empty
