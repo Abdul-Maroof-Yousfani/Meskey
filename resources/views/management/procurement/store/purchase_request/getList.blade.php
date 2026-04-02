@@ -2,11 +2,11 @@
     <thead>
 
         <tr>
-            <th class="col-3">Purchase Request No</th>
+            <th class="col-1">Purchase Request No</th>
             {{-- <th class="col-2">Location</th> --}}
-            <th class="col-4">Category</th>
-            {{-- <th class="col-2 text-right">Qty</th> --}}
-            <th class="col-1 text-right">Qty</th>
+            <th class="col-1">Category</th>
+            <th class="col-1">Item</th>
+            <th class="col-1">Qty</th>
             <th class="col-1">PR Date</th>
             <th class="col-1">Status</th>
             <th class="col-1">Action</th>
@@ -37,13 +37,25 @@
 
                         <td style="background-color: #e8f5e8; vertical-align: middle;">
                             <p class="m-0 font-weight-bold">
-                                {{ optional($itemGroup['item_data']->category)->name ?? 'N/A' }} -
-                                {{ optional($itemGroup['item_data']->item)->name ?? 'N/A' }}
+                                {{ optional($itemGroup['item_data']->category)->name ?? 'N/A' }}
                             </p>
                         </td>
 
                         <td>
-                            <p class="m-0 text-right">
+                            <p class="m-0 font-weight-bold">
+                                {{ optional($itemGroup['item_data']->item)->name ?? 'N/A' }}
+                            </p>
+                            @if ($itemGroup['item_data']->is_single_job_order)
+                                <span class="badge badge-yellow mt-1" style="font-size: 10px; padding: 3px 10px; border-radius: 20px;">With job order</span>
+                            @else
+                                <span class="badge badge-secondary mt-1" style="font-size: 10px; padding: 3px 10px; border-radius: 20px;">Without job order</span>
+                            @endif
+
+
+                        </td>
+
+                        <td>
+                            <p class="m-0">
                                 {{ $itemGroup['item_data']->qty }}
                                 {{ optional($itemGroup['item_data']->item->unitOfMeasure)->name ?? 'N/A' }}
                             </p>
@@ -54,13 +66,14 @@
                                 {{ $itemGroup['item_data']->qty }}
                             </p>
                         </td> --}}
-                        <td>
-                            <p class="m-0 white-nowrap">
-                                {{ optional($itemGroup['item_data']->purchase_request)->purchase_date }}
-                            </p>
-                        </td>
+
 
                         @if ($isFirstRequestRow)
+                            <td rowspan="{{ $requestGroup['request_rowspan'] }}" style="vertical-align: middle;">
+                                <p class="m-0">
+                                    {{ $requestGroup['request_data']->purchase_date }}
+                                </p>
+                            </td>
 
                             <td rowspan="{{ $requestGroup['request_rowspan'] }}">
                                 @php
@@ -78,9 +91,8 @@
                                 </span>
                             </td>
 
-
                             <td rowspan="{{ $requestGroup['request_rowspan'] }}">
-                                <div class="d-flex" style="gap: 10px;">
+                                <div class="d-flex flex-column align-items-start" style="gap: 5px;">
                                     @php
                                         $currentApprovalStatus = $itemGroup['item_data']
                                             ?->{$itemGroup['item_data']->getApprovalModule()->approval_column ?? 'am_approval_status'} ?? 'pending';
@@ -89,25 +101,24 @@
                                     @endphp
 
                                     @if ($shouldDisableApproval)
-                                        <span class="bg-info text-white p-1 text-center position-relative" style="opacity: 0.5; cursor: not-allowed; border-radius: 4px; min-width: 50px;"
+                                        <span class="bg-info text-white p-1 text-center position-relative" style="opacity: 0.5; cursor: not-allowed; border-radius: 4px; width: 90px;"
                                             title="Approval disabled - Another item in this request is already approved">
                                             Approval
                                         </span>
                                     @else
                                         <a onclick="openModal(this, '{{ route('store.purchase-request.approvals', $itemGroup['item_data']->id) }}', 'Approval Voucher', false, '100%')"
-                                            class="bg-info text-white p-1 text-center position-relative" title="Approval" style="border-radius: 4px; min-width: 50px;">
+                                            class="bg-info text-white p-1 text-center position-relative" title="Approval" style="border-radius: 4px; width: 90px;">
                                             Approval
                                         </a>
                                     @endif
                                     @if($requestGroup['created_by_id'] == auth()->user()->id)
                                         @if($requestGroup['request_status'] == 'pending' || $requestGroup['request_status'] == 'reverted')
                                             <a onclick="openModal(this,'{{ route('store.purchase-request.edit', $itemGroup['item_data']->id) }}','Edit Purchase Request',false,'100%')"
-                                                class="bg-warning text-white p-1 text-center position-relative" style="border-radius: 4px; min-width: 50px;">
+                                                class="bg-warning text-white p-1 text-center position-relative" style="border-radius: 4px; width: 90px;">
                                                 Edit
                                             </a>
-
                                             <a onclick="deletemodal('{{ route('store.purchase-request.destroy', $requestGroup['request_data']->id) }}','{{ route('store.get.purchase-request') }}')"
-                                                class="bg-danger text-white p-1 text-center position-relative" style="border-radius: 4px; min-width: 50px;">
+                                                class="bg-danger text-white p-1 text-center position-relative" style="border-radius: 4px; width: 90px;">
                                                 Delete
                                             </a>
                                         @endif

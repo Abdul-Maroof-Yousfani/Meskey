@@ -274,8 +274,8 @@
                     <div class="col-md-1">
                         <div class="form-group">
                             <label>Stuffing (MTs):</label>
-                            <input type="number" name="packing_items[0][stuffing_in_container]"
-                                class="form-control stuffing" step="0.01" min="0">
+                            <input type="number" name="packing_items[0][stuffing_in_container]" 
+                                value="0" class="form-control stuffing" step="0.01" min="0">
                         </div>
                     </div>
                     <div class="col-md-2">
@@ -688,7 +688,7 @@
                 if ($this.is('select')) {
                     $this.prop('selectedIndex', 0);
                 } else {
-                    if($this.hasClass('empty-bags') || $this.hasClass('extra-bags') || $this.hasClass('extra-bags-percentage') || $this.hasClass('min-weight')){
+                    if($this.hasClass('empty-bags') || $this.hasClass('extra-bags') || $this.hasClass('extra-bags-percentage') || $this.hasClass('min-weight') || $this.hasClass('containers') || $this.hasClass('stuffing')){
                         $this.val('0');
                     } else {
                         $this.val('');
@@ -827,7 +827,7 @@
             // Clear values
             newRow.find('input[type="text"], input[type="number"]').not('[readonly]').val('');
             // Default sub item numeric fields to 0
-            newRow.find('.sub-empty-bags, .sub-extra-bags, .sub-extra-bags-percentage, .sub-empty-bag-weight').val('0');
+            newRow.find('.sub-empty-bags, .sub-extra-bags, .sub-extra-bags-percentage, .sub-empty-bag-weight, .sub-no-of-primary-bags').val('0');
             newRow.find('input[type="number"][readonly]').val('0');
             newRow.find('select').prop('selectedIndex', 0);
             newRow.find('input[type="file"]').val('');

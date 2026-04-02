@@ -355,7 +355,7 @@
                             <div class="form-group">
                                 <label>No. of Containers:</label>
                                 <input type="number" name="packing_items[{{ $packingIndex }}][no_of_containers]"
-                                    class="form-control containers" value="{{ $packingItem->no_of_containers }}">
+                                    class="form-control containers" value="{{ $packingItem->no_of_containers ?? 0 }}">
                             </div>
                         </div>
                        
@@ -862,8 +862,8 @@
 
             // Clear specific values and IDs
             newItem.find('input[type="hidden"].packing-item-ref').remove(); // Important: remove the ID of the cloned item
-            newItem.find('.bag-size, .no-of-bags, .stuffing, .containers').val('');
-            newItem.find('.extra-bags, .empty-bags, .extra-bags-percentage, .min-weight').val('0');
+            newItem.find('.bag-size, .no-of-bags').val('');
+            newItem.find('.extra-bags, .empty-bags, .containers, .stuffing, .extra-bags-percentage, .min-weight').val('0');
             newItem.find('.total-bags, .total-kgs, .metric-tons').val('0');
 
             // Handle Select2 in the new item
@@ -940,7 +940,7 @@
             // Clear values
             newRow.find('input[type="text"], input[type="number"]').not('[readonly]').val('');
             // Default sub item numeric fields to 0
-            newRow.find('.sub-empty-bags, .sub-extra-bags, .sub-extra-bags-percentage, .sub-empty-bag-weight').val('0');
+            newRow.find('.sub-empty-bags, .sub-extra-bags, .sub-extra-bags-percentage, .sub-empty-bag-weight, .sub-no-of-primary-bags').val('0');
             newRow.find('input[type="number"][readonly]').val('0');
             newRow.find('select').prop('selectedIndex', 0);
             newRow.find('input[type="file"]').val('');

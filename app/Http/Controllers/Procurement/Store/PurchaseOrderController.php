@@ -105,12 +105,26 @@ class PurchaseOrderController extends Controller
             $query->where('supplier_id', $request->supplier_id);
         }
 
+        if ($request->filled('qty')) {
+            $query->where('qty', $request->qty);
+        }
+
+        if ($request->filled('rate')) {
+            $query->where('rate', $request->rate);
+        }
+
+        if ($request->filled('amount')) {
+            $query->where('total', $request->amount);
+        }
+
         $PurchaseOrderRaw = $query->with(
             'purchase_order.purchase_quotation.purchase_request',
+            'purchase_request_data',
             'category',
             'item',
             'supplier'
         )
+
             ->latest()
             ->paginate(request('per_page', 25));
 
@@ -223,9 +237,12 @@ class PurchaseOrderController extends Controller
 
         return view('management.procurement.store.purchase_order.getList', [
             'PurchaseOrder' => $PurchaseOrderRaw,
-            'GroupedPurchaseOrder' => $processedData
+            'GroupedPurchaseOrder' => $processedData,
+            'categories' => Category::where('category_type', 'general_items')->get(),
+            'suppliers' => Supplier::where('status', 'active')->get()
         ]);
     }
+
 
 
     public function approve_item(Request $request)

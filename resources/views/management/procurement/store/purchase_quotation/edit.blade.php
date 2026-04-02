@@ -91,7 +91,9 @@
                             <th>Status</th>
                             <th>Supplier</th>
                             <th>Item</th>
+                            <th>Job Order</th>
                             <th>Qty</th>
+
                             <th>Rate</th>
                             <th>Total Amount</th>
                             <th>Item UOM</th>
@@ -170,6 +172,17 @@
                                     </select>
                                     <input type="hidden" name="item_id[]" value="{{ $data->item_id }}">
                                 </td>
+
+                                <td style="min-width: 250px;">
+                                    <select class="form-control select2" multiple disabled style="width: 100%">
+                                        @foreach($data->purchase_request?->JobOrder ?? [] as $jo)
+                                            <option selected>{{ $jo->job_order_data->job_order_no ?? '' }}</option>
+                                        @endforeach
+                                    </select>
+                                </td>
+
+
+
 
                                     <td style="min-width: 150px;">
                                         <input  name="qty[{{ $data->id }}]" type="number"
@@ -353,6 +366,11 @@
                     </select>
                     <input type="hidden" name="data_id[]" value="0">
                 </td>
+                <td style="min-width: 250px;">
+                    <select class="form-control select2" multiple disabled style="width: 100%"></select>
+                </td>
+
+
                 <td style="min-width: 150px;"><input  onkeyup="calc(${index})" onblur="calc(${index})"  type="number" name="qty[]" id="qty_${index}" class="form-control" step="0.01" min="0"></td>
                 <td style="min-width: 150px;"><input  onkeyup="calc(${index})" onblur="calc(${index})"  type="number" name="rate[]" id="rate_${index}" class="form-control" step="0.01" min="0"></td>
                 <td style="min-width: 150px;"><input  type="number" readonly name="total[]" id="total_${index}" class="form-control" step="0.01" min="0"></td>

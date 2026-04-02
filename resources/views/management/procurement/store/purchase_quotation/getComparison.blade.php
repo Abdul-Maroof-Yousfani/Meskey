@@ -1,17 +1,18 @@
-<table class="table m-0">
+<table class="table m-0" style="table-layout: fixed; width: 100%;">
     <thead>
         <tr>
-            <th class="col-2">Purchase Request</th>
-            <th class="col-2">Purchase Quotation No</th>
-            <th class="col-3">Category - Item</th>
-            <th class="col-3">Suppliers</th>
-            <th class="col-1 text-right">UOM</th>
-            <th class="col-1 text-right">Qty</th>
-            <th class="col-1 text-right">Rate</th>
-            <th class="col-1 text-right">Amount</th>
-            <th class="col-1">Action</th>
+            <th style="width: 12%;">Purchase Request</th>
+            <th style="width: 12%;">Purchase Quotation No</th>
+            <th style="width: 18%;">Category - Item</th>
+            <th style="width: 18%;">Suppliers</th>
+            <th style="width: 8%;">UOM</th>
+            <th style="width: 8%;">Qty</th>
+            <th style="width: 8%;">Rate</th>
+            <th style="width: 8%;">Amount</th>
+            <th style="width: 8%;">Action</th>
         </tr>
     </thead>
+
 
     <tbody>
         @if (count($GroupedPurchaseQuotation) != 0)
@@ -136,7 +137,13 @@
                                         </span>
                                     @endif
                                 </p>
+                                @if(optional($supplierRow['data']->purchase_request)->is_single_job_order)
+                                    <span class="badge badge-yellow mt-1" style="font-size: 10px; padding: 3px 10px; border-radius: 20px;">With job order</span>
+                                @else
+                                    <span class="badge badge-secondary mt-1" style="font-size: 10px; padding: 3px 10px; border-radius: 20px;">Without job order</span>
+                                @endif
                             </td>
+
 
                             <td style="background-color: #fff3e0; vertical-align: middle;">
                                 <p class="m-0 font-weight-bold">

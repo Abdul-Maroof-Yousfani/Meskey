@@ -1891,21 +1891,19 @@ function jobOrderPackingBalanceAgainstPurchaseRequest($packing_id)
 {
     $used_qty = PurchaseRequestData::where("packing_id", $packing_id)
         ->where("module_type", "packing")
-        ->where("am_approval_status", "!=", "rejected")
         ->whereHas('purchase_request', function ($query) {
             $query->where('am_approval_status', '!=', 'rejected');
         })
         ->sum("qty");
     $job_order_packing = JobOrderPackingItem::select("id", "total_bags")->find($packing_id);
 
-    return ($job_order_packing->total_bags);
+    return ($job_order_packing->total_bags - $used_qty);
 }
 
 function jobOrderSubPackingBalanceAgainstPurchaseRequest($subpacking_id)
 {
     $used_qty = PurchaseRequestData::where("packing_id", $subpacking_id)
         ->where("module_type", "subpacking")
-        ->where("am_approval_status", "!=", "rejected")
         ->whereHas('purchase_request', function ($query) {
             $query->where('am_approval_status', '!=', 'rejected');
         })
@@ -1913,7 +1911,7 @@ function jobOrderSubPackingBalanceAgainstPurchaseRequest($subpacking_id)
 
     $job_order_sub_packing = JobOrderPackingSubItem::select("id", "total_bags")->find($subpacking_id);
 
-    return ($job_order_sub_packing->total_bags);
+    return ($job_order_sub_packing->total_bags - $used_qty);
 }
 
 function getDoQty($do_id)

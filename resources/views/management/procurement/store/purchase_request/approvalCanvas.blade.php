@@ -348,8 +348,10 @@
             type: 'GET',
             data: {
                 job_order: id,
-                category_id: $('#category_id_header').val()
+                category_id: $('#category_id_header').val(),
+                purchase_request_id: '{{ $purchaseRequest->id }}'
             },
+
             success: function (response) {
                 if($('#category_id_header').val() == "") {
                     alert("Please select category first.");
