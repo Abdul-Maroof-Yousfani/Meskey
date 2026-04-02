@@ -333,7 +333,7 @@ class PurchaseQuotationController extends Controller
         $quotedItemIds = PurchaseQuotationData::distinct()->pluck('item_id');
         $suppliers = Supplier::select('id', 'name')->where('status', 'active')->whereType('store_supplier')->get();
         $items = Product::whereIn('id', $quotedItemIds)->select('id', 'name')->where('status', 'active')->get();
-        $uoms = \App\Models\UnitOfMeasure::select('id', 'name')->where('status', 'active')->get();
+        $uoms = \App\Models\UnitOfMeasure::select('id', 'name')->get();
 
         return view('management.procurement.store.purchase_quotation.comparisonList', compact('suppliers', 'items', 'uoms'));
     }
@@ -1348,6 +1348,9 @@ class PurchaseQuotationController extends Controller
         if ($supplier_id && $supplier_id != 'all') {
             $itemIds = (clone $baseDataQuery)->where('supplier_id', $supplier_id)->distinct()->pluck('item_id');
             $itemsQuery->whereIn('id', $itemIds);
+        } else {
+            $quotedItemIds = (clone $baseDataQuery)->distinct()->pluck('item_id');
+            $itemsQuery->whereIn('id', $quotedItemIds);
         }
         if ($uom_id && $uom_id != 'all') {
             $itemsQuery->where('unit_of_measure_id', $uom_id);
@@ -1361,6 +1364,9 @@ class PurchaseQuotationController extends Controller
             $itemIdsInUom = Product::where('unit_of_measure_id', $uom_id)->pluck('id');
             $supplierIds = (clone $baseDataQuery)->whereIn('item_id', $itemIdsInUom)->distinct()->pluck('supplier_id');
             $suppliersQuery->whereIn('id', $supplierIds);
+        } else {
+            $quotedSupplierIds = (clone $baseDataQuery)->distinct()->pluck('supplier_id');
+            $suppliersQuery->whereIn('id', $quotedSupplierIds);
         }
 
         // Apply filters to UOMs
@@ -1371,6 +1377,10 @@ class PurchaseQuotationController extends Controller
             $itemIds = (clone $baseDataQuery)->where('supplier_id', $supplier_id)->distinct()->pluck('item_id');
             $uomIds = Product::whereIn('id', $itemIds)->distinct()->pluck('unit_of_measure_id');
             $uomsQuery->whereIn('id', $uomIds);
+        } else {
+            $quotedItemIds = (clone $baseDataQuery)->distinct()->pluck('item_id');
+            $quotedUomIds = Product::whereIn('id', $quotedItemIds)->distinct()->pluck('unit_of_measure_id');
+            $uomsQuery->whereIn('id', $quotedUomIds);
         }
 
         return response()->json([
