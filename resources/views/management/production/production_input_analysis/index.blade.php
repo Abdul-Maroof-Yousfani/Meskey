@@ -24,23 +24,7 @@
                                 <div class="row">
                                     <div class="col-md-12 my-1">
                                         <div class="row">
-                                            <div class="col-md-2 text-left">
-                                                <label for="job_order_ids" class="form-label">Job Order Filter</label>
-                                                <select name="job_order_ids[]" id="job_order_ids" class="form-control select2-filter" multiple data-placeholder="Select Job Order(s)">
-                                                    @foreach($jobOrders as $jobOrder)
-                                                        <option value="{{ $jobOrder->id }}">{{ $jobOrder->job_order_no }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                            <div class="col-md-2 text-left">
-                                                <label for="brand_ids" class="form-label">Brand Filter</label>
-                                                <select name="brand_ids[]" id="brand_ids" class="form-control select2-filter" multiple data-placeholder="Select Brand(s)">
-                                                    @foreach($brands as $brand)
-                                                        <option value="{{ $brand->id }}">{{ $brand->name }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                            <div class="col-md-2 text-left">
+                                            <div class="col-md-4 text-left">
                                                 <label for="location_ids" class="form-label">Location Filter</label>
                                                 <select name="location_ids[]" id="location_ids" class="form-control select2-filter" multiple data-placeholder="Select Location(s)">
                                                     @foreach($locations as $location)
@@ -48,11 +32,7 @@
                                                     @endforeach
                                                 </select>
                                             </div>
-                                            <div class="col-md-2 text-left">
-                                                <label for="variety_search" class="form-label">Variety Search</label>
-                                                <input type="text" name="variety_search" id="variety_search" class="form-control" placeholder="Search Variety">
-                                            </div>
-                                            <div class="col-md-2 text-left">
+                                            <div class="col-md-4 text-left">
                                                 <label for="custom_date_range" class="form-label">Date Range Filter</label>
                                                 <input type="text" class="form-control" name="date_range" id="custom_date_range" value="{{ date('Y-m-d', strtotime('-30 days')) }} - {{ date('Y-m-d') }}">
                                             </div>
@@ -66,22 +46,8 @@
                             </form>
                         </div>
                         <div class="card-content">
-                            <div class="card-body table-responsive" id="filteredData">
-                                <table class="table m-0">
-                                    <thead>
-                                        <tr>
-                                            <th>Date</th>
-                                            <th>Job Order(s)</th>
-                                            <th>Brand</th>
-                                            <th>Variety</th>
-                                            <th>Location</th>
-                                            <th>Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <!-- Data will be loaded here via AJAX -->
-                                    </tbody>
-                                </table>
+                            <div class="card-body table-responsive" id="filteredData" style="margin-top: 30px;">
+                                {{-- Loaded via AJAX --}}
                             </div>
                         </div>
                     </div>
@@ -105,7 +71,7 @@
                 autoUpdateInput: true
             }).on('apply.daterangepicker', function(ev, picker) {
                 $(this).val(picker.startDate.format('YYYY-MM-DD') + ' - ' + picker.endDate.format('YYYY-MM-DD'));
-                $('#variety_search').trigger('change').trigger('keyup');
+                $('#location_ids').trigger('change');
             });
         });
     </script>

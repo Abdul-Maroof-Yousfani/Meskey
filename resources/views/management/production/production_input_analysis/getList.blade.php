@@ -2,34 +2,28 @@
     <thead>
         <tr>
             <th>Date</th>
-            <th>Job Order(s)</th>
-            <th>Brand</th>
-            <th>Variety</th>
-            <th>Location</th>
-            <th class="text-right">Action</th>
+            <th>Company Location</th>
+            <th>Arrival Location</th>
+            <th>Plant</th>
+            <th class="text-right px-4">Action</th>
         </tr>
     </thead>
     <tbody>
         @forelse($items as $item)
             <tr>
-                <td>{{ $item->analysis_date->format('d-m-Y') }}</td>
-                <td>
-                    @foreach($item->jobOrders as $jobOrder)
-                        <span class="badge badge-primary">{{ $jobOrder->job_order_no }}</span>
-                    @endforeach
-                </td>
-                <td>{{ $item->brand->name ?? 'N/A' }}</td>
-                <td>{{ $item->variety }}</td>
+                <td>{{ \Carbon\Carbon::parse($item->analysis_date)->format('d-m-Y') }}</td>
                 <td>{{ $item->location->name ?? 'N/A' }}</td>
-                <td class="text-right">
-                    <div class="btn-group">
-                        <button onclick="openModal(this,'{{ route('production-input-analysis.show', $item->id) }}','View Production Input Analysis', true, '90%')" title="View" class="btn btn-sm btn-info mr-1">
+                <td>{{ $item->arrivalLocation->name ?? 'N/A' }}</td>
+                <td>{{ $item->plant->name ?? 'N/A' }}</td>
+                <td class="text-right px-4">
+                    <div class="group mx-auto">
+                        <button onclick="openModal(this,'{{ route('production-input-analysis.show', $item->id) }}','View Production Input Analysis', true, '90%')" title="View" class="btn btn-sm btn-info hov waves-effect waves-light">
                             <i class="ft-eye"></i>
                         </button>
-                        <button onclick="openModal(this,'{{ route('production-input-analysis.edit', $item->id) }}','Edit Production Input Analysis', false, '90%')" title="Edit" class="btn btn-sm btn-primary mr-1">
+                        <button onclick="openModal(this,'{{ route('production-input-analysis.edit', $item->id) }}','Edit Production Input Analysis', false, '90%')" title="Edit" class="btn btn-sm btn-primary hov waves-effect waves-lightmx-1">
                             <i class="ft-edit"></i>
                         </button>
-                        <button onclick="deletemodal('{{ route('production-input-analysis.destroy', $item->id) }}','{{ route('get.production-input-analysis') }}')" title="Delete" class="btn btn-sm btn-danger deletebutton">
+                        <button onclick="deletemodal('{{ route('production-input-analysis.destroy', $item->id) }}','{{ route('get.production-input-analysis') }}')" title="Delete" class="btn btn-sm btn-danger hov waves-effect waves-light">
                             <i class="ft-trash"></i>
                         </button>
                     </div>
@@ -37,7 +31,7 @@
             </tr>
         @empty
             <tr>
-                <td colspan="6" class="text-center">No records found.</td>
+                <td colspan="5" class="text-center">No records found.</td>
             </tr>
         @endforelse
     </tbody>

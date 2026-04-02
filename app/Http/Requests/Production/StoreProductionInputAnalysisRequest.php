@@ -23,12 +23,9 @@ class StoreProductionInputAnalysisRequest extends FormRequest
     {
         return [
             'date' => 'required|date',
-            'job_order_ids' => 'required|array',
-            'brand_id' => 'required',
-            'packing_id' => 'required',
             'location_id' => 'required',
-            'variety' => 'required',
-            'crop_year_id' => 'required',
+            'arrival_location_id' => 'required',
+            'plant_id' => 'required',
             'items' => 'required|array',
             'items.*.time' => 'required',
             'items.*.params' => 'required|array',

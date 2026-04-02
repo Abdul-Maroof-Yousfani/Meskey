@@ -21,34 +21,25 @@ class ProductionInputAnalysisController extends Controller
 {
     public function index()
     {
-        $jobOrders = JobOrder::all();
-        $brands = Brands::all();
-        $locations = CompanyLocation::all();
-        return view('management.production.production_input_analysis.index', compact('jobOrders', 'brands', 'locations'));
+        $locationIds = getUserCurrentCompanyLocations();
+        $locations = CompanyLocation::whereIn('id', $locationIds)->get();
+        return view('management.production.production_input_analysis.index', compact('locations'));
     }
 
     public function create()
     {
-        $jobOrders = JobOrder::all();
-        $brands = Brands::all();
-        $packings = BagPacking::all();
-        $companyLocations = CompanyLocation::all();
-        $cropYears = CropYear::all();
-        $units = UnitOfMeasure::all();
-        $productSlabTypes = ProductSlabType::select("id", "name", "qc_symbol")
-                                            ->where("for_general_item", 1)
-                                            ->where("status", "active")
-                                            ->get(); 
+        $locationIds = getUserCurrentCompanyLocations();
+        $companyLocations = CompanyLocation::whereIn('id', $locationIds)->get();
         
-        return view('management.production.production_input_analysis.create', compact(
-            'jobOrders', 
-            'brands', 
-            'packings', 
-            'productSlabTypes',
-            'companyLocations', 
-            'cropYears',
-            'units'
-        ));
+        // Pre-select if only one location is assigned
+        $preSelectedLocationId = count($companyLocations) === 1 ? $companyLocations->first()->id : null;
+        
+        $units = UnitOfMeasure::all();
+        $productSlabTypes = ProductSlabType::where('status', 'active')
+            ->where('for_general_item', 1)
+            ->get();
+            
+        return view('management.production.production_input_analysis.create', compact('companyLocations', 'units', 'productSlabTypes', 'preSelectedLocationId'));
     }
 
     public function store(StoreProductionInputAnalysisRequest $request)
@@ -59,26 +50,12 @@ class ProductionInputAnalysisController extends Controller
             // Create Parent Record
             $analysis = ProductionAnalysis::create([
                 'analysis_date' => $request->date,
-                'brand_id' => $request->brand_id,
-                'bag_packing_id' => $request->packing_id,
                 'location_id' => $request->location_id,
-                'variety' => $request->variety,
-                'crop_year_id' => $request->crop_year_id,
+                'arrival_location_id' => $request->arrival_location_id,
+                'plant_id' => $request->plant_id,
                 'remarks' => $request->remarks,
                 'production_analysis_type' => 'input',
             ]);
-
-            // Save Job Orders (Pivot Table)
-            if ($request->has('job_order_ids')) {
-                foreach ($request->job_order_ids as $jobOrderId) {
-                    DB::table('job_orders_against_production_analysis')->insert([
-                        'job_order_id' => $jobOrderId,
-                        'production_id' => $analysis->id,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-                }
-            }
 
             // Store New Line Items
             if ($request->has('items')) {
@@ -115,7 +92,7 @@ class ProductionInputAnalysisController extends Controller
 
     public function show($id)
     {
-        $item = ProductionAnalysis::with(['brand', 'location', 'product', 'jobOrders', 'items.unit', 'items.slabs.slabType'])
+        $item = ProductionAnalysis::with(['location', 'arrivalLocation', 'plant', 'items.unit', 'items.slabs.slabType'])
             ->findOrFail($id);
             
         // Get general slab types
@@ -128,14 +105,11 @@ class ProductionInputAnalysisController extends Controller
 
     public function edit($id)
     {
-        $item = ProductionAnalysis::with(['jobOrders', 'items.slabs'])
+        $item = ProductionAnalysis::with(['items.slabs'])
                                     ->findOrFail($id);
         
-        $jobOrders = JobOrder::all();
-        $brands = Brands::all();
-        $packings = BagPacking::all();
-        $companyLocations = CompanyLocation::all();
-        $cropYears = CropYear::all();
+        $locationIds = getUserCurrentCompanyLocations();
+        $companyLocations = CompanyLocation::whereIn('id', $locationIds)->get();
         $units = UnitOfMeasure::all();
 
         $productSlabTypes = ProductSlabType::select("id", "name", "qc_symbol")
@@ -143,18 +117,19 @@ class ProductionInputAnalysisController extends Controller
                                             ->where("status", "active")
                                             ->get();
         
-        $selectedJobOrderIds = $item->jobOrders->pluck('id')->toArray();
+        // Dependent dropdown data for edit view
+        $arrivalLocations = \App\Models\Master\ArrivalLocation::where('company_location_id', $item->location_id)->get();
+        $plants = \App\Models\Master\Plant::where('company_location_id', $item->location_id)
+            ->where('arrival_location_id', $item->arrival_location_id)
+            ->get();
 
         return view('management.production.production_input_analysis.edit', compact(
             'item',
-            'jobOrders', 
-            'brands', 
-            'packings', 
             'productSlabTypes',
             'companyLocations', 
-            'cropYears',
             'units',
-            'selectedJobOrderIds'
+            'arrivalLocations',
+            'plants'
         ));
     }
 
@@ -168,20 +143,14 @@ class ProductionInputAnalysisController extends Controller
             // Update Parent Record
             $analysis->update([
                 'analysis_date' => $request->date,
-                'brand_id' => $request->brand_id,
-                'bag_packing_id' => $request->packing_id,
                 'location_id' => $request->location_id,
-                'variety' => $request->variety,
-                'crop_year_id' => $request->crop_year_id,
+                'arrival_location_id' => $request->arrival_location_id,
+                'plant_id' => $request->plant_id,
                 'remarks' => $request->remarks,
             ]);
 
-            // Sync Job Orders
-            if ($request->has('job_order_ids')) {
-                $analysis->jobOrders()->sync($request->job_order_ids);
-            } else {
-                $analysis->jobOrders()->sync([]);
-            }
+            // Sync Job Orders (Detach all regardless of presence in request as we don't use them anymore)
+            $analysis->jobOrders()->detach();
 
             // Delete old items (which will cascade to slabs)
             $analysis->items()->delete();
@@ -242,33 +211,19 @@ class ProductionInputAnalysisController extends Controller
     public function getList(Request $request)
     {
         $limit = $request->per_page ?? 25;
-        $jobOrderIdsFilter = $request->job_order_ids;
-        $brandIdsFilter = $request->brand_ids;
         $locationIdsFilter = $request->location_ids;
-        $varietySearch = $request->variety_search;
         $dateRange = $request->date_range;
 
-        $items = ProductionAnalysis::with(['brand', 'location', 'jobOrders'])
+        $items = ProductionAnalysis::with(['location', 'arrivalLocation', 'plant'])
             ->where('production_analysis_type', 'input')
-            ->when($brandIdsFilter, function ($query) use ($brandIdsFilter) {
-                return $query->whereIn('brand_id', $brandIdsFilter);
-            })
             ->when($locationIdsFilter, function ($query) use ($locationIdsFilter) {
                 return $query->whereIn('location_id', $locationIdsFilter);
-            })
-            ->when($varietySearch, function ($query) use ($varietySearch) {
-                return $query->where('variety', 'LIKE', "%$varietySearch%");
             })
             ->when($dateRange, function ($query) use ($dateRange) {
                 $dates = explode(' - ', $dateRange);
                 if (count($dates) == 2) {
                     return $query->whereBetween('analysis_date', [trim($dates[0]), trim($dates[1])]);
                 }
-            })
-            ->when($jobOrderIdsFilter, function ($query) use ($jobOrderIdsFilter) {
-                return $query->whereHas('jobOrders', function ($q) use ($jobOrderIdsFilter) {
-                    $q->whereIn('job_orders.id', $jobOrderIdsFilter);
-                });
             })
             ->orderBy('id', 'DESC')
             ->paginate($limit);
