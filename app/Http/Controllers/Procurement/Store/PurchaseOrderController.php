@@ -119,10 +119,12 @@ class PurchaseOrderController extends Controller
 
         $PurchaseOrderRaw = $query->with(
             'purchase_order.purchase_quotation.purchase_request',
+            'purchase_request_data',
             'category',
             'item',
             'supplier'
         )
+
             ->latest()
             ->paginate(request('per_page', 25));
 

@@ -67,7 +67,13 @@
                                     {{ optional($supplierRow['data']->category)->name }} -
                                     {{ optional($supplierRow['data']->item)->name }}
                                 </p>
+                                @if(optional($supplierRow['data']->purchase_request_data)->is_single_job_order)
+                                    <span class="badge badge-yellow mt-1" style="font-size: 10px; padding: 3px 10px; border-radius: 20px;">With job order</span>
+                                @else
+                                    <span class="badge badge-secondary mt-1" style="font-size: 10px; padding: 3px 10px; border-radius: 20px;">Without job order</span>
+                                @endif
                             </td>
+
 
                             {{-- Supplier --}}
                             <td style="background-color: #fff3e0; vertical-align: middle;">

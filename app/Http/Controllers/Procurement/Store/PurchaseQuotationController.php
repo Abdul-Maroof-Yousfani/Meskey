@@ -345,10 +345,12 @@ class PurchaseQuotationController extends Controller
     {
         $query = PurchaseQuotationData::with(
             'purchase_quotation.purchase_request',
+            'purchase_request',
             'category',
             'item',
             'supplier'
         )->whereStatus(true);
+
 
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;

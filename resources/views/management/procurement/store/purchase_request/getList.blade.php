@@ -6,7 +6,8 @@
             {{-- <th class="col-2">Location</th> --}}
             <th class="col-1">Category</th>
             <th class="col-1">Item</th>
-            <th class="col-1 text-right">Qty</th>
+            <th class="col-1">Qty</th>
+            <th class="col-1">PR Date</th>
             <th class="col-1">Status</th>
             <th class="col-1">Action</th>
         </tr>
@@ -44,10 +45,17 @@
                             <p class="m-0 font-weight-bold">
                                 {{ optional($itemGroup['item_data']->item)->name ?? 'N/A' }}
                             </p>
+                            @if ($itemGroup['item_data']->is_single_job_order)
+                                <span class="badge badge-yellow mt-1" style="font-size: 10px; padding: 3px 10px; border-radius: 20px;">With job order</span>
+                            @else
+                                <span class="badge badge-secondary mt-1" style="font-size: 10px; padding: 3px 10px; border-radius: 20px;">Without job order</span>
+                            @endif
+
+
                         </td>
 
                         <td>
-                            <p class="m-0 text-right">
+                            <p class="m-0">
                                 {{ $itemGroup['item_data']->qty }}
                                 {{ optional($itemGroup['item_data']->item->unitOfMeasure)->name ?? 'N/A' }}
                             </p>
@@ -61,6 +69,11 @@
 
 
                         @if ($isFirstRequestRow)
+                            <td rowspan="{{ $requestGroup['request_rowspan'] }}" style="vertical-align: middle;">
+                                <p class="m-0">
+                                    {{ $requestGroup['request_data']->purchase_date }}
+                                </p>
+                            </td>
 
                             <td rowspan="{{ $requestGroup['request_rowspan'] }}">
                                 @php
@@ -77,7 +90,6 @@
                                     {{ $approvalStatus }}
                                 </span>
                             </td>
-
 
                             <td rowspan="{{ $requestGroup['request_rowspan'] }}">
                                 <div class="d-flex flex-column align-items-start" style="gap: 5px;">
