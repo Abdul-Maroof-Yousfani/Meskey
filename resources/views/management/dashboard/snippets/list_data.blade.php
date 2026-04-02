@@ -1,5 +1,5 @@
 <div class="table-responsive">
-    <h6 class="text-uppercase">Total Records: {{ count($data) }}</h6>
+    <!-- <h6 class="text-uppercase">Total Records: {{ count($data) }}</h6> -->
     <table class="table table-striped table-hover" id="myTable">
         <thead class="thead-dark">
             <tr>
@@ -198,12 +198,14 @@
             "paging": false,   // No pagination
             "searching": true,  // Search enabled
                 "ordering": false,
+                        "dom": '<"top"i>frt',  // i = info, f = search filter, r = processing, t = table
+
                    "language": {
             "emptyTable": "No data found for the selected criteria",
             "zeroRecords": "No matching records found",
             "search": "Search:",
-            "info": "Showing _START_ to _END_ of _TOTAL_ entries",
-            "infoEmpty": "Showing 0 to 0 of 0 entries",
+            "info": "Total Entries: _TOTAL_",
+            "infoEmpty": "Total Entries: 0",
             "infoFiltered": "(filtered from _MAX_ total records)"
         }
 
