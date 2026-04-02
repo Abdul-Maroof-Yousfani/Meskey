@@ -22,122 +22,112 @@
                     <div class="card">
                         <div class="card-header">
                             <form id="filterForm" class="form">
-                                <div class="row ">
-                                    <div class="col-md-12 my-1 ">
-                                        <div class="row">
-                                            <div class="px-1 text-left" style="width: 15%;">
-                                                <label for="po_no" class="form-label">PO No</label>
-                                                <input type="text" class="form-control" id="po_no"
-                                                    placeholder="PO No" name="po_no"
-                                                    value="{{ request('po_no', '') }}">
-                                            </div>
-                                            <div class="px-1 text-left" style="width: 11%;">
-                                                <label for="pr_no" class="form-label">PR No</label>
-                                                <input type="text" class="form-control" id="pr_no"
-                                                    placeholder="PR No" name="pr_no"
-                                                    value="{{ request('pr_no', '') }}">
-                                            </div>
-                                            <div class="px-1 text-left" style="width: 16%;">
-                                                <label for="pq_no" class="form-label">PQ No</label>
-                                                <input type="text" class="form-control" id="pq_no"
-                                                    placeholder="PQ No" name="pq_no"
-                                                    value="{{ request('pq_no', '') }}">
-                                            </div>
-                                            <div class="px-1 text-left" style="width: 15%;">
-                                                <label for="category_id" class="form-label">Category</label>
-                                                <select name="category_id" id="category_id" class="form-control select2">
-                                                    <option value="all">All</option>
-                                                    @foreach($categories as $category)
-                                                        <option value="{{ $category->id }}">{{ $category->name }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                            <div class="px-1 text-left" style="width: 14%;">
-                                                <label for="filter_supplier_id" class="form-label">Supplier</label>
-                                                <select name="supplier_id" id="filter_supplier_id" class="form-control select2">
-                                                    <option value="all">All Suppliers</option>
-                                                    @foreach($suppliers as $supplier)
-                                                        <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
+                                <div class="row mx-0">
+                                    <div class="px-1 text-left" style="width: 13%;">
+                                        <label for="po_no" class="form-label">PO No</label>
+                                        <input type="text" class="form-control" id="po_no"
+                                            placeholder="PO" name="po_no"
+                                            value="{{ request('po_no', '') }}">
+                                    </div>
+                                    <div class="px-1 text-left" style="width: 13%;">
+                                        <label for="pr_no" class="form-label">PR No</label>
+                                        <input type="text" class="form-control" id="pr_no"
+                                            placeholder="PR" name="pr_no"
+                                            value="{{ request('pr_no', '') }}">
+                                    </div>
+                                    <div class="px-1 text-left" style="width: 13%;">
+                                        <label for="pq_no" class="form-label">PQ No</label>
+                                        <input type="text" class="form-control" id="pq_no"
+                                            placeholder="PQ" name="pq_no"
+                                            value="{{ request('pq_no', '') }}">
+                                    </div>
+                                    <div class="px-1 text-left" style="width: 14%;">
+                                        <label for="category_id" class="form-label">Category</label>
+                                        <select name="category_id" id="category_id" class="form-control select2">
+                                            <option value="all">All</option>
+                                            @foreach($categories as $category)
+                                                <option value="{{ $category->id }}" @selected(request('category_id') == $category->id)>
+                                                    {{ $category->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="px-1 text-left" style="width: 12%;">
+                                        <label for="filter_supplier_id" class="form-label">Vendor</label>
+                                        <select name="supplier_id" id="filter_supplier_id" class="form-control select2">
+                                            <option value="all">All</option>
+                                            @foreach($suppliers as $supplier)
+                                                <option value="{{ $supplier->id }}" @selected(request('supplier_id') == $supplier->id)>
+                                                    {{ $supplier->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
 
-                                            <div class="px-1 text-left" style="width: 5%;">
-                                                <label for="qty" class="form-label">Qty</label>
-                                                <input type="text" class="form-control" id="qty"
-                                                    placeholder="Qty" name="qty"
-                                                    value="{{ request('qty', '') }}">
-                                            </div>
+                                    <div class="px-1 text-left" style="width: 8%;">
+                                        <label for="qty" class="form-label">Qty</label>
+                                        <input type="text" class="form-control" id="qty"
+                                            placeholder="Qty" name="qty"
+                                            value="{{ request('qty', '') }}">
+                                    </div>
 
-                                            <div class="col px-1 text-left">
-                                                <label for="rate" class="form-label">Rate</label>
-                                                <input type="text" class="form-control" id="rate"
-                                                    placeholder="Rate" name="rate"
-                                                    value="{{ request('rate', '') }}">
-                                            </div>
+                                    <div class="px-1 text-left" style="width: 6%;">
+                                        <label for="rate" class="form-label">Rate</label>
+                                        <input type="text" class="form-control" id="rate"
+                                            placeholder="Rate" name="rate"
+                                            value="{{ request('rate', '') }}">
+                                    </div>
 
-                                            <div class="col px-1 text-left">
-                                                <label for="amount" class="form-label">Amount</label>
-                                                <input type="text" class="form-control" id="amount"
-                                                    placeholder="Amount" name="amount"
-                                                    value="{{ request('amount', '') }}">
-                                            </div>
-                                            <!-- <div class="col px-1 text-left">
-                                                <label for="item_id" class="form-label">Item</label>
-                                                <select name="item_id" id="item_id" class="form-control select2">
-                                                    <option value="all">All</option>
-                                                    @foreach($items as $item)
-                                                        <option value="{{ $item->id }}">{{ $item->name }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div> -->
-                                            <div class="col px-1 text-left">
-                                                <label for="status" class="form-label">Status</label>
-                                                <select name="status" id="status" class="form-control p-0">
-                                                    <option value="all">All Status</option>
-                                                    <option value="pending">Pending</option>
-                                                    <option value="approved">Approved</option>
-                                                    <option value="rejected">Rejected</option>
-                                                    <option value="reverted">Reverted</option>
-                                                </select>
-                                            </div>
-                                            <div class="col px-1 text-left">
-                                                <label for="search" class="form-label">Search</label>
-                                                <input type="hidden" name="page" value="{{ request('page', 1) }}">
-                                                <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
-                                                <input type="text" class="form-control" id="search"
-                                                    placeholder="Search here" name="search"
-                                                    value="{{ request('search', '') }}">
-                                            </div>
-                                        </div>
+                                    <div class="px-1 text-left" style="width: 7%;">
+                                        <label for="amount" class="form-label">Amt</label>
+                                        <input type="text" class="form-control" id="amount"
+                                            placeholder="Amt" name="amount"
+                                            value="{{ request('amount', '') }}">
+                                    </div>
+
+                                    <div class="px-1 text-left" style="width: 7%;">
+                                        <label for="status" class="form-label">Status</label>
+                                        <select name="status" id="status" class="form-control p-0">
+                                            <option value="all">All</option>
+                                            <option value="pending" @selected(request('status') == 'pending')>Pending</option>
+                                            <option value="approved" @selected(request('status') == 'approved')>Approved</option>
+                                            <option value="rejected" @selected(request('status') == 'rejected')>Rejected</option>
+                                            <option value="reverted" @selected(request('status') == 'reverted')>Reverted</option>
+                                        </select>
+                                    </div>
+                                    <div class="px-1 text-left" style="width: 7%;">
+                                        <label for="search" class="form-label">Search</label>
+                                        <input type="hidden" name="page" value="{{ request('page', 1) }}">
+                                        <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
+                                        <input type="text" class="form-control" id="search"
+                                            placeholder="Search" name="search"
+                                            value="{{ request('search', '') }}">
                                     </div>
                                 </div>
                             </form>
-                            {{-- <a href="{{ route('export-roles') }}" class="btn btn-warning">Export Roles</a> --}}
+
                         </div>
                         <div class="card-content">
                             <div class="card-body table-responsive" id="filteredData">
-                                <table class="table m-0">
+                                <table class="table m-0" style="table-layout: fixed; width: 100%;">
                                     <thead>
                                         <tr>
-                                            <th class="col-sm-1">Purchase Order No </th>
-                                            <th class="col-sm-3">Purchase Request No</th>
-                                            <th class="col-sm-3">Purchase Quotation No</th>
-                                            {{-- <th class="col-sm-2">Location</th> --}}
-                                            <th class="col-sm-3">Category- item</th>
-                                            <th class="col-sm-3">Supplier</th>
-                                            {{-- <th class="col-sm-2">Item UOM</th> --}}
-                                            {{-- <th class="col-sm-2">Supplier</th> --}}
-                                            <th class="col-sm-1">Qty</th>
-                                            <th class="col-sm-1">Rate</th>
-                                            <th class="col-sm-1">Total Amount</th>
-                                            <th class="col-sm-1">Item Status</th>
-                                            <th class="col-sm-1">Action</th>
+                                            <th style="width: 13%;">Order No</th>
+                                            <th style="width: 13%;">Request No</th>
+                                            <th style="width: 13%;">Quotation No</th>
+                                            <th style="width: 14%;">Category- item</th>
+                                            <th style="width: 12%;">Supplier</th>
+                                            <th style="width: 8%;">Qty</th>
+                                            <th style="width: 6%;">Rate</th>
+                                            <th style="width: 7%;">Amount</th>
+                                            <th style="width: 7%;">Status</th>
+                                            <th style="width: 7%;">Action</th>
                                         </tr>
                                     </thead>
                                 </table>
                             </div>
                         </div>
+
                     </div>
                 </div>
             </div>

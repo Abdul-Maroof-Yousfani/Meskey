@@ -1,21 +1,19 @@
-<table class="table m-0">
+<table class="table m-0" style="table-layout: fixed; width: 100%;">
     <thead>
         <tr>
-            <th class="col-3">Purchase Order No </th>
-            <th class="col-3">Purchase Request No</th>
-            <th class="col-3">Purchase Quotation No</th>
-            {{-- <th class="col-sm-2">Location</th> --}}
-            <th class="col-3">Category- item</th>
-            <th class="col-3">Supplier</th>
-            {{-- <th class="col-sm-2">Item UOM</th> --}}
-            {{-- <th class="col-1">Supplier</th> --}}
-            <th class="col-sm-1">Qty</th>
-            <th class="col-sm-1">Rate</th>
-            <th class="col-sm-1">Total Amount</th>
-            <th class="col-sm-1">Item Status</th>
-            <th class="col-sm-1">Action</th>
+            <th style="width: 13%;">Purchase Order No </th>
+            <th style="width: 13%;">Purchase Request No</th>
+            <th style="width: 13%;">Purchase Quotation No</th>
+            <th style="width: 14%;">Category- item</th>
+            <th style="width: 12%;">Supplier</th>
+            <th style="width: 8%;">Qty</th>
+            <th style="width: 6%;">Rate</th>
+            <th style="width: 7%;">Total Amount</th>
+            <th style="width: 7%;">Item Status</th>
+            <th style="width: 7%;">Action</th>
         </tr>
     </thead>
+
     <tbody>
     <tbody>
         {{-- @php dd($GroupedPurchaseOrder); @endphp --}}
@@ -131,7 +129,7 @@
                                     </span>
                                 </td>
                                 <td rowspan="{{ $requestGroup['request_rowspan'] }}">
-                                    <div class="d-flex" style="gap: 10px;">
+                                    <div class="d-flex flex-column align-items-start" style="gap: 5px;">
                                         @php
                                             $currentApprovalStatus =
                                                 $supplierRow['data']
@@ -144,7 +142,7 @@
 
                                         {{-- View Approval --}}
                                         <a onclick="openModal(this, '{{ route('store.purchase-order.approvals', ['id' => $supplierRow['data']->purchase_order->id, 'listRefresh' => route('store.get.purchase-order')]) }}', 'View Purchase Order', false, '100%')"
-                                            class="bg-info text-white p-1 text-center position-relative" title="Approval" style="border-radius: 4px; min-width: 60px;">
+                                            class="bg-info text-white p-1 text-center position-relative" title="Approval" style="border-radius: 4px; min-width: 90px;">
                                             Approval
                                         </a>
 
@@ -153,18 +151,19 @@
 
                                             @if ($requestGroup['request_status'] != 'approved' && $requestGroup['request_status'] != 'rejected')
                                                 <a onclick="openModal(this, '{{ route('store.purchase-order.edit', $supplierRow['data']->purchase_order->id) }}', 'Edit Purchase Order', false, '100%')"
-                                                    class="bg-warning text-white p-1 text-center position-relative" title="Edit" style="border-radius: 4px; min-width: 60px;">
+                                                    class="bg-warning text-white p-1 text-center position-relative" title="Edit" style="border-radius: 4px; min-width: 90px;">
                                                     Edit
                                                 </a>
 
                                                 <a onclick="deletemodal('{{ route('store.purchase-order.destroy', $supplierRow['data']->purchase_order->id) }}', '{{ route('store.get.purchase-order') }}')"
-                                                    class="bg-danger text-white p-1 text-center position-relative" title="Delete" style="border-radius: 4px; min-width: 60px;">
+                                                    class="bg-danger text-white p-1 text-center position-relative" title="Delete" style="border-radius: 4px; min-width: 90px;">
                                                     Delete
                                                 </a>
                                             @endif
                                         @endif
                                     </div>
                                 </td>
+
                                 @php $isFirstRequestRow = false; @endphp
                             @endif
                         </tr>

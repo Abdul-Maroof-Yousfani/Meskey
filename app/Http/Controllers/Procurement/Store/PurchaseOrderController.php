@@ -237,9 +237,12 @@ class PurchaseOrderController extends Controller
 
         return view('management.procurement.store.purchase_order.getList', [
             'PurchaseOrder' => $PurchaseOrderRaw,
-            'GroupedPurchaseOrder' => $processedData
+            'GroupedPurchaseOrder' => $processedData,
+            'categories' => Category::where('category_type', 'general_items')->get(),
+            'suppliers' => Supplier::where('status', 'active')->get()
         ]);
     }
+
 
 
     public function approve_item(Request $request)
