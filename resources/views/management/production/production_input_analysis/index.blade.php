@@ -22,21 +22,37 @@
                         <div class="card-header">
                             <form id="filterForm" class="form">
                                 <div class="row">
-                                    <div class="col-md-12 my-1">
+                                    <div class="col-md-12">
                                         <div class="row">
-                                            <div class="col-md-4 text-left">
-                                                <label for="location_ids" class="form-label">Location Filter</label>
+                                            <div class="col-md-2 text-left">
+                                                <label for="custom_date_range" class="form-label">Date</label>
+                                                <input type="text" class="form-control" name="date_range" id="custom_date_range" value="{{ date('Y-m-d', strtotime('-30 days')) }} - {{ date('Y-m-d') }}">
+                                            </div>
+                                            <div class="col-md-3 text-left">
+                                                <label for="location_ids" class="form-label">Company Location</label>
                                                 <select name="location_ids[]" id="location_ids" class="form-control select2-filter" multiple data-placeholder="Select Location(s)">
                                                     @foreach($locations as $location)
                                                         <option value="{{ $location->id }}">{{ $location->name }}</option>
                                                     @endforeach
                                                 </select>
                                             </div>
-                                            <div class="col-md-4 text-left">
-                                                <label for="custom_date_range" class="form-label">Date Range Filter</label>
-                                                <input type="text" class="form-control" name="date_range" id="custom_date_range" value="{{ date('Y-m-d', strtotime('-30 days')) }} - {{ date('Y-m-d') }}">
+                                            <div class="col-md-3 text-left">
+                                                <label for="arrival_location_ids" class="form-label">Arrival Location</label>
+                                                <select name="arrival_location_ids[]" id="arrival_location_ids" class="form-control select2-filter" multiple data-placeholder="Select Arrival Location(s)">
+                                                    @foreach($arrivalLocations as $arrival)
+                                                        <option value="{{ $arrival->id }}">{{ $arrival->name }}</option>
+                                                    @endforeach
+                                                </select>
                                             </div>
-                                            <div class="col-md-2">
+                                            <div class="col-md-3 text-left">
+                                                <label for="plant_ids" class="form-label">Plant</label>
+                                                <select name="plant_ids[]" id="plant_ids" class="form-control select2-filter" multiple data-placeholder="Select Plant(s)">
+                                                    @foreach($plants as $plant)
+                                                        <option value="{{ $plant->id }}">{{ $plant->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div class="col-md-1">
                                                 <input type="hidden" name="page" value="{{ request('page', 1) }}">
                                                 <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
                                             </div>

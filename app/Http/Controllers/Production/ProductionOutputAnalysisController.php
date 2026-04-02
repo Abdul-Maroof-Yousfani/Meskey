@@ -20,7 +20,9 @@ class ProductionOutputAnalysisController extends Controller
     {
         $locationIds = getUserCurrentCompanyLocations();
         $locations = CompanyLocation::whereIn('id', $locationIds)->get();
-        return view('management.production.production_output_analysis.index', compact('locations'));
+        $arrivalLocations = \App\Models\Master\ArrivalLocation::whereIn('company_location_id', $locationIds)->get();
+        $plants = \App\Models\Master\Plant::whereIn('company_location_id', $locationIds)->get();
+        return view('management.production.production_output_analysis.index', compact('locations', 'arrivalLocations', 'plants'));
     }
 
     public function create()
@@ -223,12 +225,20 @@ class ProductionOutputAnalysisController extends Controller
     {
         $limit = $request->per_page ?? 25;
         $locationIdsFilter = $request->location_ids;
+        $arrivalLocationIdsFilter = $request->arrival_location_ids;
+        $plantIdsFilter = $request->plant_ids;
         $dateRange = $request->date_range;
 
         $items = ProductionAnalysis::with(['location', 'arrivalLocation', 'plant'])
             ->where('production_analysis_type', 'output')
             ->when($locationIdsFilter, function ($query) use ($locationIdsFilter) {
                 return $query->whereIn('location_id', $locationIdsFilter);
+            })
+            ->when($arrivalLocationIdsFilter, function ($query) use ($arrivalLocationIdsFilter) {
+                return $query->whereIn('arrival_location_id', $arrivalLocationIdsFilter);
+            })
+            ->when($plantIdsFilter, function ($query) use ($plantIdsFilter) {
+                return $query->whereIn('plant_id', $plantIdsFilter);
             })
             ->when($dateRange, function ($query) use ($dateRange) {
                 $dates = explode(' - ', $dateRange);

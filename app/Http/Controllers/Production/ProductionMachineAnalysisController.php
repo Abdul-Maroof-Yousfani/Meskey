@@ -22,7 +22,10 @@ class ProductionMachineAnalysisController extends Controller
     {
         $locationIds = getUserCurrentCompanyLocations();
         $locations = CompanyLocation::whereIn('id', $locationIds)->get();
-        return view('management.production.production_machine_analysis.index', compact('locations'));
+        $arrivalLocations = ArrivalLocation::whereIn('company_location_id', $locationIds)->get();
+        $plants = Plant::whereIn('company_location_id', $locationIds)->get();
+        $machines = \App\Models\Master\ProductionMachine::whereIn('arrival_location_id', $arrivalLocations->pluck('id'))->get();
+        return view('management.production.production_machine_analysis.index', compact('locations', 'arrivalLocations', 'plants', 'machines'));
     }
 
     public function create()
@@ -203,11 +206,23 @@ class ProductionMachineAnalysisController extends Controller
     {
         $limit = $request->per_page ?? 25;
         $locationIdsFilter = $request->location_ids;
+        $arrivalLocationIdsFilter = $request->arrival_location_ids;
+        $plantIdsFilter = $request->plant_ids;
+        $machineIdsFilter = $request->production_machine_ids;
         $dateRange = $request->date_range;
 
         $items = ProductionMachineAnalysis::with(['companyLocation', 'arrivalLocation', 'plant', 'machine'])
             ->when($locationIdsFilter, function ($query) use ($locationIdsFilter) {
                 return $query->whereIn('company_location_id', $locationIdsFilter);
+            })
+            ->when($arrivalLocationIdsFilter, function ($query) use ($arrivalLocationIdsFilter) {
+                return $query->whereIn('arrival_location_id', $arrivalLocationIdsFilter);
+            })
+            ->when($plantIdsFilter, function ($query) use ($plantIdsFilter) {
+                return $query->whereIn('plant_id', $plantIdsFilter);
+            })
+            ->when($machineIdsFilter, function ($query) use ($machineIdsFilter) {
+                return $query->whereIn('production_machine_id', $machineIdsFilter);
             })
             ->when($dateRange, function ($query) use ($dateRange) {
                 $dates = explode(' - ', $dateRange);
