@@ -1,17 +1,18 @@
-<table class="table m-0">
+<table class="table m-0" style="table-layout: fixed; width: 100%;">
     <thead>
         <tr>
-            <th class="col-2">Purchase Request</th>
-            <th class="col-2">Purchase Quotation No</th>
-            <th class="col-2">Category - Item</th>
-            <th class="col-2">Suppliers</th>
-            <th class="col-1 text-right">UOM</th>
-            <th class="col-1 text-right">Qty</th>
-            <th class="col-1 text-right">Rate</th>
-            <th class="col-1 text-right">Amount</th>
-            <th class="col-1">Action</th>
+            <th style="width: 12%;">Purchase Request</th>
+            <th style="width: 12%;">Purchase Quotation No</th>
+            <th style="width: 18%;">Category - Item</th>
+            <th style="width: 18%;">Suppliers</th>
+            <th style="width: 8%;">UOM</th>
+            <th style="width: 8%;">Qty</th>
+            <th style="width: 8%;">Rate</th>
+            <th style="width: 8%;">Amount</th>
+            <th style="width: 8%;">Action</th>
         </tr>
     </thead>
+
 
     <tbody>
         @if (count($GroupedPurchaseQuotation) != 0)
