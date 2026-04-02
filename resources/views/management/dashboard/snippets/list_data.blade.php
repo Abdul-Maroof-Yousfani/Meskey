@@ -178,9 +178,9 @@
                     @endif
                 </tr>
             @empty
-                <tr>
-                    <td colspan="8" class="text-center">No data found for the selected criteria.</td>
-                </tr>
+                <!-- <tr>
+                    <td colspan="10" class="text-center">No data found for the selected criteria.</td>
+                </tr> -->
             @endforelse
         </tbody>
     </table>
