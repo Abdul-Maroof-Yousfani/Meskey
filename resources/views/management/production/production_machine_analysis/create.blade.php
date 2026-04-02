@@ -18,7 +18,9 @@
                         <select name="company_location_id" id="company_location_id" class="form-control select2" required>
                             <option value="">Select Location</option>
                             @foreach($companyLocations as $location)
-                                <option value="{{ $location->id }}">{{ $location->name }}</option>
+                                <option value="{{ $location->id }}" @selected($preSelectedLocationId == $location->id)>
+                                    {{ $location->name }}
+                                </option>
                             @endforeach
                         </select>
                     </div>
@@ -123,6 +125,11 @@
             }
         }
         initSelect2('.select2');
+
+        // Trigger change if only one location is pre-selected
+        if ($('#company_location_id').val()) {
+            $('#company_location_id').trigger('change');
+        }
 
         function addRow() {
             let rowCount = $('#lineItemsBody tr').length;

@@ -20,19 +20,25 @@ class ProductionMachineAnalysisController extends Controller
 {
     public function index()
     {
-        $locations = CompanyLocation::all();
+        $locationIds = getUserCurrentCompanyLocations();
+        $locations = CompanyLocation::whereIn('id', $locationIds)->get();
         return view('management.production.production_machine_analysis.index', compact('locations'));
     }
 
     public function create()
     {
-        $companyLocations = CompanyLocation::all();
+        $locationIds = getUserCurrentCompanyLocations();
+        $companyLocations = CompanyLocation::whereIn('id', $locationIds)->get();
+        
+        // Pre-select if only one location is assigned
+        $preSelectedLocationId = count($companyLocations) === 1 ? $companyLocations->first()->id : null;
+        
         $units = UnitOfMeasure::all();
         $productSlabTypes = ProductSlabType::where('status', 'active')
             ->where('for_general_item', 1)
             ->get();
             
-        return view('management.production.production_machine_analysis.create', compact('companyLocations', 'units', 'productSlabTypes'));
+        return view('management.production.production_machine_analysis.create', compact('companyLocations', 'units', 'productSlabTypes', 'preSelectedLocationId'));
     }
 
     public function store(StoreProductionMachineAnalysisRequest $request)
@@ -100,7 +106,8 @@ class ProductionMachineAnalysisController extends Controller
         $item = ProductionMachineAnalysis::with(['items.slabs'])
                                     ->findOrFail($id);
         
-        $companyLocations = CompanyLocation::all();
+        $locationIds = getUserCurrentCompanyLocations();
+        $companyLocations = CompanyLocation::whereIn('id', $locationIds)->get();
         $units = UnitOfMeasure::all();
         $productSlabTypes = ProductSlabType::where('status', 'active')
             ->where('for_general_item', 1)
