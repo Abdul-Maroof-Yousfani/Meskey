@@ -80,15 +80,15 @@
                                   <input type="checkbox" id="check-all" class="form-check-input" style="cursor: pointer; transform: scale(1.2); margin: 0;">
                               </div>
                           </th>
-                         <th class="col-sm-4">PQ No.</th>
-                         <th class="col-sm-3">Supplier</th>
-                         <th class="col-sm-3">Item</th>
-                         <th>Job Order</th>
-                         <th>Qty</th>
+                         <th style="min-width: 250px;">PQ No.</th>
+                         <th style="min-width: 300px;">Supplier</th>
+                         <th style="min-width: 350px;">Item</th>
+                         <th style="min-width: 220px;">Job Order</th>
+                         <th style="min-width: 120px;">Qty</th>
 
-                         <th>Rate</th>
-                         <th>Total Amount</th>
-                         <th class="col-sm-3">Item uom</th>
+                         <th style="min-width: 140px;">Rate</th>
+                         <th style="min-width: 160px;">Total Amount</th>
+                         <th style="min-width: 120px;">Item uom</th>
                          <th class="col-sm-3 bag-only">Min Weight (KG)</th>
                          <th class="col-sm-3 bag-only">Brand</th>
                          <th class="col-sm-3 bag-only">Color</th>
