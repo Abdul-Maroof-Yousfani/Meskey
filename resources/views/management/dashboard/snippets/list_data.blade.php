@@ -1,6 +1,6 @@
 <div class="table-responsive">
     <h6 class="text-uppercase">Total Records: {{ count($data) }}</h6>
-    <table class="table table-striped table-hover">
+    <table class="table table-striped table-hover" id="myTable">
         <thead class="thead-dark">
             <tr>
                 <th>S.No</th>
@@ -191,3 +191,21 @@
         {{ $data->links() }}
     </div>
 @endif
+
+<script>
+    $(document).ready(function() {
+        $('#myTable').DataTable({
+            "paging": false,   // No pagination
+            "searching": true,  // Search enabled
+                "ordering": false,
+
+        });
+    });
+</script>
+<style>
+    a.modal-sidebar-close.top-wala {
+    position: fixed !important;
+    right: 35px;
+    top: 15px;
+}
+</style>

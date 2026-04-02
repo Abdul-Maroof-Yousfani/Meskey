@@ -339,6 +339,9 @@
 <!-- BEGIN: Custom CSS-->
 {{--
 <script src="{{ asset('management/assets/js/pageload.js') }}"></script> --}}
+
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="{{ asset('management/assets/js/scripts.js') }}"></script>
 <script src="{{ asset('management/assets/js/fetch-dynamic-html.js') }}"></script>
