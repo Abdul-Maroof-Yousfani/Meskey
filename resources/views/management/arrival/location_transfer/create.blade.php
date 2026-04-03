@@ -1,4 +1,4 @@
-<form action="{{ route('location-transfer.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form action="{{ route('location-transfer.store') }}" method="POST" id="ajaxSubmitStayOpen" autocomplete="off">
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('get.location-transfer') }}" />
     <div class="row form-mar">
@@ -144,6 +144,123 @@ $('#arrival_ticket_id').on('change', function () {
                 // Clear commodity field if no ticket selected
                 $('#commodity_name').val('');
             }
+        });
+
+        // Custom submit handler to keep modal open
+        $('#ajaxSubmitStayOpen').on('submit', function(e) {
+            e.preventDefault();
+
+            // Clear previous errors
+            $(".print-error-msg").find("ul").html("");
+            $(".alert-success").find("ul").html("");
+            $(".error-message").remove();
+            $(".is-invalid").removeClass("is-invalid");
+
+            var form = $(this);
+            var formData = new FormData(this);
+
+            Swal.fire({
+                title: 'Processing',
+                text: 'Please wait...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            $.ajax({
+                url: form.attr('action'),
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    Swal.close();
+                    if (response.catchError) {
+                        Swal.fire({
+                            icon: "error",
+                            title: "Error",
+                            text: response.catchError,
+                            confirmButtonColor: "#D95000",
+                        });
+                    } else if (response.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success',
+                            text: response.success,
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+
+                        // Remove the transferred ticket from dropdown
+                        var selectedTicketId = form.find('#arrival_ticket_id').val();
+                        if (selectedTicketId) {
+                            form.find('#arrival_ticket_id option[value="' + selectedTicketId + '"]').remove();
+                        }
+
+                        // Reset form but keep modal open
+                        form[0].reset();
+                        form.find('.select2').trigger('change');
+                        $('#slabsContainer').empty();
+                        
+                        // Refresh the list in background
+                        var listRefresh = $('#listRefresh');
+                        if (listRefresh.length > 0 && listRefresh.val()) {
+                            filterationCommon(listRefresh.val());
+                        }
+                    } else if (response.error) {
+                        let errors = response.error;
+                        let message = "";
+
+                        for (let field in errors) {
+                            message += errors[field].join("<br>") + "<br>";
+                        }
+                        
+                        Swal.fire({
+                            title: "Validation Error",
+                            html: message,
+                            icon: "warning",
+                            confirmButtonColor: "#D95000",
+                        });
+
+                        printErrorMsg(response.error);
+                    }
+                },
+                error: function(xhr) {
+                    Swal.close();
+                    if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+                        let errors = xhr.responseJSON.errors;
+                        let message = "";
+
+                        for (let field in errors) {
+                            message += errors[field].join("<br>") + "<br>";
+                        }
+
+                        Swal.fire({
+                            title: "Validation Error",
+                            html: message,
+                            icon: "warning",
+                            confirmButtonColor: "#D95000",
+                        });
+
+                        printErrorMsg(errors);
+                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                        Swal.fire({
+                            icon: "error",
+                            title: "Error",
+                            text: xhr.responseJSON.message,
+                            confirmButtonColor: "#D95000",
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: "error",
+                            title: "Error",
+                            text: xhr.responseText || "Something went wrong. Please try again.",
+                            confirmButtonColor: "#D95000",
+                        });
+                    }
+                }
+            });
         });
     });
 </script>
