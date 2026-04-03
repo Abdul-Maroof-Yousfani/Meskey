@@ -34,6 +34,7 @@
                         <tr><td colspan="4" class="text-bold-600 bg-white py-2" style="color: #666;"><i class="ft-credit-card mr-1"></i> Optional Bank Details</td></tr>
                         <tr><td>12-16</td><td>Company Bank</td><td class="text-center">-</td><td>Bank, Branch, Code, Title, Account</td></tr>
                         <tr><td>17-21</td><td>Owner Bank</td><td class="text-center">-</td><td>Bank, Branch, Code, Title, Account</td></tr>
+                        <tr><td>22</td><td><strong>Location Names</strong></td><td class="text-center">-</td><td>Pipe separated Names (e.g. <code>Karachi|Lahore</code>). Case-insensitive.</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -72,9 +73,9 @@
         let stopRequested = false;
 
         $('#downloadSampleBtn').click(function() {
-            const headers = "Company Name,Owner Name,Owner Mobile No,Owner CNIC No,Type,Status,Email,Phone,Address,NTN,STN,Create as Broker,Comp Bank Name,Comp Branch,Comp Code,Comp Title,Comp Account,Own Bank Name,Own Branch,Own Code,Own Title,Own Account";
+            const headers = "Company Name,Owner Name,Owner Mobile No,Owner CNIC No,Type,Status,Email,Phone,Address,NTN,STN,Create as Broker,Comp Bank Name,Comp Branch,Comp Code,Comp Title,Comp Account,Own Bank Name,Own Branch,Own Code,Own Title,Own Account,Location Names";
             // Using Excel-friendly quotes and formula for leading zeros
-            const sampleRow = 'Matrix Co,John Doe,"03001234567",12345-1234567-1,raw_material,active,john@example.com,021-345678,Street 123 Karachi,NTN888,STN999,No,MCB,Site Branch,MC001,Title 1,"000111222",UBL,Gulshan,UB002,Title 2,"333444555"';
+            const sampleRow = 'Matrix Co,John Doe,"03001234567",12345-1234567-1,raw_material,active,john@example.com,021-345678,Street 123 Karachi,NTN888,STN999,No,MCB,Site Branch,MC001,Title 1,"000111222",UBL,Gulshan,UB002,Title 2,"333444555",';
             const csvContent = headers + "\n" + sampleRow;
             
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
