@@ -11,7 +11,7 @@
                     <h2 class="page-title"> Suppliers List</h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
-                    <button onclick="openModal(this,'{{ route('supplier.import-modal') }}','Import Suppliers')" type="button"
+                    <button style="display: none;" onclick="openModal(this,'{{ route('supplier.import-modal') }}','Import Suppliers')" type="button"
                         class="btn btn-success position-relative mr-1">
                         Import Suppliers
                     </button>
