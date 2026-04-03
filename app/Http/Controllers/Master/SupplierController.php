@@ -329,7 +329,36 @@ class SupplierController extends Controller
         try {
             $rowData = $request->row_data;
             $meskeyCompanyId = $request->company_id; // Injected by CheckCurrentCompany middleware
-            $locationIds = getUserCurrentCompanyLocations();
+            // Location Selection (Index 22, optional, pipe-separated names like Location A|Location B)
+            $csvLocations = trim($rowData[22] ?? '');
+            if (!empty($csvLocations)) {
+                $locationNames = array_map('trim', explode('|', $csvLocations));
+                $locationNames = array_filter($locationNames); // Remove empty values
+
+                // Fetch all active locations to map names to IDs (Case-Insensitive)
+                $allLocations = CompanyLocation::where('status', 'active')->get();
+                $locationMap = [];
+                foreach ($allLocations as $loc) {
+                    $locationMap[strtolower($loc->name)] = $loc->id;
+                }
+                
+                $locationIds = [];
+                foreach ($locationNames as $name) {
+                    $lowerName = strtolower($name);
+                    if (isset($locationMap[$lowerName])) {
+                        $locationIds[] = $locationMap[$lowerName];
+                    }
+                }
+                
+                $locationIds = array_values(array_unique($locationIds));
+                
+                // If names are provided but none matched, you might want to throw an error or fallback
+                if (empty($locationIds)) {
+                    $locationIds = getUserCurrentCompanyLocations();
+                }
+            } else {
+                $locationIds = getUserCurrentCompanyLocations();
+            }
 
             if (empty($rowData) || count($rowData) < 6) {
                 throw new \Exception("Insufficient data in row.");
