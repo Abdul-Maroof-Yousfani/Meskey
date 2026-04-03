@@ -68,7 +68,8 @@ class ArrivalDashboardService
             })
             ->whereIn('location_id', getUserCurrentCompanyLocations())
             ->whereBetween('created_at', $dateRange)
-            ->sum('net_weight');
+            ->where('arrival_slip_status', 'generated')
+            ->sum('arrived_net_weight');
 
 
         $newTickets = ArrivalTicket::where('company_id', $companyId)

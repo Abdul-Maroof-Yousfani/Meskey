@@ -8,7 +8,7 @@
         <div class="row">
             <div class="col-12 dd-none">
                 <div class="dashboard-filters">
-                    <div class="filter-group">
+                    <div class="filter-group d-none">
                         <label>SELECT MODULE</label>
                         <select id="module_select" class="filter-input">
                             <option value="arrival" {{ $module == 'arrival' ? 'selected' : '' }}>Arrival</option>
@@ -18,11 +18,11 @@
                             <option value="finance" {{ $module == 'finance' ? 'selected' : '' }}>Finance</option>
                         </select>
                     </div>
-                    <div class="filter-group">
+                    <div class="filter-group d-none">
                         <label>FROM DATE</label>
                         <input type="date" id="from_date" class="filter-input" value="{{ $fromDate }}">
                     </div>
-                    <div class="filter-group">
+                    <div class="filter-group d-none">
                         <label>TO DATE</label>
                         <input type="date" id="to_date" class="filter-input" value="{{ $toDate }}">
                     </div>
@@ -94,7 +94,7 @@
                             </button>
                         </div>
 
-                        <div class="dashboard-card" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=total_tickets&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Total Tickets in Kgs', true, '85%')">
+                        <div class="dashboard-card" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=total_tickets_kgs&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Total Tickets in Kgs', true, '85%')">
                             <div class="card-icon">
                                 <i class="ft-grid"></i>
                             </div>
@@ -103,7 +103,7 @@
                             <div class="card-subtitle">Total Kgs Received (Tickets Net Weight)</div>
                             
                             <button class="view-btn"
-                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=total_tickets&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Total Tickets in Kgs', true, '85%')">
+                                onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=total_tickets_kgs&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Total Tickets in Kgs', true, '85%')">
                                 View
                             </button>
                         </div>

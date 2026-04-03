@@ -258,6 +258,24 @@ class HomeController extends Controller
                     ->latest()
                     ->paginate(1000);
                 break;
+            case 'total_tickets_kgs':
+                $title = 'Total Tickets in Kgs';
+                $data = ArrivalTicket::where('company_id', $request->company_id)
+                    // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                    //     return $q->where('location_id', auth()->user()->company_location_id);
+                    // })
+                    ->whereIn('location_id', getUserCurrentCompanyLocations())
+                    ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
+                        return $q->where('location_id', $request->location_id);
+                    })
+                    // ->whereIn('first_qc_status', ['pending', 'resampling'])
+                    ->whereBetween('created_at', $dateRange)
+                    ->with(['product', 'station', 'accountsOf'])
+                    ->where('arrival_slip_status', 'generated')
+
+                    ->latest()
+                    ->paginate(1000);
+                break;
 
             case 'new_tickets':
                 $title = 'New Tickets (Pending Initial Sampling)';

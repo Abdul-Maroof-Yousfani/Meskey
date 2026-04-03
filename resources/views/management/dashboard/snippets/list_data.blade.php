@@ -16,6 +16,7 @@
                         'truck_at_ho',
                         'truck_for_built_return',
                         'old_pending_trucks',
+                        'total_tickets_kgs',
 
                     ]))
                     <th>Ticket #</th>
@@ -90,6 +91,7 @@
                             'truck_at_ho',
                             'truck_for_built_return',
                             'old_pending_trucks',
+                            'total_tickets_kgs',
                         ]))
                         <td>{{ $item->unique_no ?? 'N/A' }}</td>
                         <td>{{ $item->product->name ?? 'N/A' }}</td>
