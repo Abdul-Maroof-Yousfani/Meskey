@@ -318,6 +318,128 @@ class SupplierController extends Controller
         }
     }
 
+    public function importModal()
+    {
+        return view('management.master.supplier.import_modal');
+    }
+
+    public function importRow(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+            $rowData = $request->row_data;
+            $meskeyCompanyId = $request->company_id; // Injected by CheckCurrentCompany middleware
+            $locationIds = getUserCurrentCompanyLocations();
+
+            if (empty($rowData) || count($rowData) < 6) {
+                throw new \Exception("Insufficient data in row.");
+            }
+
+            // Cleanup & Format data
+            $mobile = trim($rowData[2] ?? '');
+            // Auto-fix leading zero if stripped by Excel (if 10 digits starting with 3, prepend 0)
+            if (strlen($mobile) == 10 && str_starts_with($mobile, '3')) {
+                $mobile = '0' . $mobile;
+            }
+
+            // Mapping
+            $data = [
+                'company_id' => $meskeyCompanyId,
+                'company_name' => $rowData[0] ?? '',
+                'owner_name' => $rowData[1] ?? '',
+                'owner_mobile_no' => $mobile,
+                'owner_cnic_no' => $rowData[3] ?? '',
+                'type' => $rowData[4] ?? '',
+                'status' => $rowData[5] ?? '',
+                'email' => $rowData[6] ?? null,
+                'phone' => $rowData[7] ?? null,
+                'address' => $rowData[8] ?? null,
+                'ntn' => $rowData[9] ?? null,
+                'stn' => $rowData[10] ?? null,
+                'create_as_broker' => (strtolower($rowData[11] ?? '') == 'yes'),
+                'company_location_ids' => $locationIds,
+            ];
+
+            // Reduced Validation (Mainly presence checks)
+            $validator = \Illuminate\Support\Facades\Validator::make($data, [
+                'company_id' => 'required|exists:companies,id',
+                'company_name' => 'required|string|max:255',
+                'owner_name' => 'required',
+                'owner_mobile_no' => 'required',
+                'owner_cnic_no' => 'required',
+                'type' => 'required',
+                'status' => 'required',
+            ]);
+
+            if ($validator->fails()) {
+                throw new \Exception(implode(', ', $validator->errors()->all()));
+            }
+
+            // check unique company name for this Meskey company
+            $exists = Supplier::where('company_name', $data['company_name'])
+                ->where('company_id', $meskeyCompanyId)
+                ->exists();
+            if ($exists) {
+                throw new \Exception("Supplier company name already exists for this company.");
+            }
+
+            // Account Creation
+            $account = Account::create(getParamsForAccountCreationByPath($meskeyCompanyId, $data['company_name'], '2-2', 'suppliers'));
+            $data['account_id'] = $account->id;
+            $data['unique_no'] = generateUniqueNumber('suppliers', null, null, 'unique_no');
+            $data['name'] = $data['company_name'];
+
+            $supplier = Supplier::create($data);
+
+            // Company Bank Detail (Columns 12-16: Name, Branch, Code, Title, Acc)
+            if (!empty($rowData[12])) {
+                SupplierCompanyBankDetail::create([
+                    'supplier_id' => $supplier->id,
+                    'bank_name' => $rowData[12],
+                    'branch_name' => $rowData[13] ?? '',
+                    'branch_code' => $rowData[14] ?? '',
+                    'account_title' => $rowData[15] ?? '',
+                    'account_number' => $rowData[16] ?? '',
+                ]);
+            }
+
+            // Owner Bank Detail (Columns 17-21: Name, Branch, Code, Title, Acc)
+            if (!empty($rowData[17])) {
+                SupplierOwnerBankDetail::create([
+                    'supplier_id' => $supplier->id,
+                    'bank_name' => $rowData[17],
+                    'branch_name' => $rowData[18] ?? '',
+                    'branch_code' => $rowData[19] ?? '',
+                    'account_title' => $rowData[20] ?? '',
+                    'account_number' => $rowData[21] ?? '',
+                ]);
+            }
+
+            // Broker creation if requested
+            if ($data['create_as_broker']) {
+                $Brokeraccount = Account::create(getParamsForAccountCreationByPath($meskeyCompanyId, $data['company_name'], '2-3', 'brokers'));
+                Broker::create([
+                    'company_id' => $meskeyCompanyId,
+                    'unique_no' => generateUniqueNumber('brokers', null, null, 'unique_no'),
+                    'name' => $data['company_name'],
+                    'account_id' => $Brokeraccount->id,
+                    'email' => $data['email'],
+                    'phone' => $data['phone'],
+                    'address' => $data['address'],
+                    'ntn' => $data['ntn'],
+                    'stn' => $data['stn'],
+                    'status' => $data['status'],
+                ]);
+            }
+
+            DB::commit();
+            return response()->json(['status' => 'success', 'message' => 'Imported successfully']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 422);
+        }
+    }
+
     /**
      * Remove the specified resource from storage.
      */
@@ -326,5 +448,16 @@ class SupplierController extends Controller
         $supplier->delete();
 
         return response()->json(['success' => 'Category deleted successfully.'], 200);
+    }
+
+    public function show($id)
+
+    {
+        $supplier = Supplier::with([
+            'companyBankDetails',
+            'ownerBankDetails',
+        ])->findOrFail($id);
+
+        return view('management.master.supplier.show', compact('supplier'));
     }
 }
