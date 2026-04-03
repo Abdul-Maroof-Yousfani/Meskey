@@ -140,7 +140,17 @@
     <script>
         $(document).ready(function () {
             $('.select2').select2();
-            filterationCommon(`{{ route('store.get.purchase-order') }}`)
+            filterationCommon(`{{ route('store.get.purchase-order') }}`);
+
+            // Re-initialize select2 after any AJAX update to preserve selected value in visual UI
+            $(document).on('ajaxSuccess', function() {
+                $('.select2').select2();
+            });
+
+            // Trigger filtering automatically on select change
+            $(document).on('change', '#category_id, #filter_supplier_id', function() {
+                filterationCommon(`{{ route('store.get.purchase-order') }}`);
+            });
         });
     </script>
 @endsection

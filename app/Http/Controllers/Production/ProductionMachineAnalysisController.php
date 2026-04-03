@@ -3,29 +3,29 @@
 namespace App\Http\Controllers\Production;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Models\Production\JobOrder\JobOrder;
-use App\Models\Master\Brands;
-use App\Models\BagPacking;
 use App\Models\Master\CompanyLocation;
-use App\Models\Master\CropYear;
+use App\Models\Master\ArrivalLocation;
+use App\Models\Master\Plant;
 use App\Models\Master\ProductSlabType;
-use App\Models\Production\ProductionAnalysis;
-use App\Models\Production\ProductionAnalysisItem;
-use App\Models\Production\ProductionAnalysisItemSlab;
+use App\Models\Master\ProductionMachine;
 use App\Models\UnitOfMeasure;
-use App\Http\Requests\Production\StoreProductionInputAnalysisRequest;
+use App\Models\Production\ProductionMachineAnalysis;
+use App\Models\Production\ProductionMachineAnalysisItem;
+use App\Models\Production\ProductionMachineAnalysisItemSlab;
+use App\Http\Requests\Production\StoreProductionMachineAnalysisRequest;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class ProductionInputAnalysisController extends Controller
+class ProductionMachineAnalysisController extends Controller
 {
     public function index()
     {
         $locationIds = getUserCurrentCompanyLocations();
         $locations = CompanyLocation::whereIn('id', $locationIds)->get();
-        $arrivalLocations = \App\Models\Master\ArrivalLocation::whereIn('company_location_id', $locationIds)->get();
-        $plants = \App\Models\Master\Plant::whereIn('company_location_id', $locationIds)->get();
-        return view('management.production.production_input_analysis.index', compact('locations', 'arrivalLocations', 'plants'));
+        $arrivalLocations = ArrivalLocation::whereIn('company_location_id', $locationIds)->get();
+        $plants = Plant::whereIn('company_location_id', $locationIds)->get();
+        $machines = \App\Models\Master\ProductionMachine::whereIn('arrival_location_id', $arrivalLocations->pluck('id'))->get();
+        return view('management.production.production_machine_analysis.index', compact('locations', 'arrivalLocations', 'plants', 'machines'));
     }
 
     public function create()
@@ -41,30 +41,30 @@ class ProductionInputAnalysisController extends Controller
             ->where('for_general_item', 1)
             ->get();
             
-        return view('management.production.production_input_analysis.create', compact('companyLocations', 'units', 'productSlabTypes', 'preSelectedLocationId'));
+        return view('management.production.production_machine_analysis.create', compact('companyLocations', 'units', 'productSlabTypes', 'preSelectedLocationId'));
     }
 
-    public function store(StoreProductionInputAnalysisRequest $request)
+    public function store(StoreProductionMachineAnalysisRequest $request)
     {
         try {
             DB::beginTransaction();
 
             // Create Parent Record
-            $analysis = ProductionAnalysis::create([
+            $analysis = ProductionMachineAnalysis::create([
                 'analysis_date' => $request->date,
-                'location_id' => $request->location_id,
+                'company_location_id' => $request->company_location_id,
                 'arrival_location_id' => $request->arrival_location_id,
                 'plant_id' => $request->plant_id,
+                'production_machine_id' => $request->production_machine_id,
                 'remarks' => $request->remarks,
-                'production_analysis_type' => 'input',
             ]);
 
             // Store New Line Items
             if ($request->has('items')) {
                 foreach ($request->items as $row) {
                     // Create the Row Metadata (Item)
-                    $item = ProductionAnalysisItem::create([
-                        'production_analysis_id' => $analysis->id,
+                    $item = ProductionMachineAnalysisItem::create([
+                        'machine_analysis_id' => $analysis->id,
                         'analysis_time' => $row['time'],
                         'unit_id' => $row['unit_id'] ?? null,
                     ]);
@@ -73,10 +73,10 @@ class ProductionInputAnalysisController extends Controller
                     if (isset($row['params']) && is_array($row['params'])) {
                         foreach ($row['params'] as $slabTypeId => $value) {
                             if ($value !== null && $value !== '') {
-                                ProductionAnalysisItemSlab::create([
-                                    'production_analysis_item_id' => $item->id,
+                                ProductionMachineAnalysisItemSlab::create([
+                                    'machine_analysis_item_id' => $item->id,
                                     'slab_type_id' => $slabTypeId,
-                                    'production_analysis_value' => $value,
+                                    'analysis_value' => $value,
                                 ]);
                             }
                         }
@@ -85,96 +85,94 @@ class ProductionInputAnalysisController extends Controller
             }
 
             DB::commit();
-            return response()->json(['status' => 'success', 'message' => 'Analysis stored successfully']);
+            return response()->json(['status' => 'success', 'message' => 'Machine Analysis stored successfully']);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['status' => 'error', 'message' => 'Failed to store analysis: ' . $e->getMessage()], 500);
+            return response()->json(['status' => 'error', 'message' => 'Failed to store machine analysis: ' . $e->getMessage()], 500);
         }
     }
 
     public function show($id)
     {
-        $item = ProductionAnalysis::with(['location', 'arrivalLocation', 'plant', 'items.unit', 'items.slabs.slabType'])
+        $item = ProductionMachineAnalysis::with(['companyLocation', 'arrivalLocation', 'plant', 'machine', 'items.unit', 'items.slabs.slabType'])
             ->findOrFail($id);
             
-        // Get general slab types
-        $productSlabTypes = ProductSlabType::where("for_general_item", 1)
-                                            ->where("status", "active")
-                                            ->get();
+        $productSlabTypes = ProductSlabType::where('status', 'active')
+            ->where('for_general_item', 1)
+            ->get();
 
-        return view('management.production.production_input_analysis.show', compact('item', 'productSlabTypes'));
+        return view('management.production.production_machine_analysis.show', compact('item', 'productSlabTypes'));
     }
 
     public function edit($id)
     {
-        $item = ProductionAnalysis::with(['items.slabs'])
+        $item = ProductionMachineAnalysis::with(['items.slabs'])
                                     ->findOrFail($id);
         
         $locationIds = getUserCurrentCompanyLocations();
         $companyLocations = CompanyLocation::whereIn('id', $locationIds)->get();
         $units = UnitOfMeasure::all();
-
-        $productSlabTypes = ProductSlabType::select("id", "name", "qc_symbol")
-                                            ->where("for_general_item", 1)
-                                            ->where("status", "active")
-                                            ->get();
-        
-        // Dependent dropdown data for edit view
-        $arrivalLocations = \App\Models\Master\ArrivalLocation::where('company_location_id', $item->location_id)->get();
-        $plants = \App\Models\Master\Plant::where('company_location_id', $item->location_id)
-            ->where('arrival_location_id', $item->arrival_location_id)
+        $productSlabTypes = ProductSlabType::where('status', 'active')
+            ->where('for_general_item', 1)
             ->get();
 
-        return view('management.production.production_input_analysis.edit', compact(
+        // Dependent dropdown data for edit view
+        $arrivalLocations = ArrivalLocation::where('company_location_id', $item->company_location_id)->get();
+        $plants = Plant::where('company_location_id', $item->company_location_id)
+            ->where('arrival_location_id', $item->arrival_location_id)
+            ->get();
+        $machines = ProductionMachine::where('arrival_location_id', $item->arrival_location_id)
+            ->where('plant_id', $item->plant_id)
+            ->get();
+
+        return view('management.production.production_machine_analysis.edit', compact(
             'item',
-            'productSlabTypes',
             'companyLocations', 
-            'units',
+            'units', 
+            'productSlabTypes',
             'arrivalLocations',
-            'plants'
+            'plants',
+            'machines'
         ));
     }
 
-    public function update(StoreProductionInputAnalysisRequest $request, $id)
+    public function update(StoreProductionMachineAnalysisRequest $request, $id)
     {
         try {
             DB::beginTransaction();
 
-            $analysis = ProductionAnalysis::findOrFail($id);
+            $analysis = ProductionMachineAnalysis::findOrFail($id);
 
             // Update Parent Record
             $analysis->update([
                 'analysis_date' => $request->date,
-                'location_id' => $request->location_id,
+                'company_location_id' => $request->company_location_id,
                 'arrival_location_id' => $request->arrival_location_id,
                 'plant_id' => $request->plant_id,
+                'production_machine_id' => $request->production_machine_id,
                 'remarks' => $request->remarks,
             ]);
 
-            // Sync Job Orders (Detach all regardless of presence in request as we don't use them anymore)
-            $analysis->jobOrders()->detach();
-
-            // Delete old items (which will cascade to slabs)
+            // Delete old items (which will cascade to slabs due to migration or manual delete if cascade not set)
+            // But we have cascade on migration.
             $analysis->items()->delete();
 
             // Store New Line Items
             if ($request->has('items')) {
                 foreach ($request->items as $row) {
-                    // Create the Row Metadata (Item)
-                    $item = ProductionAnalysisItem::create([
-                        'production_analysis_id' => $analysis->id,
+                    $item = ProductionMachineAnalysisItem::create([
+                        'machine_analysis_id' => $analysis->id,
                         'analysis_time' => $row['time'],
                         'unit_id' => $row['unit_id'] ?? null,
                     ]);
 
-                    // Save the Slab Values for this Item (Pivot)
                     if (isset($row['params']) && is_array($row['params'])) {
                         foreach ($row['params'] as $slabTypeId => $value) {
                             if ($value !== null && $value !== '') {
-                                ProductionAnalysisItemSlab::create([
-                                    'production_analysis_item_id' => $item->id,
+                                ProductionMachineAnalysisItemSlab::create([
+                                    'machine_analysis_item_id' => $item->id,
                                     'slab_type_id' => $slabTypeId,
-                                    'production_analysis_value' => $value,
+                                    'analysis_value' => $value,
                                 ]);
                             }
                         }
@@ -183,10 +181,10 @@ class ProductionInputAnalysisController extends Controller
             }
 
             DB::commit();
-            return response()->json(['status' => 'success', 'message' => 'Analysis updated successfully']);
+            return response()->json(['status' => 'success', 'message' => 'Machine Analysis updated successfully']);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['status' => 'error', 'message' => 'Failed to update analysis: ' . $e->getMessage()], 500);
+            return response()->json(['status' => 'error', 'message' => 'Failed to update machine analysis: ' . $e->getMessage()], 500);
         }
     }
 
@@ -194,14 +192,8 @@ class ProductionInputAnalysisController extends Controller
     {
         try {
             DB::beginTransaction();
-            $analysis = ProductionAnalysis::findOrFail($id);
-            
-            // Delete pivot table records
-            $analysis->jobOrders()->detach();
-            
-            // Delete parent
+            $analysis = ProductionMachineAnalysis::findOrFail($id);
             $analysis->delete();
-            
             DB::commit();
             return response()->json(['status' => 'success', 'message' => 'Analysis deleted successfully']);
         } catch (\Exception $e) {
@@ -216,18 +208,21 @@ class ProductionInputAnalysisController extends Controller
         $locationIdsFilter = $request->location_ids;
         $arrivalLocationIdsFilter = $request->arrival_location_ids;
         $plantIdsFilter = $request->plant_ids;
+        $machineIdsFilter = $request->production_machine_ids;
         $dateRange = $request->date_range;
 
-        $items = ProductionAnalysis::with(['location', 'arrivalLocation', 'plant'])
-            ->where('production_analysis_type', 'input')
+        $items = ProductionMachineAnalysis::with(['companyLocation', 'arrivalLocation', 'plant', 'machine'])
             ->when($locationIdsFilter, function ($query) use ($locationIdsFilter) {
-                return $query->whereIn('location_id', $locationIdsFilter);
+                return $query->whereIn('company_location_id', $locationIdsFilter);
             })
             ->when($arrivalLocationIdsFilter, function ($query) use ($arrivalLocationIdsFilter) {
                 return $query->whereIn('arrival_location_id', $arrivalLocationIdsFilter);
             })
             ->when($plantIdsFilter, function ($query) use ($plantIdsFilter) {
                 return $query->whereIn('plant_id', $plantIdsFilter);
+            })
+            ->when($machineIdsFilter, function ($query) use ($machineIdsFilter) {
+                return $query->whereIn('production_machine_id', $machineIdsFilter);
             })
             ->when($dateRange, function ($query) use ($dateRange) {
                 $dates = explode(' - ', $dateRange);
@@ -238,6 +233,29 @@ class ProductionInputAnalysisController extends Controller
             ->orderBy('id', 'DESC')
             ->paginate($limit);
 
-        return view('management.production.production_input_analysis.getList', compact('items'));
+        return view('management.production.production_machine_analysis.getList', compact('items'));
+    }
+
+    // Methods for dynamic population (will be used in the view's JS)
+    public function getArrivalLocationsByCompanyLocation($companyLocationId)
+    {
+        $arrivalLocations = ArrivalLocation::where('company_location_id', $companyLocationId)->get();
+        return response()->json($arrivalLocations);
+    }
+
+    public function getPlantsByArrivalLocation($companyLocationId, $arrivalLocationId)
+    {
+        $plants = Plant::where('company_location_id', $companyLocationId)
+            ->where('arrival_location_id', $arrivalLocationId)
+            ->get();
+        return response()->json($plants);
+    }
+
+    public function getMachinesByPlant($arrivalLocationId, $plantId)
+    {
+        $machines = ProductionMachine::where('arrival_location_id', $arrivalLocationId)
+            ->where('plant_id', $plantId)
+            ->get();
+        return response()->json($machines);
     }
 }

@@ -1,23 +1,18 @@
-<style>
-    button:disabled {
-        cursor: not-allowed !important;
-    }
-</style>
-<table class="table m-0">
+<table class="table m-0" style="width: 100%; min-width: 1710px;">
     <thead>
         <tr>
-            <th class="col-sm-3">PO Receiving No </th>
-            <th class="col-sm-3">Purchase Request No</th>
-            <th class="col-sm-3">Purchase Order No</th>
-            <th class="col-sm-1">DC No</th>
-            <th class="col-sm-3">Category- item</th>
-            <th class="col-sm-3">Supplier</th>
-            <th class="col-sm-1">Qty</th>
-            <th class="col-sm-1">Rate</th>
-            <th class="col-sm-1">Total Amount</th>
-            <th class="col-sm-1">QC</th>
-            <th class="col-sm-1">QC Status</th>
-            <th class="col-sm-1">Action</th>
+            <th style="width: 180px; min-width: 180px;">PO Receiving No</th>
+            <th style="width: 180px; min-width: 180px;">Purchase Request No</th>
+            <th style="width: 180px; min-width: 180px;">Purchase Order No</th>
+            <th style="width: 100px; min-width: 100px;">DC No</th>
+            <th style="width: 250px; min-width: 250px;">Category- item</th>
+            <th style="width: 200px; min-width: 200px;">Supplier</th>
+            <th style="width: 90px; min-width: 90px;">Qty</th>
+            <th style="width: 90px; min-width: 90px;">Rate</th>
+            <th style="width: 100px; min-width: 100px;">Total Amount</th>
+            <th style="width: 110px; min-width: 110px;">QC</th>
+            <th style="width: 110px; min-width: 110px;">QC Status</th>
+            <th style="min-width: 120px;">Action</th>
         </tr>
     </thead>
     <tbody>
@@ -44,7 +39,6 @@
                             {{-- Purchase Order No --}}
                             @if ($isFirstRequestRow)
                                 <td rowspan="{{ $requestGroup['request_rowspan'] }}"
-                                    class="text-center"
                                     style="background-color: #e3f2fd; vertical-align: middle;">
                                     <p class="m-0 font-weight-bold">
                                         #{{ $requestGroup['request_no'] }}
@@ -100,6 +94,11 @@
                                     {{ optional($supplierRow['data']->category)->name }} -
                                     {{ optional($supplierRow['data']->item)->name }}
                                 </p>
+                                @if(optional($supplierRow['data']->purchase_order_data?->purchase_request_data)->is_single_job_order)
+                                    <span class="badge badge-yellow mt-1" style="font-size: 10px; padding: 3px 10px; border-radius: 20px;">With job order</span>
+                                @else
+                                    <span class="badge badge-secondary mt-1" style="font-size: 10px; padding: 3px 10px; border-radius: 20px;">Without job order</span>
+                                @endif
                             </td>
 
                             {{-- Supplier --}}
@@ -118,7 +117,7 @@
                             <td>
                                 @php
                                     $rate = $supplierRow["data"]?->purchase_order_data?->rate ?? 0;
-                                    $qty = $supplierRow["data"]?->purchase_order_data?->qty ?? 0;
+                                    $qty = $supplierRow["data"]?->qty ?? 0;
                                 @endphp
                                 <p class="m-0 text-right">
                                     {{ $rate }}
@@ -211,7 +210,7 @@
 
                             @if ($isFirstRequestRow)
                                 <td rowspan="{{ $requestGroup['request_rowspan'] }}">
-                                    <div class="d-flex" style="gap: 10px;">
+                                    <div class="d-flex flex-column align-items-start" style="gap: 5px;">
                                         @php
                                             $currentApprovalStatus =
                                                 $supplierRow['data']
@@ -222,7 +221,7 @@
                                                 $requestGroup['has_approved_item'] && !$isCurrentApproved;
                                         @endphp
                                         <a onclick="openModal(this, '{{ route('store.purchase-order-receiving.approvals', $supplierRow['data']->purchase_order_receiving->id) }}', 'View GRN', false, '100%')"
-                                            class="bg-info text-white p-1 text-center position-relative" title="View" style="border-radius: 4px; min-width: 60px;">
+                                            class="bg-info text-white p-1 text-center position-relative" title="View" style="border-radius: 4px; width: 90px;">
                                             View
                                         </a>
 
@@ -230,12 +229,12 @@
 
                                             @if ($requestGroup['request_status'] != 'approved' && $requestGroup['request_status'] != 'rejected')
                                                 <a onclick="openModal(this, '{{ route('store.purchase-order-receiving.edit', $supplierRow['data']->purchase_order_receiving->id) }}', 'Edit GRN', false, '100%')"
-                                                    class="bg-warning text-white p-1 text-center position-relative" title="Edit" style="border-radius: 4px; min-width: 60px;">
+                                                    class="bg-warning text-white p-1 text-center position-relative" title="Edit" style="border-radius: 4px; width: 90px;">
                                                     Edit
                                                 </a>
 
                                                 <a onclick="deletemodal('{{ route('store.purchase-order-receiving.destroy', $supplierRow['data']->purchase_order_receiving->id) }}', '{{ route('store.get.purchase-order-receiving') }}')"
-                                                    class="bg-danger text-white p-1 text-center position-relative" title="Delete" style="border-radius: 4px; min-width: 60px;">
+                                                    class="bg-danger text-white p-1 text-center position-relative" title="Delete" style="border-radius: 4px; width: 90px;">
                                                     Delete
                                                 </a>
                                             @endif

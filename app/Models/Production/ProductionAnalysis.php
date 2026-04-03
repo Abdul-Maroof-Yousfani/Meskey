@@ -29,6 +29,8 @@ class ProductionAnalysis extends Model
         'remarks',
         'product_id',
         'production_analysis_type',
+        'arrival_location_id',
+        'plant_id',
     ];
 
     protected $casts = [
@@ -58,6 +60,16 @@ class ProductionAnalysis extends Model
     public function cropYear()
     {
         return $this->belongsTo(CropYear::class, 'crop_year_id');
+    }
+
+    public function arrivalLocation()
+    {
+        return $this->belongsTo(\App\Models\Master\ArrivalLocation::class, 'arrival_location_id');
+    }
+
+    public function plant()
+    {
+        return $this->belongsTo(\App\Models\Master\Plant::class, 'plant_id');
     }
 
     public function jobOrders()

@@ -4,46 +4,42 @@ namespace App\Http\Controllers\Production;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Production\JobOrder\JobOrder;
-use App\Models\Master\Brands;
-use App\Models\BagPacking;
 use App\Models\Master\CompanyLocation;
-use App\Models\Master\CropYear;
+use App\Models\Master\ProductSlab;
 use App\Models\Master\ProductSlabType;
 use App\Models\Production\ProductionAnalysis;
-use App\Models\Production\ProductionAnalysisData;
+use App\Models\Production\ProductionAnalysisItem;
+use App\Models\Production\ProductionAnalysisItemSlab;
+use App\Models\UnitOfMeasure;
+use App\Models\Product;
 use Illuminate\Support\Facades\DB;
 
 class ProductionOutputAnalysisController extends Controller
 {
     public function index()
     {
-        $jobOrders = JobOrder::all();
-        $brands = Brands::all();
-        $locations = CompanyLocation::all();
-        return view('management.production.production_output_analysis.index', compact('jobOrders', 'brands', 'locations'));
+        $locationIds = getUserCurrentCompanyLocations();
+        $locations = CompanyLocation::whereIn('id', $locationIds)->get();
+        $arrivalLocations = \App\Models\Master\ArrivalLocation::whereIn('company_location_id', $locationIds)->get();
+        $plants = \App\Models\Master\Plant::whereIn('company_location_id', $locationIds)->get();
+        return view('management.production.production_output_analysis.index', compact('locations', 'arrivalLocations', 'plants'));
     }
 
     public function create()
     {
-        $jobOrders = JobOrder::all();
-        $brands = Brands::all();
-        $packings = BagPacking::all();
-        $companyLocations = CompanyLocation::all();
-        $cropYears = CropYear::all();
-        $productSlabTypes = ProductSlabType::select("id", "name", "qc_symbol")
-                                            ->where("for_general_item", 1)
-                                            ->where("status", "active")
-                                            ->get(); 
+        $locationIds = getUserCurrentCompanyLocations();
+        $companyLocations = CompanyLocation::whereIn('id', $locationIds)->get();
         
-        return view('management.production.production_output_analysis.create', compact(
-            'jobOrders', 
-            'brands', 
-            'packings', 
-            'productSlabTypes',
-            'companyLocations', 
-            'cropYears'
-        ));
+        // Pre-select if only one location is assigned
+        $preSelectedLocationId = count($companyLocations) === 1 ? $companyLocations->first()->id : null;
+        
+        $units = UnitOfMeasure::all();
+        $products = Product::where('status', 'active')->get();
+        $productSlabTypes = ProductSlabType::where('status', 'active')
+            ->where('for_general_item', 1)
+            ->get();
+            
+        return view('management.production.production_output_analysis.create', compact('companyLocations', 'units', 'products', 'productSlabTypes', 'preSelectedLocationId'));
     }
 
     public function store(Request $request)
@@ -51,49 +47,35 @@ class ProductionOutputAnalysisController extends Controller
         try {
             DB::beginTransaction();
 
+            // Create Parent Record
             $analysis = ProductionAnalysis::create([
                 'analysis_date' => $request->date,
-                'brand_id' => $request->brand_id,
-                'bag_packing_id' => $request->packing_id,
                 'location_id' => $request->location_id,
-                'variety' => $request->variety,
-                'crop_year_id' => $request->crop_year_id,
+                'arrival_location_id' => $request->arrival_location_id,
+                'plant_id' => $request->plant_id,
                 'milling_degree' => $request->milling_degree,
                 'inner_stitching' => $request->inner_stitching,
                 'outer_stitching' => $request->outer_stitching,
                 'remarks' => $request->remarks,
+                'product_id' => $request->product_id,
                 'production_analysis_type' => 'output',
             ]);
 
-            // Save Job Orders (Pivot Table)
-            if ($request->has('job_order_ids')) {
-                foreach ($request->job_order_ids as $jobOrderId) {
-                    DB::table('job_orders_against_production_analysis')->insert([
-                        'job_order_id' => $jobOrderId,
-                        'production_id' => $analysis->id,
-                        'created_at' => now(),
-                        'updated_at' => now(),
+            // Store New Line Items
+            if ($request->has('items')) {
+                foreach ($request->items as $row) {
+                    $item = ProductionAnalysisItem::create([
+                        'production_analysis_id' => $analysis->id,
+                        'analysis_time' => $row['time'],
+                        'unit_id' => $row['unit_id'] ?? null,
                     ]);
-                }
-            }
 
-            // Fetch slab types in the same order as in create view to match indexing of params[]
-            $productSlabTypes = ProductSlabType::where("for_general_item", 1)
-                                                ->where("status", "active")
-                                                ->get();
-
-            // Store Line Items
-            if($request->has('items')) {
-                foreach ($request->items as $rowKey => $row) {
                     if (isset($row['params']) && is_array($row['params'])) {
-                        // Append seconds based on row index to distinguish multiple observations at the same HH:mm
-                        $analysisTime = $row['time'] . ":" . str_pad($rowKey % 60, 2, '0', STR_PAD_LEFT);
-                        foreach ($row['params'] as $index => $value) {
-                            if (isset($productSlabTypes[$index]) && $value !== null && $value !== '') {
-                                ProductionAnalysisData::create([
-                                    'production_analysis_id' => $analysis->id,
-                                    'analysis_time' => $analysisTime,
-                                    'slab_type_id' => $productSlabTypes[$index]->id,
+                        foreach ($row['params'] as $slabTypeId => $value) {
+                            if ($value !== null && $value !== '') {
+                                ProductionAnalysisItemSlab::create([
+                                    'production_analysis_item_id' => $item->id,
+                                    'slab_type_id' => $slabTypeId,
                                     'production_analysis_value' => $value,
                                 ]);
                             }
@@ -112,45 +94,64 @@ class ProductionOutputAnalysisController extends Controller
 
     public function show($id)
     {
-        $item = ProductionAnalysis::with(['brand', 'location', 'jobOrders', 'analysisData.slabType'])
+        $item = ProductionAnalysis::with(['location', 'arrivalLocation', 'plant', 'product', 'items.unit', 'items.slabs.slabType'])
             ->findOrFail($id);
             
-        $productSlabTypes = ProductSlabType::where("for_general_item", 1)
-                                            ->where("status", "active")
-                                            ->get();
+        $slabTypeIds = $item->items->flatMap(fn($it) => $it->slabs)->pluck('slab_type_id')->unique();
+        $productSlabTypes = ProductSlabType::whereIn('id', $slabTypeIds)->orderBy('id', 'ASC')->get();
 
-        $groupedData = $item->analysisData->groupBy('analysis_time');
+        if ($productSlabTypes->isEmpty()) {
+            $productSlabTypes = ProductSlabType::where("for_general_item", 1)->where("status", "active")->get();
+        }
 
-        return view('management.production.production_output_analysis.show', compact('item', 'productSlabTypes', 'groupedData'));
+        return view('management.production.production_output_analysis.show', compact('item', 'productSlabTypes'));
     }
 
     public function edit($id)
     {
-        $item = ProductionAnalysis::with(['jobOrders', 'analysisData.slabType'])
-                                    ->findOrFail($id);
-        $jobOrders = JobOrder::all();
-        $brands = Brands::all();
-        $packings = BagPacking::all();
-        $companyLocations = CompanyLocation::all();
-        $cropYears = CropYear::all();
-        $productSlabTypes = ProductSlabType::select("id", "name", "qc_symbol")
-                                            ->where("for_general_item", 1)
-                                            ->where("status", "active")
-                                            ->get();
-        $viewonly = request('viewonly') == 'true' ? true : false;
+        $item = ProductionAnalysis::with(['items.slabs.slabType'])->findOrFail($id);
         
-        $groupedData = $item->analysisData->groupBy('analysis_time');
+        $locationIds = getUserCurrentCompanyLocations();
+        $companyLocations = CompanyLocation::whereIn('id', $locationIds)->get();
+        $units = UnitOfMeasure::all();
+        $products = Product::where('status', 'active')->get();
+
+        // Slab type resolution logic
+        $productSlabTypes = collect();
+        if ($item->product_id) {
+            $productSlabTypes = ProductSlab::with('slabType')
+                ->where('product_id', $item->product_id)
+                ->get()
+                ->unique('product_slab_type_id')
+                ->pluck('slabType')
+                ->filter()
+                ->values();
+        }
+
+        if ($productSlabTypes->isEmpty()) {
+            $slabTypeIdsFromData = $item->items->flatMap(fn($it) => $it->slabs)->pluck('slab_type_id')->unique();
+            if ($slabTypeIdsFromData->isNotEmpty()) {
+                $productSlabTypes = ProductSlabType::whereIn('id', $slabTypeIdsFromData)->orderBy('id', 'ASC')->get();
+            }
+        }
+
+        if ($productSlabTypes->isEmpty()) {
+            $productSlabTypes = ProductSlabType::where("for_general_item", 1)->where("status", "active")->get();
+        }
+
+        $arrivalLocations = \App\Models\Master\ArrivalLocation::where('company_location_id', $item->location_id)->get();
+        $plants = \App\Models\Master\Plant::where('company_location_id', $item->location_id)
+            ->where('arrival_location_id', $item->arrival_location_id)
+            ->get();
 
         return view('management.production.production_output_analysis.edit', compact(
             'item', 
-            'jobOrders', 
-            'brands', 
-            'packings', 
             'productSlabTypes',
             'companyLocations', 
-            'cropYears',
-            'viewonly',
-            'groupedData'
+            'products',
+            'units',
+            'arrivalLocations',
+            'plants'
         ));
     }
 
@@ -162,48 +163,33 @@ class ProductionOutputAnalysisController extends Controller
             $analysis = ProductionAnalysis::findOrFail($id);
             $analysis->update([
                 'analysis_date' => $request->date,
-                'brand_id' => $request->brand_id,
-                'bag_packing_id' => $request->packing_id,
                 'location_id' => $request->location_id,
-                'variety' => $request->variety,
-                'crop_year_id' => $request->crop_year_id,
+                'arrival_location_id' => $request->arrival_location_id,
+                'plant_id' => $request->plant_id,
                 'milling_degree' => $request->milling_degree,
                 'inner_stitching' => $request->inner_stitching,
                 'outer_stitching' => $request->outer_stitching,
                 'remarks' => $request->remarks,
+                'product_id' => $request->product_id,
             ]);
 
-            // Update Job Orders (Pivot Table)
-            DB::table('job_orders_against_production_analysis')->where('production_id', $analysis->id)->delete();
-            if ($request->has('job_order_ids')) {
-                foreach ($request->job_order_ids as $jobOrderId) {
-                    DB::table('job_orders_against_production_analysis')->insert([
-                        'job_order_id' => $jobOrderId,
-                        'production_id' => $analysis->id,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-                }
-            }
-
-            // Update Line Items
-            ProductionAnalysisData::where('production_analysis_id', $analysis->id)->delete();
-            
-            $productSlabTypes = ProductSlabType::where("for_general_item", 1)
-                                                ->where("status", "active")
-                                                ->get();
+            $analysis->jobOrders()->detach();
+            $analysis->items()->delete();
 
             if($request->has('items')) {
-                foreach ($request->items as $rowKey => $row) {
+                foreach ($request->items as $row) {
+                    $item = ProductionAnalysisItem::create([
+                        'production_analysis_id' => $analysis->id,
+                        'analysis_time' => $row['time'],
+                        'unit_id' => $row['unit_id'] ?? null,
+                    ]);
+
                     if (isset($row['params']) && is_array($row['params'])) {
-                        // Append seconds based on row index to distinguish multiple observations at the same HH:mm
-                        $analysisTime = $row['time'] . ":" . str_pad($rowKey % 60, 2, '0', STR_PAD_LEFT);
-                        foreach ($row['params'] as $index => $value) {
-                            if (isset($productSlabTypes[$index]) && $value !== null && $value !== '') {
-                                ProductionAnalysisData::create([
-                                    'production_analysis_id' => $analysis->id,
-                                    'analysis_time' => $analysisTime,
-                                    'slab_type_id' => $productSlabTypes[$index]->id,
+                        foreach ($row['params'] as $slabTypeId => $value) {
+                            if ($value !== null && $value !== '') {
+                                ProductionAnalysisItemSlab::create([
+                                    'production_analysis_item_id' => $item->id,
+                                    'slab_type_id' => $slabTypeId,
                                     'production_analysis_value' => $value,
                                 ]);
                             }
@@ -225,8 +211,7 @@ class ProductionOutputAnalysisController extends Controller
         try {
             DB::beginTransaction();
             $analysis = ProductionAnalysis::findOrFail($id);
-            $analysis->analysisData()->delete();
-            DB::table('job_orders_against_production_analysis')->where('production_id', $analysis->id)->delete();
+            $analysis->jobOrders()->detach();
             $analysis->delete();
             DB::commit();
             return response()->json(['status' => 'success', 'message' => 'Analysis deleted successfully']);
@@ -239,22 +224,21 @@ class ProductionOutputAnalysisController extends Controller
     public function getList(Request $request)
     {
         $limit = $request->per_page ?? 25;
-        $jobOrderIdsFilter = $request->job_order_ids;
-        $brandIdsFilter = $request->brand_ids;
         $locationIdsFilter = $request->location_ids;
-        $varietySearch = $request->variety_search;
+        $arrivalLocationIdsFilter = $request->arrival_location_ids;
+        $plantIdsFilter = $request->plant_ids;
         $dateRange = $request->date_range;
 
-        $items = ProductionAnalysis::with(['brand', 'location', 'jobOrders'])
+        $items = ProductionAnalysis::with(['location', 'arrivalLocation', 'plant'])
             ->where('production_analysis_type', 'output')
-            ->when($brandIdsFilter, function ($query) use ($brandIdsFilter) {
-                return $query->whereIn('brand_id', $brandIdsFilter);
-            })
             ->when($locationIdsFilter, function ($query) use ($locationIdsFilter) {
                 return $query->whereIn('location_id', $locationIdsFilter);
             })
-            ->when($varietySearch, function ($query) use ($varietySearch) {
-                return $query->where('variety', 'LIKE', "%$varietySearch%");
+            ->when($arrivalLocationIdsFilter, function ($query) use ($arrivalLocationIdsFilter) {
+                return $query->whereIn('arrival_location_id', $arrivalLocationIdsFilter);
+            })
+            ->when($plantIdsFilter, function ($query) use ($plantIdsFilter) {
+                return $query->whereIn('plant_id', $plantIdsFilter);
             })
             ->when($dateRange, function ($query) use ($dateRange) {
                 $dates = explode(' - ', $dateRange);
@@ -262,14 +246,29 @@ class ProductionOutputAnalysisController extends Controller
                     return $query->whereBetween('analysis_date', [trim($dates[0]), trim($dates[1])]);
                 }
             })
-            ->when($jobOrderIdsFilter, function ($query) use ($jobOrderIdsFilter) {
-                return $query->whereHas('jobOrders', function ($q) use ($jobOrderIdsFilter) {
-                    $q->whereIn('job_orders.id', $jobOrderIdsFilter);
-                });
-            })
             ->orderBy('id', 'DESC')
             ->paginate($limit);
 
         return view('management.production.production_output_analysis.getList', compact('items'));
+    }
+
+    public function getSlabsByProduct(Request $request)
+    {
+        $productId = $request->product_id;
+        $slabs = ProductSlab::with('slabType')
+            ->where('product_id', $productId)
+            ->get()
+            ->unique('product_slab_type_id')
+            ->values();
+            
+        $slabTypes = $slabs->map(function($slab) {
+            return [
+                'id' => $slab->slabType->id,
+                'name' => $slab->slabType->name,
+                'qc_symbol' => $slab->slabType->qc_symbol,
+            ];
+        });
+        
+        return response()->json($slabTypes);
     }
 }

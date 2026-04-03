@@ -1,7 +1,7 @@
 <div class="row">
     <!-- Header Information -->
     <div class="col-md-12">
-        <h6 class="header-heading-sepration">Output Analysis Information</h6>
+        <h6 class="header-heading-sepration">Machine Analysis Information</h6>
         <div class="row">
             <div class="col-md-3">
                 <div class="form-group">
@@ -12,7 +12,7 @@
             <div class="col-md-3">
                 <div class="form-group">
                     <label>Company Location:</label>
-                    <p class="form-control-static">{{ $item->location->name ?? 'N/A' }}</p>
+                    <p class="form-control-static">{{ $item->companyLocation->name ?? 'N/A' }}</p>
                 </div>
             </div>
             <div class="col-md-3">
@@ -29,30 +29,8 @@
             </div>
             <div class="col-md-3">
                 <div class="form-group">
-                    <label>Product (Commodity):</label>
-                    <p class="form-control-static">{{ $item->product->name ?? 'N/A' }}</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Extra Fields for Output Analysis -->
-        <div class="row mt-3">
-            <div class="col-md-4">
-                <div class="form-group">
-                    <label>Milling Degree:</label>
-                    <p class="form-control-static text-capitalize">{{ $item->milling_degree ?? 'N/A' }}</p>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="form-group">
-                    <label>Stitching:</label>
-                    <p class="form-control-static text-capitalize">{{ $item->inner_stitching ?? 'N/A' }}</p>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="form-group">
-                    <label>Outer Stitching:</label>
-                    <p class="form-control-static text-capitalize">{{ $item->outer_stitching ?? 'N/A' }}</p>
+                    <label>Machine:</label>
+                    <p class="form-control-static">{{ $item->machine->name ?? 'N/A' }}</p>
                 </div>
             </div>
         </div>
@@ -79,7 +57,7 @@
                             <td>{{ $analysisItem->unit->name ?? '-' }}</td>
                             @foreach($productSlabTypes as $productSlabType)
                                 <td>
-                                    {{ $analysisItem->slabs->where('slab_type_id', $productSlabType->id)->first()->production_analysis_value ?? '-' }}
+                                    {{ $analysisItem->slabs->where('slab_type_id', $productSlabType->id)->first()->analysis_value ?? '-' }}
                                 </td>
                             @endforeach
                         </tr>

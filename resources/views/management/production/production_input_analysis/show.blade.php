@@ -6,47 +6,25 @@
             <div class="col-md-3">
                 <div class="form-group">
                     <label>Date:</label>
-                    <p class="form-control-static">{{ $item->analysis_date->format('d-m-Y') }}</p>
+                    <p class="form-control-static">{{ \Carbon\Carbon::parse($item->analysis_date)->format('d-m-Y') }}</p>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="form-group">
-                    <label>Job Order(s):</label>
-                    <p class="form-control-static">
-                        @foreach($item->jobOrders as $jobOrder)
-                            <span class="badge badge-primary">{{ $jobOrder->job_order_no }}</span>
-                        @endforeach
-                    </p>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="form-group">
-                    <label>Brand:</label>
-                    <p class="form-control-static">{{ $item->brand->name ?? 'N/A' }}</p>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="form-group">
-                    <label>Packing:</label>
-                    <p class="form-control-static">{{ $item->bagPacking->name ?? 'N/A' }}</p>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="form-group">
-                    <label>Location:</label>
+                    <label>Company Location:</label>
                     <p class="form-control-static">{{ $item->location->name ?? 'N/A' }}</p>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="form-group">
-                    <label>Variety:</label>
-                    <p class="form-control-static">{{ $item->variety }}</p>
+                    <label>Arrival Location:</label>
+                    <p class="form-control-static">{{ $item->arrivalLocation->name ?? 'N/A' }}</p>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="form-group">
-                    <label>Crop Year:</label>
-                    <p class="form-control-static">{{ $item->cropYear->name ?? 'N/A' }}</p>
+                    <label>Plant:</label>
+                    <p class="form-control-static">{{ $item->plant->name ?? 'N/A' }}</p>
                 </div>
             </div>
         </div>
@@ -62,7 +40,7 @@
                         <th style="min-width: 150px;">Time</th>
                         <th style="min-width: 150px;">Unit</th>
                         @foreach($productSlabTypes as $productSlabType)
-                            <th style="min-width: 250px;">{{ $productSlabType->name }} {{ $productSlabType->qc_symbol }}</th>
+                            <th style="min-width: 150px;">{{ $productSlabType->name }} {{ $productSlabType->qc_symbol }}</th>
                         @endforeach
                     </tr>
                 </thead>

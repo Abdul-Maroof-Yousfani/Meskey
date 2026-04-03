@@ -1,18 +1,18 @@
 @extends('management.layouts.master')
 @section('title')
-    Production Input Analysis
+    Production Machine Analysis
 @endsection
 @section('content')
     <div class="content-wrapper">
         <section id="extended">
             <div class="row w-100 mx-auto">
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-                    <h2 class="page-title">Production Input Analysis</h2>
+                    <h2 class="page-title">Production Machine Analysis</h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
-                    <button onclick="openModal(this,'{{ route('production-input-analysis.create') }}','Add Production Input Analysis',false,'90%')" type="button"
+                    <button onclick="openModal(this,'{{ route('production-machine-analysis.create') }}','Add Production Machine Analysis',false,'95%')" type="button"
                         class="btn btn-primary position-relative">
-                        Create Input Analysis
+                        Create Machine Analysis
                     </button>
                 </div>
             </div>
@@ -28,7 +28,7 @@
                                                 <label for="custom_date_range" class="form-label">Date</label>
                                                 <input type="text" class="form-control" name="date_range" id="custom_date_range" value="{{ date('Y-m-d', strtotime('-30 days')) }} - {{ date('Y-m-d') }}">
                                             </div>
-                                            <div class="col-md-3 text-left">
+                                            <div class="col-md-2 text-left">
                                                 <label for="location_ids" class="form-label">Company Location</label>
                                                 <select name="location_ids[]" id="location_ids" class="form-control select2-filter" multiple data-placeholder="Select Location(s)">
                                                     @foreach($locations as $location)
@@ -36,7 +36,7 @@
                                                     @endforeach
                                                 </select>
                                             </div>
-                                            <div class="col-md-3 text-left">
+                                            <div class="col-md-2 text-left">
                                                 <label for="arrival_location_ids" class="form-label">Arrival Location</label>
                                                 <select name="arrival_location_ids[]" id="arrival_location_ids" class="form-control select2-filter" multiple data-placeholder="Select Arrival Location(s)">
                                                     @foreach($arrivalLocations as $arrival)
@@ -44,11 +44,19 @@
                                                     @endforeach
                                                 </select>
                                             </div>
-                                            <div class="col-md-3 text-left">
+                                            <div class="col-md-2 text-left">
                                                 <label for="plant_ids" class="form-label">Plant</label>
                                                 <select name="plant_ids[]" id="plant_ids" class="form-control select2-filter" multiple data-placeholder="Select Plant(s)">
                                                     @foreach($plants as $plant)
                                                         <option value="{{ $plant->id }}">{{ $plant->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div class="col-md-3 text-left">
+                                                <label for="production_machine_ids" class="form-label">Machine</label>
+                                                <select name="production_machine_ids[]" id="production_machine_ids" class="form-control select2-filter" multiple data-placeholder="Select Machine(s)">
+                                                    @foreach($machines as $machine)
+                                                        <option value="{{ $machine->id }}">{{ $machine->name }}</option>
                                                     @endforeach
                                                 </select>
                                             </div>
@@ -62,8 +70,24 @@
                             </form>
                         </div>
                         <div class="card-content">
-                            <div class="card-body table-responsive" id="filteredData" style="margin-top: 30px;">
-                                {{-- Loaded via AJAX --}}
+                            <div class="card-body table-responsive" id="filteredData">
+                                <table class="table m-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Company Location</th>
+                                            <th>Arrival Location</th>
+                                            <th>Plant</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Data will be loaded here via AJAX -->
+                                        <tr>
+                                            <td colspan="5" class="text-center">No data available</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -76,7 +100,7 @@
 @section('script')
     <script>
         $(document).ready(function () {
-            filterationCommon(`{{ route('get.production-input-analysis') }}`)
+            filterationCommon(`{{ route('get.production-machine-analysis') }}`)
             
             $('.select2-filter').select2({
                 width: '100%'
@@ -87,7 +111,6 @@
                 autoUpdateInput: true
             }).on('apply.daterangepicker', function(ev, picker) {
                 $(this).val(picker.startDate.format('YYYY-MM-DD') + ' - ' + picker.endDate.format('YYYY-MM-DD'));
-                $('#location_ids').trigger('change');
             });
         });
     </script>

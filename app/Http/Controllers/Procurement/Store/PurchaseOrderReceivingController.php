@@ -34,8 +34,9 @@ class PurchaseOrderReceivingController extends Controller
 {
     public function index()
     {
+        $categories = Category::where('category_type', 'general_items')->get();
         $suppliers = Supplier::where('status', 'active')->get();
-        return view('management.procurement.store.purchase_order_receiving.index', compact('suppliers'));
+        return view('management.procurement.store.purchase_order_receiving.index', compact('suppliers', 'categories'));
     }
 
 
@@ -63,34 +64,42 @@ class PurchaseOrderReceivingController extends Controller
             });
         }
 
-        if ($request->has('purchase_order_receiving_no') && !empty($request->purchase_order_receiving_no)) {
-            $no = $request->purchase_order_receiving_no;
-            $query->whereHas('purchase_order_receiving', function ($q) use ($no) {
-                $q->where('purchase_order_receiving_no', 'like', "%{$no}%");
-            });
-        }
-
-        if ($request->has('purchase_order_no') && !empty($request->purchase_order_no)) {
-            $no = $request->purchase_order_no;
-            $query->whereHas('purchase_order_receiving.purchase_order', function ($q) use ($no) {
-                $q->where('purchase_order_no', 'like', "%{$no}%");
-            });
-        }
-
-        if ($request->has('purchase_request_no') && !empty($request->purchase_request_no)) {
-            $no = $request->purchase_request_no;
-            $query->whereHas('purchase_order_receiving.purchase_request', function ($q) use ($no) {
-                $q->where('purchase_request_no', 'like', "%{$no}%");
-            });
-        }
-
         if ($request->has('supplier_id') && $request->supplier_id !== 'all' && !empty($request->supplier_id)) {
             $query->where('supplier_id', $request->supplier_id);
         }
 
+        if ($request->has('dc_no') && !empty($request->dc_no)) {
+            $query->whereHas('purchase_order_receiving', function($q) use ($request) {
+                $q->where('dc_no', $request->dc_no);
+            });
+        }
+
+        foreach (['qty', 'rate', 'total'] as $field) {
+            if ($request->has($field) && !empty($request->$field)) {
+                if ($field === 'rate' || $field === 'total') {
+                    $query->whereHas('purchase_order_data', function ($q) use ($field, $request) {
+                        $q->where($field, $request->$field);
+                    });
+                } else {
+                    $query->where($field, $request->$field);
+                }
+            }
+        }
+
+        if ($request->has('qc_status') && !empty($request->qc_status)) {
+            $query->whereHas('qc', function($q) use ($request) {
+                $status = $request->qc_status;
+                if ($status === 'pending') {
+                    $q->whereIn('am_approval_status', ['pending', 'reverted']);
+                } else {
+                    $q->where('am_approval_status', $status);
+                }
+            });
+        }
+
         $PurchaseOrderRaw = $query->with(
             'qc',
-            'purchase_order_data',
+            'purchase_order_data.purchase_request_data',
             'purchase_order_receiving.purchase_order.purchase_request',
             'category',
             'item',

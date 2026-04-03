@@ -1,10 +1,10 @@
-<form action="{{ route('production-input-analysis.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form action="{{ route('production-machine-analysis.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
-    <input type="hidden" id="listRefresh" value="{{ route('get.production-input-analysis') }}">
+    <input type="hidden" id="listRefresh" value="{{ route('get.production-machine-analysis') }}">
     <div class="row form-mar">
         <!-- Header Information -->
         <div class="col-md-12">
-            <h6 class="header-heading-sepration">Input Analysis Information</h6>
+            <h6 class="header-heading-sepration">Machine Analysis Information</h6>
             <div class="row">
                 <div class="col-md-3">
                     <div class="form-group">
@@ -15,7 +15,7 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label>Company Location:</label>
-                        <select name="location_id" id="location_id" class="form-control select2" required>
+                        <select name="company_location_id" id="company_location_id" class="form-control select2" required>
                             <option value="">Select Location</option>
                             @foreach($companyLocations as $location)
                                 <option value="{{ $location->id }}" @selected($preSelectedLocationId == $location->id)>
@@ -30,7 +30,6 @@
                         <label>Arrival Location:</label>
                         <select name="arrival_location_id" id="arrival_location_id" class="form-control select2" required>
                             <option value="">Select Arrival Location</option>
-                            {{-- Populated via AJAX --}}
                         </select>
                     </div>
                 </div>
@@ -39,7 +38,14 @@
                         <label>Plant:</label>
                         <select name="plant_id" id="plant_id" class="form-control select2" required>
                             <option value="">Select Plant</option>
-                            {{-- Populated via AJAX --}}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Machine:</label>
+                        <select name="production_machine_id" id="production_machine_id" class="form-control select2" required>
+                            <option value="">Select Machine</option>
                         </select>
                     </div>
                 </div>
@@ -112,6 +118,7 @@
 
 <script>
     $(document).ready(function() {
+        // Initialize Select2
         function initSelect2(el) {
             if ($.fn.select2) {
                 $(el).select2({ width: '100%' });
@@ -119,9 +126,9 @@
         }
         initSelect2('.select2');
 
-        // Trigger change if pre-selected
-        if ($('#location_id').val()) {
-            $('#location_id').trigger('change');
+        // Trigger change if only one location is pre-selected
+        if ($('#company_location_id').val()) {
+            $('#company_location_id').trigger('change');
         }
 
         function addRow() {
@@ -151,10 +158,12 @@
             initSelect2($row.find('.select2-row'));
         }
 
+        // Add Row Button
         $('#addLineItem').on('click', function() {
             addRow();
         });
 
+        // Remove Row
         $(document).on('click', '.remove-row', function() {
             if ($('#lineItemsBody tr').length > 1) {
                 $(this).closest('tr').remove();
@@ -163,11 +172,12 @@
             }
         });
 
-        // Cascading Dropdowns (Using Machine Analysis Routes)
-        $('#location_id').on('change', function() {
+        // Cascading Dropdowns
+        $('#company_location_id').on('change', function() {
             let companyId = $(this).val();
             $('#arrival_location_id').html('<option value="">Select Arrival Location</option>').prop('disabled', true).trigger('change');
             $('#plant_id').html('<option value="">Select Plant</option>').prop('disabled', true).trigger('change');
+            $('#production_machine_id').html('<option value="">Select Machine</option>').prop('disabled', true).trigger('change');
             
             if (companyId) {
                 $('#arrival_location_id').html('<option value="">Loading...</option>').trigger('change');
@@ -184,9 +194,10 @@
         });
 
         $('#arrival_location_id').on('change', function() {
-            let companyId = $('#location_id').val();
+            let companyId = $('#company_location_id').val();
             let arrivalId = $(this).val();
             $('#plant_id').html('<option value="">Select Plant</option>').prop('disabled', true).trigger('change');
+            $('#production_machine_id').html('<option value="">Select Machine</option>').prop('disabled', true).trigger('change');
             
             if (companyId && arrivalId) {
                 $('#plant_id').html('<option value="">Loading...</option>').trigger('change');
@@ -198,6 +209,25 @@
                         $('#plant_id').append(`<option value="${item.id}">${item.name}</option>`);
                     });
                     $('#plant_id').trigger('change');
+                });
+            }
+        });
+
+        $('#plant_id').on('change', function() {
+            let arrivalId = $('#arrival_location_id').val();
+            let plantId = $(this).val();
+            $('#production_machine_id').html('<option value="">Select Machine</option>').prop('disabled', true).trigger('change');
+            
+            if (arrivalId && plantId) {
+                $('#production_machine_id').html('<option value="">Loading...</option>').trigger('change');
+                let url = '{{ route("production-machine-analysis.get-machines", [":arrivalId", ":plantId"]) }}';
+                url = url.replace(':arrivalId', arrivalId).replace(':plantId', plantId);
+                $.get(url, function(data) {
+                    $('#production_machine_id').html('<option value="">Select Machine</option>').prop('disabled', false);
+                    $.each(data, function(i, item) {
+                        $('#production_machine_id').append(`<option value="${item.id}">${item.name}</option>`);
+                    });
+                    $('#production_machine_id').trigger('change');
                 });
             }
         });

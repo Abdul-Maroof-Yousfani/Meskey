@@ -14,60 +14,40 @@
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Job Order:</label>
-                        <select name="job_order_ids[]" class="form-control select2" multiple required>
-                            @foreach($jobOrders as $jobOrder)
-                                <option value="{{ $jobOrder->id }}">{{ $jobOrder->job_order_no }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>Brand:</label>
-                        <select name="brand_id" class="form-control select2" required>
-                            <option value="">Select Brand</option>
-                            @foreach($brands as $brand)
-                                <option value="{{ $brand->id }}">{{ $brand->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>Packing:</label>
-                        <select name="packing_id" class="form-control select2" required>
-                            <option value="">Select Packing</option>
-                            @foreach($packings as $packing)
-                                <option value="{{ $packing->id }}">{{ $packing->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>Location:</label>
-                        <select name="location_id" class="form-control select2" required>
+                        <label>Company Location:</label>
+                        <select name="location_id" id="location_id" class="form-control select2" required>
                             <option value="">Select Location</option>
                             @foreach($companyLocations as $location)
-                                <option value="{{ $location->id }}">{{ $location->name }}</option>
+                                <option value="{{ $location->id }}" @selected($preSelectedLocationId == $location->id)>
+                                    {{ $location->name }}
+                                </option>
                             @endforeach
                         </select>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Variety:</label>
-                        <input type="text" name="variety" class="form-control" placeholder="Enter Variety">
+                        <label>Arrival Location:</label>
+                        <select name="arrival_location_id" id="arrival_location_id" class="form-control select2" required>
+                            <option value="">Select Arrival Location</option>
+                        </select>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Crop Year:</label>
-                        <select name="crop_year_id" class="form-control select2" required>
-                            <option value="">Select Crop Year</option>
-                            @foreach($cropYears as $cropYear)
-                                <option value="{{ $cropYear->id }}">{{ $cropYear->name }}</option>
+                        <label>Plant:</label>
+                        <select name="plant_id" id="plant_id" class="form-control select2" required>
+                            <option value="">Select Plant</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Product (Commodity):</label>
+                        <select name="product_id" id="product_id" class="form-control select2" required>
+                            <option value="">Select Product</option>
+                            @foreach($products as $product)
+                                <option value="{{ $product->id }}">{{ $product->name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -145,8 +125,9 @@
                     <thead>
                         <tr id="headerRow">
                             <th style="min-width: 150px;">Time</th>
+                            <th style="min-width: 150px;">Unit</th>
                             @foreach($productSlabTypes as $productSlabType)
-                                <th class="dynamic-col" style="min-width: 250px;">{{ $productSlabType->name }} {{ $productSlabType->qc_symbol }}</th>
+                                <th class="dynamic-col" data-slab-id="{{ $productSlabType->id }}" style="min-width: 150px;">{{ $productSlabType->name }} {{ $productSlabType->qc_symbol }}</th>
                             @endforeach
                             <th style="width: 50px;">Action</th>
                         </tr>
@@ -156,9 +137,17 @@
                             <td>
                                 <input type="time" name="items[0][time]" class="form-control" value="{{ date('H:i') }}">
                             </td>
+                            <td>
+                                <select name="items[0][unit_id]" class="form-control select2">
+                                    <option value="">Select Unit</option>
+                                    @foreach($units as $unit)
+                                        <option value="{{ $unit->id }}">{{ $unit->name }}</option>
+                                    @endforeach
+                                </select>
+                            </td>
                             @foreach($productSlabTypes as $productSlabType)
                                 <td class="dynamic-col">
-                                    <input type="text" name="items[0][params][]" class="form-control">
+                                    <input type="text" name="items[0][params][{{ $productSlabType->id }}]" class="form-control">
                                 </td>
                             @endforeach
                             <td>
@@ -189,31 +178,78 @@
 
 <script>
     $(document).ready(function() {
-        // Initialize Select2
-        if ($.fn.select2) {
-            $('.select2').select2({
-                width: '100%'
-            });
+        function initSelect2(el) {
+            if ($.fn.select2) {
+                $(el).select2({ width: '100%' });
+            }
+        }
+        initSelect2('.select2');
+
+        if ($('#location_id').val()) {
+            $('#location_id').trigger('change');
         }
 
-        // Add Row
-        $('#addLineItem').on('click', function() {
+        $('#product_id').on('change', function() {
+            let productId = $(this).val();
+            if(!productId) return;
+
+            $.ajax({
+                url: "{{ route('production-output-analysis.get-slabs') }}",
+                type: "GET",
+                data: { product_id: productId },
+                success: function(response) {
+                    let headerRow = $('#headerRow');
+                    headerRow.find('.dynamic-col').remove();
+                    
+                    let actionTh = headerRow.find('th:last-child');
+                    response.forEach(slab => {
+                        $(`<th class="dynamic-col" data-slab-id="${slab.id}" style="min-width: 150px;">${slab.name} ${slab.qc_symbol || ''}</th>`)
+                            .insertBefore(actionTh);
+                    });
+
+                    $('#lineItemsBody').html('');
+                    addRow(response);
+                }
+            });
+        });
+
+        function addRow(slabs = null) {
             let rowCount = $('#lineItemsBody tr').length;
-            let colCount = $('#headerRow th.dynamic-col').length;
             let currentTime = new Date().getHours().toString().padStart(2, '0') + ':' + new Date().getMinutes().toString().padStart(2, '0');
             
             let newRow = `<tr>
-                <td><input type="time" name="items[${rowCount}][time]" class="form-control" value="${currentTime}"></td>`;
+                <td><input type="time" name="items[${rowCount}][time]" class="form-control" value="${currentTime}"></td>
+                <td>
+                    <select name="items[${rowCount}][unit_id]" class="form-control select2-row">
+                        <option value="">Select Unit</option>
+                        @foreach($units as $unit)
+                            <option value="{{ $unit->id }}">{{ $unit->name }}</option>
+                        @endforeach
+                    </select>
+                </td>`;
             
-            for(let i=0; i<colCount; i++) {
-                newRow += `<td class="dynamic-col"><input type="text" name="items[${rowCount}][params][]" class="form-control"></td>`;
+            if (slabs) {
+                slabs.forEach(slab => {
+                    newRow += `<td class="dynamic-col"><input type="text" name="items[${rowCount}][params][${slab.id}]" class="form-control"></td>`;
+                });
+            } else {
+                $('#headerRow th.dynamic-col').each(function() {
+                    let slabId = $(this).data('slab-id');
+                    newRow += `<td class="dynamic-col"><input type="text" name="items[${rowCount}][params][${slabId}]" class="form-control"></td>`;
+                });
             }
             
             newRow += `<td><button type="button" class="btn btn-sm btn-danger remove-row"><i class="ft-trash"></i></button></td></tr>`;
-            $('#lineItemsBody').append(newRow);
+            
+            let $row = $(newRow);
+            $('#lineItemsBody').append($row);
+            initSelect2($row.find('.select2-row'));
+        }
+
+        $('#addLineItem').on('click', function() {
+            addRow();
         });
 
-        // Remove Row
         $(document).on('click', '.remove-row', function() {
             if ($('#lineItemsBody tr').length > 1) {
                 $(this).closest('tr').remove();
@@ -221,15 +257,44 @@
                 alert('At least one row is required.');
             }
         });
+
+        // Cascading Dropdowns
+        $('#location_id').on('change', function() {
+            let companyId = $(this).val();
+            $('#arrival_location_id').html('<option value="">Select Arrival Location</option>').prop('disabled', true).trigger('change');
+            $('#plant_id').html('<option value="">Select Plant</option>').prop('disabled', true).trigger('change');
+            
+            if (companyId) {
+                $('#arrival_location_id').html('<option value="">Loading...</option>').trigger('change');
+                let url = '{{ route("production-machine-analysis.get-arrival-locations", ":id") }}';
+                url = url.replace(':id', companyId);
+                $.get(url, function(data) {
+                    $('#arrival_location_id').html('<option value="">Select Arrival Location</option>').prop('disabled', false);
+                    $.each(data, function(i, item) {
+                        $('#arrival_location_id').append(`<option value="${item.id}">${item.name}</option>`);
+                    });
+                    $('#arrival_location_id').trigger('change');
+                });
+            }
+        });
+
+        $('#arrival_location_id').on('change', function() {
+            let companyId = $('#location_id').val();
+            let arrivalId = $(this).val();
+            $('#plant_id').html('<option value="">Select Plant</option>').prop('disabled', true).trigger('change');
+            
+            if (companyId && arrivalId) {
+                $('#plant_id').html('<option value="">Loading...</option>').trigger('change');
+                let url = '{{ route("production-machine-analysis.get-plants", [":companyId", ":arrivalId"]) }}';
+                url = url.replace(':companyId', companyId).replace(':arrivalId', arrivalId);
+                $.get(url, function(data) {
+                    $('#plant_id').html('<option value="">Select Plant</option>').prop('disabled', false);
+                    $.each(data, function(i, item) {
+                        $('#plant_id').append(`<option value="${item.id}">${item.name}</option>`);
+                    });
+                    $('#plant_id').trigger('change');
+                });
+            }
+        });
     });
 </script>
-
-<style>
-    .custom-control-label::before, 
-    .custom-control-label::after {
-        top: 0.25rem !important;
-    }
-    .custom-radio .custom-control-label::after {
-        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e") !important;
-    }
-</style>

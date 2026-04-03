@@ -10,54 +10,16 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label>Date:</label>
-                        <input type="date" name="date" class="form-control" value="{{ $item->analysis_date->format('Y-m-d') }}" readonly>
+                        <input type="date" name="date" class="form-control" value="{{ \Carbon\Carbon::parse($item->analysis_date)->format('Y-m-d') }}" readonly>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Job Order:</label>
-                        <select name="job_order_ids[]" class="form-control select2" multiple required>
-                            @foreach($jobOrders as $jobOrder)
-                                <option value="{{ $jobOrder->id }}" {{ in_array($jobOrder->id, $selectedJobOrderIds) ? 'selected' : '' }}>
-                                    {{ $jobOrder->job_order_no }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>Brand:</label>
-                        <select name="brand_id" class="form-control select2" required>
-                            <option value="">Select Brand</option>
-                            @foreach($brands as $brand)
-                                <option value="{{ $brand->id }}" {{ $item->brand_id == $brand->id ? 'selected' : '' }}>
-                                    {{ $brand->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>Packing:</label>
-                        <select name="packing_id" class="form-control select2" required>
-                            <option value="">Select Packing</option>
-                            @foreach($packings as $packing)
-                                <option value="{{ $packing->id }}" {{ $item->bag_packing_id == $packing->id ? 'selected' : '' }}>
-                                    {{ $packing->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>Location:</label>
-                        <select name="location_id" class="form-control select2" required>
+                        <label>Company Location:</label>
+                        <select name="location_id" id="location_id" class="form-control select2" required>
                             <option value="">Select Location</option>
                             @foreach($companyLocations as $location)
-                                <option value="{{ $location->id }}" {{ $item->location_id == $location->id ? 'selected' : '' }}>
+                                <option value="{{ $location->id }}" @selected($item->location_id == $location->id)>
                                     {{ $location->name }}
                                 </option>
                             @endforeach
@@ -66,17 +28,26 @@
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Variety:</label>
-                        <input type="text" name="variety" class="form-control" placeholder="Enter Variety" value="{{ $item->variety }}">
+                        <label>Arrival Location:</label>
+                        <select name="arrival_location_id" id="arrival_location_id" class="form-control select2" required>
+                            <option value="">Select Arrival Location</option>
+                            @foreach($arrivalLocations as $loc)
+                                <option value="{{ $loc->id }}" @selected($item->arrival_location_id == $loc->id)>
+                                    {{ $loc->name }}
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Crop Year:</label>
-                        <select name="crop_year_id" class="form-control select2" required>
-                            <option value="">Select Crop Year</option>
-                            @foreach($cropYears as $cropYear)
-                                <option value="{{ $cropYear->id }}" {{ $item->crop_year_id == $cropYear->id ? 'selected' : '' }}>{{ $cropYear->name }}</option>
+                        <label>Plant:</label>
+                        <select name="plant_id" id="plant_id" class="form-control select2" required>
+                            <option value="">Select Plant</option>
+                            @foreach($plants as $pl)
+                                <option value="{{ $pl->id }}" @selected($item->plant_id == $pl->id)>
+                                    {{ $pl->name }}
+                                </option>
                             @endforeach
                         </select>
                     </div>
@@ -99,7 +70,7 @@
                             <th style="min-width: 150px;">Time</th>
                             <th style="min-width: 150px;">Unit</th>
                             @foreach($productSlabTypes as $productSlabType)
-                                <th class="dynamic-col" data-slab-id="{{ $productSlabType->id }}" style="min-width: 250px;">{{ $productSlabType->name }} {{ $productSlabType->qc_symbol }}</th>
+                                <th class="dynamic-col" data-slab-id="{{ $productSlabType->id }}" style="min-width: 150px;">{{ $productSlabType->name }} {{ $productSlabType->qc_symbol }}</th>
                             @endforeach
                             <th style="width: 50px;">Action</th>
                         </tr>
@@ -114,16 +85,19 @@
                                     <select name="items[{{ $index }}][unit_id]" class="form-control select2">
                                         <option value="">Select Unit</option>
                                         @foreach($units as $unit)
-                                            <option value="{{ $unit->id }}" {{ $analysisItem->unit_id == $unit->id ? 'selected' : '' }}>{{ $unit->name }}</option>
+                                            <option value="{{ $unit->id }}" @selected($analysisItem->unit_id == $unit->id)>
+                                                {{ $unit->name }}
+                                            </option>
                                         @endforeach
                                     </select>
                                 </td>
                                 @foreach($productSlabTypes as $productSlabType)
                                     @php
-                                        $slabValue = $analysisItem->slabs->where('slab_type_id', $productSlabType->id)->first()->production_analysis_value ?? '';
+                                        $slabValue = $analysisItem->slabs->where('slab_type_id', $productSlabType->id)->first();
                                     @endphp
                                     <td class="dynamic-col">
-                                        <input type="text" name="items[{{ $index }}][params][{{ $productSlabType->id }}]" class="form-control" value="{{ $slabValue }}">
+                                        <input type="text" name="items[{{ $index }}][params][{{ $productSlabType->id }}]" 
+                                               class="form-control" value="{{ $slabValue->production_analysis_value ?? '' }}">
                                     </td>
                                 @endforeach
                                 <td>
@@ -155,7 +129,6 @@
 
 <script>
     $(document).ready(function() {
-        // Initialize Select2
         function initSelect2(el) {
             if ($.fn.select2) {
                 $(el).select2({ width: '100%' });
@@ -190,12 +163,10 @@
             initSelect2($row.find('.select2-row'));
         }
 
-        // Add Row Button
         $('#addLineItem').on('click', function() {
             addRow();
         });
 
-        // Remove Row
         $(document).on('click', '.remove-row', function() {
             if ($('#lineItemsBody tr').length > 1) {
                 $(this).closest('tr').remove();
@@ -203,12 +174,44 @@
                 alert('At least one row is required.');
             }
         });
+
+        // Cascading Dropdowns
+        $('#location_id').on('change', function() {
+            let companyId = $(this).val();
+            $('#arrival_location_id').html('<option value="">Select Arrival Location</option>').prop('disabled', true).trigger('change');
+            $('#plant_id').html('<option value="">Select Plant</option>').prop('disabled', true).trigger('change');
+            
+            if (companyId) {
+                $('#arrival_location_id').html('<option value="">Loading...</option>').trigger('change');
+                let url = '{{ route("production-machine-analysis.get-arrival-locations", ":id") }}';
+                url = url.replace(':id', companyId);
+                $.get(url, function(data) {
+                    $('#arrival_location_id').html('<option value="">Select Arrival Location</option>').prop('disabled', false);
+                    $.each(data, function(i, item) {
+                        $('#arrival_location_id').append(`<option value="${item.id}">${item.name}</option>`);
+                    });
+                    $('#arrival_location_id').trigger('change');
+                });
+            }
+        });
+
+        $('#arrival_location_id').on('change', function() {
+            let companyId = $('#location_id').val();
+            let arrivalId = $(this).val();
+            $('#plant_id').html('<option value="">Select Plant</option>').prop('disabled', true).trigger('change');
+            
+            if (companyId && arrivalId) {
+                $('#plant_id').html('<option value="">Loading...</option>').trigger('change');
+                let url = '{{ route("production-machine-analysis.get-plants", [":companyId", ":arrivalId"]) }}';
+                url = url.replace(':companyId', companyId).replace(':arrivalId', arrivalId);
+                $.get(url, function(data) {
+                    $('#plant_id').html('<option value="">Select Plant</option>').prop('disabled', false);
+                    $.each(data, function(i, item) {
+                        $('#plant_id').append(`<option value="${item.id}">${item.name}</option>`);
+                    });
+                    $('#plant_id').trigger('change');
+                });
+            }
+        });
     });
 </script>
-
-<style>
-    .custom-control-label::before, 
-    .custom-control-label::after {
-        top: 0.25rem !important;
-    }
-</style>
