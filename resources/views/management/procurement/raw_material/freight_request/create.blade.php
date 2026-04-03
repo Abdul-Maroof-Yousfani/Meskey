@@ -38,17 +38,15 @@
     $commission_percent_ded = $paymentRequestData->commission_percent_ded ?? $freightPaymentRequest?->commission_percent_ded ?? 0;
     $commission_amount = $paymentRequestData->commission_amount ?? $freightPaymentRequest?->commission_amount ?? 0;
     $weightDifference = ($ticket->arrived_net_weight ?? 0) - ($ticket->net_weight ?? 0);
-    
+
 @endphp
 @php
     $hasContract = isset($purchaseOrder) && !empty($purchaseOrder->id);
-    $targetRoute = $isRequestApprovalPage 
+    $targetRoute = $isRequestApprovalPage
         ? ($hasContract ? 'raw-material.pohouch-freight-payment-request-approval' : 'raw-material.pohouch-freight-payment-request-approval-wo-contract')
         : 'raw-material.freight-request.store';
 @endphp
-<form
-    action="{{ route($targetRoute) }}"
-    method="POST" id="ajaxSubmit" class="needs-validation" novalidate>
+<form action="{{ route($targetRoute) }}" method="POST" id="ajaxSubmit" class="needs-validation" novalidate>
     @csrf
     <input type="hidden" name="arrival_slip_no" value="{{ $ticket->arrivalSlip->unique_no ?? '' }}">
     <input type="hidden" name="arrival_slip_id" value="{{ $ticket->arrivalSlip->id ?? '' }}">
@@ -58,7 +56,7 @@
     <input type="hidden" name="ticket_type" value="{{ $ticketType ?? '' }}">
     <input type="hidden" name="payment_request_id" value="{{ $paymentRequest?->id ?? null }}">
     <input type="hidden" name="is_without_contract" value="{{ !$ticket->purchaseOrder?->contract_no }}">
-    
+
     @if (isset($isRequestApprovalPage) && $isRequestApprovalPage)
         <input type="hidden" id="listRefresh" value="{{ route('raw-material.get.payment-request-approval') }}" />
     @else
@@ -134,15 +132,15 @@
                     <select class="form-control select2" name="supplier_name" required>
                         <option value="">Select Supplier</option>
                         @foreach ($suppliers as $supplier)
-                            <option value="{{ $supplier->name }}" 
-                                @selected((isset($ticket->accountsOf->name) && $ticket->accountsOf->name == $supplier->name) || (isset($ticket->accounts_of_name) && $ticket->accounts_of_name == $supplier->name))>
+                            <option value="{{ $supplier->name }}" @selected((isset($ticket->accountsOf->name) && $ticket->accountsOf->name == $supplier->name) || (isset($ticket->accounts_of_name) && $ticket->accounts_of_name == $supplier->name))>
                                 {{ $supplier->name }}
                             </option>
                         @endforeach
                     </select>
                 @else
                     <input type="text" class="form-control bg-light" name="supplier_name"
-                        value="{{ $paymentRequestData->supplier_name ?? ($ticket->accountsOf->name ?? ($ticket->accounts_of_name ?? 'N/A')) }}" readonly placeholder="Supplier Name">
+                        value="{{ $paymentRequestData->supplier_name ?? ($ticket->accountsOf->name ?? ($ticket->accounts_of_name ?? 'N/A')) }}"
+                        readonly placeholder="Supplier Name">
                 @endif
             </div>
         </div>
@@ -150,8 +148,8 @@
             <div class="form-group">
                 <label class="font-weight-bold">Broker Name</label>
                 <input type="text" class="form-control bg-light"
-                    value="{{ $ticket->broker_name ?? ($ticket->broker->name ?? ($ticket->purchaseOrder->broker->name ?? 'N/A')) }}" readonly
-                    placeholder="Broker Name">
+                    value="{{ $ticket->broker_name ?? ($ticket->broker->name ?? ($ticket->purchaseOrder->broker->name ?? 'N/A')) }}"
+                    readonly placeholder="Broker Name">
             </div>
         </div>
         <div class="col-md-4">
@@ -160,8 +158,7 @@
                 <select class="form-control editable-field select2" name="vendor_id" @disabled($param0)>
                     <option value="">Select Freight Party</option>
                     @foreach ($vendors as $vendor)
-                        <option value="{{ $vendor->id }}" 
-                            @selected((isset($paymentRequestData) && $paymentRequestData->payment_to == $vendor->id) || (isset($suggested_vendor_id) && $suggested_vendor_id == $vendor->id))>
+                        <option value="{{ $vendor->id }}" @selected((isset($paymentRequestData) && $paymentRequestData->payment_to == $vendor->id) || (isset($suggested_vendor_id) && $suggested_vendor_id == $vendor->id))>
                             {{ $vendor->name }}
                         </option>
                     @endforeach
@@ -175,15 +172,16 @@
 
     @php
         $has_pendings = isset($paymentRequests)
-        ? $paymentRequests->whereIn('status', ['pending', 'approved'])->count()
-        : 0;
+            ? $paymentRequests->whereIn('status', ['pending', 'approved'])->count()
+            : 0;
     @endphp
     @if($ticket->saudaType?->name == 'Pohanch' && $has_pendings == 0)
         <div class="row">
             <div class="col-md-12">
                 <div class="form-group">
                     <div class="custom-control custom-checkbox">
-                        <input type="checkbox" onchange="isPaidBySupplier()" class="custom-control-input" id="paid_by_supplier" name="is_paid_by_supplier" value="1" {{ (isset($paymentRequestData) && $paymentRequestData->is_paid_by_supplier) ? 'checked' : '' }}>
+                        <input type="checkbox" onchange="isPaidBySupplier()" class="custom-control-input"
+                            id="paid_by_supplier" name="is_paid_by_supplier" value="1" {{ (isset($paymentRequestData) && $paymentRequestData->is_paid_by_supplier) ? 'checked' : '' }}>
                         <label class="custom-control-label font-weight-bold" for="paid_by_supplier">Paid By Supplier</label>
                     </div>
                 </div>
@@ -263,8 +261,8 @@
             <div class="form-group">
                 <label class="font-weight-bold">Station</label>
                 <input type="text" class="form-control bg-light"
-                    value="{{ $ticket->station_name ?? ($ticket->station->name ?? ($ticket->purchaseOrder->station_name ?? 'N/A')) }}" readonly
-                    placeholder="Station">
+                    value="{{ $ticket->station_name ?? ($ticket->station->name ?? ($ticket->purchaseOrder->station_name ?? 'N/A')) }}"
+                    readonly placeholder="Station">
             </div>
         </div>
     </div>
@@ -278,19 +276,19 @@
             </div>
         </div>
         @if($ticket->purchaseOrder?->contract_no)
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="font-weight-bold">Contract Rate</label>
-                <input type="text" class="form-control editable-field contract-rate" name="contract_rate"
-                    value="{{ $ticket->purchaseOrder->rate_per_kg ?? '0' }}" placeholder="Contract Rate" readonly>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label class="font-weight-bold">Contract Rate</label>
+                    <input type="text" class="form-control editable-field contract-rate" name="contract_rate"
+                        value="{{ $ticket->purchaseOrder->rate_per_kg ?? '0' }}" placeholder="Contract Rate" readonly>
+                </div>
             </div>
-        </div>
         @endif
         <div class="col-md-4">
             <div class="form-group">
                 <label class="font-weight-bold">Deduction Rate</label>
                 <input type="text" class="form-control editable-field deduction-rate"
-                    name="deduction_contract_rate_for_freight" id="deduction_rate"
+                    name="deduction_contract_rate_for_freight" id="deduction_rate" readonly
                     value="{{ $paymentRequestData->deduction_contract_rate_for_freight ?? ($ticket->freight->po_rate ?? ($ticket->purchaseOrder->rate_per_kg ?? '0')) }}"
                     placeholder="Contract Rate">
             </div>
@@ -542,7 +540,8 @@
 
     </div>
 
-    <div class="row @if($paymentRequestData?->is_paid_by_supplier && isset($isRequestApprovalPage) && $isRequestApprovalPage) hide @endif">
+    <div
+        class="row @if($paymentRequestData?->is_paid_by_supplier && isset($isRequestApprovalPage) && $isRequestApprovalPage) hide @endif">
         <div class="col-12">
             <h6 class="header-heading-sepration">
                 Payment Summary
@@ -567,9 +566,8 @@
             <div class="col-md-3">
                 <div class="form-group">
                     <label class="font-weight-bold">Percentage</label>
-                    <input type="number" min="0" max="100" step="0.01" class="form-control percentage-input" 
-                        value="{{ isset($isCreateFlow) && $isCreateFlow ? 100 : 0 }}"
-                        placeholder="Enter percentage">
+                    <input type="number" min="0" max="100" step="0.01" class="form-control percentage-input"
+                        value="{{ isset($isCreateFlow) && $isCreateFlow ? 100 : 0 }}" placeholder="Enter percentage">
                 </div>
             </div>
         @endif
@@ -656,7 +654,7 @@
 
 
     $(document).ready(function () {
-        window.isPaidBySupplier = function() {
+        window.isPaidBySupplier = function () {
             const isChecked = $('#paid_by_supplier').is(':checked');
             const percentageInput = $('.percentage-input');
             const requestAmountInput = $('[name="request_amount"]');
@@ -766,7 +764,7 @@
         }
 
         function calculatePaymentSummary() {
-            
+
             let freightRs = parseFloat($('[name="freight_rs"]').val()) || 0;
             let loadingKanta = parseFloat($('[name="loading_kanta"]').val()) || 0;
             let arrivedKanta = parseFloat($('[name="arrived_kanta"]').val()) || 0;
@@ -911,7 +909,7 @@
         }
 
         // Request History Toggle
-        $(document).on('click', '.togglehistory', function() {
+        $(document).on('click', '.togglehistory', function () {
             $('.togglehistorytable').toggle();
         });
 
