@@ -1,331 +1,686 @@
 <style>
-    /* Chrome, Safari, Edge, Opera */
     input[type=number]::-webkit-outer-spin-button,
-    input[type=number]::-webkit-inner-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
-    }
-
-    /* Firefox */
-    input[type=number] {
-        -moz-appearance: textfield;
-    }
-
-    .spacing-table td {
-        padding-top: 10px !important;
-        padding-bottom: 10px !important;
-    }
-    
-    .header-heading-sepration {
-        border-bottom: 2px solid #e3e3e3;
-        padding-bottom: 8px;
-        margin-bottom: 15px;
-        font-weight: bold;
-        color: #444;
-        text-transform: uppercase;
-        font-size: 0.9rem;
-    }
-    
-    .view-label {
-        font-weight: 600;
-        color: #777;
-        font-size: 0.8rem;
-        margin-bottom: 2px;
-        display: block;
-    }
-    
-    .view-value {
-        font-weight: 500;
-        color: #333;
-        word-break: break-all;
+    input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type=number] { -moz-appearance: textfield; }
+    .spacing-table td { padding-top: 12px !important; padding-bottom: 12px !important; }
+    .show-content-box {
+        max-height: 180px;
+        overflow-y: auto;
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 8px;
     }
 </style>
 
 <div class="row form-mar">
     <div class="col-8">
-        {{-- ====== BUYER & INFO ====== --}}
+
+        {{-- ====== BASIC INFORMATION ====== --}}
         <div class="col-md-12">
-            <h6 class="header-heading-sepration">Buyer & Information</h6>
+            <h6 class="header-heading-sepration">Basic Information</h6>
             <div class="row">
-                <div class="col-md-3">
-                    <div class="form-group mb-2">
-                        <span class="view-label">Voucher No</span>
-                        <div class="view-value">{{ $exportOrder->voucher_no }}</div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group mb-2">
-                        <span class="view-label">Contract No</span>
-                        <div class="view-value">{{ $exportOrder->contract_no }}</div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group mb-2">
-                        <span class="view-label">Voucher Date</span>
-                        <div class="view-value">
-                            @if($exportOrder->voucher_date)
-                                {{ $exportOrder->voucher_date->format('d-M-Y') }}
-                            @else
-                                -
-                            @endif
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group mb-2">
-                        <span class="view-label">Buyer's Name</span>
-                        <div class="view-value">{{ $exportOrder->buyer->name ?? '-' }}</div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group mb-2">
-                        <span class="view-label">Contact No</span>
-                        <div class="view-value">{{ $exportOrder->buyer->phone ?? $exportOrder->buyer->owner_mobile_no ?? '-' }}</div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Sauda#:</label>
+                        <input type="text" class="form-control" value="{{ $exportOrder->exportSoda ? ($exportOrder->exportSoda->reference ?? '#' . $exportOrder->export_soda_id) . ' - ' . ($exportOrder->exportSoda->product->name ?? '') : '-' }}" readonly>
                     </div>
                 </div>
                 <div class="col-md-6">
-                    <div class="form-group mb-2">
-                        <span class="view-label">Buyer Address</span>
-                        <div class="view-value">{{ $exportOrder->buyer->address ?? '-' }}</div>
+                    <div class="form-group">
+                        <label>Quotation#:</label>
+                        <input type="text" class="form-control" value="{{ $exportOrder->quotation_id ? '#' . $exportOrder->quotation_id : '-' }}" readonly>
                     </div>
                 </div>
             </div>
-        </div>
-
-        {{-- ====== PRODUCT ====== --}}
-        <div class="col-md-12 mt-4">
-            <h6 class="header-heading-sepration">Product / Commodity</h6>
             <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Contract No#:</label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <button class="btn btn-primary" type="button">Contract No#</button>
+                            </div>
+                            <input type="text" class="form-control" value="{{ $exportOrder->voucher_no }}" readonly>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Contract Date:</label>
+                        <input type="text" class="form-control" value="{{ $exportOrder->voucher_date ? $exportOrder->voucher_date->format('d-M-Y') : '-' }}" readonly>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Reference No#:</label>
+                        <input type="text" class="form-control" value="{{ $exportOrder->contract_no ?? '-' }}" readonly>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Reference Date:</label>
+                        <input type="text" class="form-control" value="{{ $exportOrder->voucher_heading ? (is_object($exportOrder->voucher_heading) ? $exportOrder->voucher_heading->format('d-M-Y') : $exportOrder->voucher_heading) : '-' }}" readonly>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>Buyer's Name:</label>
+                        <input type="text" class="form-control" value="{{ $exportOrder->buyer->name ?? '-' }}" readonly>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>Shipment Delivery Date From:</label>
+                        <input type="text" class="form-control" value="{{ $exportOrder->shipment_delivery_date_from ? $exportOrder->shipment_delivery_date_from->format('d-M-Y') : '-' }}" readonly>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>Shipment Delivery Date To:</label>
+                        <input type="text" class="form-control" value="{{ $exportOrder->shipment_delivery_date_to ? $exportOrder->shipment_delivery_date_to->format('d-M-Y') : '-' }}" readonly>
+                    </div>
+                </div>
                 <div class="col-md-12">
-                    <div class="form-group mb-3">
-                        <span class="view-label">Product</span>
-                        <div class="view-value font-weight-bold" style="font-size: 1.1rem;">{{ $exportOrder->product->name ?? '-' }}</div>
-                    </div>
-                </div>
-            </div>
-
-            {{-- Specifications Section --}}
-            @if($exportOrder->specifications->count())
-            <div class="mt-2">
-                <h6 class="header-heading-sepration">Specifications</h6>
-                <div class="table-responsive">
-                    <table class="table table-bordered table-striped table-sm">
-                        <thead class="thead-light">
-                            <tr>
-                                <th width="45%">Specification</th>
-                                <th width="30%">Value</th>
-                                <th width="25%">Type</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($exportOrder->specifications as $spec)
-                                <tr>
-                                    <td><strong>{{ $spec->spec_name }}</strong></td>
-                                    <td>
-                                        {{ $spec->spec_value ?? 0 }} <span class="badge badge-secondary ml-1">{{ $spec->slabType->qc_symbol ?? '' }}</span>
-                                    </td>
-                                    <td>{{ ucfirst($spec->value_type ?? 'min') }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            @endif
-
-            {{-- Commission Section --}}
-            <div class="mt-4">
-                <h6 class="header-heading-sepration">Commission</h6>
-                @php
-                    $totalMt = $exportOrder->packingItems->sum('metric_tons');
-                    $totalAmount = $exportOrder->packingItems->sum('amount');
-                    $commission = $exportOrder->commission ?? 0;
-                    $commissionPercentage = $totalAmount > 0 ? ($commission / $totalAmount) * 100 : 0;
-                    $amtPerTon = $totalMt > 0 ? ($commission / $totalMt) : 0;
-                @endphp
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="form-group mb-2">
-                            <span class="view-label">Commission (%)</span>
-                            <div class="view-value">{{ number_format($commissionPercentage, 2) }}%</div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="form-group mb-2">
-                            <span class="view-label">Amt/Ton</span>
-                            <div class="view-value">{{ number_format($amtPerTon, 2) }}</div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="form-group mb-2">
-                            <span class="view-label">Total Commission</span>
-                            <div class="view-value">{{ number_format($commission, 2) }} {{ $exportOrder->currency->currency_name ?? '' }}</div>
-                        </div>
+                    <div class="form-group">
+                        <label>Marking/Labeling:</label>
+                        <input type="text" class="form-control" value="{{ $exportOrder->marking_labeling ?? '-' }}" readonly>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="col-4">
-        {{-- ====== EXPORT DETAILS SIDEBAR ====== --}}
-        <h6 class="header-heading-sepration">Export Details</h6>
-        <div class="card border-light shadow-none bg-light-grey mb-0">
-            <div class="card-body p-0">
-                <table class="table table-bordered table-sm spacing-table mb-0 bg-white">
-                    <tr>
-                        <td style="width:45%;font-weight:bold; color: #666;">INCOTERMS</td>
-                        <td class="view-value font-weight-bold">{{ $exportOrder->incoterm->name ?? '-' }}</td>
-                    </tr>
-                    <tr>
-                        <td style="font-weight:bold; color: #666;">TERM MODE</td>
-                        <td class="view-value">{{ $exportOrder->modeOfTerm->name ?? '-' }}</td>
-                    </tr>
-                    <tr>
-                        <td style="font-weight:bold; color: #666;">TRANSPORT</td>
-                        <td class="view-value">{{ $exportOrder->modeOfTransport->name ?? '-' }}</td>
-                    </tr>
-                    <tr>
-                        <td style="font-weight:bold; color: #666;">ORIGIN</td>
-                        <td class="view-value">{{ $exportOrder->originCountry->name ?? '-' }}</td>
-                    </tr>
-                    <tr>
-                        <td style="font-weight:bold; color: #666;">DISCHARGE PORT</td>
-                        <td class="view-value">{{ $exportOrder->portOfDischarge->name ?? '-' }}</td>
-                    </tr>
-                    <tr>
-                        <td style="font-weight:bold; color: #666;">LOADING PORT</td>
-                        <td class="view-value">{{ $exportOrder->portOfLoading->name ?? '-' }}</td>
-                    </tr>
-                    <tr>
-                        <td style="font-weight:bold; color: #666;">ADVANCE (%)</td>
-                        <td class="view-value">{{ $exportOrder->advance_payment ?? 0 }}%</td>
-                    </tr>
-                    <tr>
-                        <td style="font-weight:bold; color: #666;">PAYMENT DAYS</td>
-                        <td class="view-value">{{ $exportOrder->payment_days ?? '-' }}</td>
-                    </tr>
-                    <tr>
-                        <td style="font-weight:bold; color: #666;">CURRENCY</td>
-                        <td class="view-value font-weight-bold text-success">{{ $exportOrder->currency->currency_name ?? '-' }}</td>
-                    </tr>
-                    <tr>
-                        <td style="font-weight:bold; color: #666;">EX. RATE</td>
-                        <td class="view-value">{{ number_format($exportOrder->currency_rate, 2) }}</td>
-                    </tr>
-                    <tr>
-                        <td style="font-weight:bold; color: #666;">DESTINATION</td>
-                        <td class="view-value">{{ $exportOrder->final_destination ?? '-' }}</td>
-                    </tr>
+        {{-- ====== PRODUCT & SPECS ====== --}}
+        <div class="col-md-12 mt-2">
+            <div class="form-group">
+                <label>Commodity/Product:</label>
+                <select class="form-control select2" disabled>
+                    <option value="">Select Product</option>
+                    @foreach ($products as $product)
+                        <option value="{{ $product->id }}" {{ $exportOrder->product_id == $product->id ? 'selected' : '' }}>{{ $product->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="form-group mt-2">
+                <label>Visual Name:</label>
+                <input type="text" class="form-control" value="{{ $exportOrder->visual_name ?? '-' }}" readonly>
+            </div>
+        </div>
+
+        {{-- Specifications --}}
+        @if($exportOrder->specifications->count())
+        <div class="col-md-12 mt-2">
+            <h6 class="header-heading-sepration">Specifications</h6>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th width="40%">Specification Name</th>
+                            <th width="30%">Value</th>
+                            <th width="30%">Type</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($exportOrder->specifications as $spec)
+                        <tr>
+                            <td><strong>{{ $spec->spec_name }}</strong></td>
+                            <td>
+                                <div class="input-group">
+                                    <input type="text" value="{{ $spec->spec_value ?? 0 }}" class="form-control" readonly>
+                                    <div class="input-group-prepend">
+                                        <button class="btn btn-secondary" type="button">{{ $spec->slabType->qc_symbol ?? 'N/A' }}</button>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><input type="text" class="form-control" value="{{ ucfirst($spec->value_type ?? 'min') }}" readonly></td>
+                        </tr>
+                        @endforeach
+                    </tbody>
                 </table>
             </div>
         </div>
+        @endif
 
-        @if($exportOrder->marking_labeling)
-        <div class="mt-4">
-            <h6 class="header-heading-sepration">Marking / Labeling</h6>
-            <div class="p-2 bg-light border rounded" style="white-space: pre-line;">
-                {{ $exportOrder->marking_labeling }}
+        <div class="col-md-12 mt-2">
+            <div class="form-group">
+                <label>Other Specification:</label>
+                <textarea class="form-control" rows="4" readonly>{{ $exportOrder->other_specifications }}</textarea>
             </div>
         </div>
-        @endif
-    </div>
 
-    {{-- ====== PACKING DETAILS (Full Width) ====== --}}
-    <div class="col-12 mt-4">
-        <h6 class="header-heading-sepration">Packing Details</h6>
-        <div class="table-responsive">
-            <table class="table table-bordered table-sm mb-0 text-nowrap">
-                <thead class="thead-dark">
-                    <tr>
-                        <th>Brand</th>
-                        <th>Bag Type</th>
-                        <th>Packing Size</th>
-                        <th>Bags</th>
-                        <th>MTs</th>
-                        <th>Stuffing</th>
-                        <th>Cont.</th>
-                        <th>Rate/Ton</th>
-                        <th>Amount</th>
-                        <th>Amount (PKR)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach ($exportOrder->packingItems as $item)
-                        <tr class="bg-light">
-                            <td class="font-weight-bold">{{ $item->brand->name ?? 'N/A' }}</td>
-                            <td>{{ $item->bagType->name ?? 'N/A' }}</td>
-                            <td>{{ number_format($item->bag_size, 2) }} kg</td>
-                            <td class="font-weight-bold">{{ number_format($item->no_of_bags, 0) }}</td>
-                            <td class="text-primary font-weight-bold">{{ number_format($item->metric_tons, 3) }}</td>
-                            <td>{{ number_format($item->stuffing_in_container, 3) }}</td>
-                            <td>{{ $item->no_of_containers }}</td>
-                            <td>{{ number_format($item->rate, 2) }}</td>
-                            <td class="font-weight-bold">{{ number_format($item->amount, 2) }}</td>
-                            <td class="font-weight-bold text-success">{{ number_format($item->amount_pkr, 2) }}</td>
-                        </tr>
-                        @if($item->subItems->count() > 0)
-                            <tr>
-                                <td colspan="10" class="p-0">
-                                    <div class="p-2 bg-white">
-                                        <h6 class="view-label mb-2 px-2" style="font-style: italic;">Master Packing Breakdown:</h6>
-                                        <table class="table table-sm table-bordered mb-0 bg-light-grey mx-auto" style="width: 95%;">
-                                            <thead class="bg-info text-white">
-                                                <tr>
-                                                    <th>Sub Bag Type</th>
-                                                    <th>Size</th>
-                                                    <th>Primary/Master</th>
-                                                    <th>Bags</th>
-                                                    <th>Total Bags</th>
-                                                    <th>Brand</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                @foreach($item->subItems as $sub)
-                                                <tr>
-                                                    <td>{{ $sub->bagType->name ?? 'N/A' }}</td>
-                                                    <td>{{ $sub->bagSize->size ?? 'N/A' }} kg</td>
-                                                    <td>{{ $sub->no_of_primary_bags }}</td>
-                                                    <td>{{ $sub->no_of_bags }}</td>
-                                                    <td class="font-weight-bold">{{ $sub->total_bags }}</td>
-                                                    <td>{{ $sub->brand->name ?? 'N/A' }}</td>
-                                                </tr>
-                                                @endforeach
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endif
+        {{-- ====== BANK DETAILS ====== --}}
+        <div class="row px-2 mt-2">
+            {{-- Beneficiary Bank --}}
+            <div class="col-md-12">
+                <div class="p-3">
+                    <h5 class="mb-3"><strong>Beneficiary Bank Details</strong></h5>
+                    <div class="row">
+                        @php $cBank = $exportOrder->customerBank; @endphp
+                        <div class="col-md-12 mb-2">
+                            <label>Bank Selected:</label>
+                            <input type="text" class="form-control" value="{{ $cBank ? ($cBank->account_title . ' - ' . $cBank->bank_name) : '-' }}" readonly>
+                            <small class="text-muted">Beneficiary Bank Details</small>
+                        </div>
+                        <div class="col-md-6 mt-2">
+                            <label>Account Title:</label>
+                            <input type="text" class="form-control" value="{{ $cBank->account_title ?? '-' }}" readonly>
+                        </div>
+                        <div class="col-md-6 mt-2">
+                            <label>Bank Name:</label>
+                            <input type="text" class="form-control" value="{{ $cBank->bank_name ?? '-' }}" readonly>
+                        </div>
+                        <div class="col-md-6 mt-2">
+                            <label>Branch Name:</label>
+                            <input type="text" class="form-control" value="{{ $cBank->branch_name ?? '-' }}" readonly>
+                        </div>
+                        <div class="col-md-6 mt-2">
+                            <label>Branch Code:</label>
+                            <input type="text" class="form-control" value="{{ $cBank->branch_code ?? '-' }}" readonly>
+                        </div>
+                        <div class="col-md-6 mt-2">
+                            <label>Account No:</label>
+                            <input type="text" class="form-control" value="{{ $cBank->account_no ?? '-' }}" readonly>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Correspondent Bank --}}
+            <div class="col-md-12">
+                <div class="p-3">
+                    <h5 class="mb-3"><strong>Correspondent Bank Details</strong></h5>
+                    <div class="row">
+                        @php $corrBank = $exportOrder->correspondentBank; @endphp
+                        <div class="col-md-12 mb-2">
+                            <label>Select Correspondent Bank:</label>
+                            <select class="form-control select2" disabled>
+                                <option value="">-- Select Bank --</option>
+                                @foreach ($banks as $bank)
+                                    <option value="{{ $bank->id }}" {{ $exportOrder->correspondent_bank_id == $bank->id ? 'selected' : '' }}>{{ $bank->account_title }} - {{ $bank->bank_name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6 mt-2">
+                            <label>Account Title:</label>
+                            <input type="text" class="form-control" value="{{ $corrBank->account_title ?? '-' }}" readonly>
+                        </div>
+                        <div class="col-md-6 mt-2">
+                            <label>Bank Name:</label>
+                            <input type="text" class="form-control" value="{{ $corrBank->bank_name ?? '-' }}" readonly>
+                        </div>
+                        <div class="col-md-6 mt-2">
+                            <label>IBAN:</label>
+                            <input type="text" class="form-control" value="{{ $corrBank->iban ?? '-' }}" readonly>
+                        </div>
+                        <div class="col-md-6 mt-2">
+                            <label>Account No:</label>
+                            <input type="text" class="form-control" value="{{ $corrBank->account_no ?? '-' }}" readonly>
+                        </div>
+                        <div class="col-md-6 mt-2">
+                            <label>SWIFT Code:</label>
+                            <input type="text" class="form-control" value="{{ $corrBank->swift_code ?? '-' }}" readonly>
+                        </div>
+                        <div class="col-md-6 mt-2">
+                            <label>Bank Address:</label>
+                            <input type="text" class="form-control" value="{{ $corrBank->bank_address ?? '-' }}" readonly>
+                        </div>
+                        <div class="col-md-12 mt-2">
+                            <label>Description:</label>
+                            <textarea class="form-control" rows="2" readonly>{{ $corrBank->description ?? '' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- ====== SHIPPING INSTRUCTIONS ====== --}}
+        <div class="col-md-12 mb-4">
+            <label>Shipping Instruction:</label>
+            <div class="show-content-box">{!! $exportOrder->shipping_instructions !!}</div>
+        </div>
+
+        {{-- ====== BROKER ====== --}}
+        <div class="col-md-12 mb-3">
+            <div class="form-group">
+                <label>Broker:</label>
+                <select class="form-control select2" disabled>
+                    <option value="">Select Broker</option>
+                    @foreach ($brokers as $broker)
+                        <option value="{{ $broker->id }}" {{ $exportOrder->broker_id == $broker->id ? 'selected' : '' }}>{{ $broker->name }}</option>
                     @endforeach
-                </tbody>
+                </select>
+            </div>
+        </div>
+
+        {{-- ====== DOCUMENTS TO BE PROVIDED ====== --}}
+        <div class="col-md-12 mb-3">
+            <label>Documents to be provided:</label>
+            <div class="show-content-box">{!! $exportOrder->documents_to_be_provided !!}</div>
+        </div>
+
+        {{-- ====== OTHER CONDITIONS / FORCE MAJURE / APPLICATION LAW ====== --}}
+        <div class="row p-2">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label>Other Condition:</label>
+                    <div class="show-content-box">{!! $exportOrder->other_condition !!}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label>Force Majure:</label>
+                    <div class="show-content-box">{!! $exportOrder->force_majure !!}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label>Application Law:</label>
+                    <div class="show-content-box">{!! $exportOrder->application_law !!}</div>
+                </div>
+            </div>
+            <div class="col-md-12">
+                <div class="form-group">
+                    <label>Additional Info:</label>
+                    <div class="show-content-box">{!! $exportOrder->additional_info !!}</div>
+                </div>
+            </div>
+        </div>
+
+        {{-- ====== COMMISSION ====== --}}
+        <div class="mt-2 px-2">
+            <h6 class="header-heading-sepration">Commission</h6>
+            @php
+                $totalMt    = $exportOrder->packingItems->sum('metric_tons');
+                $totalAmt   = $exportOrder->packingItems->sum('amount');
+                $commission = $exportOrder->commission ?? 0;
+                $commPct    = $totalAmt  > 0 ? ($commission / $totalAmt)  * 100 : ($exportOrder->commission_percentage ?? 0);
+                $amtPerTon  = $totalMt   > 0 ? ($commission / $totalMt)        : ($exportOrder->commission_amount_per_ton ?? 0);
+            @endphp
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>Commission (%):</label>
+                        <input type="text" class="form-control" value="{{ number_format($commPct, 2) }}" readonly>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>Amt/Ton:</label>
+                        <input type="text" class="form-control" value="{{ number_format($amtPerTon, 2) }}" readonly>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>Total Commission:</label>
+                        <input type="text" class="form-control font-weight-bold" value="{{ number_format($commission, 2) }}" readonly>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>{{-- end col-8 --}}
+
+    {{-- ====== RIGHT SIDEBAR: EXPORT DETAILS ====== --}}
+    <div class="col-4">
+        <h6 class="header-heading-sepration">Export</h6>
+        <div class="table-responsive">
+            <table class="table table-bordered spacing-table" style="margin-bottom:0;">
+                <tr>
+                    <td style="width:35%;font-weight:bold;vertical-align:middle;">INCOTERMS</td>
+                    <td>
+                        <select class="form-control select2" disabled>
+                            <option value="">Select</option>
+                            @foreach ($incoterms as $incoterm)
+                                <option value="{{ $incoterm->id }}" {{ $exportOrder->incoterm_id == $incoterm->id ? 'selected' : '' }}>{{ $incoterm->name }}</option>
+                            @endforeach
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="font-weight:bold;vertical-align:middle;">PACKING TYPE</td>
+                    <td>
+                        <select class="form-control select2" disabled>
+                            <option value="">Select</option>
+                            <option value="In Conatiner" {{ $exportOrder->packing_type == 'In Conatiner' ? 'selected' : '' }}>IN CONTAINER</option>
+                            <option value="In Bulk" {{ $exportOrder->packing_type == 'In Bulk' ? 'selected' : '' }}>IN BULK</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="font-weight:bold;vertical-align:middle;">MODE OF TERM</td>
+                    <td>
+                        <select class="form-control select2" disabled>
+                            <option value="">Select</option>
+                            @foreach ($modeofterms as $term)
+                                <option value="{{ $term->id }}" {{ $exportOrder->mode_of_term_id == $term->id ? 'selected' : '' }}>{{ $term->name }}</option>
+                            @endforeach
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="font-weight:bold;vertical-align:middle;">MODE OF TRANSPORT</td>
+                    <td>
+                        <select class="form-control select2" disabled>
+                            <option value="">Select</option>
+                            @foreach ($modeoftransport as $transport)
+                                <option value="{{ $transport->id }}" {{ $exportOrder->mode_of_transport_id == $transport->id ? 'selected' : '' }}>{{ $transport->name }}</option>
+                            @endforeach
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="font-weight:bold;vertical-align:middle;">ORIGIN</td>
+                    <td>
+                        <select class="form-control select2" disabled>
+                            <option value="">Select</option>
+                            @foreach ($countries as $country)
+                                <option value="{{ $country->id }}" {{ $exportOrder->origin_country_id == $country->id ? 'selected' : '' }}>{{ $country->name }}</option>
+                            @endforeach
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="font-weight:bold;vertical-align:middle;">PORT OF DISCHARGE</td>
+                    <td>
+                        <select class="form-control select2" disabled>
+                            <option value="">Select</option>
+                            @foreach ($ports as $port)
+                                <option value="{{ $port->id }}" {{ $exportOrder->port_of_discharge_id == $port->id ? 'selected' : '' }}>{{ $port->name }}, {{ $port->country?->name ?? '' }}</option>
+                            @endforeach
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="font-weight:bold;vertical-align:middle;">PORT OF LOADING</td>
+                    <td>
+                        <select class="form-control select2" disabled>
+                            <option value="">Select</option>
+                            @foreach ($ports as $port)
+                                <option value="{{ $port->id }}" {{ $exportOrder->port_of_loading_id == $port->id ? 'selected' : '' }}>{{ $port->name }}, {{ $port->country?->name ?? '' }}</option>
+                            @endforeach
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="font-weight:bold;vertical-align:middle;">HS CODE</td>
+                    <td>
+                        <select class="form-control select2" disabled>
+                            <option value="">Select</option>
+                            @foreach ($hscodes as $hs)
+                                <option value="{{ $hs->id }}" {{ $exportOrder->hs_code_id == $hs->id ? 'selected' : '' }}>{{ $hs->code }}</option>
+                            @endforeach
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="font-weight:bold;vertical-align:middle;">PARTIAL PAYMENT</td>
+                    <td>
+                        <select class="form-control select2" disabled>
+                            <option value="">Select</option>
+                            <option value="Yes" {{ $exportOrder->partial_payment == 'Yes' ? 'selected' : '' }}>YES</option>
+                            <option value="No" {{ $exportOrder->partial_payment == 'No' ? 'selected' : '' }}>NO</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="font-weight:bold;vertical-align:middle;">TRANSHIPMENT</td>
+                    <td>
+                        <select class="form-control select2" disabled>
+                            <option value="">Select</option>
+                            <option value="shall be permitted" {{ $exportOrder->transhipment == 'shall be permitted' ? 'selected' : '' }}>SHALL BE PERMITTED</option>
+                            <option value="shall not be permitted" {{ $exportOrder->transhipment == 'shall not be permitted' ? 'selected' : '' }}>SHALL NOT BE PERMITTED</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="font-weight:bold;vertical-align:middle;">PART SHIPMENT</td>
+                    <td>
+                        <select class="form-control select2" disabled>
+                            <option value="">Select</option>
+                            <option value="shall be permitted" {{ $exportOrder->part_shipment == 'shall be permitted' ? 'selected' : '' }}>SHALL BE PERMITTED</option>
+                            <option value="shall not be permitted" {{ $exportOrder->part_shipment == 'shall not be permitted' ? 'selected' : '' }}>SHALL NOT BE PERMITTED</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="font-weight:bold;vertical-align:middle;">INSURANCE COVERED BY</td>
+                    <td>
+                        <select class="form-control select2" disabled>
+                            <option value="">Select</option>
+                            <option value="Buyer" {{ $exportOrder->insurance_covered_by == 'Buyer' ? 'selected' : '' }}>BUYER</option>
+                            <option value="Supplier" {{ $exportOrder->insurance_covered_by == 'Supplier' ? 'selected' : '' }}>SUPPLIER</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="font-weight:bold;vertical-align:middle;">ADVANCE PAYMENT(%)</td>
+                    <td>
+                        <input type="text" class="form-control" value="{{ $exportOrder->advance_payment }}" readonly>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="font-weight:bold;vertical-align:middle;">PAYMENT DAYS</td>
+                    <td>
+                        <input type="text" class="form-control" value="{{ $exportOrder->payment_days }}" readonly>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="font-weight:bold;vertical-align:middle;">CURRENCY</td>
+                    <td>
+                        <select class="form-control select2" disabled>
+                            <option value="">Select</option>
+                            @foreach ($currencies as $currency)
+                                <option value="{{ $currency->id }}" {{ $exportOrder->currency_id == $currency->id ? 'selected' : '' }}>{{ $currency->currency_name }}</option>
+                            @endforeach
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="font-weight:bold;vertical-align:middle;">RATE</td>
+                    <td>
+                        <input type="text" class="form-control font-weight-bold" value="{{ number_format($exportOrder->currency_rate, 2) }}" readonly>
+                    </td>
+                </tr>
             </table>
         </div>
+    </div>{{-- end col-4 --}}
 
-        <div class="row mt-4">
-            <div class="col-md-6">
-                <div class="card border-secondary shadow-none">
-                    <div class="card-header bg-light py-1">
-                        <h6 class="mb-0 font-weight-bold">Additional Information</h6>
-                    </div>
-                    <div class="card-body p-2" style="min-height: 100px; white-space: pre-line;">
-                        {{ $exportOrder->additional_info ?? 'No additional information.' }}
-                    </div>
-                </div>
+    {{-- ====== PACKING DETAILS (Full Width) ====== --}}
+    <div class="col-md-12 mt-4">
+        <h6 class="header-heading-sepration">Packing Details</h6>
+
+        @forelse ($exportOrder->packingItems as $itemIndex => $item)
+        <div class="packing-item card border-secondary mb-4 shadow-sm">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center py-2">
+                <h6 class="mb-0 font-weight-bold grey">Packing Row #{{ $itemIndex + 1 }}</h6>
             </div>
-            <div class="col-md-6">
-                <div class="card border-secondary shadow-none">
-                    <div class="card-header bg-light py-1">
-                        <h6 class="mb-0 font-weight-bold">Other Specifications</h6>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>Brand:</label>
+                            <input type="text" class="form-control" value="{{ $item->brand->name ?? '-' }}" readonly>
+                        </div>
                     </div>
-                    <div class="card-body p-2" style="min-height: 100px; white-space: pre-line;">
-                        {{ $exportOrder->other_specifications ?? 'No other specifications.' }}
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>Bag Type:</label>
+                            <input type="text" class="form-control" value="{{ $item->bagType->name ?? '-' }}" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>Packing Type:</label>
+                            <input type="text" class="form-control" value="{{ $item->bagPacking->name ?? '-' }}" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>Bag Condition:</label>
+                            <input type="text" class="form-control" value="{{ $item->bagCondition->name ?? '-' }}" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>Bag Color:</label>
+                            <input type="text" class="form-control" value="{{ $item->bagColor->color ?? '-' }}" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>Thread Color:</label>
+                            <input type="text" class="form-control" value="{{ $item->threadColor->color ?? '-' }}" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>Stitching:</label>
+                            <input type="text" class="form-control" value="{{ $item->stitching->name ?? '-' }}" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>Bag Size (kg):</label>
+                            <input type="text" class="form-control" value="{{ number_format($item->bag_size, 2) }}" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>No. of Bags:</label>
+                            <input type="text" class="form-control font-weight-bold" value="{{ number_format($item->no_of_bags, 0) }}" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>Extra Bags:</label>
+                            <input type="text" class="form-control" value="{{ $item->extra_bags }}" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>Empty Bags:</label>
+                            <input type="text" class="form-control" value="{{ $item->empty_bags }}" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>Qty (MT):</label>
+                            <input type="text" class="form-control font-weight-bold text-primary" value="{{ number_format($item->metric_tons, 3) }}" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>Total Bags:</label>
+                            <input type="text" class="form-control" value="{{ number_format($item->total_bags, 0) }}" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>Stuffing/Cont (MT):</label>
+                            <input type="text" class="form-control" value="{{ number_format($item->stuffing_in_container, 3) }}" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>Containers:</label>
+                            <input type="text" class="form-control" value="{{ $item->no_of_containers }}" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>Rate/Ton:</label>
+                            <input type="text" class="form-control" value="{{ number_format($item->rate, 2) }}" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>Amount:</label>
+                            <input type="text" class="form-control font-weight-bold" value="{{ number_format($item->amount, 2) }}" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>Amount (PKR):</label>
+                            <input type="text" class="form-control font-weight-bold text-success" value="{{ number_format($item->amount_pkr, 2) }}" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>Min Weight Empty Bags:</label>
+                            <input type="text" class="form-control" value="{{ number_format($item->min_weight_empty_bags, 2) }}" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label>Fumigation By:</label>
+                            <input type="text" class="form-control" value="{{ is_array($item->fumigation_company_id) && count($item->fumigation_company_id) ? implode(', ', $item->fumigation_company_id) : '-' }}" readonly>
+                        </div>
                     </div>
                 </div>
+
+                {{-- Master Packing Sub-items --}}
+                @if($item->subItems->count() > 0)
+                <div class="mt-4">
+                    <div class="card border-info shadow-none">
+                        <div class="card-header bg-light-info d-flex justify-content-between align-items-center py-1">
+                            <h6 class="mb-0 font-weight-bold">Master Packing #{{ sprintf('%02d', $itemIndex + 1) }}</h6>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-sm mb-0 text-nowrap">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th style="min-width: 150px;">Bag Type</th>
+                                            <th style="min-width: 120px;">Bag Size</th>
+                                            <th style="min-width: 150px;">Primary Bags fit in master bag</th>
+                                            <th style="min-width: 90px;">No. of Bags</th>
+                                            <th style="min-width: 90px;">Empty Bags</th>
+                                            <th style="min-width: 90px;">Extra Bags</th>
+                                            <th style="min-width: 100px;">Empty Bag Weight (g)</th>
+                                            <th style="min-width: 90px;">Total Bags</th>
+                                            <th style="min-width: 120px;">Stitching</th>
+                                            <th style="min-width: 120px;">Bag Color</th>
+                                            <th style="min-width: 120px;">Brand</th>
+                                            <th style="min-width: 120px;">Thread Color</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($item->subItems as $sub)
+                                        <tr>
+                                            <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->bagType->name ?? '-' }}" readonly></td>
+                                            <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->bagSize->size ?? '-' }}" readonly></td>
+                                            <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->no_of_primary_bags }}" readonly></td>
+                                            <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->no_of_bags }}" readonly></td>
+                                            <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->empty_bags }}" readonly></td>
+                                            <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->extra_bags }}" readonly></td>
+                                            <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->empty_bag_weight }}" readonly></td>
+                                            <td class="p-1"><input type="text" class="form-control form-control-sm font-weight-bold" value="{{ $sub->total_bags }}" readonly></td>
+                                            <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->stitching->name ?? '-' }}" readonly></td>
+                                            <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->bagColor->color ?? '-' }}" readonly></td>
+                                            <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->brand->name ?? '-' }}" readonly></td>
+                                            <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->threadColor->color ?? '-' }}" readonly></td>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
             </div>
         </div>
-    </div>
-</div>
+        @empty
+        <div class="alert alert-light">No packing items found.</div>
+        @endforelse
+    </div>{{-- end packing col-12 --}}
+
+</div>{{-- end row --}}
 
 <div class="row bottom-button-bar">
     <div class="col-12 mb-3">
