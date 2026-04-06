@@ -52,7 +52,7 @@
                 </select>
             </div>
         </div>
-
+        <input type="hidden" name="category_id" value="{{ $purchaseRequest->category_id }}" id="category_id" />
         <div class="col-md-4 header-conditional job-order-section" {!! $purchaseRequest->category_id == 38 ? '' : 'style="display: none;"' !!}>
             <div class="form-group">
                 <label class="form-label">Job Orders:</label>
@@ -642,8 +642,9 @@
         let input = $(this);
         let val = parseFloat(input.val()) || 0;
         let balance = parseFloat(input.data('balance')) || 0;
+        let category_id = $("#category_id").val();
 
-        if (val > balance) {
+        if (val > balance && category_id == 38) {
             alert("Quantity cannot exceed available Job Order balance (" + balance + ")");
             input.val(balance);
         }
