@@ -983,8 +983,9 @@ class FreightRequestController extends Controller
                 }
 
             }
-            dd("test");
             $counterAccount = $saudaType == "pohouch" ? $purchaseOrder->supplier->account_id : $qcAccountId;
+            
+            dd("test");
             if ($saudaType == "pohouch") {
 
                 $paid_by_supplier_value = $request->penalty + $request->total_labour + $request->total_commision;
