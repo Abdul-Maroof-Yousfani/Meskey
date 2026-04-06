@@ -948,8 +948,7 @@ class FreightRequestController extends Controller
 
             $inventoryAmountwithFreight = $inventoryAmount + $request->net_amount + $request->godown_penalty;
 
-            dd("test");
-       
+          
             if ($request->godown_penalty == 'Commit') {
                 $txnInv = Transaction::where('grn_no', $grnNo)
                     ->where('purpose', 'arrival-slip')
@@ -984,6 +983,7 @@ class FreightRequestController extends Controller
                 }
 
             }
+            dd("test");
             $counterAccount = $saudaType == "pohouch" ? $purchaseOrder->supplier->account_id : $qcAccountId;
             if ($saudaType == "pohouch") {
 
