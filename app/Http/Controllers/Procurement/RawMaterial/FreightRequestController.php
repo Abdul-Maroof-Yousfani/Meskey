@@ -1024,7 +1024,7 @@ class FreightRequestController extends Controller
                     }
                 }
             }
-            dd("test");
+            
             if ($saudaType == "thadda") {
                 $supplierDebitFreight = Transaction::where('grn_no', $grnNo)
                     ->where('purpose', "{$saudaType}-freight-paid-to-vendor")
@@ -1060,7 +1060,7 @@ class FreightRequestController extends Controller
             }
 
 
-
+            dd("test3");
 
 
 
