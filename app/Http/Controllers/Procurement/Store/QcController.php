@@ -261,7 +261,7 @@ class QcController extends Controller
        
         if($is_auto_approval) {
             $qc->am_approval_status = "approved";
-            $qc->am_change_made = 1;
+            $qc->am_change_made = 0;
             $qc->save();
             approve_qc($qc);
         }
