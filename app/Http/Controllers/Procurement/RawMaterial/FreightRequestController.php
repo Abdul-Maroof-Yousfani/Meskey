@@ -1101,6 +1101,7 @@ class FreightRequestController extends Controller
             }
 
 
+            dd($request->labour_vendor_id);
             if ($request->total_labour != 0) {
 
 
@@ -1119,10 +1120,6 @@ class FreightRequestController extends Controller
                     'payment_to' => $paymentRequestData->payment_to,
                     'amount' => $request->total_labour ?? 0
                 ]);
-
-
-
-                dd("tdfdff");
 
                 $txnLabour = Transaction::where('grn_no', $grnNo)
                     ->where('purpose', "{$saudaType}-freight-labour")
