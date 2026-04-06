@@ -1033,15 +1033,36 @@
         }
 
         function fillFormFromData(data) {
-            if (data.buyer_id) $('select[name="buyer_id"]').val(data.buyer_id).trigger('change');
-            if (data.product_id) $('select[name="product_id"]').val(data.product_id).trigger('change');
-            if (data.currency_id) $('select[name="currency_id"]').val(data.currency_id).trigger('change');
-            if (data.shipment_delivery_date_from) $('input[name="shipment_delivery_date_from"]').val(data.shipment_delivery_date_from);
-            if (data.shipment_delivery_date_to) $('input[name="shipment_delivery_date_to"]').val(data.shipment_delivery_date_to);
-            if (data.currency_rate) $('input[name="currency_rate"]').val(data.currency_rate);
-            if (data.payment_days) $('input[name="payment_days"]').val(data.payment_days);
-            if (data.advance_payment) $('input[name="advance_payment"]').val(data.advance_payment);
+            // Basic fields
+            if (data.buyer_id)    $('select[name="buyer_id"]').val(data.buyer_id).trigger('change');
+            if (data.product_id)  $('select[name="product_id"]').val(data.product_id).trigger('change');
+            if (data.visual_name) $('input[name="visual_name"], #visualName').val(data.visual_name);
 
+            // Dates
+            if (data.shipment_delivery_date_from) $('input[name="shipment_delivery_date_from"]').val(data.shipment_delivery_date_from);
+            if (data.shipment_delivery_date_to)   $('input[name="shipment_delivery_date_to"]').val(data.shipment_delivery_date_to);
+
+            // Export sidebar dropdowns
+            if (data.incoterm_id)          $('select[name="incoterm_id"]').val(data.incoterm_id).trigger('change.select2');
+            if (data.packing_type)         $('select[name="packing_type"]').val(data.packing_type).trigger('change.select2');
+            if (data.mode_of_term_id)      $('select[name="mode_of_term_id"]').val(data.mode_of_term_id).trigger('change.select2');
+            if (data.mode_of_transport_id) $('select[name="mode_of_transport_id"]').val(data.mode_of_transport_id).trigger('change.select2');
+            if (data.origin_country_id)    $('select[name="origin_country_id"]').val(data.origin_country_id).trigger('change.select2');
+            if (data.port_of_discharge_id) $('select[name="port_of_discharge_id"]').val(data.port_of_discharge_id).trigger('change.select2');
+            if (data.port_of_loading_id)   $('select[name="port_of_loading_id"]').val(data.port_of_loading_id).trigger('change.select2');
+            if (data.hs_code_id)           $('select[name="hs_code_id"]').val(data.hs_code_id).trigger('change.select2');
+            if (data.partial_payment)      $('select[name="partial_payment"]').val(data.partial_payment).trigger('change.select2');
+            if (data.transhipment)         $('select[name="transhipment"]').val(data.transhipment).trigger('change.select2');
+            if (data.part_shipment)        $('select[name="part_shipment"]').val(data.part_shipment).trigger('change.select2');
+            if (data.insurance_covered_by) $('select[name="insurance_covered_by"]').val(data.insurance_covered_by).trigger('change.select2');
+
+            // Export sidebar numeric fields
+            if (data.advance_payment) $('input[name="advance_payment"]').val(data.advance_payment);
+            if (data.payment_days)    $('input[name="payment_days"]').val(data.payment_days);
+            if (data.currency_id)     $('select[name="currency_id"]').val(data.currency_id).trigger('change.select2');
+            if (data.currency_rate)   $('input[name="currency_rate"], #currencyRate').val(data.currency_rate);
+
+            // Packing rows
             if (data.packing_items && data.packing_items.length > 0) {
                 addPackingRowsFromData(data.packing_items);
             }

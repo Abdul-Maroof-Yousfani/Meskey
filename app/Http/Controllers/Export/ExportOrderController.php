@@ -37,67 +37,53 @@ class ExportOrderController extends Controller
 {
     public function index(Request $request): View
     {
-        try {
-            $export_orders = ExportOrder::orderBy('id', 'ASC')->paginate(0);
-        } catch (QueryException $e) {
-            $export_orders = collect(); // Or use a paginator placeholder if needed
-        }
+        $export_orders = ExportOrder::orderBy('id', 'ASC')->paginate(0);
 
         return view('management.export.export-order.index', compact('export_orders'))->with('i', ($request->input('page', 1) - 1) * 5);
     }
 
     public function getExportOrderTable(Request $request)
     {
-        try {
-            $export_orders = ExportOrder::with(['product'])
-                ->when($request->filled('search'), function ($q) use ($request) {
-                    $searchTerm = '%'.$request->search.'%';
+        $export_orders = ExportOrder::with(['product'])
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $searchTerm = '%'.$request->search.'%';
 
-                    return $q->where(function ($sq) use ($searchTerm) {
-                        $sq->where('voucher_no', 'like', $searchTerm)
-                            ->orWhere('contract_no', 'like', $searchTerm);
-                    });
-                })
-                ->latest()
-                ->paginate(request('per_page', 25));
-        } catch (QueryException $e) {
-            $export_orders = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 25);
-        }
+                return $q->where(function ($sq) use ($searchTerm) {
+                    $sq->where('voucher_no', 'like', $searchTerm)
+                        ->orWhere('contract_no', 'like', $searchTerm);
+                });
+            })
+            ->latest()
+            ->paginate(request('per_page', 25));
 
         return view('management.export.export-order.getList', compact('export_orders'));
     }
 
     public function create(): View
     {
-        // Initialize all variables to empty collections first
-        $products = $bagTypes = $bagPackings = $brands = $bagColors = $users = $banks = $brokers = $incoterms = $modeofterms = $modeoftransport = $countries = $ports = $hscodes = $currencies = $exportSodas = $quotations = $companyLocations = $bagConditions = $bagSizes = $stitchings = $threadColors = $inspectionCompanies = collect();
-
-        // Fetch core data (risky queries isolated)
-        try { $products = Product::where('status', 1)->get(); } catch (QueryException $e) {}
-        try { $bagTypes = BagType::where('status', 1)->get(); } catch (QueryException $e) {}
-        try { $bagPackings = BagPacking::where('status', 1)->get(); } catch (QueryException $e) {}
-        try { $brands = Brands::where('status', 1)->get(); } catch (QueryException $e) {}
-        try { $bagColors = Color::where('status', 1)->get(); } catch (QueryException $e) {}
-        try { $users = Customer::get(); } catch (QueryException $e) {}
-        try { $banks = Bank::where('status', 1)->get(); } catch (QueryException $e) {}
-        try { $brokers = Broker::where('status', 1)->get(); } catch (QueryException $e) {}
-        try { $incoterms = IncoTerm::where('status', 1)->get(); } catch (QueryException $e) {}
-        try { $modeofterms = ModeOfTerm::where('status', 1)->get(); } catch (QueryException $e) {}
-        try { $modeoftransport = ModeOfTransport::where('status', 1)->get(); } catch (QueryException $e) {}
-        try { $countries = Country::get(); } catch (QueryException $e) {}
-        try { $ports = Port::where('status', 1)->get(); } catch (QueryException $e) {}
-        try { $hscodes = HsCode::where('status', 1)->get(); } catch (QueryException $e) {}
-        try { $currencies = Currency::where('status', 1)->get(); } catch (QueryException $e) {}
-        try { $exportSodas = ExportSodaField::latest()->get(); } catch (QueryException $e) {}
-        try { $quotations = Quotation::latest()->get(); } catch (QueryException $e) {}
-        try { $companyLocations = CompanyLocation::where('status', 'active')->get(); } catch (QueryException $e) {}
-        try { $bagConditions = BagCondition::where('status', 1)->get(); } catch (QueryException $e) {}
-        try { $bagSizes = \App\Models\Master\Size::where('status', 'active')->get(); } catch (QueryException $e) {}
-        try { $stitchings = \App\Models\Master\Stitching::where('status', 'active')->get(); } catch (QueryException $e) {}
-        try { $threadColors = Color::where('status', 1)->get(); } catch (QueryException $e) {}
-        try { $inspectionCompanies = \App\Models\Master\FumigationCompany::where('status', 'active')->get(); } catch (QueryException $e) {}
-
-
+        $products            = Product::where('status', 1)->get();
+        $bagTypes            = BagType::where('status', 1)->get();
+        $bagPackings         = BagPacking::where('status', 1)->get();
+        $brands              = Brands::where('status', 1)->get();
+        $bagColors           = Color::where('status', 1)->get();
+        $users               = Customer::get();
+        $banks               = Bank::where('status', 1)->get();
+        $brokers             = Broker::where('status', 1)->get();
+        $incoterms           = IncoTerm::where('status', 1)->get();
+        $modeofterms         = ModeOfTerm::where('status', 1)->get();
+        $modeoftransport     = ModeOfTransport::where('status', 1)->get();
+        $countries           = Country::get();
+        $ports               = Port::where('status', 1)->get();
+        $hscodes             = HsCode::where('status', 1)->get();
+        $currencies          = Currency::where('status', 1)->get();
+        $exportSodas         = ExportSodaField::latest()->get();
+        $quotations          = Quotation::latest()->get();
+        $companyLocations    = CompanyLocation::where('status', 'active')->get();
+        $bagConditions       = BagCondition::where('status', 1)->get();
+        $bagSizes            = \App\Models\Master\Size::where('status', 'active')->get();
+        $stitchings          = \App\Models\Master\Stitching::where('status', 'active')->get();
+        $threadColors        = Color::where('status', 1)->get();
+        $inspectionCompanies = \App\Models\Master\FumigationCompany::where('status', 'active')->get();
 
         return view('management.export.export-order.create', compact(
             'products',
@@ -122,7 +108,7 @@ class ExportOrderController extends Controller
             'bagSizes',
             'stitchings',
             'threadColors',
-            'inspectionCompanies',
+            'inspectionCompanies'
         ));
     }
 
@@ -220,41 +206,31 @@ class ExportOrderController extends Controller
 
     public function show($id): View
     {
-        // Initialize variables
-        $products = $bagTypes = $bagPackings = $brands = $bagColors = $users = $banks = $brokers = $incoterms = $modeofterms = $modeoftransport = $countries = $ports = $hscodes = $currencies = $exportSodas = $quotations = $companyLocations = $bagConditions = $bagSizes = $stitchings = $threadColors = collect();
+        $exportOrder = ExportOrder::with(['specifications', 'packingItems.subItems', 'product'])->findOrFail($id);
 
-        try {
-            $exportOrder = ExportOrder::with(['specifications', 'packingItems.subItems', 'product'])->findOrFail($id);
-
-            // Fetch data (risky queries isolated)
-            try { $products = Product::where('status', 1)->get(); } catch (QueryException $e) {}
-            try { $bagTypes = BagType::where('status', 1)->get(); } catch (QueryException $e) {}
-            try { $bagPackings = BagPacking::where('status', 1)->get(); } catch (QueryException $e) {}
-            try { $brands = Brands::where('status', 1)->get(); } catch (QueryException $e) {}
-            try { $bagColors = Color::where('status', 1)->get(); } catch (QueryException $e) {}
-            try { $users = Customer::get(); } catch (QueryException $e) {}
-            try { $banks = Bank::where('status', 1)->get(); } catch (QueryException $e) {}
-            try { $brokers = Broker::where('status', 1)->get(); } catch (QueryException $e) {}
-            try { $incoterms = IncoTerm::where('status', 1)->get(); } catch (QueryException $e) {}
-            try { $modeofterms = ModeOfTerm::where('status', 1)->get(); } catch (QueryException $e) {}
-            try { $modeoftransport = ModeOfTransport::where('status', 1)->get(); } catch (QueryException $e) {}
-            try { $countries = Country::get(); } catch (QueryException $e) {}
-            try { $ports = Port::where('status', 1)->get(); } catch (QueryException $e) {}
-            try { $hscodes = HsCode::where('status', 1)->get(); } catch (QueryException $e) {}
-            try { $currencies = Currency::where('status', 1)->get(); } catch (QueryException $e) {}
-            try { $exportSodas = ExportSodaField::latest()->get(); } catch (QueryException $e) {}
-            try { $quotations = Quotation::latest()->get(); } catch (QueryException $e) {}
-            try { $companyLocations = CompanyLocation::where('status', 'active')->get(); } catch (QueryException $e) {}
-            try { $bagConditions = BagCondition::where('status', 1)->get(); } catch (QueryException $e) {}
-            try { $bagSizes = \App\Models\Master\Size::where('status', 'active')->get(); } catch (QueryException $e) {}
-            try { $stitchings = \App\Models\Master\Stitching::where('status', 'active')->get(); } catch (QueryException $e) {}
-            try { $threadColors = Color::where('status', 1)->get(); } catch (QueryException $e) {}
-            try { $inspectionCompanies = \App\Models\Master\FumigationCompany::where('status', 'active')->get(); } catch (QueryException $e) {}
-
-        } catch (QueryException $e) {
-            $exportOrder = new ExportOrder();
-        }
-
+        $products            = Product::where('status', 1)->get();
+        $bagTypes            = BagType::where('status', 1)->get();
+        $bagPackings         = BagPacking::where('status', 1)->get();
+        $brands              = Brands::where('status', 1)->get();
+        $bagColors           = Color::where('status', 1)->get();
+        $users               = Customer::get();
+        $banks               = Bank::where('status', 1)->get();
+        $brokers             = Broker::where('status', 1)->get();
+        $incoterms           = IncoTerm::where('status', 1)->get();
+        $modeofterms         = ModeOfTerm::where('status', 1)->get();
+        $modeoftransport     = ModeOfTransport::where('status', 1)->get();
+        $countries           = Country::get();
+        $ports               = Port::where('status', 1)->get();
+        $hscodes             = HsCode::where('status', 1)->get();
+        $currencies          = Currency::where('status', 1)->get();
+        $exportSodas         = ExportSodaField::latest()->get();
+        $quotations          = Quotation::latest()->get();
+        $companyLocations    = CompanyLocation::where('status', 'active')->get();
+        $bagConditions       = BagCondition::where('status', 1)->get();
+        $bagSizes            = \App\Models\Master\Size::where('status', 'active')->get();
+        $stitchings          = \App\Models\Master\Stitching::where('status', 'active')->get();
+        $threadColors        = Color::where('status', 1)->get();
+        $inspectionCompanies = \App\Models\Master\FumigationCompany::where('status', 'active')->get();
 
         return view('management.export.export-order.show', compact(
             'exportOrder',
@@ -280,47 +256,37 @@ class ExportOrderController extends Controller
             'bagSizes',
             'stitchings',
             'threadColors',
-            'inspectionCompanies',
+            'inspectionCompanies'
         ));
     }
 
     public function edit($id): View
     {
-        // Initialize variables
-        $products = $bagTypes = $bagPackings = $brands = $bagColors = $users = $banks = $brokers = $incoterms = $modeofterms = $modeoftransport = $countries = $ports = $hscodes = $currencies = $exportSodas = $quotations = $companyLocations = $bagConditions = $bagSizes = $stitchings = $threadColors = collect();
+        $exportOrder = ExportOrder::with(['specifications', 'packingItems.subItems', 'product'])->findOrFail($id);
 
-        try {
-            $exportOrder = ExportOrder::with(['specifications', 'packingItems.subItems', 'product'])->findOrFail($id);
-
-            // Fetch data (risky queries isolated)
-            try { $products = Product::where('status', 1)->get(); } catch (QueryException $e) {}
-            try { $bagTypes = BagType::where('status', 1)->get(); } catch (QueryException $e) {}
-            try { $bagPackings = BagPacking::where('status', 1)->get(); } catch (QueryException $e) {}
-            try { $brands = Brands::where('status', 1)->get(); } catch (QueryException $e) {}
-            try { $bagColors = Color::where('status', 1)->get(); } catch (QueryException $e) {}
-            try { $users = Customer::get(); } catch (QueryException $e) {}
-            try { $banks = Bank::where('status', 1)->get(); } catch (QueryException $e) {}
-            try { $brokers = Broker::where('status', 1)->get(); } catch (QueryException $e) {}
-            try { $incoterms = IncoTerm::where('status', 1)->get(); } catch (QueryException $e) {}
-            try { $modeofterms = ModeOfTerm::where('status', 1)->get(); } catch (QueryException $e) {}
-            try { $modeoftransport = ModeOfTransport::where('status', 1)->get(); } catch (QueryException $e) {}
-            try { $countries = Country::get(); } catch (QueryException $e) {}
-            try { $ports = Port::where('status', 1)->get(); } catch (QueryException $e) {}
-            try { $hscodes = HsCode::where('status', 1)->get(); } catch (QueryException $e) {}
-            try { $currencies = Currency::where('status', 1)->get(); } catch (QueryException $e) {}
-            try { $exportSodas = ExportSodaField::latest()->get(); } catch (QueryException $e) {}
-            try { $quotations = Quotation::latest()->get(); } catch (QueryException $e) {}
-            try { $companyLocations = CompanyLocation::where('status', 'active')->get(); } catch (QueryException $e) {}
-            try { $bagConditions = BagCondition::where('status', 1)->get(); } catch (QueryException $e) {}
-            try { $bagSizes = \App\Models\Master\Size::where('status', 'active')->get(); } catch (QueryException $e) {}
-            try { $stitchings = \App\Models\Master\Stitching::where('status', 'active')->get(); } catch (QueryException $e) {}
-            try { $threadColors = Color::where('status', 1)->get(); } catch (QueryException $e) {}
-            try { $inspectionCompanies = \App\Models\Master\FumigationCompany::where('status', 'active')->get(); } catch (QueryException $e) {}
-
-        } catch (QueryException $e) {
-            $exportOrder = new ExportOrder();
-        }
-
+        $products            = Product::where('status', 1)->get();
+        $bagTypes            = BagType::where('status', 1)->get();
+        $bagPackings         = BagPacking::where('status', 1)->get();
+        $brands              = Brands::where('status', 1)->get();
+        $bagColors           = Color::where('status', 1)->get();
+        $users               = Customer::get();
+        $banks               = Bank::where('status', 1)->get();
+        $brokers             = Broker::where('status', 1)->get();
+        $incoterms           = IncoTerm::where('status', 1)->get();
+        $modeofterms         = ModeOfTerm::where('status', 1)->get();
+        $modeoftransport     = ModeOfTransport::where('status', 1)->get();
+        $countries           = Country::get();
+        $ports               = Port::where('status', 1)->get();
+        $hscodes             = HsCode::where('status', 1)->get();
+        $currencies          = Currency::where('status', 1)->get();
+        $exportSodas         = ExportSodaField::latest()->get();
+        $quotations          = Quotation::latest()->get();
+        $companyLocations    = CompanyLocation::where('status', 'active')->get();
+        $bagConditions       = BagCondition::where('status', 1)->get();
+        $bagSizes            = \App\Models\Master\Size::where('status', 'active')->get();
+        $stitchings          = \App\Models\Master\Stitching::where('status', 'active')->get();
+        $threadColors        = Color::where('status', 1)->get();
+        $inspectionCompanies = \App\Models\Master\FumigationCompany::where('status', 'active')->get();
 
         return view('management.export.export-order.edit', compact(
             'exportOrder',
@@ -346,7 +312,7 @@ class ExportOrderController extends Controller
             'bagSizes',
             'stitchings',
             'threadColors',
-            'inspectionCompanies',
+            'inspectionCompanies'
         ));
     }
 
@@ -528,7 +494,32 @@ class ExportOrderController extends Controller
 
     public function getQuotationDetails($id)
     {
-        return Quotation::with(['packingItems', 'buyer', 'product'])->findOrFail($id);
+        $q = Quotation::with(['packingItems', 'buyer', 'product'])->findOrFail($id);
+
+        return response()->json([
+            'buyer_id'                   => $q->buyer_id,
+            'product_id'                 => $q->product_id,
+            'visual_name'                => $q->product->name ?? null,
+            'currency_id'                => $q->currency_id,
+            'currency_rate'              => $q->currency_rate,
+            'payment_days'               => $q->payment_days,
+            'advance_payment'            => $q->advance_payment,
+            'incoterm_id'                => $q->incoterm_id,
+            'packing_type'               => $q->packing_type,
+            'mode_of_term_id'            => $q->mode_of_term_id,
+            'mode_of_transport_id'       => $q->mode_of_transport_id,
+            'origin_country_id'          => $q->origin_country_id,
+            'port_of_discharge_id'       => $q->port_of_discharge_id,
+            'port_of_loading_id'         => $q->port_of_loading_id,
+            'hs_code_id'                 => $q->hs_code_id,
+            'partial_payment'            => $q->partial_payment,
+            'transhipment'               => $q->transhipment,
+            'part_shipment'              => $q->part_shipment,
+            'insurance_covered_by'       => $q->insurance_covered_by,
+            'shipment_delivery_date_from'=> $q->shipment_delivery_date_from,
+            'shipment_delivery_date_to'  => $q->shipment_delivery_date_to,
+            'packing_items'              => $q->packingItems,
+        ]);
     }
 
     public function getCustomerBanks($customerId)
