@@ -929,8 +929,8 @@ class FreightRequestController extends Controller
 
             $paymentDetails = calculatePaymentDetails($ticket->id, 1);
 
-            $qcAccountId = $ticket->qcProduct->account_id;
             dd("test");
+            $qcAccountId = $ticket->qcProduct->account_id;
             $truckNo = $ticket->truck_no ?? 'N/A';
             $biltyNo = $ticket->bilty_no ?? 'N/A';
             $rate = $request->contract_rate;
