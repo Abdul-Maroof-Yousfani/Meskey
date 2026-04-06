@@ -9,7 +9,12 @@ return new class extends Migration {
     {
         Schema::create('export_order_packing_sub_items', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('export_order_packing_item_id', 'eo_psi_pi_foreign')->constrained('export_order_packing_items')->onDelete('cascade');
+            $table->foreignId('export_order_packing_item_id');
+
+            $table->foreign('export_order_packing_item_id', 'eo_psi_pi_fk')
+                ->references('id')
+                ->on('export_order_packing_items')
+                ->cascadeOnDelete();
             $table->foreignId('bag_type_id')->nullable()->constrained('bag_types');
             $table->foreignId('bag_size_id')->nullable()->constrained('sizes');
             $table->integer('no_of_primary_bags')->nullable()->default(0);
