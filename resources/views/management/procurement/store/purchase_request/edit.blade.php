@@ -7,7 +7,7 @@
         width: 100% !important;
     }
 </style>
-<input type="hidden" name="category_id" value="{{ $purchaseRequest->category_id }}" id="category_id" />
+<input type="hidden" name="category_id" value="{{ $purchaseRequest->category_id }}" id="category_id_value" />
         
 <form style="overflow-x: hidden;" action="{{ route('store.purchase-request.update', $purchaseRequest->id) }}" method="POST" id="ajaxSubmit"
     autocomplete="off">
@@ -643,7 +643,7 @@
         let input = $(this);
         let val = parseFloat(input.val()) || 0;
         let balance = parseFloat(input.data('balance')) || 0;
-        let category_id = $("#category_id").val();
+        let category_id = $("#category_id_value").val();
 
         if (val > balance && category_id == 38) {
             alert("Quantity cannot exceed available Job Order balance (" + balance + ")");
