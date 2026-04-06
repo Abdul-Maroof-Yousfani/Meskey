@@ -9,6 +9,7 @@ use App\Models\Master\Broker;
 use App\Models\TruckSizeRange;
 use App\Models\PurchaseTicket;
 use App\Models\Master\ProductSlab;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
 use App\Models\ArrivalPurchaseOrder;
 use App\Http\Controllers\Controller;
@@ -308,6 +309,13 @@ class FreightRequestController extends Controller
             $is_paid_by_supplier = $request->has('is_paid_by_supplier') ? 1 : 0;
             $requestData['is_paid_by_supplier'] = $request->has('is_paid_by_supplier') ? 1 : 0;
 
+            if (!$is_paid_by_supplier && !$request->vendor_id) {
+                throw ValidationException::withMessages([
+                    'vendor_id' => ['Vendor is required.']
+                ]);
+            }
+
+            
             $requestData['module_type'] = 'freight_payment';
             $requestData['total_amount'] = $requestData['net_amount'];
 
