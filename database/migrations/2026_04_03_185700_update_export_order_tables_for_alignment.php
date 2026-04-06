@@ -13,7 +13,7 @@ return new class extends Migration {
 
         Schema::table('export_order_packing_items', function (Blueprint $table) {
             if (!Schema::hasColumn('export_order_packing_items', 'company_location_id')) {
-                $table->foreignId('company_location_id')->nullable()->after('export_order_id')->constrained('company_locations', 'eo_pi_loc_foreign');
+                $table->foreignId('company_location_id')->nullable()->after('export_order_id')->constrained('company_locations');
             }
             
             $table->integer('extra_bags')->after('no_of_bags')->default(0);
