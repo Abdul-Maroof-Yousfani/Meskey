@@ -875,6 +875,12 @@ class FreightRequestController extends Controller
     public function pohouch_freight_payment_request_approval(Request $request)
     {
 
+        if($request->status == 'rejected') {
+            $paymentRequest = PaymentRequest::findOrFail($request->payment_request_id);
+            $paymentRequest->status = "rejected";
+            $paymentRequest->save();
+            return response()->json(['message' => 'Payment request rejected successfully!']);
+        }
 
 
         return DB::transaction(function () use ($request) {
@@ -1230,6 +1236,13 @@ class FreightRequestController extends Controller
 
     public function pohouch_freight_payment_request_approval_wo_contract(Request $request)
     {
+        if($request->status == 'rejected') {
+            $paymentRequest = PaymentRequest::findOrFail($request->payment_request_id);
+            $paymentRequest->status = "rejected";
+            $paymentRequest->save();
+            return response()->json(['message' => 'Payment request rejected successfully!']);
+        }
+
         return DB::transaction(function () use ($request) {
             $paymentRequest = PaymentRequest::findOrFail($request->payment_request_id);
            
