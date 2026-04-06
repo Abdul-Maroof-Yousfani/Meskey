@@ -1060,7 +1060,6 @@ class FreightRequestController extends Controller
             }
 
 
-            dd("test3");
 
 
 
@@ -1100,6 +1099,8 @@ class FreightRequestController extends Controller
                 }
 
             }
+
+            dd("test3");
 
             if ($request->total_labour != 0) {
 
