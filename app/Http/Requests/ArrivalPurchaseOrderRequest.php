@@ -54,6 +54,7 @@ class ArrivalPurchaseOrderRequest extends FormRequest
             'weighbridge_from'        => 'nullable|string',
             'remarks'                 => 'nullable|string',
             'status'                  => 'in:draft,confirmed,completed,cancelled',
+            "contract_status"         => 'nullable'
         ];
 
         if (isset($data['calculation_type']) && $data['calculation_type'] === 'quantity') {

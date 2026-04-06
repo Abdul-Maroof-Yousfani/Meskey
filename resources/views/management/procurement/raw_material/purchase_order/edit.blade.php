@@ -377,6 +377,17 @@
              </div>
          </div>
          <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group ">
+                <label>Contract Status:</label>
+                <select name="contract_status" id="contract_status" class="form-control select22">
+                    <option value="">Select Contract Status</option>
+                    <option @selected($arrivalPurchaseOrder->contract_status == 'close-contract-due-to-market-down') value="close-contract-due-to-market-down">Close Contract (due to market down)</option>
+                    <option @selected($arrivalPurchaseOrder->contract_status == 'continue-contract-due-to-high-market') value="continue-contract-due-to-high-market">Continue Contract (due to high market)</option>
+                    <option @selected($arrivalPurchaseOrder->contract_status == 'close-with-market-rate-penalty') value="close-with-market-rate-penalty">Close with market rate (Penalty)</option>
+                </select>
+            </div>
+        </div>
+         <div class="col-xs-12 col-sm-12 col-md-12">
              <div class="form-group">
                  <label>Remarks (Optional):</label>
                  <textarea name="remarks" placeholder="Remarks" class="form-control">{{ $arrivalPurchaseOrder->remarks }}</textarea>

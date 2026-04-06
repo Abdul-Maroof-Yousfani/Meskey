@@ -1,12 +1,13 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-2">Ticket No / Contract No</th>
-            <th class="col-sm-2">Supplier</th>
-            <th class="col-sm-2">Truck No</th>
+            <th class="col-sm-3">Ticket No / Contract No</th>
+            <th class="col-sm-3">Supplier</th>
+            <th class="col-sm-1">Sauda Type</th>
+            <th class="col-sm-1">Truck No</th>
 
-            <th class="col-sm-2">Builty No</th>
-            <th class="col-sm-1">Commodity</th>
+            <th class="col-sm-1">Builty No</th>
+            <th class="col-sm-2">Commodity</th>
             <th class="col-sm-1">Loading date</th>
             <th class="col-sm-2">Amounts</th>
             <th class="col-sm-2">Total Requested Amount</th>
@@ -21,13 +22,16 @@
                     <td>
                         <strong>Ticket:</strong> #{{ $ticket['unique_no'] ?? 'N/A' }}<br>
                         <strong>Contract:</strong> #{{ $ticket['purchaseOrder']->contract_no ?? 'N/A' }}<br>
+              
 
                     </td>
 
-                    <td>{{ $ticket['purchaseOrder']->supplier->name ?? 'N/A' }}</td>
+                    <td>{{ $ticket['purchaseOrder']->supplier?->name ?? ($ticket['model']->accountsOf?->name ?? 'N/A') }}</td>
+                    <td>{{ $ticket["model"]->saudaType->name ?? "N/A" }}</td>
                     <td>{{ $ticket['model']->truck_no ?? 'N/A' }}</td>
                     <td>{{ $ticket['model']->bilty_no ?? 'N/A' }}</td>
-                    <td>{{ $ticket['purchaseOrder']->qcProduct->name ?? ($ticket['qcProduct']->name ?? 'N/A') }}</td>
+                    <td>{{ $ticket['purchaseOrder']->qcProduct?->name ?? ($ticket['qcProduct']?->name ?? 'N/A') }}</td>
+                    
                     <td>
                         @if ($ticket['type'] == 'thadda')
                             {{ $ticket['purchaseFreight'] ? \Carbon\Carbon::parse($ticket['purchaseFreight']->loading_date)->format('Y-m-d') : 'N/A' }}
@@ -80,8 +84,16 @@
                             @if ($ticket['calculated_values']['total_freight_sum'] > 0)
                                 <span class="badge badge-warning">
                                     Freight: {{ number_format($ticket['calculated_values']['total_freight_sum'], 2) }}
+
                                 </span>
                             @endif
+                        @endif
+                        @if($ticket["model"]->paymentRequestData?->isNotEmpty())
+                            <span class="badge badge-primary mt-2">
+                                {{ $ticket["model"]->paymentRequestData?->contains('is_paid_by_supplier', true) 
+                                    ? 'Paid by Supplier' 
+                                    : 'Not Paid by Supplier' }}
+                            </span>
                         @endif
                     </td>
                     <td>
@@ -89,17 +101,10 @@
                         {{ \Carbon\Carbon::parse($ticket['calculated_values']['created_at'])->format('H:i A') }}
                     </td>
                     <td>
-                        @if ($ticket['total_requests_count'] > 0)
-                            <a onclick="openModal(this,'{{ route('raw-material.freight-request.edit', $ticket['model']->id) }}','Manage Freight Payment Request', false, '80%')"
-                                class="info p-1 text-center mr-2 position-relative">
-                                <i class="ft-eye font-medium-3"></i>
-                            </a>
-                        @else
                             <a onclick="openModal(this,'{{ route('raw-material.freight-request.edit', $ticket['model']->id) }}','Manage Freight Payment Request', false, '80%')"
                                 class="info p-1 text-center mr-2 position-relative">
                                 <i class="ft-edit font-medium-3"></i>
                             </a>
-                        @endif
                     </td>
                 </tr>
             @endforeach

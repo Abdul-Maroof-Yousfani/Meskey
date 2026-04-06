@@ -3,6 +3,8 @@
 use App\Http\Controllers\Finance\PaymentVoucherController;
 use App\Http\Controllers\Production\JobOrderController;
 use App\Http\Controllers\Production\JobOrderRawMaterialQcController;
+use App\Http\Controllers\Production\ProductionInputAnalysisController;
+use App\Http\Controllers\Production\ProductionOutputAnalysisController;
 use App\Http\Controllers\Production\ProductionQualityCheckController;
 use App\Http\Controllers\Production\ProductionVoucherController;
 use App\Models\Production\JobOrder\JobOrderRawMaterialQc;
@@ -13,6 +15,7 @@ use App\Http\Controllers\Production\PlantBreakdownController;
 
 
 Route::resource('job-orders', JobOrderController::class);
+Route::get('job-orders/{id}/print', [JobOrderController::class, 'printJobOrder'])->name('job-orders.print');
 Route::post('get-job-orders', [JobOrderController::class, 'getList'])->name('get.job_orders');
 Route::get('get-product-specs/{productId}', [JobOrderController::class, 'getProductSpecs'])->name('get.product_specs');
 
@@ -67,3 +70,17 @@ Route::post('get-plant-breakdown', [PlantBreakdownController::class, 'getList'])
 // Plant Breakdown Routes
 Route::resource('production-quality-check', ProductionQualityCheckController::class);
 Route::post('get-production-quality-check', [ProductionQualityCheckController::class, 'getList'])->name('get.production-quality-check');
+
+Route::resource("production-input-analysis", ProductionInputAnalysisController::class);
+Route::post('get-production-input-analysis', [ProductionInputAnalysisController::class, 'getList'])->name('get.production-input-analysis');
+
+use App\Http\Controllers\Production\ProductionMachineAnalysisController;
+Route::resource("production-machine-analysis", ProductionMachineAnalysisController::class);
+Route::post('get-production-machine-analysis', [ProductionMachineAnalysisController::class, 'getList'])->name('get.production-machine-analysis');
+Route::get('production-machine-analysis/get-arrival-locations/{id}', [ProductionMachineAnalysisController::class, 'getArrivalLocationsByCompanyLocation'])->name('production-machine-analysis.get-arrival-locations');
+Route::get('production-machine-analysis/get-plants/{companyId}/{arrivalId}', [ProductionMachineAnalysisController::class, 'getPlantsByArrivalLocation'])->name('production-machine-analysis.get-plants');
+Route::get('production-machine-analysis/get-machines/{arrivalId}/{plantId}', [ProductionMachineAnalysisController::class, 'getMachinesByPlant'])->name('production-machine-analysis.get-machines');
+
+Route::resource("production-output-analysis", ProductionOutputAnalysisController::class);
+Route::post('get-production-output-analysis', [ProductionOutputAnalysisController::class, 'getList'])->name('get.production-output-analysis');
+Route::get('get-slabs-by-product', [ProductionOutputAnalysisController::class, 'getSlabsByProduct'])->name('production-output-analysis.get-slabs');

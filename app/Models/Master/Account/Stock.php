@@ -18,6 +18,10 @@ class Stock extends Model
         'parent_id',
         'company_location_id',
         'arrival_id',
-        'subarrival_id'
+        'subarrival_id',
+        'parentable_id',
+        'bag_packing_id',
+        'parentable_type',
+        'brand_id'
     ];
 }

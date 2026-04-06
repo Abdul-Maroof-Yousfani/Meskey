@@ -1,3 +1,9 @@
+<style>
+    .expired td {
+        background-color: orange !important;
+        color: white;
+    }
+</style>
 <x-sticky-table :items="$arrivalPurchaseOrder" :leftSticky="3" :rightSticky="1" :emptyMessage="'No purchase orders found'" :pagination="$arrivalPurchaseOrder->links()">
     @slot('head')
     <th>Contract #</th>
@@ -38,7 +44,7 @@
             }
         @endphp
 
-        <tr>
+        <tr class="{{ $row->hasExpired() ? 'expired' : '' }}">
             <td>
                 #{{ $row->contract_no }}
             </td>

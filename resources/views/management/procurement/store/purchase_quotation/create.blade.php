@@ -78,12 +78,14 @@
         </div> --}}
         <div class="col-md-12">
         <div style="overflow-x: auto; white-space: nowrap;">
-            <table class="table table-bordered" id="purchaseRequestTable" style="min-width: 2000px;">
+            <table class="table table-bordered" id="purchaseRequestTable" style="min-width: 3000px;">
                 <thead>
                     <tr>
                         <th>Category</th>
                         <th>Item</th>
+                        <th>Job Order</th>
                         <th>Qty</th>
+
                         <th>Rate</th>
                         <th>Total Amount</th>
                         <th>Item UOM</th>
@@ -196,31 +198,36 @@
     }
         let row = `
             <tr id="row_${index}">
-                <td style="width: 25%">
+                <td style="min-width: 250px;">
                     <select name="category_id[]" onchange="filter_items(this.value, ${index})"
                             id="category_id_${index}" class="form-control item-select select2">
                         ${categoryOptions}
                     </select>
                 </td>
-                <td style="width: 25%">
+                <td style="min-width: 400px;">
                     <select name="item_id[]" id="item_id_${index}" onchange="get_uom(${index})"
                             class="form-control item-select select2"></select>
                     <input type="hidden" name="data_id[]" value="0">
                 </td>
-                <td style="width: 10%"><input onkeyup="calc(${index})" onblur="calc(${index})" style="width: 100px" type="number" name="qty[]" id="qty_${index}" class="form-control" step="0.01" min="0"></td>
-                <td style="width: 20%"><input onkeyup="calc(${index})" onblur="calc(${index})" style="width: 100px" type="number" name="rate[]" id="rate_${index}" class="form-control" step="0.01" min="0"></td>
-                <td style="width: 20%"><input style="width: 100px" type="number" readonly name="total[]" id="total_${index}" class="form-control" step="0.01" min="0"></td>
-                <td style="width: 15%"><input type="text" name="uom[]" id="uom_${index}" class="form-control uom" readonly></td>
+                <td style="min-width: 250px;">
+                    <select class="form-control select2" multiple disabled style="width: 100%"></select>
+                </td>
+
+
+                <td style="min-width: 150px;"><input onkeyup="calc(${index})" onblur="calc(${index})" style="width: 100%" type="number" name="qty[]" id="qty_${index}" class="form-control" step="0.01" min="0"></td>
+                <td style="min-width: 150px;"><input onkeyup="calc(${index})" onblur="calc(${index})" style="width: 100%" type="number" name="rate[]" id="rate_${index}" class="form-control" step="0.01" min="0"></td>
+                <td style="min-width: 150px;"><input style="width: 100%" type="number" readonly name="total[]" id="total_${index}" class="form-control" step="0.01" min="0"></td>
+                <td style="min-width: 150px;"><input type="text" name="uom[]" id="uom_${index}" class="form-control uom" readonly></td>
                 
-                <td class="bag-only"></td>
-                <td class="bag-only"></td>
-                <td class="bag-only"></td>
-                <td class="bag-only"></td>
-                <td class="bag-only"></td>
-                <td class="bag-only"></td>
-                <td class="bag-only"></td>
-                <td class="bag-only"></td>
-                <td style="width: 25%"><input style="width: 140px" type="text" name="remarks[]" id="remark_${index}" class="form-control"></td>
+                <td class="bag-only" style="min-width: 200px;"></td>
+                <td class="bag-only" style="min-width: 200px;"></td>
+                <td class="bag-only" style="min-width: 200px;"></td>
+                <td class="bag-only" style="min-width: 200px;"></td>
+                <td class="bag-only" style="min-width: 200px;"></td>
+                <td class="bag-only" style="min-width: 200px;"></td>
+                <td class="bag-only" style="min-width: 200px;"></td>
+                <td class="bag-only" style="min-width: 200px;"></td>
+                <td style="min-width: 400px;"><input style="width: 100%" type="text" name="remarks[]" id="remark_${index}" class="form-control"></td>
                 <td><button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="remove(${index})">Remove</button></td>
             </tr>`;
         $('#purchaseRequestBody').append(row);

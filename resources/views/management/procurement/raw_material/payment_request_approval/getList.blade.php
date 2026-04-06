@@ -3,6 +3,7 @@
         <tr>
             <th class="col-sm-2">Ticket No / Contract No</th>
             <th class="col-sm-2">Supplier</th>
+            <th class="col-sm-2">Sauda Type</th>
             <th class="col-sm-2">Type</th>
             <th class="col-sm-1">Amount</th>
             <th class="col-sm-2">Status</th>
@@ -13,6 +14,7 @@
     <tbody>
         @if (count($paymentRequests) != 0)
             @foreach ($paymentRequests as $request)
+                
                 <tr>
                     <td>
                         @if ($request->payment_type !== null)
@@ -29,6 +31,7 @@
                     </td>
                     <td>{{ $request->paymentRequestData->supplier_name ?? ($request->purchaseOrder->purchaseOrderData[0]->supplier->name ?? 'N/A') }}
                     </td>
+                    <td>{{ $request->sauda_type }}</td>
                     <td>
                         @if ($request->payment_type !== null)
                             @if ($request->payment_type == 'advance')
@@ -61,8 +64,8 @@
                                 <span class="badge badge-yellow mt-1">Arrival Freight</span>
                             @endif
                         @endif
-                    </td>
-                    <td>{{ number_format($request->amount, 2) }}</td>
+                    </td>   
+                    <td>{{ !$request->paymentRequestData->is_paid_by_supplier ? number_format($request->amount, 2) : "Paid by supplier" }}</td>
                     <td>
                         @if ($request->status == 'approved')
                             <span class="badge badge-success">Approved</span>

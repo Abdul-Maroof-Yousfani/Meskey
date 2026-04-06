@@ -213,7 +213,9 @@ class TicketContractController extends Controller
             $rate = $purchaseOrder->rate_per_kg;
             $totalAmount = $inventoryAmount;
             $loadingWeight = null;
-            if ($arrivalTicket->saudaType->name == 'Pohanch') {
+
+
+            if ($type == 'pohanch') {
                 $loadingWeight = $arrivedWeight;
                 $txn = Transaction::where('purpose', 'supplier-payable')
                     ->where('grn_no', $grnNo)
@@ -485,6 +487,15 @@ class TicketContractController extends Controller
                 );
 
             }
+
+                        
+            $saudaType = $arrivalTicket->saudaType->name == 'Pohanch' ? 'pohouch' : 'thadda';
+            
+            $transactions = Transaction::where('grn_no', $grnNo)
+                ->where('payment_against', $saudaType . "-freight")
+                ->update([
+                    "voucher_no" => $purchaseOrder->contract_no
+                ]);
 
             DB::commit();
 

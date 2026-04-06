@@ -73,11 +73,13 @@ class PaymentRequestData extends Model
         'penalty_adjust_to',
         'labour_vendor_id',
         'gross_amount',
+        'is_paid_by_supplier',
     ];
 
     protected $casts = [
         'loading_date' => 'date',
-        'is_loading' => 'boolean'
+        'is_loading' => 'boolean',
+        'is_paid_by_supplier' => 'boolean',
     ];
 
     public function paymentRequests()

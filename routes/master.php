@@ -81,6 +81,8 @@ Route::resource('product', ProductController::class);
 Route::post('/get-product', [ProductController::class, 'getList'])->name('get.product');
 Route::get('/get-items', [ProductController::class, 'getItems'])->name('get.items');
 
+Route::get('/supplier/import-modal', [SupplierController::class, 'importModal'])->name('supplier.import-modal');
+Route::post('/supplier/import-row', [SupplierController::class, 'importRow'])->name('supplier.import-row');
 Route::resource('supplier', SupplierController::class);
 Route::post('/get-supplier', [SupplierController::class, 'getList'])->name('get.supplier');
 

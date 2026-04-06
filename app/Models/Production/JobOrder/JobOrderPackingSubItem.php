@@ -26,6 +26,7 @@ class JobOrderPackingSubItem extends Model
         'brand_id',
         'thread_color_id',
         'attachment',
+        'extra_bags_percentage',
     ];
 
     public function packingItem()
@@ -33,9 +34,34 @@ class JobOrderPackingSubItem extends Model
         return $this->belongsTo(JobOrderPackingItem::class, 'job_order_packing_item_id');
     }
 
-    public function bagType()
+    public function bagProduct()
     {
-        return $this->belongsTo(BagType::class, 'bag_type_id');
+        return $this->belongsTo(\App\Models\Product::class, 'bag_product_id');
+    }
+
+    public function bagSize()
+    {
+        return $this->belongsTo(\App\Models\Master\Size::class, 'bag_size_id');
+    }
+
+    public function stitching()
+    {
+        return $this->belongsTo(\App\Models\Master\Stitching::class, 'stitching_id');
+    }
+
+    public function bagColor()
+    {
+        return $this->belongsTo(\App\Models\Master\Color::class, 'bag_color_id');
+    }
+
+    public function brand()
+    {
+        return $this->belongsTo(\App\Models\Master\Brands::class, 'brand_id');
+    }
+
+    public function threadColor()
+    {
+        return $this->belongsTo(\App\Models\Master\Color::class, 'thread_color_id');
     }
 }
 

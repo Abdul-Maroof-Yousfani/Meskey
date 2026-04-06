@@ -184,23 +184,31 @@
     </div>
 
     <div class="row mt-3" id="lineItemsContainer">
+        <style>
+            .items-table {
+                table-layout: fixed !important;
+                min-width: 2700px !important;
+                width: 2700px !important;
+            }
+        </style>
         <div class="col-12">
             <h6 class="header-heading-sepration">Loading Program Items</h6>
             <div class="table-responsive">
-                <table class="table table-bordered table-striped">
+                <table class="table table-bordered table-striped items-table">
                     <thead class="thead-light">
                         <tr>
-                            <th style="width: 250px">Sale Order</th>
-                            <th style="width: 250px">Delivery Order</th>
-                            <th style="width: 150px">Truck Number</th>
-                            <th style="width: 150px">Container Number</th>
-                            <th style="width: 140px">Packing</th>
-                            <th style="width: 180px">Brand</th>
-                            <th style="width: 220px">Factory/Arrival Location</th>
-                            <th style="width: 220px">Gala/Sub Arrival Location</th>
-                            <th style="width: 180px">Driver Name</th>
-                            <th style="width: 180px">Contact Details</th>
-                            <th style="width: 90px">Sug. Qty</th>
+                            <th style="width: 300px">Sale Order</th>
+                            <th style="width: 300px">Delivery Order</th>
+                            <th style="width: 200px">Truck Number</th>
+                            <th style="width: 200px">Container Number</th>
+                            <th style="width: 180px">Packing</th>
+                            <th style="width: 250px">Brand</th>
+                            <th style="width: 280px">Factory/Arrival Location</th>
+                            <th style="width: 280px">Gala/Sub Arrival Location</th>
+                            <th style="width: 220px">Driver Name</th>
+                            <th style="width: 220px">Contact Details</th>
+                            <th style="width: 250px">Transporter</th>
+                            <th style="width: 120px">Sug. Qty</th>
                         </tr>
                     </thead>
                     <tbody id="itemsList">
@@ -264,8 +272,13 @@
                                 </select>
                             </td>
                             <td><input type="text" value="{{ $item->driver_name }}" class="form-control form-control-sm" disabled></td>
-                            <td><input type="text" value="{{ $item->contact_details }}" class="form-control form-control-sm" disabled></td>
-                            <td><input type="text" value="{{ number_format($item->qty, 2) }}" class="form-control form-control-sm" disabled></td>
+                             <td><input type="text" value="{{ $item->contact_details }}" class="form-control form-control-sm" disabled></td>
+                             <td>
+                                 <select class="form-control form-control-sm select2" disabled>
+                                     <option selected>{{ $item->transporter->name ?? '-' }}</option>
+                                 </select>
+                             </td>
+                             <td><input type="text" value="{{ number_format($item->qty, 2) }}" class="form-control form-control-sm" disabled></td>
                         </tr>
                         @endforeach
                     </tbody>

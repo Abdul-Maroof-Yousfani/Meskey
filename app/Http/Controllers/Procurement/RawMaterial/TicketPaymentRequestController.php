@@ -646,9 +646,19 @@ class TicketPaymentRequestController extends Controller
         $freightPaymentRequestgrossAmount = paymentRequestData::where('ticket_id', $arrivalTicket->id)
             ->where('purchase_order_id', $arrivalTicket->arrival_purchase_order_id)
             ->where('module_type', 'freight_payment')
-            ->latest() // id ya created_at ke hisaab se last record
-            // ->value('gross_amount');
-            ->value('total_amount');
+            ->latest()->first(); // id ya created_at ke hisaab se last record
+        // ->value('gross_amount');
+
+
+        // dd($freightPaymentRequestgrossAmount, $freightPaymentRequestgrossAmount->godown_penalty);
+        if ($freightPaymentRequestgrossAmount->is_paid_by_supplier == 1) {
+            $freightPaymentRequestgrossAmount = $freightPaymentRequestgrossAmount->godown_penalty + $freightPaymentRequestgrossAmount->other_minus_labour + $freightPaymentRequestgrossAmount->commission_amount;
+        } else {
+            $freightPaymentRequestgrossAmount = $freightPaymentRequestgrossAmount->gross_amount;
+        }
+
+
+        // dd($freightPaymentRequestgrossAmount);
 
         $samplingRequest = null;
         $samplingRequestCompulsuryResults = collect();

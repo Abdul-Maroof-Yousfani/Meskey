@@ -5,7 +5,7 @@
     }
 </style>
 
-<input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-order') }}" />
+
 <div class="row form-mar">
     <div class="col-md-3">
         <div class="form-group">
@@ -298,7 +298,7 @@
 <div class="voucher-footer mt-4 pt-3 border-top">
     <div class="row">
         <div class="col-12">
-            <x-approval-status :model="$purchase_bill" />
+            <x-approval-status :model="$purchase_bill" :listRefresh="route('store.get.purchase-bill')" />
         </div>
     </div>
 </div>
