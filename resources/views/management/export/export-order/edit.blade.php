@@ -392,14 +392,14 @@
                         <div class="form-group">
                             <label>Commission (%):</label>
                             <input type="number" id="commission_percentage" name="commission_percentage"
-                                class="form-control" step="0.01" min="0">
+                                class="form-control" step="0.01" min="0" value="{{ old('commission_percentage', $exportOrder->commission_percentage) }}">
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="form-group">
                             <label>Amt/Ton:</label>
                             <input type="number" id="commission_amount_per_ton" name="commission_amount_per_ton"
-                                class="form-control" step="0.01" min="0">
+                                class="form-control" step="0.01" min="0" value="{{ old('commission_amount_per_ton', $exportOrder->commission_amount_per_ton) }}">
                         </div>
                     </div>
                     <div class="col-md-4">
@@ -1126,10 +1126,25 @@
             
             newRow.attr('data-index', rowCount);
             newRow.find('.card-header h6').text('Packing Row #' + (rowCount + 1));
+            
+            // Clean Select2 before clearing
             newRow.find('.select2-container').remove();
             newRow.find('select').removeClass('select2-hidden-accessible').removeAttr('data-select2-id').show();
-            newRow.find('input').val(0);
-            newRow.find('input[type="date"]').val('');
+            
+            // Generate unique names for inputs/selects to avoid conflict
+            newRow.find('input, select, textarea').each(function() {
+                var name = $(this).attr('name');
+                if (name) {
+                    name = name.replace(/\[\d+\]/, '[' + rowCount + ']');
+                    $(this).attr('name', name);
+                }
+            });
+
+            // Resets
+            newRow.find('input[type="number"]').val(0);
+            newRow.find('input[type="text"], input[type="date"]').val('');
+            newRow.find('input[type="hidden"]').val('');
+            
             newRow.find('select').val('').trigger('change');
             newRow.find('.sub-packing-items-container').empty().attr('data-index', rowCount);
             newRow.find('.add-sub-packing-item').attr('data-index', rowCount);
