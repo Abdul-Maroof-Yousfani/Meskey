@@ -494,7 +494,7 @@ class ExportOrderController extends Controller
 
     public function getQuotationDetails($id)
     {
-        $q = Quotation::with(['packingItems', 'buyer', 'product'])->findOrFail($id);
+        $q = Quotation::with(['packingItems', 'buyer', 'product', 'specifications'])->findOrFail($id);
 
         return response()->json([
             'buyer_id'                   => $q->buyer_id,
@@ -519,6 +519,7 @@ class ExportOrderController extends Controller
             'shipment_delivery_date_from'=> $q->shipment_delivery_date_from,
             'shipment_delivery_date_to'  => $q->shipment_delivery_date_to,
             'packing_items'              => $q->packingItems,
+            'specifications'             => $q->specifications,
         ]);
     }
 
