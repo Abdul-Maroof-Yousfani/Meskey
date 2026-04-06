@@ -2,7 +2,7 @@
 
 namespace App\Models\Export;
 
-use App\Models\ProductSlabType;
+use App\Models\Master\ProductSlabType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 

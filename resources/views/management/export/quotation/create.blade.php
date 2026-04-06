@@ -16,7 +16,7 @@
                             <select name="export_soda_id" class="form-control select2">
                                 <option value="">Select Sauda</option>
                                 @foreach ($exportSodas as $soda)
-                                    <option value="{{ $soda->id }}">#{{ $soda->id }} - {{ $soda->product->name ?? '' }}</option>
+                                    <option value="{{ $soda->id }}">{{ $soda->reference }} - {{ $soda->product->name ?? '' }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -340,6 +340,13 @@
                 </div>
             </div>
         </div>
+
+        <div class="col-md-12 mt-3">
+            <h6 class="header-heading-sepration">Additional Information</h6>
+            <div class="form-group">
+                <textarea name="additional_info" class="form-control" rows="4" placeholder="Enter any additional details here..."></textarea>
+            </div>
+        </div>
     </div>
 
     <div class="row bottom-button-bar">
@@ -575,6 +582,111 @@ $(document).ready(function() {
         if (s > 0 && totalMt > 0) {
             $('#qty_containers').val(Math.ceil(totalMt / s));
         }
+    }
+
+    // Export Sauda Autofill
+    $('select[name="export_soda_id"]').on('change', function() {
+        var saudaId = $(this).val();
+        if (saudaId) {
+            $.get('{{ route('quotation.get-sauda-details', '') }}/' + saudaId, function(data) {
+                // Basic Info
+                $('#buyerSelect').val(data.buyer_id).trigger('change.select2'); // Use select2 event to avoid manual fetch if possible
+                $('#productSelect').val(data.product_id).trigger('change');
+                
+                // Direct fill buyer details if available
+                if (data.buyer) {
+                    $('#buyer_phone').val(data.buyer.phone || data.buyer.owner_mobile_no || '');
+                    $('#buyer_email').val(data.buyer.email || '');
+                    $('#buyer_address').val(data.buyer.address || '');
+                }
+                
+                // Export Details
+                $('select[name="incoterm_id"]').val(data.incoterm_id).trigger('change');
+                $('select[name="mode_of_term_id"]').val(data.mode_of_term_id).trigger('change');
+                
+                // Commission
+                $('#commission_percentage').val(data.commission_percentage);
+                $('#commission_amount_per_ton').val(data.commission_amount_per_ton);
+                $('#commission').val(data.commission);
+                
+                // Additional Info
+                $('textarea[name="additional_info"]').val(data.additional_info);
+                
+                // Packing Items
+                if (data.packing_items && data.packing_items.length > 0) {
+                    $('#packingItems').empty();
+                    data.packing_items.forEach(function(item, index) {
+                        addNewPackingItemWithData(item, index);
+                    });
+                }
+            });
+        }
+    });
+
+    function addNewPackingItemWithData(item, index) {
+        var firstRowTemplate = `
+            <tr class="packing-item">
+                <td class="p-2">
+                    <select name="packing_items[${index}][bag_type_id]" class="form-control select2">
+                        <option value="">Select Bag Type</option>
+                        @foreach ($bagTypes as $bagType)
+                            <option value="{{ $bagType->id }}">{{ $bagType->name }}</option>
+                        @endforeach
+                    </select>
+                </td>
+                <td class="p-2">
+                    <select name="packing_items[${index}][bag_packing_id]" class="form-control select2">
+                        <option value="">Packing</option>
+                        @foreach ($bagPackings as $packing)
+                            <option value="{{ $packing->id }}">{{ $packing->name }}</option>
+                        @endforeach
+                    </select>
+                </td>
+                <td class="p-2">
+                    <input type="number" name="packing_items[${index}][bag_size]" class="form-control bag-size" step="0.01" value="${item.bag_size || 0}" min="0">
+                </td>
+                <td class="p-2">
+                    <input type="number" name="packing_items[${index}][metric_tons]" class="form-control metric-tons" value="${item.metric_tons || 0}" step="0.001" min="0">
+                </td>
+                <td class="p-2" style="display: none;">
+                    <input type="number" name="packing_items[${index}][maunds]" class="form-control maunds" value="${item.maunds || 0}" step="0.01" min="0">
+                </td>
+                <td class="p-2" style="display: none;">
+                    <input type="number" name="packing_items[${index}][total_kgs]" class="form-control total-kgs" value="${item.total_kgs || 0}" readonly>
+                </td>
+                <td class="p-2">
+                    <input type="number" name="packing_items[${index}][no_of_bags]" class="form-control no_of_bags" value="${item.no_of_bags || 0}" readonly>
+                </td>
+                <td class="p-2">
+                    <input type="number" name="packing_items[${index}][rate]" class="form-control rates" value="${item.rate || 0}" step="0.01" min="0">
+                </td>
+                <td class="p-2" style="display: none;">
+                    <input type="number" name="packing_items[${index}][rate_per_maund]" class="form-control rates_mnd" value="${item.rate_per_maund || 0}" step="0.01" min="0">
+                </td>
+                <td class="p-2">
+                    <input type="number" name="packing_items[${index}][amount]" class="form-control amount" value="${item.amount || 0}" min="0" readonly>
+                </td>
+                <td class="p-2">
+                    <input type="number" name="packing_items[${index}][amount_pkr]" class="form-control amount_pkr" value="${item.amount_pkr || 0}" min="0" readonly>
+                </td>
+                <td class="text-center p-2">
+                    <button type="button" class="btn btn-sm btn-danger remove-packing-item">
+                        <i class="ft-trash-2"></i>
+                    </button>
+                </td>
+            </tr>`;
+        
+        var $newRow = $(firstRowTemplate);
+        
+        // Set dropdown values
+        $newRow.find('select[name*="bag_type_id"]').val(item.bag_type_id);
+        $newRow.find('select[name*="bag_packing_id"]').val(item.bag_packing_id);
+        
+        $('#packingItems').append($newRow);
+        $newRow.find('.select2').select2({ width: '100%' });
+        
+        // Trigger calculation for the row
+        calculateRowAmount($newRow);
     }
 
     // Packing items

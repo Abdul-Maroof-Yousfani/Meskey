@@ -42,6 +42,7 @@ Route::resource('export-delivery-order', ExportDeliveryOrderController::class);
 Route::post('/get-export-delivery-order', [ExportDeliveryOrderController::class, 'getExportDeliveryOrderTable'])->name('get.export-delivery-order');
 Route::get('/get-export-order-details/{id}', [ExportDeliveryOrderController::class, 'getExportOrderDetails'])->name('export.get-export-order-details');
 Route::get('/get-orders-by-buyer/{buyerId}', [ExportDeliveryOrderController::class, 'getOrdersByBuyer'])->name('export.get-orders-by-buyer');
+Route::get('/export-order/get-quotation-details/{id}', [ExportOrderController::class, 'getQuotationDetails'])->name('export-order.get-quotation-details');
 
 // export form-e
 Route::resource('export-form-e', App\Http\Controllers\Export\ExportFormEController::class);
@@ -55,6 +56,7 @@ Route::resource('quotation', QuotationController::class);
 Route::post('/get-quotation', [QuotationController::class, 'getQuotationTable'])->name('get.quotation');
 Route::get('get-product-specs-quotation/{productId}', [QuotationController::class, 'getProductSpecs'])->name('get.product_specs.quotation');
 Route::get('get-buyer-details-quotation/{id}', [QuotationController::class, 'getBuyerDetails'])->name('get.buyer_details.quotation');
+Route::get('get-sauda-details/{id}', [QuotationController::class, 'getSaudaDetails'])->name('quotation.get-sauda-details');
 
 Route::get('/get-bank-details/{id}', function ($id) {
     return \App\Models\Export\Bank::findOrFail($id);

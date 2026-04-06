@@ -11,40 +11,39 @@ class ExportSodaField extends Model
     protected $guarded = ['id'];
 
     protected $casts = [
-        'price_per_kg' => 'float',
-        'price_per_mound' => 'float',
-        'price_per_100_kg' => 'float',
-        'quantity_in_kg' => 'float',
-        'quantity_in_ton' => 'float',
+        'commission_percentage' => 'float',
+        'commission_amount_per_ton' => 'float',
+        'commission' => 'float',
+        'shipment_period' => 'date',
     ];
 
     public function buyer()
     {
-        return $this->belongsTo(\App\Models\User::class, 'buyer_id');
+        return $this->belongsTo(\App\Models\Master\Customer::class , 'buyer_id');
     }
 
     public function product()
     {
-        return $this->belongsTo(\App\Models\Product::class, 'product_id');
+        return $this->belongsTo(\App\Models\Product::class , 'product_id');
     }
 
-    public function packing()
+    public function packingItems()
     {
-        return $this->belongsTo(\App\Models\BagPacking::class, 'bag_packing_id');
+        return $this->hasMany(ExportSodaPackingItem::class , 'export_soda_id');
     }
 
     public function incoterm()
     {
-        return $this->belongsTo(\App\Models\Export\IncoTerm::class, 'incoterm_id');
+        return $this->belongsTo(\App\Models\Export\IncoTerm::class , 'incoterm_id');
     }
 
     public function modeOfTerm()
     {
-        return $this->belongsTo(\App\Models\Export\ModeOfTerm::class, 'mode_of_term_id');
+        return $this->belongsTo(\App\Models\Export\ModeOfTerm::class , 'mode_of_term_id');
     }
 
     public function company()
     {
-        return $this->belongsTo(\App\Models\Master\Company::class, 'company_id');
+        return $this->belongsTo(\App\Models\Master\Company::class , 'company_id');
     }
 }

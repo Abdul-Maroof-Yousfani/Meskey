@@ -15,8 +15,8 @@ class ProductSlabType extends Model
         'name',
         'description',
         'calculation_base_type',
+        'qc_symbol',
         'status',
-        
     ];
 
     public function slabs()

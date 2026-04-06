@@ -28,6 +28,9 @@ class ExportOrder extends Model
         'company_location_ids' => 'array',
         'arrival_location_ids' => 'array',
         'arrival_sub_location_ids' => 'array',
+        'voucher_date' => 'date',
+        'shipment_delivery_date_from' => 'date',
+        'shipment_delivery_date_to' => 'date',
     ];
 
     protected static function booted()
@@ -69,6 +72,11 @@ class ExportOrder extends Model
     public function specifications()
     {
         return $this->hasMany(ExportOrderSpecification::class);
+    }
+
+    public function exportSoda()
+    {
+        return $this->belongsTo(ExportSodaField::class, 'export_soda_id');
     }
 
     public function broker()
