@@ -173,7 +173,7 @@
                                     <input type="hidden" name="data_id[]" value="{{ $data->id }}">
                                     <input type="hidden" name="purchase_request_data_id[]" value="{{ $data->purchase_request_data_id }}">
                                 </td>
-                                <td style="min-width: 400px;">
+                                <td style="min-width: 600px;">
                                     <select  id="item_id_{{ $key }}" disabled
                                         onchange="get_uom({{ $key }})" 
                                         class="form-control item-select select2" data-index="{{ $key }}">
@@ -519,7 +519,7 @@
                         @endforeach
                     </select>
                 </td>
-                <td style="min-width: 400px;">
+                <td style="min-width: 600px;">
                     <select name="item_id[]" id="item_id_${index}" onchange="get_uom(${index})" class="form-control item-select select2" data-index="0">
                         <option value="">Select Item</option>
                     

@@ -109,7 +109,7 @@
 
         </td>
 
-        <td style="min-width: 400px;">
+        <td style="min-width: 600px;">
             <select id="item_id_{{ $key }}" disabled onchange="get_uom({{ $key }})"
                 class="form-control item-select select2" data-index="{{ $key }}">
                 @foreach (get_product_by_id($data->item_id) as $item)
