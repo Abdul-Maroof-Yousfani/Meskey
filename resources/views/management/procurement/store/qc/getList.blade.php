@@ -13,7 +13,6 @@
         </tr>
     </thead>
     <tbody>
-    <tbody>
         {{-- @php dd($GroupedPurchaseOrderReceiving); @endphp --}}
         @if (count($GroupedPurchaseOrderReceiving) != 0)
             @foreach ($GroupedPurchaseOrderReceiving as $requestGroup)
@@ -124,21 +123,20 @@
                             </td> --}}
 
                             {{-- Approval Status + Actions --}}
-                             <td style="display: flex; flex-direction: column; justify-content: center; height: 100px;">
-                            <div style="display: flex; align-items: center; justify-content: center;">
+                             <td style="vertical-align: middle;">
+                            <div class="d-flex" style="gap: 5px; justify-content: center;">
                                     <a onclick="openModal(this, '{{ route('store.qc.view', ['id' => $supplierRow['data']->id, 'grn' => $requestGroup['request_no']]) }}', 'View QC', false, '70%')"
-                                        class="info p-1 text-center mr-2 position-relative" title="Approval">
-                                        <i class="ft-check font-medium-3"></i>
+                                        class="bg-info text-white p-1 text-center position-relative" title="Approval" style="border-radius: 4px; min-width: 60px; font-size: 12px;">
+                                        Approval
                                     </a>
                                     <a onclick="openModal(this, '{{ route('store.qc.view', ['id' => $supplierRow['data']->id, 'grn' => $requestGroup['request_no'], 'type' => 'view']) }}', 'View QC', false, '70%')"
-                                        class="info p-1 text-center mr-2 position-relative" title="Approval">
-                                        <i class="ft-eye font-medium-3"></i>
+                                        class="bg-primary text-white p-1 text-center position-relative" title="View" style="border-radius: 4px; min-width: 50px; font-size: 12px;">
+                                        View
                                     </a>
                                     @if($itemGroup["canUserApprove"] && !$supplierRow["data"]->qc?->is_qc_approved)
                                         <a onclick="deletemodal('{{ route('store.qc.delete', $supplierRow['data']->id) }}','{{ route('store.qc.get') }}')"
-                                            class="danger p-1 text-center mr-2 position-relative">
-
-                                            <i class="ft-x font-medium-3"></i>
+                                            class="bg-danger text-white p-1 text-center position-relative" style="border-radius: 4px; min-width: 50px; font-size: 12px;">
+                                            Delete
                                         </a>
                                     @endif
                                 </div>

@@ -76,7 +76,7 @@
     <div class="row form-mar">
         <div class="col-md-12">
             <div style="overflow-x: auto; white-space: nowrap; width: 100%;">
-                <table class="table table-bordered" id="purchaseRequestTable">
+                <table class="table table-bordered" id="purchaseRequestTable" style="min-width: 3500px;">
                     <thead>
                         <tr>
                             <th>Item</th>

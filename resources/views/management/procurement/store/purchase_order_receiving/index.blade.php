@@ -22,50 +22,91 @@
                     <div class="card">
                         <div class="card-header">
                             <form id="filterForm" class="form">
-                                <div class="row ">
-                                    <div class="col-md-12 my-1 ">
-                                        <div class="row justify-content-end text-right">
-                                            <div class="col-md-2 text-left">
-                                                <label for="filter_supplier_id" class="form-label">Supplier</label>
-                                                <select name="supplier_id" id="filter_supplier_id" class="form-control select2">
-                                                    <option value="all">All Suppliers</option>
-                                                    @foreach($suppliers as $supplier)
-                                                        <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                            <div class="col-md-2">
-                                                <label for="search" class="form-label">Search</label>
-                                                <input type="hidden" name="page" value="{{ request('page', 1) }}">
-                                                <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
-                                                <input type="text" class="form-control" id="search"
-                                                    placeholder="Search here" name="search"
-                                                    value="{{ request('search', '') }}">
-                                            </div>
-                                        </div>
+                                <div class="row mx-0 align-items-end flex-nowrap" style="overflow-x: hidden;">
+                                    <div class="px-1 text-left" style="min-width: 180px; flex: 0 0 180px;">
+                                        <label for="receiving_no" class="form-label text-nowrap">GRN No</label>
+                                        <input type="text" class="form-control" name="search" id="receiving_no" placeholder="GRN No">
+                                    </div>
+                                    <div class="px-1 text-left" style="min-width: 180px; flex: 0 0 180px;">
+                                        <label for="pr_no" class="form-label text-nowrap">PR No</label>
+                                        <input type="text" class="form-control" name="purchase_request_no" id="pr_no" placeholder="PR No">
+                                    </div>
+                                    <div class="px-1 text-left" style="min-width: 180px; flex: 0 0 180px;">
+                                        <label for="po_no" class="form-label text-nowrap">PO No</label>
+                                        <input type="text" class="form-control" name="purchase_order_no" id="po_no" placeholder="PO No">
+                                    </div>
+                                    <div class="px-1 text-left" style="min-width: 100px; flex: 0 0 100px;">
+                                        <label for="dc_no" class="form-label text-nowrap">DC No</label>
+                                        <input type="text" class="form-control" name="dc_no" id="dc_no" placeholder="DC No">
+                                    </div>
+
+                                    <div class="px-1 text-left" style="min-width: 250px; flex: 0 0 250px;">
+                                        <label for="category_id" class="form-label">Item / Category</label>
+                                        <select name="category_id" id="category_id" class="form-control select2">
+                                            <option value="">All Categories</option>
+                                            @foreach($categories as $category)
+                                                <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="px-1 text-left" style="min-width: 200px; flex: 0 0 200px;">
+                                        <label for="filter_supplier_id" class="form-label">Supplier</label>
+                                        <select name="supplier_id" id="filter_supplier_id" class="form-control select2">
+                                            <option value="all">All Vendors</option>
+                                            @foreach($suppliers as $supplier)
+                                                <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <div class="px-1 text-left" style="min-width: 90px; flex: 0 0 90px;">
+                                        <label for="qty" class="form-label">Qty</label>
+                                        <input type="number" class="form-control" name="qty" id="qty" placeholder="Qty">
+                                    </div>
+                                    <div class="px-1 text-left" style="min-width: 90px; flex: 0 0 90px;">
+                                        <label for="rate" class="form-label">Rate</label>
+                                        <input type="number" class="form-control" name="rate" id="rate" placeholder="Rate">
+                                    </div>
+                                    <div class="px-1 text-left" style="min-width: 100px; flex: 0 0 100px;">
+                                        <label for="total" class="form-label">Total</label>
+                                        <input type="number" class="form-control" name="total" id="total" placeholder="Total">
+                                    </div>
+
+                                    <div class="px-1 text-left" style="min-width: 220px; flex: 0 0 220px;">
+                                        <label for="qc_status" class="form-label">QC Status</label>
+                                        <select name="qc_status" id="qc_status" class="form-control select2">
+                                            <option value="">All Status</option>
+                                            <option value="pending">Pending</option>
+                                            <option value="approved">Approved</option>
+                                            <option value="rejected">Rejected</option>
+                                        </select>
+                                    </div>
+                                    <div class="px-1 text-left" style="min-width: 120px; flex: 1 1 auto;">
+                                        <label class="form-label">&nbsp;</label>
+                                        <button type="button" class="btn btn-outline-primary btn-block p-1" onclick="filterationCommon(`{{ route('store.get.purchase-order-receiving') }}`)">
+                                            <i class="ft-search"></i>
+                                        </button>
                                     </div>
                                 </div>
                             </form>
-                            {{-- <a href="{{ route('export-roles') }}" class="btn btn-warning">Export Roles</a> --}}
                         </div>
                         <div class="card-content">
-                            <div class="card-body table-responsive" id="filteredData">
-                                <table class="table m-0">
+                            <div class="card-body table-responsive" id="filteredData" style="overflow-x: auto;">
+                                <table class="table m-0" style="width: 100%; min-width: 1710px;">
                                     <thead>
                                         <tr>
-                                            <th class="col-sm-3">Purchase Order No </th>
-                                            <th class="col-sm-3">Purchase Request No</th>
-                                            <th class="col-sm-3">Purchase Quotation No</th>
-                                            {{-- <th class="col-sm-2">Location</th> --}}
-                                            <th class="col-sm-3">Category- item</th>
-                                            <th class="col-sm-3">Supplier</th>
-                                            {{-- <th class="col-sm-2">Item UOM</th> --}}
-                                            {{-- <th class="col-sm-2">Supplier</th> --}}
-                                            <th class="col-sm-1">Qty</th>
-                                            {{-- <th class="col-sm-1">Rate</th> --}}
-                                            {{-- <th class="col-sm-1">Total Amount</th> --}}
-                                            <th class="col-sm-1">Item Status</th>
-                                            <th class="col-sm-1">Action</th>
+                                            <th style="width: 180px; min-width: 180px;">PO Receiving No</th>
+                                            <th style="width: 180px; min-width: 180px;">Purchase Request No</th>
+                                            <th style="width: 180px; min-width: 180px;">Purchase Order No</th>
+                                            <th style="width: 100px; min-width: 100px;">DC No</th>
+                                            <th style="width: 250px; min-width: 250px;">Category- item</th>
+                                            <th style="width: 200px; min-width: 200px;">Supplier</th>
+                                            <th style="width: 90px; min-width: 90px;">Qty</th>
+                                            <th style="width: 90px; min-width: 90px;">Rate</th>
+                                            <th style="width: 100px; min-width: 100px;">Total Amount</th>
+                                            <th style="width: 110px; min-width: 110px;">QC</th>
+                                            <th style="width: 110px; min-width: 110px;">QC Status</th>
+                                            <th style="min-width: 120px;">Action</th>
                                         </tr>
                                     </thead>
                                 </table>
@@ -83,7 +124,17 @@
     <script>
         $(document).ready(function () {
             $('.select2').select2();
-            filterationCommon(`{{ route('store.get.purchase-order-receiving') }}`)
+            filterationCommon(`{{ route('store.get.purchase-order-receiving') }}`);
+
+            // Re-initialize select2 after any AJAX update to preserve selected value in visual UI
+            $(document).on('ajaxSuccess', function() {
+                $('.select2').select2();
+            });
+
+            // Trigger filtering automatically on select change
+            $(document).on('change', '#category_id, #filter_supplier_id, #qc_status', function() {
+                filterationCommon(`{{ route('store.get.purchase-order-receiving') }}`);
+            });
         });
     </script>
 @endsection

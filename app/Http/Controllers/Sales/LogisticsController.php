@@ -108,6 +108,8 @@ class LogisticsController extends Controller
             if (!$logistics->exists) {
                 $logistics->created_by = auth()->user()->id;
             }
+            $logistics->am_approval_status = 'pending';
+            $logistics->am_change_made = 1;
             
             $logistics->fill([
                 'date' => $request->date,

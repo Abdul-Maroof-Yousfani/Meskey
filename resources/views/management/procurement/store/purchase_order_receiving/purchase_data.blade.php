@@ -20,7 +20,7 @@
 
    <tr id="row_{{ $key }}">
 
-    <td style="width: 220px; min-width: 220px;">
+    <td style="width: 300px; min-width: 300px;">
         <select style="width: 100%;" id="category_id_{{ $key }}" onchange="filter_items(this.value,{{ $key }})"
             class="form-control item-select select2" data-index="{{ $key }}" disabled>
             <option value="">Select Category</option>
@@ -33,7 +33,7 @@
         <input type="hidden" name="purchase_order_data_id[]" value="{{ $data->id }}">
     </td>
 
-    <td style="width: 280px; min-width: 280px;">
+    <td style="width: 450px; min-width: 450px;">
         <select style="width: 100%;" id="item_id_{{ $key }}" onchange="get_uom({{ $key }})"
             class="form-control item-select select2" data-index="{{ $key }}" disabled>
             @foreach (get_product_by_id($data->item_id) as $item)
@@ -46,12 +46,22 @@
         <input type="hidden" name="item_id[]" value="{{ $data->item_id }}">
     </td>
 
-    <td style="width: 140px; min-width: 140px;">
+    <td style="width: 150px; min-width: 150px;">
         <input type="text" name="uom[]" value="{{ get_uom($data->item_id) }}" id="uom_{{ $key }}"
             class="form-control uom" readonly style="width: 100%;">
     </td>
 
-    <td style="width: 180px; min-width: 180px;">
+    <td style="width: 300px; min-width: 300px;">
+        <select class="form-control select2" multiple disabled>
+            @if($data->job_orders && $data->job_orders->count() > 0)
+                @foreach($data->job_orders as $pajo)
+                    <option selected>{{ $pajo->job_order_data->job_order_no ?? 'N/A' }}</option>
+                @endforeach
+            @endif
+        </select>
+    </td>
+
+    <td style="width: 250px; min-width: 250px;">
         <input type="number" style="width: 100%;" 
             onkeyup="calc({{ $key }})" onblur="calc({{ $key }})"
             name="qty[]" value="{{ $remainingQty }}" id="qty_{{ $key }}"
@@ -65,7 +75,7 @@
         </div>
     </td>
 
-    <td style="width: 160px; min-width: 160px;" class="bag-only">
+    <td style="width: 200px; min-width: 200px;" class="bag-only">
         <div class="loop-fields">
             <div class="form-group mb-0">
                 <input type="number" style="width: 100%;" name="receive_weight[]" id="receive_weight_{{ $key }}"
@@ -74,7 +84,7 @@
         </div>
     </td>
 
-    <td style="width: 140px; min-width: 140px;" class="bag-only">
+    <td style="width: 200px; min-width: 200px;" class="bag-only">
         <div class="loop-fields">
             <div class="form-group mb-0">
                 <input type="number" style="width: 100%;" name="min_weight[]" id="min_weight_{{ $key }}"
@@ -83,7 +93,7 @@
         </div>
     </td>
 
-    <td style="width: 180px; min-width: 180px;" class="bag-only">
+    <td style="width: 250px; min-width: 250px;" class="bag-only">
         <div class="loop-fields">
             <div class="form-group mb-0">
                 <input type="text" style="width: 100%;" name="brand[]" id="brand_{{ $key }}"
@@ -92,7 +102,7 @@
         </div>
     </td>
 
-    <td style="width: 160px; min-width: 160px;" class="bag-only">
+    <td style="width: 200px; min-width: 200px;" class="bag-only">
         <div class="loop-fields">
             <div class="form-group mb-0">
                 <input type="text" style="width: 100%;" name="color[]" id="color_{{ $key }}"
@@ -101,7 +111,7 @@
         </div>
     </td>
 
-    <td style="width: 170px; min-width: 170px;" class="bag-only">
+    <td style="width: 200px; min-width: 200px;" class="bag-only">
         <div class="loop-fields">
             <div class="form-group mb-0">
                 <input type="text" style="width: 100%;" name="construction_per_square_inch[]"
@@ -111,7 +121,7 @@
         </div>
     </td>
 
-    <td style="width: 140px; min-width: 140px;" class="bag-only">
+    <td style="width: 200px; min-width: 200px;" class="bag-only">
         <div class="loop-fields">
             <div class="form-group mb-0">
                 <input type="text" style="width: 100%;" name="size[]" id="size_{{ $key }}"
@@ -120,7 +130,7 @@
         </div>
     </td>
 
-    <td style="width: 220px; min-width: 220px;" class="bag-only">
+    <td style="width: 300px; min-width: 300px;" class="bag-only">
         <div class="loop-fields">
             <div class="form-group mb-0">
                 <select class="form-control select2" multiple disabled>
@@ -134,7 +144,7 @@
         </div>
     </td>
 
-    <td style="width: 140px; min-width: 140px;" class="bag-only">
+    <td style="width: 200px; min-width: 200px;" class="bag-only">
         <div class="loop-fields">
             <div class="form-group mb-0">
                 <input type="text" style="width: 100%;" name="micron[]" id="micron_{{ $key }}"
@@ -143,7 +153,7 @@
         </div>
     </td>
 
-    <td style="width: 220px; min-width: 220px;" class="bag-only">
+    <td style="width: 300px; min-width: 300px;" class="bag-only">
         <input type="file" name="printing_sample[]" id="printing_sample_{{ $key }}" disabled
             class="form-control" accept="image/*,application/pdf">
         @if (!empty($data->printing_sample))
@@ -157,12 +167,12 @@
         @endif
     </td>
 
-    <td style="width: 260px; min-width: 260px;">
+    <td style="width: 450px; min-width: 450px;">
         <input style="width: 100%; resize: vertical; min-height: 38px;" name="remarks[]"
             id="remark_{{ $key }}" class="form-control" placeholder="Remarks">
     </td>
 
-    <td style="width: 110px; min-width: 110px; text-align: center; vertical-align: middle;">
+    <td style="width: 150px; min-width: 150px; text-align: center; vertical-align: middle;">
         <button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="remove({{ $key }})"
             data-id="{{ $key }}">Remove</button>
     </td>

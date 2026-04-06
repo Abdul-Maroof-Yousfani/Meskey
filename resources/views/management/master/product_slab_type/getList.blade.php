@@ -2,6 +2,7 @@
     <thead>
         <tr>
             <th class="col-sm-4">Name </th>
+            <th class="col-sm-4">Type</th>
             <th class="col-sm-4">Description</th>
             <th class="col-sm-1">Status</th>
             <th class="col-sm-2">Created</th>
@@ -16,6 +17,17 @@
                         <p class="m-0">
                             {{ $row->name }} <br>
                         </p>
+                    </td>
+                    <td>
+                        @if($row->for_general_item)
+                            <div class="badge bg-success">
+                                For general item
+                            </div>
+                        @else
+                            <div class="badge bg-danger">
+                                Not for general item
+                            </div>
+                        @endif
                     </td>
                     <td>
                         <p class="m-0">

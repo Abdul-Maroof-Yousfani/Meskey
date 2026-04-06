@@ -7,10 +7,11 @@
 @section('content')
     <div class="content-wrapper">
         <section id="extended">
-            <div class="row w-100 mx-auto">
+            <div class="row w-100 mx-auto align-items-center mb-2">
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
                     <h2 class="page-title">Freight Payment Request</h2>
                 </div>
+          
             </div>
             <div class="row">
                 <div class="col-12">
@@ -24,7 +25,7 @@
                                                 <div class="form-group">
                                                     <label>Date:</label>
                                                     <input type="text" name="daterange" class="form-control"
-                                                        value="{{ request('daterange', \Carbon\Carbon::now()->subMonth()->format('m/d/Y') . ' - ' . \Carbon\Carbon::now()->format('m/d/Y')) }}" />
+                                                        value="{{ request('daterange', \Carbon\Carbon::now()->subYear()->format('m/d/Y') . ' - ' . \Carbon\Carbon::now()->format('m/d/Y')) }}" />
                                                 </div>
                                             </div>
                                             <div class="col-md-2">

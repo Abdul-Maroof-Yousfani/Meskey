@@ -43,16 +43,36 @@ class TicketController extends Controller
      */
     public function getList(Request $request)
     {
-      //  dd(getUserCurrentCompanyLocations());
-        $tickets = ArrivalTicket::when($request->filled('search'), function ($q) use ($request) {
-            $searchTerm = '%' . $request->search . '%';
-            $q->where(function ($sq) use ($searchTerm) {
-                $sq->where('unique_no', 'like', $searchTerm)
-                    // ->orWhere('supplier_name', 'like', $searchTerm)
-                    ->orWhere('truck_no', 'like', $searchTerm)
-                    ->orWhere('bilty_no', 'like', $searchTerm);
-            });
-        })
+        $tickets = ArrivalTicket::with(['product', 'miller'])
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $searchTerm = '%' . $request->search . '%';
+                $q->where(function ($sq) use ($searchTerm) {
+                    $sq->where('unique_no', 'like', $searchTerm)
+                        ->orWhere('truck_no', 'like', $searchTerm)
+                        ->orWhere('bilty_no', 'like', $searchTerm);
+                });
+            })
+            ->when($request->filled('unique_no'), function ($q) use ($request) {
+                $q->where('unique_no', 'like', '%' . $request->unique_no . '%');
+            })
+            ->when($request->filled('product_id'), function ($q) use ($request) {
+                $q->where('product_id', $request->product_id);
+            })
+            ->when($request->filled('acc_of'), function ($q) use ($request) {
+                $q->where('accounts_of_name', 'like', '%' . $request->acc_of . '%');
+            })
+            ->when($request->filled('miller_id'), function ($q) use ($request) {
+                $q->where('miller_id', $request->miller_id);
+            })
+            ->when($request->filled('truck_no'), function ($q) use ($request) {
+                $q->where('truck_no', 'like', '%' . $request->truck_no . '%');
+            })
+            ->when($request->filled('bilty_no'), function ($q) use ($request) {
+                $q->where('bilty_no', 'like', '%' . $request->bilty_no . '%');
+            })
+            ->when($request->filled('qc_status'), function ($q) use ($request) {
+                $q->where('first_qc_status', $request->qc_status);
+            })
             ->when($request->filled('from_date'), function ($q) use ($request) {
                 $q->whereDate('created_at', '>=', $request->from_date);
             })
@@ -73,11 +93,6 @@ class TicketController extends Controller
                 return $q->whereDate('created_at', '>=', $startDate)
                     ->whereDate('created_at', '<=', $endDate);
             })
-            // Yahan naya condition add karen
-            // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
-            //     return $q->where('location_id', auth()->user()->company_location_id);
-            // })
-
             ->whereIn('location_id', getUserCurrentCompanyLocations())
             ->latest()
             ->paginate($request->get('per_page', 25));

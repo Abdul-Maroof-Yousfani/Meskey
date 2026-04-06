@@ -35,6 +35,7 @@ class JobOrderPackingItem extends Model
         'delivery_date',
         'fumigation_company_id',
         'min_weight_empty_bags',
+        'extra_bags_percentage',
         'description',
         'location_instruction'
     ];
@@ -102,6 +103,21 @@ class JobOrderPackingItem extends Model
     public function brand()
     {
         return $this->belongsTo(Brands::class, 'brand_id');
+    }
+
+    public function bagColor()
+    {
+        return $this->belongsTo(\App\Models\Master\Color::class, 'bag_color_id');
+    }
+
+    public function threadColor()
+    {
+        return $this->belongsTo(\App\Models\Master\Color::class, 'thread_color_id');
+    }
+
+    public function stitching()
+    {
+        return $this->belongsTo(\App\Models\Master\Stitching::class, 'stitching_id');
     }
 
     public function subItems()

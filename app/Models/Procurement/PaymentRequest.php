@@ -39,7 +39,11 @@ class PaymentRequest extends Model
         'status',
         'amount',
         'am_approval_status',
-        'am_change_made'
+        'am_change_made',
+        'is_without_contract'
+    ];
+    protected $casts = [
+        'is_without_contract' => 'boolean'
     ];
 
     public function paymentRequestData()

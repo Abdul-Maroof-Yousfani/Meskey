@@ -106,8 +106,8 @@
         <style>
             #itemsTable {
                 table-layout: fixed !important;
-                min-width: 2010px !important;
-                width: 2010px !important;
+                min-width: 2700px !important;
+                width: 2700px !important;
             }
             #itemsTable th, #itemsTable td {
                 padding: 8px 4px !important;
@@ -141,18 +141,19 @@
                 <table class="table table-bordered table-striped" id="itemsTable">
                     <thead class="thead-light">
                         <tr>
-                            <th style="width: 250px">Sale Order *</th>
-                            <th style="width: 250px">Delivery Order</th>
-                            <th style="width: 150px">Truck Number *</th>
-                            <th style="width: 150px">Container Number</th>
-                            <th style="width: 140px">Packing</th>
-                            <th style="width: 180px">Brand</th>
-                            <th style="width: 220px">Factory/Arrival Location *</th>
-                            <th style="width: 220px">Gala/Sub Arrival Location *</th>
-                            <th style="width: 180px">Driver Name</th>
-                            <th style="width: 180px">Contact Details</th>
-                            <th style="width: 90px">Sug. Qty</th>
-                            <th style="width: 90px">Actions</th>
+                            <th style="width: 300px">Sale Order *</th>
+                            <th style="width: 300px">Delivery Order</th>
+                            <th style="width: 200px">Truck Number *</th>
+                            <th style="width: 200px">Container Number</th>
+                            <th style="width: 180px">Packing</th>
+                            <th style="width: 250px">Brand</th>
+                            <th style="width: 280px">Factory/Arrival Location *</th>
+                            <th style="width: 280px">Gala/Sub Arrival Location *</th>
+                            <th style="width: 220px">Driver Name</th>
+                            <th style="width: 220px">Contact Details</th>
+                            <th style="width: 250px">Transporter</th>
+                            <th style="width: 120px">Sug. Qty</th>
+                            <th style="width: 100px">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="itemsList">
@@ -337,6 +338,25 @@
                                             data-placement="left"
                                         @endif
                                     >
+                                        <select name="loading_program_items[{{ $index }}][transporter_id]" 
+                                            class="form-control form-control-sm select2 transporter-select" @disabled($item->firstWeighbridge)>
+                                            @if($item->transporter_id)
+                                                <option value="{{ $item->transporter_id }}" selected>{{ $item->transporter?->name }}</option>
+                                            @else
+                                                <option value="">Select Transporter</option>
+                                            @endif
+                                        </select>
+                                        <span class="transporter-placeholder text-muted" style="display: none;">-</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div
+                                        @if($item->firstWeighbridge)
+                                            data-toggle="tooltip"
+                                            title="You cannot update information because Ticket is already passed to first Weighbridge"
+                                            data-placement="left"
+                                        @endif
+                                    >
                                         <input type="number" name="loading_program_items[{{ $index }}][qty]"
                                             class="form-control form-control-sm" step="0.01"
                                             value="{{ $item->qty }}" @disabled($item->firstWeighbridge)>
@@ -358,7 +378,7 @@
                             </tr>
 @empty
                             <tr id="noItemsRow">
-                                <td colspan="10" class="text-center text-muted py-3">
+                                <td colspan="13" class="text-center text-muted py-3">
                                     No items found. Click "Add Item" to add loading program items.
                                 </td>
                             </tr>
@@ -456,7 +476,7 @@
                     const $doSelect = $row.find('.delivery-order-select');
                     if (soIds.length > 0) {
                         $.ajax({
-                            url: '{{ route('sales.getDeliveryOrdersBySaleOrderLoading') }}',
+                            url: '{{ route('sales.getDeliveryOrdersBySaleOrderLoadingEdit') }}',
                             type: 'GET',
                             data: { 
                                 sale_order_id: soIds,
@@ -478,9 +498,16 @@
                                     const filteredDOs = response.delivery_orders.filter(d => selectedDoIds.includes(d.id.toString()));
                                     updateRowMetadata($row, filteredDOs);
 
+                                    // Update global transporters map
+                                    if (response.transporters_map) {
+                                        window.transportersMap = window.transportersMap || {};
+                                        Object.assign(window.transportersMap, response.transporters_map);
+                                    }
+
                                     window.isUpdatingUI = false;
                                     updateItemLocations($row);
                                     updateRowDORequiredStatus($row);
+                                    updateTransporterOptions($row);
                                 }
                             }
                         });
@@ -495,6 +522,7 @@
                     window.isUpdatingUI = false;
                     updateItemLocations($row);
                     updateRowDORequiredStatus($row);
+                    updateTransporterOptions($row);
                 }
             });
 
@@ -513,6 +541,7 @@
                 $row.find('.row-so-select').trigger('change');
             } else {
                 updateRowDORequiredStatus($row);
+                updateTransporterOptions($row);
             }
         });
     get_sale_order(initialSOIds, $('#sale_order_id option:selected').first().data('type'));
@@ -719,6 +748,7 @@
                     $('#saleOrderDataContainer').html(response.html);
                     $('.select2').select2({ width: '100%' });
                     if (response.sale_order_data) window.saleOrderData = response.sale_order_data;
+                    if (response.transporters_map) window.transportersMap = response.transporters_map;
                     
                     if (response.is_delivery_order_optional) {
                         $('#is_delivery_order_optional').val('1');
@@ -837,6 +867,12 @@
                 </td>
                 <td><input type="text" name="loading_program_items[${index}][driver_name]" class="form-control form-control-sm"></td>
                 <td><input type="text" name="loading_program_items[${index}][contact_details]" class="form-control form-control-sm"></td>
+                <td>
+                    <select name="loading_program_items[${index}][transporter_id]" class="form-control form-control-sm select2 transporter-select">
+                        <option value="">Select Transporter</option>
+                    </select>
+                    <span class="transporter-placeholder text-muted" style="display: none;">-</span>
+                </td>
                 <td><input type="number" name="loading_program_items[${index}][qty]" class="form-control form-control-sm" step="0.01"></td>
                 <td class="text-center">
                     <button type="button" class="btn btn-sm btn-danger remove-item-btn"><i class="ft-trash-2"></i></button>
@@ -856,7 +892,7 @@
             if (rowSOIds.length > 0) {
                 const company_location_id = $('#main_company_location_id').val();
                 $.ajax({
-                    url: '{{ route('sales.getDeliveryOrdersBySaleOrderLoading') }}',
+                    url: '{{ route('sales.getDeliveryOrdersBySaleOrderLoadingEdit') }}',
                     type: 'GET',
                     data: { 
                         sale_order_id: rowSOIds,
@@ -878,9 +914,16 @@
                             const filteredDOs = response.delivery_orders.filter(d => selectedDoIds.includes(d.id.toString()));
                             updateRowMetadata($newRow, filteredDOs);
 
+                            // Update global transporters map
+                            if (response.transporters_map) {
+                                window.transportersMap = window.transportersMap || {};
+                                Object.assign(window.transportersMap, response.transporters_map);
+                            }
+
                             window.isUpdatingUI = false;
                             updateItemLocations($newRow);
                             updateRowDORequiredStatus($newRow);
+                            updateTransporterOptions($newRow);
                         }
                     },
                 });
@@ -895,6 +938,7 @@
                 window.isUpdatingUI = false;
                 updateItemLocations($newRow);
                 updateRowDORequiredStatus($newRow);
+                updateTransporterOptions($newRow);
             }
         });
 
@@ -910,6 +954,7 @@
 
         updateItemLocations($newRow);
         updateRowDORequiredStatus($newRow);
+        updateTransporterOptions($newRow);
     }
 
     function updateRowMetadata($row, deliveryOrders) {
@@ -946,6 +991,49 @@
         // Brands
         $brandSelect.val(brandIds).trigger('change.select2');
         $brandHidden.val(brandIds.length > 0 ? brandIds[0] : '');
+    }
+
+    function updateTransporterOptions($row) {
+        const selectedSOIds = $row.find('.row-so-select').val() || [];
+        const $transporterSelect = $row.find('.transporter-select');
+        const $transporterPlaceholder = $row.find('.transporter-placeholder');
+        
+        let allTransporters = [];
+        let isTransporterRequired = false;
+
+        selectedSOIds.forEach(soId => {
+            if (window.transportersMap && window.transportersMap[soId]) {
+                const soData = window.transportersMap[soId];
+                if (soData.transporter_used === 'yes') {
+                    isTransporterRequired = true;
+                    if (soData.transporters) {
+                        allTransporters = allTransporters.concat(soData.transporters);
+                    }
+                }
+            }
+        });
+
+        // Unique transporters
+        const uniqueTransporters = Array.from(new Map(allTransporters.map(t => [t.id, t])).values());
+
+        const currentVal = $transporterSelect.val();
+        $transporterSelect.empty();
+
+        if (isTransporterRequired) {
+            $transporterSelect.parent().find('.select2-container').show();
+            $transporterPlaceholder.hide();
+
+            $transporterSelect.append('<option value="">Select Transporter</option>');
+            uniqueTransporters.forEach(t => {
+                $transporterSelect.append(new Option(t.name, t.id, false, t.id.toString() === currentVal));
+            });
+        } else {
+            $transporterSelect.parent().find('.select2-container').hide();
+            $transporterPlaceholder.show();
+            $transporterSelect.val('');
+        }
+
+        $transporterSelect.trigger('change.select2');
     }
 
     function updateItemLocations($singleRow = null) {

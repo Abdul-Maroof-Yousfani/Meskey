@@ -17,26 +17,6 @@ class PurchaseBillData extends Model
         "updated_at"
     ];
 
-    public static function booted() {
-
-        static::created(function($purchase_bill_data) {
-            $supplier_account_id = Supplier::select("id", "account_id")->find($purchase_bill_data->purchase_bill->supplier_id);
-            createTransaction(
-                $purchase_bill_data->final_amount,
-                $supplier_account_id->account_id,
-                5,
-                $purchase_bill_data->purchase_bill->bill_no,
-                'credit',
-                'no',
-                [
-                    'payment_against' => "Purchase Bill",
-                    'remarks' => "Purchase Bill"
-                ] 
-            );
-        });
-   
-    }
-
     public function PurchaseOrderReceivingData() {
         return $this->belongsTo(PurchaseOrderReceivingData::class, "purchase_order_receiving_data_id");
     }

@@ -54,8 +54,8 @@
             <div class="form-group ">
                 <label>Weighbridge Money:</label>
                 <input type="text" placeholder="First Weight"
-                    value="{{ $ArrivalTicket->truckType->weighbridge_amount }}" disabled class="form-control"
-                    autocomplete="off" />
+                    value="{{ getTruckWeighbridgeAmount($ArrivalTicket->truck_type_id, $ArrivalTicket->location_id) }}" disabled
+                    class="form-control" autocomplete="off" />
             </div>
         </div>
         <div class="col-12">

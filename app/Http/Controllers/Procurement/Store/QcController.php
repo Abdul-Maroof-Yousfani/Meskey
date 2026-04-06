@@ -186,11 +186,13 @@ class QcController extends Controller
     public function edit(Request $request) {
         $id = $request->id;
         $grn = $request->grn;
+        $refresh_url = $request->refresh_url;
+
 
         $purchaseOrderReceivingData = PurchaseOrderReceivingData::with("qc", "purchase_order_data")->find($id);
 
 
-        return view("management.procurement.store.qc.edit", compact("grn", "purchaseOrderReceivingData", "id"));
+        return view("management.procurement.store.qc.edit", compact("grn", "purchaseOrderReceivingData", "id", "refresh_url"));
     }
     public function create(Request $request) {
         $id = $request->id;

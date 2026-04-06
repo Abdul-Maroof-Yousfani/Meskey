@@ -113,6 +113,22 @@
             filterationCommon(
                 `{{ route('raw-material.get.payment-request') }}`
             );
+
+            // Persist current page and per_page for AJAX refreshes
+            $(document).on('click', '#paginationLinks a', function() {
+                var url = $(this).attr('href');
+                if (url) {
+                    var page = url.split('page=')[1];
+                    if (page) {
+                        $('input[name="page"]').val(page);
+                    }
+                }
+            });
+
+            $(document).on('change', '#per_page', function() {
+                $('input[name="per_page"]').val($(this).val());
+                $('input[name="page"]').val(1);
+            });
         });
     </script>
 @endsection

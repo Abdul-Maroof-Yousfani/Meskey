@@ -1,6 +1,6 @@
 <form action="{{ route('raw-material.payment-request.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
-    <input type="hidden" id="listRefresh" value="{{ route('raw-material.get.payment-request') }}" />
+    <input type="hidden" id="listRefresh" value="{{ route('raw-material.get.payment-request-approval') }}" />
 
     <div class="row form-mar">
         <div class="col-xs-12 col-sm-12 col-md-12">

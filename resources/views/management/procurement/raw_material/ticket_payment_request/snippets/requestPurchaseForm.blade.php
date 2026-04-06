@@ -48,6 +48,8 @@
     $kantaCharges = $arrivalTicket->freight->karachi_kanta_charges ?? 0;
     $arrivalFreightAmount = $arrivalTicket->freight->gross_freight_amount ?? 0;
     $grossFreightAmount = $freightPaymentRequestgrossAmount ?? $arrivalTicket->freight->gross_freight_amount ?? 0;
+    
+    // dd($grossFreightAmount);
     $netWeight = $loadingWeight - $bagWeight * $noOfBags;
 
     foreach ($samplingRequestCompulsuryResults as $slab) {

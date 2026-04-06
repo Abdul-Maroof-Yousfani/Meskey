@@ -17,6 +17,7 @@
                 <textarea name="description" placeholder="Description" class="form-control">{{$product_slab_type->description}}</textarea>
             </div>
         </div>
+
         <!-- Status -->
        <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group ">
@@ -25,6 +26,18 @@
                     <option {{$product_slab_type->status == 'active' ? 'selected' : ''}} value="active">Active</option>
                     <option {{$product_slab_type->status == 'inactive' ? 'selected' : ''}}  value="inactive">Inactive</option>
                 </select>
+            </div>
+        </div>
+
+
+        <!-- Slab type for general item -->
+        <div class="col-xs-12 col-sm-12 col-md-12" style="margin-top: 20px;">
+            <div class="form-group d-flex align-items-center">
+                <label class="mr-2 mb-0">Slab type for general item:</label>
+                <div class="custom-control custom-switch">
+                    <input type="checkbox" class="custom-control-input" id="for_general_item" name="for_general_item" value="1" @checked($product_slab_type->for_general_item)>
+                    <label class="custom-control-label" for="for_general_item"></label>
+                </div>
             </div>
         </div>
     </div>

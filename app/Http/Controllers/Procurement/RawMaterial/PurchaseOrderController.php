@@ -171,6 +171,7 @@ class PurchaseOrderController extends Controller
             $arrivalPOData = collect($data)->except(['slabs', 'quantity_range', 'truck_size_range'])->toArray();
 
             $arrivalPOData['is_replacement'] = $request->is_replacement == '1';
+            $arrivalPOData['contract_status'] = $request->contract_status;
 
             if (isset($data['truck_size_range'])) {
                 $arrivalPOData['truck_size_range_id'] = $data['truck_size_range'];
@@ -303,6 +304,8 @@ class PurchaseOrderController extends Controller
                 'max_quantity' => $data['max_quantity'] ?? null,
                 'min_bags' => $data['min_bags'] ?? null,
                 'max_bags' => $data['max_bags'] ?? null,
+                'contract_status' => $data['contract_status'] ?? null,
+                'status' => $data['contract_status'] == 'close-contract-due-to-market-down' || $data['contract_status'] == 'close-with-market-rate-penalty' ? 'cancelled' : 'draft',
                 'remarks' => $data['remarks'] ?? null,
             ];
 

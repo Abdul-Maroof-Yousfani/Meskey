@@ -5,6 +5,7 @@ namespace App\Models\Sales;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Master\Brand as Brands;
+use App\Models\Master\Transporter;
 
 class LoadingProgramItem extends Model
 {
@@ -105,5 +106,10 @@ class LoadingProgramItem extends Model
 
     public function delivery_challan_data() {
         return $this->hasOne(DeliveryChallanData::class, "ticket_id");
+    }
+
+    public function transporter()
+    {
+        return $this->belongsTo(Transporter::class);
     }
 }

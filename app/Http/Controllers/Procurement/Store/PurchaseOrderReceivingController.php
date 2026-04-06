@@ -28,13 +28,15 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class PurchaseOrderReceivingController extends Controller
 {
     public function index()
     {
+        $categories = Category::where('category_type', 'general_items')->get();
         $suppliers = Supplier::where('status', 'active')->get();
-        return view('management.procurement.store.purchase_order_receiving.index', compact('suppliers'));
+        return view('management.procurement.store.purchase_order_receiving.index', compact('suppliers', 'categories'));
     }
 
 
@@ -66,9 +68,38 @@ class PurchaseOrderReceivingController extends Controller
             $query->where('supplier_id', $request->supplier_id);
         }
 
+        if ($request->has('dc_no') && !empty($request->dc_no)) {
+            $query->whereHas('purchase_order_receiving', function($q) use ($request) {
+                $q->where('dc_no', $request->dc_no);
+            });
+        }
+
+        foreach (['qty', 'rate', 'total'] as $field) {
+            if ($request->has($field) && !empty($request->$field)) {
+                if ($field === 'rate' || $field === 'total') {
+                    $query->whereHas('purchase_order_data', function ($q) use ($field, $request) {
+                        $q->where($field, $request->$field);
+                    });
+                } else {
+                    $query->where($field, $request->$field);
+                }
+            }
+        }
+
+        if ($request->has('qc_status') && !empty($request->qc_status)) {
+            $query->whereHas('qc', function($q) use ($request) {
+                $status = $request->qc_status;
+                if ($status === 'pending') {
+                    $q->whereIn('am_approval_status', ['pending', 'reverted']);
+                } else {
+                    $q->where('am_approval_status', $status);
+                }
+            });
+        }
+
         $PurchaseOrderRaw = $query->with(
             'qc',
-            'purchase_order_data',
+            'purchase_order_data.purchase_request_data',
             'purchase_order_receiving.purchase_order.purchase_request',
             'category',
             'item',
@@ -240,7 +271,7 @@ class PurchaseOrderReceivingController extends Controller
 
 
         if ($dataItems->isEmpty()) {
-         $dataItems = PurchaseOrderData::with(['purchase_order', 'item', 'category', 'purchase_request_data'])
+         $dataItems = PurchaseOrderData::with(['purchase_order', 'item', 'category', 'purchase_request_data', 'job_orders.job_order_data'])
                 ->where('purchase_order_id', $requestId)
                 ->get();
 
@@ -335,7 +366,11 @@ class PurchaseOrderReceivingController extends Controller
      */
     public function store(PurchaseOrderReceivingRequest $request)
     {
-        // dd($request->all());
+        $v = $this->validateQty($request);
+        if ($v->errors()->any()) {
+            return response()->json(['errors' => $v->errors()], 422);
+        }
+
         DB::beginTransaction();
         
         try {
@@ -435,7 +470,7 @@ class PurchaseOrderReceivingController extends Controller
     public function edit($id)
     {
         $purchaseOrderReceiving = PurchaseOrderReceiving::with([
-            'purchaseOrderReceivingData',
+            'purchaseOrderReceivingData.purchase_order_data.job_orders.job_order_data',
             'purchaseOrderReceivingData.qc',
             'purchaseOrderReceivingData.category',
             'purchaseOrderReceivingData.item',
@@ -510,6 +545,11 @@ class PurchaseOrderReceivingController extends Controller
 
     public function update(Request $request, $id)
     {
+        $v = $this->validateQty($request, $id);
+        if ($v->errors()->any()) {
+            return response()->json(['errors' => $v->errors()], 422);
+        }
+
         $validated = $request->validate([
             'truck_no' => "required",
             "dc_no" => "required",
@@ -620,7 +660,7 @@ class PurchaseOrderReceivingController extends Controller
         // $job_orders = JobOrder::get();
         // dd($job_orders);
         $purchaseOrderReceiving = PurchaseOrderReceiving::with([
-            'purchaseOrderReceivingData',
+            'purchaseOrderReceivingData.purchase_order_data.job_orders.job_order_data',
             'purchaseOrderReceivingData.category',
             'purchaseOrderReceivingData.item',
             'purchaseOrderReceivingData.supplier'
@@ -717,5 +757,35 @@ class PurchaseOrderReceivingController extends Controller
         }
 
         return $grn;
+    }
+
+    private function validateQty(Request $request, $receivingId = null)
+    {
+        $validator = Validator::make([], []);
+        
+        foreach ($request->qty ?? [] as $index => $qty) {
+            $poDataId = $request->purchase_order_data_id[$index] ?? null;
+            if (!$poDataId) continue;
+
+            $poData = PurchaseOrderData::find($poDataId);
+            if (!$poData) continue;
+            
+            // Calculate sum of quantities already received for this PO item
+            $alreadyReceived = PurchaseOrderReceivingData::where('purchase_order_data_id', $poDataId)
+                ->when($receivingId, function($q) use ($receivingId) {
+                    $q->where('purchase_order_receiving_id', '!=', $receivingId);
+                })
+                ->sum('qty');
+            
+            $orderedQty = (float)$poData->qty;
+            $maxAllowed = $orderedQty - (float)$alreadyReceived;
+            
+            if ((float)$qty > $maxAllowed + 0.001) {
+                $itemName = $poData->item->name ?? "Item " . ($index + 1);
+                $validator->errors()->add("qty.$index", "Received quantity for '{$itemName}' exceeds the remaining Purchase Order balance. Remaining: " . round($maxAllowed, 2));
+            }
+        }
+        
+        return $validator;
     }
 }

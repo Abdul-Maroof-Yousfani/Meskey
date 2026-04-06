@@ -129,7 +129,6 @@ class FreightController extends Controller
                     $contractNo = $ticket->purchaseOrder->contract_no ?? 'N/A';
                     $qcProduct = $ticket->purchaseOrder->qcProduct->name ?? $ticket->purchaseOrder->product->name ?? 'N/A';
                     $loadingWeight = $ticket->arrived_net_weight;
-
                     // Gate buying transactions start
                     if ($ticket->purchaseOrder->purchase_type == 'gate_buying') {
 
@@ -350,6 +349,25 @@ class FreightController extends Controller
                         }
                     }
                 }
+
+                createStockTransaction(
+                    $ticket->qc_product ?? $ticket->product_id ?? null,
+                    'grn',
+                    $grnNumber->unique_no,
+                    $request->arrived_weight,
+                    "stock-in",
+                    null,
+                    null,
+                    "Goods Received Note (Arrival)",
+                    [
+                        "subarrival_id" => $ticket->approvals->gala_id,    
+                        "company_location_id" => $ticket->location_id,
+                        "arrival_id" => $ticket->unloadingLocation->arrival_location_id,
+                        "parentable_id" => $ticket->id,
+                        "bag_packing_id" => $ticket->approvals->bag_packing_id,
+                        "parentable_type" => "arrival-ticket"
+                    ]
+                );
 
                 return response()->json(['success' => 'Freight created successfully.', 'data' => ['freight' => $freight, 'slip' => $arrivalApprove]], 201);
             });

@@ -103,6 +103,37 @@ class JobOrderController extends Controller
         return view('management.production.job_orders.getList', compact('job_orders'));
     }
 
+    public function printJobOrder($id)
+    {
+        $jobOrder = JobOrder::with([
+            'product', 
+            'packingItems.companyLocation',
+            'packingItems.bagProduct',
+            'packingItems.bagCondition',
+            'packingItems.brand',
+            'packingItems.bagColor',
+            'packingItems.threadColor',
+            'packingItems.stitching',
+            'packingItems.subItems.bagProduct',
+            'packingItems.subItems.bagSize',
+            'packingItems.subItems.stitching',
+            'packingItems.subItems.bagColor',
+            'packingItems.subItems.brand',
+            'packingItems.subItems.threadColor',
+            'specifications'
+        ])->findOrFail($id);
+        
+        $attentionToIds = [];
+        if (is_string($jobOrder->attention_to)) {
+            $attentionToIds = json_decode($jobOrder->attention_to, true) ?? [];
+        } elseif (is_array($jobOrder->attention_to)) {
+            $attentionToIds = $jobOrder->attention_to;
+        }
+
+        $users = User::whereIn('id', $attentionToIds)->get();
+        return view('management.production.job_orders.view_job_order', compact('jobOrder', 'users'));
+    }
+
     public function create()
     {
         $products = Product::where('status', 1)->get();
@@ -199,6 +230,17 @@ class JobOrderController extends Controller
                 $subItems = $item['sub_items'] ?? [];
                 unset($item['sub_items']);
 
+                // Fallback numeric fields to 0
+                $item['extra_bags'] = $item['extra_bags'] ?? 0;
+                $item['empty_bags'] = $item['empty_bags'] ?? 0;
+                $item['extra_bags_percentage'] = $item['extra_bags_percentage'] ?? 0;
+                $item['min_weight_empty_bags'] = $item['min_weight_empty_bags'] ?? 0;
+                $item['total_bags'] = $item['total_bags'] ?? 0;
+                $item['total_kgs'] = $item['total_kgs'] ?? 0;
+                $item['metric_tons'] = $item['metric_tons'] ?? 0;
+                $item['no_of_containers'] = $item['no_of_containers'] ?? 0;
+                $item['stuffing_in_container'] = $item['stuffing_in_container'] ?? 0;
+
                 // Merge location details if exists
                 $locationId = $item['company_location_id'] ?? null;
                 if ($locationId && isset($locationDetails[$locationId])) {
@@ -230,6 +272,11 @@ class JobOrderController extends Controller
                 // Create sub-items
                 if (!empty($subItems)) {
                     foreach ($subItems as $subItem) {
+                        $subItem['empty_bags'] = $subItem['empty_bags'] ?? 0;
+                        $subItem['extra_bags'] = $subItem['extra_bags'] ?? 0;
+                        $subItem['extra_bags_percentage'] = $subItem['extra_bags_percentage'] ?? 0;
+                        $subItem['empty_bag_weight'] = $subItem['empty_bag_weight'] ?? 0;
+                        $subItem['no_of_primary_bags'] = $subItem['no_of_primary_bags'] ?? 0;
                         $packingItem->subItems()->create($subItem);
                     }
                 }
@@ -377,6 +424,17 @@ class JobOrderController extends Controller
                 $subItems = $item['sub_items'] ?? [];
                 unset($item['sub_items']);
 
+                // Fallback numeric fields to 0
+                $item['extra_bags'] = $item['extra_bags'] ?? 0;
+                $item['empty_bags'] = $item['empty_bags'] ?? 0;
+                $item['extra_bags_percentage'] = $item['extra_bags_percentage'] ?? 0;
+                $item['min_weight_empty_bags'] = $item['min_weight_empty_bags'] ?? 0;
+                $item['total_bags'] = $item['total_bags'] ?? 0;
+                $item['total_kgs'] = $item['total_kgs'] ?? 0;
+                $item['metric_tons'] = $item['metric_tons'] ?? 0;
+                $item['no_of_containers'] = $item['no_of_containers'] ?? 0;
+                $item['stuffing_in_container'] = $item['stuffing_in_container'] ?? 0;
+
                 // Merge location details if exists
                 $locationId = $item['company_location_id'] ?? null;
                 if ($locationId && isset($locationDetails[$locationId])) {
@@ -408,6 +466,11 @@ class JobOrderController extends Controller
                 // Create sub-items
                 if (!empty($subItems)) {
                     foreach ($subItems as $subItem) {
+                        $subItem['empty_bags'] = $subItem['empty_bags'] ?? 0;
+                        $subItem['extra_bags'] = $subItem['extra_bags'] ?? 0;
+                        $subItem['extra_bags_percentage'] = $subItem['extra_bags_percentage'] ?? 0;
+                        $subItem['empty_bag_weight'] = $subItem['empty_bag_weight'] ?? 0;
+                        $subItem['no_of_primary_bags'] = $subItem['no_of_primary_bags'] ?? 0;
                         $packingItem->subItems()->create($subItem);
                     }
                 }

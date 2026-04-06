@@ -87,6 +87,7 @@ Route::prefix('raw-material')->name('raw-material.')->group(function () {
     Route::resource('freight-request', FreightRequestController::class);
     Route::post('/get-freight-request', [FreightRequestController::class, 'getList'])->name('get.freight-request');
     Route::get('freight-request/view/{id}', [FreightRequestController::class, 'view'])->name('freight-request.view');
+    Route::get('get-freight-request-form', [FreightRequestController::class, 'getFreightRequestForm'])->name('freight-request.getFreightRequestForm');
 
     Route::resource('advance-payment-request', AdvancePaymentRequestController::class);
     Route::post('/get-advance-payment-request', [AdvancePaymentRequestController::class, 'getList'])->name('get.advance-payment-request');
@@ -94,6 +95,7 @@ Route::prefix('raw-material')->name('raw-material.')->group(function () {
     Route::resource('payment-request-approval', PaymentRequestApprovalController::class);
     Route::resource('advance-payment-request-approval', AdvancePaymentRequestApprovalController::class);
     Route::post('pohouch-freight-payment-request-approval', [FreightRequestController::class, 'pohouch_freight_payment_request_approval'])->name('pohouch-freight-payment-request-approval');
+    Route::post('pohouch-freight-payment-request-approval-wo-contract', [FreightRequestController::class, 'pohouch_freight_payment_request_approval_wo_contract'])->name('pohouch-freight-payment-request-approval-wo-contract');
 
     Route::get('purchase-order-payment-request-approval', [PurchaseOrderPaymentRequestController::class, 'index'])->name('purchase-order-payment-request-approval.index');
     Route::get('purchase-order-payment-request-approval/create', [PurchaseOrderPaymentRequestController::class, 'create'])->name('purchase-order-payment-request-approval.create');

@@ -30,11 +30,14 @@ class PurchaseRequest extends FormRequest
                 function ($attribute, $value, $fail) {
                     $currentCategoryId = $this->input("category_id_header");
 
-                    // Get all item IDs
                     $itemIds = $this->input('item_id', []);
+                    // Filter to remove null/empty values and ensure we only have strings/integers
+                    $filteredItemIds = array_filter($itemIds, function($id) {
+                        return !is_null($id) && $id !== '';
+                    });
                     
                     // Check for duplicates of the same item
-                    $occurrences = array_count_values($itemIds);
+                    $occurrences = array_count_values($filteredItemIds);
 
                     if (isset($occurrences[$value]) && $occurrences[$value] > 1) {
                         $fail('The same item cannot be added multiple times.');
@@ -118,7 +121,10 @@ class PurchaseRequest extends FormRequest
     {
         $validator->after(function ($validator) {
             $itemIds = $this->input('item_id', []);
-            $occurrences = array_count_values($itemIds);
+            $filteredItemIds = array_filter($itemIds, function($id) {
+                return !is_null($id) && $id !== '';
+            });
+            $occurrences = array_count_values($filteredItemIds);
 
             foreach ($itemIds as $index => $itemId) {
                 if (isset($occurrences[$itemId]) && $occurrences[$itemId] > 1) {

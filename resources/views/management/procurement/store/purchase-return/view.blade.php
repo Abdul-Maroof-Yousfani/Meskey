@@ -253,7 +253,7 @@
         </div>
     </div>
 </form>
-<x-approval-status :model="$purchaseReturn" />
+<x-approval-status :model="$purchaseReturn" :listRefresh="route('store.get.purchase-return')" />
 
 <script>
     $(document).ready(function() {

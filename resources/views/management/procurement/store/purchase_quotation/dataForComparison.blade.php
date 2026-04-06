@@ -80,13 +80,15 @@
                                   <input type="checkbox" id="check-all" class="form-check-input" style="cursor: pointer; transform: scale(1.2); margin: 0;">
                               </div>
                           </th>
-                         <th class="col-sm-4">PQ No.</th>
-                         <th class="col-sm-3">Supplier</th>
-                         <th class="col-sm-3">Item</th>
-                         <th>Qty</th>
-                         <th>Rate</th>
-                         <th>Total Amount</th>
-                         <th class="col-sm-3">Item uom</th>
+                         <th style="min-width: 250px;">PQ No.</th>
+                         <th style="min-width: 300px;">Supplier</th>
+                         <th style="min-width: 350px;">Item</th>
+                         <th style="min-width: 220px;">Job Order</th>
+                         <th style="min-width: 120px;">Qty</th>
+
+                         <th style="min-width: 140px;">Rate</th>
+                         <th style="min-width: 160px;">Total Amount</th>
+                         <th style="min-width: 120px;">Item uom</th>
                          <th class="col-sm-3 bag-only">Min Weight (KG)</th>
                          <th class="col-sm-3 bag-only">Brand</th>
                          <th class="col-sm-3 bag-only">Color</th>
@@ -97,7 +99,6 @@
                          <th class="col-sm-3 bag-only">Printing Sample</th>
                          <th>Remarks</th>
                          <th>Status</th>
-                         <th>Action</th>
                      </tr>
                  </thead>
                  <tbody id="purchaseRequestBody">
@@ -142,6 +143,17 @@
                                  </select>
                                  <input type="hidden" name="item_id[]" value="{{ $data->item_id }}">
                              </td>
+
+                             <td style="width: 30%">
+                                 <select class="form-control select2" multiple disabled style="width: 100%">
+                                     @foreach($data->purchase_request?->JobOrder ?? [] as $jo)
+                                         <option selected>{{ $jo->job_order_data->job_order_no ?? '' }}</option>
+                                     @endforeach
+                                 </select>
+                             </td>
+
+
+
 
                              <td style="width: 30%">
                                  <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
@@ -262,10 +274,6 @@
                                          {{ $data->am_approval_status }}
                                      </span>
                              </td>
-                             <td>
-                                 <button type="button" class="btn btn-danger btn-sm removeRowBtn"
-                                     onclick="remove({{ $key }})"
-                                     data-id="{{ $key }}">Remove</button>
                              </td>
                          </tr>
                      @empty
@@ -336,6 +344,11 @@
                     </select>
                     <input type="hidden" name="data_id[]" value="0">
                 </td>
+                <td style="width: 20%">
+                    <select class="form-control select2" multiple disabled style="width: 100%"></select>
+                </td>
+
+
                 <td style="width: 15%"><input type="text" name="uom[]" id="uom_${index}" class="form-control uom" readonly></td>
                  <td style="width: 20%">
                     <select name="supplier_id[]" id="supplier_id_${index}" onchange="get_uom(${index})" class="form-control item-select" data-index="0">

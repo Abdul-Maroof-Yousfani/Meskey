@@ -29,7 +29,7 @@
                                 <div class="row ">
                                     <div class="col-md-12 my-1 ">
                                         <div class="row justify-content-start text-left">
-                                            <div class="col-md-2">
+                                            <div class="col-md-1">
                                                 <div class="form-group mb-0">
                                                     <label>Location:</label>
                                                     <select name="company_location_id" id="company_location"
@@ -40,7 +40,7 @@
                                             </div>
                                             <div class="col-md-2">
                                                 <div class="form-group mb-0">
-                                                    <label>Date:</label>
+                                                    <label>Date Range:</label>
                                                     <input type="text" name="daterange" class="form-control"
                                                         value="{{ request('daterange', \Carbon\Carbon::now()->subMonth()->format('m/d/Y') . ' - ' . \Carbon\Carbon::now()->format('m/d/Y')) }}" />
                                                 </div>
@@ -50,19 +50,48 @@
                                                     <label>Accounts Of:</label>
                                                     <select name="supplier_id" id="supplier_id_f"
                                                         class="form-control select2">
-                                                        <option value="">Accounts Of</option>
+                                                        <option value="">All</option>
                                                     </select>
                                                 </div>
                                             </div>
-                                            <div class="col-md-2">
-                                                <label for="search" class="form-label">Ticket/Truck/Bilty (No).</label>
-                                                <input type="hidden" name="page" value="{{ request('page', 1) }}">
-                                                <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
-                                                
-                                                <input type="text" class="form-control" id="search"
-                                                    placeholder="Search By Ticket/Truck/Bilty (No)." name="search"
-                                                    value="{{ request('search') }}">
+                                            <div class="col-md-1">
+                                                <div class="form-group mb-0">
+                                                    <label>QC Status:</label>
+                                                    <select name="qc_status" id="qc_status_f" class="form-control selectWithoutAjax">
+                                                        <option value="">All</option>
+                                                        <option value="pending">Pending</option>
+                                                        <option value="approved">Approved</option>
+                                                        <option value="rejected">Rejected</option>
+                                                    </select>
+                                                </div>
                                             </div>
+                                            <div class="col-md-1">
+                                                <label class="form-label">Ticket No.</label>
+                                                <input type="text" class="form-control" placeholder="Ticket#" name="unique_no" value="{{ request('unique_no') }}">
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label class="form-label">Commodity</label>
+                                                <select name="product_id" id="commodity_f" class="form-control select2">
+                                                    <option value="">Commodity</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-1">
+                                                <label class="form-label">Miller</label>
+                                                <select name="miller_id" id="miller_id_f" class="form-control select2">
+                                                    <option value="">All</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-1">
+                                                <label class="form-label">Truck No</label>
+                                                <input type="text" class="form-control" placeholder="Truck#" name="truck_no" value="{{ request('truck_no') }}">
+                                            </div>
+                                            <div class="col-md-1">
+                                                <label class="form-label">Bilty No</label>
+                                                <input type="text" class="form-control" placeholder="Bilty#" name="bilty_no" value="{{ request('bilty_no') }}">
+                                            </div>
+                                            
+                                            <input type="hidden" name="page" value="{{ request('page', 1) }}">
+                                            <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
                                         </div>
                                     </div>
                                 </div>
@@ -95,23 +124,93 @@
 @section('script')
     <script>
         $(document).ready(function() {
+            $('#qc_status_f').select2();
             filterationCommon(`{{ route('get.ticket') }}`);
-            // initializeDynamicSelect2('#company_location', 'company_locations', 'name', 'id', true, false, true,
-            //     true);
-            initializeDynamicDependentSelect2(
-                '#company_location',
-                '#supplier_id_f',
-                'company_locations',
-                'name',
-                'id',
-                'suppliers',
-                'company_location_ids',
-                'name',
-                true,
-                false,
-                true,
-                true,
-            );
+            initializeDynamicSelect2('#commodity_f', 'products', 'name', 'id', true, false, true, true);
+            initializeDynamicSelect2('#miller_id_f', 'millers', 'name', 'id', true, false, true, true);
+            
+            // Custom Dependent Select for Arrival Ticket to include "All Accounts"
+            const $locationEl = $('#company_location');
+            const $supplierEl = $('#supplier_id_f');
+
+            $locationEl.select2({
+                ajax: {
+                    url: "/dynamic-dependent-fetch-data",
+                    type: "GET",
+                    dataType: "json",
+                    delay: 250,
+                    data: function (params) {
+                        return {
+                            search: params.term || "",
+                            table: 'company_locations',
+                            column: 'name',
+                            idColumn: 'id',
+                            enableTags: true,
+                            targetTable: 'suppliers',
+                            targetColumn: 'company_location_ids',
+                            fetchMode: "source",
+                        };
+                    },
+                    processResults: function (data) {
+                        return { results: data.items };
+                    },
+                },
+                minimumInputLength: 0,
+                placeholder: "Location",
+                allowClear: true
+            });
+
+            $supplierEl.select2({
+                ajax: {
+                    url: "/dynamic-dependent-fetch-data",
+                    dataType: "json",
+                    delay: 250,
+                    data: function (params) {
+                        return {
+                            search: params.term,
+                            table: 'suppliers',
+                            column: 'name',
+                            idColumn: "id",
+                            targetTable: 'suppliers',
+                            targetColumn: 'company_location_ids',
+                            fetchMode: "target",
+                            sourceId: $locationEl.val(),
+                        };
+                    },
+                    processResults: function (data) {
+                        let res = data.items;
+                        res.unshift({ id: "", text: "All Accounts" });
+                        return { results: res };
+                    },
+                },
+                minimumInputLength: 0,
+                placeholder: "All Accounts",
+                allowClear: true
+            });
+
+            $locationEl.on("change", function () {
+                const selectedId = $(this).val();
+                $supplierEl.val(null).trigger("change");
+
+                if (selectedId) {
+                    $.ajax({
+                        url: "/dynamic-dependent-fetch-data",
+                        data: {
+                            table: 'suppliers',
+                            column: 'name',
+                            fetchMode: "target",
+                            sourceId: selectedId,
+                        },
+                        success: function (data) {
+                            const options = data.items.map(
+                                (item) => new Option(item.text, item.id)
+                            );
+                            options.unshift(new Option("All Accounts", ""));
+                            $supplierEl.empty().append(options).trigger("change");
+                        },
+                    });
+                }
+            });
         });
     </script>
 @endsection
