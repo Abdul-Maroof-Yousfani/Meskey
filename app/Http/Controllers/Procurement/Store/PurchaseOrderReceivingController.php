@@ -410,6 +410,7 @@ class PurchaseOrderReceivingController extends Controller
                     'total' => $request->total[$index] ?? 0,
                     'supplier_id' => $request->supplier_id,
                     'receive_weight' => $request->receive_weight[$index],
+                    'tolerance' => $request->tolerance[$index] ?? null,
                     'remarks' => $request->input('remarks.'.$index),
                 ]);
 
@@ -592,14 +593,15 @@ class PurchaseOrderReceivingController extends Controller
                 "truck_no" => $request->truck_no,
                 "dc_no" => $request->dc_no,
                 "description" => $request->description,
-                "location_id" => $request->location_id
+                "location_id" => $request->location_id,
+                "am_approval_status" => "pending",
+                "am_change_made" => 1
             ]);
 
             $grn_data = PurchaseOrderReceivingData::whereDoesntHave("qc")->where('purchase_order_receiving_id', $PurchaseOrderReceiving->id)->delete();
 
-
             foreach ($request->item_id as $index => $itemId) {
-                if($request->approval_status[$index] === '1') continue;
+                if($request->approval_status && $request->approval_status[$index] === '1') continue;
                 PurchaseOrderReceivingData::create([
                     'purchase_order_receiving_id' => $PurchaseOrderReceiving->id,
                     'category_id' => $request->category_id[$index],
@@ -609,10 +611,12 @@ class PurchaseOrderReceivingController extends Controller
                     'rate' => $request->rate[$index] ?? 0,
                     'total' => $request->total[$index] ?? 0,
                     'supplier_id' => $request->supplier_id,
-                    'receive_weight' => $request->receive_weight[$index],
+                    'receive_weight' => $request->receive_weight[$index] ?? 0,
+                    'tolerance' => $request->tolerance[$index] ?? null,
                     'remarks' => $request->input('remarks.'.$index),
                 ]);
             }
+
 
             DB::commit();
 

@@ -42,7 +42,7 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label>Purchase Order Date:</label>
-                <input type="date" id="purchase_date" min="{{ date('Y-m-d') }}" name="purchase_date" class="form-control">
+                <input type="date" id="purchase_date" min="{{ date('Y-m-d') }}" name="purchase_date" class="form-control" value="{{ date('Y-m-d') }}">
             </div>
         </div>
         <div class="col-md-3">
@@ -103,7 +103,8 @@
                             <th>Tax Amount</th>
                             <th>Duty</th>
                             <th>Net Amount</th>
-                            <th class="bag-only">Min Weight (KG)</th>
+                            <th class="bag-only">Min Weight (gm)</th>
+                            <th class="bag-only">Tolerance</th>
                             <th class="bag-only">Brand</th>
                             <th class="bag-only">Color</th>
                             <th class="bag-only">Cons./sq. in.</th>
@@ -149,7 +150,7 @@
 <script>
     $(document).ready(function() {
 
-        $(document).on('change', '#purchase_date', function() {
+        $('#purchase_date, #company_location_id').on('change', function() {
             fetchUniqueNumber();
         });
 

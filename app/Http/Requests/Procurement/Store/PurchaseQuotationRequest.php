@@ -80,6 +80,9 @@ class PurchaseQuotationRequest extends FormRequest
 
             'remarks' => 'nullable|array',
             'remarks.*' => 'nullable|string|max:1000',
+
+            'delivery_date' => 'required|array|min:1',
+            'delivery_date.*' => 'required|date',
         ];
     }
 
@@ -106,8 +109,8 @@ class PurchaseQuotationRequest extends FormRequest
             'supplier_id.*.required' => 'Each supplier is required.',
 
             // 'qty.*.min' => 'Quantity must be at least 0.01.',
-            'rate.*.min' => 'Rate must be at least 0.01.',
-            // 'total.*.min' => 'Total amount must be at least 0.01.',
+            'delivery_date.required' => 'At least one delivery date is required.',
+            'delivery_date.*.required' => 'The delivery date is required for each item.',
         ];
     }
 

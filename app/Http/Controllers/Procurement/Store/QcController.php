@@ -247,7 +247,23 @@ class QcController extends Controller
 
         
         $purchase_receiving_data = PurchaseOrderReceivingData::find($id);
-        $purchase_receiving_data->qc()->create([...$request->validated(), "deduction_per_bag" => $request->deduction_per_bag]);
+
+
+        $tolerance = $purchase_receiving_data->tolerance;
+
+        $qcParametersOk = areQcParametersOk($request);
+        $min_weight = $purchase_receiving_data->purchase_order_data->min_weight;
+        $allowed_value = $min_weight - $tolerance;
+        $is_auto_approval = $request->sample_average_weight >= $allowed_value && $qcParametersOk;
+
+
+        $qc = $purchase_receiving_data->qc()->create([...$request->validated(), "deduction_per_bag" => $request->deduction_per_bag]);
+       
+        if($is_auto_approval) {
+            $qc->am_approval_status = "approved";
+            $qc->save();
+            approve_qc($qc);
+        }
         
         foreach($net_weights as $index => $net_weight) {
             if(is_null($net_weights[$index]) || is_null($bag_weights[$index])) continue;
@@ -266,8 +282,24 @@ class QcController extends Controller
 
 
         $purchase_receiving_data = PurchaseOrderReceivingData::find($id);
+
+
+        $tolerance = $purchase_receiving_data->tolerance;
+
+        $qcParametersOk = areQcParametersOk($request);
+        $min_weight = $purchase_receiving_data->purchase_order_data->min_weight;
+        $allowed_value = $min_weight - $tolerance;
+        $is_auto_approval = $request->sample_average_weight >= $allowed_value && $qcParametersOk;
+     
         $purchase_receiving_data->qc()->update([...$request->validated(), "deduction_per_bag" => $request->deduction_per_bag]);
+        if($is_auto_approval) {
+            $purchase_receiving_data->qc->am_approval_status = "approved";
+            $purchase_receiving_data->qc->save();
+            approve_qc($purchase_receiving_data->qc);
+        }
         $purchase_receiving_data->qc->bags()->delete();
+
+
 
         foreach($net_weights as $index => $net_weight) {
             if(is_null($net_weights[$index]) || is_null($bag_weights[$index])) continue;

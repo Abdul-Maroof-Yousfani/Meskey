@@ -368,6 +368,7 @@ class PurchaseOrderController extends Controller
                     'stitching' => $request->stitching[$index],
                     'micron' => $request->micron[$index],
                     'brand' => $request->brand[$index],
+                    'tolerance' => $request->tolerance[$index] ?? null,
                     'printing_sample' => is_string($request->printing_sample[$index]) ? json_decode($request->printing_sample[$index], true) : $request->printing_sample[$index],
 
                     'remarks' => $request->remarks[$index] ?? null,
@@ -521,6 +522,7 @@ class PurchaseOrderController extends Controller
                     'size' => $request->input('size.'.$index),
                     'stitching' => $request->input('stitching.'.$index),
                     'micron' => $request->input('micron.'.$index),
+                    'tolerance' => $request->input('tolerance.'.$index),
                     'printing_sample' => is_string($request->input('printing_sample.'.$index)) ? json_decode($request->input('printing_sample.'.$index), true) : $request->input('printing_sample.'.$index),
                     'remarks' => $request->input('remarks.'.$index),
                     

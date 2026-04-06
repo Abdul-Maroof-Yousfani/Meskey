@@ -34,7 +34,7 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label>Receiving Date:</label>
-                <input type="date" id="receiving_date" min="{{ date('Y-m-d') }}" name="receiving_date" value="{{ now()->toDateString() }}" class="form-control" readonly>
+                <input type="date" id="receiving_date" min="{{ date('Y-m-d') }}" name="receiving_date" value="{{ date('Y-m-d') }}" class="form-control" readonly>
             </div>
         </div>
         <div class="col-md-4">
@@ -85,8 +85,9 @@
                         <th>Item UOM</th>
                         <th>Job Order</th>
                         <th>Qty</th>
-                        <th class="bag-only">Receive Weight (kg)</th>
-                        <th class="bag-only">Min Weight (Kg)</th>
+                        <th class="bag-only">Receive Weight (gm)</th>
+                        <th class="bag-only">Min Weight (gm)</th>
+                        <th class="bag-only">Tolerance</th>
                         <th class="bag-only">Brands</th>
                         <th class="bag-only">Color</th>
                         <th class="bag-only">Cons./sq. in.</th>

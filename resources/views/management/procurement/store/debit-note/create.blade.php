@@ -27,7 +27,7 @@
         <div class="col-md-6">
             <div class="form-group">
                 <label>Date:</label>
-                <input type="date" min="{{ date('Y-m-d') }}" class="form-control" name="transaction_date" id="transaction_date" onchange="get_transaction_number()">
+                <input type="date" min="{{ date('Y-m-d') }}" class="form-control" name="transaction_date" id="transaction_date" onchange="get_transaction_number()" value="{{ date('Y-m-d') }}">
             </div>
         </div>
          <div class="col-md-6">
@@ -80,6 +80,8 @@
             placeholder: 'Please Select',
             width: '100%'
         });
+
+        get_transaction_number();
 
         // When GRN is selected, populate bills
         $('#grn_id').on('change', function () {

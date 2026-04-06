@@ -68,12 +68,20 @@
                 value="{{ get_uom($data->item_id) }}" disabled readonly>
             <input type="hidden" name="uom[]" value="{{ get_uom($data->item_id) }}">
         </td>
+        <td style="min-width: 180px;">
+            <input type="date" name="delivery_date[]" id="delivery_date_{{ $key }}" class="form-control" required>
+        </td>
         <td style="min-width: 200px;" class="bag-only">
            
            <input  type="text" id="min_weight_{{ $key }}" class="form-control min_weight"
                value="{{ $data->min_weight }}" disabled readonly>
            
            <input type="hidden" name="min_weight[]" value="{{ $data->min_weight }}">
+        </td>
+        <td style="min-width: 150px;" class="bag-only">
+           <input type="text" id="tolerance_{{ $key }}" class="form-control tolerance"
+               value="{{ $data->tolerance }}" disabled readonly>
+           <input type="hidden" name="tolerance[]" value="{{ $data->tolerance }}">
         </td>
           <td style="min-width: 200px;" class="bag-only">
            

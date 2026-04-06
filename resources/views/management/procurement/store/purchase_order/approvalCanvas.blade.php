@@ -115,7 +115,8 @@
 
                             <th>Duty</th>
                             @if($isBag)
-                                <th>Min Weight (KG)</th>
+                                <th>Min Weight (gm)</th>
+                                <th>Tolerance</th>
                                 <th>Brand</th>
                                 <th>Color</th>
                                 <th>Cons./sq. in.</th>
@@ -251,6 +252,11 @@
                                     <input style="width: 100px;" type="number" readonly name="min_weight[]"
                                         value="{{ $data->min_weight }}" id="min_weight_{{ $key }}"
                                         class="form-control" step="0.01" min="0">
+                                </td>
+                                <td style="width: 30%">
+                                    <input style="width: 100px;" type="text" readonly name="tolerance[]"
+                                        value="{{ $data->tolerance }}" id="tolerance_{{ $key }}"
+                                        class="form-control">
                                 </td>
                                 <td style="width: 30%">
                                     <input style="width: 100px;" type="text" readonly name="brand[]"

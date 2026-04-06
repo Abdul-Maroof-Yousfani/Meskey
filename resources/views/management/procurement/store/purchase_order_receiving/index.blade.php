@@ -22,25 +22,25 @@
                     <div class="card">
                         <div class="card-header">
                             <form id="filterForm" class="form">
-                                <div class="row mx-0 align-items-end flex-nowrap" style="overflow-x: hidden;">
-                                    <div class="px-1 text-left" style="min-width: 180px; flex: 0 0 180px;">
+                                <div class="row mx-0 align-items-end flex-nowrap" style="overflow-x: auto; padding-bottom: 10px;">
+                                    <div class="px-1 text-left" style="min-width: 180px; flex: 1 1 180px;">
                                         <label for="receiving_no" class="form-label text-nowrap">GRN No</label>
                                         <input type="text" class="form-control" name="search" id="receiving_no" placeholder="GRN No">
                                     </div>
-                                    <div class="px-1 text-left" style="min-width: 180px; flex: 0 0 180px;">
+                                    <div class="px-1 text-left" style="min-width: 180px; flex: 1 1 180px;">
                                         <label for="pr_no" class="form-label text-nowrap">PR No</label>
                                         <input type="text" class="form-control" name="purchase_request_no" id="pr_no" placeholder="PR No">
                                     </div>
-                                    <div class="px-1 text-left" style="min-width: 180px; flex: 0 0 180px;">
+                                    <div class="px-1 text-left" style="min-width: 180px; flex: 1 1 180px;">
                                         <label for="po_no" class="form-label text-nowrap">PO No</label>
                                         <input type="text" class="form-control" name="purchase_order_no" id="po_no" placeholder="PO No">
                                     </div>
-                                    <div class="px-1 text-left" style="min-width: 100px; flex: 0 0 100px;">
+                                    <div class="px-1 text-left" style="min-width: 180px; flex: 1 1 180px;">
                                         <label for="dc_no" class="form-label text-nowrap">DC No</label>
                                         <input type="text" class="form-control" name="dc_no" id="dc_no" placeholder="DC No">
                                     </div>
 
-                                    <div class="px-1 text-left" style="min-width: 250px; flex: 0 0 250px;">
+                                    <div class="px-1 text-left" style="min-width: 180px; flex: 1 1 180px;">
                                         <label for="category_id" class="form-label">Item / Category</label>
                                         <select name="category_id" id="category_id" class="form-control select2">
                                             <option value="">All Categories</option>
@@ -49,7 +49,7 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="px-1 text-left" style="min-width: 200px; flex: 0 0 200px;">
+                                    <div class="px-1 text-left" style="min-width: 180px; flex: 1 1 180px;">
                                         <label for="filter_supplier_id" class="form-label">Supplier</label>
                                         <select name="supplier_id" id="filter_supplier_id" class="form-control select2">
                                             <option value="all">All Vendors</option>
@@ -59,20 +59,20 @@
                                         </select>
                                     </div>
 
-                                    <div class="px-1 text-left" style="min-width: 90px; flex: 0 0 90px;">
+                                    <div class="px-1 text-left" style="min-width: 180px; flex: 1 1 180px;">
                                         <label for="qty" class="form-label">Qty</label>
                                         <input type="number" class="form-control" name="qty" id="qty" placeholder="Qty">
                                     </div>
-                                    <div class="px-1 text-left" style="min-width: 90px; flex: 0 0 90px;">
+                                    <div class="px-1 text-left" style="min-width: 180px; flex: 1 1 180px;">
                                         <label for="rate" class="form-label">Rate</label>
                                         <input type="number" class="form-control" name="rate" id="rate" placeholder="Rate">
                                     </div>
-                                    <div class="px-1 text-left" style="min-width: 100px; flex: 0 0 100px;">
+                                    <div class="px-1 text-left" style="min-width: 180px; flex: 1 1 180px;">
                                         <label for="total" class="form-label">Total</label>
                                         <input type="number" class="form-control" name="total" id="total" placeholder="Total">
                                     </div>
 
-                                    <div class="px-1 text-left" style="min-width: 220px; flex: 0 0 220px;">
+                                    <div class="px-1 text-left" style="min-width: 180px; flex: 1 1 180px;">
                                         <label for="qc_status" class="form-label">QC Status</label>
                                         <select name="qc_status" id="qc_status" class="form-control select2">
                                             <option value="">All Status</option>
@@ -80,12 +80,6 @@
                                             <option value="approved">Approved</option>
                                             <option value="rejected">Rejected</option>
                                         </select>
-                                    </div>
-                                    <div class="px-1 text-left" style="min-width: 120px; flex: 1 1 auto;">
-                                        <label class="form-label">&nbsp;</label>
-                                        <button type="button" class="btn btn-outline-primary btn-block p-1" onclick="filterationCommon(`{{ route('store.get.purchase-order-receiving') }}`)">
-                                            <i class="ft-search"></i>
-                                        </button>
                                     </div>
                                 </div>
                             </form>

@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\Acl\{Company, Menu};
-use App\Models\{BagType, BillPaymentVoucherData, Category, Master\ArrivalLocation, Master\ArrivalSubLocation, Master\Customer, Master\Stitching, Master\Tax, PaymentTerm, Procurement\Store\DebitNoteData, Procurement\Store\PurchaseAgainstJobOrder, Procurement\Store\PurchaseBill, Procurement\Store\PurchaseBillData, Procurement\Store\PurchaseOrderData, Procurement\Store\PurchaseOrderReceiving, Procurement\Store\PurchaseRequest, Procurement\Store\PurchaseRequestData, Procurement\Store\PurchaseReturnData, Product, Production\JobOrder\JobOrder, Production\JobOrder\JobOrderPackingItem, Production\JobOrder\JobOrderPackingSubItem, ReceiptVoucher, ReceiptVoucherItem, Sales\DeliveryChallan, Sales\DeliveryChallanData, Sales\DeliveryOrder, Sales\DeliveryOrderData, Sales\LoadingProgramItem, Sales\LoadingSlip, Sales\SaleReturnData, Sales\SalesInquiry, Sales\SalesInvoiceData, Sales\SalesOrder, Sales\SalesOrderData, User};
+use App\Models\{BagType, BillPaymentVoucherData, Category, Master\ArrivalLocation, Master\ArrivalSubLocation, Master\Customer, Master\Stitching, Master\Tax, PaymentTerm, Procurement\Store\DebitNoteData, Procurement\Store\PurchaseAgainstJobOrder, Procurement\Store\PurchaseBagQC, Procurement\Store\PurchaseBill, Procurement\Store\PurchaseBillData, Procurement\Store\PurchaseOrderData, Procurement\Store\PurchaseOrderReceiving, Procurement\Store\PurchaseRequest, Procurement\Store\PurchaseRequestData, Procurement\Store\PurchaseReturnData, Product, Production\JobOrder\JobOrder, Production\JobOrder\JobOrderPackingItem, Production\JobOrder\JobOrderPackingSubItem, ReceiptVoucher, ReceiptVoucherItem, Sales\DeliveryChallan, Sales\DeliveryChallanData, Sales\DeliveryOrder, Sales\DeliveryOrderData, Sales\LoadingProgramItem, Sales\LoadingSlip, Sales\SaleReturnData, Sales\SalesInquiry, Sales\SalesInvoiceData, Sales\SalesOrder, Sales\SalesOrderData, User};
 use App\Models\Arrival\ArrivalSamplingRequest;
 use App\Models\Arrival\ArrivalSamplingResult;
 use App\Models\Arrival\ArrivalSamplingResultForCompulsury;
@@ -22,6 +22,8 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Fluent;
 use Carbon\Carbon;
+use App\Http\Requests\QCRequest;
+
 const SLAB_TYPE_PERCENTAGE = 1;
 const SLAB_TYPE_KG = 2;
 const SLAB_TYPE_PRICE = 3;
@@ -1995,4 +1997,84 @@ function innerSamplingDonePurchaserwise($purchase_id, $from_date, $to_date, $loc
             $q->whereIn('location_id', getUserCurrentCompanyLocations())
                 ->where('decision_id', $purchase_id);
         })->count();
+}
+
+function identify_deduction_type(PurchaseBagQC $bag_qc) {
+    $deduction_type = "no_deduction";
+    if($bag_qc->deduction_per_bag && $bag_qc->deduction_per_bag > 0) {
+        if($bag_qc->rejected_quantity && $bag_qc->rejected_quantity > 0) {
+            $deduction_type = "half_deduction";
+        } else {
+            $deduction_type = "full_deduction";
+        }
+    }
+
+    $bag_qc->deduction_type = $deduction_type;
+    $bag_qc->save();
+
+    return $deduction_type;
+}
+
+function areQcParametersOk(QCRequest $request): bool {
+    return $request->printing 
+        && $request->bottom_stitching 
+        && $request->ready_to_pack;
+}
+
+function isQcAutoApprovable(QCRequest $bagQc): bool {
+    $tolerance = $bagQc->grn->purchase_order_data->tolerance;
+    $qcParametersOk = areQcParametersOk($bagQc);
+    $min_weight = $bagQc->grn->min_weight;
+    $allowed_value = $min_weight - $tolerance;
+
+    return $bagQc->sample_average_weight >= $allowed_value && $qcParametersOk;
+}
+
+function approve_qc(PurchaseBagQC $bag_qc) {
+    $rate = $bag_qc?->grn?->purchase_order_data?->rate ?? 0;
+    $qty = $bag_qc?->grn?->purchase_order_data?->qty ?? 0;
+
+    // this condition will be applied when we are sure that deduction is gonna be applied either on accepted or in rejected
+    $deduction_type = identify_deduction_type($bag_qc);
+    if($deduction_type != "no_deduction") return;
+    
+    $product = Product::select("id", "account_id")->find($bag_qc->grn->item_id);
+    
+    if(!$rate) {
+        return;
+    }
+
+    if(!$product) {
+        return;
+    }
+
+
+    $stock = Stock::create([
+        "product_id" => $product->account_id,
+        "voucher_type" => "qc",
+        "voucher_no" => "qc",
+        "qty" => $bag_qc->rejected_quantity,
+        "type" => "stock-out",
+        "narration" => "Qc Item rejection",
+        "price" => $bag_qc->rejected_quantity * $rate,
+        "avg_price_per_kg" => $bag_qc->rejected_quantity * $rate,
+        'parent_id' => $bag_qc->grn->purchase_order_data_id
+    ]);
+    
+
+    createTransaction(
+        $bag_qc->rejected_quantity * $rate,
+        $product->account_id,
+        9,
+        '-',
+        'credit',
+        'no',
+        [
+            'grn_no' => $bag_qc->grn->purchase_order_receiving_no,
+            'purpose' => 'purchase-bag-qc',
+            'against_reference_number' => $bag_qc->grn->purchase_order_receiving_no,
+            'payment_against' => "QC",
+            'remarks' => "Purchase Bag QC"
+        ]  
+    );
 }
