@@ -7,6 +7,8 @@
         width: 100% !important;
     }
 </style>
+<input type="hidden" name="category_id" value="{{ $purchaseRequest->category_id }}" id="category_id" />
+        
 <form style="overflow-x: hidden;" action="{{ route('store.purchase-request.update', $purchaseRequest->id) }}" method="POST" id="ajaxSubmit"
     autocomplete="off">
     @csrf
@@ -52,7 +54,6 @@
                 </select>
             </div>
         </div>
-        <input type="hidden" name="category_id" value="{{ $purchaseRequest->category_id }}" id="category_id" />
         <div class="col-md-4 header-conditional job-order-section" {!! $purchaseRequest->category_id == 38 ? '' : 'style="display: none;"' !!}>
             <div class="form-group">
                 <label class="form-label">Job Orders:</label>
