@@ -280,7 +280,7 @@
                                         value="{{ $data->size }}" id="size_{{ $key }}"
                                         class="form-control" step="0.01" min="0">
                                 </td>
-                                <td style="width: 30%">
+                                <td style="min-width: 400px;">
                                       <select class="form-control select2" multiple disabled>
                                             @foreach(getStitchingsByIds($data?->purchase_request_data?->stitching ?? "") as $stitching)
                                                 <option value="{{ $stitching->id }}" selected>{{ $stitching->name }}</option>
