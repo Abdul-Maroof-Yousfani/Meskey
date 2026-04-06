@@ -315,7 +315,7 @@ class FreightRequestController extends Controller
                 ]);
             }
 
-            
+
             $requestData['module_type'] = 'freight_payment';
             $requestData['total_amount'] = $requestData['net_amount'];
 
@@ -930,6 +930,7 @@ class FreightRequestController extends Controller
             $paymentDetails = calculatePaymentDetails($ticket->id, 1);
 
             $qcAccountId = $ticket->qcProduct->account_id;
+            dd("test");
             $truckNo = $ticket->truck_no ?? 'N/A';
             $biltyNo = $ticket->bilty_no ?? 'N/A';
             $rate = $request->contract_rate;
