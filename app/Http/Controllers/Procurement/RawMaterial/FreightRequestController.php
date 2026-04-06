@@ -1101,7 +1101,6 @@ class FreightRequestController extends Controller
             }
 
 
-            dd($request->labour_vendor_id);
             if ($request->total_labour != 0) {
 
 
