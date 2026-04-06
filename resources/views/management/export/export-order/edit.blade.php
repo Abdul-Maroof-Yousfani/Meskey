@@ -963,6 +963,22 @@
                 $.get("{{ route('get.product_specs.export', '') }}/" + productId, function(data) {
                     $('#productSpecs').html(data);
                     $('#specificationsSection').show();
+
+                    // Apply pending specs if any (from Quotation/Sauda autofill)
+                    if (window.pendingSpecs && window.pendingSpecs.length > 0) {
+                        window.pendingSpecs.forEach(function(spec) {
+                            let typeId = spec.product_slab_type_id;
+                            let val = spec.spec_value;
+                            let vType = spec.value_type;
+
+                            let row = $('#productSpecs').find(`input[name*="[product_slab_type_id]"][value="${typeId}"]`).closest('tr');
+                            if (row.length) {
+                                row.find('input[name*="[spec_value]"]').val(val);
+                                if (vType) row.find('select[name*="[value_type]"]').val(vType);
+                            }
+                        });
+                        window.pendingSpecs = null; // Clear after applying
+                    }
                 });
             } else {
                 $('#visualName').val('');
@@ -1065,6 +1081,11 @@
             // Packing rows
             if (data.packing_items && data.packing_items.length > 0) {
                 addPackingRowsFromData(data.packing_items);
+            }
+
+            // Specifications
+            if (data.specifications && data.specifications.length > 0) {
+                window.pendingSpecs = data.specifications;
             }
         }
 
