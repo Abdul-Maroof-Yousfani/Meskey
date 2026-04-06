@@ -7,6 +7,7 @@ use App\Models\BagPacking;
 use App\Models\BagType;
 use App\Models\Master\Brands;
 use App\Models\Master\Color;
+use App\Models\Master\Stitching;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 

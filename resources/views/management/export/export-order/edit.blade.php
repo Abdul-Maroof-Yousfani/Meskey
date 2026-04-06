@@ -63,7 +63,7 @@
                         <div class="form-group">
                             <label>Contract Date:</label>
                             <input type="date" name="voucher_date" class="form-control" max="{{ date('Y-m-d') }}"
-                                value="{{ old('voucher_date', $exportOrder->voucher_date) }}">
+                                value="{{ old('voucher_date', $exportOrder->voucher_date?->format('Y-m-d')) }}">
                         </div>
                     </div>
                 </div>
@@ -105,14 +105,14 @@
                         <div class="form-group">
                             <label>Shipment Delivery Date From:</label>
                             <input type="date" name="shipment_delivery_date_from" class="form-control"
-                                value="{{ old('shipment_delivery_date_from', $exportOrder->shipment_delivery_date_from) }}">
+                                value="{{ old('shipment_delivery_date_from', $exportOrder->shipment_delivery_date_from?->format('Y-m-d')) }}">
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="form-group">
                             <label> Shipment DeliveryDate To:</label>
                             <input type="date" name="shipment_delivery_date_to" class="form-control"
-                                value="{{ old('shipment_delivery_date_to', $exportOrder->shipment_delivery_date_to) }}">
+                                value="{{ old('shipment_delivery_date_to', $exportOrder->shipment_delivery_date_to?->format('Y-m-d')) }}">
                         </div>
                     </div>
 
