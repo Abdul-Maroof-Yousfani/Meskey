@@ -929,7 +929,6 @@ class FreightRequestController extends Controller
 
             $paymentDetails = calculatePaymentDetails($ticket->id, 1);
 
-            dd("test");
             $qcAccountId = $ticket->qcProduct->account_id;
             $truckNo = $ticket->truck_no ?? 'N/A';
             $biltyNo = $ticket->bilty_no ?? 'N/A';
@@ -949,7 +948,8 @@ class FreightRequestController extends Controller
 
             $inventoryAmountwithFreight = $inventoryAmount + $request->net_amount + $request->godown_penalty;
 
-
+            dd("test");
+       
             if ($request->godown_penalty == 'Commit') {
                 $txnInv = Transaction::where('grn_no', $grnNo)
                     ->where('purpose', 'arrival-slip')
