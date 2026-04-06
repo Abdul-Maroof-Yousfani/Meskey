@@ -4,11 +4,12 @@
             <th width="5%">S no.</th>
             <th width="15%">Reference#</th>
             <th width="15%">Buyer</th>
-            <th width="15%">Packing</th>
-            <th width="15%">Commodity</th>
+            <th width="10%">Packing</th>
+            <th width="10%">Commodity</th>
+            <th width="10%">Shipment</th>
             <th width="10%">Price</th>
             <th width="10%">Quantity</th>
-            <th width="15%">Action</th>
+            <th width="13%">Action</th>
         </tr>
     </thead>
     <tbody>
@@ -17,15 +18,22 @@
                 <tr>
                     <td>{{ $key + 1 }}</td>
                     <td>{{ $exportSoda->reference }}</td>
-                    <td>{{ Str::limit($exportSoda->buyer->name ?? 'N/A', 30) }}</td>
-                    <td>{{ Str::limit($exportSoda->packing->name ?? 'N/A', 30) }}</td>
-                    <td>{{ Str::limit($exportSoda->product->name ?? 'N/A', 30) }}</td>
+                    <td>{{ ucfirst(Str::limit($exportSoda->buyer->name ?? 'N/A', 30)) }}</td>
                     <td>
-                        {{ number_format($exportSoda->price_per_kg, 2) }} 
+                        @if($exportSoda->packingItems->count() > 1)
+                            {{ $exportSoda->packingItems->first()->bagPacking->name ?? 'N/A' }}
+                        @else
+                            {{ $exportSoda->packingItems->first()->bagPacking->name ?? 'N/A' }}
+                        @endif
+                    </td>
+                    <td>{{ Str::limit($exportSoda->product->name ?? 'N/A', 30) }}</td>
+                    <td>{{ $exportSoda->shipment_period ? $exportSoda->shipment_period->format('d-M-Y') : 'N/A' }}</td>
+                    <td>
+                        {{ number_format($exportSoda->packingItems->first()->rate ?? 0, 2) }} 
                         <small>({{ $exportSoda->incoterm->name ?? '' }})</small>
                     </td>
                     <td>
-                        {{ number_format($exportSoda->quantity_in_kg, 2) }} Kg / {{ number_format($exportSoda->quantity_in_ton, 2) }} Ton
+                        {{ number_format($exportSoda->packingItems->sum('metric_tons'), 3) }} MT
                     </td>
                     <td>
                         <a class="info p-1 text-center position-relative"

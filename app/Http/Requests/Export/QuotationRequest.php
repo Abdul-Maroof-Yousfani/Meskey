@@ -50,6 +50,14 @@ class QuotationRequest extends FormRequest
             'rate_per_kg'   => ['nullable', 'numeric', 'min:0'],
             'total_amount'  => ['nullable', 'numeric', 'min:0'],
 
+            // Commission
+            'commission_percentage'      => ['nullable', 'numeric', 'min:0'],
+            'commission_amount_per_ton'  => ['nullable', 'numeric', 'min:0'],
+            'commission'                 => ['nullable', 'numeric', 'min:0'],
+
+            // Additional Info
+            'additional_info' => ['nullable', 'string'],
+
             // Packing Items
             'packing_items'                     => ['nullable', 'array'],
             'packing_items.*.brand_id'          => ['nullable', 'exists:brands,id'],
@@ -90,6 +98,7 @@ class QuotationRequest extends FormRequest
     {
         $this->merge([
             'packing_items' => $this->packing_items ?? [],
+            'export_soda_id' => $this->export_soda_id ?: null,
         ]);
     }
 }

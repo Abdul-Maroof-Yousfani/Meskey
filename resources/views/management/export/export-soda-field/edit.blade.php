@@ -41,7 +41,7 @@
                 <div class="col-md-6 mt-2">
                     <div class="form-group">
                         <label>Shipment Period:</label>
-                        <input type="date" name="shipment_period" class="form-control" value="{{ $exportSodaField->shipment_period }}">
+                        <input type="date" name="shipment_period" class="form-control" value="{{ $exportSodaField->shipment_period ? $exportSodaField->shipment_period->format('Y-m-d') : '' }}">
                     </div>
                 </div>
             </div>
@@ -54,14 +54,14 @@
                         <div class="form-group">
                             <label>Commission (%):</label>
                             <input type="number" id="commission_percentage" min="0" name="commission_percentage"
-                                class="form-control" step="0.01">
+                                class="form-control" step="0.01" value="{{ $exportSodaField->commission_percentage }}">
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="form-group">
                             <label>Amt/Ton:</label>
                             <input type="number" id="commission_amount_per_ton" min="0" name="commission_amount_per_ton"
-                                class="form-control" step="0.01">
+                                class="form-control" step="0.01" value="{{ $exportSodaField->commission_amount_per_ton }}">
                         </div>
                     </div>
                     <div class="col-md-4">
@@ -219,7 +219,7 @@
     <div class="row bottom-button-bar">
         <div class="col-12 mb-3 text-right">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
-            <button type="submit" class="btn btn-primary submitbutton">Update Export Sauda Field</button>
+            <button type="submit" class="btn btn-primary submitbutton">Update Export Sauda</button>
         </div>
     </div>
 </form>
@@ -291,6 +291,9 @@ $(document).ready(function() {
         let rateMt = parseFloat(row.find('.rates').val()) || 0;
         let amount = mt * rateMt;
         row.find('.amount').val(amount.toFixed(2));
+
+        // Trigger commission recalculation
+        calculateOverallTotals();
     }
 
     function calculateOverallTotals() {

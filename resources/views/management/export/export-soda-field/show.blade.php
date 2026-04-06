@@ -1,84 +1,136 @@
-<div class="row form-mar p-2">
+<style>
+    /* Chrome, Safari, Edge, Opera */
+    input[type=number]::-webkit-outer-spin-button,
+    input[type=number]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    /* Firefox */
+    input[type=number] {
+        -moz-appearance: textfield;
+    }
+
+    .spacing-table td {
+        padding-top: 15px !important;
+        padding-bottom: 15px !important;
+    }
+</style>
+
+<div class="row form-mar">
     <div class="col-8">
-        <h6 class="header-heading-sepration">Basic Information</h6>
-        <div class="table-responsive">
-            <table class="table table-bordered">
-                <tr>
-                    <th style="width:30%;">Reference #</th>
-                    <td>{{ $exportSodaField->reference }}</td>
-                </tr>
-                <tr>
-                    <th>Party Name (Buyer)</th>
-                    <td>{{ $exportSodaField->buyer->name ?? 'N/A' }}</td>
-                </tr>
-                <tr>
-                    <th>Commodity</th>
-                    <td>{{ $exportSodaField->product->name ?? 'N/A' }}</td>
-                </tr>
-                <tr>
-                    <th>Shipment Period</th>
-                    <td>{{ $exportSodaField->shipment_period ?? 'N/A' }}</td>
-                </tr>
-                @php
-                    $totalAmount = method_exists($exportSodaField, 'packingItems') ? $exportSodaField->packingItems->sum('amount') : 0;
-                    $totalMt = method_exists($exportSodaField, 'packingItems') ? $exportSodaField->packingItems->sum('metric_tons') : 0;
-                    $commission = $exportSodaField->commission ?? 0;
-                    $perc = $totalAmount > 0 ? ($commission / $totalAmount) * 100 : 0;
-                    $amtPerTon = $totalMt > 0 ? ($commission / $totalMt) : 0;
-                @endphp
-
-            </table>
-        </div>
-
-        {{-- Commission Section --}}
-        <div class="mt-4">
-            <h6 class="header-heading-sepration">Commission</h6>
-            <div class="table-responsive">
-                <table class="table table-bordered">
-                    <tr>
-                        <th style="width:30%;">Commission (%)</th>
-                        <td>{{ number_format($perc, 2) }}%</td>
-                    </tr>
-                    <tr>
-                        <th>Amt/Ton</th>
-                        <td>{{ number_format($amtPerTon, 2) }}</td>
-                    </tr>
-                    <tr>
-                        <th>Total Commission</th>
-                        <td>{{ number_format($commission, 2) }}</td>
-                    </tr>
-                </table>
+        {{-- ====== BUYER & INFO ====== --}}
+        <div class="col-md-12">
+            <h6 class="header-heading-sepration">Buyer & Information</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Reference #:</label>
+                        <input type="text" class="form-control" value="{{ $exportSodaField->reference }}" readonly>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Buyer's Name:</label>
+                        <select class="form-control select2" disabled>
+                            <option value="">Select Buyer</option>
+                            @foreach ($users as $user)
+                                <option value="{{ $user->id }}" {{ $exportSodaField->buyer_id == $user->id ? 'selected' : '' }}>{{ $user->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Product / Commodity:</label>
+                        <select class="form-control select2" disabled>
+                            <option value="">Select Product</option>
+                            @foreach ($products as $product)
+                                <option value="{{ $product->id }}" {{ $exportSodaField->product_id == $product->id ? 'selected' : '' }}>{{ $product->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Shipment Period:</label>
+                        <input type="text" class="form-control" value="{{ $exportSodaField->shipment_period ? $exportSodaField->shipment_period->format('d-M-Y') : 'N/A' }}" readonly>
+                    </div>
+                </div>
             </div>
         </div>
 
+        {{-- ====== COMMISSION ====== --}}
+        <div class="col-md-12 mt-4">
+            <h6 class="header-heading-sepration">Commission</h6>
+            @php
+                $totalMt = $exportSodaField->packingItems->sum('metric_tons');
+                $totalAmount = $exportSodaField->packingItems->sum('amount');
+                $commission = $exportSodaField->commission ?? 0;
+                $commissionPercentage = $totalAmount > 0 ? ($commission / $totalAmount) * 100 : 0;
+                $amtPerTon = $totalMt > 0 ? ($commission / $totalMt) : 0;
+            @endphp
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>Commission (%):</label>
+                        <input type="text" class="form-control" value="{{ number_format($commissionPercentage, 2) }}%" readonly>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>Amt/Ton:</label>
+                        <input type="text" class="form-control" value="{{ number_format($amtPerTon, 2) }}" readonly>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>Total Commission:</label>
+                        <input type="text" class="form-control" value="{{ number_format($commission, 2) }}" readonly>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="col-4">
+        {{-- ====== EXPORT DETAILS SIDEBAR ====== --}}
         <h6 class="header-heading-sepration">Export Details</h6>
         <div class="table-responsive">
-            <table class="table table-bordered">
+            <table class="table table-bordered spacing-table" style="margin-bottom:0;">
                 <tr>
-                    <th style="width:50%;">INCO TERM</th>
-                    <td>{{ $exportSodaField->incoterm->name ?? 'N/A' }}</td>
+                    <td style="width:40%;font-weight:bold;vertical-align:middle;">INCO TERM</td>
+                    <td>
+                        <select class="form-control select2" disabled>
+                            @foreach ($incoterms as $incoterm)
+                                <option value="{{ $incoterm->id }}" {{ $exportSodaField->incoterm_id == $incoterm->id ? 'selected' : '' }}>{{ $incoterm->name }}</option>
+                            @endforeach
+                        </select>
+                    </td>
                 </tr>
                 <tr>
-                    <th>PAYMENT TERM</th>
-                    <td>{{ $exportSodaField->modeOfTerm->name ?? 'N/A' }}</td>
+                    <td style="font-weight:bold;vertical-align:middle;">PAYMENT TERM</td>
+                    <td>
+                        <select class="form-control select2" disabled>
+                            @foreach ($modeofterms as $term)
+                                <option value="{{ $term->id }}" {{ $exportSodaField->mode_of_term_id == $term->id ? 'selected' : '' }}>{{ $term->name }}</option>
+                            @endforeach
+                        </select>
+                    </td>
                 </tr>
             </table>
         </div>
     </div>
 
-    {{-- ====== PACKING DETAILS ====== --}}
+    {{-- ====== PACKING DETAILS (Full Width) ====== --}}
     <div class="col-12 mt-4">
         <h6 class="header-heading-sepration">Packing Details</h6>
         <div class="table-responsive">
             <table class="table table-bordered mb-0">
                 <thead>
-                    <tr class="bg-light">
+                    <tr>
                         <th>Bag Type</th>
                         <th>Packing</th>
-
                         <th>Packing Size (kg)</th>
                         <th>Qty (MT)</th>
                         <th style="display: none;">Qty (Mnds)</th>
@@ -89,47 +141,26 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @php 
-                        $items = method_exists($exportSodaField, 'packingItems') ? $exportSodaField->packingItems : collect();
-                    @endphp
-                    @forelse ($items as $item)
-                    <tr>
-                        <td>{{ $item->bagType->name ?? 'N/A' }}</td>
-                        <td>{{ $item->bagPacking->name ?? 'N/A' }}</td>
-
-                        <td>{{ $item->bag_size }}</td>
-                        <td>{{ number_format($item->metric_tons, 3) }}</td>
-                        <td style="display: none;">{{ number_format($item->maunds, 2) }}</td>
-                        <td>{{ number_format($item->no_of_bags) }}</td>
-                        <td>{{ number_format($item->rate, 2) }}</td>
-                        <td style="display: none;">{{ number_format($item->rate_per_maund, 2) }}</td>
-                        <td>{{ number_format($item->amount, 2) }}</td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="9" class="text-center">No packing items found.</td>
-                    </tr>
-                    @endforelse
+                    @foreach ($exportSodaField->packingItems as $item)
+                        <tr>
+                            <td class="p-2"><input type="text" class="form-control" value="{{ $item->bagType->name ?? 'N/A' }}" readonly></td>
+                            <td class="p-2"><input type="text" class="form-control" value="{{ $item->bagPacking->name ?? 'N/A' }}" readonly></td>
+                            <td class="p-2"><input type="text" class="form-control" value="{{ $item->bag_size }}" readonly></td>
+                            <td class="p-2"><input type="text" class="form-control" value="{{ number_format($item->metric_tons, 3) }}" readonly></td>
+                            <td class="p-2" style="display: none;"><input type="text" class="form-control" value="{{ number_format($item->maunds, 2) }}" readonly></td>
+                            <td class="p-2"><input type="text" class="form-control" value="{{ number_format($item->no_of_bags, 0) }}" readonly></td>
+                            <td class="p-2"><input type="text" class="form-control" value="{{ number_format($item->rate, 2) }}" readonly></td>
+                            <td class="p-2" style="display: none;"><input type="text" class="form-control" value="{{ number_format($item->rate_per_maund, 2) }}" readonly></td>
+                            <td class="p-2"><input type="text" class="form-control" value="{{ number_format($item->amount, 2) }}" readonly></td>
+                        </tr>
+                    @endforeach
                 </tbody>
-                <tfoot>
-                    <tr class="font-weight-bold bg-light">
-                        <td colspan="4" class="text-right">Totals:</td>
-                        <td>{{ number_format($items->sum('metric_tons'), 3) }}</td>
-                        <td style="display: none;">{{ number_format($items->sum('maunds'), 2) }}</td>
-                        <td>{{ number_format($items->sum('no_of_bags')) }}</td>
-                        <td></td>
-                        <td style="display: none;">{{ number_format($items->sum('rate_per_maund'), 2) }}</td>
-                        <td>{{ number_format($items->sum('amount'), 2) }}</td>
-                    </tr>
-                </tfoot>
             </table>
         </div>
-    </div>
 
-    <div class="col-md-12 mt-3">
-        <h6 class="header-heading-sepration">Additional Information</h6>
-        <div class="card p-2 bg-light">
-            {!! nl2br(e($exportSodaField->additional_info)) !!}
+        <div class="mt-4">
+            <h6 class="header-heading-sepration">Additional Information</h6>
+            <textarea class="form-control" rows="4" readonly>{{ $exportSodaField->additional_info }}</textarea>
         </div>
     </div>
 </div>
@@ -139,3 +170,9 @@
         <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
     </div>
 </div>
+
+<script>
+    $(document).ready(function() {
+        $('.select2').select2({ width: '100%' });
+    });
+</script>

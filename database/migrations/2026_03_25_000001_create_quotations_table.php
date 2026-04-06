@@ -46,6 +46,14 @@ return new class extends Migration
             // Price (Global)
             $table->decimal('total_amount', 15, 4)->nullable()->default(0);
 
+            // Commission
+            $table->decimal('commission_percentage', 15, 2)->nullable();
+            $table->decimal('commission_amount_per_ton', 15, 2)->nullable();
+            $table->decimal('commission', 15, 2)->nullable();
+
+            // Additional Info
+            $table->text('additional_info')->nullable();
+
             // Meta
             $table->unsignedBigInteger('created_by')->nullable();
             $table->timestamps();

@@ -24,6 +24,7 @@
                             @endif
                         </div>
                     </td>
+
                     <td>{{ \Carbon\Carbon::parse($export->voucher_date)->format('d/m/Y') }}</td>
                     <td>{{ $export->marking_labeling ?? '' }}</td>
                     <td>{{ Str::limit($export->product->name ?? 'N/A', 30) }}</td>

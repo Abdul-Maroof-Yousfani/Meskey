@@ -17,7 +17,7 @@
             @foreach ($quotations as $key => $quotation)
                 <tr>
                     <td>{{ $key + 1 }}</td>
-                    <td>{{ $quotation->exportSoda ? '#' . $quotation->exportSoda->id : 'N/A' }}</td>
+                    <td>{{ $quotation->exportSoda ? $quotation->exportSoda->reference : '-' }}</td>
                     <td>{{ $quotation->buyer->name ?? 'N/A' }}</td>
                     <td>{{ $quotation->company->name ?? 'N/A' }}</td>
                     <td>{{ Str::limit($quotation->product->name ?? 'N/A', 30) }}</td>
