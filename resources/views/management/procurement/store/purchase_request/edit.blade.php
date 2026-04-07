@@ -174,11 +174,11 @@
                             $jo_balance = 0;
                             if($item->module_type == 'packing') {
                                 $packing = \App\Models\Production\JobOrder\JobOrderPackingItem::find($item->packing_id);
-                                $jo_total = $packing->total_bags ?? 0;
+                                $jo_total = $packing?->total_bags ?? 0;
                                 $jo_balance = jobOrderPackingBalanceAgainstPurchaseRequest($item->packing_id);
                             } else if($item->module_type == 'subpacking') {
                                 $subpacking = \App\Models\Production\JobOrder\JobOrderPackingSubItem::find($item->packing_id);
-                                $jo_total = $subpacking->total_bags ?? 0;
+                                $jo_total = $subpacking?->total_bags ?? 0;
                                 $jo_balance = jobOrderSubPackingBalanceAgainstPurchaseRequest($item->packing_id);
                             }
                         @endphp
