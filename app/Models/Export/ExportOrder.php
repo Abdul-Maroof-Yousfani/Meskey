@@ -94,6 +94,11 @@ class ExportOrder extends Model
         return $this->hasMany(ExportOrderPackingItem::class);
     }
 
+    public function jobOrders()
+    {
+        return $this->hasMany(\App\Models\Production\JobOrder\JobOrder::class);
+    }
+
     public function createdBy()
     {
         return $this->belongsTo(User::class, 'created_by');
