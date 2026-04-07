@@ -81,6 +81,11 @@
                     placeholder="Min Weight">
             </td>
 
+            <td class="bag-only" style="min-width: 150px;">
+                <input type="text" name="tolerance[]" id="tolerance_{{ $i }}" class="form-control"
+                    placeholder="Tolerance">
+            </td>
+
             <td class="bag-only" style="min-width: 300px;">
                 <select name="color[]" id="colors_{{ $i }}" class="form-control item-select select2Dropdown">
                     <option value="">Select Color</option>
@@ -220,6 +225,11 @@
                 <input type="number" name="min_weight[]" id="min_weight_{{ $i }}" class="form-control"
                     step="0.01" min="0" value="{{ $sub_packing_item->empty_bag_weight }}"
                     placeholder="Min Weight" style="width:100%;">
+            </td>
+
+            <td class="bag-only" style="min-width: 150px;">
+                <input type="text" name="tolerance[]" id="tolerance_{{ $i }}" class="form-control"
+                    placeholder="Tolerance" style="width:100%;">
             </td>
 
             <td class="bag-only" style="min-width: 300px;">

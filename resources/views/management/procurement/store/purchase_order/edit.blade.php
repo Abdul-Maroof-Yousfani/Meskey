@@ -139,7 +139,8 @@
                             <th>Duty</th>
 
                             @if($isBag)
-                                <th>Min Weight (KG)</th>
+                                <th>Min Weight (gm)</th>
+                                <th>Tolerance</th>
                                 <th>Brand</th>
                                 <th>Color</th>
                                 <th>Cons./sq. in.</th>
@@ -172,7 +173,7 @@
                                     <input type="hidden" name="data_id[]" value="{{ $data->id }}">
                                     <input type="hidden" name="purchase_request_data_id[]" value="{{ $data->purchase_request_data_id }}">
                                 </td>
-                                <td style="min-width: 400px;">
+                                <td style="min-width: 600px;">
                                     <select  id="item_id_{{ $key }}" disabled
                                         onchange="get_uom({{ $key }})" 
                                         class="form-control item-select select2" data-index="{{ $key }}">
@@ -318,6 +319,11 @@
                                     <input  type="number" readonly name="min_weight[]"
                                         value="{{ $data->min_weight }}" id="min_weight_{{ $key }}"
                                         class="form-control" step="0.01" min="0">
+                                </td>
+                                <td style="min-width: 150px;" class="bag-only">
+                                    <input type="text" readonly name="tolerance[]"
+                                        value="{{ $data->tolerance }}" id="tolerance_{{ $key }}"
+                                        class="form-control">
                                 </td>
                                 <td style="min-width: 200px;" class="bag-only">
                                     <input  type="text" readonly name="brand[]"
@@ -513,7 +519,7 @@
                         @endforeach
                     </select>
                 </td>
-                <td style="min-width: 400px;">
+                <td style="min-width: 600px;">
                     <select name="item_id[]" id="item_id_${index}" onchange="get_uom(${index})" class="form-control item-select select2" data-index="0">
                         <option value="">Select Item</option>
                     

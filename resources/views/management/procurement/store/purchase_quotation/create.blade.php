@@ -4,7 +4,7 @@
     }
 </style>
 
-<form action="{{ route('store.purchase-quotation.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form style="overflow-x: hidden;" action="{{ route('store.purchase-quotation.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-quotation') }}" />
     <div class="alert alert-danger" id="message" 
@@ -39,8 +39,8 @@
         </div>
         <div class="col-md-3">
             <div class="form-group">
-                <label>Quatation Date:</label>
-                <input type="date" id="purchase_date" name="purchase_date" class="form-control" min="{{ date('Y-m-d') }}">
+                <label>Quotation Date:</label>
+                <input type="date" id="purchase_date" name="purchase_date" class="form-control" min="{{ date('Y-m-d') }}" value="{{ date('Y-m-d') }}">
             </div>
         </div>
         <div class="col-md-3">
@@ -89,7 +89,9 @@
                         <th>Rate</th>
                         <th>Total Amount</th>
                         <th>Item UOM</th>
-                        <th class="bag-only">Min Weight (KG)</th>
+                        <th>Delivery Date <span class="text-danger">*</span></th>
+                        <th class="bag-only">Min Weight (gm)</th>
+                        <th class="bag-only">Tolerance</th>
                         <th class="bag-only">Brands</th>
                         <th class="bag-only">Color</th>
                         <th class="bag-only">Cons./sq. in.</th>
@@ -131,7 +133,7 @@
             }
         });
 
-        $(document).on('change', '#purchase_date', function () {
+        $('#purchase_date, #company_location_id').on('change', function () {
             fetchUniqueNumber();
         });
 
@@ -218,8 +220,10 @@
                 <td style="min-width: 150px;"><input onkeyup="calc(${index})" onblur="calc(${index})" style="width: 100%" type="number" name="rate[]" id="rate_${index}" class="form-control" step="0.01" min="0"></td>
                 <td style="min-width: 150px;"><input style="width: 100%" type="number" readonly name="total[]" id="total_${index}" class="form-control" step="0.01" min="0"></td>
                 <td style="min-width: 150px;"><input type="text" name="uom[]" id="uom_${index}" class="form-control uom" readonly></td>
+                <td style="min-width: 180px;"><input type="date" name="delivery_date[]" id="delivery_date_${index}" class="form-control" required></td>
                 
                 <td class="bag-only" style="min-width: 200px;"></td>
+                <td class="bag-only" style="min-width: 150px;"></td>
                 <td class="bag-only" style="min-width: 200px;"></td>
                 <td class="bag-only" style="min-width: 200px;"></td>
                 <td class="bag-only" style="min-width: 200px;"></td>

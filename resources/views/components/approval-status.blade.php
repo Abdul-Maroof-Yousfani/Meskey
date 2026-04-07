@@ -402,6 +402,44 @@
             }).then((result) => {
                 if (result.isConfirmed) {
                     let approvedQtys = [];
+
+                    // Validation for PurchaseQuotationData to prevent exceeding PR quantity
+                    if ("{{ class_basename($model) }}" === "PurchaseQuotationData" && type === 'approve') {
+                        let itemTotals = {};
+                        let validationFailed = false;
+                        let errorMsg = '';
+
+                        $('.item-checkbox:checked').each(function() {
+                            let $row = $(this).closest('tr');
+                            let prDataId = $row.data('pr-data-id');
+                            let prQty = parseFloat($row.data('pr-qty')) || 0;
+                            let alreadyApproved = parseFloat($row.data('already-approved')) || 0;
+                            let currentQty = parseFloat($row.data('row-qty')) || 0;
+                            let itemName = $row.data('item-name') || 'Item';
+
+                            if (!itemTotals[prDataId]) {
+                                itemTotals[prDataId] = {
+                                    total: alreadyApproved,
+                                    limit: prQty,
+                                    name: itemName
+                                };
+                            }
+                            itemTotals[prDataId].total += currentQty;
+
+                            // Allow some floating point tolerance (e.g. 0.0001)
+                            if (itemTotals[prDataId].total > (itemTotals[prDataId].limit + 0.0001)) {
+                                validationFailed = true;
+                                errorMsg = `Total approved quantity for "${itemName}" (${itemTotals[prDataId].total.toFixed(2)}) exceeds the requested quantity (${prQty.toFixed(2)}). Already approved: ${alreadyApproved.toFixed(2)}.`;
+                                return false; // break each
+                            }
+                        });
+
+                        if (validationFailed) {
+                            Swal.fire('Validation Error', errorMsg, 'error');
+                            return;
+                        }
+                    }
+
                     // Check if there are any checkboxes for individual selection
                     if ($('.item-checkbox').length > 0) {
                         $('.item-checkbox:checked').each(function () {

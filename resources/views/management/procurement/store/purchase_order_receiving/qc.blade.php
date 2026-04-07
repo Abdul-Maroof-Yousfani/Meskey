@@ -85,7 +85,8 @@
                      <th>Item UOM</th>
                      <th>Vendor</th>
                      <th>Qty</th>
-                     <th>Min Weight (KG)</th>
+                     <th>Min Weight (gm)</th>
+                     <th>Tolerance</th>
                      <th>Brand</th>
                      <th>Color</th>
                      <th>Cons./sq. in.</th>
@@ -162,6 +163,15 @@
                                          id="min_weight_0" class="form-control" step="0.01" min="0"
                                          value="{{ $data->purchase_order_data->min_weight }}"
                                          placeholder="Min Weight">
+                                 </div>
+                             </div>
+                         </td>
+                         <td style="width: 30%">
+                             <div class="loop-fields">
+                                 <div class="form-group mb-0">
+                                     <input type="text" name="tolerance[]" style="width: 100px;"
+                                         value="{{ $data->purchase_order_data->tolerance ?? ($data->purchase_order_data->purchase_request_data->tolerance ?? null) }}" id="tolerance_0"
+                                         class="form-control" placeholder="Tolerance">
                                  </div>
                              </div>
                          </td>

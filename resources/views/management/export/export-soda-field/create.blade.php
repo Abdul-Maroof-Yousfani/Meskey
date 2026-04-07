@@ -208,7 +208,7 @@
     <div class="row bottom-button-bar">
         <div class="col-12 mb-3 text-right">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
-            <button type="submit" class="btn btn-primary submitbutton">Save Export Sauda Field</button>
+            <button type="submit" class="btn btn-primary submitbutton">Create Export Sauda</button>
         </div>
     </div>
 </form>
@@ -280,6 +280,9 @@ $(document).ready(function() {
         let rateMt = parseFloat(row.find('.rates').val()) || 0;
         let amount = mt * rateMt;
         row.find('.amount').val(amount.toFixed(2));
+        
+        // Trigger commission recalculation
+        calculateOverallTotals();
     }
 
     function calculateOverallTotals() {

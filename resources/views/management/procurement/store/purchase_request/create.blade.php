@@ -7,7 +7,7 @@
         width: 100% !important;
     }
 </style>
-<form action="{{ route('store.purchase-request.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form style="overflow-x: hidden;" action="{{ route('store.purchase-request.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-request') }}" />
 
@@ -22,7 +22,7 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Purchase Date:</label>
-                <input type="date" name="purchase_date" class="form-control" min="{{ date('Y-m-d') }}" id="purchase_date">
+                <input type="date" name="purchase_date" class="form-control" min="{{ date('Y-m-d') }}" id="purchase_date" value="{{ date('Y-m-d') }}">
             </div>
         </div>
         <div class="col-md-4">
@@ -106,7 +106,8 @@
                 <th style="min-width: 150px;">Qty</th>
                 <th class="bag-only" style="min-width: 450px;">Job Orders</th>
                 <th class="bag-only" style="min-width: 300px;">Brands</th>
-                <th class="bag-only" style="min-width: 200px;">Min Weight (KG)</th>
+                <th class="bag-only" style="min-width: 200px;">Min Weight (gm)</th>
+                <th class="bag-only" style="min-width: 150px;">Tolerance</th>
                 <th class="bag-only" style="min-width: 300px;">Color</th>
                 <th class="bag-only" style="min-width: 300px;">Cons./sq. in.</th>
                 <th class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">Size</th>
@@ -331,6 +332,14 @@
                             <div class="form-group mb-0">
                                 <input type="number" name="min_weight[]" id="min_weight_${index}" class="form-control"
                                     step="0.01" min="0" placeholder="Min Weight">
+                            </div>
+                        </div>
+                    </td>
+                    <td class="bag-only" style="min-width: 150px;">
+                        <div class="loop-fields">
+                            <div class="form-group mb-0">
+                                <input type="text" name="tolerance[]" id="tolerance_${index}" class="form-control"
+                                    placeholder="Tolerance">
                             </div>
                         </div>
                     </td>

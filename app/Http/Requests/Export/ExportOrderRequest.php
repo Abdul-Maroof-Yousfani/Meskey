@@ -44,6 +44,7 @@ class ExportOrderRequest extends FormRequest
             ],
 
             'other_specifications' => ['required', 'string'],
+            'additional_info' => ['nullable', 'string'],
 
             /* ================= FOREIGN KEYS ================= */
 
@@ -97,19 +98,39 @@ class ExportOrderRequest extends FormRequest
             /* ================= PACKING ITEMS ================= */
 
             'packing_items' => ['nullable', 'array'],
-            'packing_items.*.brand_id' => ['required', 'exists:brands,id'],
-            'packing_items.*.bag_type_id' => ['required', 'exists:bag_types,id'],
+            'packing_items.*.brand_id' => ['nullable', 'exists:brands,id'],
+            'packing_items.*.bag_type_id' => ['nullable', 'exists:bag_types,id'],
             'packing_items.*.bag_packing_id' => ['nullable', 'exists:bag_packings,id'],
-            'packing_items.*.bag_condition_id' => ['required', 'exists:bag_conditions,id'],
-            'packing_items.*.bag_color_id' => ['required', 'exists:colors,id'],
-            'packing_items.*.bag_size' => ['required', 'numeric', 'min:0.1'],
-            'packing_items.*.metric_tons' => ['required', 'numeric', 'min:0.001'],
+            'packing_items.*.bag_condition_id' => ['nullable', 'exists:bag_conditions,id'],
+            'packing_items.*.bag_color_id' => ['nullable', 'exists:colors,id'],
+            'packing_items.*.bag_size' => ['nullable', 'numeric', 'min:0'],
+            'packing_items.*.metric_tons' => ['nullable', 'numeric', 'min:0'],
             'packing_items.*.stuffing_in_container' => ['nullable', 'numeric', 'min:0'],
             'packing_items.*.no_of_containers' => ['nullable', 'integer', 'min:0'],
-            'packing_items.*.rate' => ['required', 'numeric', 'min:0'],
+            'packing_items.*.rate' => ['nullable', 'numeric', 'min:0'],
             'packing_items.*.rate_per_maund' => ['nullable', 'numeric', 'min:0'],
             'packing_items.*.maunds' => ['nullable', 'numeric', 'min:0'],
             'packing_items.*.stuffing_maunds' => ['nullable', 'numeric', 'min:0'],
+            'packing_items.*.no_of_bags' => ['nullable', 'numeric', 'min:0'],
+            'packing_items.*.min_weight_empty_bags' => ['nullable', 'numeric', 'min:0'],
+            'packing_items.*.amount' => ['nullable', 'numeric', 'min:0'],
+            'packing_items.*.amount_pkr' => ['nullable', 'numeric', 'min:0'],
+            'packing_items.*.total_bags' => ['nullable', 'numeric', 'min:0'],
+            'packing_items.*.total_kgs' => ['nullable', 'numeric', 'min:0'],
+            'packing_items.*.fumigation_company_id' => ['nullable', 'array'],
+            'packing_items.*.sub_items' => ['nullable', 'array'],
+            'packing_items.*.sub_items.*.bag_type_id' => ['nullable', 'exists:bag_types,id'],
+            'packing_items.*.sub_items.*.bag_size_id' => ['nullable', 'exists:sizes,id'],
+            'packing_items.*.sub_items.*.no_of_primary_bags' => ['nullable', 'numeric', 'min:0'],
+            'packing_items.*.sub_items.*.no_of_bags' => ['nullable', 'numeric', 'min:0'],
+            'packing_items.*.sub_items.*.empty_bags' => ['nullable', 'numeric', 'min:0'],
+            'packing_items.*.sub_items.*.extra_bags' => ['nullable', 'numeric', 'min:0'],
+            'packing_items.*.sub_items.*.empty_bag_weight' => ['nullable', 'numeric', 'min:0'],
+            'packing_items.*.sub_items.*.total_bags' => ['nullable', 'numeric', 'min:0'],
+            'packing_items.*.sub_items.*.stitching_id' => ['nullable', 'exists:stitchings,id'],
+            'packing_items.*.sub_items.*.bag_color_id' => ['nullable', 'exists:colors,id'],
+            'packing_items.*.sub_items.*.brand_id' => ['nullable', 'exists:brands,id'],
+            'packing_items.*.sub_items.*.thread_color_id' => ['nullable', 'exists:colors,id'],
         ];
     }
 
@@ -228,10 +249,10 @@ class ExportOrderRequest extends FormRequest
     protected function prepareForValidation()
     {
         $this->merge([
-            'company_location_ids' => $this->company_location_ids ?? [],
-            'arrival_location_ids' => $this->arrival_location_ids ?? [],
-            'arrival_sub_location_ids' => $this->arrival_sub_location_ids ?? [],
-            'packing_items' => $this->packing_items ?? [],
+            'company_location_ids' => !empty($this->company_location_ids) ? $this->company_location_ids : null,
+            'arrival_location_ids' => !empty($this->arrival_location_ids) ? $this->arrival_location_ids : null,
+            'arrival_sub_location_ids' => !empty($this->arrival_sub_location_ids) ? $this->arrival_sub_location_ids : null,
+            'packing_items' => !empty($this->packing_items) ? $this->packing_items : [],
         ]);
     }
 }

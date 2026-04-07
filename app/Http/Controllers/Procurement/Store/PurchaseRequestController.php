@@ -280,6 +280,7 @@ class PurchaseRequestController extends Controller
                     'micron' => $request->micron[$index] ?? null,
                     'printing_sample' => $printingSamplePaths,
                     'brand_id' => $request->brands[$index] ?? null,
+                    'tolerance' => $request->tolerance[$index] ?? null,
                     'remarks' => $request->remarks[$index] ?? null,
                     'packing_id' => $request->packing_id[$index] ?? null,
                     "module_type" => $request->module_type[$index] ?? null,
@@ -494,6 +495,7 @@ class PurchaseRequestController extends Controller
                             'printing_sample' => $printingSamplePath,
                             'remarks' => $request->remarks[$index] ?? null,
                             'brand_id' => $request->brands[$index] ?? null,
+                            'tolerance' => $request->tolerance[$index] ?? null,
                             'micron' => $request->micron[$index] ?? null,
                             'packing_id' => $request->packing_id[$index] ?? null,
                             "module_type" => $request->module_type[$index] ?? null,
@@ -574,6 +576,7 @@ class PurchaseRequestController extends Controller
                         "module_type" => $request->module_type[$index] ?? null,
                         "is_single_job_order" => $request->is_single_job_order[$index] ?? false,
                         'micron' => $request->micron[$index] ?? null,
+                        'tolerance' => $request->tolerance[$index] ?? null,
                     ]);
 
                     $submittedItems[] = $requestData->id;

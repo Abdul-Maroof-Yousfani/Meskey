@@ -17,6 +17,7 @@ class PurchaseRequestData extends Model
         'category_id',
         'item_id',
         'qty',
+        'tolerance',
         'approved_qty',
         'min_weight',
         'color',

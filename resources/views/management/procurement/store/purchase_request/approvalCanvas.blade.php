@@ -7,7 +7,7 @@
         width: 100% !important;
     }
 </style>
-<form action="{{ route('store.purchase-request.update', $purchaseRequest->id) }}" method="POST" id="ajaxSubmit2"
+<form style="overflow-x: hidden;" action="{{ route('store.purchase-request.update', $purchaseRequest->id) }}" method="POST" id="ajaxSubmit2"
     autocomplete="off">
     @csrf
     @method('PUT')
@@ -118,7 +118,8 @@
                 <th style="min-width: 150px;">Qty</th>
                 <th class="bag-only" style="min-width: 450px;">Job Orders</th>
                 <th class="bag-only" style="min-width: 300px;">Brands</th>
-                <th class="bag-only" style="min-width: 200px;">Min Weight (KG)</th>
+                <th class="bag-only" style="min-width: 200px;">Min Weight (gm)</th>
+                <th class="bag-only" style="min-width: 150px;">Tolerance</th>
                 <th class="bag-only" style="min-width: 300px;">Color</th>
                 <th class="bag-only" style="min-width: 300px;">Cons./sq. in.</th>
                 <th class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">Size</th>
@@ -185,6 +186,8 @@
                 </td>
                 <td class="bag-only" style="min-width: 200px;"><input type="number" name="min_weight[]" id="min_weight_{{ $rowIdApproval }}" class="form-control"
                         step="0.01" min="0" value="{{ $item->min_weight }}" placeholder="Min Weight" readonly></td>
+                <td class="bag-only" style="min-width: 150px;"><input type="text" name="tolerance[]" id="tolerance_{{ $rowIdApproval }}" class="form-control"
+                        value="{{ $item->tolerance }}" placeholder="Tolerance" readonly></td>
                 <td class="bag-only" style="min-width: 300px;">
                     <select name="color[]" id="color_{{ $rowIdApproval }}" class="form-control item-select color-select"
                         disabled>
@@ -440,6 +443,14 @@
                             <div class="form-group mb-0">
                                 <input type="number" name="min_weight[]" id="min_weight_${index}" class="form-control"
                                     step="0.01" min="0" placeholder="Min Weight">
+                            </div>
+                        </div>
+                    </td>
+                    <td style="min-width: 150px;" class="bag-only">
+                        <div class="loop-fields">
+                            <div class="form-group mb-0">
+                                <input type="text" name="tolerance[]" id="tolerance_${index}" class="form-control"
+                                    placeholder="Tolerance">
                             </div>
                         </div>
                     </td>

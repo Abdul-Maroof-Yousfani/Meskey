@@ -2,35 +2,22 @@
 @foreach ($dataItems ?? [] as $key => $data)
     @php
         $remainingQty = ($data->category_id == 38) ? ($data->qc?->accepted_quantity ?? 0) : ($data->qty ?? 0);
+        $rejectedQty = ($data->category_id == 38) ? ($data->qc?->rejected_quantity ?? 0) : ($data->qty ?? 0);
+        $deductionPerBag = ($data->category_id == 38) ? ($data->qc?->deduction_per_bag ?? 0) : null;
+        $deduction_type = ($data->category_id == 38) ? $data->qc?->deduction_type ?? '' : '';
+        $deduction = 0;
+
+        if($deduction_type != '') {
+            if($deduction_type == 'full_deduction') {
+                $deduction = $remainingQty * $deductionPerBag;
+            } else if($deduction_type == 'half_deduction') {
+                $deduction = $rejectedQty * $deductionPerBag;
+            }
+        }
+
+
     @endphp
-    {{-- @php
-   
 
-    $currentRate = $data->rate ?? 0;
-    $currentQty = $data->qty ?? 0;
-    $currentTotal = ($currentRate !== '' && $currentQty > 0) ? (float)$currentRate * (float)$currentQty : '';
-
-   // $currentSupplierId = $quotedSupplierId ?: '';
-    //$currentSupplierName = $quoted
-    <p>test</p>SupplierName ?: '';
-@endphp
-
-
-@if (isset($data->purchase_order_data))
-    @php
-        $totalOrdered = $data->purchase_order_data->sum('qty');
-    @endphp
-@else
-    @php
-        $totalOrdered = 0;
-    @endphp
-@endif
-
-@php
-    $remainingQty = $data->qty - $totalOrdered;
-    $isQuotationAvailable = ($data->rate) > 0 ? true : false;
-@endphp
-@if ($remainingQty <= 0) @continue @endif; --}}
 
 <tr id="row_{{ $key }}" data-category-id="{{ $data->category_id }}">
 
@@ -95,7 +82,7 @@
 
             <td style="min-width: 200px;" class="deduction-col">
                 <input style="width: 100%" type="number" readonly name="deduction[]"
-                    value="{{ ($data->qc?->deduction_per_bag ?? 0) * $remainingQty }}" id="deduction_{{ $key }}"
+                    value="{{ $deduction }}" id="deduction_{{ $key }}"
                     class="form-control deduction" step="0.01" min="0" readonly>
             </td>
         @else
@@ -104,7 +91,7 @@
         @endif
 
         @php
-            $deduction = ($data->category_id == 38) ? (($data->qc?->deduction_per_bag ?? 0) * $remainingQty) : 0;
+            // $deduction = ($data->category_id == 38) ? (($data->qc?->deduction_per_bag ?? 0) * $remainingQty) : 0;
             $net_amount = ($remainingQty * $data->purchase_order_data->rate) - $deduction;
         @endphp
 

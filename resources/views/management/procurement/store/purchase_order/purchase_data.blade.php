@@ -109,7 +109,7 @@
 
         </td>
 
-        <td style="min-width: 400px;">
+        <td style="min-width: 600px;">
             <select id="item_id_{{ $key }}" disabled onchange="get_uom({{ $key }})"
                 class="form-control item-select select2" data-index="{{ $key }}">
                 @foreach (get_product_by_id($data->item_id) as $item)
@@ -214,6 +214,10 @@
         <td style="min-width: 200px;" class="bag-only">
             <input  type="number" readonly name="min_weight[]" value="{{ $data->min_weight ? $data->min_weight : $prSource->min_weight }}"
                 id="min_weight_{{ $key }}" class="form-control" step="0.01" min="0">
+        </td>
+        <td style="min-width: 150px;" class="bag-only">
+            <input type="text" readonly name="tolerance[]" value="{{ $data->tolerance ? $data->tolerance : $prSource->tolerance }}"
+                id="tolerance_{{ $key }}" class="form-control">
         </td>
         <td style="min-width: 200px;" class="bag-only">
             <input  type="text" readonly name="brand[]" value="{{ getBrandById($data->brand_id ? $data->brand_id : $prSource->brand_id)?->name ?? null }}"

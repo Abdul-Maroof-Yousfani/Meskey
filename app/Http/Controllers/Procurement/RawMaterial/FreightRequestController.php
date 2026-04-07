@@ -9,6 +9,7 @@ use App\Models\Master\Broker;
 use App\Models\TruckSizeRange;
 use App\Models\PurchaseTicket;
 use App\Models\Master\ProductSlab;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
 use App\Models\ArrivalPurchaseOrder;
 use App\Http\Controllers\Controller;
@@ -307,6 +308,13 @@ class FreightRequestController extends Controller
             $requestData = $request->all();
             $is_paid_by_supplier = $request->has('is_paid_by_supplier') ? 1 : 0;
             $requestData['is_paid_by_supplier'] = $request->has('is_paid_by_supplier') ? 1 : 0;
+
+            if (!$is_paid_by_supplier && !$request->vendor_id) {
+                throw ValidationException::withMessages([
+                    'vendor_id' => ['Vendor is required.']
+                ]);
+            }
+
 
             $requestData['module_type'] = 'freight_payment';
             $requestData['total_amount'] = $requestData['net_amount'];
@@ -875,6 +883,12 @@ class FreightRequestController extends Controller
     public function pohouch_freight_payment_request_approval(Request $request)
     {
 
+        if($request->status == 'rejected') {
+            $paymentRequest = PaymentRequest::findOrFail($request->payment_request_id);
+            $paymentRequest->status = "rejected";
+            $paymentRequest->save();
+            return response()->json(['message' => 'Payment request rejected successfully!']);
+        }
 
 
         return DB::transaction(function () use ($request) {
@@ -934,7 +948,7 @@ class FreightRequestController extends Controller
 
             $inventoryAmountwithFreight = $inventoryAmount + $request->net_amount + $request->godown_penalty;
 
-
+          
             if ($request->godown_penalty == 'Commit') {
                 $txnInv = Transaction::where('grn_no', $grnNo)
                     ->where('purpose', 'arrival-slip')
@@ -970,6 +984,7 @@ class FreightRequestController extends Controller
 
             }
             $counterAccount = $saudaType == "pohouch" ? $purchaseOrder->supplier->account_id : $qcAccountId;
+            
             if ($saudaType == "pohouch") {
 
                 $paid_by_supplier_value = $request->penalty + $request->total_labour + $request->total_commision;
@@ -1009,6 +1024,7 @@ class FreightRequestController extends Controller
                     }
                 }
             }
+            
             if ($saudaType == "thadda") {
                 $supplierDebitFreight = Transaction::where('grn_no', $grnNo)
                     ->where('purpose', "{$saudaType}-freight-paid-to-vendor")
@@ -1042,7 +1058,6 @@ class FreightRequestController extends Controller
                     );
                 }
             }
-
 
 
 
@@ -1085,6 +1100,7 @@ class FreightRequestController extends Controller
 
             }
 
+
             if ($request->total_labour != 0) {
 
 
@@ -1103,10 +1119,6 @@ class FreightRequestController extends Controller
                     'payment_to' => $paymentRequestData->payment_to,
                     'amount' => $request->total_labour ?? 0
                 ]);
-
-
-
-
 
                 $txnLabour = Transaction::where('grn_no', $grnNo)
                     ->where('purpose', "{$saudaType}-freight-labour")
@@ -1230,6 +1242,13 @@ class FreightRequestController extends Controller
 
     public function pohouch_freight_payment_request_approval_wo_contract(Request $request)
     {
+        if($request->status == 'rejected') {
+            $paymentRequest = PaymentRequest::findOrFail($request->payment_request_id);
+            $paymentRequest->status = "rejected";
+            $paymentRequest->save();
+            return response()->json(['message' => 'Payment request rejected successfully!']);
+        }
+
         return DB::transaction(function () use ($request) {
             $paymentRequest = PaymentRequest::findOrFail($request->payment_request_id);
            

@@ -1,14 +1,14 @@
 <table class="table m-0" style="table-layout: fixed; width: 100%;">
     <thead>
         <tr>
-            <th style="width: 13%;">Purchase Order No </th>
-            <th style="width: 13%;">Purchase Request No</th>
-            <th style="width: 13%;">Purchase Quotation No</th>
-            <th style="width: 14%;">Category- item</th>
-            <th style="width: 12%;">Supplier</th>
-            <th style="width: 8%;">Qty</th>
+            <th style="width: 10%;">Purchase Order No </th>
+            <th style="width: 10%;">Purchase Request No</th>
+            <th style="width: 10%;">Purchase Quotation No</th>
+            <th style="width: 25%;">Category- item</th>
+            <th style="width: 10%;">Supplier</th>
+            <th style="width: 7%;">Qty</th>
             <th style="width: 6%;">Rate</th>
-            <th style="width: 7%;">Total Amount</th>
+            <th style="width: 8%;">Total Amount</th>
             <th style="width: 7%;">Item Status</th>
             <th style="width: 7%;">Action</th>
         </tr>

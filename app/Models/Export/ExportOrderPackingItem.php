@@ -7,6 +7,7 @@ use App\Models\BagPacking;
 use App\Models\BagType;
 use App\Models\Master\Brands;
 use App\Models\Master\Color;
+use App\Models\Master\Stitching;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -16,18 +17,25 @@ class ExportOrderPackingItem extends Model
 
     protected $fillable = [
         'export_order_id',
-        // 'company_location_id',
+        'company_location_id',
         'brand_id',
         'bag_type_id',
         'bag_packing_id',
         'bag_condition_id',
         'bag_color_id',
+        'thread_color_id',
+        'stitching_id',
         'bag_size',
         'metric_tons',
         'no_of_bags',
+        'extra_bags',
+        'empty_bags',
+        'total_bags',
         'total_kgs',
         'stuffing_in_container',
         'no_of_containers',
+        'min_weight_empty_bags',
+        'fumigation_company_id',
         'rate',
         'rate_per_maund',
         'maunds',
@@ -38,15 +46,17 @@ class ExportOrderPackingItem extends Model
 
     protected $casts = [
         'bag_size' => 'decimal:2',
-        'metric_tons' => 'decimal:3',
-        'maunds' => 'decimal:3',
-        'stuffing_in_container' => 'decimal:3',
-        'stuffing_maunds' => 'decimal:3',
+        'metric_tons' => 'decimal:4',
+        'maunds' => 'decimal:4',
+        'stuffing_in_container' => 'decimal:4',
+        'stuffing_maunds' => 'decimal:4',
         'total_kgs' => 'decimal:2',
         'rate' => 'decimal:2',
         'rate_per_maund' => 'decimal:2',
         'amount' => 'decimal:2',
         'amount_pkr' => 'decimal:2',
+        'min_weight_empty_bags' => 'decimal:2',
+        'fumigation_company_id' => 'array',
     ];
 
     /**
@@ -74,13 +84,26 @@ class ExportOrderPackingItem extends Model
             }
 
             // Amount (Rate per Ton)
-            $item->amount = $item->metric_tons * $item->rate;
+            $metricTons = (float)($item->metric_tons ?? 0);
+            $rate = (float)($item->rate ?? 0);
+            
+            // If metric_tons is 0 but total_kgs is set (from controller), use it
+            if ($metricTons == 0 && (float)($item->total_kgs ?? 0) > 0) {
+                $metricTons = (float)$item->total_kgs / 1000;
+                $item->metric_tons = $metricTons;
+            }
 
-            $exportOrder = ExportOrder::find($item->export_order_id);
+            $item->amount = $metricTons * $rate;
+            $item->total_kgs = $metricTons * 1000;
+
+            // Get currency rate from the parent order
+            $exportOrder = $item->exportOrder ?? ExportOrder::find($item->export_order_id);
 
             // PKR conversion
-            if ($exportOrder && $exportOrder->currency_rate > 0) {
-                $item->amount_pkr = $item->amount * $exportOrder->currency_rate;
+            if ($exportOrder && (float)($exportOrder->currency_rate ?? 0) > 0) {
+                $item->amount_pkr = $item->amount * (float)$exportOrder->currency_rate;
+            } else {
+                $item->amount_pkr = 0;
             }
         });
     }
@@ -113,5 +136,24 @@ class ExportOrderPackingItem extends Model
     public function bagColor()
     {
         return $this->belongsTo(Color::class);
+    }
+    public function subItems()
+    {
+        return $this->hasMany(ExportOrderPackingSubItem::class, 'export_order_packing_item_id');
+    }
+
+    public function threadColor()
+    {
+        return $this->belongsTo(Color::class, 'thread_color_id');
+    }
+
+    public function stitching()
+    {
+        return $this->belongsTo(Stitching::class);
+    }
+
+    public function companyLocation()
+    {
+        return $this->belongsTo(\App\Models\Master\CompanyLocation::class);
     }
 }

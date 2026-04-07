@@ -28,6 +28,7 @@ class PurchaseQuotationData extends Model
         'quotation_status',
         'po_status',
         'status',
+        'delivery_date',
     ];
 
     protected $casts = [

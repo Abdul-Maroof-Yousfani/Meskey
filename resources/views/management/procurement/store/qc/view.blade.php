@@ -1,4 +1,4 @@
-        <div style="padding-left: 10px; padding-right: 10px;">
+<div style="padding-left: 10px; padding-right: 10px;">
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
@@ -26,11 +26,15 @@
                                 <th>Brand</th>
                                 <th>Job Order</th>
                                 @endif
+                                 @canApprove('qc')
+                                 <th>PO No</th>
+                                 <th>Rate</th>
+                                 @endcanApprove
                                 <th>Required Weight Per Bag</th>
                                 <th>Average Weight of 1 Bag</th>
                                 <th>Total Bags</th>
                                 <th>Total Weight Required (Kg)</th>
-                                <th>Total Weight Received (Kg)</th>
+                                <th>Sample Average Weight (grams)</th>
                             </tr>
                         </thead>
                         <tbody id="purchaseOrderBody">
@@ -61,6 +65,14 @@
                                     class="form-control">
                             </td>
                             @endif
+                             @canApprove('qc')
+                             <td>
+                                 <input type="text" value="{{ $purchaseOrderReceivingData?->purchase_order_receiving?->purchase_order?->purchase_order_no }}" readonly class="form-control">
+                             </td>
+                             <td>
+                                 <input type="text" value="{{ $purchaseOrderReceivingData?->purchase_order_data?->rate }}" readonly class="form-control">
+                             </td>
+                             @endcanApprove
                             <td>
                                 <input type="text" name="required_weight_per_bag" value="{{ $purchaseOrderReceivingData->category_id == 38 ? ($purchaseOrderReceivingData?->purchase_order_data?->min_weight ?? null) : 0 }}" id="required_weight_per_bag" readonly class="form-control">
                             </td>
@@ -81,7 +93,7 @@
                             </td>
 
                             <td>
-                                <input type="text" name="total_weight_received" id="total_weight_received" value="{{ ($purchaseOrderReceivingData?->qty * $purchaseOrderReceivingData?->qc?->average_weight_of_one_bag) / 1000 }}"
+                                <input type="text" name="sample_average_weight" id="total_weight_received" value="{{ $purchaseOrderReceivingData?->qc?->sample_average_weight }}"
                                     readonly class="form-control">
                             </td>
 
@@ -293,6 +305,7 @@
                         </div>
                     </div>
 
+                    @canApprove('qc')
                     <div class="col-md-4">
                         <div class="form-group">
                             <label class="form-label">Deduction Per Bag:</label>
@@ -301,6 +314,7 @@
                                 class="form-control" @readonly($type == "view")>
                         </div>
                     </div>
+                    @endcanApprove
                 </div>
                 @endif
         </form>
@@ -321,4 +335,8 @@
             
          
             $(".select2").select2();
+            var refreshRoute = window.location.pathname.includes('procurement/store/qc') 
+                ? '{{ route('store.qc.getList') }}' 
+                : '{{ route('store.get.purchase-order-receiving') }}';
+            $('#ajaxSubmit').append('<input type="hidden" name="listRefresh" id="listRefresh" value="' + refreshRoute + '">');
         </script>

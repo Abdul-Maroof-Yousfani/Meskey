@@ -4,7 +4,6 @@
     <input type="hidden" id="listRefresh" value="{{ route('get.quotation') }}" />
 
     <input type="hidden" name="company_id" value="{{ auth()->user()->current_company_id }}">
-    <input type="hidden" name="export_soda_id" value="{{ $quotation->export_soda_id }}">
 
     <div class="row form-mar">
         <div class="col-8">
@@ -15,7 +14,8 @@
                     <div class="col-md-4">
                         <div class="form-group">
                             <label>Export Sauda</label>
-                            <input type="text" class="form-control" value="{{ $quotation->exportSoda ? '#' . $quotation->exportSoda->id . ' - ' . ($quotation->exportSoda->product->name ?? '') : 'N/A' }}" readonly>
+                            <input type="text" class="form-control" value="{{ $quotation->exportSoda ? $quotation->exportSoda->reference : '-' }}" readonly>
+                            <input type="hidden" name="export_soda_id" value="{{ $quotation->export_soda_id }}">
                         </div>
                     </div>
                     <div class="col-md-4">
@@ -33,19 +33,19 @@
                     <div class="col-md-4">
                         <div class="form-group">
                             <label>Contact No</label>
-                            <input type="text" id="buyer_phone" class="form-control" value="{{ $quotation->buyer->phone ?? $quotation->buyer->owner_mobile_no ?? '' }}" readonly>
+                            <input type="text" id="buyer_phone" class="form-control" value="{{ $quotation->buyer->phone ?? $quotation->buyer->owner_mobile_no ?? '-' }}" readonly>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="form-group">
                             <label>Email Address</label>
-                            <input type="text" id="buyer_email" class="form-control" value="{{ $quotation->buyer->email ?? '' }}" readonly>
+                            <input type="text" id="buyer_email" class="form-control" value="{{ $quotation->buyer->email ?? '-' }}" readonly>
                         </div>
                     </div>
                     <div class="col-md-8">
                         <div class="form-group">
                             <label>Buyer Address</label>
-                            <input type="text" id="buyer_address" class="form-control" value="{{ $quotation->buyer->address ?? '' }}" readonly>
+                            <input type="text" id="buyer_address" class="form-control" value="{{ $quotation->buyer->address ?? '-' }}" readonly>
                         </div>
                     </div>
                 </div>
@@ -68,9 +68,49 @@
                         </div>
                     </div>
                 </div>
-                <div id="specificationsSection" style="display:none;" class="mt-2">
+                <div id="specificationsSection" style="display: {{ $quotation->specifications->count() ? 'block' : 'none' }};" class="mt-2">
                     <h6 class="header-heading-sepration">Specifications</h6>
-                    <div id="productSpecs"></div>
+                    <div id="productSpecs">
+                        @if($quotation->specifications->count())
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped">
+                                    <thead class="thead-dark">
+                                        <tr>
+                                            <th width="40%">Specification Name</th>
+                                            <th width="30%">Value</th>
+                                            <th width="30%">UOM</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($quotation->specifications as $index => $spec)
+                                            <tr>
+                                                <td>
+                                                    <strong>{{ $spec->spec_name }}</strong>
+                                                    <input type="hidden" name="specifications[{{ $index }}][product_slab_type_id]" value="{{ $spec->product_slab_type_id }}">
+                                                    <input type="hidden" name="specifications[{{ $index }}][spec_name]" value="{{ $spec->spec_name }}">
+                                                    <input type="hidden" name="specifications[{{ $index }}][uom]" value="{{ $spec->uom }}">
+                                                </td>
+                                                <td>
+                                                    <div class="input-group">
+                                                        <input type="text" name="specifications[{{ $index }}][spec_value]" value="{{ $spec->spec_value ?? 0 }}" class="form-control form-control-sm">
+                                                        <div class="input-group-prepend">
+                                                            <button class="btn btn-secondary" type="button">{{ $spec->slabType->qc_symbol ?? 'N/A' }}</button>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <select name="specifications[{{ $index }}][value_type]" class="form-control">
+                                                        <option value="min" {{ $spec->value_type == 'min' ? 'selected' : '' }}>Minimum</option>
+                                                        <option value="max" {{ $spec->value_type == 'max' ? 'selected' : '' }}>Maximum</option>
+                                                    </select>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @endif
+                    </div>
                 </div>
 
                 {{-- Commission Section --}}
@@ -397,6 +437,13 @@
                 </div>
             </div>
         </div>
+
+        <div class="col-md-12 mt-3">
+            <h6 class="header-heading-sepration">Additional Information</h6>
+            <div class="form-group">
+                <textarea name="additional_info" class="form-control" rows="4" placeholder="Enter any additional details here...">{{ old('additional_info', $quotation->additional_info) }}</textarea>
+            </div>
+        </div>
     </div>
 
     <div class="row bottom-button-bar">
@@ -638,6 +685,111 @@ $(document).ready(function() {
         }
     }
 
+
+    // Export Sauda Autofill
+    $('select[name="export_soda_id"]').on('change', function() {
+        var saudaId = $(this).val();
+        if (saudaId) {
+            $.get('{{ route('quotation.get-sauda-details', '') }}/' + saudaId, function(data) {
+                // Basic Info
+                $('#buyerSelect').val(data.buyer_id).trigger('change');
+                $('#productSelect').val(data.product_id).trigger('change');
+                
+                // Direct fill buyer details if available
+                if (data.buyer) {
+                    $('#buyer_phone').val(data.buyer.phone || data.buyer.owner_mobile_no || '');
+                    $('#buyer_email').val(data.buyer.email || '');
+                    $('#buyer_address').val(data.buyer.address || '');
+                }
+                
+                // Export Details
+                $('select[name="incoterm_id"]').val(data.incoterm_id).trigger('change');
+                $('select[name="mode_of_term_id"]').val(data.mode_of_term_id).trigger('change');
+                
+                // Commission
+                $('#commission_percentage').val(data.commission_percentage);
+                $('#commission_amount_per_ton').val(data.commission_amount_per_ton);
+                $('#commission').val(data.commission);
+                
+                // Additional Info
+                $('textarea[name="additional_info"]').val(data.additional_info);
+                
+                // Packing Items
+                if (data.packing_items && data.packing_items.length > 0) {
+                    $('#packingItems').empty();
+                    data.packing_items.forEach(function(item, index) {
+                        addNewPackingItemWithData(item, index);
+                    });
+                }
+            });
+        }
+    });
+
+    function addNewPackingItemWithData(item, index) {
+        var firstRowTemplate = `
+            <tr class="packing-item">
+                <td class="p-2">
+                    <select name="packing_items[${index}][bag_type_id]" class="form-control select2">
+                        <option value="">Select Bag Type</option>
+                        @foreach ($bagTypes as $bagType)
+                            <option value="{{ $bagType->id }}">{{ $bagType->name }}</option>
+                        @endforeach
+                    </select>
+                </td>
+                <td class="p-2">
+                    <select name="packing_items[${index}][bag_packing_id]" class="form-control select2">
+                        <option value="">Packing</option>
+                        @foreach ($bagPackings as $packing)
+                            <option value="{{ $packing->id }}">{{ $packing->name }}</option>
+                        @endforeach
+                    </select>
+                </td>
+                <td class="p-2">
+                    <input type="number" name="packing_items[${index}][bag_size]" class="form-control bag-size" step="0.01" value="${item.bag_size || 0}" min="0">
+                </td>
+                <td class="p-2">
+                    <input type="number" name="packing_items[${index}][metric_tons]" class="form-control metric-tons" value="${item.metric_tons || 0}" step="0.001" min="0">
+                </td>
+                <td class="p-2" style="display: none;">
+                    <input type="number" name="packing_items[${index}][maunds]" class="form-control maunds" value="${item.maunds || 0}" step="0.01" min="0">
+                </td>
+                <td class="p-2" style="display: none;">
+                    <input type="number" name="packing_items[${index}][total_kgs]" class="form-control total-kgs" value="${item.total_kgs || 0}" readonly>
+                </td>
+                <td class="p-2">
+                    <input type="number" name="packing_items[${index}][no_of_bags]" class="form-control no_of_bags" value="${item.no_of_bags || 0}" readonly>
+                </td>
+                <td class="p-2">
+                    <input type="number" name="packing_items[${index}][rate]" class="form-control rates" value="${item.rate || 0}" step="0.01" min="0">
+                </td>
+                <td class="p-2" style="display: none;">
+                    <input type="number" name="packing_items[${index}][rate_per_maund]" class="form-control rates_mnd" value="${item.rate_per_maund || 0}" step="0.01" min="0">
+                </td>
+                <td class="p-2">
+                    <input type="number" name="packing_items[${index}][amount]" class="form-control amount" value="${item.amount || 0}" min="0" readonly>
+                </td>
+                <td class="p-2">
+                    <input type="number" name="packing_items[${index}][amount_pkr]" class="form-control amount_pkr" value="${item.amount_pkr || 0}" min="0" readonly>
+                </td>
+                <td class="text-center p-2">
+                    <button type="button" class="btn btn-sm btn-danger remove-packing-item">
+                        <i class="ft-trash-2"></i>
+                    </button>
+                </td>
+            </tr>`;
+        
+        var $newRow = $(firstRowTemplate);
+        
+        // Set dropdown values
+        $newRow.find('select[name*="bag_type_id"]').val(item.bag_type_id);
+        $newRow.find('select[name*="bag_packing_id"]').val(item.bag_packing_id);
+        
+        $('#packingItems').append($newRow);
+        $newRow.find('.select2').select2({ width: '100%' });
+        
+        // Trigger calculation for the row
+        calculateRowAmount($newRow);
+    }
 
     // Packing items buttons
     $('#addPackingItem').click(function() { addNewPackingItem(); });

@@ -25,6 +25,10 @@ class Quotation extends Model
         'company_location_ids' => 'array',
         'arrival_location_ids' => 'array',
         'arrival_sub_location_ids' => 'array',
+        'commission_percentage' => 'float',
+        'commission_amount_per_ton' => 'float',
+        'commission' => 'float',
+        'total_amount' => 'float',
     ];
 
     public function buyer()

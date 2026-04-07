@@ -1,297 +1,156 @@
+<div id="modal_purchase_comparison_main">
  <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-quotation') }}" />
  {{-- <input type="hidden" name="data_id" value="{{ $purchaseRequest->purchase_quotation->id }}"> --}}
  {{-- <input type="hidden" name="purchase_request_data_id"
     value="{{ optional($purchaseRequest->quotation_data->first())->purchase_request_data_id }}"> --}}
 
- <div class="row form-mar">
-     <div class="col-md-3">
-         <div class="form-group">
-             <label>Purchase Request:</label>
-             <select readonly class="form-control" onchange="get_purchase(this.value)" name="purchase_request_id">
-                 <option value="{{ optional($purchaseRequest)->id }}">
-                     {{ optional($purchaseRequest)->purchase_request_no }}
-                 </option>
-             </select>
-         </div>
-     </div>
-     <div class="col-md-3">
-         <div class="form-group">
-             <label>Location:</label>
-             <select disabled name="company_location" id="company_location_id" class="form-control select2">
-                 <option value="">Select Location</option>
-                 @foreach (get_locations() as $loc)
-                     <option
-                         {{ optional($purchaseRequest)->location_id == $loc->id ? 'selected' : '' }}
-                         value="{{ $loc->id }}">{{ $loc->name }}</option>
-                 @endforeach
-                 <input type="hidden" name="location_id"
-                     value="{{ optional($purchaseRequest)->location_id }}" id="location_id">
-             </select>
-         </div>
-     </div>
-     <div class="col-md-3">
-        <div class="form-group">
-            <label>Quotation Date:</label>
-            <input readonly type="date" id="purchase_date"
-                value="{{ optional($PurchaseQuotation)->quotation_date }}" name="purchase_date"
-                class="form-control">
-        </div>
-    </div>
-
+<div class="row form-mar">
     <div class="col-md-3">
         <div class="form-group">
-            <label>Reference No:</label>
-            <select readonly class="form-control" name="purchase_quotation_id">
-                <option value="{{ $PurchaseQuotation->id }}">
-                    {{ optional($PurchaseQuotation)->purchase_quotation_no }}</option>
+            <label>Purchase Request:</label>
+            <input type="text" readonly class="form-control" value="{{ $purchaseRequest->purchase_request_no }}">
+            <input type="hidden" id="filter_pr_id" value="{{ $purchaseRequest->id }}">
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="form-group">
+            <label>Filter by Supplier:</label>
+            <select id="filter_supplier" class="form-control select2" multiple onchange="applyFilters()">
+                @php
+                    $allSuppliers = \App\Models\Master\Supplier::whereIn('id', 
+                        \App\Models\Procurement\Store\PurchaseQuotationData::whereIn('purchase_request_data_id', 
+                            $purchaseRequest->PurchaseData->pluck('id')
+                        )->pluck('supplier_id')
+                    )->get();
+                @endphp
+                @foreach ($allSuppliers as $supplier)
+                    <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
+                @endforeach
             </select>
         </div>
     </div>
-
-     <div class="col-md-3">
-            <div class="form-group">
-                <label class="form-label">Supplier:</label>
-                <select disabled id="supplier_id" name="supplier_id" class="form-control item-select select2">
-                    <option value="">Select Vendor</option>
-                    @foreach (get_supplier() as $supplier)
-                        <option value="{{ $supplier->id }}"
-                        {{ $supplier->id == $PurchaseQuotation->supplier_id ? 'selected' : '' }}>
-                            {{ $supplier->name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
+    <div class="col-md-3">
+        <div class="form-group">
+            <label>Filter by Category:</label>
+            <select id="filter_category" class="form-control select2" multiple onchange="applyFilters()">
+                @foreach ($categories as $cat)
+                    <option value="{{ $cat->id }}">{{ $cat->name }}</option>
+                @endforeach
+            </select>
         </div>
-     <div class="col-xs-12 col-sm-12 col-md-12">
-         <div class="form-group">
-             <label>Description (Optional):</label>
-             <textarea readonly name="description" id="description" placeholder="Description" class="form-control">{{ $purchaseRequest->description }}</textarea>
-         </div>
-     </div>
- </div>
+    </div>
+    <div class="col-md-3">
+        <div class="form-group">
+            <label>Filter by Location:</label>
+            <select id="filter_location" class="form-control select2" multiple onchange="applyFilters()">
+                @foreach (get_locations() as $loc)
+                    <option value="{{ $loc->id }}">{{ $loc->name }}</option>
+                @endforeach
+            </select>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="form-group">
+            <label>Status Filter:</label>
+            <select id="filter_status" class="form-control select2" multiple onchange="applyFilters()">
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+                <option value="neglected">Neglected</option>
+                <option value="returned">Returned</option>
+            </select>
+        </div>
+    </div>
+</div>
+<div id="comparison_table_container">
  <div class="row form-mar">
      <div class="col-md-12">
          <div style="overflow-x: auto; white-space: nowrap; width: 100%;">
-             <table class="table table-bordered" id="purchaseRequestTable">
-                 <thead>
-                     <tr>
-                          <th style="width: 50px; min-width: 50px; vertical-align: middle !important;">
-                              <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
-                                  <input type="checkbox" id="check-all" class="form-check-input" style="cursor: pointer; transform: scale(1.2); margin: 0;">
-                              </div>
-                          </th>
-                         <th style="min-width: 250px;">PQ No.</th>
-                         <th style="min-width: 300px;">Supplier</th>
-                         <th style="min-width: 350px;">Item</th>
-                         <th style="min-width: 220px;">Job Order</th>
-                         <th style="min-width: 120px;">Qty</th>
+            <table class="table table-bordered" id="purchaseRequestTable">
+                <thead>
+                    <tr>
+                        <th style="min-width: 250px;">Item</th>
+                        <th style="min-width: 100px;">UOM</th>
+                        <th style="min-width: 100px;">Req. Qty</th>
+                        <th style="min-width: 250px;">Supplier</th>
+                        <th style="min-width: 150px;">PQ No</th>
+                        <th style="min-width: 100px;">Quoted Qty</th>
+                        <th style="min-width: 120px;">Rate</th>
+                        <th style="min-width: 120px;">Amount</th>
+                        <th style="min-width: 150px;">Delivery Date</th>
+                        <th style="min-width: 200px;">Job Order</th>
+                        <th style="min-width: 120px;">Status</th>
+                        <th style="min-width: 200px;">Remarks</th>
+                    </tr>
+                </thead>
+                <tbody id="purchaseRequestBody">
+                    @forelse ($groupedItems ?? [] as $prDataId => $group)
+                        @foreach ($group['quotations'] as $index => $data)
+                            <tr id="row_{{ $prDataId }}_{{ $index }}" 
+                                class="quotation-row"
+                                data-pr-data-id="{{ $prDataId }}"
+                                data-category-id="{{ $data->category_id }}"
+                                data-supplier-id="{{ $data->supplier_id }}"
+                                data-status="{{ strtolower($data->am_approval_status) }}"
+                                data-pr-qty="{{ $group['pr_data']->qty ?? 0 }}"
+                                data-already-approved="{{ $group['pr_data']->purchase_quotation_data()->where('am_approval_status', 'approved')->sum('qty') }}"
+                                data-item-name="{{ $data->item->name ?? 'Item' }}"
+                                data-row-qty="{{ $data->qty }}">
 
-                         <th style="min-width: 140px;">Rate</th>
-                         <th style="min-width: 160px;">Total Amount</th>
-                         <th style="min-width: 120px;">Item uom</th>
-                         <th class="col-sm-3 bag-only">Min Weight (KG)</th>
-                         <th class="col-sm-3 bag-only">Brand</th>
-                         <th class="col-sm-3 bag-only">Color</th>
-                         <th class="col-sm-3 bag-only">Cons./sq. in.</th>
-                         <th class="col-sm-3 bag-only">Size</th>
-                         <th class="col-sm-3 bag-only">Stitching</th>
-                         <th class="col-sm-3 bag-only">Micron</th>
-                         <th class="col-sm-3 bag-only">Printing Sample</th>
-                         <th>Remarks</th>
-                         <th>Status</th>
-                     </tr>
-                 </thead>
-                 <tbody id="purchaseRequestBody">
-                     @forelse ($PurchaseQuotationData ?? [] as $key => $data)
-                         <tr id="row_{{ $key }}">
-                              <td style="vertical-align: middle !important;">
-                                  <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
-                                      <input type="checkbox" class="form-check-input item-checkbox" style="cursor: pointer; transform: scale(1.2); margin: 0;">
-                                  </div>
-                              </td>
-                             <td style="width: 30%">
-                                 <input type="hidden" name="data_id[]" value="{{ $data->id }}">
-                                 <input style="width: 100%" type="text" readonly
-                                     value="{{ $data->purchase_quotation->purchase_quotation_no ?? '-' }}"
-                                     id="purchase_quotation_no_{{ $key }}" class="form-control">
-                                 <input type="hidden" name="purchase_quotation_no[]"
-                                     value="{{ $data->purchase_quotation->purchase_quotation_no ?? '' }}">
-                             </td>
-                             <td style="width: 30%">
-                                 <select style="width: 100px;" id="supplier_id_{{ $key }}"
-                                     name="supplier_id[]" disabled class="form-control item-select select2"
-                                     data-index="{{ $key }}">
-                                     <option value="">Select Vendor</option>
-                                     @foreach (get_supplier() as $supplier)
-                                         <option value="{{ $supplier->id }}" @selected($data->supplier_id == $supplier->id)>
-                                             {{ $supplier->name }}
-                                         </option>
-                                     @endforeach
-                                 </select>
-                             </td>
-                             <td style="width: 30%">
-                                 <select style="width: 100px;" id="item_id_{{ $key }}"
-                                     onchange="get_uom({{ $key }})" disabled
-                                     class="form-control item-select select2" data-index="{{ $key }}">
-                                     @foreach (get_product_by_id($data->item_id) as $item)
-                                         <option data-uom="{{ $item->unitOfMeasure->name ?? '' }}"
-                                             value="{{ $item->id }}"
-                                             {{ $item->id == $data->item_id ? 'selected' : '' }}>
-                                             {{ $item->name }}
-                                         </option>
-                                     @endforeach
-                                 </select>
-                                 <input type="hidden" name="item_id[]" value="{{ $data->item_id }}">
-                             </td>
-
-                             <td style="width: 30%">
-                                 <select class="form-control select2" multiple disabled style="width: 100%">
-                                     @foreach($data->purchase_request?->JobOrder ?? [] as $jo)
-                                         <option selected>{{ $jo->job_order_data->job_order_no ?? '' }}</option>
-                                     @endforeach
-                                 </select>
-                             </td>
-
-
-
-
-                             <td style="width: 30%">
-                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
-                                     disabled onblur="calc({{ $key }})" value="{{ $data->qty }}"
-                                     id="qty_{{ $key }}" class="form-control" step="0.01"
-                                     min="0">
-                                 <input type="hidden" name="qty[]" value="{{ $data->qty }}">
-                             </td>
-                             <td style="width: 30%">
-                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
-                                     onblur="calc({{ $key }})" name="rate[]" value="{{ $data->rate }}"
-                                     disabled id="rate_{{ $key }}" class="form-control" step="0.01"
-                                     min="{{ $key }}">
-                             </td>
-                             <td style="width: 30%">
-                                 <input style="width: 100px" type="number" onkeyup="calc({{ $key }})"
-                                     onblur="calc({{ $key }})" name="amount[]"
-                                     value="{{ (int) $data->rate * (int) $data->qty }}" readonly
-                                     id="total_{{ $key }}" class="form-control" step="0.01"
-                                     min="{{ $key }}">
-                             </td>
-                             <td style="width: 30%">
-                                 <input style="width: 100px" type="text" value="{{ get_uom($data->item_id) }}"
-                                     onkeyup="calc({{ $key }})" disabled onblur="calc({{ $key }})"
-                                     id="uom{{ $key }}" class="form-control"
-                                     step="0.01" min="0">
-                             </td>
-
-
-                             <td style="width: 30%" class="bag-only">
-                                 <input style="width: 100px" type="number" readonly
-                                     value="{{ $data->purchase_request?->min_weight ?? null }}"
-                                     id="min_weight_{{ $key }}" class="form-control" step="0.01" min="0">
-                                 <input type="hidden" name="min_weight[]"
-                                     value="{{ $data->purchase_request?->min_weight ?? null }}">
-                             </td>
-                             <td style="width: 30%" class="bag-only">
-                                 <input style="width: 100px" type="text" readonly
-                                     value="{{ getBrandById($data->purchase_request?->brand_id ?? null)?->name ?? null }}"
-                                     id="brand_{{ $key }}" class="form-control">
-                                 <input type="hidden" name="brand[]"
-                                     value="{{ $data->purchase_request?->brand_id ?? null }}">
-                             </td>
-                             <td style="width: 30%" class="bag-only">
-                                 <input style="width: 100px" type="text" readonly
-                                     value="{{ getColorById($data->purchase_request?->color ?? null)?->color ?? null }}"
-                                     id="color_{{ $key }}" class="form-control">
-                                 <input type="hidden" name="color[]"
-                                     value="{{ $data->purchase_request?->color ?? null }}">
-                             </td>
-
-                             <td style="width: 30%" class="bag-only">
-                                 <input style="width: 100px" type="number" readonly
-                                     value="{{ $data->purchase_request?->construction_per_square_inch ?? null }}"
-                                     id="construction_{{ $key }}" class="form-control" step="0.01"
-                                     min="0">
-                                 <input type="hidden" name="construction_per_square_inch[]"
-                                     value="{{ $data->purchase_request?->construction_per_square_inch ?? null }}">
-                             </td>
-                             <td style="width: 30%" class="bag-only">
-                                 <input style="width: 100px" type="text" readonly
-                                     value="{{ getSizeById($data->purchase_request?->size ?? null)?->size ?? null }}"
-                                     id="size_{{ $key }}" class="form-control">
-                                 <input type="hidden" name="size[]"
-                                     value="{{ $data->purchase_request?->size ?? null }}">
-                             </td>
-
-                               <td style="width: 10%" class="bag-only">
-                                    <select class="form-control select2" multiple disabled style="width: 120px">
-                                    @foreach(getStitchingsByIds($data?->purchase_request->stitching ?? "") as $stitching)
-                                        <option value="{{ $stitching->id }}" selected>{{ $stitching->name }}</option>
-                                    @endforeach
-                                </select>
-                                    <input type="hidden" name="stitching[]"
-                                        value="{{ $data->purchase_request?->stitching ?? null }}">
-                                </td>
-
-                             <td style="width: 30%" class="bag-only">
-                                 <input style="width: 100px" type="text" readonly
-                                     value="{{ $data->purchase_request?->micron ?? null }}"
-                                     id="micron_{{ $key }}" class="form-control">
-                                 <input type="hidden" name="micron[]"
-                                     value="{{ $data->purchase_request?->micron ?? null }}">
-                             </td>
-                            <td style="width:150px;" class="bag-only">
-                                <input type="file" name="printing_sample[]" id="printing_sample_{{ $key }}" disabled class="form-control" accept="image/*,application/pdf">
-                                @if (!empty($data->purchase_request->printing_sample))
-                                    @foreach((array)$data->purchase_request->printing_sample as $sample)
-                                        <small class="d-block">
-                                            <a href="{{ asset('storage/' . $sample) }}" target="_blank">
-                                                View existing file
-                                            </a>
-                                        </small>
-                                    @endforeach
+                                @if ($index === 0)
+                                    <td rowspan="{{ $group['rowspan'] }}" style="vertical-align: middle;">
+                                        {{ $data->item->name ?? '-' }}
+                                    </td>
+                                    <td rowspan="{{ $group['rowspan'] }}" style="vertical-align: middle;">
+                                        {{ get_uom($data->item_id) }}
+                                    </td>
+                                    <td rowspan="{{ $group['rowspan'] }}" style="vertical-align: middle;">
+                                        {{ $group['pr_data']->qty ?? 0 }}
+                                    </td>
                                 @endif
-                            </td>
 
+                                <td class="{{ $index === 0 ? 'table-success' : '' }}" style="border-right: 1px solid #ddd;">{{ $data->supplier->name ?? '-' }}</td>
+                                <td class="{{ $index === 0 ? 'table-success' : '' }}">{{ $data->purchase_quotation->purchase_quotation_no ?? '-' }}</td>
+                                <td class="{{ $index === 0 ? 'table-success' : '' }}">{{ $data->qty }}</td>
+                                <td class="{{ $index === 0 ? 'table-success' : '' }}"><strong>{{ $data->rate }}</strong></td>
+                                <td class="{{ $index === 0 ? 'table-success' : '' }}">{{ number_format($data->qty * $data->rate, 2) }}</td>
+                                <td class="{{ $index === 0 ? 'table-success' : '' }}">{{ $data->delivery_date ?? '-' }}</td>
 
+                                @if ($index === 0)
+                                    <td rowspan="{{ $group['rowspan'] }}" style="vertical-align: middle;">
+                                        @foreach($group['pr_data']->JobOrder ?? [] as $jo)
+                                            <span class="badge badge-light border">{{ $jo->job_order_data->job_order_no ?? '' }}</span><br>
+                                        @endforeach
+                                    </td>
+                                @endif
 
-
-                             <td style="width: 30%">
-                                 <input style="width: 100px" type="text" readonly value="{{ $data->remarks }}"
-                                     id="remark_{{ $key }}" class="form-control">
-                                 <input type="hidden" name="remarks[]" value="{{ $data->remarks }}">
-                             </td>                          
-                             <td>
-                                 @php
-                                     $badgeClass = match (strtolower($data->am_approval_status)) {
-                                         'approved' => 'badge-success',
-                                         'rejected' => 'badge-danger',
-                                         'neglected' => 'badge-warning',
-                                         'pending' => 'badge-warning',
-                                         'returned' => 'badge-info',
-                                         default => 'badge-secondary',
-                                     };
-                                     @endphp
-                                     <span class="badge {{ $badgeClass }}">
-                                         {{ $data->am_approval_status }}
-                                     </span>
-                             </td>
-                             </td>
-                         </tr>
-                     @empty
-                         <tr>
-                             <td colspan="7" class="text-center text-muted">No pending quotations against
-                                 {{ $purchaseRequest->purchase_request_no }}.</td>
-                         </tr>
-                     @endforelse
-                 </tbody>
-
-
-             </table>
+                                <td>
+                                    @php
+                                        $badgeClass = match (strtolower($data->am_approval_status)) {
+                                            'approved' => 'badge-success',
+                                            'rejected' => 'badge-danger',
+                                            'pending' => 'badge-warning',
+                                            default => 'badge-secondary',
+                                        };
+                                    @endphp
+                                    <span class="badge {{ $badgeClass }}">{{ $data->am_approval_status }}</span>
+                                </td>
+                                <td>{{ $data->remarks ?? '-' }}</td>
+                            </tr>
+                        @endforeach
+                    @empty
+                        <tr>
+                            <td colspan="13" class="text-center text-muted">No quotation data available.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
          </div>
      </div>
  </div>
  </div>
  <input type="hidden" id="rowCount" value="0">
- @if ($PurchaseQuotationData->isNotEmpty() && request()->routeIs('store.purchase-quotation.comparison-approvals'))
+ @if (isset($PurchaseQuotationData) && $PurchaseQuotationData->isNotEmpty() && request()->routeIs('store.purchase-quotation.comparison-approvals'))
      <div class="row">
          <div class="col-12">
              <x-approval-status :model="$data1" />
@@ -323,6 +182,49 @@
               $('.item-checkbox').prop('checked', $(this).prop('checked'));
           });
      });
+
+     function applyFilters() {
+          let prId = $('#filter_pr_id').val();
+          let suppliers = $('#filter_supplier').val();
+          let categories = $('#filter_category').val();
+          let statuses = $('#filter_status').val();
+          let locations = $('#filter_location').val();
+
+          $.ajax({
+              url: '{{ route('store.purchase-quotation.dataForComparison', '') }}/' + prId,
+              type: 'GET',
+              data: {
+                  supplier_ids: suppliers,
+                  category_ids: categories,
+                  statuses: statuses,
+                  location_ids: locations
+              },
+              beforeSend: function() {
+                  $('#comparison_table_container').css('opacity', '0.5');
+              },
+              success: function(response) {
+                  // Resilient way to find the container in the response
+                  let $newDom = $('<div>').append($.parseHTML(response));
+                  let newContent = $newDom.find('#comparison_table_container').html();
+                  
+                  if (newContent) {
+                      $('#comparison_table_container').html(newContent).css('opacity', '1');
+                  } else {
+                      console.error('Failed to find comparison_table_container in response');
+                      $('#comparison_table_container').css('opacity', '1');
+                  }
+                  
+                  // Re-initialize select2 if any was in the container (usually not, but safe)
+                  $('.select2').select2({
+                      placeholder: 'Please Select',
+                      width: '100%'
+                  });
+              },
+              error: function() {
+                  $('#comparison_table_container').css('opacity', '1');
+              }
+          });
+      }
 
     rowIndex = 1;
 
@@ -469,4 +371,5 @@
              $('.bag-only').hide();
          }
      }
- </script>
+  </script>
+</div>

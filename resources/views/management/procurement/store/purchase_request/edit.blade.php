@@ -7,7 +7,9 @@
         width: 100% !important;
     }
 </style>
-<form action="{{ route('store.purchase-request.update', $purchaseRequest->id) }}" method="POST" id="ajaxSubmit"
+<input type="hidden" name="category_id" value="{{ $purchaseRequest->category_id }}" id="category_id_value" />
+        
+<form style="overflow-x: hidden;" action="{{ route('store.purchase-request.update', $purchaseRequest->id) }}" method="POST" id="ajaxSubmit"
     autocomplete="off">
     @csrf
     @method('PUT')
@@ -52,7 +54,6 @@
                 </select>
             </div>
         </div>
-
         <div class="col-md-4 header-conditional job-order-section" {!! $purchaseRequest->category_id == 38 ? '' : 'style="display: none;"' !!}>
             <div class="form-group">
                 <label class="form-label">Job Orders:</label>
@@ -120,7 +121,8 @@
                 <th style="min-width: 150px;">Qty</th>
                 <th class="bag-only" style="min-width: 450px;">Job Orders</th>
                 <th class="bag-only" style="min-width: 300px;">Brands</th>
-                <th class="bag-only" style="min-width: 200px;">Min Weight (KG)</th>
+                <th class="bag-only" style="min-width: 200px;">Min Weight (gm)</th>
+                <th class="bag-only" style="min-width: 150px;">Tolerance</th>
                 <th class="bag-only" style="min-width: 300px;">Color</th>
                 <th class="bag-only" style="min-width: 300px;">Cons./sq. in.</th>
                 <th class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">Size</th>
@@ -218,6 +220,9 @@
                
                 <td class="bag-only" style="min-width: 200px;"><input type="number" name="min_weight[]" id="min_weight_{{ $rowId }}" class="form-control"
                         step="0.01" min="0" value="{{ $item->min_weight }}" placeholder="Min Weight"></td>
+
+                <td class="bag-only" style="min-width: 150px;"><input type="text" name="tolerance[]" id="tolerance_{{ $rowId }}" class="form-control"
+                        value="{{ $item->tolerance }}" placeholder="Tolerance"></td>
 
            
                 <td class="bag-only" style="min-width: 300px;">
@@ -495,6 +500,14 @@
                             </div>
                         </div>
                     </td>
+                    <td style="min-width: 150px;" class="bag-only">
+                        <div class="loop-fields">
+                            <div class="form-group mb-0">
+                                <input type="text" name="tolerance[]" id="tolerance_${index}" class="form-control"
+                                    placeholder="Tolerance">
+                            </div>
+                        </div>
+                    </td>
                     <td class="bag-only" style="min-width: 300px;"><select name="color[]" id="color_${index}" class="form-control item-select color-select">
                         <option value="">Select Color</option>
                         @foreach(getAllColors() ?? [] as $color)
@@ -630,8 +643,9 @@
         let input = $(this);
         let val = parseFloat(input.val()) || 0;
         let balance = parseFloat(input.data('balance')) || 0;
+        let category_id = $("#category_id_value").val();
 
-        if (val > balance) {
+        if (val > balance && category_id == 38) {
             alert("Quantity cannot exceed available Job Order balance (" + balance + ")");
             input.val(balance);
         }
