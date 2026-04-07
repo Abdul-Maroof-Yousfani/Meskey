@@ -35,7 +35,8 @@ class PurchaseRequestData extends Model
         'is_single_job_order',
         'net_amount',
         'packing_id',
-        'module_type'
+        'module_type',
+        'tolerance_percentage'
     ];
 
     protected $casts = [

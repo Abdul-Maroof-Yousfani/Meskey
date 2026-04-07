@@ -76,14 +76,19 @@
             </td>
 
             <td class="bag-only" style="min-width: 200px;">
-                <input type="number" name="min_weight[]" id="min_weight_{{ $i }}" class="form-control"
+                <input type="number" name="min_weight[]" id="min_weight_{{ $i }}" class="form-control min-weight-input"
                     step="0.01" min="0" value="{{ $packing_item->min_weight_empty_bags }}"
                     placeholder="Min Weight">
             </td>
 
             <td class="bag-only" style="min-width: 150px;">
-                <input type="text" name="tolerance[]" id="tolerance_{{ $i }}" class="form-control"
-                    placeholder="Tolerance">
+                <input type="text" name="tolerance[]" id="tolerance_{{ $i }}" class="form-control tolerance-input"
+                    placeholder="Tolerance" readonly>
+            </td>
+
+            <td class="bag-only" style="min-width: 150px;">
+                <input type="number" name="tolerance_percentage[]" id="tolerance_percentage_{{ $i }}" class="form-control tolerance-percentage-input"
+                    step="0.01" min="0" max="100" placeholder="Tol. %">
             </td>
 
             <td class="bag-only" style="min-width: 300px;">
@@ -222,14 +227,19 @@
             </td>
 
             <td class="bag-only" style="min-width: 200px;">
-                <input type="number" name="min_weight[]" id="min_weight_{{ $i }}" class="form-control"
+                <input type="number" name="min_weight[]" id="min_weight_{{ $i }}" class="form-control min-weight-input"
                     step="0.01" min="0" value="{{ $sub_packing_item->empty_bag_weight }}"
                     placeholder="Min Weight" style="width:100%;">
             </td>
 
             <td class="bag-only" style="min-width: 150px;">
-                <input type="text" name="tolerance[]" id="tolerance_{{ $i }}" class="form-control"
-                    placeholder="Tolerance" style="width:100%;">
+                <input type="text" name="tolerance[]" id="tolerance_{{ $i }}" class="form-control tolerance-input"
+                    placeholder="Tolerance" style="width:100%;" readonly>
+            </td>
+
+            <td class="bag-only" style="min-width: 150px;">
+                <input type="number" name="tolerance_percentage[]" id="tolerance_percentage_{{ $i }}" class="form-control tolerance-percentage-input"
+                    step="0.01" min="0" max="100" placeholder="Tol. %" style="width:100%;">
             </td>
 
             <td class="bag-only" style="min-width: 300px;">

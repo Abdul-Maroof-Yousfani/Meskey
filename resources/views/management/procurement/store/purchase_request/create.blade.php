@@ -108,6 +108,7 @@
                 <th class="bag-only" style="min-width: 300px;">Brands</th>
                 <th class="bag-only" style="min-width: 200px;">Min Weight (gm)</th>
                 <th class="bag-only" style="min-width: 150px;">Tolerance</th>
+                <th class="bag-only" style="min-width: 150px;">Tolerance %</th>
                 <th class="bag-only" style="min-width: 300px;">Color</th>
                 <th class="bag-only" style="min-width: 300px;">Cons./sq. in.</th>
                 <th class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">Size</th>
@@ -330,7 +331,7 @@
                     <td class="bag-only" style="min-width: 200px;">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
-                                <input type="number" name="min_weight[]" id="min_weight_${index}" class="form-control"
+                                <input type="number" name="min_weight[]" id="min_weight_${index}" class="form-control min-weight-input"
                                     step="0.01" min="0" placeholder="Min Weight">
                             </div>
                         </div>
@@ -338,8 +339,16 @@
                     <td class="bag-only" style="min-width: 150px;">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
-                                <input type="text" name="tolerance[]" id="tolerance_${index}" class="form-control"
-                                    placeholder="Tolerance">
+                                <input type="text" name="tolerance[]" id="tolerance_${index}" class="form-control tolerance-input"
+                                    placeholder="Tolerance" readonly>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="bag-only" style="min-width: 150px;">
+                        <div class="loop-fields">
+                            <div class="form-group mb-0">
+                                <input type="number" name="tolerance_percentage[]" id="tolerance_percentage_${index}" class="form-control tolerance-percentage-input"
+                                    step="0.01" min="0" max="100" placeholder="Tol. %">
                             </div>
                         </div>
                     </td>
@@ -497,5 +506,20 @@
         // Update live balance display
         let remaining = (balance - input.val()).toFixed(2);
         input.closest('td').find('.balance-span').text(remaining);
+    });
+
+    $(document).on('input', '.tolerance-percentage-input, .min-weight-input', function() {
+        let row = $(this).closest('tr');
+        let minWeight = parseFloat(row.find('.min-weight-input').val()) || 0;
+        let percentage = parseFloat(row.find('.tolerance-percentage-input').val()) || 0;
+        
+        if (percentage > 100) {
+            alert('Tolerance percentage cannot exceed 100%.');
+            row.find('.tolerance-percentage-input').val(100);
+            percentage = 100;
+        }
+
+        let tolerance = (minWeight * percentage / 100).toFixed(2);
+        row.find('.tolerance-input').val(tolerance);
     });
 </script>
