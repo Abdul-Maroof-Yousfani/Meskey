@@ -1900,7 +1900,7 @@ function jobOrderPackingBalanceAgainstPurchaseRequest($packing_id)
     $job_order_packing = JobOrderPackingItem::select("id", "total_bags")->find($packing_id);
 
         if(!$job_order_packing) {
-            dd($packing_id);
+            dd($packing_id, "packing");
         }
 
     return (($job_order_packing->total_bags) - $used_qty);
@@ -1919,7 +1919,7 @@ function jobOrderSubPackingBalanceAgainstPurchaseRequest($subpacking_id)
 
 
         if(!$job_order_sub_packing) {
-            dd($subpacking_id);
+            dd($subpacking_id, "subpacking");
         }
 
     return (($job_order_sub_packing->total_bags) - $used_qty);
