@@ -220,7 +220,7 @@
                 <td style="min-width: 150px;"><input onkeyup="calc(${index})" onblur="calc(${index})" style="width: 100%" type="number" name="rate[]" id="rate_${index}" class="form-control" step="0.01" min="0"></td>
                 <td style="min-width: 150px;"><input style="width: 100%" type="number" readonly name="total[]" id="total_${index}" class="form-control" step="0.01" min="0"></td>
                 <td style="min-width: 150px;"><input type="text" name="uom[]" id="uom_${index}" class="form-control uom" readonly></td>
-                <td style="min-width: 180px;"><input type="date" name="delivery_date[]" id="delivery_date_${index}" class="form-control" required></td>
+                <td style="min-width: 180px;"><input type="date" name="delivery_date[]" id="delivery_date_\${index}" class="form-control" min="{{ date('Y-m-d') }}" value="{{ date('Y-m-d') }}" required></td>
                 
                 <td class="bag-only" style="min-width: 200px;"></td>
                 <td class="bag-only" style="min-width: 150px;"></td>

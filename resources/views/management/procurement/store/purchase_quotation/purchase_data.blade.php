@@ -69,7 +69,8 @@
             <input type="hidden" name="uom[]" value="{{ get_uom($data->item_id) }}">
         </td>
         <td style="min-width: 180px;">
-            <input type="date" name="delivery_date[]" id="delivery_date_{{ $key }}" class="form-control" required>
+            <input type="date" name="delivery_date[]" id="delivery_date_{{ $key }}" 
+                class="form-control" min="{{ date('Y-m-d') }}" value="{{ date('Y-m-d') }}" required>
         </td>
         <td style="min-width: 200px;" class="bag-only">
            
