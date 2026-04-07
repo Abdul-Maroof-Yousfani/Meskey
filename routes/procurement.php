@@ -140,6 +140,7 @@ Route::prefix('store')->name('store.')->group(function () {
     Route::get('purchase-request-approvals/{id}', [StorePurchaseRequestController::class, 'manageApprovals'])->name('purchase-request.approvals');
     Route::get('get-unique-number/{locationId}/{contractDate}', [StorePurchaseRequestController::class, 'getNumber'])->name('get-unique-umber');
     Route::get('purchase-request-approve/{id}', [StorePurchaseRequestController::class, 'approve'])->name('purchase-request.approve');
+    Route::get('purchase-request/po-history/{id}', [StorePurchaseRequestController::class, 'getPoHistory'])->name('purchase-request.po-history');
 
     Route::resource('purchase-quotation', PurchaseQuotationController::class)->except(['show']);
     Route::post('get-purchase-quotation', [PurchaseQuotationController::class, 'getList'])->name('get.purchase-quotation');

@@ -50,7 +50,7 @@ class PurchaseRequestController extends Controller
      */
     public function getList(Request $request)
     {
-        $query = PurchaseRequestData::has('purchase_request')->with('purchase_request', 'category', 'item', 'approval')
+        $query = PurchaseRequestData::has('purchase_request')->with('purchase_request', 'category', 'item', 'approval', 'purchase_order_data')
             ->whereStatus(true);
 
         if ($request->has('search') && !empty($request->search)) {
@@ -626,6 +626,12 @@ class PurchaseRequestController extends Controller
         // $PurchaseRequestData = PurchaseRequestData::where('id', $id)->delete();
 
         return response()->json(['success' => 'Purchase Request deleted successfully.'], 200);
+    }
+
+    public function getPoHistory($id)
+    {
+        $purchaseRequestData = PurchaseRequestData::with(['purchase_order_data.purchase_order', 'purchase_order_data.supplier', 'item.unitOfMeasure'])->findOrFail($id);
+        return view('management.procurement.store.purchase_request.po_history', compact('purchaseRequestData'));
     }
 
     public function getNumber(Request $request, $locationId = null, $contractDate = null)
