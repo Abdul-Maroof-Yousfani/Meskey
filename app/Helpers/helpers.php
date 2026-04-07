@@ -1899,7 +1899,7 @@ function jobOrderPackingBalanceAgainstPurchaseRequest($packing_id)
         ->sum("qty");
     $job_order_packing = JobOrderPackingItem::select("id", "total_bags")->find($packing_id);
 
-    return ($job_order_packing->total_bags - $used_qty);
+    return ($job_order_packing?->total_bags ?? 0 - $used_qty);
 }
 
 function jobOrderSubPackingBalanceAgainstPurchaseRequest($subpacking_id)
