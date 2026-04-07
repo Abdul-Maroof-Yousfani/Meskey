@@ -9,6 +9,7 @@ use App\Models\Procurement\Store\DebitNoteData;
 use App\Models\Procurement\Store\PurchaseBill;
 use App\Models\Procurement\Store\PurchaseBillData;
 use App\Models\Procurement\Store\PurchaseOrderReceiving;
+use App\Models\Master\Supplier;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -21,23 +22,9 @@ class DebitNoteController extends Controller
         return view("management.procurement.store.debit-note.index");
     }
     public function create() {
-        $grns = PurchaseOrderReceiving::select("id", "purchase_order_receiving_no")
-                                        ->get();
-        
-        $grns = $grns->filter(function($grn) {
-            $purhase_bills = $grn->bills;
-            foreach($purhase_bills as $purhase_bill) {
-                foreach($purhase_bill->bill_data as $bill_data) {
-                    $remainingQty = purchaseBillDistribution($bill_data->id);
-                    if($remainingQty > 0) {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        });
+        $suppliers = Supplier::where('type', 'store_supplier')->select('id', 'name')->get();
        
-        return view("management.procurement.store.debit-note.create", compact("grns"));
+        return view("management.procurement.store.debit-note.create", compact("suppliers"));
     }
     public function store(DebitNoteRequest $request) {
         $debitNote = DebitNote::create([
@@ -126,12 +113,26 @@ class DebitNoteController extends Controller
     public function edit($id) {
         $debitNote = DebitNote::with(['debit_note_data.item', 'grn', 'bill'])->findOrFail($id);
 
-        // Get GRNs that have bills
-        $grns = PurchaseOrderReceiving::select("id", "purchase_order_receiving_no")
-                                        ->whereHas("bills")
-                                        ->get();
+        // Get suppliers that have GRNs with bills
+        $suppliers = Supplier::where('type', 'store_supplier')->select('id', 'name')->get();
 
+        // Get GRNs for the current supplier
+        $grns = PurchaseOrderReceiving::where('supplier_id', $debitNote->grn->supplier_id)
+                                        ->select("id", "purchase_order_receiving_no")
+                                        ->get();
         
+        $grns = $grns->filter(function($grn) {
+            $purhase_bills = $grn->bills;
+            foreach($purhase_bills as $purhase_bill) {
+                foreach($purhase_bill->bill_data as $bill_data) {
+                    $remainingQty = purchaseBillDistribution($bill_data->id);
+                    if($remainingQty > 0) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        });
 
         // Get bills for the current GRN
         $bills = PurchaseBill::select("id", "bill_no")
@@ -151,7 +152,28 @@ class DebitNoteController extends Controller
             $debitNoteItem->original_qty = $billData ? $billData->qty : 0;
         }
 
-        return view("management.procurement.store.debit-note.edit", compact("debitNote", "grns", "bills"));
+        return view("management.procurement.store.debit-note.edit", compact("debitNote", "grns", "bills", "suppliers"));
+    }
+
+    public function get_grns($supplier_id) {
+        $grns = PurchaseOrderReceiving::where('supplier_id', $supplier_id)
+                                        ->select("id", "purchase_order_receiving_no")
+                                        ->get();
+        
+        $grns = $grns->filter(function($grn) {
+            $purhase_bills = $grn->bills;
+            foreach($purhase_bills as $purhase_bill) {
+                foreach($purhase_bill->bill_data as $bill_data) {
+                    $remainingQty = purchaseBillDistribution($bill_data->id);
+                    if($remainingQty > 0) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        })->values();
+
+        return response()->json($grns);
     }
 
     public function getList() {

@@ -180,6 +180,7 @@ Route::prefix('store')->name('store.')->group(function () {
     Route::get("get-unique-number-purchase-bill/{locationId}/{contractDate}", [PurchaseBillController::class, "getNumber"])->name("purchase-bill.getNumber");
     Route::get("get-grns", [PurchaseBillController::class, "getGrns"])->name("get.grns");
    
+    Route::get("/debit-note/get-grns/{supplier_id}", [DebitNoteController::class, "get_grns"])->name("debit-note.get-grns");
     Route::get("/debit-note/get-bills/{grn_id}", [DebitNoteController::class, "get_bills"])->name("debit-note.get-bills");
     Route::get("/debit-note/get-bill-items/{bill_id}", [DebitNoteController::class, "get_bill_items"])->name("debit-note.get-bill-items");
     Route::get("/debit-note/get-number", [DebitNoteController::class, "get_number"])->name("debit-note.get-number");
