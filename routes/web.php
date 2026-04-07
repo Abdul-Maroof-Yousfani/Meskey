@@ -44,7 +44,7 @@ use App\Models\Sales\SecondWeighbridge;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Http\Request;
-use App\Models\JobOrderPackingItem;
+use App\Models\Production\JobOrder\JobOrderPackingItem;
 use App\Http\Controllers\Acl\{CompanyController, MenuController, UserController, RoleController};
 use App\Http\Controllers\ApprovalsModule\ApprovalController;
 use App\Http\Controllers\Arrival\ArrivalCustomSamplingController;
