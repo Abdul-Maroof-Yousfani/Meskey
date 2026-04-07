@@ -749,7 +749,7 @@ class JobOrderController extends Controller
         // Track how much "consumed" quantity is left to subtract from items sequentially
         $tempConsumed = $consumedMt;
 
-        $packingItems = $exportOrder->packingItems->map(function ($item) use (&$tempConsumed) {
+        $packingItems = $exportOrder->packingItems->sortBy('id')->map(function ($item) use (&$tempConsumed) {
             $originalMt = (float) $item->metric_tons;
             $originalBags = (int) $item->no_of_bags;
             
@@ -764,7 +764,7 @@ class JobOrderController extends Controller
             // Adjust no_of_bags proportionately if MT changed
             $remainingBagsInItem = $originalMt > 0 ? round(($remainingMtInItem / $originalMt) * $originalBags) : 0;
 
-            $subItems = $item->subItems->map(function ($sub) use ($originalMt, $remainingMtInItem) {
+            $subItems = $item->subItems->sortBy('id')->map(function ($sub) use ($originalMt, $remainingMtInItem) {
                 $subOriginalBags = (int) $sub->no_of_bags;
                 $subRemainingBags = $originalMt > 0 ? round(($remainingMtInItem / $originalMt) * $subOriginalBags) : 0;
 
@@ -805,6 +805,7 @@ class JobOrderController extends Controller
                 'stuffing_in_container' => $item->stuffing_in_container,
                 'no_of_containers'  => $item->no_of_containers,
                 'min_weight_empty_bags' => $item->min_weight_empty_bags,
+                'fumigation_company_id' => $item->fumigation_company_id,
                 'sub_items'         => $subItems,
             ];
         })->values();

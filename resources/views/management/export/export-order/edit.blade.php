@@ -1024,7 +1024,7 @@
                     row.find('select').val('');
                     row.find('.sub-packing-items-container').empty().attr('data-index', index);
                     row.find('.add-sub-packing-item').attr('data-index', index);
-                    container.append(row);
+                    row.appendTo(container);
                     row.find('.select2').select2({ width: '100%' });
                 }
 
@@ -1127,17 +1127,16 @@
             newRow.attr('data-index', rowCount);
             newRow.find('.card-header h6').text('Packing Row #' + (rowCount + 1));
             
-            // Clean Select2 before clearing
+            // Thorough Select2 Cleanup
             newRow.find('.select2-container').remove();
-            newRow.find('select').removeClass('select2-hidden-accessible').removeAttr('data-select2-id').show();
-            
-            // Generate unique names for inputs/selects to avoid conflict
-            newRow.find('input, select, textarea').each(function() {
-                var name = $(this).attr('name');
-                if (name) {
-                    name = name.replace(/\[\d+\]/, '[' + rowCount + ']');
-                    $(this).attr('name', name);
-                }
+            newRow.find('select').each(function() {
+                $(this).removeClass('select2-hidden-accessible');
+                $(this).removeAttr('data-select2-id');
+                $(this).removeAttr('aria-hidden');
+                $(this).removeAttr('tabindex');
+                $(this).val('');
+                $(this).show();
+                $(this).find('option').removeAttr('data-select2-id');
             });
 
             // Resets
@@ -1145,13 +1144,16 @@
             newRow.find('input[type="text"], input[type="date"]').val('');
             newRow.find('input[type="hidden"]').val('');
             
-            newRow.find('select').val('').trigger('change');
             newRow.find('.sub-packing-items-container').empty().attr('data-index', rowCount);
             newRow.find('.add-sub-packing-item').attr('data-index', rowCount);
             
             container.append(newRow);
-            newRow.find('.select2').select2({ width: '100%' });
+            
+            // Re-index names and indices
             reindexAll();
+            
+            // Initialize Select2 on the new row AFTER re-indexing to ensure correct internal mapping
+            newRow.find('.select2').select2({ width: '100%' });
         });
 
         $(document).off('click', '.remove-packing-item').on('click', '.remove-packing-item', function() {

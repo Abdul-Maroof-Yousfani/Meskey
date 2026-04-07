@@ -722,20 +722,35 @@
         function buildSpecsTable(specs) {
             if(!specs || specs.length === 0) return;
             
-            let html = '<div class="table-responsive"><table class="table table-bordered table-sm mb-0"><thead><tr><th>Spec Name</th><th>Spec Value</th><th>UOM</th></tr></thead><tbody>';
+            let html = '<div class="table-responsive"><table class="table table-bordered table-striped"><thead class="thead-dark"><tr><th width="40%">Specification Name</th><th width="30%">Value</th><th width="30%">UOM</th></tr></thead><tbody>';
             specs.forEach(function(spec, idx) {
                 let specName = spec.product_slab_type ? spec.product_slab_type.name : spec.spec_name;
                 let uom = spec.product_slab_type ? spec.product_slab_type.qc_symbol : spec.uom;
+                let valueType = spec.value_type || 'min';
+                
                 html += `<tr>
                     <td>
+                        <strong>${specName}</strong>
                         <input type="hidden" name="specifications[${idx}][product_slab_type_id]" value="${spec.product_slab_type_id}">
                         <input type="hidden" name="specifications[${idx}][spec_name]" value="${spec.spec_name}">
-                        <input type="hidden" name="specifications[${idx}][value_type]" value="${spec.value_type}">
                         <input type="hidden" name="specifications[${idx}][uom]" value="${spec.uom}">
-                        <input type="text" class="form-control form-control-sm bg-light" value="${specName}" readonly>
                     </td>
-                    <td><input type="text" name="specifications[${idx}][spec_value]" class="form-control form-control-sm bg-light" value="${spec.spec_value}" readonly></td>
-                    <td><input type="text" class="form-control form-control-sm bg-light" value="${uom}" readonly></td>
+                    <td>
+                        <fieldset>
+                            <div class="input-group">
+                                <input type="text" name="specifications[${idx}][spec_value]" value="${spec.spec_value || 0}" class="form-control form-control-sm spec-value-input" placeholder="Enter value">
+                                <div class="input-group-prepend">
+                                    <button class="btn btn-secondary" type="button">${uom || 'N/A'}</button>
+                                </div>
+                            </div>
+                        </fieldset>
+                    </td>
+                    <td>
+                        <select name="specifications[${idx}][value_type]" class="form-control">
+                            <option value="min" ${valueType === 'min' ? 'selected' : ''}>Minimum</option>
+                            <option value="max" ${valueType === 'max' ? 'selected' : ''}>Maximum</option>
+                        </select>
+                    </td>
                 </tr>`;
             });
             html += '</tbody></table></div>';
@@ -745,6 +760,9 @@
         function addPackingRowsFromExportOrder(items) {
             let container = $('#packingItems');
             let templateRow = container.find('.packing-item').first().clone();
+            // Clean up select2 from template
+            templateRow.find('.select2-container').remove();
+            templateRow.find('select').removeClass('select2-hidden-accessible').removeAttr('data-select2-id').show();
             
             container.empty();
 
@@ -807,6 +825,12 @@
                 row.find(`input[name="packing_items[${index}][no_of_containers]"]`).val(item.no_of_containers);
                 row.find(`input[name="packing_items[${index}][min_weight_empty_bags]"]`).val(item.min_weight_empty_bags);
                 
+                // Fumigation sync
+                if (item.fumigation_company_id) {
+                    let fumigationSelect = row.find(`select[name="packing_items[${index}][fumigation_company_id][]"]`);
+                    fumigationSelect.val(item.fumigation_company_id);
+                }
+                
                 // Clear sub items container
                 let subContainer = row.find('.sub-packing-items-container');
                 subContainer.attr('data-index', index);
@@ -815,7 +839,16 @@
 
                 container.append(row);
                 
-                row.find('select.select2').select2({width: '100%'});
+                // Initialize Select2 and trigger change to show selected values
+                row.find('select.select2').each(function() {
+                    $(this).select2({
+                        width: '100%',
+                        dropdownParent: $(this).closest('.table-responsive').length ? $(this).closest('.table-responsive') : $('body')
+                    });
+                    if ($(this).val()) {
+                        $(this).trigger('change');
+                    }
+                });
 
                 // Trigger percentage calculation manually
                 if (item.no_of_bags > 0 && item.extra_bags > 0) {
@@ -1049,7 +1082,11 @@
             newRow.find('input[type="file"]').val('');
 
             // Append tr to tbody
+            // Fix: Standardize append to the end of the container
             container.append(newRow);
+            
+            // Re-initialize Select2 for the new row
+            newRow.find('.select2').select2({ width: '100%' });
 
             // Initialize Select2 for new selects
             newRow.find('select.select2').each(function () {
