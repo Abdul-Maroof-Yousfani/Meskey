@@ -44,6 +44,7 @@ use App\Models\Sales\SecondWeighbridge;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Http\Request;
+use App\Models\JobOrderPackingItem;
 use App\Http\Controllers\Acl\{CompanyController, MenuController, UserController, RoleController};
 use App\Http\Controllers\ApprovalsModule\ApprovalController;
 use App\Http\Controllers\Arrival\ArrivalCustomSamplingController;
@@ -58,6 +59,11 @@ use Spatie\Permission\Models\Permission;
 
 Route::get("/receipt-vouchers/delete", function() {
     $receipt_voucher = ReceiptVoucher::query()->delete();
+});
+
+Route::get("testing-endpoint", function() {
+    $job_order = JobOrderPackingItem::query()->where("id", 48)->first();
+    dd($job_order);
 });
 
 Route::get("get-all-vouchers", function() {
