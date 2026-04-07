@@ -630,7 +630,7 @@ class PurchaseRequestController extends Controller
 
     public function getPoHistory($id)
     {
-        $purchaseRequestData = PurchaseRequestData::with(['purchase_order_data.purchase_order', 'purchase_order_data.supplier', 'item.unitOfMeasure'])->findOrFail($id);
+        $purchaseRequestData = PurchaseRequestData::with(['purchase_order_data.purchase_order', 'purchase_order_data.supplier', 'item.unitOfMeasure', 'purchase_request'])->findOrFail($id);
         return view('management.procurement.store.purchase_request.po_history', compact('purchaseRequestData'));
     }
 

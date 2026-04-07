@@ -3,8 +3,8 @@
         <div class="card card-custom">
             <div class="card-header flex-wrap border-0 pt-6 pb-0">
                 <div class="card-title">
-                    <h3 class="card-label">PO History for Item: <span class="text-primary">{{ $purchaseRequestData->item->name }}</span>
-                    <span class="d-block text-muted pt-2 font-size-sm">Original PR Qty: {{ $purchaseRequestData->qty }} {{ $purchaseRequestData->item->unitOfMeasure->name ?? '' }}</span></h3>
+                    <h3 class="card-label">PO Trail for PR: <span class="text-primary">#{{ $purchaseRequestData->purchase_request->purchase_request_no }}</span>
+                    <span class="d-block text-muted pt-2 font-size-sm">Item: <strong>{{ $purchaseRequestData->item->name }}</strong> | PR Qty: {{ $purchaseRequestData->qty }} {{ $purchaseRequestData->item->unitOfMeasure->name ?? '' }}</span></h3>
                 </div>
             </div>
             <div class="card-body">
