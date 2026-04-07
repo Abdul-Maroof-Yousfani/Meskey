@@ -617,7 +617,13 @@
                     <div class="col-md-4">
                         <div class="form-group">
                             <label>Fumigation By:</label>
-                            <input type="text" class="form-control" value="{{ is_array($item->fumigation_company_id) && count($item->fumigation_company_id) ? implode(', ', $item->fumigation_company_id) : '-' }}" readonly>
+                            @php
+                                $fNames = [];
+                                if (is_array($item->fumigation_company_id)) {
+                                    $fNames = $inspectionCompanies->whereIn('id', $item->fumigation_company_id)->pluck('name')->toArray();
+                                }
+                            @endphp
+                            <input type="text" class="form-control" value="{{ count($fNames) ? implode(', ', $fNames) : '-' }}" readonly>
                         </div>
                     </div>
                 </div>

@@ -887,20 +887,35 @@
         function buildSpecsTable(specs) {
             if(!specs || specs.length === 0) return;
             
-            let html = '<div class="table-responsive"><table class="table table-bordered table-sm mb-0"><thead><tr><th>Spec Name</th><th>Spec Value</th><th>UOM</th></tr></thead><tbody>';
+            let html = '<div class="table-responsive"><table class="table table-bordered table-striped"><thead class="thead-dark"><tr><th width="40%">Specification Name</th><th width="30%">Value</th><th width="30%">UOM</th></tr></thead><tbody>';
             specs.forEach(function(spec, idx) {
                 let specName = spec.product_slab_type ? spec.product_slab_type.name : spec.spec_name;
                 let uom = spec.product_slab_type ? spec.product_slab_type.qc_symbol : spec.uom;
+                let valueType = spec.value_type || 'min';
+
                 html += `<tr>
                     <td>
+                        <strong>${specName}</strong>
                         <input type="hidden" name="specifications[${idx}][product_slab_type_id]" value="${spec.product_slab_type_id}">
                         <input type="hidden" name="specifications[${idx}][spec_name]" value="${spec.spec_name}">
-                        <input type="hidden" name="specifications[${idx}][value_type]" value="${spec.value_type}">
                         <input type="hidden" name="specifications[${idx}][uom]" value="${spec.uom}">
-                        <input type="text" class="form-control form-control-sm bg-light" value="${specName}" readonly>
                     </td>
-                    <td><input type="text" name="specifications[${idx}][spec_value]" class="form-control form-control-sm bg-light" value="${spec.spec_value}" readonly></td>
-                    <td><input type="text" class="form-control form-control-sm bg-light" value="${uom}" readonly></td>
+                    <td>
+                        <fieldset>
+                            <div class="input-group">
+                                <input type="text" name="specifications[${idx}][spec_value]" value="${spec.spec_value || 0}" class="form-control form-control-sm spec-value-input" placeholder="Enter value">
+                                <div class="input-group-prepend">
+                                    <button class="btn btn-secondary" type="button">${uom || 'N/A'}</button>
+                                </div>
+                            </div>
+                        </fieldset>
+                    </td>
+                    <td>
+                        <select name="specifications[${idx}][value_type]" class="form-control">
+                            <option value="min" ${valueType === 'min' ? 'selected' : ''}>Minimum</option>
+                            <option value="max" ${valueType === 'max' ? 'selected' : ''}>Maximum</option>
+                        </select>
+                    </td>
                 </tr>`;
             });
             html += '</tbody></table></div>';
@@ -980,6 +995,9 @@
 
                 container.append(row);
                 
+                // Clean up any select2 leftovers and re-initialize
+                row.find('.select2-container').remove();
+                row.find('select').removeClass('select2-hidden-accessible').removeAttr('data-select2-id').show();
                 row.find('select.select2').select2({width: '100%'});
 
                 // Trigger percentage calculation manually
@@ -1068,13 +1086,16 @@
             var originalValues = {};
             firstItem.find('select').each(function () {
                 var $select = $(this);
-                // Temporarily uninitialize Select2 to get clean value
                 originalValues[$select.attr('name')] = $select.val();
             });
 
             // Clone the item
             var newItem = firstItem.clone(); 
-
+            
+            // Clean up select2 from clone
+            newItem.find('.select2-container').remove();
+            newItem.find('select').removeClass('select2-hidden-accessible').removeAttr('data-select2-id').show();
+            newItem.find('option').removeAttr('data-select2-id');
             // Update indexes
             var newIndex = $('.packing-item').length;
             newItem.find('input, select').each(function () {
