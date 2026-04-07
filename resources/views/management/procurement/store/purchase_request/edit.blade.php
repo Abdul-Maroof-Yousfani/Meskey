@@ -164,25 +164,30 @@
                         value="{{ $item->item->unitOfMeasure->name ?? '' }}"></td>
 
                 <td style="min-width: 150px;">
+                    @php
+                        $jo_data = null;
+                        if($item->is_single_job_order == 1) {
+                            if($item->module_type == 'packing') {
+                                $jo_data = \App\Models\Production\JobOrder\JobOrderPackingItem::find($item->packing_id);
+                            } else if($item->module_type == 'subpacking') {
+                                $jo_data = \App\Models\Production\JobOrder\JobOrderPackingSubItem::find($item->packing_id);
+                            }
+                        }
+                        $jo_balance = 0;
+                        if($jo_data) {
+                            if($item->module_type == 'packing') {
+                                $jo_balance = jobOrderPackingBalanceAgainstPurchaseRequest($item->packing_id);
+                            } else {
+                                $jo_balance = jobOrderSubPackingBalanceAgainstPurchaseRequest($item->packing_id);
+                            }
+                        }
+                    @endphp
                     <input type="number" name="qty[]" id="qty_{{ $rowId }}" class="form-control qty-input-check {{ $item->is_single_job_order == 1 ? '' : 'bg-white' }}"
                                         step="0.01" min="0" placeholder="Qty" value="{{ $item->qty }}" 
                                         @if($item->is_single_job_order == 1)
-                                            data-balance="{{ $item->qty + (float)jobOrderPackingBalanceAgainstPurchaseRequest($item->packing_id) }}"
+                                            data-balance="{{ $item->qty + (float)$jo_balance }}"
                                         @endif>
                     @if($item->is_single_job_order == 1)
-                        @php
-                            $jo_total = 0;
-                            $jo_balance = 0;
-                            if($item->module_type == 'packing') {
-                                $packing = \App\Models\Production\JobOrder\JobOrderPackingItem::find($item->packing_id);
-                                $jo_total = $packing?->total_bags ?? 0;
-                                $jo_balance = jobOrderPackingBalanceAgainstPurchaseRequest($item->packing_id);
-                            } else if($item->module_type == 'subpacking') {
-                                $subpacking = \App\Models\Production\JobOrder\JobOrderPackingSubItem::find($item->packing_id);
-                                $jo_total = $subpacking?->total_bags ?? 0;
-                                $jo_balance = jobOrderSubPackingBalanceAgainstPurchaseRequest($item->packing_id);
-                            }
-                        @endphp
                         <div class="mt-1" style="font-size: 11px;">
                             <strong>Limit:</strong> {{ $item->qty + (float)$jo_balance }} <br>
                             <strong>Remaining:</strong> <span class="balance-span">{{ $jo_balance }}</span>
@@ -210,17 +215,25 @@
 
                  <td class="bag-only" style="min-width: 300px;">
 
-                    <select id="brands_{{ $rowId }}" name="brands[]" class="form-control item-select color-select">
+                    <select id="brands_{{ $rowId }}" name="brands[]" class="form-control item-select color-select" {{ $jo_data?->brand_id ? 'disabled' : '' }}>
                         <option value="">Select Brand</option>
                         @foreach(getAllBrands() ?? [] as $brand)
                         <option @selected($brand->id == $item->brand_id) value="{{ $brand->id }}">
                             {{ $brand->name }}</option>
                         @endforeach
                     </select>
+                    @if($jo_data?->brand_id)
+                        <input type="hidden" name="brands[]" value="{{ $item->brand_id }}">
+                    @endif
                 </td>
                
-                <td class="bag-only" style="min-width: 200px;"><input type="number" name="min_weight[]" id="min_weight_{{ $rowId }}" class="form-control min-weight-input"
-                        step="0.01" min="0" value="{{ $item->min_weight }}" placeholder="Min Weight"></td>
+                <td class="bag-only" style="min-width: 200px;">
+                    @php
+                        $jo_min_weight = $jo_data?->min_weight_empty_bags ?? $jo_data?->empty_bag_weight ?? 0;
+                    @endphp
+                    <input type="number" name="min_weight[]" id="min_weight_{{ $rowId }}" class="form-control min-weight-input"
+                        step="0.01" min="0" value="{{ $item->min_weight }}" placeholder="Min Weight" {{ $jo_min_weight > 0 ? 'readonly' : '' }}>
+                </td>
 
                 <td class="bag-only" style="min-width: 150px;"><input type="text" name="tolerance[]" id="tolerance_{{ $rowId }}" class="form-control tolerance-input"
                         value="{{ $item->tolerance }}" placeholder="Tolerance" readonly></td>
@@ -231,13 +244,16 @@
            
                 <td class="bag-only" style="min-width: 300px;">
 
-                    <select id="color_{{ $rowId }}" name="color[]" class="form-control item-select color-select">
+                    <select id="color_{{ $rowId }}" name="color[]" class="form-control item-select color-select" {{ $jo_data?->bag_color_id ? 'disabled' : '' }}>
                         <option value="">Select Color</option>
                         @foreach(getAllColors() ?? [] as $color)
                         <option @selected($color->id == $item->color) value="{{ $color->id }}">
                             {{ $color->color }}</option>
                         @endforeach
                     </select>
+                    @if($jo_data?->bag_color_id)
+                        <input type="hidden" name="color[]" value="{{ $item->color }}">
+                    @endif
                 </td>
 
                 <td class="bag-only" style="min-width: 300px;"><input type="text" name="construction_per_square_inch[]" id="construction_per_square_inch_{{ $rowId }}"
@@ -259,7 +275,7 @@
                         $selectedStitchings = $item->stitching ? array_filter(array_map('trim', explode(',', $item->stitching))) : [];
                     @endphp
 
-                    <select id="stitching_{{ $rowId }}" name="stitching[{{ $rowId }}][]" class="form-control item-select stitching-select select2" multiple>
+                    <select id="stitching_{{ $rowId }}" name="stitching[{{ $rowId }}][]" class="form-control item-select stitching-select select2" multiple {{ $jo_data?->stitching_id ? 'disabled' : '' }}>
                         <option value="">Select Stitching</option>
                         @foreach(getAllStitchings() ?? [] as $stitching)
                             <option value="{{ $stitching->id }}" @selected(in_array($stitching->id, $selectedStitchings))>
@@ -267,6 +283,9 @@
                             </option>
                         @endforeach
                     </select>
+                    @if($jo_data?->stitching_id)
+                        <input type="hidden" name="stitching[{{ $rowId }}][]" value="{{ $item->stitching }}">
+                    @endif
                 </td>
 
 

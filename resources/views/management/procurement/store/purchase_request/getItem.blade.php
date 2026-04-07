@@ -64,7 +64,7 @@
             </td>
 
             <td class="bag-only" style="min-width: 300px;">
-                <select name="brands[]" id="brands_{{ $i }}" class="form-control item-select select2Dropdown">
+                <select name="brands[]" id="brands_{{ $i }}" class="form-control item-select select2Dropdown" {{ $packing_item->brand_id ? 'disabled' : '' }}>
                     <option value="">Select Brand</option>
                     @foreach (getAllBrands() ?? [] as $brand)
                         <option value="{{ $brand->id }}" @selected($packing_item->brand_id == $brand->id)>
@@ -72,13 +72,15 @@
                         </option>
                     @endforeach
                 </select>
-
+                @if($packing_item->brand_id)
+                    <input type="hidden" name="brands[]" value="{{ $packing_item->brand_id }}">
+                @endif
             </td>
 
             <td class="bag-only" style="min-width: 200px;">
                 <input type="number" name="min_weight[]" id="min_weight_{{ $i }}" class="form-control min-weight-input"
                     step="0.01" min="0" value="{{ $packing_item->min_weight_empty_bags }}"
-                    placeholder="Min Weight">
+                    placeholder="Min Weight" {{ $packing_item->min_weight_empty_bags > 0 ? 'readonly' : '' }}>
             </td>
 
             <td class="bag-only" style="min-width: 150px;">
@@ -92,7 +94,7 @@
             </td>
 
             <td class="bag-only" style="min-width: 300px;">
-                <select name="color[]" id="colors_{{ $i }}" class="form-control item-select select2Dropdown">
+                <select name="color[]" id="colors_{{ $i }}" class="form-control item-select select2Dropdown" {{ $packing_item->bag_color_id ? 'disabled' : '' }}>
                     <option value="">Select Color</option>
                     @foreach (getAllColors() ?? [] as $color)
                         <option value="{{ $color->id }}" @selected($packing_item->bag_color_id == $color->id)>
@@ -100,7 +102,9 @@
                         </option>
                     @endforeach
                 </select>
-
+                @if($packing_item->bag_color_id)
+                    <input type="hidden" name="color[]" value="{{ $packing_item->bag_color_id }}">
+                @endif
             </td>
 
             <td class="bag-only" style="min-width: 300px;">
@@ -124,12 +128,15 @@
                     placeholder="Stitching"> --}}
 
                <select name="stitching[{{ $i }}][]" id="stitching_{{ $i }}"
-                    class="form-control item-select stitching-select select2Dropdown" multiple>
+                    class="form-control item-select stitching-select select2Dropdown" multiple {{ $packing_item->stitching_id ? 'disabled' : '' }}>
                     <option value="">Select Stitching</option>
                     @foreach (getAllStitchings() ?? [] as $stitching)
-                        <option value="{{ $stitching->id }}">{{ $stitching->name }}</option>
+                        <option value="{{ $stitching->id }}" @selected($packing_item->stitching_id == $stitching->id)>{{ $stitching->name }}</option>
                     @endforeach
                 </select>
+                @if($packing_item->stitching_id)
+                    <input type="hidden" name="stitching[{{ $i }}][]" value="{{ $packing_item->stitching_id }}">
+                @endif
             </td>
 
             <td class="bag-only" style="min-width: 200px;">
@@ -215,7 +222,7 @@
 
             <td class="bag-only" style="min-width: 300px;">
                 <select name="brands[]" id="brands_{{ $i }}" class="form-control item-select select2Dropdown"
-                    style="width:100%;">
+                    style="width:100%;" {{ $sub_packing_item->brand_id ? 'disabled' : '' }}>
                     <option value="">Select Brand</option>
                     @foreach (getAllBrands() ?? [] as $brand)
                         <option value="{{ $brand->id }}" @selected($sub_packing_item->brand_id == $brand->id)>
@@ -223,13 +230,15 @@
                         </option>
                     @endforeach
                 </select>
-
+                @if($sub_packing_item->brand_id)
+                    <input type="hidden" name="brands[]" value="{{ $sub_packing_item->brand_id }}">
+                @endif
             </td>
 
             <td class="bag-only" style="min-width: 200px;">
                 <input type="number" name="min_weight[]" id="min_weight_{{ $i }}" class="form-control min-weight-input"
                     step="0.01" min="0" value="{{ $sub_packing_item->empty_bag_weight }}"
-                    placeholder="Min Weight" style="width:100%;">
+                    placeholder="Min Weight" style="width:100%;" {{ $sub_packing_item->empty_bag_weight > 0 ? 'readonly' : '' }}>
             </td>
 
             <td class="bag-only" style="min-width: 150px;">
@@ -244,7 +253,7 @@
 
             <td class="bag-only" style="min-width: 300px;">
                 <select name="color[]" id="colors_{{ $i }}" class="form-control item-select select2Dropdown"
-                    style="width:100%;">
+                    style="width:100%;" {{ $sub_packing_item->bag_color_id ? 'disabled' : '' }}>
                     <option value="">Select Color</option>
                     @foreach (getAllColors() ?? [] as $color)
                         <option value="{{ $color->id }}" @selected($sub_packing_item->bag_color_id == $color->id)>
@@ -252,7 +261,9 @@
                         </option>
                     @endforeach
                 </select>
-
+                @if($sub_packing_item->bag_color_id)
+                    <input type="hidden" name="color[]" value="{{ $sub_packing_item->bag_color_id }}">
+                @endif
             </td>
 
             <td class="bag-only" style="min-width: 300px;">
@@ -276,12 +287,15 @@
                     placeholder="Stitching" style="width:120px;"> --}}
 
                <select name="stitching[{{ $i }}][]" id="stitching_{{ $i }}"
-                    class="form-control item-select stitching-select select2Dropdown" style="width:100%;" multiple>
+                    class="form-control item-select stitching-select select2Dropdown" style="width:100%;" multiple {{ $sub_packing_item->stitching_id ? 'disabled' : '' }}>
                     <option value="">Select Stitching</option>
                     @foreach (getAllStitchings() ?? [] as $stitching)
                         <option value="{{ $stitching->id }}" @selected($stitching->id == $sub_packing_item->stitching_id)>{{ $stitching->name }}</option>
                     @endforeach
                 </select>
+                @if($sub_packing_item->stitching_id)
+                    <input type="hidden" name="stitching[{{ $i }}][]" value="{{ $sub_packing_item->stitching_id }}">
+                @endif
 
             </td>
 
