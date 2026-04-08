@@ -288,7 +288,7 @@
             <div class="form-group">
                 <label class="font-weight-bold">Deduction Rate</label>
                 <input type="text" class="form-control editable-field deduction-rate"
-                    name="deduction_contract_rate_for_freight" id="deduction_rate" readonly
+                    name="deduction_contract_rate_for_freight" id="deduction_rate" {{ $isRequestApprovalPage ? 'readonly' : '' }}
                     value="{{ $paymentRequestData->deduction_contract_rate_for_freight ?? ($ticket->freight->po_rate ?? ($ticket->purchaseOrder->rate_per_kg ?? '0')) }}"
                     placeholder="Contract Rate">
             </div>
