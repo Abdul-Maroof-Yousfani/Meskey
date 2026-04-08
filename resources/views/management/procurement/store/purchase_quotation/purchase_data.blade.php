@@ -106,10 +106,8 @@
            <input type="hidden" name="construction_per_square_inch[]" value="{{ $data->construction_per_square_inch }}">
         </td>
         <td style="min-width: 200px;" class="bag-only">
-           
-           <input  type="text" id="size{{ $key }}" class="form-control size"
-               value="{{ getSizeById($data->size)?->size ?? null }}" disabled readonly>
-           
+           <input  type="text" id="size{{ $key }}" class="form-control size-input-check"
+               value="{{ $data->size }}" readonly>
            <input type="hidden" name="size[]" value="{{ $data->size }}">
         </td>
         <td style="min-width: 200px;" class="bag-only">

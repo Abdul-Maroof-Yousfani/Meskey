@@ -228,8 +228,8 @@
                                 </td>
                                 <td style="width: 30%" class="bag-only">
                                     <input style="width: 100px" type="text" readonly
-                                        value="{{ getSizeById($data->purchase_request?->size ?? null)?->size ?? null }}"
-                                        id="size_{{ $key }}" class="form-control">
+                                        value="{{ $data->purchase_request?->size ?? null }}"
+                                        id="size_{{ $key }}" class="form-control size-input-check">
                                     <input type="hidden" name="size[]"
                                         value="{{ $data->purchase_request?->size ?? null }}">
                                 </td>
@@ -463,4 +463,10 @@
             $('.bag-only').hide();
         }
     }
+    $(document).on('input', '.size-input-check', function() {
+        this.value = this.value.replace(/[^0-9.]/g, '');
+        if ((this.value.match(/\./g) || []).length > 1) {
+            this.value = this.value.replace(/\.+$/, "");
+        }
+    });
 </script>

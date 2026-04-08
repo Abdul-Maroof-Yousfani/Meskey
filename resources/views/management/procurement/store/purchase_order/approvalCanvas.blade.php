@@ -278,7 +278,7 @@
                                 <td style="width: 30%">
                                     <input style="width: 100px;" type="text" readonly name="size[]"
                                         value="{{ $data->size }}" id="size_{{ $key }}"
-                                        class="form-control" step="0.01" min="0">
+                                        class="form-control size-input-check" step="0.01" min="0">
                                 </td>
                                 <td style="min-width: 400px;">
                                       <select class="form-control select2" multiple disabled>
@@ -515,4 +515,10 @@
 
 
      }
- </script>
+     $(document).on('input', '.size-input-check', function() {
+        this.value = this.value.replace(/[^0-9.]/g, '');
+        if ((this.value.match(/\./g) || []).length > 1) {
+            this.value = this.value.replace(/\.+$/, "");
+        }
+    });
+</script>

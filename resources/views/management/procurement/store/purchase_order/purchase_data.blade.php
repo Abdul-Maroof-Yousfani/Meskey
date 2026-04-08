@@ -232,8 +232,8 @@
                 id="construction_per_square_inch_{{ $key }}" class="form-control" step="0.01" min="0">
         </td>
          <td style="min-width: 200px;" class="bag-only">
-            <input  type="text" readonly name="size[]" value="{{ getSizeById($data->size ? $data->size : $prSource->size)?->size ?? null }}"
-                id="size_{{ $key }}" class="form-control" step="0.01" min="0">
+            <input  type="text" readonly name="size[]" value="{{ $data->size ? $data->size : $prSource->size }}"
+                id="size_{{ $key }}" class="form-control size-input-check" step="0.01" min="0">
         </td>
          <td style="min-width: 200px;" class="bag-only">
                 <select class="form-control select2" multiple disabled>

@@ -259,8 +259,8 @@
 
                                 <td style="min-width: 200px;" class="bag-only">
                                     <input  type="text"
-                                        value="{{ getSizeById($data->purchase_request?->size ?? null)?->size ?? null }}"
-                                        id="size_{{ $key }}" class="form-control" readonly>
+                                        value="{{ $data->purchase_request?->size ?? null }}"
+                                        id="size_{{ $key }}" class="form-control size-input-check" readonly>
                                     <input type="hidden" name="size[]"
                                         value="{{ $data->purchase_request?->size ?? null }}">
                                 </td>
@@ -545,6 +545,13 @@
     // Disable mousewheel on number inputs to prevent accidental changes and scroll issues
     $(document).on('wheel', 'input[type=number]', function (e) {
         $(this).blur();
+    });
+
+    $(document).on('input', '.size-input-check', function() {
+        this.value = this.value.replace(/[^0-9.]/g, '');
+        if ((this.value.match(/\./g) || []).length > 1) {
+            this.value = this.value.replace(/\.+$/, "");
+        }
     });
 
     $(document).on('select2:open', function (e) {
