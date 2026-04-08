@@ -224,23 +224,29 @@ class PurchaseOrderRequest extends FormRequest
 
             $orderId = $this->route('purchase_order'); // Get ID if it's an update route
 
-            // Pre-calculate item occurrences to check for duplicates
+            // Pre-calculate item + source occurrences to check for duplicates
             $itemIds = $this->input('item_id', []);
-            $filteredItemIds = array_filter($itemIds, function($id) {
-                return !is_null($id) && $id !== '';
-            });
-            $occurrences = array_count_values($filteredItemIds);
+            $prDataIds = $this->input('purchase_request_data_id', []);
+            $combinations = [];
+            foreach ($itemIds as $index => $itemId) {
+                if (!is_null($itemId) && $itemId !== '') {
+                    $prDataId = $prDataIds[$index] ?? 'manual';
+                    $combinations[] = "{$itemId}-{$prDataId}";
+                }
+            }
+            $occurrencesCount = array_count_values($combinations);
 
             foreach ($this->qty as $index => $qty) {
-                $prDataId = $this->purchase_request_data_id[$index] ?? null;
+                $prDataId = $this->purchase_request_data_id[$index] ?? 'manual';
                 $pqDataId = $this->purchase_quotation_data_id[$index] ?? null;
                 $itemId = $this->item_id[$index] ?? null;
+                $currentCombo = "{$itemId}-{$prDataId}";
                 
-                // 1. Check for duplicate items
-                if ($itemId && isset($occurrences[$itemId]) && $occurrences[$itemId] > 1) {
+                // 1. Check for duplicate items from the same source
+                if ($itemId && isset($occurrencesCount[$currentCombo]) && $occurrencesCount[$currentCombo] > 1) {
                     $validator->errors()->add(
                         "item_id.{$index}",
-                        'The same item cannot be added multiple times.'
+                        'The same item from the same source cannot be added multiple times.'
                     );
                 }
 
