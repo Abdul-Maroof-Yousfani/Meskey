@@ -84,8 +84,8 @@
             </td>
 
             <td class="bag-only" style="min-width: 150px;">
-                <input type="text" name="tolerance[]" id="tolerance_{{ $i }}" class="form-control tolerance-input"
-                    placeholder="Tolerance" readonly>
+                <input type="number" name="tolerance[]" id="tolerance_{{ $i }}" class="form-control tolerance-input"
+                    step="0.01" value="0.00" placeholder="Tolerance" readonly>
             </td>
 
             <td class="bag-only" style="min-width: 150px;">
@@ -114,13 +114,8 @@
             </td>
 
             <td class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">
-                <select name="size[]" id="size_{{ $i }}"
-                    class="form-control item-select size-select select2Dropdown" style="width: 100%;">
-                    <option value="">Select Size</option>
-                    @foreach (getAllSizes() ?? [] as $size)
-                        <option value="{{ $size->id }}">{{ $size->size }}</option>
-                    @endforeach
-                </select>
+                <input type="text" name="size[]" id="size_{{ $i }}"
+                    class="form-control size-input-check" placeholder="Size">
             </td>
 
             <td class="bag-only" style="min-width: 350px;">
@@ -242,8 +237,8 @@
             </td>
 
             <td class="bag-only" style="min-width: 150px;">
-                <input type="text" name="tolerance[]" id="tolerance_{{ $i }}" class="form-control tolerance-input"
-                    placeholder="Tolerance" style="width:100%;" readonly>
+                <input type="number" name="tolerance[]" id="tolerance_{{ $i }}" class="form-control tolerance-input"
+                    step="0.01" value="0.00" placeholder="Tolerance" style="width:100%;" readonly>
             </td>
 
             <td class="bag-only" style="min-width: 150px;">
@@ -273,13 +268,8 @@
             </td>
 
             <td class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">
-                <select name="size[]" id="size_{{ $i }}"
-                    class="form-control item-select size-select select2Dropdown" style="width: 100%;">
-                    <option value="">Select Size</option>
-                    @foreach (getAllSizes() ?? [] as $size)
-                        <option value="{{ $size->id }}">{{ $size->size }}</option>
-                    @endforeach
-                </select>
+                <input type="text" name="size[]" id="size_{{ $i }}"
+                    class="form-control size-input-check" placeholder="Size">
             </td>
 
             <td class="bag-only" style="min-width: 350px;">
@@ -334,11 +324,21 @@
     $(document).ready(function() {
         $(".select2Dropdown").select2();
         $(".stitching-select").select2();
+        // Size is now a text input, no need for select2 tags
+        /*
         $(".size-select").select2({
             tags: true,
             placeholder: "Select or add size",
             allowClear: true
         });
+        */
+    });
+
+    $(document).on('input', '.size-input-check', function() {
+        this.value = this.value.replace(/[^0-9.]/g, '');
+        if ((this.value.match(/\./g) || []).length > 1) {
+            this.value = this.value.replace(/\.+$/, "");
+        }
     });
 
     $(".job_orders").on("change", function() {

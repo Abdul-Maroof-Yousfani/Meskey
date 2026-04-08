@@ -235,8 +235,8 @@
                         step="0.01" min="0" value="{{ $item->min_weight }}" placeholder="Min Weight" {{ $jo_min_weight > 0 ? 'readonly' : '' }}>
                 </td>
 
-                <td class="bag-only" style="min-width: 150px;"><input type="text" name="tolerance[]" id="tolerance_{{ $rowId }}" class="form-control tolerance-input"
-                        value="{{ $item->tolerance }}" placeholder="Tolerance" readonly></td>
+                <td class="bag-only" style="min-width: 150px;"><input type="number" name="tolerance[]" id="tolerance_{{ $rowId }}" class="form-control tolerance-input"
+                        step="0.01" value="{{ $item->tolerance ?? 0 }}" placeholder="Tolerance" readonly></td>
 
                 <td class="bag-only" style="min-width: 150px;"><input type="number" name="tolerance_percentage[]" id="tolerance_percentage_{{ $rowId }}" class="form-control tolerance-percentage-input"
                         step="0.01" min="0" max="100" value="{{ $item->tolerance_percentage }}" placeholder="Tol. %"></td>
@@ -261,13 +261,13 @@
                         placeholder="Cons./sq. in."></td>
 
                 <td class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">
-                    <select id="size_{{ $rowId }}" name="size[]" class="form-control item-select size-select">
-                        <option value="">Select Size</option>
-                        @foreach(getAllSizes() ?? [] as $size)
-                        <option @selected($size->id == $item->size) value="{{ $size->id }}">
-                            {{ $size->size }}</option>
-                        @endforeach
-                    </select>
+                    @php
+                        $jo_size = $jo_data->bag_size ?? ($jo_data?->bagSize?->size ?? '');
+                        $current_size = $item->size;
+                        $display_size = (is_numeric($jo_size) && $jo_size > 0) ? $jo_size : (getSizeById($current_size)->size ?? $current_size);
+                    @endphp
+                    <input type="text" id="size_{{ $rowId }}" name="size[]" class="form-control size-input-check" placeholder="Size"
+                        value="{{ $display_size }}" {{ (is_numeric($jo_size) && $jo_size > 0) ? 'readonly' : '' }}>
                 </td>
 
                 <td class="bag-only" style="min-width: 350px;">
@@ -336,11 +336,6 @@
     purchaseRequestRowIndex = {{ count($purchaseRequest->PurchaseData) }};
 
     $(document).ready(function() {
-        // $(".size-select").select2({
-        //     tags: true,
-        //     placeholder: "Select or add size",
-        //     allowClear: true
-        // });
         $(".select2").select2();
         @foreach ($purchaseRequest->PurchaseData as $loopIndex => $item)
             @php
@@ -351,11 +346,6 @@
 
             $("#color_{{ $jsIndex }}").select2();
             $("#brands_{{ $jsIndex }}").select2();
-            $("#size_{{ $jsIndex }}").select2({
-                tags: true,
-                placeholder: "Select or add size",
-                allowClear: true
-            });
             $("#stitching_{{ $jsIndex }}").select2();
             $('#job_order_id_{{ $jsIndex }}').select2({
                 placeholder: 'Please Select Job Order',
@@ -554,12 +544,9 @@
                             </div>
                         </div>
                     </td>
-                    <td class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;"><select name="size[]" id="size_${index}" class="form-control item-select size-select" style="width: 100%;">
-                        <option value="">Select Size</option>
-                        @foreach(getAllSizes() ?? [] as $size)
-                            <option value="{{ $size->id }}">{{ $size->size }}</option>
-                        @endforeach
-                    </select></td>
+                    <td class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">
+                        <input type="text" name="size[]" id="size_${index}" class="form-control size-input-check" placeholder="Size">
+                    </td>
                    <td class="bag-only" style="min-width: 350px;">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
@@ -603,11 +590,13 @@
         $('#purchaseRequestBody').append(row);
 
         $('#color_' + index).select2();
+        /*
         $('#size_' + index).select2({
             tags: true,
             placeholder: "Select or add size",
             allowClear: true
         });
+        */
         $('#brands_' + index).select2();
         $('#stitching_' + index).select2();
         $('#category_id_' + index).select2();
@@ -699,5 +688,12 @@
 
         let tolerance = (minWeight * percentage / 100).toFixed(2);
         row.find('.tolerance-input').val(tolerance);
+    });
+
+    $(document).on('input', '.size-input-check', function() {
+        this.value = this.value.replace(/[^0-9.]/g, '');
+        if ((this.value.match(/\./g) || []).length > 1) {
+            this.value = this.value.replace(/\.+$/, "");
+        }
     });
 </script>
