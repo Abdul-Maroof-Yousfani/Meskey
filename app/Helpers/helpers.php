@@ -1899,9 +1899,9 @@ function jobOrderPackingBalanceAgainstPurchaseRequest($packing_id)
         ->sum("qty");
     $job_order_packing = JobOrderPackingItem::select("id", "total_bags")->find($packing_id);
 
-        if(!$job_order_packing) {
-            dd($packing_id, "packing");
-        }
+    if (!$job_order_packing) {
+        dd($packing_id, "packing");
+    }
 
     return (($job_order_packing->total_bags) - $used_qty);
 }
@@ -1917,9 +1917,9 @@ function jobOrderSubPackingBalanceAgainstPurchaseRequest($subpacking_id)
 
     $job_order_sub_packing = JobOrderPackingSubItem::select("id", "total_bags")->find($subpacking_id);
 
-        if(!$job_order_sub_packing) {
-            dd($job_order_sub_packing, "subpacking");
-        }
+    if (!$job_order_sub_packing) {
+        dd($job_order_sub_packing, "subpacking");
+    }
 
     return (($job_order_sub_packing->total_bags) - $used_qty);
 }
@@ -1968,7 +1968,7 @@ function initialSamplingDonePurchaserwise($purchase_id, $from_date, $to_date, $l
     $dateRange = [$from_date, $to_date];
     // dd($dateRange);
     return ArrivalSamplingRequest::whereHas('arrivalTicket', function ($q) use ($dateRange) {
-        $q->whereBetween('created_at', $dateRange);
+        // $q->whereBetween('created_at', $dateRange);
     })
 
         ->where('sampling_type', 'initial')
@@ -1990,7 +1990,7 @@ function innerSamplingDonePurchaserwise($purchase_id, $from_date, $to_date, $loc
     $dateRange = [$from_date, $to_date];
     // dd($dateRange);
     return ArrivalSamplingRequest::whereHas('arrivalTicket', function ($q) use ($dateRange) {
-        $q->whereBetween('created_at', $dateRange);
+        // $q->whereBetween('created_at', $dateRange);
     })
 
         ->where('sampling_type', 'inner')
@@ -2007,10 +2007,11 @@ function innerSamplingDonePurchaserwise($purchase_id, $from_date, $to_date, $loc
         })->count();
 }
 
-function identify_deduction_type(PurchaseBagQC $bag_qc) {
+function identify_deduction_type(PurchaseBagQC $bag_qc)
+{
     $deduction_type = "no_deduction";
-    if($bag_qc->deduction_per_bag && $bag_qc->deduction_per_bag > 0) {
-        if($bag_qc->rejected_quantity && $bag_qc->rejected_quantity > 0) {
+    if ($bag_qc->deduction_per_bag && $bag_qc->deduction_per_bag > 0) {
+        if ($bag_qc->rejected_quantity && $bag_qc->rejected_quantity > 0) {
             $deduction_type = "half_deduction";
         } else {
             $deduction_type = "full_deduction";
@@ -2023,13 +2024,15 @@ function identify_deduction_type(PurchaseBagQC $bag_qc) {
     return $deduction_type;
 }
 
-function areQcParametersOk(QCRequest $request): bool {
-    return $request->printing 
-        && $request->bottom_stitching 
+function areQcParametersOk(QCRequest $request): bool
+{
+    return $request->printing
+        && $request->bottom_stitching
         && $request->ready_to_pack;
 }
 
-function isQcAutoApprovable(QCRequest $bagQc): bool {
+function isQcAutoApprovable(QCRequest $bagQc): bool
+{
     $tolerance = $bagQc->grn->purchase_order_data->tolerance;
     $qcParametersOk = areQcParametersOk($bagQc);
     $min_weight = $bagQc->grn->min_weight;
@@ -2038,21 +2041,23 @@ function isQcAutoApprovable(QCRequest $bagQc): bool {
     return $bagQc->sample_average_weight >= $allowed_value && $qcParametersOk;
 }
 
-function approve_qc(PurchaseBagQC $bag_qc) {
+function approve_qc(PurchaseBagQC $bag_qc)
+{
     $rate = $bag_qc?->grn?->purchase_order_data?->rate ?? 0;
     $qty = $bag_qc?->grn?->purchase_order_data?->qty ?? 0;
 
     // this condition will be applied when we are sure that deduction is gonna be applied either on accepted or in rejected
     $deduction_type = identify_deduction_type($bag_qc);
-    if($deduction_type != "no_deduction") return;
-    
+    if ($deduction_type != "no_deduction")
+        return;
+
     $product = Product::select("id", "account_id")->find($bag_qc->grn->item_id);
-    
-    if(!$rate) {
+
+    if (!$rate) {
         return;
     }
 
-    if(!$product) {
+    if (!$product) {
         return;
     }
 
@@ -2068,7 +2073,7 @@ function approve_qc(PurchaseBagQC $bag_qc) {
         "avg_price_per_kg" => $bag_qc->rejected_quantity * $rate,
         'parent_id' => $bag_qc->grn->purchase_order_data_id
     ]);
-    
+
 
     createTransaction(
         $bag_qc->rejected_quantity * $rate,
@@ -2083,6 +2088,6 @@ function approve_qc(PurchaseBagQC $bag_qc) {
             'against_reference_number' => $bag_qc->grn->purchase_order_receiving_no,
             'payment_against' => "QC",
             'remarks' => "Purchase Bag QC"
-        ]  
+        ]
     );
 }

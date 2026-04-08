@@ -335,8 +335,8 @@ class HomeController extends Controller
             case 'initial_sampling_requested':
                 $title = 'Initial Sampling Requested (Not Done)';
                 $data = ArrivalSamplingRequest::whereHas('arrivalTicket', function ($q) use ($request, $dateRange) {
-                    $q->where('company_id', $request->company_id)
-                        ->whereBetween('created_at', $dateRange);
+                    $q->where('company_id', $request->company_id);
+                    // ->whereBetween('created_at', $dateRange);
                 })
                     ->where('sampling_type', 'initial')
                     ->where('is_done', 'no')
@@ -359,8 +359,8 @@ class HomeController extends Controller
             case 'initial_re_sampling_requested':
                 $title = 'Initial Re-Sampling Requested (Not Done)';
                 $data = ArrivalSamplingRequest::whereHas('arrivalTicket', function ($q) use ($request, $dateRange) {
-                    $q->where('company_id', $request->company_id)
-                        ->whereBetween('created_at', $dateRange);
+                    $q->where('company_id', $request->company_id);
+                    // ->whereBetween('created_at', $dateRange);
                 })
                     ->where('sampling_type', 'initial')
                     ->where('is_done', 'no')
@@ -401,8 +401,8 @@ class HomeController extends Controller
             case 'initial_sampling_done':
                 $title = 'Initial Sampling Done (Pending Approval)';
                 $data = ArrivalSamplingRequest::whereHas('arrivalTicket', function ($q) use ($request, $dateRange) {
-                    $q->where('company_id', $request->company_id)
-                        ->whereBetween('created_at', $dateRange);
+                    $q->where('company_id', $request->company_id);
+                    // ->whereBetween('created_at', $dateRange);
                 })
                     ->where('sampling_type', 'initial')
                     ->where('is_done', 'yes')
@@ -429,8 +429,8 @@ class HomeController extends Controller
             case 'resampling_required':
                 $title = 'Resampling Required';
                 $data = ArrivalSamplingRequest::whereHas('arrivalTicket', function ($q) use ($request, $dateRange) {
-                    $q->where('company_id', $request->company_id)
-                        ->whereBetween('created_at', $dateRange);
+                    $q->where('company_id', $request->company_id);
+                    // ->whereBetween('created_at', $dateRange);
                 })
                     ->where('sampling_type', 'initial')
                     ->where('is_re_sampling', 'yes')
@@ -444,7 +444,7 @@ class HomeController extends Controller
                 $title = 'Location Transfer Pending';
                 $data = ArrivalTicket::where('company_id', $request->company_id)
                     ->where('location_transfer_status', 'pending')
-                    ->whereBetween('created_at', $dateRange)
+                    // ->whereBetween('created_at', $dateRange)
                     ->with(['product', 'station', 'accountsOf'])
 
                     ->whereIn('location_id', getUserCurrentCompanyLocations())
@@ -478,7 +478,7 @@ class HomeController extends Controller
                 $data = ArrivalTicket::where('company_id', $request->company_id)
                     ->where('location_transfer_status', 'transfered')
                     ->where('first_weighbridge_status', 'pending')
-                    ->whereBetween('created_at', $dateRange)
+                    // ->whereBetween('created_at', $dateRange)
                     ->whereIn('location_id', getUserCurrentCompanyLocations())
                     ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                         return $q->where('location_id', $request->location_id);
@@ -501,8 +501,8 @@ class HomeController extends Controller
             case 'inner_sampling_requested':
                 $title = 'Inner Sampling Requested (Not Done)';
                 $data = ArrivalSamplingRequest::whereHas('arrivalTicket', function ($q) use ($request, $dateRange) {
-                    $q->where('company_id', $request->company_id)
-                        ->whereBetween('created_at', $dateRange);
+                    $q->where('company_id', $request->company_id);
+                    // ->whereBetween('created_at', $dateRange);
                 })
                     ->whereHas('arrivalTicket', function ($q) {
                         $q->whereIn('location_id', getUserCurrentCompanyLocations());
@@ -524,8 +524,8 @@ class HomeController extends Controller
             case 'inner_re_sampling_requested':
                 $title = 'Inner Re-Sampling Requested (Not Done)';
                 $data = ArrivalSamplingRequest::whereHas('arrivalTicket', function ($q) use ($request, $dateRange) {
-                    $q->where('company_id', $request->company_id)
-                        ->whereBetween('created_at', $dateRange);
+                    $q->where('company_id', $request->company_id);
+                    // ->whereBetween('created_at', $dateRange);
                 })
                     ->whereHas('arrivalTicket', function ($q) {
                         $q->whereIn('location_id', getUserCurrentCompanyLocations());
@@ -546,8 +546,8 @@ class HomeController extends Controller
             case 'inner_sampling_pending_approval':
                 $title = 'Inner Sampling Pending Approval';
                 $data = ArrivalSamplingRequest::whereHas('arrivalTicket', function ($q) use ($request, $dateRange) {
-                    $q->where('company_id', $request->company_id)
-                        ->whereBetween('created_at', $dateRange);
+                    $q->where('company_id', $request->company_id);
+                    // ->whereBetween('created_at', $dateRange);
                 })
                     ->whereHas('arrivalTicket', function ($q) {
                         $q->whereIn('location_id', getUserCurrentCompanyLocations());
@@ -601,7 +601,7 @@ class HomeController extends Controller
                             $sq->where('arrival_location_id', $request->arrival_location_id);
                         });
                     })
-                    ->whereBetween('arrival_tickets.created_at', $dateRange)
+                    // ->whereBetween('arrival_tickets.created_at', $dateRange)
                     ->select('arrival_tickets.*') // Select only arrival_tickets columns to avoid ambiguity
                     ->with(['product', 'station', 'accountsOf', 'firstWeighbridge'])
                     ->distinct() // Add distinct to avoid duplicates
@@ -623,7 +623,7 @@ class HomeController extends Controller
                             $sq->where('arrival_location_id', $request->arrival_location_id);
                         });
                     })
-                    ->whereBetween('created_at', $dateRange)
+                    // ->whereBetween('created_at', $dateRange)
                     ->with(['product', 'station', 'accountsOf', 'approvals'])
                     ->latest()
                     ->paginate(1000);
@@ -633,7 +633,7 @@ class HomeController extends Controller
                 $data = ArrivalTicket::where('company_id', $request->company_id)
                     ->where('second_weighbridge_status', 'completed')
                     ->where('freight_status', 'pending')
-                    ->whereBetween('created_at', $dateRange)
+                    // ->whereBetween('created_at', $dateRange)
                     ->whereIn('location_id', getUserCurrentCompanyLocations())
                     ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                         return $q->where('location_id', $request->location_id);
@@ -677,7 +677,7 @@ class HomeController extends Controller
                     ->where('second_weighbridge_status', 'completed')
                     ->where('freight_status', 'pending')
                     ->where('decision_making', 0)
-                    ->whereBetween('created_at', $dateRange)
+                    // ->whereBetween('created_at', $dateRange)
                     ->whereIn('location_id', getUserCurrentCompanyLocations())
                     ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                         return $q->where('location_id', $request->location_id);
