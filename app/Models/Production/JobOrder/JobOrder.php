@@ -30,7 +30,8 @@ class JobOrder extends Model
         'packing_description',
         'crop_year_id',
         'other_specifications',
-        'company_id'
+        'company_id',
+        'export_order_id'
     ];
 
     protected $casts = [
@@ -93,6 +94,11 @@ class JobOrder extends Model
     public function company()
     {
         return $this->belongsTo(\App\Models\Acl\Company::class);
+    }
+
+    public function exportOrder()
+    {
+        return $this->belongsTo(\App\Models\Export\ExportOrder::class);
     }
 
     // Auto calculate total fields

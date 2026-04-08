@@ -136,6 +136,17 @@ class JobOrderController extends Controller
 
     public function create()
     {
+        $exportOrders = \App\Models\Export\ExportOrder::with(['packingItems', 'jobOrders.packingItems'])
+            ->latest()
+            ->get()
+            ->filter(function ($eo) {
+                $totalMt = $eo->packingItems->sum('metric_tons');
+                $consumedMt = $eo->jobOrders->sum(function ($jo) {
+                    return $jo->packingItems->sum('metric_tons');
+                });
+                return ($totalMt - $consumedMt) > 0;
+            });
+            
         $products = Product::where('status', 1)->get();
         $bagProducts = Product::where('status', 1)->where('product_type', 'general_items')
             ->with('category')
@@ -162,6 +173,7 @@ class JobOrderController extends Controller
         $sizes = Size::get();
         $stitchings = Stitching::where('status', 'active')->get();
         return view('management.production.job_orders.create', compact(
+            'exportOrders',
             'products',
             'bagProducts',
             'containerProtectionProducts',
@@ -188,6 +200,23 @@ class JobOrderController extends Controller
             $locationCode = CompanyLocation::where('id', $request->company_location_id)
                 ->value('code');
 
+            if ($request->export_order_id) {
+                $eo = \App\Models\Export\ExportOrder::with(['jobOrders.packingItems', 'packingItems'])->findOrFail($request->export_order_id);
+                $totalAllowedMt = $eo->packingItems->sum('metric_tons');
+                $alreadyConsumedMt = $eo->jobOrders->sum(function ($jo) {
+                    return $jo->packingItems->sum('metric_tons');
+                });
+
+                $currentRequestMt = collect($request->packing_items)->sum('metric_tons');
+
+                if (($alreadyConsumedMt + $currentRequestMt) > ($totalAllowedMt + 0.001)) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => "Total Metric Tons ($currentRequestMt) exceeds the remaining capacity of Export Order (" . round($totalAllowedMt - $alreadyConsumedMt, 3) . " MT)."
+                    ], 422);
+                }
+            }
+
             $uniqueJobNo = generateUniversalUniqueNo('job_orders', [
                 'prefix' => 'JOB',
                 // 'location' => $locationCode,
@@ -210,6 +239,7 @@ class JobOrderController extends Controller
                 'packing_description',
                 'crop_year_id',
                 'other_specifications',
+                'export_order_id',
             ]);
 
             $jobOrderData['company_id'] = $request->company_id;
@@ -337,7 +367,21 @@ class JobOrderController extends Controller
             'product',
             'containerProtectionItems'
         ])->findOrFail($id);
-        //    dd($jobOrder);
+        
+        $exportOrders = \App\Models\Export\ExportOrder::with(['packingItems', 'jobOrders.packingItems'])
+            ->latest()
+            ->get()
+            ->filter(function ($eo) use ($jobOrder) {
+                if ($jobOrder->export_order_id == $eo->id) {
+                    return true;
+                }
+                $totalMt = $eo->packingItems->sum('metric_tons');
+                $consumedMt = $eo->jobOrders->sum(function ($jo) {
+                    return $jo->packingItems->sum('metric_tons');
+                });
+                return ($totalMt - $consumedMt) > 0;
+            });
+            
         $products = Product::where('status', 1)->get();
         $inspectionCompanies = InspectionCompany::where('status', 'active')->get();
         $fumigationCompanies = FumigationCompany::where('status', 'active')->get();
@@ -366,6 +410,7 @@ class JobOrderController extends Controller
             ->get();
         // dd($bagColors);
         return view('management.production.job_orders.edit', compact(
+            'exportOrders',
             'jobOrder',
             'products',
             'bagProducts',
@@ -403,6 +448,7 @@ class JobOrderController extends Controller
                 'packing_description',
                 'crop_year_id',
                 'other_specifications',
+                'export_order_id',
             ]);
 
             // $jobOrderData['location'] = $request->location;
@@ -410,6 +456,24 @@ class JobOrderController extends Controller
             $jobOrderData['inspection_company_id'] = json_encode($request->inspection_company_id ?? []);
             // $jobOrderData['fumigation_company_id'] = json_encode($request->fumigation_company_id ?? []);
             $jobOrderData['arrival_locations'] = json_encode($request->arrival_locations ?? []);
+
+            if ($request->export_order_id) {
+                $eo = \App\Models\Export\ExportOrder::with(['jobOrders.packingItems', 'packingItems'])->findOrFail($request->export_order_id);
+                $totalAllowedMt = $eo->packingItems->sum('metric_tons');
+                // Exclude current job order from consumed calculation
+                $alreadyConsumedMt = $eo->jobOrders->where('id', '!=', $jobOrder->id)->sum(function ($jo) {
+                    return $jo->packingItems->sum('metric_tons');
+                });
+
+                $currentRequestMt = collect($request->packing_items)->sum('metric_tons');
+
+                if (($alreadyConsumedMt + $currentRequestMt) > ($totalAllowedMt + 0.001)) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => "Total Metric Tons ($currentRequestMt) exceeds the remaining capacity of Export Order (" . round($totalAllowedMt - $alreadyConsumedMt, 3) . " MT)."
+                    ], 422);
+                }
+            }
 
             $jobOrder->update($jobOrderData);
 
@@ -663,5 +727,107 @@ class JobOrderController extends Controller
             ->values(); // Array keys reset karega
 
         return view('management.production.job_orders.partials.product_specs', compact('specs'));
+    }
+
+    public function getExportOrderDetails($id)
+    {
+        $exportOrder = \App\Models\Export\ExportOrder::with([
+            'specifications.productSlabType',
+            'packingItems.subItems.bagType',
+            'packingItems.bagType',
+            'product',
+            'jobOrders.packingItems'
+        ])->findOrFail($id);
+
+        $totalEoMt = $exportOrder->packingItems->sum('metric_tons');
+        $consumedMt = $exportOrder->jobOrders->sum(function ($jo) {
+            return $jo->packingItems->sum('metric_tons');
+        });
+
+        $remainingMt = max(0, $totalEoMt - $consumedMt);
+
+        // Track how much "consumed" quantity is left to subtract from items sequentially
+        $tempConsumed = $consumedMt;
+
+        $packingItems = $exportOrder->packingItems->sortBy('id')->map(function ($item) use (&$tempConsumed) {
+            $originalMt = (float) $item->metric_tons;
+            $originalBags = (int) $item->no_of_bags;
+            
+            // Calculate how much was already taken from THIS packing item type area
+            // Since we don't have direct links, we'll just subtract from the total sequentially
+            // until tempConsumed is 0.
+            $consumedFromThis = min($originalMt, $tempConsumed);
+            $tempConsumed -= $consumedFromThis;
+
+            $remainingMtInItem = max(0, $originalMt - $consumedFromThis);
+            
+            // Adjust no_of_bags proportionately if MT changed
+            $remainingBagsInItem = $originalMt > 0 ? round(($remainingMtInItem / $originalMt) * $originalBags) : 0;
+
+            $subItems = $item->subItems->sortBy('id')->map(function ($sub) use ($originalMt, $remainingMtInItem) {
+                $subOriginalBags = (int) $sub->no_of_bags;
+                $subRemainingBags = $originalMt > 0 ? round(($remainingMtInItem / $originalMt) * $subOriginalBags) : 0;
+
+                return [
+                    'bag_product_id' => $sub->bag_type_id,
+                    'bag_type_name'  => $sub->bagType->name ?? '',
+                    'bag_size_id'    => $sub->bag_size_id,
+                    'stitching_id'   => $sub->stitching_id,
+                    'bag_color_id'   => $sub->bag_color_id,
+                    'brand_id'       => $sub->brand_id,
+                    'thread_color_id' => $sub->thread_color_id,
+                    'no_of_primary_bags' => $sub->no_of_primary_bags,
+                    'no_of_bags'     => $subRemainingBags,
+                    'empty_bags'     => $sub->empty_bags,
+                    'extra_bags'     => $sub->extra_bags,
+                    'extra_bags_percentage' => ($sub->no_of_bags > 0 && $sub->extra_bags > 0) ? round(($sub->extra_bags / $sub->no_of_bags) * 100, 2) : 0,
+                    'empty_bag_weight' => $sub->empty_bag_weight,
+                    'total_bags'     => $subRemainingBags + ($sub->extra_bags ?? 0) + ($sub->empty_bags ?? 0),
+                ];
+            })->values();
+
+            return [
+                'brand_id'          => $item->brand_id,
+                'bag_product_id'    => $item->bag_type_id,
+                'bag_type_name'     => $item->bagType->name ?? '',
+                'bag_condition_id'  => $item->bag_condition_id,
+                'bag_color_id'      => $item->bag_color_id,
+                'thread_color_id'   => $item->thread_color_id,
+                'stitching_id'      => $item->stitching_id,
+                'bag_size'          => $item->bag_size,
+                'no_of_bags'        => $remainingBagsInItem,
+                'extra_bags'        => $item->extra_bags,
+                'extra_bags_percentage' => $item->extra_bags_percentage ?? (($item->no_of_bags > 0 && $item->extra_bags > 0) ? round(($item->extra_bags / $item->no_of_bags) * 100, 2) : 0),
+                'empty_bags'        => $item->empty_bags,
+                'total_bags'        => $remainingBagsInItem + ($item->extra_bags ?? 0) + ($item->empty_bags ?? 0),
+                'total_kgs'         => $remainingMtInItem * 1000,
+                'metric_tons'       => $remainingMtInItem,
+                'stuffing_in_container' => $item->stuffing_in_container,
+                'no_of_containers'  => $item->no_of_containers,
+                'min_weight_empty_bags' => $item->min_weight_empty_bags,
+                'fumigation_company_id' => $item->fumigation_company_id,
+                'sub_items'         => $subItems,
+            ];
+        })->values();
+
+        return response()->json([
+            'ref_no'              => $exportOrder->contract_no ?? $exportOrder->voucher_no,
+            'product_id'          => $exportOrder->product_id,
+            'other_specifications' => $exportOrder->other_specifications,
+            'specifications'      => $exportOrder->specifications->map(function ($s) {
+                return [
+                    'product_slab_type_id' => $s->product_slab_type_id,
+                    'spec_name'  => $s->spec_name,
+                    'spec_value' => $s->spec_value,
+                    'uom'        => $s->uom,
+                    'value_type' => $s->value_type,
+                    'product_slab_type' => $s->productSlabType ? ['name' => $s->productSlabType->name, 'qc_symbol' => $s->productSlabType->qc_symbol] : null,
+                ];
+            })->values(),
+            'packing_items'       => $packingItems,
+            'total_eo_mt'         => round($totalEoMt, 3),
+            'consumed_mt'         => round($consumedMt, 3),
+            'remaining_mt'        => round($remainingMt, 3),
+        ]);
     }
 }

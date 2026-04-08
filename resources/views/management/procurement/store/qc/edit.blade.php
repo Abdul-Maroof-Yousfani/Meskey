@@ -22,6 +22,30 @@
                 </div>
             </div>
         </div>
+        @canApprove('qc')
+        <div class="row" style="margin-top: 10px; margin-bottom: 20px;">
+            <div class="col-md-12">
+                <table class="table table-bordered">
+                    <thead style="background-color: #f8f9fa;">
+                        <tr>
+                            <th>Qty</th>
+                            <th>Supplier Name</th>
+                            <th>PO Number</th>
+                            <th>Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>{{ $purchaseOrderReceivingData->qty }}</td>
+                            <td>{{ $purchaseOrderReceivingData->supplier->name ?? 'N/A' }}</td>
+                            <td>{{ $purchaseOrderReceivingData?->purchase_order_receiving?->purchase_order?->purchase_order_no ?? 'N/A' }}</td>
+                            <td>{{ $purchaseOrderReceivingData?->purchase_order_data?->rate ?? '0' }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @endcanApprove
         <div class="row" style="margin-top: 10px;">
             <div class="col-md-12">
                 <table class="table table-bordered" id="purchaseRequestTable">
@@ -33,12 +57,9 @@
                             <th>Brand</th>
                             <th>Job Order</th>
                             @endif
-                            @canApprove('qc')
-                            <th>PO No</th>
-                            <th>Rate</th>
-                            @endcanApprove
                             <th>DC No</th>
                             <th>Required Weight Per Bag (grams)</th>
+                            <th>Tolerance</th>
                             <th>Average Weight of 1 Bag (grams)</th>
                             <th>Total Bags</th>
                             <th>Total Weight Required (Kg)</th>
@@ -66,14 +87,6 @@
                                     class="form-control">
                             </td>
                             @endif
-                             @canApprove('qc')
-                             <td>
-                                 <input type="text" value="{{ $purchaseOrderReceivingData?->purchase_order_receiving?->purchase_order?->purchase_order_no }}" readonly class="form-control">
-                             </td>
-                             <td>
-                                 <input type="text" value="{{ $purchaseOrderReceivingData?->purchase_order_data?->rate }}" readonly class="form-control">
-                             </td>
-                             @endcanApprove
 
                             <td>
                                 <input type="text" name="dc_no" id="dc_no" value="{{ $purchaseOrderReceivingData->purchase_order_receiving->dc_no }}" readonly
@@ -81,6 +94,9 @@
                             </td>
                             <td>
                                 <input type="text" name="required_weight_per_bag" value="{{ $purchaseOrderReceivingData->category_id == 38 ? ($purchaseOrderReceivingData?->purchase_order_data?->min_weight ?? null) : 0 }}" id="required_weight_per_bag" readonly class="form-control">
+                            </td>
+                            <td>
+                                <input type="text" name="tolerance" value="{{ $purchaseOrderReceivingData->tolerance ?? 0 }}" readonly class="form-control">
                             </td>
 
                             <td>

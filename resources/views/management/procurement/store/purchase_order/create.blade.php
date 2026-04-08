@@ -356,4 +356,10 @@
         $(window).off('scroll.select2');
         $('*').off('scroll.select2');           // aggressive but often works
     });
+    $(document).on('input', '.size-input-check', function() {
+        this.value = this.value.replace(/[^0-9.]/g, '');
+        if ((this.value.match(/\./g) || []).length > 1) {
+            this.value = this.value.replace(/\.+$/, "");
+        }
+    });
 </script>

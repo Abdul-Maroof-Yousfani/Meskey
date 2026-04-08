@@ -52,6 +52,12 @@
                                 <td class="font-weight-bold">{{ $jobOrder->job_order_no }}</td>
                             </tr>
                             @endif
+                            @if($jobOrder->export_order_id && $jobOrder->exportOrder)
+                            <tr>
+                                <th class="text-uppercase bg-light">Export Order No.</th>
+                                <td class="font-weight-bold">{{ $jobOrder->exportOrder->voucher_no }}</td>
+                            </tr>
+                            @endif
                             @if($jobOrder->job_order_date)
                             <tr>
                                 <th class="text-uppercase bg-light">Date</th>

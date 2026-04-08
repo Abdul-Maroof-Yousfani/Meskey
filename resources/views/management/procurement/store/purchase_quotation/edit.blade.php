@@ -213,7 +213,9 @@
                                     <input type="hidden" name="uom[]" value="{{ get_uom($data->item_id) }}">
                                 </td>
                                 <td style="min-width: 180px;">
-                                    <input type="date" name="delivery_date[{{ $data->id }}]" value="{{ $data->delivery_date }}" id="delivery_date_{{ $key }}" class="form-control" required>
+                                    <input type="date" name="delivery_date[{{ $data->id }}]" 
+                                        value="{{ $data->delivery_date }}" id="delivery_date_{{ $key }}" 
+                                        class="form-control" min="{{ date('Y-m-d') }}" required>
                                 </td>
 
                                 <td style="min-width: 200px;" class="bag-only">
@@ -257,8 +259,8 @@
 
                                 <td style="min-width: 200px;" class="bag-only">
                                     <input  type="text"
-                                        value="{{ getSizeById($data->purchase_request?->size ?? null)?->size ?? null }}"
-                                        id="size_{{ $key }}" class="form-control" readonly>
+                                        value="{{ $data->purchase_request?->size ?? null }}"
+                                        id="size_{{ $key }}" class="form-control size-input-check" readonly>
                                     <input type="hidden" name="size[]"
                                         value="{{ $data->purchase_request?->size ?? null }}">
                                 </td>
@@ -387,7 +389,7 @@
                 <td style="min-width: 150px;"><input  onkeyup="calc(${index})" onblur="calc(${index})"  type="number" name="rate[]" id="rate_${index}" class="form-control" step="0.01" min="0"></td>
                 <td style="min-width: 150px;"><input  type="number" readonly name="total[]" id="total_${index}" class="form-control" step="0.01" min="0"></td>
                 <td style="min-width: 150px;"><input  type="text" name="uom[]" id="uom_${index}" class="form-control uom" readonly></td>
-                <td style="min-width: 180px;"><input type="date" name="delivery_date[]" id="delivery_date_${index}" class="form-control" required></td>
+                <td style="min-width: 180px;"><input type="date" name="delivery_date[]" id="delivery_date_\${index}" class="form-control" min="{{ date('Y-m-d') }}" value="{{ date('Y-m-d') }}" required></td>
                 
                 <td class="bag-only" style="min-width: 200px;"></td>
                 <td class="bag-only" style="min-width: 150px;"></td>
@@ -543,6 +545,13 @@
     // Disable mousewheel on number inputs to prevent accidental changes and scroll issues
     $(document).on('wheel', 'input[type=number]', function (e) {
         $(this).blur();
+    });
+
+    $(document).on('input', '.size-input-check', function() {
+        this.value = this.value.replace(/[^0-9.]/g, '');
+        if ((this.value.match(/\./g) || []).length > 1) {
+            this.value = this.value.replace(/\.+$/, "");
+        }
     });
 
     $(document).on('select2:open', function (e) {

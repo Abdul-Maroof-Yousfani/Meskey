@@ -18,6 +18,7 @@ Route::resource('job-orders', JobOrderController::class);
 Route::get('job-orders/{id}/print', [JobOrderController::class, 'printJobOrder'])->name('job-orders.print');
 Route::post('get-job-orders', [JobOrderController::class, 'getList'])->name('get.job_orders');
 Route::get('get-product-specs/{productId}', [JobOrderController::class, 'getProductSpecs'])->name('get.product_specs');
+Route::get('get-export-order-details/{id}', [JobOrderController::class, 'getExportOrderDetails'])->name('get.export_order_details');
 
 Route::resource('job-order-rm-qc', JobOrderRawMaterialQcController::class);
 Route::post('get-job-order-rm-qc', [JobOrderRawMaterialQcController::class, 'getList'])->name('get.job_order_rm_qc');

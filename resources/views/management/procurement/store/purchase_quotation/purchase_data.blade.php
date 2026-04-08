@@ -69,7 +69,8 @@
             <input type="hidden" name="uom[]" value="{{ get_uom($data->item_id) }}">
         </td>
         <td style="min-width: 180px;">
-            <input type="date" name="delivery_date[]" id="delivery_date_{{ $key }}" class="form-control" required>
+            <input type="date" name="delivery_date[]" id="delivery_date_{{ $key }}" 
+                class="form-control" min="{{ date('Y-m-d') }}" value="{{ date('Y-m-d') }}" required>
         </td>
         <td style="min-width: 200px;" class="bag-only">
            
@@ -105,10 +106,8 @@
            <input type="hidden" name="construction_per_square_inch[]" value="{{ $data->construction_per_square_inch }}">
         </td>
         <td style="min-width: 200px;" class="bag-only">
-           
-           <input  type="text" id="size{{ $key }}" class="form-control size"
-               value="{{ getSizeById($data->size)?->size ?? null }}" disabled readonly>
-           
+           <input  type="text" id="size{{ $key }}" class="form-control size-input-check"
+               value="{{ $data->size }}" readonly>
            <input type="hidden" name="size[]" value="{{ $data->size }}">
         </td>
         <td style="min-width: 200px;" class="bag-only">

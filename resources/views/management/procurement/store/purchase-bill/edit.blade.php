@@ -149,7 +149,7 @@
                                     <input style="width: 100%" type="number" name="discount_id[]"
                                         value="{{ $data->discount_percent }}" id="total_{{ $key }}"
                                         class="form-control discounts" onkeyup="calculatePercentage(this)"
-                                        step="0.01" min="0">
+                                        step="0.01" min="0" max="100">
                                 </td>
 
                                 <td style="min-width: 200px;">
@@ -198,7 +198,7 @@
                                     <input style="width: 100%" type="number" onkeyup="calculatePercentage(this)"
                                         name="tax_id[]" value="{{ $data->tax_percent }}"
                                         id="tax_id_{{ $key }}" class="form-control tax_id" step="0.01"
-                                        min="0">
+                                        min="0" max="100">
                                 </td>
                                 <td style="min-width: 200px;">
                                     <input style="width: 100%" type="number" readonly
@@ -407,8 +407,20 @@
 
     const rateVal = parseFloat(rate.val()) || 0;
     const qtyVal = parseFloat(qty.val()) || 0;
-    const discountPercentVal = parseFloat(discount_percent.val()) || 0;
-    const taxPercentVal = parseFloat(tax_percent.val()) || 0;
+    let discountPercentVal = parseFloat(discount_percent.val()) || 0;
+    let taxPercentVal = parseFloat(tax_percent.val()) || 0;
+
+    if (discountPercentVal > 100) {
+        alert("Discount Percentage cannot exceed 100");
+        discount_percent.val(100);
+        discountPercentVal = 100;
+    }
+
+    if (taxPercentVal > 100) {
+        alert("Tax Percentage cannot exceed 100");
+        tax_percent.val(100);
+        taxPercentVal = 100;
+    }
 
     // const percent_amount_of_gross = 1;
 

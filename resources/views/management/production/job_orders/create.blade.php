@@ -2,11 +2,24 @@
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('get.job_orders') }}" />
 
-    <div class="row form-mar">
         <!-- Basic Information -->
         <div class="col-md-12">
             <h6 class="header-heading-sepration">Basic Information</h6>
             <div class="row">
+                <!-- Row 1: Export Order | Job Order No | Job Order Date -->
+                <div class="col-md-4">
+                    <fieldset>
+                        <label>Export Order:</label>
+                        <div class="input-group">
+                            <select name="export_order_id" class="form-control select2" id="exportOrderSelect">
+                                <option value="">Select Export Order</option>
+                                @foreach($exportOrders as $eo)
+                                    <option value="{{ $eo->id }}">{{ $eo->voucher_no }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </fieldset>
+                </div>
                 <div class="col-md-4">
                     <fieldset>
                         <label>Job Order No#</label>
@@ -15,24 +28,9 @@
                                 <button class="btn btn-primary" type="button">Job Order No#</button>
                             </div>
                             <input type="text" readonly name="job_order_no" class="form-control">
-
                         </div>
                     </fieldset>
                 </div>
-                <!-- <div class="col-md-3">
-                    <div class="form-group">
-                        <label>Company Location:</label>
-                        <select name="company_location_id" id="company_location_id" class="form-control">
-                            <option value="">Select Location</option>
-                            @foreach($companyLocations as $location)
-                                <option data-code="{{ $location->code }}" value="{{ $location->id }}">{{ $location->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div> -->
-
-
                 <div class="col-md-4">
                     <div class="form-group">
                         <label>Job Order Date:</label>
@@ -40,13 +38,14 @@
                     </div>
                 </div>
 
+                <!-- Row 2: Ref No | Attention To -->
                 <div class="col-md-4">
                     <div class="form-group">
                         <label>Ref No:</label>
                         <input type="text" name="ref_no" class="form-control">
                     </div>
                 </div>
-                <div class="col-md-12">
+                <div class="col-md-8">
                     <div class="form-group">
                         <label>Attention To:</label>
                         <select name="attention_to[]" class="form-control select2" multiple>
@@ -57,12 +56,12 @@
                         </select>
                     </div>
                 </div>
+
+                <!-- Row 3: Remarks | Order Description -->
                 <div class="col-md-6">
                     <div class="form-group">
                         <label>Remarks:</label>
-
                         <textarea name="remarks" class="form-control" rows="5"></textarea>
-
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -78,7 +77,7 @@
         <div class="col-md-12">
             <div class="form-group">
                 <label>Commodity/Product:</label>
-                <select name="product_id" class="form-control select2" id="productSelect">
+                <select name="product_id" class="form-control select2" id="mainProductSelect">
                     <option value="">Select Product</option>
                     @foreach($products as $product)
                         <option value="{{ $product->id }}">{{ $product->name }}</option>
@@ -102,7 +101,7 @@
         <div class="col-md-12">
             <div class="form-group">
                 <label>Crop Year:</label>
-                <select name="crop_year_id" class="form-control select2" id="productSelect">
+                <select name="crop_year_id" class="form-control select2" id="cropYearSelect">
                     <option value="">Select Crop Year</option>
                     @foreach($cropYears as $cropYear)
                         <option value="{{ $cropYear->id }}">{{ $cropYear->name }}</option>
@@ -122,6 +121,8 @@
             <h6 class="header-heading-sepration d-flex justify-content-between align-items-center">Packing Details
                 <button type="button" class="btn btn-sm btn-success" id="addPackingItem">Add More Packing Item</button>
             </h6>
+
+            <div id="export-order-quantity-info" class="mb-3" style="display: none;"></div>
 
             <div id="packingItems">
                 <div class="packing-item row border-bottom pb-3 mb-3 w-100 mx-auto">
@@ -359,7 +360,7 @@
                                             <tr>
                                                 <th class="col-2">Bag Type/Product</th>
 
-                                                <th>Bag Size </th>
+                                                <th>Packing Size (kg) </th>
                                                 <th>No of Primary Bags fit in master bag</th>
                                                 <th>No. of Bags</th>
                                                 <th>Empty Bags</th>
@@ -561,7 +562,7 @@
             </td>
             <td>
                 <input type="number" name="packing_items[INDEX][sub_items][SUB_INDEX][extra_bags_percentage]"
-                    class="form-control form-control-sm sub-extra-bags-percentage" value="0" min="0">
+                    class="form-control form-control-sm sub-extra-bags-percentage" value="0" min="0" step="0.01">
             </td>
 
             <td>
@@ -644,7 +645,7 @@
         $('.select2').not('.sub-packing-item-template .select2').not('.container-protection-item-template .select2').select2();
 
         // Product selection change
-        $('#productSelect').off('change.jobOrderCreate').on('change.jobOrderCreate', function () {
+        $('#mainProductSelect').off('change.jobOrderCreate').on('change.jobOrderCreate', function () {
             var productId = $(this).val();
             if (productId) {
                 $.get('{{ route("get.product_specs", "") }}/' + productId, function (data) {
@@ -655,6 +656,254 @@
                 $('#specificationsSection').hide();
             }
         });
+
+        // Export Order selection change
+        $('#exportOrderSelect').off('change.jobOrderCreate').on('change.jobOrderCreate', function() {
+            let id = $(this).val();
+            if(!id) {
+                $('#mainProductSelect').prop('disabled', false);
+                $('#mainProductSelect').next('.select2-container').css('pointer-events', '');
+                $('#hidden_product_id').remove();
+                return;
+            }
+
+            $.get('{{ url("production/get-export-order-details") }}/' + id, function(data) {
+                // Fill simple text fields
+                if (data.ref_no) {
+                    $('input[name="ref_no"]').val(data.ref_no);
+                }
+                if (data.other_specifications) {
+                    $('textarea[name="other_specifications"]').val(data.other_specifications);
+                }
+
+                // Set product and make it readonly
+                $('#mainProductSelect').val(data.product_id).trigger('change');
+                $('#mainProductSelect').prop('disabled', true);
+                $('#mainProductSelect').next('.select2-container').css('pointer-events', 'none');
+
+                // Hidden input to submit product_id when select is disabled
+                if($('#hidden_product_id').length === 0) {
+                    $('<input>').attr({
+                        type: 'hidden',
+                        id: 'hidden_product_id',
+                        name: 'product_id',
+                        value: data.product_id
+                    }).appendTo('form#ajaxSubmit');
+                } else {
+                    $('#hidden_product_id').val(data.product_id);
+                }
+
+                // Wait for product specs AJAX to load then overwrite with export order specs
+                setTimeout(function() {
+                    buildSpecsTable(data.specifications);
+                }, 900);
+
+                // Show quantity info
+                let totalMt = data.total_eo_mt;
+                let consumedMt = data.consumed_mt;
+                let remainingMt = data.remaining_mt;
+                
+                let alertHtml = `
+                    <div class="mb-2" style="color: #d9534f; font-weight: 500;">
+                        <i class="ft-info mr-1"></i>
+                        Export Order Quantity Info: Total: ${totalMt} MT | Consumed: ${consumedMt} MT | Remaining: ${remainingMt} MT
+                    </div>
+                `;
+                $('#export-order-quantity-info').html(alertHtml).show();
+
+                // Rebuild packing rows
+                addPackingRowsFromExportOrder(data.packing_items);
+            }).fail(function(xhr) {
+                console.error('Export Order Details Error:', xhr.status, xhr.responseText);
+                alert('Failed to load export order details. Please check console.');
+            });
+        });
+
+        function buildSpecsTable(specs) {
+            if(!specs || specs.length === 0) return;
+            
+            let html = '<div class="table-responsive"><table class="table table-bordered table-striped"><thead class="thead-dark"><tr><th width="40%">Specification Name</th><th width="30%">Value</th><th width="30%">UOM</th></tr></thead><tbody>';
+            specs.forEach(function(spec, idx) {
+                let specName = spec.product_slab_type ? spec.product_slab_type.name : spec.spec_name;
+                let uom = spec.product_slab_type ? spec.product_slab_type.qc_symbol : spec.uom;
+                let valueType = spec.value_type || 'min';
+                
+                html += `<tr>
+                    <td>
+                        <strong>${specName}</strong>
+                        <input type="hidden" name="specifications[${idx}][product_slab_type_id]" value="${spec.product_slab_type_id}">
+                        <input type="hidden" name="specifications[${idx}][spec_name]" value="${spec.spec_name}">
+                        <input type="hidden" name="specifications[${idx}][uom]" value="${spec.uom}">
+                    </td>
+                    <td>
+                        <fieldset>
+                            <div class="input-group">
+                                <input type="text" name="specifications[${idx}][spec_value]" value="${spec.spec_value || 0}" class="form-control form-control-sm spec-value-input" placeholder="Enter value">
+                                <div class="input-group-prepend">
+                                    <button class="btn btn-secondary" type="button">${uom || 'N/A'}</button>
+                                </div>
+                            </div>
+                        </fieldset>
+                    </td>
+                    <td>
+                        <select name="specifications[${idx}][value_type]" class="form-control">
+                            <option value="min" ${valueType === 'min' ? 'selected' : ''}>Minimum</option>
+                            <option value="max" ${valueType === 'max' ? 'selected' : ''}>Maximum</option>
+                        </select>
+                    </td>
+                </tr>`;
+            });
+            html += '</tbody></table></div>';
+            $('#productSpecs').html(html);
+        }
+
+        function addPackingRowsFromExportOrder(items) {
+            let container = $('#packingItems');
+            let templateRow = container.find('.packing-item').first().clone();
+            // Clean up select2 from template
+            templateRow.find('.select2-container').remove();
+            templateRow.find('select').removeClass('select2-hidden-accessible').removeAttr('data-select2-id').show();
+            
+            container.empty();
+
+            items.forEach(function(item, index) {
+                let row = templateRow.clone();
+                row.find('.select2-container').remove();
+                row.find('select').removeClass('select2-hidden-accessible').show();
+                row.find('option').removeAttr('data-select2-id');
+                
+                row.attr('data-index', index);
+
+                // Update names
+                row.find('input, select, textarea').each(function() {
+                    let name = $(this).attr('name');
+                    if(name) {
+                        name = name.replace(/\[\d+\]/, `[${index}]`);
+                        $(this).attr('name', name);
+                    }
+                });
+
+                // Helper to find bag product ID by name
+                function findBagProductIdByName(name, selectElement) {
+                    if (!name) return null;
+                    let id = null;
+                    selectElement.find('option').each(function() {
+                        if ($(this).text().trim().toLowerCase() === name.trim().toLowerCase()) {
+                            id = $(this).val();
+                            return false;
+                        }
+                    });
+                    return id;
+                }
+
+                // Fill values
+                row.find(`select[name="packing_items[${index}][brand_id]"]`).val(item.brand_id);
+                
+                // Bag Type/Product mapping
+                let bagProductSelect = row.find(`select[name="packing_items[${index}][bag_product_id]"]`);
+                let mappedId = findBagProductIdByName(item.bag_type_name, bagProductSelect);
+                if (mappedId) {
+                    bagProductSelect.val(mappedId);
+                } else {
+                    bagProductSelect.val(item.bag_product_id); // Fallback to ID
+                }
+
+                row.find(`select[name="packing_items[${index}][bag_condition_id]"]`).val(item.bag_condition_id);
+                row.find(`select[name="packing_items[${index}][bag_color_id]"]`).val(item.bag_color_id);
+                row.find(`select[name="packing_items[${index}][thread_color_id]"]`).val(item.thread_color_id);
+                row.find(`select[name="packing_items[${index}][stitching_id]"]`).val(item.stitching_id);
+                
+                row.find(`input[name="packing_items[${index}][bag_size]"]`).val(item.bag_size);
+                row.find(`input[name="packing_items[${index}][no_of_bags]"]`).val(item.no_of_bags);
+                row.find(`input[name="packing_items[${index}][extra_bags]"]`).val(item.extra_bags);
+                row.find(`input[name="packing_items[${index}][extra_bags_percentage]"]`).val(item.extra_bags_percentage);
+                row.find(`input[name="packing_items[${index}][empty_bags]"]`).val(item.empty_bags);
+                row.find(`input[name="packing_items[${index}][total_bags]"]`).val(item.total_bags);
+                row.find(`input[name="packing_items[${index}][total_kgs]"]`).val(item.total_kgs);
+                row.find(`input[name="packing_items[${index}][metric_tons]"]`).val(item.metric_tons);
+                row.find(`input[name="packing_items[${index}][stuffing_in_container]"]`).val(item.stuffing_in_container);
+                row.find(`input[name="packing_items[${index}][no_of_containers]"]`).val(item.no_of_containers);
+                row.find(`input[name="packing_items[${index}][min_weight_empty_bags]"]`).val(item.min_weight_empty_bags);
+                
+                // Fumigation sync
+                if (item.fumigation_company_id) {
+                    let fumigationSelect = row.find(`select[name="packing_items[${index}][fumigation_company_id][]"]`);
+                    fumigationSelect.val(item.fumigation_company_id);
+                }
+                
+                // Clear sub items container
+                let subContainer = row.find('.sub-packing-items-container');
+                subContainer.attr('data-index', index);
+                subContainer.empty();
+                row.find('.add-sub-packing-item').attr('data-index', index);
+
+                container.append(row);
+                
+                // Initialize Select2 and trigger change to show selected values
+                row.find('select.select2').each(function() {
+                    $(this).select2({
+                        width: '100%',
+                        dropdownParent: $(this).closest('.table-responsive').length ? $(this).closest('.table-responsive') : $('body')
+                    });
+                    if ($(this).val()) {
+                        $(this).trigger('change');
+                    }
+                });
+
+                // Trigger percentage calculation manually
+                if (item.no_of_bags > 0 && item.extra_bags > 0) {
+                    let perc = (item.extra_bags / item.no_of_bags) * 100;
+                    row.find(`input[name="packing_items[${index}][extra_bags_percentage]"]`).val(perc.toFixed(2));
+                }
+                
+                // Trigger total bags calculation
+                row.find('.no-of-bags').trigger('input');
+
+                // Inside sub items
+                if(item.sub_items && item.sub_items.length > 0) {
+                    item.sub_items.forEach(function(sub, sIdx) {
+                        // Use a more robust way to get the template HTML
+                        let $template = $('.sub-packing-item-template tbody');
+                        let subRowHtml = $template.html();
+                        
+                        // Replace placeholders securely - SUB_INDEX first so INDEX doesn't partially match it!
+                        subRowHtml = subRowHtml.replace(/\[SUB_INDEX\]/g, '[' + sIdx + ']').replace(/\[INDEX\]/g, '[' + index + ']');
+                        let subRow = $(subRowHtml);
+                        
+                        // Sub Bag Type/Product mapping
+                        let subBagProductSelect = subRow.find(`select[name="packing_items[${index}][sub_items][${sIdx}][bag_product_id]"]`);
+
+                        let subMappedId = findBagProductIdByName(sub.bag_type_name, subBagProductSelect);
+                        if (subMappedId) {
+                            subBagProductSelect.val(subMappedId);
+                        } else {
+                            subBagProductSelect.val(sub.bag_product_id);
+                        }
+
+                        subRow.find(`select[name="packing_items[${index}][sub_items][${sIdx}][bag_size_id]"]`).val(sub.bag_size_id);
+                        subRow.find(`select[name="packing_items[${index}][sub_items][${sIdx}][stitching_id]"]`).val(sub.stitching_id);
+                        subRow.find(`select[name="packing_items[${index}][sub_items][${sIdx}][bag_color_id]"]`).val(sub.bag_color_id);
+                        subRow.find(`select[name="packing_items[${index}][sub_items][${sIdx}][brand_id]"]`).val(sub.brand_id);
+                        subRow.find(`select[name="packing_items[${index}][sub_items][${sIdx}][thread_color_id]"]`).val(sub.thread_color_id);
+                        
+                        subRow.find(`input[name="packing_items[${index}][sub_items][${sIdx}][no_of_primary_bags]"]`).val(sub.no_of_primary_bags);
+                        subRow.find(`input[name="packing_items[${index}][sub_items][${sIdx}][no_of_bags]"]`).val(sub.no_of_bags);
+                        subRow.find(`input[name="packing_items[${index}][sub_items][${sIdx}][empty_bags]"]`).val(sub.empty_bags);
+                        subRow.find(`input[name="packing_items[${index}][sub_items][${sIdx}][extra_bags]"]`).val(sub.extra_bags);
+                        subRow.find(`input[name="packing_items[${index}][sub_items][${sIdx}][extra_bags_percentage]"]`).val(sub.extra_bags_percentage);
+                        subRow.find(`input[name="packing_items[${index}][sub_items][${sIdx}][empty_bag_weight]"]`).val(sub.empty_bag_weight);
+                        subRow.find(`input[name="packing_items[${index}][sub_items][${sIdx}][total_bags]"]`).val(sub.total_bags);
+
+                        subContainer.append(subRow);
+                        subRow.find('select.select2').select2({width: '100%'});
+                        
+                        // Trigger sub total bags calculation
+                        subRow.find('.sub-no-of-bags').trigger('input');
+                    });
+                }
+            });
+            reindexPackingItems();
+        }
 
         // Add more packing items using clone
         $(document).off('click.jobOrderCreate', '#addPackingItem').on('click.jobOrderCreate', '#addPackingItem', function (e) {
@@ -818,8 +1067,8 @@
             newRow.find('input, select').each(function () {
                 var name = $(this).attr('name');
                 if (name) {
-                    name = name.replace(/\[INDEX\]/g, '[' + packingIndex + ']');
                     name = name.replace(/\[SUB_INDEX\]/g, '[' + subIndex + ']');
+                    name = name.replace(/\[INDEX\]/g, '[' + packingIndex + ']');
                     $(this).attr('name', name);
                 }
             });
@@ -833,7 +1082,11 @@
             newRow.find('input[type="file"]').val('');
 
             // Append tr to tbody
+            // Fix: Standardize append to the end of the container
             container.append(newRow);
+            
+            // Re-initialize Select2 for the new row
+            newRow.find('.select2').select2({ width: '100%' });
 
             // Initialize Select2 for new selects
             newRow.find('select.select2').each(function () {

@@ -197,7 +197,7 @@
                     <input style="width: 100px" type="text" readonly value="{{ $data->purchase_request?->construction_per_square_inch ?? null }}" class="form-control">
                 </td>
                 <td class="bag-only">
-                    <input style="width: 100px" type="text" readonly value="{{ getSizeById($data->purchase_request?->size ?? null)?->size ?? null }}" class="form-control">
+                    <input style="width: 100px" type="text" readonly value="{{ $data->purchase_request?->size ?? null }}" class="form-control size-input-check">
                 </td>
                 <td class="bag-only">
                     <select class="form-control select2" multiple disabled style="width: 120px">
@@ -412,4 +412,10 @@
              $('.bag-only').hide();
          }
      }
- </script>
+    $(document).on('input', '.size-input-check', function() {
+        this.value = this.value.replace(/[^0-9.]/g, '');
+        if ((this.value.match(/\./g) || []).length > 1) {
+            this.value = this.value.replace(/\.+$/, "");
+        }
+    });
+</script>

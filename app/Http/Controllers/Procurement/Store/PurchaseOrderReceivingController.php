@@ -578,8 +578,8 @@ class PurchaseOrderReceivingController extends Controller
             'remarks' => 'nullable|array',
             'remarks.*' => 'nullable|string|max:1000',
 
-            'receive_weight' => 'nullable|array',
-            'receive_weight.*' => 'nullable|string|max:1000',
+            'receive_weight' => 'required|array',
+            'receive_weight.*' => 'required|numeric|gt:0',
 
         ]);
 

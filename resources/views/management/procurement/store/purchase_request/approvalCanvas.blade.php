@@ -204,14 +204,12 @@
                         placeholder="Cons./sq. in." readonly></td>
                 
                 <td class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">
-                    <select name="size[]" id="size_{{ $rowIdApproval }}" class="form-control item-select size-select"
-                        disabled>
-                        <option value="">Select Size</option>
-                        @foreach(getAllSizes() ?? [] as $size)
-                        <option @selected(($size->id ?? '') == ($item->size ?? '')) value="{{ $size->id ?? '' }}">
-                            {{ $size->size ?? '' }}</option>
-                        @endforeach
-                    </select>
+                    @php
+                        $current_size_app = $item->size;
+                        $display_size_app = (getSizeById($current_size_app)->size ?? $current_size_app);
+                    @endphp
+                    <input type="text" id="size_{{ $rowIdApproval }}" name="size[]" class="form-control" readonly
+                        value="{{ $display_size_app }}">
                 </td>
 
                 <td class="bag-only" style="min-width: 350px;">
@@ -294,7 +292,6 @@
 
             $("#color_{{ $jsIndexApproval }}").select2();
             $("#brands_{{ $jsIndexApproval }}").select2();
-            $("#size_{{ $jsIndexApproval }}").select2();
             $("#stitching_{{ $jsIndexApproval }}").select2();
             $('#job_order_id_{{ $jsIndexApproval }}').select2({
                 placeholder: 'Please Select Job Order',
@@ -476,13 +473,7 @@
                         </div>
                     </td>
                     <td class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">
-                    <select name="size[]" id="size_${index}" class="form-control item-select size-select">
-                            <option value="">Select Size</option>
-                            @foreach(getAllSizes() ?? [] as $size)
-                            <option value="{{ $size->id }}">
-                                {{ $size->size }}</option>
-                            @endforeach
-                        </select>
+                        <input type="text" name="size[]" id="size_${index}" class="form-control size-input-check" placeholder="Size">
                     </td>
                     <td style="min-width: 350px;" class="bag-only">
                         <div class="loop-fields">
@@ -521,7 +512,6 @@
         $('#purchaseRequestBody').append(row);
 
         $('#color_' + index).select2();
-        $('#size_' + index).select2();
         $('#brands_' + index).select2();
         $('#stitching_' + index).select2();
         $('#category_id_' + index).select2();
@@ -584,4 +574,10 @@
             }
         });
     }
+    $(document).on('input', '.size-input-check', function() {
+        this.value = this.value.replace(/[^0-9.]/g, '');
+        if ((this.value.match(/\./g) || []).length > 1) {
+            this.value = this.value.replace(/\.+$/, "");
+        }
+    });
 </script>

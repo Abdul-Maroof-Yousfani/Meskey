@@ -345,7 +345,7 @@
                                 <td style="min-width: 200px;" class="bag-only">
                                     <input  type="text" readonly name="size[]"
                                         value="{{ $data->size }}" id="size_{{ $key }}"
-                                        class="form-control" step="0.01" min="0">
+                                        class="form-control size-input-check" step="0.01" min="0">
                                 </td>
                                 <td style="min-width: 200px;" class="bag-only">
                                       <select class="form-control select2" multiple disabled>
@@ -734,5 +734,11 @@ function calculatePercentage(el) {
         $(document).off('scroll.select2');
         $(window).off('scroll.select2');
         $('*').off('scroll.select2');           // aggressive but often works
+    });
+    $(document).on('input', '.size-input-check', function() {
+        this.value = this.value.replace(/[^0-9.]/g, '');
+        if ((this.value.match(/\./g) || []).length > 1) {
+            this.value = this.value.replace(/\.+$/, "");
+        }
     });
 </script>

@@ -108,6 +108,7 @@
                 <th class="bag-only" style="min-width: 300px;">Brands</th>
                 <th class="bag-only" style="min-width: 200px;">Min Weight (gm)</th>
                 <th class="bag-only" style="min-width: 150px;">Tolerance</th>
+                <th class="bag-only" style="min-width: 150px;">Tolerance %</th>
                 <th class="bag-only" style="min-width: 300px;">Color</th>
                 <th class="bag-only" style="min-width: 300px;">Cons./sq. in.</th>
                 <th class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">Size</th>
@@ -145,11 +146,6 @@
     $(document).ready(function () {
         $('#category_id_0').select2();
         $(".color-select").select2();
-        $(".size-select").select2({
-            tags: true,
-            placeholder: "Select or add size",
-            allowClear: true
-        });
         $(".stitching-select").select2();
         $(".select2").select2();
         $('#job_order_id_0').select2({
@@ -330,7 +326,7 @@
                     <td class="bag-only" style="min-width: 200px;">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
-                                <input type="number" name="min_weight[]" id="min_weight_${index}" class="form-control"
+                                <input type="number" name="min_weight[]" id="min_weight_${index}" class="form-control min-weight-input"
                                     step="0.01" min="0" placeholder="Min Weight">
                             </div>
                         </div>
@@ -338,8 +334,16 @@
                     <td class="bag-only" style="min-width: 150px;">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
-                                <input type="text" name="tolerance[]" id="tolerance_${index}" class="form-control"
-                                    placeholder="Tolerance">
+                                <input type="number" name="tolerance[]" id="tolerance_${index}" class="form-control tolerance-input"
+                                    step="0.01" placeholder="Tolerance" readonly>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="bag-only" style="min-width: 150px;">
+                        <div class="loop-fields">
+                            <div class="form-group mb-0">
+                                <input type="number" name="tolerance_percentage[]" id="tolerance_percentage_${index}" class="form-control tolerance-percentage-input"
+                                    step="0.01" min="0" max="100" placeholder="Tol. %">
                             </div>
                         </div>
                     </td>
@@ -361,12 +365,7 @@
                         </div>
                     </td>
                     <td class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">
-                        <select name="size[]" id="size_${index}" class="form-control item-select size-select" style="width: 100%;">
-                            <option value="">Select Size</option>
-                            @foreach(getAllSizes() ?? [] as $size)
-                                <option value="{{ $size->id }}">{{ $size->size }}</option>
-                            @endforeach
-                        </select>
+                        <input type="text" name="size[]" id="size_${index}" class="form-control size-input-check" placeholder="Size">
                     </td>
                     <td class="bag-only" style="min-width: 350px;">
                         <div class="loop-fields">
@@ -423,11 +422,6 @@
 
         $("#brands_" + index).select2();
         $("#color_" + index).select2();
-        $("#size_" + index).select2({
-            tags: true,
-            placeholder: "Select or add size",
-            allowClear: true
-        });
         $("#stitching_" + index).select2();
 
 
@@ -497,5 +491,27 @@
         // Update live balance display
         let remaining = (balance - input.val()).toFixed(2);
         input.closest('td').find('.balance-span').text(remaining);
+    });
+
+    $(document).on('input', '.tolerance-percentage-input, .min-weight-input', function() {
+        let row = $(this).closest('tr');
+        let minWeight = parseFloat(row.find('.min-weight-input').val()) || 0;
+        let percentage = parseFloat(row.find('.tolerance-percentage-input').val()) || 0;
+        
+        if (percentage > 100) {
+            alert('Tolerance percentage cannot exceed 100%.');
+            row.find('.tolerance-percentage-input').val(100);
+            percentage = 100;
+        }
+
+        let tolerance = (minWeight * percentage / 100).toFixed(2);
+        row.find('.tolerance-input').val(tolerance);
+    });
+
+    $(document).on('input', '.size-input-check', function() {
+        this.value = this.value.replace(/[^0-9.]/g, '');
+        if ((this.value.match(/\./g) || []).length > 1) {
+            this.value = this.value.replace(/\.+$/, "");
+        }
     });
 </script>

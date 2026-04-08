@@ -362,6 +362,10 @@ class ExportOrderController extends Controller
 
             // Update packing items
             if ($request->filled('packing_items')) {
+                // Delete existing sub-items first to avoid orphaned records
+                foreach ($exportOrder->packingItems as $oldPackingItem) {
+                    $oldPackingItem->subItems()->delete();
+                }
                 $exportOrder->packingItems()->delete();
                 foreach ($request->packing_items as $pIdx => $item) {
                     $subItems = $item['sub_items'] ?? [];
