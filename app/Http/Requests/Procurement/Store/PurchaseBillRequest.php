@@ -30,6 +30,8 @@ class PurchaseBillRequest extends FormRequest
             "description" => "required",
             // "description.*" => "required",
             "qty.*" => "required",
+            "rejected_qty.*" => "required",
+            "accepted_qty.*" => "required",
             "rate.*" => "required",
             "gross_amount.*" => "required",
             'tax_percent.*' => "required",

@@ -81,7 +81,9 @@
                         <tr>
                             <th>Item</th>
                             <th>Description</th>
-                            <th>Qty</th>
+                            <th>Total Qty</th>
+                            <th>Accepted Quantity</th>
+                            <th>Rejected Quantity</th>
                             <th>Rate</th>
                             <th>Gross Amount</th>
                             <th>Discount %</th>

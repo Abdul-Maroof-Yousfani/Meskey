@@ -87,7 +87,9 @@
                         <tr>
                             <th>Item</th>
                             <th>Description</th>
-                            <th>Qty</th>
+                            <th>Total Qty</th>
+                            <th>Accepted Quantity</th>
+                            <th>Rejected Quantity</th>
                             <th>Rate</th>
                             <th>Gross Amount</th>
                             <th>Discount %</th>
@@ -128,6 +130,25 @@
                                         id="qty_{{ $key }}" class="form-control qty" step="0.01" readonly
                                         {{-- {{ $isQuotationAvailable ? 'readonly' : '' }} --}}>
                                 </td>
+
+
+                                  <td style="min-width: 150px;">
+                                    <input style="width: 100%" type="number"
+                                        onkeyup=""
+                                        onblur="" name="accepted_qty[]" value="{{ $data->accepted_qty }}"
+                                        id="accepted_qty_{{ $key }}" class="form-control accepted_qty" step="0.01" readonly
+                                        {{-- {{ $isQuotationAvailable ? 'readonly' : '' }} --}}>
+                                </td>
+                                <td style="min-width: 150px;">
+                                    <input style="width: 100%" type="number"
+                                        onkeyup=""
+                                        onblur="" name="qty[]" value="{{ $data->rejected_qty }}"
+                                        id="qty_{{ $key }}" class="form-control qty" step="0.01" readonly
+                                        {{-- {{ $isQuotationAvailable ? 'readonly' : '' }} --}}>
+                                </td>
+
+                              
+                                
 
                                 <td style="min-width: 150px;">
                                      <input style="width: 100%" type="number"

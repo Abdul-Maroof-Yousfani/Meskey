@@ -6,12 +6,15 @@
         $deductionPerBag = ($data->category_id == 38) ? ($data->qc?->deduction_per_bag ?? 0) : null;
         $deduction_type = ($data->category_id == 38) ? $data->qc?->deduction_type ?? '' : '';
         $deduction = 0;
+        $acceptedQty = ($data->category_id == 38) ? ($data->qc?->accepted_quantity ?? 0) : ($data->qty ?? 0);
 
         if($deduction_type != '') {
             if($deduction_type == 'full_deduction') {
+                $remainingQty += $rejectedQty;
                 $deduction = $remainingQty * $deductionPerBag;
             } else if($deduction_type == 'half_deduction') {
                 $deduction = $rejectedQty * $deductionPerBag;
+                $remainingQty += $rejectedQty;
             }
         }
 
@@ -46,6 +49,18 @@
             <input style="width: 100%" type="number" onkeyup=""
                 onblur="" name="qty[]" value="{{ $remainingQty }}"
                 id="qty_{{ $key }}" class="form-control qty" step="0.01" readonly {{-- {{ $isQuotationAvailable ? 'readonly' : '' }} --}}>
+        </td>
+
+        <td style="min-width: 150px;">
+            <input style="width: 100%" type="number" onkeyup=""
+                onblur="" name="accepted_qty[]" value="{{ $acceptedQty }}"
+                id="accepted_qty_{{ $key }}" class="form-control accepted_qty" step="0.01" readonly {{-- {{ $isQuotationAvailable ? 'readonly' : '' }} --}}>
+        </td>
+
+        <td style="min-width: 150px;">
+            <input style="width: 100%" type="number" onkeyup=""
+                onblur="" name="rejected_qty[]" value="{{ $rejectedQty }}"
+                id="rejected_qty_{{ $key }}" class="form-control rejected_qty" step="0.01" readonly {{-- {{ $isQuotationAvailable ? 'readonly' : '' }} --}}>
         </td>
 
         <td style="min-width: 150px;">
