@@ -58,13 +58,16 @@
         
         $currentInputQty = (float)$data->qty;
     } else {
-        $sumOrderedPR = $prSource ? (float)($prSource->purchase_order_data->filter(function($poItem){
+        $activePOId = $current_po_id ?? null;
+        $sumOrderedPR = $prSource ? (float)($prSource->purchase_order_data->filter(function($poItem) use ($activePOId) {
+             if ($activePOId && $poItem->purchase_order_id == $activePOId) return false;
              return ($poItem->am_approval_status != 'rejected') && (optional($poItem->purchase_order)->am_approval_status != 'rejected');
         })->sum('qty') ?? 0) : 0;
         $remainingQty = $prTotal - $sumOrderedPR;
         
         if ($pqSource) {
-            $sumOrderedPQ = (float)($pqSource->purchase_order_data->filter(function($poItem){
+            $sumOrderedPQ = (float)($pqSource->purchase_order_data->filter(function($poItem) use ($activePOId) {
+                 if ($activePOId && $poItem->purchase_order_id == $activePOId) return false;
                  return ($poItem->am_approval_status != 'rejected') && (optional($poItem->purchase_order)->am_approval_status != 'rejected');
             })->sum('qty') ?? 0);
             $remainingQty = min($remainingQty, $pqTotal - $sumOrderedPQ);

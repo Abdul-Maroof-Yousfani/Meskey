@@ -425,12 +425,20 @@
     <div class="row bottom-button-bar">
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
-            <button type="submit" class="btn btn-primary submitbutton">Save</button>
+            <button type="submit" class="btn btn-primary submitbutton">Saving</button>
         </div>
     </div>
 </form>
 
 <script>
+    function toggleVisibility(categoryId) {
+        if (categoryId == 11 || categoryId == 38) {
+            $('.bag-only').show();
+        } else {
+            $('.bag-only').hide();
+        }
+    }
+
     $(document).ready(function() {
         // Get the selected purchase request ID from the dropdown
         let purchaseOrderId = $('select[name="purchase_order_id"]').val();
@@ -465,7 +473,10 @@
         $.ajax({
             url: "{{ route('store.get.quotations') }}",
             type: 'GET',
-            data: { pr_id: pr_id },
+            data: { 
+                pr_id: pr_id,
+                purchase_order_id: '{{ $purchaseOrder->id }}'
+            },
             success: function(response) {
                 const $dropdown = $("#quotation_no");
                 const currentVal = $dropdown.val();
@@ -478,6 +489,8 @@
         });
     }
 
+
+
     function get_purchase_with_quotation(purchaseRequestId, quotationNo) {
         $.ajax({
             url: "{{ route('store.purchase-order.approve-item') }}",
@@ -485,7 +498,8 @@
             data: {
                 id: purchaseRequestId,
                 quotation_no: quotationNo,
-                supplier_id: $('#supplier_id').val()
+                supplier_id: $('#supplier_id').val(),
+                purchase_order_id: '{{ $purchaseOrder->id }}'
             },
             beforeSend: function() {
                 $('#purchaseRequestBody').html('<p>Loading...</p>');

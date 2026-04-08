@@ -281,10 +281,11 @@ class PurchaseOrderController extends Controller
 
         
 
+        $current_po_id = $request->purchase_order_id;
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $job_orders = JobOrder::select('id', 'job_order_no')->get();
         $taxes = Tax::select('id', 'name', 'percentage')->where('status', 'active')->get();
-        $html = view('management.procurement.store.purchase_order.purchase_data', compact('dataItems', 'categories', 'job_orders', 'taxes'))->render();
+        $html = view('management.procurement.store.purchase_order.purchase_data', compact('dataItems', 'categories', 'job_orders', 'taxes', 'current_po_id'))->render();
 
         return response()->json([
             'html' => $html,
@@ -606,6 +607,12 @@ class PurchaseOrderController extends Controller
 
     public function get_quotations(): array {
         $pr_id = request()->pr_id;
+        $current_po_id = request()->purchase_order_id;
+        $linked_quotation_id = null;
+
+        if ($current_po_id) {
+            $linked_quotation_id = DB::table('purchase_orders')->where('id', $current_po_id)->value('purchase_quotation_id');
+        }
        
         $quotations = PurchaseQuotation::with(["quotation_data", "quotation_data.purchase_order_data"])
                     ->whereHas("quotation_data", function($q) {
@@ -614,14 +621,22 @@ class PurchaseOrderController extends Controller
                     ->where("purchase_request_id", $pr_id)
                     ->get();
         
-        $quotations = $quotations->filter(function($quotation) {
+        $quotations = $quotations->filter(function($quotation) use ($current_po_id, $linked_quotation_id) {
+            // ALWAYS show the quotation that is already linked to the current PO
+            if ($linked_quotation_id && $quotation->id == $linked_quotation_id) {
+                return true;
+            }
+
             $totalQty = $quotation->quotation_data->where("am_approval_status", 'approved')->sum("qty");
-        $po_qty = $quotation->quotation_data->sum(function ($qData) {
-            return $qData->purchase_order_data->filter(function ($poItem) {
-                return $poItem->am_approval_status != 'rejected' && $poItem->purchase_order->am_approval_status != 'rejected';
-            })->sum('qty');
-        });
-        return $po_qty < $totalQty;
+            $po_qty = $quotation->quotation_data->sum(function ($qData) use ($current_po_id) {
+                return $qData->purchase_order_data->filter(function ($poItem) use ($current_po_id) {
+                    if ($current_po_id && $poItem->purchase_order_id == $current_po_id) {
+                        return false; 
+                    }
+                    return $poItem->am_approval_status != 'rejected' && $poItem->purchase_order->am_approval_status != 'rejected';
+                })->sum('qty');
+            });
+            return $po_qty < $totalQty;
         });
 
 
