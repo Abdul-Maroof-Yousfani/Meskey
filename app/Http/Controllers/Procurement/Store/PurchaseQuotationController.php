@@ -866,31 +866,28 @@ class PurchaseQuotationController extends Controller
             ->count();
         $quantities = [];
         if ($existingQuotationCount > 0) {
-            $quotationQuantities = PurchaseQuotationData::whereIn('purchase_request_data_id', $purchaseRequestDataIds)
+
+            // Important: Group by purchase_request_data_id instead of only item_id
+            $quotedQuantities = PurchaseQuotationData::whereIn('purchase_request_data_id', $purchaseRequestDataIds)
                 ->where("am_approval_status", "!=", "rejected")
-            
-                // ->where("am_approval_status", 'approved')
-                // ->orWhere("am_approval_status", "pending")
                 ->whereHas('purchase_quotation', function ($q) use ($supplierId) {
                     $q->where('supplier_id', $supplierId);
                 })
-                ->select('item_id', DB::raw('SUM(qty) as total_quoted_qty'))
-                ->groupBy('item_id')
-                ->pluck('total_quoted_qty', 'item_id');
+                ->select('purchase_request_data_id', DB::raw('SUM(qty) as total_quoted_qty'))
+                ->groupBy('purchase_request_data_id')           // ←←← Yeh change karo
+                ->pluck('total_quoted_qty', 'purchase_request_data_id');
 
+            // Ab har item ke liye uski apni row id ke against quoted qty nikaalo
             foreach ($dataItems as $item) {
-                $quotedQty = $quotationQuantities[$item->item_id] ?? 0;
+                $quotedQty = $quotedQuantities[$item->id] ?? 0;     // ←←← item->id use karo, na ke item_id
                 $remainingQty = $item->qty - $quotedQty;
                 $item->qty = max($remainingQty, 0);
             }
+
         } else {
+            // No previous quotation case
             foreach ($dataItems as $item) {
-                if($item->qty) {
-                    $quantities[] = $item->qty;
-                } else {
-                    $quantities[] = 0;
-                }
-                $item->qty = $item->qty;
+                $item->qty = $item->qty ?? 0;
             }
         }
 
