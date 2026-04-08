@@ -109,18 +109,17 @@ class PurchaseRequestController extends Controller
         $groupedData = [];
         $processedData = [];
         foreach ($PurchaseRequests as $row) {
-            $requestNo = $row->purchase_request?->purchase_request_no;
-            $created_by_id = $row->purchase_request?->created_by;
-            $itemId = $row->item->id ?? 'unknown';
+            $requestNo = $row->purchase_request?->purchase_request_no ?? 'unknown';
 
-            if (! isset($groupedData[$requestNo])) {
+            if (!isset($groupedData[$requestNo])) {
                 $groupedData[$requestNo] = [
                     'request_data' => $row->purchase_request,
-                    'items' => [],
+                    'items' => [],           // yahan array of items
                 ];
             }
 
-            $groupedData[$requestNo]['items'][$itemId] = [
+            // Important: item_id ko key mat banao, normal push karo
+            $groupedData[$requestNo]['items'][] = [
                 'item_data' => $row,
             ];
         }
