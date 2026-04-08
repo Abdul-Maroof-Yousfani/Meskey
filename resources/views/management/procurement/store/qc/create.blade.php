@@ -329,33 +329,47 @@
         
         const net_weight = el.closest("tr").find("#net_weight");
         const bag_weight = el.closest("tr").find("#bag_weight");
-
-        if(!net_weight.val() || !bag_weight.val()) return;
-
         const total_weight = el.closest("tr").find("#total_weight");
 
-        const result =  (parseFloat(net_weight.val()) / parseFloat(bag_weight.val())).toFixed(2);
+        if(!net_weight.val() || !bag_weight.val()) {
+            total_weight.val('');
+            updateOverallWeights();
+            return;
+        }
 
+        const bag_val = parseFloat(bag_weight.val());
+        if (bag_val === 0) {
+            total_weight.val('');
+            updateOverallWeights();
+            return;
+        }
+
+        const result = (parseFloat(net_weight.val()) / bag_val).toFixed(2);
         total_weight.val(result);
 
         updateOverallWeights();
     }
 
     function updateOverallWeights() {
-        let total = 0;
-        let count = 0;
-        $('input[name="total_weight[]"]').each(function() {
-            let val = parseFloat($(this).val());
-            if (!isNaN(val) && val > 0) {
-                total += val;
-                count++;
+        let totalNetWeight = 0;
+        let totalBagsCount = 0;
+
+        let netWeights = $('input[name="net_weight[]"]');
+        let bagWeights = $('input[name="bag_weight[]"]');
+
+        for(let i = 0; i < netWeights.length; i++) {
+            let nw = parseFloat($(netWeights[i]).val());
+            let bw = parseFloat($(bagWeights[i]).val());
+
+            if (!isNaN(nw) && !isNaN(bw) && bw > 0) {
+                totalNetWeight += nw;
+                totalBagsCount += bw;
             }
-        });
+        }
+
+        let avg = totalBagsCount > 0 ? (totalNetWeight / totalBagsCount).toFixed(2) : 0;
         
-        let avg = count > 0 ? (total / count).toFixed(2) : 0;
-        // $('#average_weight_of_1_bag').val(avg);
-        
-        // Show average of 'average weight of 1 bag (grams)' in place of 'total weight received (kg)'
+        // Show results in Sample Average Weight
         $('#total_weight_received').val(avg);
     }
 

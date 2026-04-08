@@ -292,7 +292,7 @@ class QcController extends Controller
         $allowed_value = $min_weight - $tolerance;
         $is_auto_approval = $request->sample_average_weight >= $allowed_value && $qcParametersOk;
      
-        $purchase_receiving_data->qc()->update([...$request->validated(), "deduction_per_bag" => $request->deduction_per_bag]);
+        $purchase_receiving_data->qc()->update([...collect($request->validated())->except("net_weight", "bag_weight"), "deduction_per_bag" => $request->deduction_per_bag]);
         if($is_auto_approval) {
             $purchase_receiving_data->qc->am_approval_status = "approved";
             $purchase_receiving_data->qc->save();
