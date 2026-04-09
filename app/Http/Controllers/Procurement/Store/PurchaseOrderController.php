@@ -497,6 +497,7 @@ class PurchaseOrderController extends Controller
         try {
             $PurchaseOrder = PurchaseOrder::findOrFail($id);
             $PurchaseOrder->update([
+                'purchase_quotation_id' => $request->quotation_no ?? null,
                 'description' => $request->description,
                 'delivery_address' => $request->delivery_address,
                 'am_approval_status' => 'pending',
@@ -510,6 +511,7 @@ class PurchaseOrderController extends Controller
                     'category_id' => $request->category_id[$index],
                     'item_id' => $itemId,
                     'purchase_request_data_id' => $request->purchase_request_data_id[$index],
+                    'purchase_quotation_data_id' => isset($request->purchase_quotation_data_id[$index]) ? $request->purchase_quotation_data_id[$index] : null,
                     'qty' => $request->qty[$index],
                     'rate' => $request->rate[$index],
                     'total' => $request->total[$index],
