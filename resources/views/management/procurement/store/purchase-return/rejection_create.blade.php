@@ -25,7 +25,7 @@
                     @foreach($approvedGRNs ?? [] as $grn)
                         @php
                             $itemsData = $grn->purchaseOrderReceivingData->filter(function($data) {
-                                return ($data->qc->rejected_quantity ?? 0) > 0;
+                                return ($data->qc->rejected_quantity ?? 0) > 0 && ($data->qc->deduction_per_bag ?? 0) == 0;
                             })->map(function($data) {
                                 return [
                                     'id' => $data->item_id,

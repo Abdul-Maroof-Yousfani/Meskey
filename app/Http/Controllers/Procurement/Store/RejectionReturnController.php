@@ -97,6 +97,7 @@ class RejectionReturnController extends Controller
     {
         $approvedGRNs = PurchaseOrderReceiving::whereHas('purchaseOrderReceivingData.qc', function($q) {
                 $q->where('deduction_type', 'no_deduction')
+                  ->where('deduction_per_bag', 0)
                   ->where('rejected_quantity', '>', 0);
             })
             ->where(function($query) {
@@ -118,6 +119,7 @@ class RejectionReturnController extends Controller
         
         $approvedGRNs = PurchaseOrderReceiving::whereHas('purchaseOrderReceivingData.qc', function($q) {
                 $q->where('deduction_type', 'no_deduction')
+                  ->where('deduction_per_bag', 0)
                   ->where('rejected_quantity', '>', 0);
             })
             ->get();
