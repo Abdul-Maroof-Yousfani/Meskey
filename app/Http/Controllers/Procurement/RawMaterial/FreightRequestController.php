@@ -235,7 +235,6 @@ class FreightRequestController extends Controller
             'arrivalSlip',
             'accountsOf'
         ])->findOrFail($id);
-
         $requestedAmount = PaymentRequest::whereHas('paymentRequestData', function ($q) use ($arrivalTicket, $id) {
             $q->where('ticket_id', $id)
                 ->where('module_type', 'freight_payment')
@@ -849,7 +848,7 @@ class FreightRequestController extends Controller
             'isTicketPage' => true,
         ];
         $data['vendors'] = Vendor::get();
-
+        
         return view('management.procurement.raw_material.freight_request.create', $data);
     }
 

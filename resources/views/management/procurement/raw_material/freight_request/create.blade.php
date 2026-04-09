@@ -8,7 +8,7 @@
     $paymentRequest = isset($paymentRequest) ? $paymentRequest : null;
     $isUpdated = isset($isUpdated) ? $isUpdated : null;
     $approval = isset($approval) ? $approval : null;
-
+    
 @endphp
 <style>
     .hide,
@@ -172,7 +172,7 @@
 
     @php
         $has_pendings = isset($paymentRequests)
-            ? $paymentRequests->whereIn('status', ['pending', 'approved'])->count()
+            ? $paymentRequests->where("module_type", "freight_request")->whereIn('status', ['pending', 'approved'])->count()
             : 0;
     @endphp
     @if($ticket->saudaType?->name == 'Pohanch' && $has_pendings == 0)
