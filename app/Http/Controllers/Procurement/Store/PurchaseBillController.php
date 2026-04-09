@@ -446,6 +446,8 @@ class PurchaseBillController extends Controller
         $tax_amount = $request->tax_amount;
         $deduction_per_piece = $request->deduction_per_piece;
         $purchase_order_receiving_data_id = $request->purchase_order_receiving_data_id;
+        $rejected_qty = $request->rejected_qty;
+        $accepted_qty = $request->accepted_qty;
 
         DB::beginTransaction();
 
@@ -483,6 +485,8 @@ class PurchaseBillController extends Controller
                     'discount_amount' => $discount_amounts[$index],
                     'deduction' => $deduction[$index],
                     'final_amount' => $final_amount[$index],
+                    'rejected_qty' => $rejected_qty[$index],
+                    'accepted_qty' => $accepted_qty[$index],
                     'am_approval_status' => 'pending',
                     'am_change_mode' => 1,
                 ]);

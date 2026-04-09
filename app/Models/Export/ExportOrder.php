@@ -79,6 +79,11 @@ class ExportOrder extends Model
         return $this->belongsTo(ExportSodaField::class, 'export_soda_id');
     }
 
+    public function quotation()
+    {
+        return $this->belongsTo(Quotation::class, 'quotation_id');
+    }
+
     public function broker()
     {
         return $this->belongsTo(Broker::class);
@@ -199,5 +204,10 @@ class ExportOrder extends Model
     public function incoterm()
     {
         return $this->belongsTo(IncoTerm::class, 'incoterm_id');
+    }
+
+    public function deliveryOrders()
+    {
+        return $this->hasMany(\App\Models\Sales\DeliveryOrder::class, 'export_order_id');
     }
 }

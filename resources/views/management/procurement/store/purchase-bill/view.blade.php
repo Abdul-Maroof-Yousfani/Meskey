@@ -75,7 +75,9 @@
                     <tr>
                         <th>Item</th>
                         <th>Description</th>
-                        <th>Qty</th>
+                        <th>Total Qty</th>
+                        <th>Accepted Qty</th>
+                        <th>Rejected Qty</th>
                         <th>Rate</th>
                         <th>Gross Amount</th>
                         <th>Discount %</th>
@@ -124,6 +126,28 @@
                                    value="{{ $data->qty }}"
                                    id="qty_{{ $key }}" 
                                    class="form-control qty" 
+                                   step="0.01" 
+                                   readonly>
+                        </td>
+
+                        <td style="width: 140px; min-width: 140px;">
+                            <input style="width: 100%;" 
+                                   type="number" 
+                                   name="accepted_qty[]" 
+                                   value="{{ $data->accepted_qty }}"
+                                   id="accepted_qty_{{ $key }}" 
+                                   class="form-control accepted_qty" 
+                                   step="0.01" 
+                                   readonly>
+                        </td>
+
+                        <td style="width: 140px; min-width: 140px;">
+                            <input style="width: 100%;" 
+                                   type="number" 
+                                   name="rejected_qty[]" 
+                                   value="{{ $data->rejected_qty }}"
+                                   id="rejected_qty_{{ $key }}" 
+                                   class="form-control rejected_qty" 
                                    step="0.01" 
                                    readonly>
                         </td>

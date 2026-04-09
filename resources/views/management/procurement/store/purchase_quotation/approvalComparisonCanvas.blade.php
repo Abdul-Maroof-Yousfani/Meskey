@@ -92,6 +92,7 @@
                             <th style="min-width: 120px;">Item uom</th>
                             <th style="min-width: 160px;">Delivery Date</th>
                             <th class="col-sm-3 bag-only">Min Weight (gm)</th>
+                            <th class="col-sm-3 bag-only">Tolerance</th>
                             <th class="col-sm-3 bag-only">Brand</th>
                             <th class="col-sm-3 bag-only">Color</th>
                             <th class="col-sm-3 bag-only">Cons./sq. in.</th>
@@ -202,6 +203,13 @@
                                         id="min_weight_{{ $key }}" class="form-control" step="0.01" min="0">
                                     <input type="hidden" name="min_weight[]"
                                         value="{{ $data->purchase_request?->min_weight ?? null }}">
+                                </td>
+                                <td style="width: 30%" class="bag-only">
+                                    <input style="width: 100px" type="text" readonly
+                                        value="{{ $data->purchase_request?->tolerance ?? null }}"
+                                        id="tolerance_{{ $key }}" class="form-control">
+                                    <input type="hidden" name="tolerance[]"
+                                        value="{{ $data->purchase_request?->tolerance ?? null }}">
                                 </td>
                                 <td style="width: 30%" class="bag-only">
                                     <input style="width: 100px" type="text" readonly
