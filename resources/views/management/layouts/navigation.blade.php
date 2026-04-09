@@ -373,6 +373,14 @@
                         </a>
                     </li>
 
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('store.rejection-return.index') }}"
+                            onclick="loadPageContent('{{ route('store.rejection-return.index') }}')"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Task Board">Rejection Return</span>
+                        </a>
+                    </li>
+
 
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('store.purchase-bill.index') }}"
@@ -405,13 +413,6 @@
                         </a>
                     </li>
 
-                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                            href="{{ route('store.rejection-return.index') }}"
-                            onclick="loadPageContent('{{ route('store.rejection-return.index') }}')"
-                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
-                            <span data-i18n="Task Board">Rejection Return</span>
-                        </a>
-                    </li>
 
                     <!-- <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('store.purchase-order-payment-request.index') }}"
