@@ -709,6 +709,10 @@ class ArrivalMasterRevertController extends Controller
         if ($arrivalTicket->firstWeighbridge) {
             $firstWeight = $arrivalTicket->firstWeighbridge->weight;
             $netWeight = $firstWeight - $validated['arrival_second_weight'];
+
+            $arrivalTicket->update([
+                'arrived_net_weight' => $netWeight
+            ]);
             // You can save this net weight if needed
         }
 
