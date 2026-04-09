@@ -45,8 +45,9 @@
                                     <thead>
                                         <tr>
                                             <th width="5%">S no.</th>
-                                            <th width="15%">Delivery Order ID</th>
-                                            <th width="15%">Export Order No</th>
+                                            <th width="15%">Do No</th>
+                                            <th width="12%">Export Order No</th>
+                                            <th width="12%">Form-E No</th>
                                             <th width="15%">Buyer</th>
                                             <th width="15%">Delivery Date</th>
                                             <th width="15%">Shipment Date</th>

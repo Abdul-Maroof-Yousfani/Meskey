@@ -29,7 +29,7 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label>Quotation#:</label>
-                        <input type="text" class="form-control" value="{{ $exportOrder->quotation_id ? '#' . $exportOrder->quotation_id : '-' }}" readonly>
+                        <input type="text" class="form-control" value="{{ $exportOrder->quotation ? ($exportOrder->quotation->reference ?? '#' . $exportOrder->quotation_id) . ' - ' . ($exportOrder->quotation->product->name ?? '') : '-' }}" readonly>
                     </div>
                 </div>
             </div>
@@ -132,7 +132,7 @@
                                 <div class="input-group">
                                     <input type="text" value="{{ $spec->spec_value ?? 0 }}" class="form-control" readonly>
                                     <div class="input-group-prepend">
-                                        <button class="btn btn-secondary" type="button">{{ $spec->slabType->qc_symbol ?? 'N/A' }}</button>
+                                        <button class="btn btn-secondary" type="button">{{ $spec->productSlabType->qc_symbol ?? 'N/A' }}</button>
                                     </div>
                                 </div>
                             </td>

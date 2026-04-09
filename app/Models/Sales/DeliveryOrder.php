@@ -81,4 +81,44 @@ class DeliveryOrder extends Model
     public function loadingProgramItems() {
         return $this->hasMany(LoadingProgramItem::class, "delivery_order_id");
     }
+    public function exportOrder() {
+        return $this->belongsTo(\App\Models\Export\ExportOrder::class, 'export_order_id');
+    }
+
+    public function exportFormE() {
+        return $this->belongsTo(\App\Models\Export\ExportFormE::class, 'export_form_e_id');
+    }
+
+    public function exportPackingItems() {
+        return $this->hasMany(\App\Models\Export\ExportDeliveryOrderPackingItem::class, 'delivery_order_id');
+    }
+
+    /**
+     * Override createApprovalRows from HasApproval trait to handle duplicates safely
+     */
+    public function createApprovalRows()
+    {
+        $module = $this->getApprovalModule();
+        if (!$module) {
+            return;
+        }
+
+        $currentCycle = $this->getCurrentApprovalCycle();
+
+        foreach ($module->roles as $moduleRole) {
+            \App\Models\ApprovalsModule\ApprovalRow::updateOrCreate(
+                [
+                    'module_id' => $module->id,
+                    'record_id' => $this->id,
+                    'role_id' => $moduleRole->role_id,
+                    'approval_cycle' => $currentCycle,
+                ],
+                [
+                    'required_count' => $moduleRole->approval_count,
+                    'current_count' => 0,
+                    'status' => 'pending'
+                ]
+            );
+        }
+    }
 }
