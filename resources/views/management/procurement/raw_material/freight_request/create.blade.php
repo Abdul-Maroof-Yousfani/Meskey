@@ -172,7 +172,7 @@
 
     @php
         $has_pendings = isset($paymentRequests)
-            ? $paymentRequests->where("module_type", "freight_request")->whereIn('status', ['pending', 'approved'])->count()
+            ? $paymentRequests->where("module_type", "freight_payment")->whereIn('status', ['pending', 'approved'])->count()
             : 0;
     @endphp
     @if($ticket->saudaType?->name == 'Pohanch' && $has_pendings == 0)
@@ -526,7 +526,7 @@
         <div class="col-md-2">
             <div class="form-group">
                 <label class="font-weight-bold">Total Commision</label>
-                <input type="text" class="form-control bg-light" name="total_commision" value="" readonly>
+                <input type="text" class="form-control bg-light total_commision" name="total_commision" value="" readonly>
             </div>
         </div>
         <div class="col-md-2">
@@ -777,6 +777,7 @@
             let otherMinusLabour = parseFloat($('[name="other_minus_labour"]').val()) || 0;
             let extraMinusDed = parseFloat($('[name="extra_minus_ded"]').val()) || 0;
             let commissionAmount = parseFloat($('[name="commission_amount"]').val()) || 0;
+            let totalComission = parseFloat($('[name="total_commision"]').val()) || 0;
 
             let netShortage = parseFloat(document.getElementById('netShortage').value) || 0;
 
@@ -804,15 +805,19 @@
             if (commissionPercent > 0) {
                 const commissionAmount = (grossAfterDeductAmount * commissionPercent) / 100;
                 $('.commission-amount').val(commissionAmount.toFixed(2));
+                $(".total_commision").val(commissionAmount.toFixed(2));
+                
             } else {
-                $('.commission-amount').val('0');
+                $('.commission-amount').val('0'); 
+                $(".total_commision").val('0');
+
             }
 
 
             $('[name="gross_amount"]').val(grossAmount.toFixed(2));
             $('[name="total_deductions"]').val(totalDeductions.toFixed(2));
             $('[name="total_labour"]').val(totalLabour.toFixed(2));
-            $('[name="total_commision"]').val(totalCommision.toFixed(2));
+            // $('[name="total_commision"]').val(totalCommision.toFixed(2));
             $('[name="net_amount"]').val(netAmount.toFixed(2));
             $('[name="penalty"]').val(godownPenalty.toFixed(2));
 
