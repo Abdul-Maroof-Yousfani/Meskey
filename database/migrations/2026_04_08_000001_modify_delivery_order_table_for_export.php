@@ -34,10 +34,6 @@ return new class extends Migration
             $table->string("am_approval_status")->nullable()->default("pending")->change();
             $table->foreignId("payment_term_id")->nullable()->change();
             $table->string("am_change_made")->nullable()->default(1)->change();
-            
-            // Keeping these in case they also need to be explicitly nullable to prevent constraint errors
-            $table->foreignId("arrival_id")->nullable()->change();
-            $table->foreignId("subarrival_id")->nullable()->change();
         });
     }
 
