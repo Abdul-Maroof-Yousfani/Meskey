@@ -326,10 +326,10 @@ class FreightRequestController extends Controller
 
             $ticketID = $requestData['ticket_id'];
             $arrivalTicket = ArrivalTicket::where('id', $ticketID)->first();
-            
+
             $arrivalTicket->freight_paid_by_supplier = $is_paid_by_supplier;
             $arrivalTicket->save();
-            
+
             $purchaseOrderID = $requestData['purchase_order_id'];
 
             $purchaseOrder = ArrivalPurchaseOrder::with('supplier')->where('id', $purchaseOrderID)->first();
@@ -883,7 +883,7 @@ class FreightRequestController extends Controller
     public function pohouch_freight_payment_request_approval(Request $request)
     {
 
-        if($request->status == 'rejected') {
+        if ($request->status == 'rejected') {
             $paymentRequest = PaymentRequest::findOrFail($request->payment_request_id);
             $paymentRequest->status = "rejected";
             $paymentRequest->save();
@@ -948,7 +948,7 @@ class FreightRequestController extends Controller
 
             $inventoryAmountwithFreight = $inventoryAmount + $request->net_amount + $request->godown_penalty;
 
-          
+
             if ($request->godown_penalty == 'Commit') {
                 $txnInv = Transaction::where('grn_no', $grnNo)
                     ->where('purpose', 'arrival-slip')
@@ -984,7 +984,7 @@ class FreightRequestController extends Controller
 
             }
             $counterAccount = $saudaType == "pohouch" ? $purchaseOrder->supplier->account_id : $qcAccountId;
-            
+
             if ($saudaType == "pohouch") {
 
                 $paid_by_supplier_value = $request->penalty + $request->total_labour + $request->total_commision;
@@ -1024,7 +1024,7 @@ class FreightRequestController extends Controller
                     }
                 }
             }
-            
+
             if ($saudaType == "thadda") {
                 $supplierDebitFreight = Transaction::where('grn_no', $grnNo)
                     ->where('purpose', "{$saudaType}-freight-paid-to-vendor")
@@ -1242,7 +1242,7 @@ class FreightRequestController extends Controller
 
     public function pohouch_freight_payment_request_approval_wo_contract(Request $request)
     {
-        if($request->status == 'rejected') {
+        if ($request->status == 'rejected') {
             $paymentRequest = PaymentRequest::findOrFail($request->payment_request_id);
             $paymentRequest->status = "rejected";
             $paymentRequest->save();
@@ -1251,7 +1251,7 @@ class FreightRequestController extends Controller
 
         return DB::transaction(function () use ($request) {
             $paymentRequest = PaymentRequest::findOrFail($request->payment_request_id);
-           
+
             $paymentRequestData = $paymentRequest->paymentRequestData;
             $vendorAccId = $paymentRequest->account_id;
             $purchaseOrder = $paymentRequestData->purchaseOrder;
@@ -1318,7 +1318,7 @@ class FreightRequestController extends Controller
                     $txnInv->update([
                         'amount' => $inventoryAmountwithFreight,
                         'account_id' => $qcAccountId,
-                        'counter_account_id' => $purchaseOrder?->supplier->account_id ?? $ticket->accounts_of_id,
+                        'counter_account_id' => $purchaseOrder?->supplier->account_id ?? $ticket->accountsOf->account_id ?? $ticket->accounts_of_id,
                         'type' => 'debit',
                         'voucher_no' => $purchaseOrder?->contract_no ?? "-",
                         'grn_no' => $grnNo,
@@ -1334,7 +1334,7 @@ class FreightRequestController extends Controller
                         'no',
                         [
                             'grn_no' => $grnNo,
-                            'counter_account_id' => $purchaseOrder?->supplier->account_id ?? $ticket->accounts_of_id,
+                            'counter_account_id' => $purchaseOrder?->supplier->account_id ?? $ticket->accountsOf->account_id ?? $ticket->accounts_of_id,
                             'purpose' => "arrival-slip",
                             'payment_against' => "pohouch-purchase",
                             'against_reference_no' => "$truckNo/$biltyNo",
@@ -1346,7 +1346,7 @@ class FreightRequestController extends Controller
             }
 
             // $purchaseOrder?->supplier->account_id ?? $ticket->accounts_of_id
-            $counterAccount = $saudaType == "pohouch" ? ($purchaseOrder?->supplier->account_id ?? $ticket->accounts_of_id) : $qcAccountId;
+            $counterAccount = $saudaType == "pohouch" ? ($purchaseOrder?->supplier->account_id ?? $ticket->accountsOf->account_id ?? $ticket->accounts_of_id) : $qcAccountId;
             if ($saudaType == "pohouch") {
                 $supplierDebitFreight = Transaction::where('grn_no', $grnNo)
                     ->where('purpose', "{$saudaType}-freight-paid-to-vendor")
@@ -1357,7 +1357,7 @@ class FreightRequestController extends Controller
                     if ($supplierDebitFreight) {
                         $supplierDebitFreight->update([
                             'amount' => $grossfreightamount,
-                            'account_id' => $purchaseOrder?->supplier->account_id ?? $ticket->accounts_of_id,
+                            'account_id' => $purchaseOrder?->supplier->account_id ?? $ticket->accountsOf->account_id ?? $ticket->accounts_of_id,
                             'counter_account_id' => $qcAccountId,
                             'type' => 'debit',
                             'voucher_no' => $purchaseOrder?->contract_no ?? "-",
@@ -1367,7 +1367,7 @@ class FreightRequestController extends Controller
                     } else {
                         createTransaction(
                             $grossfreightamount,
-                            $purchaseOrder?->supplier->account_id ?? $ticket->accounts_of_id,
+                            $purchaseOrder?->supplier->account_id ?? $ticket->accountsOf->account_id ?? $ticket->accounts_of_id,
                             1,
                             $purchaseOrder?->contract_no ?? "-",
                             'debit',
@@ -1402,7 +1402,7 @@ class FreightRequestController extends Controller
                 } else {
                     createTransaction(
                         $request->gross_amount,
-                        $purchaseOrder?->supplier->account_id ?? $ticket->accounts_of_id,
+                        $purchaseOrder?->supplier->account_id ?? $ticket->accountsOf->account_id ?? $ticket->accounts_of_id,
                         1,
                         $purchaseOrder?->contract_no ?? "-",
                         'debit',
