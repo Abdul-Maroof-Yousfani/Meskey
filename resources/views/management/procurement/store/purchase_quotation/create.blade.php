@@ -168,8 +168,27 @@
                 $('#reference_no').val('');
             }
         }
+    });
 
+    $(document).on('change', '#purchase_date', function() {
+        let quotationDate = $(this).val();
+        if (quotationDate) {
+            $('input[name*="delivery_date"]').attr('min', quotationDate);
+        }
+    });
 
+    $(document).on('change', 'input[name*="delivery_date"]', function() {
+        let quotationDate = $('#purchase_date').val();
+        let deliveryDate = $(this).val();
+        if (quotationDate && deliveryDate && deliveryDate < quotationDate) {
+            Swal.fire({
+                title: 'Invalid Date',
+                text: 'Delivery date cannot be before quotation date.',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+            $(this).val(quotationDate);
+        }
     });
 
 
@@ -384,6 +403,11 @@
                 // ✅ Toggle visibility based on category
                 if (master && master.category_id) {
                     toggleVisibility(master.category_id);
+                }
+                
+                let qDate = $('#purchase_date').val();
+                if (qDate) {
+                    $('input[name*="delivery_date"]').attr('min', qDate);
                 }
             },
             error: function () {
