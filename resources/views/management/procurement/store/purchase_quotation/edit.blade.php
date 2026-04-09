@@ -340,6 +340,20 @@
             toggleVisibility(initialCategoryId);
         }
     });
+
+    $(document).on('change', 'input[name*="delivery_date"]', function() {
+        let quotationDate = $('#purchase_date').val();
+        let deliveryDate = $(this).val();
+        if (quotationDate && deliveryDate && deliveryDate < quotationDate) {
+            Swal.fire({
+                title: 'Invalid Date',
+                text: 'Delivery date cannot be before quotation date.',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+            $(this).val(quotationDate);
+        }
+    });
     $('.select2').select2({
         placeholder: 'Please Select',
         width: '100%'
@@ -404,6 +418,11 @@
                 <td><button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="remove(${index})">Remove</button></td>
             </tr>`;
         $('#purchaseRequestBody').append(row);
+        
+        let qDate = $('#purchase_date').val();
+        if (qDate) {
+            $('#delivery_date_' + (rowIndex-1)).attr('min', qDate);
+        }
     }
 
     function remove(id) {
@@ -506,6 +525,11 @@
                 // ✅ Toggle visibility based on category
                 if (master && master.category_id) {
                     toggleVisibility(master.category_id);
+                }
+
+                let qDate = $('#purchase_date').val();
+                if (qDate) {
+                    $('input[name*="delivery_date"]').attr('min', qDate);
                 }
             },
             error: function() {

@@ -4,6 +4,7 @@ use App\Http\Controllers\BillController;
 use App\Http\Controllers\IndicativePriceController;
 use App\Http\Controllers\Procurement\Store\DebitNoteController;
 use App\Http\Controllers\Procurement\Store\PurchaseBillController;
+use App\Http\Controllers\Procurement\Store\RejectionReturnController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Procurement\RawMaterial\{
     GateBuyingPaymentRequestController,
@@ -168,6 +169,16 @@ Route::prefix('store')->name('store.')->group(function () {
     Route::post("/qc/updateAmount", [QcController::class, "updateAmounts"])->name("qc.update-amount");
 
 
+    Route::get('rejection-return', [RejectionReturnController::class, 'index'])->name('rejection-return.index');
+    Route::post('rejection-return/getList', [RejectionReturnController::class, 'getList'])->name('rejection-return.getList');
+    Route::get('rejection-return/create', [RejectionReturnController::class, 'create'])->name('rejection-return.create');
+    Route::post('rejection-return/store', [RejectionReturnController::class, 'store'])->name('rejection-return.store');
+    Route::get('rejection-return/{id}/edit', [RejectionReturnController::class, 'edit'])->name('rejection-return.edit');
+    Route::put('rejection-return/{id}/update', [RejectionReturnController::class, 'update'])->name('rejection-return.update');
+    Route::get('rejection-return/{id}/view', [RejectionReturnController::class, 'view'])->name('rejection-return.view');
+    Route::delete('rejection-return/{id}/destroy', [RejectionReturnController::class, 'destroy'])->name('rejection-return.destroy');
+
+    Route::get('rejection-return/{id}/gate-out', [RejectionReturnController::class, 'gateOut'])->name('rejection-return.gate-out');
     Route::resource('purchase-return', PurchaseReturnController::class);
     Route::post('get-purchase-return', [PurchaseReturnController::class, 'getList'])->name('get.purchase-return');
     Route::get('purchase-return/view/{id}', [PurchaseReturnController::class, 'view'])->name('purchase-return.view');
