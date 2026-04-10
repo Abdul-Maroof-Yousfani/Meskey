@@ -214,7 +214,7 @@
                                 </td>
                                 <td style="min-width: 180px;">
                                     <input type="date" name="delivery_date[{{ $data->id }}]" 
-                                        value="{{ $data->delivery_date }}" id="delivery_date_{{ $key }}" 
+                                        value="" id="delivery_date_{{ $key }}" 
                                         class="form-control" min="{{ date('Y-m-d') }}" required>
                                 </td>
 
