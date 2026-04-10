@@ -282,7 +282,7 @@ class DeliveryOrderController extends Controller
 
         $prefix = 'DO-'.Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
 
-        $latestContract = DeliveryOrder::where('reference_no', 'like', "$prefix-%")
+        $latestContract = DeliveryOrder::withoutGlobalScopes()->where('reference_no', 'like', "$prefix-%")
             ->latest()
             ->first();
 

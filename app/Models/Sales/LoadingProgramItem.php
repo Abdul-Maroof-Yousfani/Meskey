@@ -17,7 +17,7 @@ class LoadingProgramItem extends Model
 
     public function loadingProgram()
     {
-        return $this->belongsTo(LoadingProgram::class);
+        return $this->belongsTo(LoadingProgram::class)->withoutGlobalScopes();
     }
 
     public function saleOrders()
@@ -27,7 +27,9 @@ class LoadingProgramItem extends Model
 
     public function deliveryOrders()
     {
-        return $this->belongsToMany(DeliveryOrder::class, 'loading_program_item_delivery_order', 'loading_program_item_id', 'delivery_order_id')->withTimestamps();
+        return $this->belongsToMany(DeliveryOrder::class, 'loading_program_item_delivery_order', 'loading_program_item_id', 'delivery_order_id')
+            ->withoutGlobalScopes()
+            ->withTimestamps();
     }
 
     public function exportOrders()

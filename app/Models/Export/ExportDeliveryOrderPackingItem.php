@@ -7,7 +7,7 @@ use App\Models\BagType;
 use App\Models\Master\Brands;
 use App\Models\Master\Color;
 use App\Models\Master\Stitching;
-use App\Models\Sales\DeliveryOrder;
+use App\Models\Export\ExportDeliveryOrder as DeliveryOrder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
