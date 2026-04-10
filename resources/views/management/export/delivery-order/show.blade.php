@@ -72,6 +72,62 @@
         </div>
     </div>
 
+    <!-- Location Details Section -->
+    <div class="col-12 mt-3">
+        <h6 class="header-heading-sepration">Location Details</h6>
+    </div>
+    <div class="row form-mar">
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="form-label">Locations:</label>
+                <select name="location_id" id="locations" class="form-control select2" disabled>
+                    <option value="">Select Locations</option>
+                    @if($deliveryOrder->location_id)
+                        <option value="{{ $deliveryOrder->location_id }}" selected>
+                            {{ get_location_name_by_id($deliveryOrder->location_id) }}</option>
+                    @endif
+                </select>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="form-label">Factory:</label>
+                <select name="arrival_id[]" id="arrivals" class="form-control select2" disabled multiple>
+                    <option value="">Select Factory </option>
+                    @php
+                        $selectedArrivalIds = $deliveryOrder->arrival_location_id ? explode(',', $deliveryOrder->arrival_location_id) : [];
+                    @endphp
+                    @if($deliveryOrder->location_id)
+                        @foreach (get_arrivals_by($deliveryOrder->location_id) as $location)
+                            <option value="{{ $location->id }}" @selected(in_array($location->id, $selectedArrivalIds))>
+                                {{ $location->name }}
+                            </option>
+                        @endforeach
+                    @endif
+                </select>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="form-label">Section:</label>
+                <select name="storage_id[]" id="storages" class="form-control select2" disabled multiple>
+                    <option value="">Select Section</option>
+                    @php
+                        $selectedSubArrivalIds = $deliveryOrder->sub_arrival_location_id ? explode(',', $deliveryOrder->sub_arrival_location_id) : [];
+                        $arrivalIds = $deliveryOrder->arrival_location_id ? explode(',', $deliveryOrder->arrival_location_id) : [];
+                    @endphp
+                    @if(!empty($arrivalIds))
+                        @foreach (get_sub_arrivals_by_multiple($arrivalIds) as $location)
+                            <option value="{{ $location->id }}" @selected(in_array($location->id, $selectedSubArrivalIds))>
+                                {{ $location->name }} ({{ $location->arrivalLocation->name }})
+                            </option>
+                        @endforeach
+                    @endif
+                </select>
+            </div>
+        </div>
+    </div>
+
     <!-- Export Order Snapshot Area (Read-Only) -->
     <div id="exportOrderSnapshotEdit" class="snapshot-area" style="pointer-events: none;">
         <div class="row form-mar">
@@ -497,7 +553,7 @@
                             <input type="hidden" name="packing_items[INDEX][sub_items][SUB_INDEX][thread_color_id]" class="hidden-mirror">
                         </td>
                     </tr>
-                </tbody>
+        </tbody>
             </table>
         </div>
     </div>
@@ -531,6 +587,11 @@
 </style>
 <script>
     $(document).ready(function() {
+        // Initialize Select2 for location dropdowns in show mode
+        $("#locations").select2();
+        $("#arrivals").select2();
+        $("#storages").select2();
+
         // Render JSON dumped from backend for snapshot
         let snapshotData = @json($deliveryOrder->exportOrder);
         // Render relational packing items from DB

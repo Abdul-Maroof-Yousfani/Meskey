@@ -837,6 +837,15 @@
                         </li>
                         @endcanAccess
 
+                        @canAccess('export-loading-program')
+                        <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                href="{{ route('export-loading-program.index') }}"
+                                onclick="loadPageContent('{{ route('export-loading-program.index') }}')"
+                                data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                    data-i18n="Extended">Loading Program</span></a>
+                        </li>
+                        @endcanAccess
+
                         {{-- @canAccess('commercial-invoice')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('commercial-invoice.index') }}" onclick="loadPageContent('{{ route('commercial-invoice.index') }}')"

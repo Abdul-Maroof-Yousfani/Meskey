@@ -69,6 +69,40 @@
         </div>
     </div>
 
+    <!-- Location Details Section -->
+    <div class="row form-mar">
+        <div class="col-12 mt-3">
+            <h6 class="header-heading-sepration">Location Details</h6>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="form-label">Locations:</label>
+                <select name="location_id" id="locations" onchange="selectLocation(this)" class="form-control select2">
+                    <option value="">Select Locations</option>
+                    @foreach (get_locations() as $location)
+                        <option value="{{ $location->id }}">{{ $location->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="form-label">Factory:</label>
+                <select name="arrival_id[]" id="arrivals" class="form-control select2" disabled multiple>
+                    <option value="">Select Factory </option>
+                </select>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="form-label">Section:</label>
+                <select name="storage_id[]" id="storages" class="form-control select2" disabled multiple>
+                    <option value="">Select Section</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
     <div id="exportOrderSnapshot" style="pointer-events: none; opacity: 0.9;">
 
         <div class="row form-mar">
@@ -610,6 +644,78 @@
 </form>
 
 <script>
+    // Location Selection Functions (Global - accessible from HTML onchange)
+    function selectLocation(el) {
+        const locationId = $(el).val();
+        
+        if (!locationId) {
+            $("#arrivals").prop("disabled", true).empty();
+            $("#storages").prop("disabled", true).empty();
+            return;
+        }
+
+        $("#arrivals").prop("disabled", false);
+        $.ajax({
+            url: "{{ route('export.get-arrival-locations') }}",
+            method: "GET",
+            data: { location_id: locationId },
+            dataType: "json",
+            success: function(res) {
+                $("#arrivals").empty();
+                // Auto-select ALL factories
+                res.forEach(loc => {
+                    const option = new Option(loc.text, loc.id, true, true);
+                    $("#arrivals").append(option);
+                });
+                $("#arrivals").select2();
+                
+                // Auto-populate and select all sections
+                if (res.length > 0) {
+                    const arrivalIds = res.map(loc => loc.id);
+                    selectStorage(arrivalIds);
+                }
+            },
+            error: function(error) {
+                console.error("Error fetching arrival locations:", error);
+            }
+        });
+    }
+
+    function selectStorage(arrivalIds) {
+        if (!arrivalIds || (Array.isArray(arrivalIds) && arrivalIds.length === 0)) {
+            $("#storages").prop("disabled", true).empty();
+            return;
+        }
+
+        // Handle both direct call with IDs and call from onchange
+        const ids = Array.isArray(arrivalIds) ? arrivalIds : $(arrivalIds).val();
+        
+        if (!ids || ids.length === 0) {
+            $("#storages").prop("disabled", true).empty();
+            return;
+        }
+
+        $.ajax({
+            url: "{{ route('export.get-sub-arrival-locations') }}",
+            method: "GET",
+            data: { arrival_id: ids },
+            dataType: "json",
+            success: function(res) {
+                $("#storages").empty();
+                // Auto-select ALL sections
+                res.forEach(storage => {
+                    const option = new Option(storage.text, storage.id, true, true);
+                    $("#storages").append(option);
+                });
+                $("#storages").prop("disabled", false).select2();
+            },
+            error: function(error) {
+                console.error("Error fetching sub-arrival locations:", error);
+            }
+        });
+    }
+
+    // DOM Ready Initialization
     $(document).ready(function() {
         $('.select2').select2({ width: '100%' });
 

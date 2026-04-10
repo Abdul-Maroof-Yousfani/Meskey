@@ -82,6 +82,57 @@
         </div>
     </div>
 
+    <!-- Location Details Section -->
+    <div class="row form-mar">
+        <div class="col-12 mt-3">
+            <h6 class="header-heading-sepration">Location Details</h6>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="form-label">Locations:</label>
+                <select name="location_id" id="locations" onchange="selectLocation(this)" class="form-control select2">
+                    <option value="">Select Locations</option>
+                    @foreach (get_locations() as $location)
+                        <option value="{{ $location->id }}" @selected($location->id == $deliveryOrder->location_id)>{{ $location->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="form-label">Factory:</label>
+                <select name="arrival_id[]" id="arrivals" class="form-control select2" multiple @if (!$deliveryOrder->arrival_location_id) disabled @endif>
+                    <option value="">Select Factory</option>
+                    @php
+                        $selectedArrivalIds = $deliveryOrder->arrival_location_id ? explode(',', $deliveryOrder->arrival_location_id) : [];
+                    @endphp
+                    @if($deliveryOrder->location_id)
+                        @foreach (get_arrivals_by($deliveryOrder->location_id) as $location)
+                            <option value="{{ $location->id }}" @selected(in_array($location->id, $selectedArrivalIds))>{{ $location->name }}</option>
+                        @endforeach
+                    @endif
+                </select>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="form-label">Section:</label>
+                <select name="storage_id[]" id="storages" class="form-control select2" multiple>
+                    <option value="">Select Section</option>
+                    @php
+                        $selectedSubArrivalIds = $deliveryOrder->sub_arrival_location_id ? explode(',', $deliveryOrder->sub_arrival_location_id) : [];
+                        $arrivalIds = $deliveryOrder->arrival_location_id ? explode(',', $deliveryOrder->arrival_location_id) : [];
+                    @endphp
+                    @if(!empty($arrivalIds))
+                        @foreach (get_sub_arrivals_by_multiple($arrivalIds) as $location)
+                            <option value="{{ $location->id }}" @selected(in_array($location->id, $selectedSubArrivalIds))>{{ $location->name }} ({{ $location->arrivalLocation->name }})</option>
+                        @endforeach
+                    @endif
+                </select>
+            </div>
+        </div>
+    </div>
+
     <div id="exportOrderSnapshotEdit" class="snapshot-area" style="pointer-events: none;">
         <div class="row form-mar">
             <div class="col-8">
@@ -543,6 +594,78 @@
 </form>
 
 <script>
+    // Location Selection Functions (Global - accessible from HTML onchange)
+    function selectLocation(el) {
+        const locationId = $(el).val();
+        
+        if (!locationId) {
+            $("#arrivals").prop("disabled", true).empty();
+            $("#storages").prop("disabled", true).empty();
+            return;
+        }
+
+        $("#arrivals").prop("disabled", false);
+        $.ajax({
+            url: "{{ route('export.get-arrival-locations') }}",
+            method: "GET",
+            data: { location_id: locationId },
+            dataType: "json",
+            success: function(res) {
+                $("#arrivals").empty();
+                // Auto-select ALL factories
+                res.forEach(loc => {
+                    const option = new Option(loc.text, loc.id, true, true);
+                    $("#arrivals").append(option);
+                });
+                $("#arrivals").select2();
+                
+                // Auto-populate and select all sections
+                if (res.length > 0) {
+                    const arrivalIds = res.map(loc => loc.id);
+                    selectStorage(arrivalIds);
+                }
+            },
+            error: function(error) {
+                console.error("Error fetching arrival locations:", error);
+            }
+        });
+    }
+
+    function selectStorage(arrivalIds) {
+        if (!arrivalIds || (Array.isArray(arrivalIds) && arrivalIds.length === 0)) {
+            $("#storages").prop("disabled", true).empty();
+            return;
+        }
+
+        // Handle both direct call with IDs and call from onchange
+        const ids = Array.isArray(arrivalIds) ? arrivalIds : $(arrivalIds).val();
+        
+        if (!ids || ids.length === 0) {
+            $("#storages").prop("disabled", true).empty();
+            return;
+        }
+
+        $.ajax({
+            url: "{{ route('export.get-sub-arrival-locations') }}",
+            method: "GET",
+            data: { arrival_id: ids },
+            dataType: "json",
+            success: function(res) {
+                $("#storages").empty();
+                // Auto-select ALL sections
+                res.forEach(storage => {
+                    const option = new Option(storage.text, storage.id, true, true);
+                    $("#storages").append(option);
+                });
+                $("#storages").prop("disabled", false).select2();
+            },
+            error: function(error) {
+                console.error("Error fetching sub-arrival locations:", error);
+            }
+        });
+    }
+
+    // DOM Ready Initialization
     $(document).ready(function() {
         // Render JSON dumped from backend for snapshot
         let snapshotData = @json($deliveryOrder->exportOrder);
@@ -552,6 +675,14 @@
         if (snapshotData) {
             populateSnapshotEdit(snapshotData, packingItems);
         }
+
+        // Initialize Location Dropdowns for Edit Mode - Only initialize Select2, don't re-populate
+        setTimeout(function() {
+            // Just initialize Select2 for existing dropdowns, don't change their values
+            $("#locations").select2();
+            $("#arrivals").select2();
+            $("#storages").select2();
+        }, 100);
 
         function populateSnapshotEdit(data, packingItemsAuto) {
             $('#snap_quotation_edit').val(data.quotation ? (data.quotation.reference || '#' + data.quotation_id) + ' - ' + (data.quotation.product ? data.quotation.product.name : '') : (data.quotation_id ? '#' + data.quotation_id : '---'));

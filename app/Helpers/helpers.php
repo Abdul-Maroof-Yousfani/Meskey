@@ -314,12 +314,55 @@ if (!function_exists("getLoadingProgramBalance")) {
     function getLoadingProgramBalance($delivery_order_id)
     {
         $delivery_order = DeliveryOrder::find($delivery_order_id);
-        $total_qty = $delivery_order->delivery_order_data()->sum("qty");
-        $used_qty = LoadingProgramItem::where("delivery_order_id", $delivery_order_id)->sum("qty");
+        if (!$delivery_order) return 0;
+        
+        if ($delivery_order->type == 'export_order') {
+            $total_qty = $delivery_order->exportPackingItems()->sum("metric_tons");
+        } else {
+            $total_qty = $delivery_order->delivery_order_data()->sum("qty");
+        }
+        
+        // Find all items linked to this DO via pivot table or direct column
+        $itemTotalQty = 0;
+        $items = LoadingProgramItem::where(function($q) use ($delivery_order_id) {
+            $q->where('delivery_order_id', $delivery_order_id)
+              ->orWhereHas('deliveryOrders', function($sq) use ($delivery_order_id) {
+                  $sq->where('delivery_order_id', $delivery_order_id);
+              });
+        })->with('deliveryOrders')->get();
 
-        $remaining_qty = $total_qty - $used_qty;
+        foreach ($items as $item) {
+            $linkedDos = $item->deliveryOrders->sortBy('id')->pluck('id')->toArray();
+            if (empty($linkedDos) && $item->delivery_order_id) {
+                $linkedDos = [$item->delivery_order_id];
+            }
 
-        return $remaining_qty;
+            if (count($linkedDos) <= 1) {
+                if (in_array($delivery_order_id, $linkedDos)) {
+                    $itemTotalQty += $item->qty;
+                }
+            } else {
+                // FIFO logic for multi-DO participation
+                $remainingQty = $item->qty;
+                foreach ($linkedDos as $d_id) {
+                    $d = DeliveryOrder::find($d_id);
+                    if (!$d) continue;
+                    $d_capacity = ($d->type == 'export_order') ? $d->exportPackingItems()->sum("metric_tons") : $d->delivery_order_data()->sum("qty");
+                    
+                    // This is still a bit circular, but for the purpose of attribution:
+                    // We assume each DO takes as much as it can from the item in FIFO order.
+                    $consumed = min($remainingQty, $d_capacity); 
+                    if ($d_id == $delivery_order_id) {
+                        $itemTotalQty += $consumed;
+                        break;
+                    }
+                    $remainingQty -= $consumed;
+                    if ($remainingQty <= 0) break;
+                }
+            }
+        }
+
+        return $total_qty - $itemTotalQty;
     }
 }
 
@@ -871,11 +914,18 @@ function get_second_weighbridge_balance(LoadingSlip $loadingSlip, $delivery_orde
 
 function get_second_weighbridge_balance_by_delivery_order($delivery_order_id)
 {
-    $delivery_order = DeliveryOrder::with(['delivery_order_data', 'saleSecondWeighbridge'])->find($delivery_order_id);
+    $delivery_order = DeliveryOrder::with(['delivery_order_data', 'exportPackingItems', 'saleSecondWeighbridge'])->find($delivery_order_id);
     if (!$delivery_order)
         return 0;
 
-    $overall_quantities = $delivery_order->delivery_order_data->sum("qty");
+    if ($delivery_order->type == 'export_order') {
+        $overall_quantities = $delivery_order->exportPackingItems->sum("metric_tons");
+    } else {
+        $overall_quantities = $delivery_order->delivery_order_data->sum("qty");
+    }
+    
+    // Check second weights. If linked to multiple DOs, again distribution logic is ideal, 
+    // but usually weighing is per ticket.
     $spent_quantities = $delivery_order->saleSecondWeighbridge->sum("net_weight");
 
     return $overall_quantities - $spent_quantities;
