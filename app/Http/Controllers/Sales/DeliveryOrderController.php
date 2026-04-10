@@ -91,7 +91,6 @@ class DeliveryOrderController extends Controller
 
         try {
             $delivery_order = DeliveryOrder::create([
-                'type' => 'sale_order',
                 'customer_id' => $request->customer_id,
                 'so_id' => $request->sale_order_id,
                 'advance_amount' => $request->advance_amount ?? 0,
@@ -630,7 +629,6 @@ class DeliveryOrderController extends Controller
 
         try {
             $delivery_order->update([
-                'type' => 'sale_order',
                 'customer_id' => $request->customer_id,
                 'so_id' => $request->sale_order_id,
                 'advance_amount' => $request->advance_amount ?? 0,
