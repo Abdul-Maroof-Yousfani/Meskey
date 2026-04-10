@@ -13,6 +13,7 @@ use App\Http\Controllers\Export\ProformaController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Export\QuotationController;
 use App\Http\Controllers\Export\ExportDeliveryOrderController;
+use App\Http\Controllers\Export\ExportFirstWeighBridgeController;
 
 // mode of terms
 Route::resource('modeofterms', ModeOfTermController::class);
@@ -54,6 +55,12 @@ Route::get('/fetch-export-orders-by-location', [ExportLoadingProgramController::
 Route::get('/get-export-order-related-data', [ExportLoadingProgramController::class, 'getExportOrderRelatedData'])->name('get.export-order.related.data');
 Route::get('/get-delivery-orders-by-export-order-loading', [ExportLoadingProgramController::class, 'getDeliveryOrdersByExportOrder'])->name('get.delivery-orders.by.export-order.loading');
 Route::get('/get-delivery-orders-by-export-order-loading-edit', [ExportLoadingProgramController::class, 'getDeliveryOrdersByExportOrderEdit'])->name('get.delivery-orders.by.export-order.loading.edit');
+
+// export first weighbridge
+Route::resource('export-first-weighbridge', ExportFirstWeighBridgeController::class);
+Route::post('/get-export-first-weighbridge', [ExportFirstWeighBridgeController::class, 'getList'])->name('get.export-first-weighbridge');
+Route::get('/get-export-first-weighbridge-related-data', [ExportFirstWeighBridgeController::class, 'getFirstWeighbridgeRelatedData'])->name('export.getFirstWeighbridgeRelatedData');
+Route::get('/get-export-weighbridge-amount', [ExportFirstWeighBridgeController::class, 'getWeighbridgeAmount'])->name('export.getWeighbridgeAmount');
 
 // export form-e
 Route::resource('export-form-e', App\Http\Controllers\Export\ExportFormEController::class);

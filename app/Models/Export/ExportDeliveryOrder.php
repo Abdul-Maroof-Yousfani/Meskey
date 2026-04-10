@@ -77,6 +77,11 @@ class ExportDeliveryOrder extends DeliveryOrder
         return $this->hasMany(\App\Models\Export\ExportDeliveryOrderPackingItem::class, 'delivery_order_id');
     }
 
+    public function firstWeighbridge()
+    {
+        return $this->hasOne(ExportFirstWeighbridge::class, "delivery_order_id");
+    }
+
     /**
      * Override createApprovalRows from HasApproval trait to handle duplicates safely
      */

@@ -846,6 +846,13 @@
                         </li>
                         @endcanAccess
 
+                        <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                href="{{ route('export-first-weighbridge.index') }}"
+                                onclick="loadPageContent('{{ route('export-first-weighbridge.index') }}')"
+                                data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                    data-i18n="Extended">First Weighbridge</span></a>
+                        </li>
+
                         {{-- @canAccess('commercial-invoice')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('commercial-invoice.index') }}" onclick="loadPageContent('{{ route('commercial-invoice.index') }}')"

@@ -9,9 +9,24 @@ class FirstWeighbridge extends Model
 {
     use HasFactory;
 
-    protected $table = "sales_first_weighbridges";
+    protected $table = "general_first_weighbridges";
 
     protected $guarded = ["id", "created_at", "updated_at"];
+
+    protected static function booted()
+    {
+        static::creating(function ($model) {
+            $model->type = 'sale_order';
+        });
+
+        static::updating(function ($model) {
+            $model->type = 'sale_order';
+        });
+
+        static::addGlobalScope('sale_type', function ($builder) {
+            $builder->where('type', 'sale_order');
+        });
+    }
 
     public function loadingProgramItem() {
         return $this->belongsTo(LoadingProgramItem::class, "loading_program_item_id");
