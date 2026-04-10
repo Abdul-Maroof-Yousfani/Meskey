@@ -16,6 +16,17 @@ class DeliveryOrder extends Model
     protected $table = "delivery_order";
     protected $guarded = ["id", "created_at", "updated_at"];
 
+    protected static function booted()
+    {
+        static::creating(function ($model) {
+            $model->type = 'sale_order';
+        });
+
+        static::addGlobalScope('sale_type', function ($builder) {
+            $builder->where('type', 'sale_order');
+        });
+    }
+
     public function delivery_order_data() {
         return $this->hasMany(DeliveryOrderData::class);
     }
