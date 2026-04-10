@@ -7,6 +7,7 @@
             <th width="15%">Product/Commodity</th>
             <th width="10%">QTY (MT)</th>
             <th width="10%">Rate</th>
+            <th width="10%">Status</th>
             <th width="10%">Action</th>
         </tr>
     </thead>
@@ -31,18 +32,37 @@
                         @endif
                     </td>
                     <td>
+                        @php
+                            $status = $do->am_approval_status ?? 'pending';
+                            $badge = match(strtolower($status)) {
+                                'approved' => 'badge-success',
+                                'rejected' => 'badge-danger',
+                                'pending'  => 'badge-warning',
+                                'reverted' => 'badge-secondary',
+                                default    => 'badge-secondary',
+                            };
+                        @endphp
+                        <span class="badge {{ $badge }} px-2 py-1">
+                            {{ ucfirst($status) }}
+                        </span>
+                    </td>
+                    <td>
                         <a class="info p-1 text-center position-relative"
-                            onclick="openModal(this,'{{ route('export-delivery-order.show', $do->id) }}','Show Delivery Order',false,'90%')">
+                            onclick="openModal(this,'{{ route('export-delivery-order.show', $do->id) }}','Show Delivery Order',false,'90%')" title="View">
                             <i class="ft-eye font-medium-3"></i></a>
 
-                        <a class="info p-1 text-center position-relative"
-                            onclick="openModal(this,'{{ route('export-delivery-order.edit', $do->id) }}','Edit Delivery Order',false,'90%')">
-                            <i class="ft-edit font-medium-3"></i></a>
+                        @if(auth()->user()->id == $do->created_by)
+                            @if($status === 'pending' || $status === 'reverted')
+                                <a class="info p-1 text-center position-relative"
+                                    onclick="openModal(this,'{{ route('export-delivery-order.edit', $do->id) }}','Edit Delivery Order',false,'90%')" title="Edit">
+                                    <i class="ft-edit font-medium-3"></i></a>
 
-                        <a onclick="deletemodal('{{ route('export-delivery-order.destroy', $do->id) }}','{{ route('get.export-delivery-order') }}')"
-                            class="danger p-1 text-center mr-2 position-relative">
-                            <i class="ft-x font-medium-3"></i>
-                        </a>
+                                <a onclick="deletemodal('{{ route('export-delivery-order.destroy', $do->id) }}','{{ route('get.export-delivery-order') }}')"
+                                    class="danger p-1 text-center mr-2 position-relative" title="Delete">
+                                    <i class="ft-x font-medium-3"></i>
+                                </a>
+                            @endif
+                        @endif
                     </td>
                 </tr>
             @endforeach

@@ -575,6 +575,12 @@
     </div>
 </div>
 
+<div class="row">
+    <div class="col-12">
+        <x-approval-status :model="$deliveryOrder" />
+    </div>
+</div>
+
 <style>
     /* Hide specific edit controls in show view */
     #exportDeliveryOrderShow .clone-btn,

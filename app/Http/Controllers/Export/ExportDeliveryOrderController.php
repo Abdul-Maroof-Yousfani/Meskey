@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Export;
 
 use App\Http\Controllers\Controller;
-use App\Models\Sales\DeliveryOrder;
+use App\Models\Export\ExportDeliveryOrder as DeliveryOrder;
 use App\Models\Export\ExportDeliveryOrderPackingItem;
 use App\Models\Export\ExportFormE;
 use App\Models\Export\ExportOrder;
@@ -24,14 +24,13 @@ class ExportDeliveryOrderController extends Controller
 {
     public function index(Request $request): View
     {
-        $delivery_orders = DeliveryOrder::where('type', 'export_order')->orderBy('id', 'ASC')->paginate(0);
+        $delivery_orders = DeliveryOrder::orderBy('id', 'ASC')->paginate(0);
         return view('management.export.delivery-order.index', compact('delivery_orders'))->with('i', ($request->input('page', 1) - 1) * 5);
     }
 
     public function getExportDeliveryOrderTable(Request $request)
     {
         $delivery_orders = DeliveryOrder::with(['exportOrder.packingItems', 'customer', 'exportFormE', 'exportPackingItems'])
-            ->where('type', 'export_order')
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%'.$request->search.'%';
                 return $q->whereHas('exportOrder', function ($sq) use ($searchTerm) {
@@ -239,6 +238,7 @@ class ExportDeliveryOrderController extends Controller
             'location_id' => $request->location_id ?? null,
             'arrival_location_id' => $request->arrival_id ? implode(',', (array)$request->arrival_id) : null,
             'sub_arrival_location_id' => $request->storage_id ? implode(',', (array)$request->storage_id) : null,
+            'am_approval_status' => 'pending',
         ]);
 
         foreach ($request->packing_items as $index => $itemData) {
@@ -460,6 +460,8 @@ class ExportDeliveryOrderController extends Controller
             'location_id' => $request->location_id ?? null,
             'arrival_location_id' => $request->arrival_id ? implode(',', (array)$request->arrival_id) : null,
             'sub_arrival_location_id' => $request->storage_id ? implode(',', (array)$request->storage_id) : null,
+            'am_approval_status' => 'pending',
+            'am_change_made' => 1
         ]);
 
         if ($request->filled('packing_items')) {
