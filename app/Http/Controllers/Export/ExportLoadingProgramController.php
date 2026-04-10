@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Export;
 
 use App\Http\Controllers\Controller;
 use App\Models\Export\ExportOrder;
-use App\Models\Sales\DeliveryOrder;
-use App\Models\Sales\LoadingProgram;
+use App\Models\Export\ExportDeliveryOrder as DeliveryOrder;
+use App\Models\Export\ExportLoadingProgram as LoadingProgram;
 use App\Models\Sales\LoadingProgramItem;
 use App\Models\Master\ArrivalLocation;
 use App\Models\Master\ArrivalSubLocation;

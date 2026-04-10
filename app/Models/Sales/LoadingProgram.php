@@ -12,6 +12,21 @@ class LoadingProgram extends Model
     protected $table = 'loading_programs';
 
     protected $guarded = ['id', 'created_at', 'updated_at'];
+    
+    protected static function booted()
+    {
+        static::creating(function ($model) {
+            $model->type = 'sale_order';
+        });
+
+        static::updating(function ($model) {
+            $model->type = 'sale_order';
+        });
+
+        static::addGlobalScope('sale_type', function ($builder) {
+            $builder->where('type', 'sale_order');
+        });
+    }
 
     protected $casts = [
         'company_locations' => 'array',
@@ -39,19 +54,19 @@ class LoadingProgram extends Model
         return $this->belongsToMany(DeliveryOrder::class, 'loading_program_delivery_order', 'loading_program_id', 'delivery_order_id')->withTimestamps();
     }
 
-    public function exportOrder()
-    {
-        return $this->belongsTo(\App\Models\Export\ExportOrder::class, 'export_order_id');
-    }
+    // public function exportOrder()
+    // {
+    //     return $this->belongsTo(\App\Models\Export\ExportOrder::class, 'export_order_id');
+    // }
 
-    public function exportOrders()
-    {
-        return $this->belongsToMany(\App\Models\Export\ExportOrder::class, 'loading_program_export_order', 'loading_program_id', 'export_order_id')->withTimestamps();
-    }
+    // public function exportOrders()
+    // {
+    //     return $this->belongsToMany(\App\Models\Export\ExportOrder::class, 'loading_program_export_order', 'loading_program_id', 'export_order_id')->withTimestamps();
+    // }
 
     public function loadingProgramItems()
     {
-        return $this->hasMany(LoadingProgramItem::class);
+        return $this->hasMany(LoadingProgramItem::class, 'loading_program_id');
     }
 
     public function createdBy()
