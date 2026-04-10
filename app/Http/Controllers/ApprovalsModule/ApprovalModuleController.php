@@ -97,8 +97,16 @@ class ApprovalModuleController extends Controller
                 'label' => 'Purchase Order Receiving'
             ],
             [
+                'value' => 'App\Models\Export\Quotation',
+                'label' => 'Export Quotation'
+            ],
+            [
                 'value' => 'App\Models\Export\ExportOrder',
                 'label' => 'Export Order'
+            ],
+            [
+                'value' => 'App\Models\Export\ExportDeliveryOrder',
+                'label' => 'Export Delivery Order'
             ],
 
         ];

@@ -788,7 +788,7 @@
                         </li>
                         @endcanAccess
 
-                        @canAccess('quotation')
+                        {{-- @canAccess('quotation') --}}
                         <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                 href="{{ route('quotation.index') }}"
                                 onclick="loadPageContent('{{ route('quotation.index') }}')"
@@ -796,9 +796,9 @@
                                 <span data-i18n="Task Board">Quotation</span>
                             </a>
                         </li>
-                        @endcanAccess
+                        {{-- @endcanAccess --}}
 
-                        @canAccess('export-order')
+                        {{-- @canAccess('export-order') --}}
                         <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                 href="{{ route('export-order.index') }}"
                                 onclick="loadPageContent('{{ route('export-order.index') }}')"
@@ -806,7 +806,7 @@
                                     data-i18n="Extended">Export
                                     Order</span></a>
                         </li>
-                        @endcanAccess
+                        {{-- @endcanAccess --}}
 
                         @canAccess('proforma')
                         <li data-menu="">
@@ -827,7 +827,7 @@
                         </li>
                         @endcanAccess
 
-                        @canAccess('export-delivery-order')
+                        {{-- @canAccess('export-delivery-order') --}}
                         <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                 href="{{ route('export-delivery-order.index') }}"
                                 onclick="loadPageContent('{{ route('export-delivery-order.index') }}')"
@@ -835,7 +835,7 @@
                                     data-i18n="Extended">Delivery
                                     Order</span></a>
                         </li>
-                        @endcanAccess
+                        {{--@endcanAccess --}}
 
                         @canAccess('export-loading-program')
                         <li data-menu=""><a class="dropdown-item d-flex align-items-center"

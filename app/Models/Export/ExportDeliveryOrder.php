@@ -2,29 +2,24 @@
 
 namespace App\Models\Export;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use App\Models\Sales\DeliveryOrder;
 
-class ExportDeliveryOrder extends Model
+class ExportDeliveryOrder extends DeliveryOrder
 {
-    use HasFactory;
+    protected $table = "delivery_order";
 
-    protected $fillable = [
-        'export_order_id',
-        'buyer_id',
-        'export_form_e_id',
-        'remarks',
-        'export_snapshot',
-        'created_by',
-    ];
-
-    protected $casts = [
-        'export_snapshot' => 'array',
-    ];
-
-    public function exportOrder()
+    /**
+     * Scope for export type records
+     */
+    protected static function booted()
     {
-        return $this->belongsTo(\App\Models\Export\ExportOrder::class, 'export_order_id');
+        static::creating(function ($model) {
+            $model->type = 'export_order';
+        });
+
+        static::addGlobalScope('export_type', function ($builder) {
+            $builder->where('type', 'export_order');
+        });
     }
 
     public function buyer()
