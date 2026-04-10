@@ -236,6 +236,9 @@ class ExportDeliveryOrderController extends Controller
             'created_by' => auth()->user() ? auth()->user()->id : null,
             'reference_no' => $request->reference_no, 
             'ref_no' => $request->ref_no,
+            'location_id' => $request->location_id ?? null,
+            'arrival_location_id' => $request->arrival_id ? implode(',', (array)$request->arrival_id) : null,
+            'sub_arrival_location_id' => $request->storage_id ? implode(',', (array)$request->storage_id) : null,
         ]);
 
         foreach ($request->packing_items as $index => $itemData) {
@@ -454,6 +457,9 @@ class ExportDeliveryOrderController extends Controller
             'export_form_e_id' => $request->export_form_e_id,
             'reference_no' => $request->reference_no ?? $deliveryOrder->reference_no,
             'ref_no' => $request->ref_no,
+            'location_id' => $request->location_id ?? null,
+            'arrival_location_id' => $request->arrival_id ? implode(',', (array)$request->arrival_id) : null,
+            'sub_arrival_location_id' => $request->storage_id ? implode(',', (array)$request->storage_id) : null,
         ]);
 
         if ($request->filled('packing_items')) {
@@ -550,5 +556,39 @@ class ExportDeliveryOrderController extends Controller
             'success' => true,
             'data' => $export_orders
         ]);
+    }
+
+    public function getArrivalLocations(Request $request)
+    {
+        $location_id = $request->location_id;
+        
+        $arrival_locations = \App\Models\Master\ArrivalLocation::where('company_location_id', $location_id)->get();
+
+        $data = [];
+        foreach ($arrival_locations as $arrival_location) {
+            $data[] = [
+                'id' => $arrival_location->id,
+                'text' => $arrival_location->name,
+            ];
+        }
+
+        return response()->json($data);
+    }
+
+    public function getSubArrivalLocations(Request $request)
+    {
+        $arrival_ids = (array) $request->arrival_id;
+        
+        $sub_arrival_locations = \App\Models\Master\ArrivalSubLocation::whereIn('arrival_location_id', $arrival_ids)->get();
+
+        $data = [];
+        foreach ($sub_arrival_locations as $sub_arrival) {
+            $data[] = [
+                'id' => $sub_arrival->id,
+                'text' => $sub_arrival->name . " (" . $sub_arrival->arrivalLocation->name . ")",
+            ];
+        }
+
+        return response()->json($data);
     }
 }

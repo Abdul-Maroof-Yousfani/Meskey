@@ -8,6 +8,7 @@ use App\Http\Controllers\Export\ExportSodaFieldController;
 use App\Http\Controllers\Export\IncoTermController;
 use App\Http\Controllers\Export\ModeOfTermController;
 use App\Http\Controllers\Export\ModeOfTransportController;
+use App\Http\Controllers\Export\ExportLoadingProgramController;
 use App\Http\Controllers\Export\ProformaController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Export\QuotationController;
@@ -42,7 +43,17 @@ Route::resource('export-delivery-order', ExportDeliveryOrderController::class);
 Route::post('/get-export-delivery-order', [ExportDeliveryOrderController::class, 'getExportDeliveryOrderTable'])->name('get.export-delivery-order');
 Route::get('/get-export-order-details/{id}', [ExportDeliveryOrderController::class, 'getExportOrderDetails'])->name('export.get-export-order-details');
 Route::get('/get-orders-by-buyer/{buyerId}', [ExportDeliveryOrderController::class, 'getOrdersByBuyer'])->name('export.get-orders-by-buyer');
+Route::get('/get-arrival-locations', [ExportDeliveryOrderController::class, 'getArrivalLocations'])->name('export.get-arrival-locations');
+Route::get('/get-sub-arrival-locations', [ExportDeliveryOrderController::class, 'getSubArrivalLocations'])->name('export.get-sub-arrival-locations');
 Route::get('/export-order/get-quotation-details/{id}', [ExportOrderController::class, 'getQuotationDetails'])->name('export-order.get-quotation-details');
+
+// export loading program
+Route::resource('export-loading-program', ExportLoadingProgramController::class);
+Route::post('/get-export-loading-program', [ExportLoadingProgramController::class, 'getList'])->name('get.export-loading-program');
+Route::get('/fetch-export-orders-by-location', [ExportLoadingProgramController::class, 'fetchExportOrdersByLocation'])->name('fetch.export.orders.by.location');
+Route::get('/get-export-order-related-data', [ExportLoadingProgramController::class, 'getExportOrderRelatedData'])->name('get.export-order.related.data');
+Route::get('/get-delivery-orders-by-export-order-loading', [ExportLoadingProgramController::class, 'getDeliveryOrdersByExportOrder'])->name('get.delivery-orders.by.export-order.loading');
+Route::get('/get-delivery-orders-by-export-order-loading-edit', [ExportLoadingProgramController::class, 'getDeliveryOrdersByExportOrderEdit'])->name('get.delivery-orders.by.export-order.loading.edit');
 
 // export form-e
 Route::resource('export-form-e', App\Http\Controllers\Export\ExportFormEController::class);

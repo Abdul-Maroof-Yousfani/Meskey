@@ -39,6 +39,16 @@ class LoadingProgram extends Model
         return $this->belongsToMany(DeliveryOrder::class, 'loading_program_delivery_order', 'loading_program_id', 'delivery_order_id')->withTimestamps();
     }
 
+    public function exportOrder()
+    {
+        return $this->belongsTo(\App\Models\Export\ExportOrder::class, 'export_order_id');
+    }
+
+    public function exportOrders()
+    {
+        return $this->belongsToMany(\App\Models\Export\ExportOrder::class, 'loading_program_export_order', 'loading_program_id', 'export_order_id')->withTimestamps();
+    }
+
     public function loadingProgramItems()
     {
         return $this->hasMany(LoadingProgramItem::class);
