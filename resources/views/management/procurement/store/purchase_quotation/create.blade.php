@@ -7,10 +7,6 @@
 <form style="overflow-x: hidden;" action="{{ route('store.purchase-quotation.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-quotation') }}" />
-    <div class="alert alert-danger" id="message" 
-     style="display:none; position:fixed; top:20px; right:20px; z-index:9999; min-width:300px;">
-    No Pending quantity to quote where quantity is zero
-</div>
     <div class="row form-mar">
         <div class="col-md-3">
             <div class="form-group">
