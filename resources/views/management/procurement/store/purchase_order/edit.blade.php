@@ -149,6 +149,7 @@
                                 <th>Micron</th>
                                 <th>Printing Sample</th>
                             @endif
+                            <th>Delivery Date</th>
                             <th>Remarks</th>
                             <th>Net Amount</th>
                             <th>Action</th>
@@ -385,6 +386,14 @@
                                     </div>
                                 </td>
                                 @endif
+                                <td style="min-width: 150px;">
+                                    @php
+                                        $initialDeliveryDate = $pqSource ? $pqSource->delivery_date : $data->delivery_date;
+                                    @endphp
+                                    <input type="date" name="delivery_date[]" value="{{ $initialDeliveryDate }}" 
+                                        id="delivery_date_{{ $key }}" class="form-control"
+                                        {{ $pqSource ? 'readonly' : '' }}>
+                                </td>
                                 <td style="min-width: 400px;">
                                     <input  name="remarks[]" type="text"
                                         value="{{ $data->remarks }}" id="remark_{{ $key }}"
@@ -704,7 +713,6 @@
         qty = maxQty;
         qtyInput.val(maxQty);
     }
-
     // Get tax percentage from selected option
     var selectedOption = $('#tax_id_' + num + ' option:selected');
     var tax_percentage = parseFloat(selectedOption.data('percentage')) || 0;
