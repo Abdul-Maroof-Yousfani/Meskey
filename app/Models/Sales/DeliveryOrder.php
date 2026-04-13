@@ -111,20 +111,20 @@ class DeliveryOrder extends Model
     {
         return $this->hasMany(LoadingProgramItem::class, "delivery_order_id");
     }
-    public function exportOrder()
-    {
-        return $this->belongsTo(\App\Models\Export\ExportOrder::class, 'export_order_id');
-    }
+    // public function exportOrder()
+    // {
+    //     return $this->belongsTo(\App\Models\Export\ExportOrder::class, 'export_order_id');
+    // }
 
-    public function exportFormE()
-    {
-        return $this->belongsTo(\App\Models\Export\ExportFormE::class, 'export_form_e_id');
-    }
+    // public function exportFormE()
+    // {
+    //     return $this->belongsTo(\App\Models\Export\ExportFormE::class, 'export_form_e_id');
+    // }
 
-    public function exportPackingItems()
-    {
-        return $this->hasMany(\App\Models\Export\ExportDeliveryOrderPackingItem::class, 'delivery_order_id');
-    }
+    // public function exportPackingItems()
+    // {
+    //     return $this->hasMany(\App\Models\Export\ExportDeliveryOrderPackingItem::class, 'delivery_order_id');
+    // }
 
     /**
      * Override createApprovalRows from HasApproval trait to handle duplicates safely
