@@ -85,7 +85,7 @@
                         <th>Item UOM</th>
                         <th>Job Order</th>
                         <th>Qty</th>
-                        <th class="bag-only">Receive Weight (kg)</th>
+                        <th class="bag-only">Receive Weight (grams)</th>
                         <th class="bag-only">Min Weight (gm)</th>
                         <th class="bag-only">Tolerance</th>
                         <th class="bag-only">Brands</th>
