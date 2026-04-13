@@ -70,7 +70,7 @@
         </td>
         <td style="min-width: 180px;">
             <input type="date" name="delivery_date[]" id="delivery_date_{{ $key }}" 
-                class="form-control" min="{{ date('Y-m-d') }}" value="{{ date('Y-m-d') }}" required>
+                class="form-control" min="{{ date('Y-m-d') }}" value="" required>
         </td>
         <td style="min-width: 200px;" class="bag-only">
            
