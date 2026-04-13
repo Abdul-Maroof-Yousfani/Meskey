@@ -13,31 +13,24 @@
         </thead>
         <tbody>
             @foreach($FirstWeighbridges as $firstWeighbridge)
+                @php
+                    $loadingProgramItem = $firstWeighbridge->loadingProgramItem;
+                    $deliveryOrder = $loadingProgramItem?->deliveryOrders?->first();
+                    $saleOrder = $loadingProgramItem?->saleOrders?->first();
+                @endphp
                 <tr>
                     <td>
-                        {{ $firstWeighbridge->loadingProgramItem->transaction_number ?? 'N/A' }}
+                        {{ $loadingProgramItem?->transaction_number ?? 'N/A' }}
                     </td>
                     <td>
-                        {{ $firstWeighbridge->loadingProgramItem->truck_number ?? 'N/A' }}
+                        {{ $loadingProgramItem?->truck_number ?? 'N/A' }}
                     </td>
-                    @if($firstWeighbridge->loadingProgramItem->loadingProgram->deliveryOrder)
-                        <td>
-                            {{ $firstWeighbridge->loadingProgramItem->loadingProgram->deliveryOrder->customer->name ?? 'N/A' }}
-                        </td>
-                    @else
-                        <td>
-                            {{ $firstWeighbridge->loadingProgramItem->loadingProgram->saleOrder->customer->name ?? 'N/A' }}
-                        </td>
-                    @endif
-                    @if($firstWeighbridge->loadingProgramItem->loadingProgram->deliveryOrder)
-                        <td>
-                            {{ $firstWeighbridge->loadingProgramItem->loadingProgram->deliveryOrder->delivery_order_data->first()->item->name ?? 'N/A' }}
-                        </td>
-                    @else
-                        <td>
-                            {{ $firstWeighbridge->loadingProgramItem->loadingProgram->saleOrder->sales_order_data->first()->item->name ?? 'N/A' }}
-                        </td>
-                    @endif
+                    <td>
+                        {{ $deliveryOrder?->customer?->name ?? $saleOrder?->customer?->name ?? 'N/A' }}
+                    </td>
+                    <td>
+                        {{ $deliveryOrder?->delivery_order_data?->first()?->item?->name ?? $saleOrder?->sales_order_data?->first()?->item?->name ?? 'N/A' }}
+                    </td>
                     <td>
                         {{ $firstWeighbridge->first_weight ?? 'N/A' }}
                     </td>

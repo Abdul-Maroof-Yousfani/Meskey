@@ -23,7 +23,7 @@ class DeliveryOrder extends Model
         });
 
         static::updating(function ($model) {
-            $model->type = 'sale_order'; 
+            $model->type = 'sale_order';
         });
 
         static::addGlobalScope('sale_type', function ($builder) {

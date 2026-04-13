@@ -35,10 +35,15 @@ class FirstWeighBridgeController extends Controller
     {
         
         $FirstWeighbridges = FirstWeighbridge::with([
-            'loadingProgramItem.loadingProgram.deliveryOrder.customer',
-            'loadingProgramItem.loadingProgram.deliveryOrder.delivery_order_data.item',
+            'loadingProgramItem.deliveryOrders.customer',
+            'loadingProgramItem.deliveryOrders.delivery_order_data.item',
+            'loadingProgramItem.saleOrders.customer',
+            'loadingProgramItem.saleOrders.sales_order_data.item',
             'loadingProgramItem'
         ])
+            ->whereHas('loadingProgramItem.loadingProgram', function ($query) {
+                $query->where('type', 'sale_order');
+            })
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
                 return $q->where(function ($sq) use ($searchTerm) {
@@ -61,8 +66,16 @@ class FirstWeighBridgeController extends Controller
     {
         $data = [
             'ArrivalTruckTypes' => ArrivalTruckType::where('status', 'active')->get(),
-            'Tickets' => LoadingProgramItem::whereDoesntHave('firstWeighbridge')
-                ->with(['loadingProgram.deliveryOrder.customer', 'loadingProgram.deliveryOrder.delivery_order_data.item'])
+            'Tickets' => LoadingProgramItem::whereHas('loadingProgram', function ($query) {
+                $query->where('type', 'sale_order');
+            })
+                ->whereDoesntHave('firstWeighbridge')
+                ->with([
+                    'deliveryOrders.customer',
+                    'deliveryOrders.delivery_order_data.item',
+                    'saleOrders.customer',
+                    'saleOrders.sales_order_data.item'
+                ])
                 ->get()
         ];
 
@@ -92,8 +105,10 @@ class FirstWeighBridgeController extends Controller
             return response()->json(['errors' => ['loading_program_item_id' => 'This ticket already has a first weighbridge.']], 422);
         }
 
-        $loadingProgramItem = LoadingProgramItem::with('deliveryOrders')->findOrFail($request->loading_program_item_id);
-    $deliveryOrders = $loadingProgramItem->deliveryOrders;
+        $loadingProgramItem = LoadingProgramItem::whereHas('loadingProgram', function ($query) {
+            $query->where('type', 'sale_order');
+        })->with('deliveryOrders')->findOrFail($request->loading_program_item_id);
+        $deliveryOrders = $loadingProgramItem->deliveryOrders;
 
     $request['created_by'] = auth()->user()->id;
     $request['company_id'] = $request->company_id;
@@ -138,22 +153,26 @@ class FirstWeighBridgeController extends Controller
     public function edit($id)
     {
         $data['FirstWeighbridge'] = FirstWeighbridge::with([
-        'loadingProgramItem.saleOrders.customer',
-        'loadingProgramItem.saleOrders.sales_order_data.item',
-        'loadingProgramItem.saleOrders.sales_order_data.brand',
-        'loadingProgramItem.deliveryOrders.customer',
-        'loadingProgramItem.deliveryOrders.delivery_order_data.item',
-        'loadingProgramItem.deliveryOrders.delivery_order_data.salesOrderData',
-        'loadingProgramItem.deliveryOrders.arrivalLocation',
-        'loadingProgramItem.deliveryOrders.subArrivalLocation'
-    ])->findOrFail($id);
+            'loadingProgramItem.saleOrders.customer',
+            'loadingProgramItem.saleOrders.sales_order_data.item',
+            'loadingProgramItem.saleOrders.sales_order_data.brand',
+            'loadingProgramItem.deliveryOrders.customer',
+            'loadingProgramItem.deliveryOrders.delivery_order_data.item',
+            'loadingProgramItem.deliveryOrders.delivery_order_data.salesOrderData',
+            'loadingProgramItem.deliveryOrders.arrivalLocation',
+            'loadingProgramItem.deliveryOrders.subArrivalLocation'
+        ])
+            ->whereHas('loadingProgramItem.loadingProgram', function ($query) {
+                $query->where('type', 'sale_order');
+            })
+            ->findOrFail($id);
 
-    $data['ArrivalTruckTypes'] = ArrivalTruckType::where('status', 'active')->get();
-    $data['DeliveryOrders'] = $data['FirstWeighbridge']->loadingProgramItem->deliveryOrders;
-    $data['SalesOrders'] = $data['FirstWeighbridge']->loadingProgramItem->saleOrders;
+        $data['ArrivalTruckTypes'] = ArrivalTruckType::where('status', 'active')->get();
+        $data['DeliveryOrders'] = $data['FirstWeighbridge']->loadingProgramItem->deliveryOrders;
+        $data['SalesOrders'] = $data['FirstWeighbridge']->loadingProgramItem->saleOrders;
 
-    return view('management.sales.first-weighbridge.edit', $data);
-}
+        return view('management.sales.first-weighbridge.edit', $data);
+    }
 
     /**
      * Update the specified resource in storage.
@@ -181,9 +200,11 @@ class FirstWeighBridgeController extends Controller
         }
 
         $firstWeighbridge = FirstWeighbridge::findOrFail($id);
-    $loadingProgramItem = LoadingProgramItem::with('deliveryOrders')->findOrFail($request->loading_program_item_id);
-    $deliveryOrders = $loadingProgramItem->deliveryOrders;
-    $request['company_id'] = $request->company_id;
+        $loadingProgramItem = LoadingProgramItem::whereHas('loadingProgram', function ($query) {
+            $query->where('type', 'sale_order');
+        })->with('deliveryOrders')->findOrFail($request->loading_program_item_id);
+        $deliveryOrders = $loadingProgramItem->deliveryOrders;
+        $request['company_id'] = $request->company_id;
 
     // Fetch weighbridge amount from WeighbridgeAmount model based on truck type and company location
     $companyLocationId = null;
@@ -237,7 +258,11 @@ class FirstWeighBridgeController extends Controller
             'deliveryOrders.delivery_order_data.salesOrderData',
             'deliveryOrders.arrivalLocation',
             'deliveryOrders.subArrivalLocation'
-        ])->findOrFail($request->loading_program_item_id);
+        ])
+            ->whereHas('loadingProgram', function ($query) {
+                $query->where('type', 'sale_order');
+            })
+            ->findOrFail($request->loading_program_item_id);
 
         $DeliveryOrders = $LoadingProgramItem->deliveryOrders;
         $SalesOrders = $LoadingProgramItem->saleOrders;
@@ -260,8 +285,10 @@ class FirstWeighBridgeController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $loadingProgramItem = LoadingProgramItem::with('deliveryOrders')->findOrFail($request->loading_program_item_id);
-    $deliveryOrders = $loadingProgramItem->deliveryOrders;
+        $loadingProgramItem = LoadingProgramItem::whereHas('loadingProgram', function ($query) {
+            $query->where('type', 'sale_order');
+        })->with('deliveryOrders')->findOrFail($request->loading_program_item_id);
+        $deliveryOrders = $loadingProgramItem->deliveryOrders;
 
     // Get company location from delivery order or loading program
     $companyLocationId = null;

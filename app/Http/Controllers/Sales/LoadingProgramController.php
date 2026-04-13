@@ -299,17 +299,24 @@ class LoadingProgramController extends Controller
             'loadingProgramItems.arrivalLocation',
             'loadingProgramItems.subArrivalLocation',
             'loadingProgramItems.transporter',
+            'loadingProgramItems.firstWeighbridge',
+            'loadingProgramItems.saleOrders',
+            'loadingProgramItems.deliveryOrders.delivery_order_data',
             'saleOrder.customer',
             'saleOrder.sales_order_data.item',
             'saleOrder.sales_order_data.brand',
             'saleOrder.locations',
-            'deliveryOrder'
+            'deliveryOrder',
+            'saleOrders.customer',
+            'saleOrders.sales_order_data.item',
+            'saleOrders.sales_order_data.brand',
+            'saleOrders.locations',
+            'saleOrders.factories',
+            'saleOrders.sections',
+            'deliveryOrders.customer',
+            'deliveryOrders.delivery_order_data.item',
+            'deliveryOrders.delivery_order_data.brand'
         ])->findOrFail($id);
-
-        $data["LoadingProgram"]->loadingProgramItems->filter(function($loadingProgramItem) {
-            // $loadingProgramItem->transaction_number = 
-        });
- 
 
         $SaleOrders = SalesOrder::where('am_approval_status', 'approved')
         ->get()
@@ -317,7 +324,7 @@ class LoadingProgramController extends Controller
             if ($sale_order->pay_type_id == 11) {
                 return true;
             }
-            if($sale_order->id == $data["LoadingProgram"]->sale_order_id) {
+            if($data["LoadingProgram"]->saleOrders->contains('id', $sale_order->id) || $sale_order->id == $data["LoadingProgram"]->sale_order_id) {
                 return true;
             }
             
@@ -331,54 +338,60 @@ class LoadingProgramController extends Controller
             return false;
         });
 
-        $currentSaleOrder = $data['LoadingProgram']->saleOrder;
-        $currentDeliveryOrder = $data['LoadingProgram']->deliveryOrder;
+        $currentSaleOrders = $data['LoadingProgram']->saleOrders->isEmpty()
+            ? collect([$data['LoadingProgram']->saleOrder])->filter()
+            : $data['LoadingProgram']->saleOrders;
+        $currentDeliveryOrders = $data['LoadingProgram']->deliveryOrders->isEmpty()
+            ? collect([$data['LoadingProgram']->deliveryOrder])->filter()
+            : $data['LoadingProgram']->deliveryOrders;
         
         $companyLocations = [];
         $factoryLocations = [];
         $sectionLocations = [];
 
-              
+        $allType11 = $currentSaleOrders->isNotEmpty() && $currentSaleOrders->every(function ($saleOrder) {
+            return $saleOrder->pay_type_id == 11;
+        });
 
-        if($currentSaleOrder->pay_type_id == 11 && !$data['LoadingProgram']->delivery_order_id) {
+        if($allType11 && $currentDeliveryOrders->isEmpty()) {
+            foreach($currentSaleOrders as $currentSaleOrder) {
+                foreach($currentSaleOrder->locations as $location) {
+                    $companyLocations[] = [
+                        "id" => $location->location_id,
+                        "text" => getLocation($location->location_id)?->name ?? "N/A"
+                    ];
+                }
 
-            // For company locations
+                foreach($currentSaleOrder->factories as $factory) {
+                    $factoryLocations[] = [
+                        "id" => $factory->arrival_location_id,
+                        "text" => getArrivalLocations($factory->arrival_location_id)?->name ?? "N/A"
+                    ];
+                }
 
-            foreach($currentSaleOrder->locations as $location) {
+                foreach($currentSaleOrder->sections as $section) {
+                    $sectionLocations[] = [
+                        "id" => $section->arrival_sub_location_id,
+                        "text" => subArrivalLocationId($section->arrival_sub_location_id)?->name ?? "N/A"
+                    ];
+                }
+            }
+        } else {
+            $companyLocationIds = $currentDeliveryOrders->flatMap(function ($deliveryOrder) {
+                return explode(",", (string) $deliveryOrder->location_id);
+            })->filter()->unique()->toArray();
+            $compLocations = CompanyLocation::whereIn("id", $companyLocationIds)->get();
+
+            foreach($compLocations as $location) {
                 $companyLocations[] = [
                     "id" => $location->location_id,
                     "text" => getLocation($location->location_id)?->name ?? "N/A"
                 ];
             }
 
-            foreach($currentSaleOrder->factories as $factory) {
-                // dd($factory);
-                $factoryLocations[] = [
-                    "id" => $factory->arrival_location_id,
-                    "text" => getArrivalLocations($factory->arrival_location_id)?->name ?? "N/A"
-                ];
-            }
-
-            foreach($currentSaleOrder->sections as $section) {
-                $sectionLocations[] = [
-                    "id" => $section->arrival_sub_location_id,
-                    "text" => subArrivalLocationId($section->arrival_sub_location_id)?->name ?? "N/A"
-                ];
-
-            }
-
-        } else {
-            $companyLocationIds = explode(",", $currentDeliveryOrder->location_id);
-            $compLocations = CompanyLocation::whereIn("id", $companyLocationIds)->get();
-
-            foreach($compLocations as $location) {
-                $companyLocations[] = [
-                    "id" => $location->location_id,
-                    "text" => $location->name
-                ];
-            }
-
-            $arrivalLocationIds = explode(",", $currentDeliveryOrder->arrival_location_id);
+            $arrivalLocationIds = $currentDeliveryOrders->flatMap(function ($deliveryOrder) {
+                return explode(",", (string) $deliveryOrder->arrival_location_id);
+            })->filter()->unique()->toArray();
             $arrivalLocations = ArrivalLocation::whereIn("id", $arrivalLocationIds)->get();
             foreach($arrivalLocations as $factory) {
                 $factoryLocations[] = [
@@ -387,7 +400,9 @@ class LoadingProgramController extends Controller
                 ];
             }
 
-            $subArrivalLocationIds = explode(",", $currentDeliveryOrder->sub_arrival_location_id);
+            $subArrivalLocationIds = $currentDeliveryOrders->flatMap(function ($deliveryOrder) {
+                return explode(",", (string) $deliveryOrder->sub_arrival_location_id);
+            })->filter()->unique()->toArray();
             $subArrivalLocations = ArrivalSubLocation::whereIn("id", $subArrivalLocationIds)->get();
             foreach($subArrivalLocations as $section) {
                 $sectionLocations[] = [
@@ -397,10 +412,25 @@ class LoadingProgramController extends Controller
             }
         }
 
-        $loading_program_dos = array_unique($data["LoadingProgram"]->loadingProgramItems->pluck("delivery_order_id")->toArray());
+        $companyLocations = collect($companyLocations)->unique('id')->values()->toArray();
+        $factoryLocations = collect($factoryLocations)->unique('id')->values()->toArray();
+        $sectionLocations = collect($sectionLocations)->unique('id')->values()->toArray();
+
+        $loading_program_dos = $data["LoadingProgram"]->loadingProgramItems
+            ->flatMap(function ($item) {
+                $ids = $item->deliveryOrders->pluck('id')->toArray();
+                if (empty($ids) && $item->delivery_order_id) {
+                    $ids = [$item->delivery_order_id];
+                }
+                return $ids;
+            })
+            ->filter()
+            ->unique()
+            ->values()
+            ->toArray();
                 
         $locations = [$companyLocations, $factoryLocations, $sectionLocations];
-        $deliveryOrders = DeliveryOrder::where('so_id', $currentSaleOrder->id)
+        $deliveryOrders = DeliveryOrder::whereIn('so_id', $currentSaleOrders->pluck('id'))
             ->where('am_approval_status', 'approved')
             ->get()
             ->reject(function($delivery_order) use ($data, $loading_program_dos) {
@@ -764,6 +794,35 @@ class LoadingProgramController extends Controller
             ->with('customer', 'delivery_order_data.item', 'delivery_order_data.brand')
             ->select('id', 'reference_no', 'customer_id', 'so_id', 'location_id', 'arrival_location_id', 'sub_arrival_location_id', 'am_approval_status')
             ->get();
+
+        $lpId = $request->loading_program_id;
+        $linkedDoIds = [];
+        if ($lpId) {
+            $linkedDoIds = LoadingProgramItem::where('loading_program_id', $lpId)
+                ->with('deliveryOrders:id')
+                ->get()
+                ->flatMap(function ($item) {
+                    $ids = $item->deliveryOrders->pluck('id')->toArray();
+                    if (empty($ids) && $item->delivery_order_id) {
+                        $ids = [$item->delivery_order_id];
+                    }
+                    return $ids;
+                })
+                ->filter()
+                ->unique()
+                ->values()
+                ->toArray();
+        }
+
+        $deliveryOrders = $deliveryOrders->reject(function($deliveryOrder) use ($linkedDoIds) {
+            if (in_array($deliveryOrder->id, $linkedDoIds)) {
+                return false;
+            }
+
+            $lpBalance = getLoadingProgramBalance($deliveryOrder->id);
+            $swbBalance = get_second_weighbridge_balance_by_delivery_order($deliveryOrder->id);
+            return $lpBalance <= 0 || $swbBalance <= 0;
+        });
 
         $deliveryOrders = $deliveryOrders->map(function($deliveryOrder) {
             $locationIds = explode(',', $deliveryOrder->location_id);

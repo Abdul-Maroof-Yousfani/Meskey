@@ -315,7 +315,7 @@ if (!function_exists("numberToOrdinalWord")) {
 if (!function_exists("getLoadingProgramBalance")) {
     function getLoadingProgramBalance($delivery_order_id)
     {
-        $delivery_order = DeliveryOrder::find($delivery_order_id);
+        $delivery_order = DeliveryOrder::withoutGlobalScopes()->find($delivery_order_id);
         if (!$delivery_order) return 0;
         
         if ($delivery_order->type == 'export_order') {
@@ -347,7 +347,7 @@ if (!function_exists("getLoadingProgramBalance")) {
                 // FIFO logic for multi-DO participation
                 $remainingQty = $item->qty;
                 foreach ($linkedDos as $d_id) {
-                    $d = DeliveryOrder::find($d_id);
+                    $d = DeliveryOrder::withoutGlobalScopes()->find($d_id);
                     if (!$d) continue;
                     $d_capacity = ($d->type == 'export_order') ? $d->exportPackingItems()->sum("metric_tons") : $d->delivery_order_data()->sum("qty");
                     
@@ -916,7 +916,7 @@ function get_second_weighbridge_balance(LoadingSlip $loadingSlip, $delivery_orde
 
 function get_second_weighbridge_balance_by_delivery_order($delivery_order_id)
 {
-    $delivery_order = DeliveryOrder::with(['delivery_order_data', 'exportPackingItems', 'saleSecondWeighbridge'])->find($delivery_order_id);
+    $delivery_order = DeliveryOrder::withoutGlobalScopes()->with(['delivery_order_data', 'exportPackingItems', 'saleSecondWeighbridge'])->find($delivery_order_id);
     if (!$delivery_order)
         return 0;
 

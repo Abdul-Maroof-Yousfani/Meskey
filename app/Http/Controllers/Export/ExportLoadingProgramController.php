@@ -66,6 +66,7 @@ class ExportLoadingProgramController extends Controller
     public function store(Request $request)
     {
         $validationRules = [
+            'main_company_location_id' => 'required|exists:model_location,id',
             'export_order_id' => 'required|array|min:1',
             'export_order_id.*' => 'exists:export_orders,id',
             'delivery_order_id' => 'required|array|min:1',
@@ -103,6 +104,7 @@ class ExportLoadingProgramController extends Controller
                 'export_order_id' => $exportOrder->id,
                 'delivery_order_id' => $request->delivery_order_id[0] ?? null,
                 'company_locations' => $companyLocationIds,
+                'company_location_id' => $request->main_company_location_id,
                 'arrival_locations' => $arrivalLocationIds,
                 'sub_arrival_locations' => $subArrivalLocationIds,
                 'remark' => $request->remark,
@@ -120,6 +122,7 @@ class ExportLoadingProgramController extends Controller
 
             foreach ($request->loading_program_items as $index => $itemData) {
                 $selectedDoIds = $itemData['delivery_order_id'] ?? [];
+                $selectedEoIds = $itemData['export_order_id'] ?? [];
                 
                 // Calculate aggregate balance for this row
                 $totalRowBalance = 0;
@@ -216,14 +219,31 @@ class ExportLoadingProgramController extends Controller
             'deliveryOrders',
         ])->findOrFail($id);
 
+        $selectedExportOrderIds = $loadingProgram->exportOrders->pluck('id')->toArray();
+        $companyLocationIds = is_array($loadingProgram->company_locations)
+            ? array_filter($loadingProgram->company_locations)
+            : array_filter(explode(',', (string) $loadingProgram->company_locations));
+
         $ExportOrders = ExportOrder::query()
             ->with(['deliveryOrders' => function ($q) {
-                $q->where('type', 'export_order')->where('am_approval_status', 'approved');
+                $q->where('am_approval_status', 'approved');
             }])
-            ->whereHas('deliveryOrders', function ($q) use ($loadingProgram) {
-                if ($loadingProgram->company_location_id) {
-                    $q->whereRaw("FIND_IN_SET(?, location_id)", [$loadingProgram->company_location_id]);
+            ->where(function ($query) use ($selectedExportOrderIds, $companyLocationIds) {
+                if (!empty($selectedExportOrderIds)) {
+                    $query->whereIn('id', $selectedExportOrderIds);
                 }
+
+                $query->orWhereHas('deliveryOrders', function ($q) use ($companyLocationIds) {
+                    $q->where('am_approval_status', 'approved');
+
+                    if (!empty($companyLocationIds)) {
+                        $q->where(function ($locationQuery) use ($companyLocationIds) {
+                            foreach ($companyLocationIds as $locationId) {
+                                $locationQuery->orWhereRaw("FIND_IN_SET(?, location_id)", [$locationId]);
+                            }
+                        });
+                    }
+                });
             })
             ->get();
 
@@ -234,8 +254,8 @@ class ExportLoadingProgramController extends Controller
         $allDeliveryOrders = $loadingProgram->deliveryOrders;
 
         if ($allDeliveryOrders->count() > 0) {
-            $companyLocationIds = $allDeliveryOrders->flatMap(fn($do) => explode(',', $do->location_id))->filter()->unique()->toArray();
-            $companyLocations = \App\Models\Master\CompanyLocation::whereIn('id', $companyLocationIds)->get()->map(function ($location) {
+            $deliveryOrderCompanyLocationIds = $allDeliveryOrders->flatMap(fn($do) => explode(',', $do->location_id))->filter()->unique()->toArray();
+            $companyLocations = \App\Models\Master\CompanyLocation::whereIn('id', $deliveryOrderCompanyLocationIds)->get()->map(function ($location) {
                 return ['id' => $location->id, 'text' => $location->name];
             })->toArray();
 
@@ -270,6 +290,7 @@ class ExportLoadingProgramController extends Controller
     public function update(Request $request, $id)
     {
         $validationRules = [
+            'main_company_location_id' => 'required|exists:model_location,id',
             'export_order_id' => 'required|array|min:1',
             'export_order_id.*' => 'exists:export_orders,id',
             'delivery_order_id' => 'required|array|min:1',
@@ -307,11 +328,13 @@ class ExportLoadingProgramController extends Controller
                 'export_order_id' => $exportOrder->id,
                 'delivery_order_id' => $request->delivery_order_id[0] ?? null,
                 'company_locations' => $companyLocationIds,
+                'company_location_id' => $request->main_company_location_id,
                 'arrival_locations' => $arrivalLocationIds,
                 'sub_arrival_locations' => $subArrivalLocationIds,
                 'remark' => $request->remark,
             ]);
 
+            $loadingProgram->exportOrders()->sync($request->export_order_id);
             $loadingProgram->deliveryOrders()->sync($request->delivery_order_id);
 
             $loadingProgram->loadingProgramItems()->whereDoesntHave('firstWeighbridge')->delete();
