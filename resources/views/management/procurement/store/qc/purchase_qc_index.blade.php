@@ -1,20 +1,16 @@
 @extends('management.layouts.master')
 @section('title')
-    Goods Received Note
+    Purchase QC
 @endsection
 @section('content')
     <div class="content-wrapper">
         <section id="extended">
             <div class="row w-100 mx-auto">
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-                    <h2 class="page-title">Goods Received Note</h2>
+                    <h2 class="page-title">Purchase QC</h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
-                    <button
-                        onclick="openModal(this,'{{ route('store.purchase-order-receiving.create') }}','Add GRN',false,'100%')"
-                        type="button" class="btn btn-primary position-relative">
-                        Create GRN
-                    </button>
+                    {{-- Create Button Removed as per request --}}
                 </div>
             </div>
             <div class="row">
@@ -49,15 +45,8 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="px-1 text-left" style="min-width: 180px; flex: 1 1 180px;">
-                                        <label for="filter_supplier_id" class="form-label">Supplier</label>
-                                        <select name="supplier_id" id="filter_supplier_id" class="form-control select2">
-                                            <option value="all">All Vendors</option>
-                                            @foreach($suppliers as $supplier)
-                                                <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
+                                    
+                                    {{-- Supplier Filter Removed as per request --}}
 
                                     <div class="px-1 text-left" style="min-width: 180px; flex: 1 1 180px;">
                                         <label for="qty" class="form-label">Qty</label>
@@ -94,11 +83,13 @@
                                             <th style="width: 180px; min-width: 180px;">Purchase Order No</th>
                                             <th style="width: 100px; min-width: 100px;">DC No</th>
                                             <th style="width: 250px; min-width: 250px;">Category- item</th>
-                                            <th style="width: 200px; min-width: 200px;">Supplier</th>
+                                            {{-- Supplier column removed --}}
                                             <th style="width: 90px; min-width: 90px;">Qty</th>
                                             <th style="width: 90px; min-width: 90px;">Rate</th>
                                             <th style="width: 100px; min-width: 100px;">Total Amount</th>
-                                            <th style="min-width: 120px;">Action</th>
+                                            <th style="width: 110px; min-width: 110px;">QC</th>
+                                            <th style="width: 110px; min-width: 110px;">QC Status</th>
+                                            {{-- Action column removed --}}
                                         </tr>
                                     </thead>
                                 </table>
@@ -108,15 +99,13 @@
                 </div>
             </div>
         </section>
-
-
     </div>
 @endsection
 @section('script')
     <script>
         $(document).ready(function () {
             $('.select2').select2();
-            filterationCommon(`{{ route('store.get.purchase-order-receiving') }}`);
+            filterationCommon(`{{ route('store.purchase-qc.getList') }}`);
 
             // Re-initialize select2 after any AJAX update to preserve selected value in visual UI
             $(document).on('ajaxSuccess', function() {
@@ -124,8 +113,8 @@
             });
 
             // Trigger filtering automatically on select change
-            $(document).on('change', '#category_id, #filter_supplier_id, #qc_status', function() {
-                filterationCommon(`{{ route('store.get.purchase-order-receiving') }}`);
+            $(document).on('change', '#category_id, #qc_status', function() {
+                filterationCommon(`{{ route('store.purchase-qc.getList') }}`);
             });
         });
     </script>

@@ -15,12 +15,207 @@ use App\Models\Procurement\Store\PurchaseOrderReceivingData;
 use App\Models\Procurement\Store\PurchaseBagQC;
 use App\Models\Sales\JobOrder;
 use DB;
+use App\Models\ApprovalsModule\ApprovalModule;
+use App\Models\ApprovalsModule\ApprovalModuleRole;
+
 use Illuminate\Http\Request;
 
 class QcController extends Controller
 {
     public function index() {
         return view("management.procurement.store.qc.index");
+    }
+
+    public function purchaseQcIndex() {
+        $categories = Category::where('category_type', 'general_items')->get();
+        return view("management.procurement.store.qc.purchase_qc_index", compact('categories'));
+    }
+
+    public function purchaseQcGetList(Request $request)
+    {
+        $query = PurchaseOrderReceivingData::query();
+
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('qty', 'like', "%{$search}%")
+                    ->orWhere('rate', 'like', "%{$search}%")
+                    ->orWhere('total', 'like', "%{$search}%")
+                    ->orWhereHas('purchase_order_receiving', function ($q) use ($search) {
+                        $q->where('purchase_order_receiving_no', 'like', "%{$search}%")
+                            ->orWhere('dc_no', 'like', "%{$search}%")
+                            ->orWhereHas('purchase_order', function ($q) use ($search) {
+                                $q->where('purchase_order_no', 'like', "%{$search}%")
+                                    ->orWhereHas('purchase_request', function ($q) use ($search) {
+                                        $q->where('purchase_request_no', 'like', "%{$search}%");
+                                    });
+                            });
+                    });
+            });
+        }
+
+        if ($request->has('dc_no') && !empty($request->dc_no)) {
+            $query->whereHas('purchase_order_receiving', function($q) use ($request) {
+                $q->where('dc_no', $request->dc_no);
+            });
+        }
+
+        foreach (['qty', 'rate', 'total'] as $field) {
+            if ($request->has($field) && !empty($request->$field)) {
+                if ($field === 'rate' || $field === 'total') {
+                    $query->whereHas('purchase_order_data', function ($q) use ($field, $request) {
+                        $q->where($field, $request->$field);
+                    });
+                } else {
+                    $query->where($field, $request->$field);
+                }
+            }
+        }
+
+        if ($request->has('qc_status') && !empty($request->qc_status)) {
+            $query->whereHas('qc', function($q) use ($request) {
+                $status = $request->qc_status;
+                if ($status === 'pending') {
+                    $q->whereIn('am_approval_status', ['pending', 'reverted']);
+                } else {
+                    $q->where('am_approval_status', $status);
+                }
+            });
+        }
+
+        $PurchaseOrderRaw = $query->with([
+            'qc',
+            'purchase_order_data.purchase_request_data',
+            'purchase_order_receiving.purchase_order.purchase_request',
+            'category',
+            'item'
+        ])
+        ->orderBy("purchase_order_receiving_id", "desc")
+        ->paginate(request('per_page', 25));
+
+        $groupedData = [];
+        $processedData = [];
+
+        foreach ($PurchaseOrderRaw as $row) {
+            $dc_no = $row->purchase_order_receiving->dc_no ?? null;
+
+            $purchaseRequestNo = $row->purchase_order_receiving->purchase_quotation_data->purchase_request->purchase_request_no ?? 'N/A';
+            $quotationNo        = $row->purchase_order_receiving->purchase_quotation_data->purchase_quotation_no ?? 'N/A';
+            $orderNo            = $row->purchase_order_receiving->purchase_order_receiving_no ?? 'N/A';
+
+            if ($orderNo === 'N/A') {
+                continue;
+            }
+
+            $itemId      = $row->item->id ?? 'unknown';
+            $dataId      = $row->id;
+            $uniqueItemKey = $itemId . '_' . $dataId;
+
+            $supplierKey = ($row->supplier->id ?? 'unknown') . '_' . $dataId;
+
+            if (!isset($groupedData[$orderNo])) {
+                $groupedData[$orderNo] = [
+                    'request_data' => $row->purchase_order_receiving->purchase_quotation_data->purchase_request ?? null,
+                    'quotations'   => []
+                ];
+            }
+
+            if (!isset($groupedData[$orderNo]['quotations'][$quotationNo])) {
+                $groupedData[$orderNo]['quotations'][$quotationNo] = [
+                    'quotation_data' => $row->purchase_order_receiving->purchase_quotation_data ?? null,
+                    'orders'         => []
+                ];
+            }
+
+            if (!isset($groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo])) {
+                $groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo] = [
+                    'order_data' => $row->purchase_order_receiving,
+                    'items'      => []
+                ];
+            }
+
+            if (!isset($groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo]['items'][$uniqueItemKey])) {
+                $groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo]['items'][$uniqueItemKey] = [
+                    'item_data'  => $row,
+                    'item_qc'    => $row->qc,
+                    'qc_status'  => $row->qc?->am_approval_status,
+                    'suppliers'  => []
+                ];
+            }
+
+            $groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo]['items'][$uniqueItemKey]['suppliers'][$supplierKey] = $row;
+        }
+
+        foreach ($groupedData as $purchaseRequestNo => $requestGroup) {
+            foreach ($requestGroup['quotations'] as $quotationNo => $quotationGroup) {
+                foreach ($quotationGroup['orders'] as $orderNo => $orderGroup) {
+                    $requestRowspan = 0;
+                    $requestItems = [];
+                    $hasApprovedItem = false;
+
+                    foreach ($orderGroup['items'] as $itemGroup) {
+                        foreach ($itemGroup['suppliers'] as $supplierData) {
+                            $approvalStatus = $supplierData->{$supplierData->getApprovalModule()->approval_column ?? 'am_approval_status'} ?? 'N/A';
+                            if (strtolower($approvalStatus) === 'approved') {
+                                $hasApprovedItem = true;
+                                break 2;
+                            }
+                        }
+                    }
+
+                    foreach ($orderGroup['items'] as $itemId => $itemGroup) {
+                        $itemRowspan = count($itemGroup['suppliers']);
+                        $requestRowspan += $itemRowspan;
+
+                        $itemSuppliers = [];
+                        $isFirstSupplier = true;
+
+                        foreach ($itemGroup['suppliers'] as $supplierKey => $supplierData) {
+                            $itemSuppliers[] = [
+                                'data' => $supplierData,
+                                'is_first_supplier' => $isFirstSupplier,
+                                'item_rowspan' => $itemRowspan,
+                            ];
+                            $isFirstSupplier = false;
+                        }
+
+                        $requestItems[] = [
+                            'item_data' => $itemGroup['item_data'],
+                            'suppliers' => $itemSuppliers,
+                            'qc_status' => $itemGroup["qc_status"],
+                            'item_rowspan' => $itemRowspan
+                        ];
+                    }
+                    $originalPurchaseRequestNo = $orderGroup['order_data']->purchase_request->purchase_request_no ?? 'N/A';
+                    $originalPurchaseOrderNo = $orderGroup['order_data']->purchase_order->purchase_order_no ?? 'N/A';
+
+                    $approvalModule = ApprovalModule::select("id")->where("slug", "qc")->first();
+                    $hasApprovalPermission = ApprovalModuleRole::where("module_id", $approvalModule->id)
+                                                                ->where("role_id", auth()->user()->id)
+                                                                ->exists();
+
+                    $processedData[] = [
+                        'request_data' => $orderGroup['order_data'],
+                        'request_no' => $orderNo,
+                        'purchase_request_no' => $originalPurchaseRequestNo,
+                        'purchase_order_no' => $originalPurchaseOrderNo,
+                        'quotation_no' => $quotationNo,
+                        'canApprove' => $hasApprovalPermission,
+                        'created_by_id' => $orderGroup['order_data']->created_by ?? null,
+                        'request_status' => $orderGroup['order_data']->am_approval_status ?? 'N/A',
+                        'request_rowspan' => $requestRowspan,
+                        'items' => $requestItems,
+                        'dc_no' => $orderGroup['order_data']->dc_no ?? 'N/A',
+                        'has_approved_item' => $hasApprovedItem,
+                    ];
+                }
+            }
+        }
+
+        return view('management.procurement.store.qc.purchase_qc_getList', [
+            'PurchaseOrderReceiving' => $PurchaseOrderRaw,
+            'GroupedPurchaseOrderReceiving' => $processedData
+        ]);
     }
     public function deleteQc(Request $request) {
         $id = $request->id;

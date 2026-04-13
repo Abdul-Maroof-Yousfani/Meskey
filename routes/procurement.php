@@ -159,6 +159,8 @@ Route::prefix('store')->name('store.')->group(function () {
 
 
     Route::post("qc/create", [PurchaseOrderReceivingController::class, "createQc"])->name("qc.create");
+    Route::get("/purchase-qc", [QcController::class, "purchaseQcIndex"])->name("purchase-qc.index");
+    Route::post("/purchase-qc/getList", [QcController::class, "purchaseQcGetList"])->name("purchase-qc.getList");
     Route::get("/qc", [QcController::class, "index"])->name("qc.get");
     Route::post("/qc", [QcController::class, "index"])->name("qc.get");
     Route::post("/qc/getList", [QcController::class, "getList"])->name("qc.getList");

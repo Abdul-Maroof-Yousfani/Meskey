@@ -2,7 +2,7 @@
     $previousUrl = url()->previous();
     $refreshRoute = str_contains($previousUrl, 'procurement/store/qc') 
         ? route('store.qc.getList') 
-        : route('store.get.purchase-order-receiving');
+        : route('store.purchase-qc.getList');
 @endphp
 <form action="{{ route('store.qc.store') }}" id="ajaxSubmit">
     <input type="hidden" id="listRefresh" value="{{ $refreshRoute }}">
