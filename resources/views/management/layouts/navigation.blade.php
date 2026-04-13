@@ -369,7 +369,7 @@
                             href="{{ route('store.qc.get') }}"
                             onclick="loadPageContent('{{ route('store.purchase-order-receiving.index') }}')"
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
-                            <span data-i18n="Task Board">Purchase QC</span>
+                            <span data-i18n="Task Board">Purchase Approval</span>
                         </a>
                     </li>
 
