@@ -115,7 +115,9 @@
 
             <td class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">
                 <input type="text" name="size[]" id="size_{{ $i }}"
-                    class="form-control size-input-check" placeholder="Size">
+                    class="form-control size-input-check" placeholder="Size"
+                    value="{{ (is_numeric($packing_item->bag_size) && $packing_item->bag_size > 0) ? $packing_item->bag_size : '' }}" 
+                    {{ (is_numeric($packing_item->bag_size) && $packing_item->bag_size > 0) ? 'readonly' : '' }}>
             </td>
 
             <td class="bag-only" style="min-width: 350px;">
@@ -268,8 +270,13 @@
             </td>
 
             <td class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">
+                @php
+                    $sub_jo_size = $sub_packing_item->bagSize->size ?? '';
+                @endphp
                 <input type="text" name="size[]" id="size_{{ $i }}"
-                    class="form-control size-input-check" placeholder="Size">
+                    class="form-control size-input-check" placeholder="Size"
+                    value="{{ (is_numeric($sub_jo_size) && $sub_jo_size > 0) ? $sub_jo_size : '' }}" 
+                    {{ (is_numeric($sub_jo_size) && $sub_jo_size > 0) ? 'readonly' : '' }}>
             </td>
 
             <td class="bag-only" style="min-width: 350px;">
