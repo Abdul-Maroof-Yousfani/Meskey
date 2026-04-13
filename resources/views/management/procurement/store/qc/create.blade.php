@@ -117,7 +117,7 @@
 
                             <td>
                                 <input type="text" name="average_weight_of_one_bag" onkeyup="calculate_total_recieved_weight(this)" id="average_weight_of_1_bag"
-                                     class="form-control" placeholder="Average Weight of One Bag" value="{{ (round($purchaseOrderReceivingData->receive_weight / $purchaseOrderReceivingData->qty, 5)) }}" readonly>
+                                     class="form-control" placeholder="Average Weight of One Bag" value="{{ (round($purchaseOrderReceivingData->receive_weight / $purchaseOrderReceivingData->qty, 5)) / 1000 }}" readonly>
                             </td>
 
                             <td>
@@ -132,7 +132,7 @@
 
                             <td>
                                 <input type="text" name="sample_average_weight" id="total_weight_received"
-                                    class="form-control" value="{{ (round($purchaseOrderReceivingData?->receive_weight / ($purchaseOrderReceivingData?->qty ?: 1), 2)) }}" readonly>
+                                    class="form-control" value="{{ (round($purchaseOrderReceivingData?->receive_weight / ($purchaseOrderReceivingData?->qty ?: 1), 2)) / 1000 }}" readonly>
                             </td>
 
                         </tr>
