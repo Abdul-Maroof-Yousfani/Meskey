@@ -208,6 +208,6 @@ class ExportOrder extends Model
 
     public function deliveryOrders()
     {
-        return $this->hasMany(\App\Models\Sales\DeliveryOrder::class, 'export_order_id');
+        return $this->hasMany(ExportDeliveryOrder::class, 'export_order_id');
     }
 }

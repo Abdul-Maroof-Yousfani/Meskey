@@ -597,14 +597,15 @@
 
             if (delivery_order_ids && delivery_order_ids.length > 0) {
                 var saleOrderId = $('#sale_order_id').val();
-                $.ajax({
-                    url: '{{ route('sales.getDeliveryOrdersBySaleOrderLoading') }}',
-                    type: 'GET',
-                    data: { 
-                        sale_order_id: saleOrderId,
-                        company_location_id: $('#main_company_location_id').val()
-                    },
-                    success: function(response) {
+                    $.ajax({
+                        url: '{{ route('sales.getDeliveryOrdersBySaleOrderLoadingEdit') }}',
+                        type: 'GET',
+                        data: { 
+                            sale_order_id: saleOrderId,
+                            company_location_id: $('#main_company_location_id').val(),
+                            loading_program_id: '{{ $LoadingProgram->id }}'
+                        },
+                        success: function(response) {
                         if (response.success && response.delivery_orders) {
                             var selectedDeliveryOrders = response.delivery_orders.filter(d_o => delivery_order_ids.includes(d_o.id.toString()));
                             if (selectedDeliveryOrders.length > 0) {
@@ -891,13 +892,14 @@
             const $doSelect = $(this).closest('tr').find('.delivery-order-select');
             if (rowSOIds.length > 0) {
                 const company_location_id = $('#main_company_location_id').val();
-                $.ajax({
-                    url: '{{ route('sales.getDeliveryOrdersBySaleOrderLoadingEdit') }}',
-                    type: 'GET',
-                    data: { 
-                        sale_order_id: rowSOIds,
-                        company_location_id: company_location_id
-                    },
+                    $.ajax({
+                        url: '{{ route('sales.getDeliveryOrdersBySaleOrderLoadingEdit') }}',
+                        type: 'GET',
+                        data: { 
+                            sale_order_id: rowSOIds,
+                            company_location_id: company_location_id,
+                            loading_program_id: '{{ $LoadingProgram->id }}'
+                        },
                     success: function(response) {
                         if (response.success) {
                             window.isUpdatingUI = true;

@@ -51,7 +51,7 @@
     </div>
 </div>
 
-<div class="col-12 mt-3" id="do-details-section">
+<div class="col-12 mt-3" id="delivery_order_details_wrapper" style="display: none;">
     <h6 class="header-heading-sepration">
         Delivery Order Details
     </h6>
@@ -59,8 +59,8 @@
         <div class="card-header p-0 pt-1">
             <ul class="nav nav-tabs horizontal-scrollable-tabs" id="do-details-tabs" role="tablist" style="overflow-x: auto; white-space: nowrap; display: flex; flex-wrap: nowrap;">
                 @foreach($DeliveryOrders as $index => $do)
-                    <li class="nav-item" style="flex: 0 0 auto;">
-                        <a class="nav-link {{ $index == 0 ? 'active' : '' }}" id="do-tab-{{ $do->id }}" data-toggle="pill" href="#do-content-{{ $do->id }}" role="tab" aria-controls="do-content-{{ $do->id }}" aria-selected="{{ $index == 0 ? 'true' : 'false' }}">
+                    <li class="nav-item do-tab-item" data-do-id="{{ $do->id }}" style="flex: 0 0 auto; display: none;">
+                        <a class="nav-link" id="do-tab-{{ $do->id }}" data-toggle="pill" href="#do-content-{{ $do->id }}" role="tab" aria-controls="do-content-{{ $do->id }}">
                             {{ $do->reference_no }}
                         </a>
                     </li>
@@ -73,7 +73,7 @@
                     <p class="text-center text-muted">No delivery orders available for selection.</p>
                 @endif
                 @foreach($DeliveryOrders as $index => $do)
-                    <div class="tab-pane fade {{ $index == 0 ? 'show active' : '' }}" id="do-content-{{ $do->id }}" role="tabpanel" aria-labelledby="do-tab-{{ $do->id }}">
+                    <div class="tab-pane fade do-pane" id="do-content-{{ $do->id }}" data-do-id="{{ $do->id }}" role="tabpanel" aria-labelledby="do-tab-{{ $do->id }}" style="display: none;">
                         <div class="row">
                             <div class="col-xs-12 col-sm-6 col-md-4">
                                 <div class="form-group">
@@ -90,7 +90,7 @@
                             <div class="col-xs-12 col-sm-6 col-md-4">
                                 <div class="form-group">
                                     <label>Balance Qty:</label>
-                                    <input type="text" value="{{ get_second_weighbridge_balance_by_delivery_order($do->id) }}" disabled class="form-control" readonly />
+                                    <input type="text" value="{{ min(getLoadingProgramBalance($do->id), get_second_weighbridge_balance_by_delivery_order($do->id)) }}" disabled class="form-control" readonly />
                                 </div>
                             </div>
                         </div>
@@ -198,24 +198,41 @@
 
             // Filter DO Tabs
             if (selectedDOIds.length === 0) {
-                $('#do-details-section').hide();
+                $('#delivery_order_details_wrapper').hide();
+                $('.do-tab-item, .do-pane').hide().removeClass('show active');
             } else {
-                $('#do-details-section').show();
-                $('#do-details-tabs .nav-item').each(function() {
-                    var doId = $(this).find('a').attr('id').replace('do-tab-', '');
+                $('#delivery_order_details_wrapper').show();
+                $('.do-tab-item, .do-pane').hide().removeClass('show active');
+                $('.do-tab-item').each(function() {
+                    var doId = $(this).data('do-id').toString();
                     if (selectedDOIds.includes(doId)) {
                         $(this).show();
-                    } else {
-                        $(this).hide();
                     }
                 });
+                $('.do-pane').each(function() {
+                    var doId = $(this).data('do-id').toString();
+                    if (selectedDOIds.includes(doId)) {
+                        $(this).show();
+                    }
+                });
+
+                var firstVisibleDoTab = $('#do-details-tabs .do-tab-item:visible').first().find('a');
+                var firstVisibleDoPane = $('#do-details-tabs-content .do-pane:visible').first();
+                if (firstVisibleDoTab.length) {
+                    $('#do-details-tabs .nav-link').removeClass('active');
+                    firstVisibleDoTab.addClass('active');
+                }
+                if (firstVisibleDoPane.length) {
+                    $('#do-details-tabs-content .do-pane').removeClass('show active');
+                    firstVisibleDoPane.addClass('show active');
+                }
             }
 
             // Ensure active tab is visible
             if ($('#so-details-tabs .nav-link.active:visible').length === 0) {
                 $('#so-details-tabs .nav-link:visible:first').tab('show');
             }
-            if ($('#do-details-tabs .nav-link.active:visible').length === 0) {
+            if (selectedDOIds.length > 0 && $('#do-details-tabs .nav-link.active:visible').length === 0) {
                 $('#do-details-tabs .nav-link:visible:first').tab('show');
             }
         };

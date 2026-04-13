@@ -8,8 +8,9 @@ use App\Models\Sales\DeliveryOrder;
 use App\Models\Sales\LoadingProgramItem;
 use App\Traits\HasApproval;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
-class ExportDeliveryOrder extends DeliveryOrder
+class ExportDeliveryOrder extends Model
 {
     use HasFactory, HasApproval;
     protected $table = "delivery_order";

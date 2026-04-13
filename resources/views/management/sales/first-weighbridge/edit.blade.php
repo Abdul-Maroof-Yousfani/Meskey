@@ -11,9 +11,18 @@
                 <select class="form-control select2" name="loading_program_item_id" id="loading_program_item_id">
                     <option value="">Select Ticket</option>
                     @php
-                        $availableTickets = \App\Models\Sales\LoadingProgramItem::whereDoesntHave('firstWeighbridge')
-                            ->orWhere('id', $FirstWeighbridge->loading_program_item_id)
-                            ->with(['loadingProgram.deliveryOrder.customer', 'loadingProgram.deliveryOrder.delivery_order_data.item'])
+                        $availableTickets = \App\Models\Sales\LoadingProgramItem::whereHas('loadingProgram', function ($query) {
+                            $query->where('type', 'sale_order');
+                        })->where(function ($query) use ($FirstWeighbridge) {
+                            $query->whereDoesntHave('firstWeighbridge')
+                                ->orWhere('id', $FirstWeighbridge->loading_program_item_id);
+                        })
+                            ->with([
+                                'deliveryOrders.customer',
+                                'deliveryOrders.delivery_order_data.item',
+                                'saleOrders.customer',
+                                'saleOrders.sales_order_data.item'
+                            ])
                             ->get();
                     @endphp
                     @foreach ($availableTickets as $ticket)
