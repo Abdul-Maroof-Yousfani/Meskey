@@ -51,7 +51,7 @@
                                 <th>Job Order</th>
                                 @endif
                                 <th>Required Weight Per Bag</th>
-                                <th>Tolerance</th>
+                                <!-- <th>Tolerance</th> -->
                                 <th>Average Weight of 1 Bag</th>
                                 <th>Total Bags</th>
                                 <th>Total Weight Required (Kg)</th>
@@ -89,9 +89,9 @@
                             <td>
                                 <input type="text" name="required_weight_per_bag" value="{{ $purchaseOrderReceivingData->category_id == 38 ? ($purchaseOrderReceivingData?->purchase_order_data?->min_weight ?? null) : 0 }}" id="required_weight_per_bag" readonly class="form-control">
                             </td>
-                            <td>
+                            <!-- <td>
                                 <input type="text" name="tolerance" value="{{ $purchaseOrderReceivingData->tolerance ?? 0 }}" readonly class="form-control">
-                            </td>
+                            </td> -->
 
                             <td>
                                 <input type="text" name="average_weight_of_one_bag" value="{{ $purchaseOrderReceivingData?->qc?->average_weight_of_one_bag }}" onkeyup="calculate_total_recieved_weight(this)" id="average_weight_of_1_bag"
