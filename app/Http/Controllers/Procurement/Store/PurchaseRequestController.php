@@ -50,7 +50,7 @@ class PurchaseRequestController extends Controller
      */
     public function getList(Request $request)
     {
-        $query = PurchaseRequestData::has('purchase_request')->with('purchase_request', 'category', 'item', 'approval')
+        $query = PurchaseRequestData::has('purchase_request')->with('purchase_request', 'category', 'item', 'approval', 'purchase_order_data')
             ->whereStatus(true);
 
         if ($request->has('search') && !empty($request->search)) {
@@ -109,18 +109,17 @@ class PurchaseRequestController extends Controller
         $groupedData = [];
         $processedData = [];
         foreach ($PurchaseRequests as $row) {
-            $requestNo = $row->purchase_request?->purchase_request_no;
-            $created_by_id = $row->purchase_request?->created_by;
-            $itemId = $row->item->id ?? 'unknown';
+            $requestNo = $row->purchase_request?->purchase_request_no ?? 'unknown';
 
-            if (! isset($groupedData[$requestNo])) {
+            if (!isset($groupedData[$requestNo])) {
                 $groupedData[$requestNo] = [
                     'request_data' => $row->purchase_request,
-                    'items' => [],
+                    'items' => [],           // yahan array of items
                 ];
             }
 
-            $groupedData[$requestNo]['items'][$itemId] = [
+            // Important: item_id ko key mat banao, normal push karo
+            $groupedData[$requestNo]['items'][] = [
                 'item_data' => $row,
             ];
         }
@@ -280,6 +279,8 @@ class PurchaseRequestController extends Controller
                     'micron' => $request->micron[$index] ?? null,
                     'printing_sample' => $printingSamplePaths,
                     'brand_id' => $request->brands[$index] ?? null,
+                    'tolerance' => $request->tolerance[$index] ?? null,
+                    'tolerance_percentage' => $request->tolerance_percentage[$index] ?? null,
                     'remarks' => $request->remarks[$index] ?? null,
                     'packing_id' => $request->packing_id[$index] ?? null,
                     "module_type" => $request->module_type[$index] ?? null,
@@ -494,6 +495,8 @@ class PurchaseRequestController extends Controller
                             'printing_sample' => $printingSamplePath,
                             'remarks' => $request->remarks[$index] ?? null,
                             'brand_id' => $request->brands[$index] ?? null,
+                            'tolerance' => $request->tolerance[$index] ?? null,
+                            'tolerance_percentage' => $request->tolerance_percentage[$index] ?? null,
                             'micron' => $request->micron[$index] ?? null,
                             'packing_id' => $request->packing_id[$index] ?? null,
                             "module_type" => $request->module_type[$index] ?? null,
@@ -574,6 +577,8 @@ class PurchaseRequestController extends Controller
                         "module_type" => $request->module_type[$index] ?? null,
                         "is_single_job_order" => $request->is_single_job_order[$index] ?? false,
                         'micron' => $request->micron[$index] ?? null,
+                        'tolerance' => $request->tolerance[$index] ?? null,
+                        'tolerance_percentage' => $request->tolerance_percentage[$index] ?? null,
                     ]);
 
                     $submittedItems[] = $requestData->id;
@@ -620,6 +625,12 @@ class PurchaseRequestController extends Controller
         // $PurchaseRequestData = PurchaseRequestData::where('id', $id)->delete();
 
         return response()->json(['success' => 'Purchase Request deleted successfully.'], 200);
+    }
+
+    public function getPoHistory($id)
+    {
+        $purchaseRequestData = PurchaseRequestData::with(['purchase_order_data.purchase_order', 'purchase_order_data.supplier', 'item.unitOfMeasure', 'purchase_request'])->findOrFail($id);
+        return view('management.procurement.store.purchase_request.po_history', compact('purchaseRequestData'));
     }
 
     public function getNumber(Request $request, $locationId = null, $contractDate = null)

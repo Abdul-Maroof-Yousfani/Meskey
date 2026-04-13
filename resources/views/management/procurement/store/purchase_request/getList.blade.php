@@ -2,11 +2,12 @@
     <thead>
 
         <tr>
-            <th style="width: 13%;">Purchase Request No</th>
-            <th style="width: 15%;">Category</th>
-            <th style="width: 22%;">Item</th>
-            <th style="width: 10%;">Qty</th>
-            <th style="width: 13%;">PR Date</th>
+            <th style="width: 11%;">Purchase Request No</th>
+            <th style="width: 13%;">Category</th>
+            <th style="width: 20%;">Item</th>
+            <th style="width: 9%;">Qty</th>
+            <th style="width: 9%;">PO Qty</th>
+            <th style="width: 11%;">PR Date</th>
             <th style="width: 15%;">Status</th>
             <th style="width: 12%;">Action</th>
         </tr>
@@ -57,6 +58,15 @@
                             <p class="m-0">
                                 {{ $itemGroup['item_data']->qty }}
                                 {{ optional($itemGroup['item_data']->item->unitOfMeasure)->name ?? 'N/A' }}
+                            </p>
+                        </td>
+
+                        <td>
+                            <p class="m-0 font-weight-bold">
+                                <a onclick="openModal(this, '{{ route('store.purchase-request.po-history', $itemGroup['item_data']->id) }}', 'PO History Trail', false, '70%')" 
+                                   class="text-primary" style="cursor: pointer;">
+                                    {{ $itemGroup['item_data']->purchase_order_data->reject(fn($po) => strtolower($po->purchase_order->am_approval_status ?? '') === 'rejected')->sum('qty') }}
+                                </a>
                             </p>
                         </td>
 

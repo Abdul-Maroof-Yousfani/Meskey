@@ -644,17 +644,22 @@ class TicketPaymentRequestController extends Controller
             ->sum('amount');
 
         $freightPaymentRequestgrossAmount = paymentRequestData::where('ticket_id', $arrivalTicket->id)
-            ->where('purchase_order_id', $arrivalTicket->arrival_purchase_order_id)
+            // ->where('purchase_order_id', $arrivalTicket->arrival_purchase_order_id)
             ->where('module_type', 'freight_payment')
             ->latest()->first(); // id ya created_at ke hisaab se last record
         // ->value('gross_amount');
+        // dd($freightPaymentRequestgrossAmount);
 
 
         // dd($freightPaymentRequestgrossAmount, $freightPaymentRequestgrossAmount->godown_penalty);
-        if ($freightPaymentRequestgrossAmount->is_paid_by_supplier == 1) {
-            $freightPaymentRequestgrossAmount = $freightPaymentRequestgrossAmount->godown_penalty + $freightPaymentRequestgrossAmount->other_minus_labour + $freightPaymentRequestgrossAmount->commission_amount;
+        if ($freightPaymentRequestgrossAmount) {
+            if ($freightPaymentRequestgrossAmount->is_paid_by_supplier == 1) {
+                $freightPaymentRequestgrossAmount = $freightPaymentRequestgrossAmount->godown_penalty + $freightPaymentRequestgrossAmount->other_minus_labour + $freightPaymentRequestgrossAmount->commission_amount;
+            } else {
+                $freightPaymentRequestgrossAmount = $freightPaymentRequestgrossAmount->gross_amount;
+            }
         } else {
-            $freightPaymentRequestgrossAmount = $freightPaymentRequestgrossAmount->gross_amount;
+            $freightPaymentRequestgrossAmount = 0;
         }
 
 

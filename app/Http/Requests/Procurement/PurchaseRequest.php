@@ -27,22 +27,22 @@ class PurchaseRequest extends FormRequest
                 'required',
                 'exists:products,id',
                 // Custom rule to prevent duplicate items within same category
-                function ($attribute, $value, $fail) {
-                    $currentCategoryId = $this->input("category_id_header");
+                // function ($attribute, $value, $fail) {
+                //     $currentCategoryId = $this->input("category_id_header");
 
-                    $itemIds = $this->input('item_id', []);
-                    // Filter to remove null/empty values and ensure we only have strings/integers
-                    $filteredItemIds = array_filter($itemIds, function($id) {
-                        return !is_null($id) && $id !== '';
-                    });
+                //     $itemIds = $this->input('item_id', []);
+                //     // Filter to remove null/empty values and ensure we only have strings/integers
+                //     $filteredItemIds = array_filter($itemIds, function($id) {
+                //         return !is_null($id) && $id !== '';
+                //     });
                     
-                    // Check for duplicates of the same item
-                    $occurrences = array_count_values($filteredItemIds);
+                //     // Check for duplicates of the same item
+                //     $occurrences = array_count_values($filteredItemIds);
 
-                    if (isset($occurrences[$value]) && $occurrences[$value] > 1) {
-                        $fail('The same item cannot be added multiple times.');
-                    }
-                }
+                //     if (isset($occurrences[$value]) && $occurrences[$value] > 1) {
+                //         $fail('The same item cannot be added multiple times.');
+                //     }
+                // }
             ],
 
             'uom'                   => 'nullable|array',
@@ -62,6 +62,9 @@ class PurchaseRequest extends FormRequest
 
             'remarks'               => 'nullable|array',
             'remarks.*'             => 'nullable|string|max:1000',
+            
+            'tolerance'             => 'nullable|array',
+            'tolerance.*'           => 'nullable|string|max:255',
 
             'micron'                => 'required_if:category_id_header,38',
             'micron.*'              => 'required_if:category_id_header,38', 
@@ -120,20 +123,20 @@ class PurchaseRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
-            $itemIds = $this->input('item_id', []);
-            $filteredItemIds = array_filter($itemIds, function($id) {
-                return !is_null($id) && $id !== '';
-            });
-            $occurrences = array_count_values($filteredItemIds);
+            // $itemIds = $this->input('item_id', []);
+            // $filteredItemIds = array_filter($itemIds, function($id) {
+            //     return !is_null($id) && $id !== '';
+            // });
+            // $occurrences = array_count_values($filteredItemIds);
 
-            foreach ($itemIds as $index => $itemId) {
-                if (isset($occurrences[$itemId]) && $occurrences[$itemId] > 1) {
-                    $validator->errors()->add(
-                        "item_id.{$index}",
-                        'The same item cannot be added multiple times.'
-                    );
-                }
-            }
+            // foreach ($itemIds as $index => $itemId) {
+            //     if (isset($occurrences[$itemId]) && $occurrences[$itemId] > 1) {
+            //         $validator->errors()->add(
+            //             "item_id.{$index}",
+            //             'The same item cannot be added multiple times.'
+            //         );
+            //     }
+            // }
         });
     }
 }

@@ -139,7 +139,8 @@
                             <th>Duty</th>
 
                             @if($isBag)
-                                <th>Min Weight (KG)</th>
+                                <th>Min Weight (gm)</th>
+                                <th>Tolerance</th>
                                 <th>Brand</th>
                                 <th>Color</th>
                                 <th>Cons./sq. in.</th>
@@ -171,8 +172,9 @@
                                     <input type="hidden" name="category_id[]" value="{{ $data->category_id }}">
                                     <input type="hidden" name="data_id[]" value="{{ $data->id }}">
                                     <input type="hidden" name="purchase_request_data_id[]" value="{{ $data->purchase_request_data_id }}">
+                                    <input type="hidden" name="purchase_quotation_data_id[]" value="{{ $data->purchase_quotation_data_id }}">
                                 </td>
-                                <td style="min-width: 400px;">
+                                <td style="min-width: 600px;">
                                     <select  id="item_id_{{ $key }}" disabled
                                         onchange="get_uom({{ $key }})" 
                                         class="form-control item-select select2" data-index="{{ $key }}">
@@ -319,6 +321,11 @@
                                         value="{{ $data->min_weight }}" id="min_weight_{{ $key }}"
                                         class="form-control" step="0.01" min="0">
                                 </td>
+                                <td style="min-width: 150px;" class="bag-only">
+                                    <input type="text" readonly name="tolerance[]"
+                                        value="{{ $data->tolerance }}" id="tolerance_{{ $key }}"
+                                        class="form-control">
+                                </td>
                                 <td style="min-width: 200px;" class="bag-only">
                                     <input  type="text" readonly name="brand[]"
                                         value="{{ $data->brand }}" id="brand_{{ $key }}"
@@ -339,7 +346,7 @@
                                 <td style="min-width: 200px;" class="bag-only">
                                     <input  type="text" readonly name="size[]"
                                         value="{{ $data->size }}" id="size_{{ $key }}"
-                                        class="form-control" step="0.01" min="0">
+                                        class="form-control size-input-check" step="0.01" min="0">
                                 </td>
                                 <td style="min-width: 200px;" class="bag-only">
                                       <select class="form-control select2" multiple disabled>
@@ -419,12 +426,20 @@
     <div class="row bottom-button-bar">
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
-            <button type="submit" class="btn btn-primary submitbutton">Save</button>
+            <button type="submit" class="btn btn-primary submitbutton">Saving</button>
         </div>
     </div>
 </form>
 
 <script>
+    function toggleVisibility(categoryId) {
+        if (categoryId == 11 || categoryId == 38) {
+            $('.bag-only').show();
+        } else {
+            $('.bag-only').hide();
+        }
+    }
+
     $(document).ready(function() {
         // Get the selected purchase request ID from the dropdown
         let purchaseOrderId = $('select[name="purchase_order_id"]').val();
@@ -459,7 +474,10 @@
         $.ajax({
             url: "{{ route('store.get.quotations') }}",
             type: 'GET',
-            data: { pr_id: pr_id },
+            data: { 
+                pr_id: pr_id,
+                purchase_order_id: '{{ $purchaseOrder->id }}'
+            },
             success: function(response) {
                 const $dropdown = $("#quotation_no");
                 const currentVal = $dropdown.val();
@@ -472,6 +490,8 @@
         });
     }
 
+
+
     function get_purchase_with_quotation(purchaseRequestId, quotationNo) {
         $.ajax({
             url: "{{ route('store.purchase-order.approve-item') }}",
@@ -479,7 +499,8 @@
             data: {
                 id: purchaseRequestId,
                 quotation_no: quotationNo,
-                supplier_id: $('#supplier_id').val()
+                supplier_id: $('#supplier_id').val(),
+                purchase_order_id: '{{ $purchaseOrder->id }}'
             },
             beforeSend: function() {
                 $('#purchaseRequestBody').html('<p>Loading...</p>');
@@ -513,7 +534,7 @@
                         @endforeach
                     </select>
                 </td>
-                <td style="min-width: 400px;">
+                <td style="min-width: 600px;">
                     <select name="item_id[]" id="item_id_${index}" onchange="get_uom(${index})" class="form-control item-select select2" data-index="0">
                         <option value="">Select Item</option>
                     
@@ -728,5 +749,11 @@ function calculatePercentage(el) {
         $(document).off('scroll.select2');
         $(window).off('scroll.select2');
         $('*').off('scroll.select2');           // aggressive but often works
+    });
+    $(document).on('input', '.size-input-check', function() {
+        this.value = this.value.replace(/[^0-9.]/g, '');
+        if ((this.value.match(/\./g) || []).length > 1) {
+            this.value = this.value.replace(/\.+$/, "");
+        }
     });
 </script>

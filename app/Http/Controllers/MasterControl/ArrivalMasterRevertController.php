@@ -148,12 +148,12 @@ class ArrivalMasterRevertController extends Controller
             $arrivalPurchaseOrders = ArrivalPurchaseOrder::when($arrivalTicket->qc_product != null, function ($q) use ($arrivalTicket) {
                 $q->where('product_id', $arrivalTicket->qc_product);
             })
-            ->when($arrivalTicket->qc_product == null, function ($q) use ($arrivalTicket) {
-                $q->where('product_id', $arrivalTicket->product_id);
-            })
-            ->where("company_location_id", $arrivalTicket->location_id)
-            ->get();
-                // dd($arrivalPurchaseOrders,$arrivalSamplingRequest->arrivalTicket->product_id);
+                ->when($arrivalTicket->qc_product == null, function ($q) use ($arrivalTicket) {
+                    $q->where('product_id', $arrivalTicket->product_id);
+                })
+                ->where("company_location_id", $arrivalTicket->location_id)
+                ->get();
+            // dd($arrivalPurchaseOrders,$arrivalSamplingRequest->arrivalTicket->product_id);
             $sampleTakenByUsers = User::all();
             $authUserCompany = $request->company_id;
             $saudaTypes = SaudaType::all();
@@ -709,6 +709,10 @@ class ArrivalMasterRevertController extends Controller
         if ($arrivalTicket->firstWeighbridge) {
             $firstWeight = $arrivalTicket->firstWeighbridge->weight;
             $netWeight = $firstWeight - $validated['arrival_second_weight'];
+
+            $arrivalTicket->update([
+                'arrived_net_weight' => $netWeight
+            ]);
             // You can save this net weight if needed
         }
 
@@ -967,6 +971,7 @@ class ArrivalMasterRevertController extends Controller
             $arrivalTicket->approvals->delete();
             $arrivalTicket->update([
                 'document_approval_status' => null,
+                'second_weighbridge_status' => null,
             ]);
             $this->logRevertAction($arrivalTicket, 'half_full_approval_revert', 'Half/Full approval reverted');
         }

@@ -93,6 +93,15 @@
         </div>
     </td>
 
+    <td style="width: 150px; min-width: 150px;" class="bag-only">
+        <div class="loop-fields">
+            <div class="form-group mb-0">
+                <input type="text" style="width: 100%;" name="tolerance[]" id="tolerance_{{ $key }}"
+                    value="{{ $data->tolerance ?? ($data->purchase_request_data->tolerance ?? null) }}" class="form-control" placeholder="Tolerance" readonly>
+            </div>
+        </div>
+    </td>
+
     <td style="width: 250px; min-width: 250px;" class="bag-only">
         <div class="loop-fields">
             <div class="form-group mb-0">

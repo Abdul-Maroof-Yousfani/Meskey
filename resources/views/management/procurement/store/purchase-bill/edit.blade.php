@@ -11,7 +11,7 @@
 }
 </style>
 
-<form action="{{ route('store.purchase-bill.update', $purchase_bill->id) }}" method="POST" id="ajaxSubmit"
+<form style="overflow-x: hidden;" action="{{ route('store.purchase-bill.update', $purchase_bill->id) }}" method="POST" id="ajaxSubmit"
     autocomplete="off">
     @csrf
 
@@ -87,7 +87,9 @@
                         <tr>
                             <th>Item</th>
                             <th>Description</th>
-                            <th>Qty</th>
+                            <th>Total Qty</th>
+                            <th>Accepted Quantity</th>
+                            <th>Rejected Quantity</th>
                             <th>Rate</th>
                             <th>Gross Amount</th>
                             <th>Discount %</th>
@@ -129,6 +131,25 @@
                                         {{-- {{ $isQuotationAvailable ? 'readonly' : '' }} --}}>
                                 </td>
 
+
+                                  <td style="min-width: 150px;">
+                                    <input style="width: 100%" type="number"
+                                        onkeyup=""
+                                        onblur="" name="accepted_qty[]" value="{{ $data->accepted_qty }}"
+                                        id="accepted_qty_{{ $key }}" class="form-control accepted_qty" step="0.01" readonly
+                                        {{-- {{ $isQuotationAvailable ? 'readonly' : '' }} --}}>
+                                </td>
+                                <td style="min-width: 150px;">
+                                    <input style="width: 100%" type="number"
+                                        onkeyup=""
+                                        onblur="" name="qty[]" value="{{ $data->rejected_qty }}"
+                                        id="qty_{{ $key }}" class="form-control qty" step="0.01" readonly
+                                        {{-- {{ $isQuotationAvailable ? 'readonly' : '' }} --}}>
+                                </td>
+
+                              
+                                
+
                                 <td style="min-width: 150px;">
                                      <input style="width: 100%" type="number"
                                          onkeyup=""
@@ -149,7 +170,7 @@
                                     <input style="width: 100%" type="number" name="discount_id[]"
                                         value="{{ $data->discount_percent }}" id="total_{{ $key }}"
                                         class="form-control discounts" onkeyup="calculatePercentage(this)"
-                                        step="0.01" min="0">
+                                        step="0.01" min="0" max="100">
                                 </td>
 
                                 <td style="min-width: 200px;">
@@ -198,7 +219,7 @@
                                     <input style="width: 100%" type="number" onkeyup="calculatePercentage(this)"
                                         name="tax_id[]" value="{{ $data->tax_percent }}"
                                         id="tax_id_{{ $key }}" class="form-control tax_id" step="0.01"
-                                        min="0">
+                                        min="0" max="100">
                                 </td>
                                 <td style="min-width: 200px;">
                                     <input style="width: 100%" type="number" readonly
@@ -252,29 +273,32 @@
 
 <script>
     $(document).ready(function() {
-        const firstRow = $('#billBody').find('tr').first();
-        const categoryId = firstRow.data('category-id');
-        if (categoryId && categoryId != 38) {
-            $('.deduction-header').hide();
-        }
+        // Initial setup
+        getGrns();
 
         $(document).on('change', '#purchase_date', function() {
             fetchUniqueNumber();
         });
 
-        $(document).on('change', 'select[name="grn_no"]', function() {
-            const purchaseRequestId = $(this).val();
-            if (purchaseRequestId) {
-                get_purchase(purchaseRequestId);
+        // When Supplier changes: Refresh GRN dropdown and clear table
+        $(document).on('change', '#supplier_id', function() {
+            const $grnSelect = $('#grn_no');
+            $grnSelect.val(null).trigger('change');
+            $('#billBody').empty();
+            getGrns();
+        });
+
+        // When GRN changes: Refresh items table
+        $(document).on('change', '#grn_no', function() {
+            const grnId = $(this).val();
+            if (grnId) {
+                get_purchase(grnId);
+            } else {
+                $('#billBody').empty();
             }
         });
 
-        $(document).on('change', '#quotation_no', function() {
-            const purchaseRequestId = $('select[name="purchase_request_id"]').val();
-            if (purchaseRequestId) {
-                get_purchase(purchaseRequestId);
-            }
-        });
+
 
         function get_purchase(purchaseOrderReceivingId) {
             if (!purchaseOrderReceivingId) return;
@@ -316,11 +340,11 @@
                     delay: 250,
                     data: function(params) {
                         return {
-                            supplier_id: $("#supplier_id").val()
+                            supplier_id: $("#supplier_id").val(),
+                            q: params.term
                         };
                     },
                     processResults: function(data) {
-                        console.log(data);
                         return {
                             results: data,
                         };
@@ -328,47 +352,11 @@
                 },
                 minimumInputLength: 0,
                 allowClear: true,
-                placeholder: "Select options",
+                placeholder: "Select GRN",
             });
-
-            // $.ajax({
-            //     url: url,
-            //     type: 'GET',
-            //     data: {
-            //         supplier_id: $("#supplier_id").val()
-            //     },
-            //     success: function(response) {
-            //         console.log(response);
-            //     },
-            //     error: function(xhr, status, error) {
-            //         $('#reference_no').val('');
-            //     }
-            // });
         }
-        $(document).on('change', '#supplier_id, [name="grn_no"]', function() {
-            getGrns();
-            // const supplierId = $('#supplier_id').val();
-            // const purchaseRequestId = $('[name="grn_no"]').val();
-            // $('#quotation_no').empty();
-            // if (supplierId) {
-            //     initializeDynamicDependentCall1Select2(
-            //         '#supplier_id',
-            //         '#grn_no',
-            //         'suppliers',
-            //         'purchase_order_receiving_no',
-            //         'id',
-            //         'purchase_order_receivings',
-            //         'supplier_id',
-            //         'purchase_order_receiving_no',
-            //         true,
-            //         false,
-            //         true,
-            //         true,
-            //     );
-            // }
-        });
-
     });
+
     $(".select2").select2();
     rowIndex = 1;
 
@@ -399,53 +387,7 @@
     }
     $('#company_location_id, #purchase_date').on('change', fetchUniqueNumber);
 
-    function get_purchase(purchaseRequestId = null) {
-        const quotationNo = $('#quotation_no').val();
-        const supplierId = $('#supplier_id').val();
 
-        if (!purchaseRequestId && !quotationNo) return;
-
-        if (!purchaseRequestId) {
-            purchaseRequestId = $('select[name="purchase_request_id"]').val();
-        }
-
-        $.ajax({
-            url: "{{ route('store.purchase-order.approve-item') }}",
-            type: "GET",
-            data: {
-                id: purchaseRequestId,
-                quotation_no: quotationNo,
-                supplier_id: supplierId
-            },
-            beforeSend: function() {
-                $('#purchaseOrderBody').html('<p>Loading...</p>');
-            },
-            success: function(response) {
-                let html = response.html;
-                let master = response.master;
-                $('#company_location_id').val(master.location_id);
-                $('#location_id').val(master.location_id);
-                $('#description').val(master.description);
-                $('#company_location_id').val(master.location_id).trigger('change');
-                $('#purchaseOrderBody').html(html);
-                $('.select2').select2({
-                    placeholder: 'Please Select',
-                    width: '100%'
-                });
-            },
-            error: function() {
-                $('#purchaseOrderBody').html('<p>Error loading data.</p>');
-            }
-        });
-    }
-
-    // $('#quotation_no, select[name="purchase_request_id"]').on('change', function () {
-    //     const purchaseRequestId = $('select[name="purchase_request_id"]').val();
-    //     $('input[name="qty[]"], input[name="rate[]"], input[name="total[]"]').each(function () {
-    //         $(this).val(''); // set to empty
-    //     });
-    //     get_purchase(purchaseRequestId);
-    // });
 
 
     function calc(num) {
@@ -486,8 +428,20 @@
 
     const rateVal = parseFloat(rate.val()) || 0;
     const qtyVal = parseFloat(qty.val()) || 0;
-    const discountPercentVal = parseFloat(discount_percent.val()) || 0;
-    const taxPercentVal = parseFloat(tax_percent.val()) || 0;
+    let discountPercentVal = parseFloat(discount_percent.val()) || 0;
+    let taxPercentVal = parseFloat(tax_percent.val()) || 0;
+
+    if (discountPercentVal > 100) {
+        alert("Discount Percentage cannot exceed 100");
+        discount_percent.val(100);
+        discountPercentVal = 100;
+    }
+
+    if (taxPercentVal > 100) {
+        alert("Tax Percentage cannot exceed 100");
+        tax_percent.val(100);
+        taxPercentVal = 100;
+    }
 
     // const percent_amount_of_gross = 1;
 

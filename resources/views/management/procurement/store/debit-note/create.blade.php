@@ -3,18 +3,26 @@
     {{-- <input type="hidden" id="listRefresh" value="{{ route('store.get.debit-notes') }}" /> --}}
 
     <div class="row form-mar">
-        <div class="col-md-6">
+        <div class="col-md-4">
             <div class="form-group">
-                <label for="grn_id">GRN:</label>
-                <select class="form-control select2" name="grn_id" id="grn_id">
-                    <option value="">Select GRN</option>
-                    @foreach ($grns as $grn)
-                        <option value="{{ $grn->id }}">{{ $grn->purchase_order_receiving_no }}</option>
+                <label for="supplier_id">Supplier:</label>
+                <select class="form-control select2" name="supplier_id" id="supplier_id">
+                    <option value="">Select Supplier</option>
+                    @foreach ($suppliers as $supplier)
+                        <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
                     @endforeach
                 </select>
             </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-4">
+            <div class="form-group">
+                <label for="grn_id">GRN:</label>
+                <select class="form-control select2" name="grn_id" id="grn_id">
+                    <option value="">Select GRN</option>
+                </select>
+            </div>
+        </div>
+        <div class="col-md-4">
             <div class="form-group">
                 <label for="bill_id">Bill:</label>
                 <select class="form-control select2" name="bill_id" id="bill_id">
@@ -27,7 +35,7 @@
         <div class="col-md-6">
             <div class="form-group">
                 <label>Date:</label>
-                <input type="date" min="{{ date('Y-m-d') }}" class="form-control" name="transaction_date" id="transaction_date" onchange="get_transaction_number()">
+                <input type="date" min="{{ date('Y-m-d') }}" class="form-control" name="transaction_date" id="transaction_date" onchange="get_transaction_number()" value="{{ date('Y-m-d') }}">
             </div>
         </div>
          <div class="col-md-6">
@@ -81,6 +89,21 @@
             width: '100%'
         });
 
+        get_transaction_number();
+        
+        // When Supplier is selected, populate GRNs
+        $('#supplier_id').on('change', function () {
+            const supplierId = $(this).val();
+            if (supplierId) {
+                getGRNsForSupplier(supplierId);
+            } else {
+                $('#grn_id').html('<option value="">Select GRN</option>');
+                $('#bill_id').html('<option value="">Select Bill</option>');
+                $('#debitNoteItems').hide();
+                $('#debitNoteBody').html('');
+            }
+        });
+
         // When GRN is selected, populate bills
         $('#grn_id').on('change', function () {
             const grnId = $(this).val();
@@ -105,12 +128,39 @@
         });
     });
 
+    function getGRNsForSupplier(supplierId) {
+        $.ajax({
+            url: "{{ url('/procurement/store/debit-note/get-grns') }}/" + supplierId,
+            type: "GET",
+            beforeSend: function () {
+                $('#grn_id').html('<option value="">Loading...</option>');
+                $('#bill_id').html('<option value="">Select Bill</option>');
+                $('#debitNoteItems').hide();
+                $('#debitNoteBody').html('');
+            },
+            success: function (response) {
+                let options = '<option value="">Select GRN</option>';
+                response.forEach(function(grn) {
+                    options += `<option value="${grn.id}">${grn.purchase_order_receiving_no}</option>`;
+                });
+                $('#grn_id').html(options);
+                $('#grn_id').trigger('change.select2');
+            },
+            error: function () {
+                $('#grn_id').html('<option value="">Error loading GRNs</option>');
+                toastr.error('Error loading GRNs for selected supplier');
+            }
+        });
+    }
+
     function getBillsForGRN(grnId) {
         $.ajax({
             url: "{{ url('/procurement/store/debit-note/get-bills') }}/" + grnId,
             type: "GET",
             beforeSend: function () {
                 $('#bill_id').html('<option value="">Loading...</option>');
+                $('#debitNoteItems').hide();
+                $('#debitNoteBody').html('');
             },
             success: function (response) {
                 console.log(response);

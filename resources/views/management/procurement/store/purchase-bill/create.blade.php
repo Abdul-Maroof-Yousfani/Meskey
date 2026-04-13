@@ -12,7 +12,7 @@
 }
 </style>
 
-<form action="{{ route('store.purchase-bill.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form style="overflow-x: hidden;" action="{{ route('store.purchase-bill.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-bill') }}" />
     
@@ -44,7 +44,7 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label>Bill Date:</label>
-                <input type="date" id="purchase_date" min="{{ date('Y-m-d') }}" name="purchase_bill_date" class="form-control">
+                <input type="date" id="purchase_date" min="{{ date('Y-m-d') }}" name="purchase_bill_date" class="form-control" value="{{ date('Y-m-d') }}">
             </div>
         </div>
         <div class="col-md-3">
@@ -81,7 +81,9 @@
                         <tr>
                             <th>Item</th>
                             <th>Description</th>
-                            <th>Qty</th>
+                            <th>Total Qty</th>
+                            <th>Accepted Quantity</th>
+                            <th>Rejected Quantity</th>
                             <th>Rate</th>
                             <th>Gross Amount</th>
                             <th>Discount %</th>
@@ -128,22 +130,28 @@
 
 <script>
     $(document).ready(function() {
+        // Initial setup for existing data if any (mostly for edit)
+        getGrns();
 
         $(document).on('change', '#purchase_date', function() {
             fetchUniqueNumber();
         });
 
-        $(document).on('change', 'select[name="grn_no"]', function() {
-            const purchaseRequestId = $(this).val();
-            if (purchaseRequestId) {
-                get_purchase(purchaseRequestId);
-            }
+        // When Supplier changes: Refresh GRN dropdown and clear table
+        $(document).on('change', '#supplier_id', function() {
+            const $grnSelect = $('#grn_no');
+            $grnSelect.val(null).trigger('change');
+            $('#billBody').empty();
+            getGrns();
         });
 
-        $(document).on('change', '#quotation_no', function() {
-            const purchaseRequestId = $('select[name="purchase_request_id"]').val();
-            if (purchaseRequestId) {
-                get_purchase(purchaseRequestId);
+        // When GRN changes: Refresh items table
+        $(document).on('change', '#grn_no', function() {
+            const grnId = $(this).val();
+            if (grnId) {
+                get_purchase(grnId);
+            } else {
+                $('#billBody').empty();
             }
         });
 
@@ -180,63 +188,27 @@
         const $targetEl = $("#grn_no");
         $targetEl.select2({
             ajax: {
-            url: url,
-            dataType: "json",
-            delay: 250,
-            data: function (params) {
-                return {
-                    supplier_id: $("#supplier_id").val()
-                };
-            },
-            processResults: function (data) {
-                $('#company_location_id').val(data.locations_id).trigger('change');
-              
-                return {
-                    results: data,
-                };
-            },
+                url: url,
+                dataType: "json",
+                delay: 250,
+                data: function (params) {
+                    return {
+                        supplier_id: $("#supplier_id").val(),
+                        q: params.term
+                    };
+                },
+                processResults: function (data) {
+                    return {
+                        results: data,
+                    };
+                },
             },
             minimumInputLength: 0,
             allowClear: true,
-            placeholder: "Select options",
+            placeholder: "Select GRN",
         });
-
-        // $.ajax({
-        //     url: url,
-        //     type: 'GET',
-        //     data: {
-        //         supplier_id: $("#supplier_id").val()
-        //     },
-        //     success: function(response) {
-        //         console.log(response);
-        //     },
-        //     error: function(xhr, status, error) {
-        //         $('#reference_no').val('');
-        //     }
-        // });
     }
-        $(document).on('change', '#supplier_id, [name="grn_no"]', function() {
-            getGrns();
-            // const supplierId = $('#supplier_id').val();
-            // const purchaseRequestId = $('[name="grn_no"]').val();
-            // $('#quotation_no').empty();
-            // if (supplierId) {
-            //     initializeDynamicDependentCall1Select2(
-            //         '#supplier_id',
-            //         '#grn_no',
-            //         'suppliers',
-            //         'purchase_order_receiving_no',
-            //         'id',
-            //         'purchase_order_receivings',
-            //         'supplier_id',
-            //         'purchase_order_receiving_no',
-            //         true,
-            //         false,
-            //         true,
-            //         true,
-            //     );
-            // }
-        });
+
 
     });
     $(".select2").select2();
@@ -269,53 +241,7 @@
     }
     $('#company_location_id, #purchase_date').on('change', fetchUniqueNumber);
 
-    function get_purchase(purchaseRequestId = null) {
-        const quotationNo = $('#quotation_no').val();
-        const supplierId = $('#supplier_id').val();
 
-        if (!purchaseRequestId && !quotationNo) return;
-
-        if (!purchaseRequestId) {
-            purchaseRequestId = $('select[name="purchase_request_id"]').val();
-        }
-
-        $.ajax({
-            url: "{{ route('store.purchase-order.approve-item') }}",
-            type: "GET",
-            data: {
-                id: purchaseRequestId,
-                quotation_no: quotationNo,
-                supplier_id: supplierId
-            },
-            beforeSend: function() {
-                $('#purchaseOrderBody').html('<p>Loading...</p>');
-            },
-            success: function(response) {
-                let html = response.html;
-                let master = response.master;
-                $('#company_location_id').val(master.location_id);
-                $('#location_id').val(master.location_id);
-                $('#description').val(master.description);
-                $('#company_location_id').val(master.location_id).trigger('change');
-                $('#purchaseOrderBody').html(html);
-                $('.select2').select2({
-                    placeholder: 'Please Select',
-                    width: '100%'
-                });
-            },
-            error: function() {
-                $('#purchaseOrderBody').html('<p>Error loading data.</p>');
-            }
-        });
-    }
-
-    // $('#quotation_no, select[name="purchase_request_id"]').on('change', function () {
-    //     const purchaseRequestId = $('select[name="purchase_request_id"]').val();
-    //     $('input[name="qty[]"], input[name="rate[]"], input[name="total[]"]').each(function () {
-    //         $(this).val(''); // set to empty
-    //     });
-    //     get_purchase(purchaseRequestId);
-    // });
 
 
     function calc(num) {

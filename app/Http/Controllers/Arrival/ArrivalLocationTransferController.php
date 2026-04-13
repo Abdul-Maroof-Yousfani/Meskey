@@ -14,6 +14,7 @@ use App\Models\Arrival\ArrivalTicket;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
 class ArrivalLocationTransferController extends Controller
 {
@@ -77,25 +78,27 @@ class ArrivalLocationTransferController extends Controller
      */
     public function store(ArrivalLocationTransferRequest $request)
     {
-        $arrivalTicket = ArrivalTicket::findOrFail($request->arrival_ticket_id);
+        return DB::transaction(function () use ($request) {
+            $arrivalTicket = ArrivalTicket::lockForUpdate()->findOrFail($request->arrival_ticket_id);
 
-        if ($arrivalTicket->location_transfer_status !== 'pending') {
-            return response('Location has already been transferred. Transfer cannot be performed again.', 422);
-        }
+            if ($arrivalTicket->location_transfer_status !== 'pending') {
+                return response('Location has already been transferred. Transfer cannot be performed again.', 422);
+            }
 
-        $request['creator_id'] = auth()->user()->id;
+            $request['creator_id'] = auth()->user()->id;
 
-        $arrival_location = ArrivalLocationTransfer::create($request->all());
+            $arrival_location = ArrivalLocationTransfer::create($request->all());
 
-        $arrivalTicket->update([
-            'location_transfer_status' => 'transfered',
-            'first_weighbridge_status' => 'pending'
-        ]);
+            $arrivalTicket->update([
+                'location_transfer_status' => 'transfered',
+                'first_weighbridge_status' => 'pending'
+            ]);
 
-        return response()->json([
-            'success' => 'Location Transferred Successfully.',
-            'data' => $arrival_location
-        ], 201);
+            return response()->json([
+                'success' => 'Location Transferred Successfully.',
+                'data' => $arrival_location
+            ], 201);
+        });
     }
 
     /**

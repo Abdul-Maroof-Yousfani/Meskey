@@ -1,4 +1,4 @@
-        <div style="padding-left: 10px; padding-right: 10px;">
+<div style="padding-left: 10px; padding-right: 10px;">
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
@@ -15,6 +15,30 @@
                     </div>
                 </div>
             </div>
+            @canApprove('qc')
+            <div class="row" style="margin-top: 10px; margin-bottom: 20px;">
+                <div class="col-md-12">
+                    <table class="table table-bordered">
+                        <thead style="background-color: #f8f9fa;">
+                            <tr>
+                                <th>Qty</th>
+                                <th>Supplier Name</th>
+                                <th>PO Number</th>
+                                <th>Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>{{ $purchaseOrderReceivingData->qty }}</td>
+                                <td>{{ $purchaseOrderReceivingData->supplier->name ?? 'N/A' }}</td>
+                                <td>{{ $purchaseOrderReceivingData?->purchase_order_receiving?->purchase_order?->purchase_order_no ?? 'N/A' }}</td>
+                                <td>{{ $purchaseOrderReceivingData?->purchase_order_data?->rate ?? '0' }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            @endcanApprove
             <div class="row" style="margin-top: 10px;">
                 <div class="col-md-12">
                     <table class="table table-bordered" id="purchaseRequestTable">
@@ -27,10 +51,11 @@
                                 <th>Job Order</th>
                                 @endif
                                 <th>Required Weight Per Bag</th>
+                                <th>Tolerance</th>
                                 <th>Average Weight of 1 Bag</th>
                                 <th>Total Bags</th>
                                 <th>Total Weight Required (Kg)</th>
-                                <th>Total Weight Received (Kg)</th>
+                                <th>Sample Average Weight (grams)</th>
                             </tr>
                         </thead>
                         <tbody id="purchaseOrderBody">
@@ -64,6 +89,9 @@
                             <td>
                                 <input type="text" name="required_weight_per_bag" value="{{ $purchaseOrderReceivingData->category_id == 38 ? ($purchaseOrderReceivingData?->purchase_order_data?->min_weight ?? null) : 0 }}" id="required_weight_per_bag" readonly class="form-control">
                             </td>
+                            <td>
+                                <input type="text" name="tolerance" value="{{ $purchaseOrderReceivingData->tolerance ?? 0 }}" readonly class="form-control">
+                            </td>
 
                             <td>
                                 <input type="text" name="average_weight_of_one_bag" value="{{ $purchaseOrderReceivingData?->qc?->average_weight_of_one_bag }}" onkeyup="calculate_total_recieved_weight(this)" id="average_weight_of_1_bag"
@@ -81,7 +109,7 @@
                             </td>
 
                             <td>
-                                <input type="text" name="total_weight_received" id="total_weight_received" value="{{ ($purchaseOrderReceivingData?->qty * $purchaseOrderReceivingData?->qc?->average_weight_of_one_bag) / 1000 }}"
+                                <input type="text" name="sample_average_weight" id="total_weight_received" value="{{ $purchaseOrderReceivingData?->qc?->sample_average_weight }}"
                                     readonly class="form-control">
                             </td>
 
@@ -293,6 +321,7 @@
                         </div>
                     </div>
 
+                    @canApprove('qc')
                     <div class="col-md-4">
                         <div class="form-group">
                             <label class="form-label">Deduction Per Bag:</label>
@@ -301,6 +330,7 @@
                                 class="form-control" @readonly($type == "view")>
                         </div>
                     </div>
+                    @endcanApprove
                 </div>
                 @endif
         </form>
@@ -321,4 +351,8 @@
             
          
             $(".select2").select2();
+            var refreshRoute = window.location.pathname.includes('procurement/store/qc') 
+                ? '{{ route('store.qc.getList') }}' 
+                : '{{ route('store.get.purchase-order-receiving') }}';
+            $('#ajaxSubmit').append('<input type="hidden" name="listRefresh" id="listRefresh" value="' + refreshRoute + '">');
         </script>

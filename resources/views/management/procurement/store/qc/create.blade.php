@@ -1,7 +1,13 @@
+@php
+    $previousUrl = url()->previous();
+    $refreshRoute = str_contains($previousUrl, 'procurement/store/qc') 
+        ? route('store.qc.getList') 
+        : route('store.get.purchase-order-receiving');
+@endphp
 <form action="{{ route('store.qc.store') }}" id="ajaxSubmit">
-    <input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-order-receiving') }}">
+    <input type="hidden" id="listRefresh" value="{{ $refreshRoute }}">
     <input type="hidden" name="purchase_receiving_data_id" value="{{ $id }}">
-    <div style="padding-left: 10px; padding-right: 10px;">
+<div style="padding-left: 10px; padding-right: 10px;">
         <div class="row">
             <div class="col-md-6">
                 <div class="form-group">
@@ -16,6 +22,30 @@
                 </div>
             </div>
         </div>
+        @canApprove('qc')
+        <div class="row" style="margin-top: 10px; margin-bottom: 20px;">
+            <div class="col-md-12">
+                <table class="table table-bordered">
+                    <thead style="background-color: #f8f9fa;">
+                        <tr>
+                            <th>Qty</th>
+                            <th>Supplier Name</th>
+                            <th>PO Number</th>
+                            <th>Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>{{ $purchaseOrderReceivingData->qty }}</td>
+                            <td>{{ $purchaseOrderReceivingData->supplier->name ?? 'N/A' }}</td>
+                            <td>{{ $purchaseOrderReceivingData?->purchase_order_receiving?->purchase_order?->purchase_order_no ?? 'N/A' }}</td>
+                            <td>{{ $purchaseOrderReceivingData?->purchase_order_data?->rate ?? '0' }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @endcanApprove
         <div class="row" style="margin-top: 10px;">
             <div class="col-md-12">
                 <table class="table table-bordered" id="purchaseRequestTable">
@@ -29,10 +59,11 @@
                             @endif
                             <th>DC No</th>
                             <th>Required Weight Per Bag (grams)</th>
+                            <th>Tolerance</th>
                             <th>Average Weight of 1 Bag (grams)</th>
                             <th>Total Bags</th>
-                            <th>Total Weight Required (Kg)</th>
-                            <th>Total Weight Received (Kg)</th>
+                            <th>Total Weight Required (grams)</th>
+                            <th>Sample Average Weight (grams)</th>
                         </tr>
                     </thead>
                     <tbody id="purchaseOrderBody">
@@ -70,6 +101,7 @@
                             </td>
                             @endif
 
+
                             <td>
                                 <input type="text" name="dc_no" id="dc_no" value="{{ $purchaseOrderReceivingData->purchase_order_receiving->dc_no }}" readonly
                                     class="form-control">
@@ -78,10 +110,13 @@
                             <td>
                                 <input type="text" name="required_weight_per_bag" value="{{ $purchaseOrderReceivingData->category_id == 38 ? ($purchaseOrderReceivingData?->purchase_order_data?->min_weight ?? null) : 0 }}" id="required_weight_per_bag" readonly class="form-control">
                             </td>
+                            <td>
+                                <input type="text" name="tolerance" value="{{ $purchaseOrderReceivingData->tolerance ?? 0 }}" readonly class="form-control">
+                            </td>
 
                             <td>
                                 <input type="text" name="average_weight_of_one_bag" onkeyup="calculate_total_recieved_weight(this)" id="average_weight_of_1_bag"
-                                     class="form-control" placeholder="Average Weight of One Bag" value="{{ (round($purchaseOrderReceivingData->receive_weight / $purchaseOrderReceivingData->qty * 1000, 2)) }}" readonly>
+                                     class="form-control" placeholder="Average Weight of One Bag" value="{{ (round($purchaseOrderReceivingData->receive_weight / $purchaseOrderReceivingData->qty, 5)) }}" readonly>
                             </td>
 
                             <td>
@@ -90,13 +125,13 @@
                             </td>
 
                             <td>
-                                <input type="text" name="total_weight_required" value="{{ (($purchaseOrderReceivingData->qty ?? 0) * ($purchaseOrderReceivingData?->purchase_order_data?->min_weight ?? 0)) / 1000 }}" id="total_weight_required" value="Total Weight Required"
+                                <input type="text" name="total_weight_required" value="{{ (($purchaseOrderReceivingData->qty ?? 0) * ($purchaseOrderReceivingData?->purchase_order_data?->min_weight ?? 0)) }}" id="total_weight_required" value="Total Weight Required"
                                     readonly class="form-control">
                             </td>
 
                             <td>
-                                <input type="text" name="total_weight_received" id="total_weight_received"
-                                    class="form-control" value="{{ $purchaseOrderReceivingData->receive_weight }}" readonly>
+                                <input type="text" name="sample_average_weight" id="total_weight_received"
+                                    class="form-control" value="{{ (round($purchaseOrderReceivingData?->receive_weight / ($purchaseOrderReceivingData?->qty ?: 1), 2)) }}" readonly>
                             </td>
 
                         </tr>
@@ -126,11 +161,11 @@
                                 </td>
                                 <td>
                                     <input type="text" name="net_weight[]" onkeyup="calculateTotalWeight(this)" id="net_weight" placeholder="Net Weight"
-                                        class="form-control">
+                                        class="form-control" required>
                                 </td>
                                 <td>
                                     <input type="text" name="bag_weight[]" onkeyup="calculateTotalWeight(this)" id="bag_weight" placeholder="Number of bags"
-                                        class="form-control">
+                                        class="form-control" required>
                                 </td>
 
                                 <td>
@@ -162,11 +197,11 @@
                                 </td>
                                 <td>
                                     <input type="text" name="net_weight[]" onkeyup="calculateTotalWeight(this)" id="net_weight" placeholder="Net Weight"
-                                        class="form-control">
+                                        class="form-control" required>
                                 </td>
                                 <td>
                                     <input type="text" name="bag_weight[]" onkeyup="calculateTotalWeight(this)" id="bag_weight" placeholder="Number of bags"
-                                        class="form-control">
+                                        class="form-control" required>
                                 </td>
 
 
@@ -258,21 +293,24 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Accepted Qty:</label>
-                <input type="text" name="accepted_quantity" id="accepted_quantity" value="" class="form-control" >
+                <input type="text" name="accepted_quantity" id="accepted_quantity" onkeyup="calculateQcQty('accepted')" value="" class="form-control" >
             </div>
         </div>
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Rejected Qty:</label>
-                <input type="text" name="rejected_quantity" id="rejected_quantity" value="" class="form-control" >
+                <input type="text" name="rejected_quantity" id="rejected_quantity" onkeyup="calculateQcQty('rejected')" value="" class="form-control" >
             </div>
         </div>
+        @canApprove('qc')
         <div class="col-md-4">
             <div class="form-group">
                 <label class="form-label">Deduction Per Bag:</label>
-                <input type="text" name="deduction_per_bag" value="" id="deduction_per_bag" class="form-control">
+                <input type="text" name="deduction_per_bag" id="deduction_per_bag" value="{{ $purchaseOrderReceivingData?->qc?->deduction_per_bag ?? 0 }}"
+                    class="form-control">
             </div>
         </div>
+        @endcanApprove
     </div>
     @endif
     {{-- @can("approve")
@@ -291,29 +329,83 @@
         
         const net_weight = el.closest("tr").find("#net_weight");
         const bag_weight = el.closest("tr").find("#bag_weight");
-
-        if(!net_weight.val() || !bag_weight.val()) return;
-
         const total_weight = el.closest("tr").find("#total_weight");
 
-        const result =  (parseFloat(net_weight.val()) / parseFloat(bag_weight.val())).toFixed(2);
+        if(!net_weight.val() || !bag_weight.val()) {
+            total_weight.val('');
+            updateOverallWeights();
+            return;
+        }
 
+        const bag_val = parseFloat(bag_weight.val());
+        if (bag_val === 0) {
+            total_weight.val('');
+            updateOverallWeights();
+            return;
+        }
+
+        const result = (parseFloat(net_weight.val()) / bag_val).toFixed(2);
         total_weight.val(result);
 
-
+        updateOverallWeights();
     }
+
+    function updateOverallWeights() {
+        let totalNetWeight = 0;
+        let totalBagsCount = 0;
+
+        let netWeights = $('input[name="net_weight[]"]');
+        let bagWeights = $('input[name="bag_weight[]"]');
+
+        for(let i = 0; i < netWeights.length; i++) {
+            let nw = parseFloat($(netWeights[i]).val());
+            let bw = parseFloat($(bagWeights[i]).val());
+
+            if (!isNaN(nw) && !isNaN(bw) && bw > 0) {
+                totalNetWeight += nw;
+                totalBagsCount += bw;
+            }
+        }
+
+        let avg = totalBagsCount > 0 ? (totalNetWeight / totalBagsCount).toFixed(2) : 0;
+        
+        // Show results in Sample Average Weight
+        $('#total_weight_received').val(avg);
+    }
+
     function calculate_total_recieved_weight(el) {
         const average_weight = $(el).val();
         const total_bags = $("#total_bags").val();
         const total_weight_received = $("#total_weight_received");
-        const result = (parseInt(average_weight) * parseInt(total_bags)) / 1000;
+        const result = (parseFloat(average_weight) * parseFloat(total_bags)) / 1000;
 
         if(isNaN(result)) {
             total_weight_received.val("");
         } else{
-            total_weight_received.val(result);
+            total_weight_received.val(result.toFixed(2));
         }
+    }
+    
+    function calculateQcQty(type) {
+        let totalBags = parseFloat($('#total_bags').val()) || 0;
+        let acceptedQty = $('#accepted_quantity');
+        let rejectedQty = $('#rejected_quantity');
 
+        if (type === 'accepted') {
+            let accepted = parseFloat(acceptedQty.val()) || 0;
+            if (accepted > totalBags) {
+                acceptedQty.val(totalBags);
+                accepted = totalBags;
+            }
+            rejectedQty.val(totalBags - accepted);
+        } else {
+            let rejected = parseFloat(rejectedQty.val()) || 0;
+            if (rejected > totalBags) {
+                rejectedQty.val(totalBags);
+                rejected = totalBags;
+            }
+            acceptedQty.val(totalBags - rejected);
+        }
     }
     $(".select2").select2();
 </script>

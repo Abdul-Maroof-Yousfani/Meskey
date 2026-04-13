@@ -488,9 +488,9 @@ class TicketContractController extends Controller
 
             }
 
-                        
+
             $saudaType = $arrivalTicket->saudaType->name == 'Pohanch' ? 'pohouch' : 'thadda';
-            
+
             $transactions = Transaction::where('grn_no', $grnNo)
                 ->where('payment_against', $saudaType . "-freight")
                 ->update([
@@ -581,7 +581,8 @@ class TicketContractController extends Controller
         ])
             ->where('status', 'draft')
             ->where('supplier_id', $arrivalTicket->accounts_of_id)
-            ->where('company_location_id', $arrivalTicket->location_id);
+            ->where('company_location_id', $arrivalTicket->location_id)
+            ->where('product_id', $arrivalTicket->qc_product);
 
         if ($arrivalTicket?->sauda_type_id) {
             $query->where('sauda_type_id', $arrivalTicket->sauda_type_id);
@@ -782,7 +783,7 @@ class TicketContractController extends Controller
 
             array_unshift($contracts, $linkedContract);
         }
-        
+
         $html = view('management.procurement.raw_material.ticket_contracts.contract_table', compact('arrivalTicket', 'contracts'))->render();
 
         return response()->json(['success' => true, 'html' => $html, 'data' => $contracts]);

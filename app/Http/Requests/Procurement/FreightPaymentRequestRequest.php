@@ -16,7 +16,7 @@ class FreightPaymentRequestRequest extends FormRequest
         return [
             'arrival_ticket_id' => 'required|exists:arrival_tickets,id',
             'arrival_slip_no' => 'nullable|string|max:255',
-            'vendor_id' => 'required|exists:vendors,id',
+            'vendor_id' => 'nullable|exists:vendors,id',
             'supplier_name' => 'required|string|max:255',
             'contract_rate' => 'nullable|numeric|min:0',
             'exempt' => 'required|numeric|min:0',

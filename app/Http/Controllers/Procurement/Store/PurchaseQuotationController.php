@@ -612,37 +612,69 @@ class PurchaseQuotationController extends Controller
         
 
         $PurchaseQuotationIds = PurchaseQuotation::where('purchase_request_id', $purchase_request_id)
-                                                ->pluck('id');
-
-        $PurchaseQuotationIds2 = PurchaseQuotation::where('purchase_request_id', $purchase_request_id)
             ->pluck('id');
 
-        $PurchaseQuotationData = PurchaseQuotationData::with(['purchase_request.JobOrder.job_order_data', 'purchase_quotation', 'supplier', 'item', 'category'])
-            ->whereIn('purchase_quotation_id', $PurchaseQuotationIds)
+        $query = PurchaseQuotationData::with(['purchase_request.JobOrder.job_order_data', 'purchase_quotation', 'supplier', 'item', 'category'])
+            ->whereIn('purchase_quotation_id', $PurchaseQuotationIds);
 
-            // ->where('am_approval_status', 'pending')
-            //     ->whereHas('purchase_quotation', function ($query) {
-            //     $query->whereNotIn('am_approval_status', ['partial_approved']);
-            // })
-            ->get();
-                
-        $data = PurchaseQuotationData::with(['purchase_quotation', 'supplier', 'item', 'category'])
-            ->whereIn('purchase_quotation_id', $PurchaseQuotationIds2)
-            ->where('am_approval_status', 'pending')
-            ->latest()->first() 
-            ?? PurchaseQuotationData::with(['purchase_quotation', 'supplier', 'item', 'category'])
-            ->whereIn('purchase_quotation_id', $PurchaseQuotationIds2)
-            ->latest()->first();
-      
-        return view('management.procurement.store.purchase_quotation.dataForComparison', [
-            'purchaseRequest' => $purchaseRequest,
-            'categories' => $categories,
-            'locations' => $locations,
-            'job_orders' => $job_orders,
-            'PurchaseQuotationData' => $PurchaseQuotationData,
-            "PurchaseQuotation" => $PurchaseQuotationData[0]->purchase_quotation,
-            'data1' => $data,
-        ]);
+        if (request()->has('supplier_ids') && !empty(request('supplier_ids'))) {
+            $query->whereIn('supplier_id', request('supplier_ids'));
+        }
+
+        if (request()->has('category_ids') && !empty(request('category_ids'))) {
+            $query->whereIn('category_id', request('category_ids'));
+        }
+
+        if (request()->has('statuses') && !empty(request('statuses'))) {
+            $query->whereIn('am_approval_status', request('statuses'));
+        }
+
+        if (request()->has('location_ids') && !empty(request('location_ids'))) {
+            $query->whereHas('purchase_quotation', function ($q) {
+                $q->whereIn('location_id', request('location_ids'));
+            });
+        }
+
+        $PurchaseQuotationData = $query->get();
+
+    $groupedItems = [];
+    foreach ($PurchaseQuotationData as $row) {
+        $prDataId = $row->purchase_request_data_id;
+        if (!isset($groupedItems[$prDataId])) {
+            $groupedItems[$prDataId] = [
+                'pr_data' => $row->purchase_request,
+                'quotations' => [],
+                'rowspan' => 0
+            ];
+        }
+        $groupedItems[$prDataId]['quotations'][] = $row;
+        $groupedItems[$prDataId]['rowspan']++;
+    }
+
+    foreach ($groupedItems as &$group) {
+        usort($group['quotations'], function ($a, $b) {
+            return $a->rate <=> $b->rate;
+        });
+    }
+            
+    $data1 = PurchaseQuotationData::with(['purchase_quotation', 'supplier', 'item', 'category'])
+        ->whereIn('purchase_quotation_id', $PurchaseQuotationIds)
+        ->where('am_approval_status', 'pending')
+        ->latest()->first() 
+        ?? PurchaseQuotationData::with(['purchase_quotation', 'supplier', 'item', 'category'])
+        ->whereIn('purchase_quotation_id', $PurchaseQuotationIds)
+        ->latest()->first();
+  
+    return view('management.procurement.store.purchase_quotation.dataForComparison', [
+        'purchaseRequest' => $purchaseRequest,
+        'categories' => $categories,
+        'locations' => $locations,
+        'job_orders' => $job_orders,
+        'groupedItems' => $groupedItems,
+        'PurchaseQuotationData' => $PurchaseQuotationData,
+        "PurchaseQuotation" => $PurchaseQuotationData->first()->purchase_quotation ?? null,
+        'data1' => $data1,
+    ]);
     }
 
     public function manageComparisonApprovals($purchase_request_id)
@@ -834,31 +866,28 @@ class PurchaseQuotationController extends Controller
             ->count();
         $quantities = [];
         if ($existingQuotationCount > 0) {
-            $quotationQuantities = PurchaseQuotationData::whereIn('purchase_request_data_id', $purchaseRequestDataIds)
+
+            // Important: Group by purchase_request_data_id instead of only item_id
+            $quotedQuantities = PurchaseQuotationData::whereIn('purchase_request_data_id', $purchaseRequestDataIds)
                 ->where("am_approval_status", "!=", "rejected")
-            
-                // ->where("am_approval_status", 'approved')
-                // ->orWhere("am_approval_status", "pending")
                 ->whereHas('purchase_quotation', function ($q) use ($supplierId) {
                     $q->where('supplier_id', $supplierId);
                 })
-                ->select('item_id', DB::raw('SUM(qty) as total_quoted_qty'))
-                ->groupBy('item_id')
-                ->pluck('total_quoted_qty', 'item_id');
+                ->select('purchase_request_data_id', DB::raw('SUM(qty) as total_quoted_qty'))
+                ->groupBy('purchase_request_data_id')           // ←←← Yeh change karo
+                ->pluck('total_quoted_qty', 'purchase_request_data_id');
 
+            // Ab har item ke liye uski apni row id ke against quoted qty nikaalo
             foreach ($dataItems as $item) {
-                $quotedQty = $quotationQuantities[$item->item_id] ?? 0;
+                $quotedQty = $quotedQuantities[$item->id] ?? 0;     // ←←← item->id use karo, na ke item_id
                 $remainingQty = $item->qty - $quotedQty;
                 $item->qty = max($remainingQty, 0);
             }
+
         } else {
+            // No previous quotation case
             foreach ($dataItems as $item) {
-                if($item->qty) {
-                    $quantities[] = $item->qty;
-                } else {
-                    $quantities[] = 0;
-                }
-                $item->qty = $item->qty;
+                $item->qty = $item->qty ?? 0;
             }
         }
 
@@ -934,6 +963,7 @@ class PurchaseQuotationController extends Controller
                     'total' => $request->total[$index],
                     'supplier_id' => $request->supplier_id,
                     'remarks' => $request->remarks[$index] ?? null,
+                    'delivery_date' => $request->delivery_date[$index] ?? null,
                 ]);
 
 
@@ -1164,6 +1194,9 @@ class PurchaseQuotationController extends Controller
 
             'remarks' => 'nullable|array',
             'remarks.*' => 'nullable|string|max:1000',
+
+            'delivery_date' => 'required|array|min:1',
+            'delivery_date.*' => 'required|date',
         ]);
 
         // $validator->after(function ($validator) use ($request) {
@@ -1239,6 +1272,7 @@ class PurchaseQuotationController extends Controller
                         "am_approval_status" => "pending",
                         "am_change_made" => 1,
                         'remarks' => $request->remarks[$row->id] ?? null,
+                        'delivery_date' => $request->delivery_date[$row->id] ?? null,
                     ]);
                 }
             }

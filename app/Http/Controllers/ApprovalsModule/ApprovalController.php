@@ -209,10 +209,12 @@ class ApprovalController extends Controller
         $results = [];
         $uniqueParents = [];
         $processedApprovedIds = [];
+        $plannedQuantities = [];
 
         // First, process all child records
         foreach ($modelDataIds as $dataId) {
             $record = $modelClass::find($dataId);
+            $returnedChild = false;
 
             if (!$record) {
                 // Fallback: If not found, try the suffix 'Data' (e.g., PurchaseQuotation -> PurchaseQuotationData)
@@ -224,8 +226,10 @@ class ApprovalController extends Controller
 
             if (!$record) {
                 $results[] = [
-                    'id' => $dataId,
-                    'status' => 'failed',
+                    'child_id' => $dataId,
+                    'child_status' => 'failed',
+                    'parent_id' => null,
+                    'parent_status' => 'failed', 
                     'message' => 'Record not found'
                 ];
                 continue;
@@ -247,13 +251,33 @@ class ApprovalController extends Controller
 
                 $returnedChild = $record->reject($request->comments);
             } else { // approve
+                $prDataId = $record->purchase_request_data_id;
+                $prDataLimit = $record->purchase_request?->qty ?? 0;
+                $alreadyApproved = $record->purchase_request?->purchase_quotation_data()
+                        ->where('am_approval_status', 'approved')
+                        ->whereNotIn('id', $modelDataIds) 
+                        ->sum('qty') ?? 0;
+
+                $currentBatchTotal = ($plannedQuantities[$prDataId] ?? 0) + $record->qty;
+
                 if ($record->canApprove()) {
+                    if (($alreadyApproved + $currentBatchTotal) > ($prDataLimit + 0.0001)) {
+                        $returnedChild = false;
+                        $results[] = [
+                            'child_id' => $record->id,
+                            'child_status' => 'failed',
+                            'parent_id' => $parentRecord ? $parentRecord->id : null,
+                            'parent_status' => 'pending', 
+                            'message' => "Approved quantity exceeds requested quantity ({$prDataLimit}) for item: " . ($record->item->name ?? 'Unknown')
+                        ];
+                        continue;
+                    }
+
                     $returnedChild = $record->approve($request->comments);
                     if ($returnedChild) {
                         $processedApprovedIds[] = $record->purchase_request_data_id;
+                        $plannedQuantities[$prDataId] = $currentBatchTotal;
                     }
-                } else {
-                    $returnedChild = false;
                 }
             }
 

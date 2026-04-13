@@ -7,7 +7,9 @@
         width: 100% !important;
     }
 </style>
-<form action="{{ route('store.purchase-request.update', $purchaseRequest->id) }}" method="POST" id="ajaxSubmit"
+<input type="hidden" name="category_id" value="{{ $purchaseRequest->category_id }}" id="category_id_value" />
+        
+<form style="overflow-x: hidden;" action="{{ route('store.purchase-request.update', $purchaseRequest->id) }}" method="POST" id="ajaxSubmit"
     autocomplete="off">
     @csrf
     @method('PUT')
@@ -52,7 +54,6 @@
                 </select>
             </div>
         </div>
-
         <div class="col-md-4 header-conditional job-order-section" {!! $purchaseRequest->category_id == 38 ? '' : 'style="display: none;"' !!}>
             <div class="form-group">
                 <label class="form-label">Job Orders:</label>
@@ -120,7 +121,9 @@
                 <th style="min-width: 150px;">Qty</th>
                 <th class="bag-only" style="min-width: 450px;">Job Orders</th>
                 <th class="bag-only" style="min-width: 300px;">Brands</th>
-                <th class="bag-only" style="min-width: 200px;">Min Weight (KG)</th>
+                <th class="bag-only" style="min-width: 200px;">Min Weight (gm)</th>
+                <th class="bag-only" style="min-width: 150px;">Tolerance</th>
+                <th class="bag-only" style="min-width: 150px;">Tolerance %</th>
                 <th class="bag-only" style="min-width: 300px;">Color</th>
                 <th class="bag-only" style="min-width: 300px;">Cons./sq. in.</th>
                 <th class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">Size</th>
@@ -161,25 +164,30 @@
                         value="{{ $item->item->unitOfMeasure->name ?? '' }}"></td>
 
                 <td style="min-width: 150px;">
+                    @php
+                        $jo_data = null;
+                        if($item->is_single_job_order == 1) {
+                            if($item->module_type == 'packing') {
+                                $jo_data = \App\Models\Production\JobOrder\JobOrderPackingItem::find($item->packing_id);
+                            } else if($item->module_type == 'subpacking') {
+                                $jo_data = \App\Models\Production\JobOrder\JobOrderPackingSubItem::find($item->packing_id);
+                            }
+                        }
+                        $jo_balance = 0;
+                        if($jo_data) {
+                            if($item->module_type == 'packing') {
+                                $jo_balance = jobOrderPackingBalanceAgainstPurchaseRequest($item->packing_id);
+                            } else {
+                                $jo_balance = jobOrderSubPackingBalanceAgainstPurchaseRequest($item->packing_id);
+                            }
+                        }
+                    @endphp
                     <input type="number" name="qty[]" id="qty_{{ $rowId }}" class="form-control qty-input-check {{ $item->is_single_job_order == 1 ? '' : 'bg-white' }}"
                                         step="0.01" min="0" placeholder="Qty" value="{{ $item->qty }}" 
                                         @if($item->is_single_job_order == 1)
-                                            data-balance="{{ $item->qty + (float)jobOrderPackingBalanceAgainstPurchaseRequest($item->packing_id) }}"
+                                            data-balance="{{ $item->qty + (float)$jo_balance }}"
                                         @endif>
                     @if($item->is_single_job_order == 1)
-                        @php
-                            $jo_total = 0;
-                            $jo_balance = 0;
-                            if($item->module_type == 'packing') {
-                                $packing = \App\Models\Production\JobOrder\JobOrderPackingItem::find($item->packing_id);
-                                $jo_total = $packing->total_bags ?? 0;
-                                $jo_balance = jobOrderPackingBalanceAgainstPurchaseRequest($item->packing_id);
-                            } else if($item->module_type == 'subpacking') {
-                                $subpacking = \App\Models\Production\JobOrder\JobOrderPackingSubItem::find($item->packing_id);
-                                $jo_total = $subpacking->total_bags ?? 0;
-                                $jo_balance = jobOrderSubPackingBalanceAgainstPurchaseRequest($item->packing_id);
-                            }
-                        @endphp
                         <div class="mt-1" style="font-size: 11px;">
                             <strong>Limit:</strong> {{ $item->qty + (float)$jo_balance }} <br>
                             <strong>Remaining:</strong> <span class="balance-span">{{ $jo_balance }}</span>
@@ -207,28 +215,45 @@
 
                  <td class="bag-only" style="min-width: 300px;">
 
-                    <select id="brands_{{ $rowId }}" name="brands[]" class="form-control item-select color-select">
+                    <select id="brands_{{ $rowId }}" name="brands[]" class="form-control item-select color-select" {{ $jo_data?->brand_id ? 'disabled' : '' }}>
                         <option value="">Select Brand</option>
                         @foreach(getAllBrands() ?? [] as $brand)
                         <option @selected($brand->id == $item->brand_id) value="{{ $brand->id }}">
                             {{ $brand->name }}</option>
                         @endforeach
                     </select>
+                    @if($jo_data?->brand_id)
+                        <input type="hidden" name="brands[]" value="{{ $item->brand_id }}">
+                    @endif
                 </td>
                
-                <td class="bag-only" style="min-width: 200px;"><input type="number" name="min_weight[]" id="min_weight_{{ $rowId }}" class="form-control"
-                        step="0.01" min="0" value="{{ $item->min_weight }}" placeholder="Min Weight"></td>
+                <td class="bag-only" style="min-width: 200px;">
+                    @php
+                        $jo_min_weight = $jo_data?->min_weight_empty_bags ?? $jo_data?->empty_bag_weight ?? 0;
+                    @endphp
+                    <input type="number" name="min_weight[]" id="min_weight_{{ $rowId }}" class="form-control min-weight-input"
+                        step="0.01" min="0" value="{{ $item->min_weight }}" placeholder="Min Weight" {{ $jo_min_weight > 0 ? 'readonly' : '' }}>
+                </td>
+
+                <td class="bag-only" style="min-width: 150px;"><input type="number" name="tolerance[]" id="tolerance_{{ $rowId }}" class="form-control tolerance-input"
+                        step="0.01" value="{{ $item->tolerance ?? 0 }}" placeholder="Tolerance" readonly></td>
+
+                <td class="bag-only" style="min-width: 150px;"><input type="number" name="tolerance_percentage[]" id="tolerance_percentage_{{ $rowId }}" class="form-control tolerance-percentage-input"
+                        step="0.01" min="0" max="100" value="{{ $item->tolerance_percentage }}" placeholder="Tol. %"></td>
 
            
                 <td class="bag-only" style="min-width: 300px;">
 
-                    <select id="color_{{ $rowId }}" name="color[]" class="form-control item-select color-select">
+                    <select id="color_{{ $rowId }}" name="color[]" class="form-control item-select color-select" {{ $jo_data?->bag_color_id ? 'disabled' : '' }}>
                         <option value="">Select Color</option>
                         @foreach(getAllColors() ?? [] as $color)
                         <option @selected($color->id == $item->color) value="{{ $color->id }}">
                             {{ $color->color }}</option>
                         @endforeach
                     </select>
+                    @if($jo_data?->bag_color_id)
+                        <input type="hidden" name="color[]" value="{{ $item->color }}">
+                    @endif
                 </td>
 
                 <td class="bag-only" style="min-width: 300px;"><input type="text" name="construction_per_square_inch[]" id="construction_per_square_inch_{{ $rowId }}"
@@ -236,13 +261,13 @@
                         placeholder="Cons./sq. in."></td>
 
                 <td class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">
-                    <select id="size_{{ $rowId }}" name="size[]" class="form-control item-select size-select">
-                        <option value="">Select Size</option>
-                        @foreach(getAllSizes() ?? [] as $size)
-                        <option @selected($size->id == $item->size) value="{{ $size->id }}">
-                            {{ $size->size }}</option>
-                        @endforeach
-                    </select>
+                    @php
+                        $jo_size = $jo_data->bag_size ?? ($jo_data?->bagSize?->size ?? '');
+                        $current_size = $item->size;
+                        $display_size = (is_numeric($jo_size) && $jo_size > 0) ? $jo_size : (getSizeById($current_size)->size ?? $current_size);
+                    @endphp
+                    <input type="text" id="size_{{ $rowId }}" name="size[]" class="form-control size-input-check" placeholder="Size"
+                        value="{{ $display_size }}" {{ (is_numeric($jo_size) && $jo_size > 0) ? 'readonly' : '' }}>
                 </td>
 
                 <td class="bag-only" style="min-width: 350px;">
@@ -250,7 +275,7 @@
                         $selectedStitchings = $item->stitching ? array_filter(array_map('trim', explode(',', $item->stitching))) : [];
                     @endphp
 
-                    <select id="stitching_{{ $rowId }}" name="stitching[{{ $rowId }}][]" class="form-control item-select stitching-select select2" multiple>
+                    <select id="stitching_{{ $rowId }}" name="stitching[{{ $rowId }}][]" class="form-control item-select stitching-select select2" multiple {{ $jo_data?->stitching_id ? 'disabled' : '' }}>
                         <option value="">Select Stitching</option>
                         @foreach(getAllStitchings() ?? [] as $stitching)
                             <option value="{{ $stitching->id }}" @selected(in_array($stitching->id, $selectedStitchings))>
@@ -258,6 +283,9 @@
                             </option>
                         @endforeach
                     </select>
+                    @if($jo_data?->stitching_id)
+                        <input type="hidden" name="stitching[{{ $rowId }}][]" value="{{ $item->stitching }}">
+                    @endif
                 </td>
 
 
@@ -308,11 +336,6 @@
     purchaseRequestRowIndex = {{ count($purchaseRequest->PurchaseData) }};
 
     $(document).ready(function() {
-        // $(".size-select").select2({
-        //     tags: true,
-        //     placeholder: "Select or add size",
-        //     allowClear: true
-        // });
         $(".select2").select2();
         @foreach ($purchaseRequest->PurchaseData as $loopIndex => $item)
             @php
@@ -323,11 +346,6 @@
 
             $("#color_{{ $jsIndex }}").select2();
             $("#brands_{{ $jsIndex }}").select2();
-            $("#size_{{ $jsIndex }}").select2({
-                tags: true,
-                placeholder: "Select or add size",
-                allowClear: true
-            });
             $("#stitching_{{ $jsIndex }}").select2();
             $('#job_order_id_{{ $jsIndex }}').select2({
                 placeholder: 'Please Select Job Order',
@@ -490,8 +508,24 @@
                     <td style="min-width: 200px;" class="bag-only">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
-                                <input type="number" name="min_weight[]" id="min_weight_${index}" class="form-control"
+                                <input type="number" name="min_weight[]" id="min_weight_${index}" class="form-control min-weight-input"
                                     step="0.01" min="0" placeholder="Min Weight">
+                            </div>
+                        </div>
+                    </td>
+                    <td style="min-width: 150px;" class="bag-only">
+                        <div class="loop-fields">
+                            <div class="form-group mb-0">
+                                <input type="number" name="tolerance[]" id="tolerance_${index}" class="form-control tolerance-input"
+                                    placeholder="Tolerance" readonly step="0.01">
+                            </div>
+                        </div>
+                    </td>
+                    <td style="min-width: 150px;" class="bag-only">
+                        <div class="loop-fields">
+                            <div class="form-group mb-0">
+                                <input type="number" name="tolerance_percentage[]" id="tolerance_percentage_${index}" class="form-control tolerance-percentage-input"
+                                    step="0.01" min="0" max="100" placeholder="Tol. %">
                             </div>
                         </div>
                     </td>
@@ -510,12 +544,9 @@
                             </div>
                         </div>
                     </td>
-                    <td class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;"><select name="size[]" id="size_${index}" class="form-control item-select size-select" style="width: 100%;">
-                        <option value="">Select Size</option>
-                        @foreach(getAllSizes() ?? [] as $size)
-                            <option value="{{ $size->id }}">{{ $size->size }}</option>
-                        @endforeach
-                    </select></td>
+                    <td class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">
+                        <input type="text" name="size[]" id="size_${index}" class="form-control size-input-check" placeholder="Size">
+                    </td>
                    <td class="bag-only" style="min-width: 350px;">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
@@ -559,11 +590,13 @@
         $('#purchaseRequestBody').append(row);
 
         $('#color_' + index).select2();
+        /*
         $('#size_' + index).select2({
             tags: true,
             placeholder: "Select or add size",
             allowClear: true
         });
+        */
         $('#brands_' + index).select2();
         $('#stitching_' + index).select2();
         $('#category_id_' + index).select2();
@@ -630,8 +663,9 @@
         let input = $(this);
         let val = parseFloat(input.val()) || 0;
         let balance = parseFloat(input.data('balance')) || 0;
+        let category_id = $("#category_id_value").val();
 
-        if (val > balance) {
+        if (val > balance && category_id == 38) {
             alert("Quantity cannot exceed available Job Order balance (" + balance + ")");
             input.val(balance);
         }
@@ -639,5 +673,27 @@
         // Update live balance display
         let remaining = (balance - input.val()).toFixed(2);
         input.closest('td').find('.balance-span').text(remaining);
+    });
+
+    $(document).on('input', '.tolerance-percentage-input, .min-weight-input', function() {
+        let row = $(this).closest('tr');
+        let minWeight = parseFloat(row.find('.min-weight-input').val()) || 0;
+        let percentage = parseFloat(row.find('.tolerance-percentage-input').val()) || 0;
+        
+        if (percentage > 100) {
+            alert('Tolerance percentage cannot exceed 100%.');
+            row.find('.tolerance-percentage-input').val(100);
+            percentage = 100;
+        }
+
+        let tolerance = (minWeight * percentage / 100).toFixed(2);
+        row.find('.tolerance-input').val(tolerance);
+    });
+
+    $(document).on('input', '.size-input-check', function() {
+        this.value = this.value.replace(/[^0-9.]/g, '');
+        if ((this.value.match(/\./g) || []).length > 1) {
+            this.value = this.value.replace(/\.+$/, "");
+        }
     });
 </script>

@@ -360,7 +360,7 @@
                                             <tr>
                                                 <th class="col-2">Bag Type/Product</th>
 
-                                                <th>Bag Size </th>
+                                                <th>Packing Size (kg) </th>
                                                 <th>No of Primary Bags fit in master bag</th>
                                                 <th>No. of Bags</th>
                                                 <th>Empty Bags</th>

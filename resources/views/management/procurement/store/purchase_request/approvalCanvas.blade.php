@@ -7,7 +7,7 @@
         width: 100% !important;
     }
 </style>
-<form action="{{ route('store.purchase-request.update', $purchaseRequest->id) }}" method="POST" id="ajaxSubmit2"
+<form style="overflow-x: hidden;" action="{{ route('store.purchase-request.update', $purchaseRequest->id) }}" method="POST" id="ajaxSubmit2"
     autocomplete="off">
     @csrf
     @method('PUT')
@@ -118,7 +118,9 @@
                 <th style="min-width: 150px;">Qty</th>
                 <th class="bag-only" style="min-width: 450px;">Job Orders</th>
                 <th class="bag-only" style="min-width: 300px;">Brands</th>
-                <th class="bag-only" style="min-width: 200px;">Min Weight (KG)</th>
+                <th class="bag-only" style="min-width: 200px;">Min Weight (gm)</th>
+                <th class="bag-only" style="min-width: 150px;">Tolerance</th>
+                <th class="bag-only" style="min-width: 150px;">Tolerance %</th>
                 <th class="bag-only" style="min-width: 300px;">Color</th>
                 <th class="bag-only" style="min-width: 300px;">Cons./sq. in.</th>
                 <th class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">Size</th>
@@ -185,6 +187,10 @@
                 </td>
                 <td class="bag-only" style="min-width: 200px;"><input type="number" name="min_weight[]" id="min_weight_{{ $rowIdApproval }}" class="form-control"
                         step="0.01" min="0" value="{{ $item->min_weight }}" placeholder="Min Weight" readonly></td>
+                <td class="bag-only" style="min-width: 150px;"><input type="number" name="tolerance[]" id="tolerance_{{ $rowIdApproval }}" class="form-control tolerance-input"
+                        value="{{ $item->tolerance }}" placeholder="Tolerance" readonly step="0.01"></td>
+                <td class="bag-only" style="min-width: 150px;"><input type="number" name="tolerance_percentage[]" id="tolerance_percentage_{{ $rowIdApproval }}" class="form-control tolerance-percentage-input"
+                        value="{{ $item->tolerance_percentage }}" placeholder="Tol. %" readonly step="0.01" min="0" max="100"></td>
                 <td class="bag-only" style="min-width: 300px;">
                     <select name="color[]" id="color_{{ $rowIdApproval }}" class="form-control item-select color-select"
                         disabled>
@@ -201,14 +207,12 @@
                         placeholder="Cons./sq. in." readonly></td>
                 
                 <td class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">
-                    <select name="size[]" id="size_{{ $rowIdApproval }}" class="form-control item-select size-select"
-                        disabled>
-                        <option value="">Select Size</option>
-                        @foreach(getAllSizes() ?? [] as $size)
-                        <option @selected(($size->id ?? '') == ($item->size ?? '')) value="{{ $size->id ?? '' }}">
-                            {{ $size->size ?? '' }}</option>
-                        @endforeach
-                    </select>
+                    @php
+                        $current_size_app = $item->size;
+                        $display_size_app = (getSizeById($current_size_app)->size ?? $current_size_app);
+                    @endphp
+                    <input type="text" id="size_{{ $rowIdApproval }}" name="size[]" class="form-control" readonly
+                        value="{{ $display_size_app }}">
                 </td>
 
                 <td class="bag-only" style="min-width: 350px;">
@@ -261,11 +265,11 @@
     
     
     <div class="row bottom-button-bar">
-        <div class="col-12 text-end">
+        <!-- <div class="col-12 text-end">
             <a type="button"
             class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton me-2">Close</a>
             <button type="submit" class="btn btn-primary submitbutton" disabled>Save</button>
-        </div>
+        </div> -->
     </div>
 </form>
 <div class="row">
@@ -291,7 +295,6 @@
 
             $("#color_{{ $jsIndexApproval }}").select2();
             $("#brands_{{ $jsIndexApproval }}").select2();
-            $("#size_{{ $jsIndexApproval }}").select2();
             $("#stitching_{{ $jsIndexApproval }}").select2();
             $('#job_order_id_{{ $jsIndexApproval }}').select2({
                 placeholder: 'Please Select Job Order',
@@ -443,6 +446,22 @@
                             </div>
                         </div>
                     </td>
+                    <td style="min-width: 150px;" class="bag-only">
+                        <div class="loop-fields">
+                            <div class="form-group mb-0">
+                                <input type="number" name="tolerance[]" id="tolerance_${index}" class="form-control tolerance-input"
+                                    placeholder="Tolerance" readonly step="0.01">
+                            </div>
+                        </div>
+                    </td>
+                    <td style="min-width: 150px;" class="bag-only">
+                        <div class="loop-fields">
+                            <div class="form-group mb-0">
+                                <input type="number" name="tolerance_percentage[]" id="tolerance_percentage_${index}" class="form-control tolerance-percentage-input"
+                                    placeholder="Tol. %" step="0.01" min="0" max="100">
+                            </div>
+                        </div>
+                    </td>
 
                     <td class="bag-only" style="min-width: 300px;">
                         <select name="color[]" id="color_${index}" class="form-control item-select color-select">
@@ -465,13 +484,7 @@
                         </div>
                     </td>
                     <td class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">
-                    <select name="size[]" id="size_${index}" class="form-control item-select size-select">
-                            <option value="">Select Size</option>
-                            @foreach(getAllSizes() ?? [] as $size)
-                            <option value="{{ $size->id }}">
-                                {{ $size->size }}</option>
-                            @endforeach
-                        </select>
+                        <input type="text" name="size[]" id="size_${index}" class="form-control size-input-check" placeholder="Size">
                     </td>
                     <td style="min-width: 350px;" class="bag-only">
                         <div class="loop-fields">
@@ -510,7 +523,6 @@
         $('#purchaseRequestBody').append(row);
 
         $('#color_' + index).select2();
-        $('#size_' + index).select2();
         $('#brands_' + index).select2();
         $('#stitching_' + index).select2();
         $('#category_id_' + index).select2();
@@ -573,4 +585,25 @@
             }
         });
     }
+    $(document).on('input', '.size-input-check', function() {
+        this.value = this.value.replace(/[^0-9.]/g, '');
+        if ((this.value.match(/\./g) || []).length > 1) {
+            this.value = this.value.replace(/\.+$/, "");
+        }
+    });
+
+    $(document).on('input', '.tolerance-percentage-input, .min-weight-input', function() {
+        let row = $(this).closest('tr');
+        let minWeight = parseFloat(row.find('.min-weight-input').val()) || 0;
+        let percentage = parseFloat(row.find('.tolerance-percentage-input').val()) || 0;
+        
+        if (percentage > 100) {
+            alert('Tolerance percentage cannot exceed 100%.');
+            row.find('.tolerance-percentage-input').val(100);
+            percentage = 100;
+        }
+
+        let tolerance = (minWeight * percentage / 100).toFixed(2);
+        row.find('.tolerance-input').val(tolerance);
+    });
 </script>

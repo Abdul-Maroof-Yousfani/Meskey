@@ -5,7 +5,7 @@
     }
 </style>
 
-<form action="{{ route('store.purchase-quotation.update', optional($purchaseQuotation->purchase_request)->id) }}" method="POST"
+<form style="overflow-x: hidden;" action="{{ route('store.purchase-quotation.update', optional($purchaseQuotation->purchase_request)->id) }}" method="POST"
     id="ajaxSubmit" autocomplete="off">
     @csrf
     @method('PUT')
@@ -97,7 +97,10 @@
                             <th>Rate</th>
                             <th>Total Amount</th>
                             <th>Item UOM</th>
-                            <th class="bag-only">Min Weight (KG)</th>
+                            <th>Delivery Date <span class="text-danger">*</span></th>
+                            <th class="bag-only">Min Weight (gm)</th>
+                            <th class="bag-only">Tolerance</th>
+                            <th class="bag-only">Tolerance %</th>
                             <th class="bag-only">Brands</th>
                             <th class="bag-only">Color</th>
                             <th class="bag-only">Cons./sq. in.</th>
@@ -210,6 +213,11 @@
                                         id="uom_{{ $key }}" class="form-control" readonly>
                                     <input type="hidden" name="uom[]" value="{{ get_uom($data->item_id) }}">
                                 </td>
+                                <td style="min-width: 180px;">
+                                    <input type="date" name="delivery_date[{{ $data->id }}]" 
+                                        value="{{ $data->delivery_date }}" id="delivery_date_{{ $key }}" 
+                                        class="form-control" min="{{ date('Y-m-d') }}" required>
+                                </td>
 
                                 <td style="min-width: 200px;" class="bag-only">
                                     <input  type="number"
@@ -218,6 +226,20 @@
                                         min="0" readonly>
                                     <input type="hidden" name="min_weight[]"
                                         value="{{ $data->purchase_request?->min_weight ?? null }}">
+                                </td>
+                                <td style="min-width: 150px;" class="bag-only">
+                                    <input type="text"
+                                        value="{{ $data->purchase_request?->tolerance ?? null }}"
+                                        id="tolerance_{{ $key }}" class="form-control" readonly>
+                                    <input type="hidden" name="tolerance[]"
+                                        value="{{ $data->purchase_request?->tolerance ?? null }}">
+                                </td>
+                                <td style="min-width: 150px;" class="bag-only">
+                                    <input type="text"
+                                        value="{{ $data->purchase_request?->tolerance_percentage ?? null }}"
+                                        id="tolerance_percentage_{{ $key }}" class="form-control" readonly>
+                                    <input type="hidden" name="tolerance_percentage[]"
+                                        value="{{ $data->purchase_request?->tolerance_percentage ?? null }}">
                                 </td>
                                 <td style="min-width: 200px;" class="bag-only">
                                     <input  type="text"
@@ -245,8 +267,8 @@
 
                                 <td style="min-width: 200px;" class="bag-only">
                                     <input  type="text"
-                                        value="{{ getSizeById($data->purchase_request?->size ?? null)?->size ?? null }}"
-                                        id="size_{{ $key }}" class="form-control" readonly>
+                                        value="{{ $data->purchase_request?->size ?? null }}"
+                                        id="size_{{ $key }}" class="form-control size-input-check" readonly>
                                     <input type="hidden" name="size[]"
                                         value="{{ $data->purchase_request?->size ?? null }}">
                                 </td>
@@ -326,6 +348,20 @@
             toggleVisibility(initialCategoryId);
         }
     });
+
+    $(document).on('change', 'input[name*="delivery_date"]', function() {
+        let quotationDate = $('#purchase_date').val();
+        let deliveryDate = $(this).val();
+        if (quotationDate && deliveryDate && deliveryDate < quotationDate) {
+            Swal.fire({
+                title: 'Invalid Date',
+                text: 'Delivery date cannot be before quotation date.',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+            $(this).val(quotationDate);
+        }
+    });
     $('.select2').select2({
         placeholder: 'Please Select',
         width: '100%'
@@ -375,10 +411,27 @@
                 <td style="min-width: 150px;"><input  onkeyup="calc(${index})" onblur="calc(${index})"  type="number" name="rate[]" id="rate_${index}" class="form-control" step="0.01" min="0"></td>
                 <td style="min-width: 150px;"><input  type="number" readonly name="total[]" id="total_${index}" class="form-control" step="0.01" min="0"></td>
                 <td style="min-width: 150px;"><input  type="text" name="uom[]" id="uom_${index}" class="form-control uom" readonly></td>
+                <td style="min-width: 180px;"><input type="date" name="delivery_date[]" id="delivery_date_\${index}" class="form-control" min="{{ date('Y-m-d') }}" value="{{ date('Y-m-d') }}" required></td>
+                
+                <td class="bag-only" style="min-width: 200px;"></td>
+                <td class="bag-only" style="min-width: 150px;"></td>
+                <td class="bag-only" style="min-width: 150px;"></td>
+                <td class="bag-only" style="min-width: 200px;"></td>
+                <td class="bag-only" style="min-width: 200px;"></td>
+                <td class="bag-only" style="min-width: 200px;"></td>
+                <td class="bag-only" style="min-width: 200px;"></td>
+                <td class="bag-only" style="min-width: 200px;"></td>
+                <td class="bag-only" style="min-width: 200px;"></td>
+                <td class="bag-only" style="min-width: 200px;"></td>
                 
                 <td><button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="remove(${index})">Remove</button></td>
             </tr>`;
         $('#purchaseRequestBody').append(row);
+        
+        let qDate = $('#purchase_date').val();
+        if (qDate) {
+            $('#delivery_date_' + (rowIndex-1)).attr('min', qDate);
+        }
     }
 
     function remove(id) {
@@ -482,6 +535,11 @@
                 if (master && master.category_id) {
                     toggleVisibility(master.category_id);
                 }
+
+                let qDate = $('#purchase_date').val();
+                if (qDate) {
+                    $('input[name*="delivery_date"]').attr('min', qDate);
+                }
             },
             error: function() {
                 $('#purchaseRequestBody').html('<p>Error loading data.</p>');
@@ -520,6 +578,13 @@
     // Disable mousewheel on number inputs to prevent accidental changes and scroll issues
     $(document).on('wheel', 'input[type=number]', function (e) {
         $(this).blur();
+    });
+
+    $(document).on('input', '.size-input-check', function() {
+        this.value = this.value.replace(/[^0-9.]/g, '');
+        if ((this.value.match(/\./g) || []).length > 1) {
+            this.value = this.value.replace(/\.+$/, "");
+        }
     });
 
     $(document).on('select2:open', function (e) {

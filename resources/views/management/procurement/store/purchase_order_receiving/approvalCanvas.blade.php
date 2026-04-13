@@ -106,13 +106,14 @@
                      <th>Job Order</th>
                      <th>Qty</th>
 @if(optional($purchaseOrderReceiving->purchase_request)->category_id == 38)
-                    <th>Recieve Weight</th>
+                    <th>Receive Weight (gm)</th>
                      <th>Accepted Quantity</th>
                      <th>Rejected Quantity</th>
                      <th>Deduction Per KG</th>
 @endif
                      @if(optional($purchaseOrderReceiving->purchase_request)->category_id == 38)
-                     <th>Min Weight (KG)</th>
+                     <th>Min Weight (gm)</th>
+                     <th>Tolerance</th>
                      <th>Brand</th>
                      <th>Color</th>
                      <th>Cons./sq. in.</th>
@@ -239,6 +240,17 @@
                        class="form-control" step="0.01" min="0"
                        value="{{ $data->purchase_order_data->min_weight }}"
                        placeholder="Min Weight">
+            </div>
+        </div>
+    </td>
+
+    <td style="width: 150px; min-width: 150px;">
+        <div class="loop-fields">
+            <div class="form-group mb-0">
+                <input type="text" style="width: 100%;" 
+                       name="tolerance[]" id="tolerance_{{ $key }}" 
+                       value="{{ $data->purchase_order_data->tolerance ?? ($data->purchase_order_data->purchase_request_data->tolerance ?? null) }}" 
+                       class="form-control" placeholder="Tolerance">
             </div>
         </div>
     </td>
