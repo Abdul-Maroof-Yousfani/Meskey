@@ -48,22 +48,23 @@
         @endcanApprove
         <div class="row" style="margin-top: 10px;">
             <div class="col-md-12">
-                <table class="table table-bordered" id="purchaseRequestTable">
+            <div style="overflow-x: auto; width: 100%;">
+                <table class="table table-bordered" id="purchaseRequestTable" style="min-width: 2500px;">
                     <thead>
                         <tr>
-                            <th>Item</th>
+                            <th style="min-width: 300px;">Item</th>
                             @if($purchaseOrderReceivingData->category_id == 38)
-                            <th>Size</th>
-                            <th>Brand</th>
-                            <th>Job Order</th>
+                            <th style="min-width: 200px;">Size</th>
+                            <th style="min-width: 200px;">Brand</th>
+                            <th style="min-width: 250px;">Job Order</th>
                             @endif
-                            <th>DC No</th>
-                            <th>Required Weight Per Bag (grams)</th>
+                            <th style="min-width: 200px;">DC No</th>
+                            <th style="min-width: 250px;">Required Weight Per Bag (grams)</th>
                             <!-- <th>Tolerance</th> -->
-                            <th>Average Weight of 1 Bag (grams)</th>
-                            <th>Total Bags</th>
-                            <th>Total Weight Required (Kg)</th>
-                            <th>Sample Average Weight (grams)</th>
+                            <th style="min-width: 250px;">Average Weight of 1 Bag (grams)</th>
+                            <th style="min-width: 150px;">Total Bags</th>
+                            <th style="min-width: 250px;">Total Weight Required (Kg)</th>
+                            <th style="min-width: 250px;">Sample Average Weight (grams)</th>
                         </tr>
                     </thead>
                     <tbody id="purchaseOrderBody">
@@ -122,6 +123,7 @@
                         </tr>
                     </tbody>
                 </table>
+            </div>
             </div>
         </div>
 
