@@ -46,6 +46,13 @@
                 <input type="text" name="uom[]" value="{{ get_uom($packing_item->bag_product_id) }}" id="uom_{{ $i }}" class="form-control" readonly>
             </td>
 
+            <td class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">
+                <input type="text" name="size[]" id="size_{{ $i }}"
+                    class="form-control size-input-check" placeholder="Size"
+                    value="{{ (is_numeric($packing_item->bag_size) && $packing_item->bag_size > 0) ? $packing_item->bag_size : '' }}" 
+                    {{ (is_numeric($packing_item->bag_size) && $packing_item->bag_size > 0) ? 'readonly' : '' }}>
+            </td>
+
             <td style="min-width: 150px;">
                 <input type="number" name="qty[]" id="qty_{{ $i }}" class="form-control qty-input-check" step="0.01"
                     min="0" placeholder="Qty" value="{{ $display_balance }}" data-balance="{{ $display_balance }}">
@@ -113,11 +120,15 @@
                     min="0" placeholder="Cons./sq. in.">
             </td>
 
-            <td class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">
-                <input type="text" name="size[]" id="size_{{ $i }}"
-                    class="form-control size-input-check" placeholder="Size"
-                    value="{{ (is_numeric($packing_item->bag_size) && $packing_item->bag_size > 0) ? $packing_item->bag_size : '' }}" 
-                    {{ (is_numeric($packing_item->bag_size) && $packing_item->bag_size > 0) ? 'readonly' : '' }}>
+
+
+            <td class="bag-only" style="min-width: 250px;">
+                <select name="size_id[]" id="size_id_{{ $i }}" class="form-control select2Dropdown">
+                    <option value="">Select Size</option>
+                    @foreach($sizes as $sz)
+                        <option value="{{ $sz->id }}">{{ $sz->size }}</option>
+                    @endforeach
+                </select>
             </td>
 
             <td class="bag-only" style="min-width: 350px;">
@@ -200,6 +211,16 @@
                     style="width:100%;">
             </td>
 
+            <td class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">
+                @php
+                    $sub_jo_size = $sub_packing_item->packing_size ?? '';
+                @endphp
+                <input type="text" name="size[]" id="size_{{ $i }}"
+                    class="form-control size-input-check" placeholder="Size"
+                    value="{{ (is_numeric($sub_jo_size) && $sub_jo_size > 0) ? $sub_jo_size : '' }}" 
+                    {{ (is_numeric($sub_jo_size) && $sub_jo_size > 0) ? 'readonly' : '' }}>
+            </td>
+
             <td style="min-width: 150px;">
                 <input type="number" name="qty[]" id="qty_{{ $i }}" class="form-control qty-input-check" step="0.01"
                     min="0" placeholder="Qty" style="width:100%;" value="{{ $display_sub_balance }}" data-balance="{{ $display_sub_balance }}">
@@ -269,14 +290,15 @@
                     min="0" placeholder="Cons./sq. in.">
             </td>
 
-            <td class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">
-                @php
-                    $sub_jo_size = $sub_packing_item->packing_size ?? '';
-                @endphp
-                <input type="text" name="size[]" id="size_{{ $i }}"
-                    class="form-control size-input-check" placeholder="Size"
-                    value="{{ (is_numeric($sub_jo_size) && $sub_jo_size > 0) ? $sub_jo_size : '' }}" 
-                    {{ (is_numeric($sub_jo_size) && $sub_jo_size > 0) ? 'readonly' : '' }}>
+
+
+            <td class="bag-only" style="min-width: 250px;">
+                <select name="size_id[]" id="size_id_{{ $i }}" class="form-control select2Dropdown">
+                    <option value="">Select Size</option>
+                    @foreach($sizes as $sz)
+                        <option value="{{ $sz->id }}">{{ $sz->size }}</option>
+                    @endforeach
+                </select>
             </td>
 
             <td class="bag-only" style="min-width: 350px;">

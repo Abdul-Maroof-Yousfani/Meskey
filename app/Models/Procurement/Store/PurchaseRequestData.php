@@ -36,7 +36,8 @@ class PurchaseRequestData extends Model
         'net_amount',
         'packing_id',
         'module_type',
-        'tolerance_percentage'
+        'tolerance_percentage',
+        'size_id'
     ];
 
     protected $casts = [
@@ -114,5 +115,10 @@ class PurchaseRequestData extends Model
     public function approval()
     {
         return $this->hasMany(PurchaseItemApprove::class, 'purchase_request_data_id');
+    }
+
+    public function size_model()
+    {
+        return $this->belongsTo(\App\Models\Master\Size::class, 'size_id');
     }
 }
