@@ -84,6 +84,11 @@
                value="{{ $data->tolerance }}" disabled readonly>
            <input type="hidden" name="tolerance[]" value="{{ $data->tolerance }}">
         </td>
+        <td style="min-width: 150px;" class="bag-only">
+           <input type="text" id="tolerance_percentage_{{ $key }}" class="form-control tolerance_percentage"
+               value="{{ $data->tolerance_percentage }}" disabled readonly>
+           <input type="hidden" name="tolerance_percentage[]" value="{{ $data->tolerance_percentage }}">
+        </td>
           <td style="min-width: 200px;" class="bag-only">
            
            <input  type="text" id="brands_{{ $key }}" class="form-control brands"

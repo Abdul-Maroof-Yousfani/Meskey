@@ -93,6 +93,7 @@
                             <th style="min-width: 160px;">Delivery Date</th>
                             <th class="col-sm-3 bag-only">Min Weight (gm)</th>
                             <th class="col-sm-3 bag-only">Tolerance</th>
+                            <th class="col-sm-3 bag-only">Tolerance %</th>
                             <th class="col-sm-3 bag-only">Brand</th>
                             <th class="col-sm-3 bag-only">Color</th>
                             <th class="col-sm-3 bag-only">Cons./sq. in.</th>
@@ -210,6 +211,13 @@
                                         id="tolerance_{{ $key }}" class="form-control">
                                     <input type="hidden" name="tolerance[]"
                                         value="{{ $data->purchase_request?->tolerance ?? null }}">
+                                </td>
+                                <td style="width: 30%" class="bag-only">
+                                    <input style="width: 100px" type="text" readonly
+                                        value="{{ $data->purchase_request?->tolerance_percentage ?? null }}"
+                                        id="tolerance_percentage_{{ $key }}" class="form-control">
+                                    <input type="hidden" name="tolerance_percentage[]"
+                                        value="{{ $data->purchase_request?->tolerance_percentage ?? null }}">
                                 </td>
                                 <td style="width: 30%" class="bag-only">
                                     <input style="width: 100px" type="text" readonly

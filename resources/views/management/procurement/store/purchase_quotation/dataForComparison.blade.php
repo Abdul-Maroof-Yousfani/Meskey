@@ -80,6 +80,8 @@
                         <th style="min-width: 150px;">Delivery Date</th>
                         <th style="min-width: 200px;">Job Order</th>
                         <th style="min-width: 120px;">Status</th>
+                        <th style="min-width: 150px;">Tolerance</th>
+                        <th style="min-width: 150px;">Tolerance %</th>
                         <th style="min-width: 200px;">Remarks</th>
                     </tr>
                 </thead>
@@ -135,6 +137,8 @@
                                     @endphp
                                     <span class="badge {{ $badgeClass }}">{{ $data->am_approval_status }}</span>
                                 </td>
+                                <td>{{ $data->purchase_request->tolerance ?? '-' }}</td>
+                                <td>{{ $data->purchase_request->tolerance_percentage ?? '-' }}</td>
                                 <td>{{ $data->remarks ?? '-' }}</td>
                             </tr>
                         @endforeach

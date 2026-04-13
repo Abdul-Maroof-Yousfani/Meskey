@@ -100,6 +100,7 @@
                             <th>Delivery Date <span class="text-danger">*</span></th>
                             <th class="bag-only">Min Weight (gm)</th>
                             <th class="bag-only">Tolerance</th>
+                            <th class="bag-only">Tolerance %</th>
                             <th class="bag-only">Brands</th>
                             <th class="bag-only">Color</th>
                             <th class="bag-only">Cons./sq. in.</th>
@@ -214,7 +215,7 @@
                                 </td>
                                 <td style="min-width: 180px;">
                                     <input type="date" name="delivery_date[{{ $data->id }}]" 
-                                        value="" id="delivery_date_{{ $key }}" 
+                                        value="{{ $data->delivery_date }}" id="delivery_date_{{ $key }}" 
                                         class="form-control" min="{{ date('Y-m-d') }}" required>
                                 </td>
 
@@ -232,6 +233,13 @@
                                         id="tolerance_{{ $key }}" class="form-control" readonly>
                                     <input type="hidden" name="tolerance[]"
                                         value="{{ $data->purchase_request?->tolerance ?? null }}">
+                                </td>
+                                <td style="min-width: 150px;" class="bag-only">
+                                    <input type="text"
+                                        value="{{ $data->purchase_request?->tolerance_percentage ?? null }}"
+                                        id="tolerance_percentage_{{ $key }}" class="form-control" readonly>
+                                    <input type="hidden" name="tolerance_percentage[]"
+                                        value="{{ $data->purchase_request?->tolerance_percentage ?? null }}">
                                 </td>
                                 <td style="min-width: 200px;" class="bag-only">
                                     <input  type="text"
@@ -406,6 +414,7 @@
                 <td style="min-width: 180px;"><input type="date" name="delivery_date[]" id="delivery_date_\${index}" class="form-control" min="{{ date('Y-m-d') }}" value="{{ date('Y-m-d') }}" required></td>
                 
                 <td class="bag-only" style="min-width: 200px;"></td>
+                <td class="bag-only" style="min-width: 150px;"></td>
                 <td class="bag-only" style="min-width: 150px;"></td>
                 <td class="bag-only" style="min-width: 200px;"></td>
                 <td class="bag-only" style="min-width: 200px;"></td>

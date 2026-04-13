@@ -88,6 +88,7 @@
                         <th>Vendor</th>
                         <th class="bag-only">Min Weight (gm)</th>
                         <th class="bag-only">Tolerance</th>
+                        <th class="bag-only">Tolerance %</th>
                         <th class="bag-only">Brands</th>
                         <th class="bag-only">Color</th>
                         <th class="bag-only">Cons./sq. in.</th>
@@ -190,6 +191,9 @@
                 </td>
                 <td class="bag-only">
                     <input style="width: 100px" type="text" readonly value="{{ $data->purchase_request?->tolerance ?? null }}" class="form-control">
+                </td>
+                <td class="bag-only">
+                    <input style="width: 100px" type="text" readonly value="{{ $data->purchase_request?->tolerance_percentage ?? null }}" class="form-control">
                 </td>
                 <td class="bag-only">
                     <input style="width: 100px" type="text" readonly value="{{ getBrandById($data->purchase_request?->brand_id ?? null)?->name ?? null }}" class="form-control">
