@@ -72,7 +72,7 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label class="form-label">Supplier:</label>
-                <select id="vendor_id" name="vendor_id" class="form-control item-select select2">
+                <select id="vendor_id" name="vendor_id" class="form-control item-select select2" @disabled($purchaseOrder->purchase_quotation_id)>
                     <option value="">Select Vendor</option>
                     @foreach (get_supplier() as $supplier)
                         <option value="{{ $supplier->id }}"
@@ -80,9 +80,9 @@
                             {{ $supplier->name }}
                         </option>
                     @endforeach
-                    <input type="hidden" name="supplier_id" value="{{ optional($purchaseOrder)->supplier_id }}"
-                        id="supplier_id">
                 </select>
+                <input type="hidden" name="supplier_id" value="{{ optional($purchaseOrder)->supplier_id }}"
+                    id="supplier_id">
             </div>
         </div>
 
@@ -457,16 +457,39 @@
 
         $(document).on('change', '#quotation_no', function() {
             const prId = $('select[name="purchase_request_id"]').val();
-            if (prId) {
-                const quotationNo = $(this).val();
-                if (quotationNo) {
-                    // When changing to a NEW quotation in edit mode, 
-                    // we use approve-item logic to potentially load NEW items
-                    // unless you want to keep existing PO items.
-                    // Usually edit is more restrictive, but matching create's logic for now.
+            const quotationNo = $(this).val();
+
+            if (quotationNo) {
+                // 1. Fetch and set Supplier
+                $.ajax({
+                    url: "{{ route('store.pq.get.supplier') }}",
+                    type: 'GET',
+                    data: { pq_id: quotationNo },
+                    success: function(response) {
+                        if (response.length > 0) {
+                            const supplier = response[0];
+                            // Update select2 dropdown and hidden input
+                            $('#vendor_id').val(supplier.id).trigger('change.select2');
+                            $('#supplier_id').val(supplier.id);
+                            // Freeze field
+                            $('#vendor_id').prop('disabled', true);
+                        }
+                    }
+                });
+
+                // 2. Load items
+                if (prId) {
                     get_purchase_with_quotation(prId, quotationNo);
                 }
+            } else {
+                // Unfreeze if no quotation is selected
+                $('#vendor_id').prop('disabled', false);
             }
+        });
+
+        // Ensure hidden input is updated if manual selection is enabled
+        $(document).on('change', '#vendor_id', function() {
+            $('#supplier_id').val($(this).val());
         });
     });
 
