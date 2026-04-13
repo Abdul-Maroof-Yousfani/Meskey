@@ -4,6 +4,8 @@
             <th class="col-sm-2">Contract No</th>
             <th class="col-sm-2">Supplier</th>
             <th class="col-sm-2">Commodity</th>
+            <th class="col-sm-1">Truck No</th>
+            <th class="col-sm-1">Bilty No</th>
             <th class="col-sm-1">Loading date</th>
             <th class="col-sm-2">Amounts</th>
             <th class="col-sm-1">Tot. Req. Amt.</th>
@@ -24,6 +26,8 @@
                     <td>{{ $ticket->qcProduct->name ?? 'N/A' }}
                         {{-- <br>{{ $ticket->purchaseOrder->qcProduct->name ?? 'N/A' }} --}}
                     </td>
+                    <td>{{ $ticket->truck_no ?? 'N/A' }}</td>
+                    <td>{{ $ticket->bilty_no ?? 'N/A' }}</td>
                     <td>
                         {{ $ticket ? \Carbon\Carbon::parse($ticket->loading_date)->format('Y-m-d') : 'N/A' }}
                     </td>

@@ -58,13 +58,16 @@
         
         $currentInputQty = (float)$data->qty;
     } else {
-        $sumOrderedPR = $prSource ? (float)($prSource->purchase_order_data->filter(function($poItem){
+        $activePOId = $current_po_id ?? null;
+        $sumOrderedPR = $prSource ? (float)($prSource->purchase_order_data->filter(function($poItem) use ($activePOId) {
+             if ($activePOId && $poItem->purchase_order_id == $activePOId) return false;
              return ($poItem->am_approval_status != 'rejected') && (optional($poItem->purchase_order)->am_approval_status != 'rejected');
         })->sum('qty') ?? 0) : 0;
         $remainingQty = $prTotal - $sumOrderedPR;
         
         if ($pqSource) {
-            $sumOrderedPQ = (float)($pqSource->purchase_order_data->filter(function($poItem){
+            $sumOrderedPQ = (float)($pqSource->purchase_order_data->filter(function($poItem) use ($activePOId) {
+                 if ($activePOId && $poItem->purchase_order_id == $activePOId) return false;
                  return ($poItem->am_approval_status != 'rejected') && (optional($poItem->purchase_order)->am_approval_status != 'rejected');
             })->sum('qty') ?? 0);
             $remainingQty = min($remainingQty, $pqTotal - $sumOrderedPQ);
@@ -109,7 +112,7 @@
 
         </td>
 
-        <td style="min-width: 400px;">
+        <td style="min-width: 600px;">
             <select id="item_id_{{ $key }}" disabled onchange="get_uom({{ $key }})"
                 class="form-control item-select select2" data-index="{{ $key }}">
                 @foreach (get_product_by_id($data->item_id) as $item)
@@ -215,6 +218,10 @@
             <input  type="number" readonly name="min_weight[]" value="{{ $data->min_weight ? $data->min_weight : $prSource->min_weight }}"
                 id="min_weight_{{ $key }}" class="form-control" step="0.01" min="0">
         </td>
+        <td style="min-width: 150px;" class="bag-only">
+            <input type="text" readonly name="tolerance[]" value="{{ $data->tolerance ? $data->tolerance : $prSource->tolerance }}"
+                id="tolerance_{{ $key }}" class="form-control">
+        </td>
         <td style="min-width: 200px;" class="bag-only">
             <input  type="text" readonly name="brand[]" value="{{ getBrandById($data->brand_id ? $data->brand_id : $prSource->brand_id)?->name ?? null }}"
                 id="brand_{{ $key }}" class="form-control" step="0.01" min="0">
@@ -228,8 +235,8 @@
                 id="construction_per_square_inch_{{ $key }}" class="form-control" step="0.01" min="0">
         </td>
          <td style="min-width: 200px;" class="bag-only">
-            <input  type="text" readonly name="size[]" value="{{ getSizeById($data->size ? $data->size : $prSource->size)?->size ?? null }}"
-                id="size_{{ $key }}" class="form-control" step="0.01" min="0">
+            <input  type="text" readonly name="size[]" value="{{ $data->size ? $data->size : $prSource->size }}"
+                id="size_{{ $key }}" class="form-control size-input-check" step="0.01" min="0">
         </td>
          <td style="min-width: 200px;" class="bag-only">
                 <select class="form-control select2" multiple disabled>

@@ -71,6 +71,7 @@ class SecondWeighbridgeController extends Controller
         $data = [
             'ArrivalLocations' => ArrivalLocation::where('status', 'active')->get(),
             'ArrivalTickets' => ArrivalTicket::with('unloadingLocation')
+                ->whereIn('document_approval_status', ['half_approved', 'fully_approved'])
                 ->where('second_weighbridge_status', 'pending')
                 // ->when(!$isSuperAdmin, function ($query) use ($authUser) {
                 //     return $query->whereHas('unloadingLocation', function ($q) use ($authUser) {
@@ -125,9 +126,9 @@ class SecondWeighbridgeController extends Controller
     public function edit($id)
     {
         $data['SecondWeighbridge'] = SecondWeighbridge::findOrFail($id);
-        $data['ArrivalLocations'] =  ArrivalLocation::where('status', 'active')->get();
-        $data['ArrivalTickets'] =  ArrivalTicket::where('second_weighbridge_status', 'pending')->get();
-        $data['ArrivalTicket'] =  ArrivalTicket::where('id',  $data['SecondWeighbridge']->arrival_ticket_id)->first();
+        $data['ArrivalLocations'] = ArrivalLocation::where('status', 'active')->get();
+        $data['ArrivalTickets'] = ArrivalTicket::where('second_weighbridge_status', 'pending')->get();
+        $data['ArrivalTicket'] = ArrivalTicket::where('id', $data['SecondWeighbridge']->arrival_ticket_id)->first();
 
         return view('management.arrival.second_weighbridge.edit', $data);
     }

@@ -112,14 +112,14 @@
                                 <table class="table m-0" style="table-layout: fixed; width: 100%;">
                                     <thead>
                                         <tr>
-                                            <th style="width: 13%;">Order No</th>
-                                            <th style="width: 13%;">Request No</th>
-                                            <th style="width: 13%;">Quotation No</th>
-                                            <th style="width: 14%;">Category- item</th>
-                                            <th style="width: 12%;">Supplier</th>
-                                            <th style="width: 8%;">Qty</th>
+                                            <th style="width: 10%;">Order No</th>
+                                            <th style="width: 10%;">Request No</th>
+                                            <th style="width: 10%;">Quotation No</th>
+                                            <th style="width: 25%;">Category- item</th>
+                                            <th style="width: 10%;">Supplier</th>
+                                            <th style="width: 7%;">Qty</th>
                                             <th style="width: 6%;">Rate</th>
-                                            <th style="width: 7%;">Amount</th>
+                                            <th style="width: 8%;">Amount</th>
                                             <th style="width: 7%;">Status</th>
                                             <th style="width: 7%;">Action</th>
                                         </tr>

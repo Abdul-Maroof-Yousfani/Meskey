@@ -47,6 +47,15 @@ class AppServiceProvider extends ServiceProvider
             return "<?php endif; ?>";
         });
 
+        Blade::if('canApprove', function ($slug) {
+            if (!auth()->check()) {
+                return false;
+            }
+            return \App\Models\ApprovalsModule\ApprovalModuleRole::whereHas('module', function ($q) use ($slug) {
+                $q->where('slug', $slug);
+            })->whereIn('role_id', auth()->user()->roles->pluck('id'))->exists();
+        });
+
         Blade::directive('routerLink', function ($routeUrl) {
             return "<?php echo 'href=\"' . $routeUrl . '\" onclick=\"loadPageContent(\\\".'. $routeUrl .'.\\\")\"'; ?>";
         });

@@ -23,6 +23,7 @@ class QCRequest extends FormRequest
     {
         return [
             "average_weight_of_one_bag" => "required",
+            "sample_average_weight" => "nullable",
             "size" => "required",
             "bio" => "required",
             "smell" => "required",
@@ -55,7 +56,11 @@ class QCRequest extends FormRequest
                         $fail("Accepted quantity, and Rejected quantity should be equal to $qty");
                     }
                 }
-            ], 
+            ],
+            "net_weight" => "required|array|size:10",
+            "net_weight.*" => "required|numeric|min:0.01",
+            "bag_weight" => "required|array|size:10",
+            "bag_weight.*" => "required|numeric|min:1",
         ];
     }
 }

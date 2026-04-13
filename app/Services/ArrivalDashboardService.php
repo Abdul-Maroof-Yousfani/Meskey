@@ -79,8 +79,8 @@ class ArrivalDashboardService
 
 
         $initialSamplingRequested = ArrivalSamplingRequest::whereHas('arrivalTicket', function ($q) use ($companyId, $dateRange) {
-            $q->where('company_id', $companyId)
-                ->whereBetween('created_at', $dateRange);
+            $q->where('company_id', $companyId);
+            // ->whereBetween('created_at', $dateRange);
         })
 
             //Superadmin
@@ -104,8 +104,8 @@ class ArrivalDashboardService
 
 
         $initialRe_SamplingRequested = ArrivalSamplingRequest::whereHas('arrivalTicket', function ($q) use ($companyId, $dateRange) {
-            $q->where('company_id', $companyId)
-                ->whereBetween('created_at', $dateRange);
+            $q->where('company_id', $companyId);
+            // ->whereBetween('created_at', $dateRange);
         })
 
             //Superadmin
@@ -130,8 +130,8 @@ class ArrivalDashboardService
 
 
         $initialSamplingDone = ArrivalSamplingRequest::whereHas('arrivalTicket', function ($q) use ($companyId, $dateRange) {
-            $q->where('company_id', $companyId)
-                ->whereBetween('created_at', $dateRange);
+            $q->where('company_id', $companyId);
+            // ->whereBetween('created_at', $dateRange);
         })
 
             ->where('sampling_type', 'initial')
@@ -154,8 +154,8 @@ class ArrivalDashboardService
             ->count();
 
         $initialSamplingDonePurchaserwise = ArrivalSamplingRequest::whereHas('arrivalTicket', function ($q) use ($companyId, $dateRange) {
-            $q->where('company_id', $companyId)
-                ->whereBetween('created_at', $dateRange);
+            $q->where('company_id', $companyId);
+            // ->whereBetween('created_at', $dateRange);
         })
 
             ->where('sampling_type', 'initial')
@@ -179,8 +179,8 @@ class ArrivalDashboardService
 
 
         $resamplingRequired = ArrivalSamplingRequest::whereHas('arrivalTicket', function ($q) use ($companyId, $dateRange) {
-            $q->where('company_id', $companyId)
-                ->whereBetween('created_at', $dateRange);
+            $q->where('company_id', $companyId);
+            // ->whereBetween('created_at', $dateRange);
         })
             // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
             //     return $q->whereHas('arrivalTicket', function ($sq) {
@@ -210,7 +210,7 @@ class ArrivalDashboardService
                 return $q->where('location_id', $request->location_id);
             })
             ->whereIn('location_id', getUserCurrentCompanyLocations())
-            ->whereBetween('created_at', $dateRange)
+            // ->whereBetween('created_at', $dateRange)
             ->count();
 
         $rejectedTickets = ArrivalTicket::where('company_id', $companyId)
@@ -333,8 +333,8 @@ class ArrivalDashboardService
             // ->whereIn('arrival_tickets.document_approval_status', ['half_approved', 'fully_approved'])
             ->where('arrival_tickets.location_transfer_status', 'transfered')
             ->whereIn('arrival_tickets.location_id', getUserCurrentCompanyLocations())
-            ->whereIn('arrival_locations.id', getUserCurrentCompanyArrivalLocations())
-            ->whereBetween('arrival_tickets.created_at', $dateRange);
+            ->whereIn('arrival_locations.id', getUserCurrentCompanyArrivalLocations());
+        // ->whereBetween('arrival_tickets.created_at', $dateRange);
 
         // Apply location_id filter on arrival_tickets.location_id (original logic)
         if ($request->has('location_id') && $request->location_id != '') {
@@ -379,8 +379,8 @@ class ArrivalDashboardService
             ->whereDoesntHave('arrivalSamplingRequests', function ($q) {
                 $q->where('sampling_type', 'inner')
                     ->where('approved_status', 'pending');
-            })
-            ->whereBetween('arrival_tickets.created_at', $dateRange);
+            });
+        // ->whereBetween('arrival_tickets.created_at', $dateRange);
 
         // Apply location_id filter on arrival_tickets.location_id (original logic)
         if ($request->has('location_id') && $request->location_id != '') {
@@ -405,8 +405,8 @@ class ArrivalDashboardService
         // dd($weighbridgePendingLocationwise);
 
         $innerSamplingRequested = ArrivalSamplingRequest::whereHas('arrivalTicket', function ($q) use ($companyId, $dateRange) {
-            $q->where('company_id', $companyId)
-                ->whereBetween('created_at', $dateRange);
+            $q->where('company_id', $companyId);
+            // ->whereBetween('created_at', $dateRange);
         })
             // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
             //     return $q->whereHas('arrivalTicket', function ($sq) {
@@ -428,8 +428,8 @@ class ArrivalDashboardService
 
 
         $innerRe_SamplingRequested = ArrivalSamplingRequest::whereHas('arrivalTicket', function ($q) use ($companyId, $dateRange) {
-            $q->where('company_id', $companyId)
-                ->whereBetween('created_at', $dateRange);
+            $q->where('company_id', $companyId);
+            // ->whereBetween('created_at', $dateRange);
         })
             // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
             //     return $q->whereHas('arrivalTicket', function ($sq) {
@@ -450,8 +450,8 @@ class ArrivalDashboardService
             ->count();
 
         $innerSamplingPendingApproval = ArrivalSamplingRequest::whereHas('arrivalTicket', function ($q) use ($companyId, $dateRange) {
-            $q->where('company_id', $companyId)
-                ->whereBetween('created_at', $dateRange);
+            $q->where('company_id', $companyId);
+            // ->whereBetween('created_at', $dateRange);
         })
             // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
             //     return $q->whereHas('arrivalTicket', function ($sq) {
@@ -491,7 +491,7 @@ class ArrivalDashboardService
             // ->when(auth()->user()->user_type != 'super-admin', function ($q) {
             //     return $q->where('location_id', auth()->user()->company_location_id);
             // })
-            ->whereBetween('created_at', $dateRange)
+            // ->whereBetween('created_at', $dateRange)
             ->count();
 
         $secondWeighbridgePending = ArrivalTicket::where('company_id', $companyId)
@@ -505,7 +505,7 @@ class ArrivalDashboardService
             ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                 return $q->where('location_id', $request->location_id);
             })
-            ->whereBetween('created_at', $dateRange)
+            // ->whereBetween('created_at', $dateRange)
             ->count();
 
         $freightPending = ArrivalTicket::where('company_id', $companyId)
@@ -519,7 +519,7 @@ class ArrivalDashboardService
                 return $q->where('location_id', $request->location_id);
             })
             ->whereIn('location_id', getUserCurrentCompanyLocations())
-            ->whereBetween('created_at', $dateRange)
+            // ->whereBetween('created_at', $dateRange)
             ->count();
 
         $freightReady = ArrivalTicket::where('company_id', $companyId)
@@ -532,7 +532,7 @@ class ArrivalDashboardService
             ->when($request->has('location_id') && $request->location_id != '', function ($q) use ($request) {
                 return $q->where('location_id', $request->location_id);
             })
-            ->whereBetween('created_at', $dateRange)
+            // ->whereBetween('created_at', $dateRange)
             ->count();
 
 

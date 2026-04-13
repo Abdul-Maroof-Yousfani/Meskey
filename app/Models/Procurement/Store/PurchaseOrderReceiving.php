@@ -168,5 +168,9 @@ class PurchaseOrderReceiving extends Model
             WHERE purchase_bills.purchase_order_receiving_id = purchase_order_receivings.id
         )");
     }
+    public function rejectionReturns(): HasMany
+    {
+        return $this->hasMany(RejectionReturn::class, 'grn_id');
+    }
 
 }

@@ -79,22 +79,22 @@ class PaymentRequestApprovalController extends Controller
 
             // Set Sauda Type logic as requested: $ticket->saudaType->name
             $moduleType = optional($request->paymentRequestData)->module_type;
-            $ticket = ($moduleType === 'purchase_order') 
-                ? $request->paymentRequestData?->purchaseTicket 
+            $ticket = ($moduleType === 'purchase_order')
+                ? $request->paymentRequestData?->purchaseTicket
                 : $request->paymentRequestData?->arrivalTicket;
-            
+
             $saudaType = optional($ticket?->saudaType)->name;
-            
+
             // Fallback to Purchase Order if ticket doesn't have its own sauda type
             if (!$saudaType) {
                 $saudaType = optional($ticket?->purchaseOrder?->saudaType)->name;
             }
-            
+
             // Final fallback to module type detection
             if (!$saudaType) {
                 $saudaType = (in_array($moduleType, ['ticket', 'freight_payment'])) ? 'pohanch' : 'thadda';
             }
-            
+
             $request->sauda_type = $saudaType;
 
             return $request;
@@ -703,11 +703,27 @@ class PaymentRequestApprovalController extends Controller
             ])->render();
         } else if ($moduleType == 'ticket') {
             if ($ticket) {
+
                 $samplingRequest = ArrivalSamplingRequest::where('arrival_ticket_id', $ticket->id)
                     ->whereIn('approved_status', ['approved', 'rejected'])
                     ->latest()
                     ->first();
+                $freightPaymentRequestgrossAmount = paymentRequestData::where('ticket_id', $ticket->id)
+                    // ->where('purchase_order_id', $arrivalTicket->arrival_purchase_order_id)
+                    ->where('module_type', 'freight_payment')
+                    ->latest()->first(); // id ya created_at ke hisaab se last record
+                // dd($freightPaymentRequestgrossAmount);
 
+
+                if ($freightPaymentRequestgrossAmount) {
+                    if ($freightPaymentRequestgrossAmount->is_paid_by_supplier == 1) {
+                        $freightPaymentRequestgrossAmount = $freightPaymentRequestgrossAmount->godown_penalty + $freightPaymentRequestgrossAmount->other_minus_labour + $freightPaymentRequestgrossAmount->commission_amount;
+                    } else {
+                        $freightPaymentRequestgrossAmount = $freightPaymentRequestgrossAmount->gross_amount;
+                    }
+                } else {
+                    $freightPaymentRequestgrossAmount = 0;
+                }
                 if ($samplingRequest) {
                     $rmPoSlabs = collect();
 
@@ -742,6 +758,7 @@ class PaymentRequestApprovalController extends Controller
                     ->latest()
                     ->first();
             }
+
             $requestPurchaseForm = view('management.procurement.raw_material.ticket_payment_request.snippets.requestPurchaseForm', [
                 'arrivalTicket' => $ticket,
                 'ticket' => $ticket,
@@ -756,7 +773,8 @@ class PaymentRequestApprovalController extends Controller
                 'paymentRequestData' => $paymentRequestData,
                 'otherDeduction' => $otherDeduction,
                 'isRequestApprovalPage' => true,
-                'paymentRequest' => $paymentRequest
+                'paymentRequest' => $paymentRequest,
+                'freightPaymentRequestgrossAmount' => $freightPaymentRequestgrossAmount,
             ])->render();
         } else if ($moduleType == 'purchase_order') {
             if ($ticket) {

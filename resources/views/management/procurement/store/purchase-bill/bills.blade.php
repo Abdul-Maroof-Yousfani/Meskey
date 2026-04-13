@@ -2,35 +2,25 @@
 @foreach ($dataItems ?? [] as $key => $data)
     @php
         $remainingQty = ($data->category_id == 38) ? ($data->qc?->accepted_quantity ?? 0) : ($data->qty ?? 0);
+        $rejectedQty = ($data->category_id == 38) ? ($data->qc?->rejected_quantity ?? 0) : ($data->qty ?? 0);
+        $deductionPerBag = ($data->category_id == 38) ? ($data->qc?->deduction_per_bag ?? 0) : null;
+        $deduction_type = ($data->category_id == 38) ? $data->qc?->deduction_type ?? '' : '';
+        $deduction = 0;
+        $acceptedQty = ($data->category_id == 38) ? ($data->qc?->accepted_quantity ?? 0) : ($data->qty ?? 0);
+
+        if($deduction_type != '') {
+            if($deduction_type == 'full_deduction') {
+                $remainingQty += $rejectedQty;
+                $deduction = $remainingQty * $deductionPerBag;
+            } else if($deduction_type == 'half_deduction') {
+                $deduction = $rejectedQty * $deductionPerBag;
+                $remainingQty += $rejectedQty;
+            }
+        }
+
+
     @endphp
-    {{-- @php
-   
 
-    $currentRate = $data->rate ?? 0;
-    $currentQty = $data->qty ?? 0;
-    $currentTotal = ($currentRate !== '' && $currentQty > 0) ? (float)$currentRate * (float)$currentQty : '';
-
-   // $currentSupplierId = $quotedSupplierId ?: '';
-    //$currentSupplierName = $quoted
-    <p>test</p>SupplierName ?: '';
-@endphp
-
-
-@if (isset($data->purchase_order_data))
-    @php
-        $totalOrdered = $data->purchase_order_data->sum('qty');
-    @endphp
-@else
-    @php
-        $totalOrdered = 0;
-    @endphp
-@endif
-
-@php
-    $remainingQty = $data->qty - $totalOrdered;
-    $isQuotationAvailable = ($data->rate) > 0 ? true : false;
-@endphp
-@if ($remainingQty <= 0) @continue @endif; --}}
 
 <tr id="row_{{ $key }}" data-category-id="{{ $data->category_id }}">
 
@@ -63,6 +53,18 @@
 
         <td style="min-width: 150px;">
             <input style="width: 100%" type="number" onkeyup=""
+                onblur="" name="accepted_qty[]" value="{{ $acceptedQty }}"
+                id="accepted_qty_{{ $key }}" class="form-control accepted_qty" step="0.01" readonly {{-- {{ $isQuotationAvailable ? 'readonly' : '' }} --}}>
+        </td>
+
+        <td style="min-width: 150px;">
+            <input style="width: 100%" type="number" onkeyup=""
+                onblur="" name="rejected_qty[]" value="{{ $rejectedQty }}"
+                id="rejected_qty_{{ $key }}" class="form-control rejected_qty" step="0.01" readonly {{-- {{ $isQuotationAvailable ? 'readonly' : '' }} --}}>
+        </td>
+
+        <td style="min-width: 150px;">
+            <input style="width: 100%" type="number" onkeyup=""
                 onblur="" name="rate[]" value="{{ $data->purchase_order_data->rate }}"
                 id="rate_{{ $key }}" class="form-control rate" step="0.01" readonly>
         </td>
@@ -78,7 +80,7 @@
 
             <input style="width: 100%" type="number" name="discount_id[]" value="{{ 0 }}"
                 id="total_{{ $key }}" class="form-control discounts" onkeyup="calculatePercentage(this)"
-                step="0.01" min="0">
+                step="0.01" min="0" max="100">
         </td>
 
         <td style="min-width: 200px;">
@@ -95,7 +97,7 @@
 
             <td style="min-width: 200px;" class="deduction-col">
                 <input style="width: 100%" type="number" readonly name="deduction[]"
-                    value="{{ ($data->qc?->deduction_per_bag ?? 0) * $remainingQty }}" id="deduction_{{ $key }}"
+                    value="{{ $deduction }}" id="deduction_{{ $key }}"
                     class="form-control deduction" step="0.01" min="0" readonly>
             </td>
         @else
@@ -104,7 +106,7 @@
         @endif
 
         @php
-            $deduction = ($data->category_id == 38) ? (($data->qc?->deduction_per_bag ?? 0) * $remainingQty) : 0;
+            // $deduction = ($data->category_id == 38) ? (($data->qc?->deduction_per_bag ?? 0) * $remainingQty) : 0;
             $net_amount = ($remainingQty * $data->purchase_order_data->rate) - $deduction;
         @endphp
 
@@ -130,7 +132,7 @@
         <td style="min-width: 150px;">
             <input style="width: 100%" type="number" onkeyup="calculatePercentage(this)" name="tax_id[]"
                 value="{{ getTaxPercentageById($data->sales_tax) }}" id="tax_id_{{ $key }}"
-                class="form-control tax_id" step="0.01" min="0">
+                class="form-control tax_id" step="0.01" min="0" max="100">
         </td>
         @php
             $gst_amount = (getTaxPercentageById($data->sales_tax) / 100) * ($net_amount);
@@ -196,8 +198,20 @@
 
     const rateVal = parseFloat(rate.val()) || 0;
     const qtyVal = parseFloat(qty.val()) || 0;
-    const discountPercentVal = parseFloat(discount_percent.val()) || 0;
-    const taxPercentVal = parseFloat(tax_percent.val()) || 0;
+    let discountPercentVal = parseFloat(discount_percent.val()) || 0;
+    let taxPercentVal = parseFloat(tax_percent.val()) || 0;
+
+    if (discountPercentVal > 100) {
+        alert("Discount Percentage cannot exceed 100");
+        discount_percent.val(100);
+        discountPercentVal = 100;
+    }
+
+    if (taxPercentVal > 100) {
+        alert("Tax Percentage cannot exceed 100");
+        tax_percent.val(100);
+        taxPercentVal = 100;
+    }
 
     // const percent_amount_of_gross = 1;
 

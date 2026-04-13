@@ -23,18 +23,27 @@
                     <div class="card">
                         <div class="card-header">
                             <form id="filterForm" class="form">
-                                <div class="row ">
-                                    <div class="col-md-12 my-1 ">
-                                        <div class="row justify-content-end text-right">
-                                            <div class="col-md-2">
-                                                <label for="customers" class="form-label">Search</label>
-                                                <input type="hidden" name="page" value="{{ request('page', 1) }}">
-                                                <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
-                                                <input type="text" class="form-control" id="search"
-                                                    placeholder="Type Ticket No, Supplier Name " name="search"
-                                                    value="{{ request('search') }}">
-                                            </div>
-                                        </div>
+                                <div class="row mx-0 align-items-end flex-nowrap" style="overflow-x: auto; padding-bottom: 10px;">
+                                    <div class="px-1 text-left" style="min-width: 180px; flex: 1 1 180px;">
+                                        <label for="daterange" class="form-label text-nowrap">Date Range</label>
+                                        <input type="text" name="daterange" class="form-control"
+                                            value="{{ request('daterange', \Carbon\Carbon::now()->subYear()->format('m/d/Y') . ' - ' . \Carbon\Carbon::now()->format('m/d/Y')) }}" />
+                                    </div>
+                                    <div class="px-1 text-left" style="min-width: 180px; flex: 1 1 180px;">
+                                        <label for="unique_no" class="form-label text-nowrap">Ticket No</label>
+                                        <input type="text" class="form-control" name="unique_no" id="unique_no" placeholder="Ticket No">
+                                    </div>
+                                    <div class="px-1 text-left" style="min-width: 180px; flex: 1 1 180px;">
+                                        <label for="commodity_f" class="form-label text-nowrap">Commodity</label>
+                                        <select name="commodity" id="commodity_f" class="form-control select2">
+                                            <option value="">All Commodities</option>
+                                        </select>
+                                    </div>
+                       
+    
+                                    <div class="px-1 text-left" style="min-width: 180px; flex: 1 1 180px;">
+                                        <label for="remark" class="form-label text-nowrap">Remark</label>
+                                        <input type="text" class="form-control" name="remark" id="remark" placeholder="Remark">
                                     </div>
                                 </div>
                             </form>
@@ -67,6 +76,8 @@
     <script>
         $(document).ready(function() {
             filterationCommon(`{{ route($isResampling ? 'get.initial-resampling' : 'get.initialsampling') }}`)
+            initializeDynamicSelect2('#commodity_f', 'products', 'name', 'id', true, false, true, true);
+            initializeDynamicSelect2('#supplier_id_f', 'suppliers', 'name', 'id', true, false, true, true);
         });
     </script>
 @endsection

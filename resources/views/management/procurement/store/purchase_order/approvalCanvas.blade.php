@@ -115,7 +115,8 @@
 
                             <th>Duty</th>
                             @if($isBag)
-                                <th>Min Weight (KG)</th>
+                                <th>Min Weight (gm)</th>
+                                <th>Tolerance</th>
                                 <th>Brand</th>
                                 <th>Color</th>
                                 <th>Cons./sq. in.</th>
@@ -147,8 +148,8 @@
                                     <input type="hidden" name="data_id[]" value="{{ $data->id }}">
                                     <input type="hidden" name="purchase_request_data_id[]" value="{{ $data->purchase_request_data_id }}">
                                 </td>
-                                <td style="width: 30%">
-                                    <select style="width: 100px;" id="item_id_{{ $key }}"
+                                <td style="min-width: 600px;">
+                                    <select style="width: 100%;" id="item_id_{{ $key }}"
                                         onchange="get_uom({{ $key }})" disabled
                                         class="form-control item-select select2" data-index="{{ $key }}">
                                         @foreach (get_product_by_id($data->item_id) as $item)
@@ -253,6 +254,11 @@
                                         class="form-control" step="0.01" min="0">
                                 </td>
                                 <td style="width: 30%">
+                                    <input style="width: 100px;" type="text" readonly name="tolerance[]"
+                                        value="{{ $data->tolerance }}" id="tolerance_{{ $key }}"
+                                        class="form-control">
+                                </td>
+                                <td style="width: 30%">
                                     <input style="width: 100px;" type="text" readonly name="brand[]"
                                         value="{{ $data->brand }}" id="brand_{{ $key }}"
                                         class="form-control" step="0.01" min="0">
@@ -272,9 +278,9 @@
                                 <td style="width: 30%">
                                     <input style="width: 100px;" type="text" readonly name="size[]"
                                         value="{{ $data->size }}" id="size_{{ $key }}"
-                                        class="form-control" step="0.01" min="0">
+                                        class="form-control size-input-check" step="0.01" min="0">
                                 </td>
-                                <td style="width: 30%">
+                                <td style="min-width: 400px;">
                                       <select class="form-control select2" multiple disabled>
                                             @foreach(getStitchingsByIds($data?->purchase_request_data?->stitching ?? "") as $stitching)
                                                 <option value="{{ $stitching->id }}" selected>{{ $stitching->name }}</option>
@@ -380,7 +386,7 @@
                         @endforeach
                     </select>
                 </td>
-                <td style="width: 25%">
+                <td style="min-width: 600px;">
                     <select name="item_id[]" id="item_id_${index}" onchange="get_uom(${index})" class="form-control item-select" data-index="0">
                         
                     </select>
@@ -509,4 +515,10 @@
 
 
      }
- </script>
+     $(document).on('input', '.size-input-check', function() {
+        this.value = this.value.replace(/[^0-9.]/g, '');
+        if ((this.value.match(/\./g) || []).length > 1) {
+            this.value = this.value.replace(/\.+$/, "");
+        }
+    });
+</script>

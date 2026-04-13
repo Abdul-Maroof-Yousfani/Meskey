@@ -68,12 +68,26 @@
                 value="{{ get_uom($data->item_id) }}" disabled readonly>
             <input type="hidden" name="uom[]" value="{{ get_uom($data->item_id) }}">
         </td>
+        <td style="min-width: 180px;">
+            <input type="date" name="delivery_date[]" id="delivery_date_{{ $key }}" 
+                class="form-control" min="{{ date('Y-m-d') }}" value="" required>
+        </td>
         <td style="min-width: 200px;" class="bag-only">
            
            <input  type="text" id="min_weight_{{ $key }}" class="form-control min_weight"
                value="{{ $data->min_weight }}" disabled readonly>
            
            <input type="hidden" name="min_weight[]" value="{{ $data->min_weight }}">
+        </td>
+        <td style="min-width: 150px;" class="bag-only">
+           <input type="text" id="tolerance_{{ $key }}" class="form-control tolerance"
+               value="{{ $data->tolerance }}" disabled readonly>
+           <input type="hidden" name="tolerance[]" value="{{ $data->tolerance }}">
+        </td>
+        <td style="min-width: 150px;" class="bag-only">
+           <input type="text" id="tolerance_percentage_{{ $key }}" class="form-control tolerance_percentage"
+               value="{{ $data->tolerance_percentage }}" disabled readonly>
+           <input type="hidden" name="tolerance_percentage[]" value="{{ $data->tolerance_percentage }}">
         </td>
           <td style="min-width: 200px;" class="bag-only">
            
@@ -97,10 +111,8 @@
            <input type="hidden" name="construction_per_square_inch[]" value="{{ $data->construction_per_square_inch }}">
         </td>
         <td style="min-width: 200px;" class="bag-only">
-           
-           <input  type="text" id="size{{ $key }}" class="form-control size"
-               value="{{ getSizeById($data->size)?->size ?? null }}" disabled readonly>
-           
+           <input  type="text" id="size{{ $key }}" class="form-control size-input-check"
+               value="{{ $data->size }}" readonly>
            <input type="hidden" name="size[]" value="{{ $data->size }}">
         </td>
         <td style="min-width: 200px;" class="bag-only">

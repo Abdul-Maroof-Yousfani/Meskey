@@ -97,73 +97,69 @@ class PurchaseOrderReceivingController extends Controller
             });
         }
 
-        $PurchaseOrderRaw = $query->with(
+        $PurchaseOrderRaw = $query->with([
             'qc',
             'purchase_order_data.purchase_request_data',
             'purchase_order_receiving.purchase_order.purchase_request',
             'category',
             'item',
             'supplier'
-        )
-            ->orderBy("purchase_order_receiving_id", "desc")
-            ->paginate(request('per_page', 25));
+        ])
+        ->orderBy("purchase_order_receiving_id", "desc")
+        ->paginate(request('per_page', 25));
 
         $groupedData = [];
         $processedData = [];
 
         foreach ($PurchaseOrderRaw as $row) {
-            $dc_no = $row->purchase_order_receiving->dc_no;
-            // Handle missing relationships
-            $purchaseRequestNo = $row->purchase_order_receiving->purchase_quotation->purchase_request->purchase_request_no ?? 'N/A';
-            $quotationNo = $row->purchase_order_receiving->purchase_quotation->purchase_quotation_no ?? 'N/A';
-            $orderNo = $row->purchase_order_receiving->purchase_order_receiving_no ?? 'N/A';
-            $itemId = $row->item->id ?? 'unknown';
-            $supplierKey = ($row->supplier->id ?? 'unknown') . '_' . $row->id;
+            $dc_no = $row->purchase_order_receiving->dc_no ?? null;
+
+            // ← Yeh lines change kiye hain
+            $purchaseRequestNo = $row->purchase_order_receiving->purchase_quotation_data->purchase_request->purchase_request_no ?? 'N/A';
+            $quotationNo        = $row->purchase_order_receiving->purchase_quotation_data->purchase_quotation_no ?? 'N/A';
+            $orderNo            = $row->purchase_order_receiving->purchase_order_receiving_no ?? 'N/A';
 
             if ($orderNo === 'N/A') {
                 continue;
             }
 
+            $itemId      = $row->item->id ?? 'unknown';
+            $dataId      = $row->id;
+            $uniqueItemKey = $itemId . '_' . $dataId;
+
+            $supplierKey = ($row->supplier->id ?? 'unknown') . '_' . $dataId;
 
             if (!isset($groupedData[$orderNo])) {
                 $groupedData[$orderNo] = [
-                    'request_data' => $row->purchase_order_receiving->purchase_quotation->purchase_request ?? null,
-                    'quotations' => []
+                    'request_data' => $row->purchase_order_receiving->purchase_quotation_data->purchase_request ?? null,
+                    'quotations'   => []
                 ];
             }
 
             if (!isset($groupedData[$orderNo]['quotations'][$quotationNo])) {
                 $groupedData[$orderNo]['quotations'][$quotationNo] = [
-                    'quotation_data' => $row->purchase_order_receiving->purchase_quotation ?? null,
-                    'orders' => []
+                    'quotation_data' => $row->purchase_order_receiving->purchase_quotation_data ?? null,
+                    'orders'         => []
                 ];
             }
 
             if (!isset($groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo])) {
                 $groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo] = [
                     'order_data' => $row->purchase_order_receiving,
-                    'row' => $row,
-                    'items' => []
+                    'items'      => []
                 ];
             }
 
-            if (!isset($groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo])) {
-                $groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo] = [
-                    'qc' => $row->qc,
-                    'items' => []
+            if (!isset($groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo]['items'][$uniqueItemKey])) {
+                $groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo]['items'][$uniqueItemKey] = [
+                    'item_data'  => $row,
+                    'item_qc'    => $row->qc,
+                    'qc_status'  => $row->qc?->am_approval_status,
+                    'suppliers'  => []
                 ];
             }
 
-            if (!isset($groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo]['items'][$itemId])) {
-                $groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo]['items'][$itemId] = [
-                    'item_data' => $row,
-                    "item_qc" => $row->qc,
-                    'qc_status' => $row->qc?->am_approval_status,
-                    'suppliers' => []
-                ];
-            }
-
-            $groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo]['items'][$itemId]['suppliers'][$supplierKey] = $row;
+            $groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo]['items'][$uniqueItemKey]['suppliers'][$supplierKey] = $row;
         }
 
         // Process grouped data (unchanged)
@@ -410,6 +406,7 @@ class PurchaseOrderReceivingController extends Controller
                     'total' => $request->total[$index] ?? 0,
                     'supplier_id' => $request->supplier_id,
                     'receive_weight' => $request->receive_weight[$index],
+                    'tolerance' => $request->tolerance[$index] ?? null,
                     'remarks' => $request->input('remarks.'.$index),
                 ]);
 
@@ -577,8 +574,8 @@ class PurchaseOrderReceivingController extends Controller
             'remarks' => 'nullable|array',
             'remarks.*' => 'nullable|string|max:1000',
 
-            'receive_weight' => 'nullable|array',
-            'receive_weight.*' => 'nullable|string|max:1000',
+            'receive_weight' => 'required|array',
+            'receive_weight.*' => 'required|numeric|gt:0',
 
         ]);
 
@@ -592,14 +589,15 @@ class PurchaseOrderReceivingController extends Controller
                 "truck_no" => $request->truck_no,
                 "dc_no" => $request->dc_no,
                 "description" => $request->description,
-                "location_id" => $request->location_id
+                "location_id" => $request->location_id,
+                "am_approval_status" => "pending",
+                "am_change_made" => 1
             ]);
 
             $grn_data = PurchaseOrderReceivingData::whereDoesntHave("qc")->where('purchase_order_receiving_id', $PurchaseOrderReceiving->id)->delete();
 
-
             foreach ($request->item_id as $index => $itemId) {
-                if($request->approval_status[$index] === '1') continue;
+                if($request->approval_status && $request->approval_status[$index] === '1') continue;
                 PurchaseOrderReceivingData::create([
                     'purchase_order_receiving_id' => $PurchaseOrderReceiving->id,
                     'category_id' => $request->category_id[$index],
@@ -609,10 +607,12 @@ class PurchaseOrderReceivingController extends Controller
                     'rate' => $request->rate[$index] ?? 0,
                     'total' => $request->total[$index] ?? 0,
                     'supplier_id' => $request->supplier_id,
-                    'receive_weight' => $request->receive_weight[$index],
+                    'receive_weight' => $request->receive_weight[$index] ?? 0,
+                    'tolerance' => $request->tolerance[$index] ?? null,
                     'remarks' => $request->input('remarks.'.$index),
                 ]);
             }
+
 
             DB::commit();
 
