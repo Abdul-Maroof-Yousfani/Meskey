@@ -516,8 +516,8 @@
                     <td style="min-width: 150px;" class="bag-only">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
-                                <input type="text" name="tolerance[]" id="tolerance_${index}" class="form-control tolerance-input"
-                                    placeholder="Tolerance" readonly>
+                                <input type="number" name="tolerance[]" id="tolerance_${index}" class="form-control tolerance-input"
+                                    placeholder="Tolerance" readonly step="0.01">
                             </div>
                         </div>
                     </td>

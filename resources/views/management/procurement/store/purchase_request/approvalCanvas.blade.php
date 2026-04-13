@@ -120,6 +120,7 @@
                 <th class="bag-only" style="min-width: 300px;">Brands</th>
                 <th class="bag-only" style="min-width: 200px;">Min Weight (gm)</th>
                 <th class="bag-only" style="min-width: 150px;">Tolerance</th>
+                <th class="bag-only" style="min-width: 150px;">Tolerance %</th>
                 <th class="bag-only" style="min-width: 300px;">Color</th>
                 <th class="bag-only" style="min-width: 300px;">Cons./sq. in.</th>
                 <th class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">Size</th>
@@ -186,8 +187,10 @@
                 </td>
                 <td class="bag-only" style="min-width: 200px;"><input type="number" name="min_weight[]" id="min_weight_{{ $rowIdApproval }}" class="form-control"
                         step="0.01" min="0" value="{{ $item->min_weight }}" placeholder="Min Weight" readonly></td>
-                <td class="bag-only" style="min-width: 150px;"><input type="text" name="tolerance[]" id="tolerance_{{ $rowIdApproval }}" class="form-control"
-                        value="{{ $item->tolerance }}" placeholder="Tolerance" readonly></td>
+                <td class="bag-only" style="min-width: 150px;"><input type="number" name="tolerance[]" id="tolerance_{{ $rowIdApproval }}" class="form-control tolerance-input"
+                        value="{{ $item->tolerance }}" placeholder="Tolerance" readonly step="0.01"></td>
+                <td class="bag-only" style="min-width: 150px;"><input type="number" name="tolerance_percentage[]" id="tolerance_percentage_{{ $rowIdApproval }}" class="form-control tolerance-percentage-input"
+                        value="{{ $item->tolerance_percentage }}" placeholder="Tol. %" readonly step="0.01" min="0" max="100"></td>
                 <td class="bag-only" style="min-width: 300px;">
                     <select name="color[]" id="color_{{ $rowIdApproval }}" class="form-control item-select color-select"
                         disabled>
@@ -446,8 +449,16 @@
                     <td style="min-width: 150px;" class="bag-only">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
-                                <input type="text" name="tolerance[]" id="tolerance_${index}" class="form-control"
-                                    placeholder="Tolerance">
+                                <input type="number" name="tolerance[]" id="tolerance_${index}" class="form-control tolerance-input"
+                                    placeholder="Tolerance" readonly step="0.01">
+                            </div>
+                        </div>
+                    </td>
+                    <td style="min-width: 150px;" class="bag-only">
+                        <div class="loop-fields">
+                            <div class="form-group mb-0">
+                                <input type="number" name="tolerance_percentage[]" id="tolerance_percentage_${index}" class="form-control tolerance-percentage-input"
+                                    placeholder="Tol. %" step="0.01" min="0" max="100">
                             </div>
                         </div>
                     </td>
@@ -579,5 +590,20 @@
         if ((this.value.match(/\./g) || []).length > 1) {
             this.value = this.value.replace(/\.+$/, "");
         }
+    });
+
+    $(document).on('input', '.tolerance-percentage-input, .min-weight-input', function() {
+        let row = $(this).closest('tr');
+        let minWeight = parseFloat(row.find('.min-weight-input').val()) || 0;
+        let percentage = parseFloat(row.find('.tolerance-percentage-input').val()) || 0;
+        
+        if (percentage > 100) {
+            alert('Tolerance percentage cannot exceed 100%.');
+            row.find('.tolerance-percentage-input').val(100);
+            percentage = 100;
+        }
+
+        let tolerance = (minWeight * percentage / 100).toFixed(2);
+        row.find('.tolerance-input').val(tolerance);
     });
 </script>
