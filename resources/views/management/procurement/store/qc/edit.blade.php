@@ -61,10 +61,10 @@
                             <th style="min-width: 200px;">DC No</th>
                             <th style="min-width: 250px;">Required Weight Per Bag (grams)</th>
                             <!-- <th>Tolerance</th> -->
-                            <th style="min-width: 250px;">Average Weight of 1 Bag (grams)</th>
+                            <th style="min-width: 250px;">Average Weight of 1 Bag (kg)</th>
                             <th style="min-width: 150px;">Total Bags</th>
                             <th style="min-width: 250px;">Total Weight Required (Kg)</th>
-                            <th style="min-width: 250px;">Sample Average Weight (grams)</th>
+                            <th style="min-width: 250px;">Sample Average Weight (kg)</th>
                         </tr>
                     </thead>
                     <tbody id="purchaseOrderBody">

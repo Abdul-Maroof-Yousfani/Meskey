@@ -61,10 +61,10 @@
                             <th style="min-width: 200px;">DC No</th>
                             <th style="min-width: 250px;">Required Weight Per Bag (grams)</th>
                             <!-- <th>Tolerance</th> -->
-                            <th style="min-width: 250px;">Average Weight of 1 Bag (grams)</th>
+                            <th style="min-width: 250px;">Average Weight of 1 Bag (kg)</th>
                             <th style="min-width: 150px;">Total Bags</th>
-                            <th style="min-width: 250px;">Total Weight Required (grams)</th>
-                            <th style="min-width: 250px;">Sample Average Weight (grams)</th>
+                            <th style="min-width: 250px;">Total Weight Required (kg)</th>
+                            <th style="min-width: 250px;">Sample Average Weight (kg)</th>
                         </tr>
                     </thead>
                     <tbody id="purchaseOrderBody">
@@ -126,7 +126,7 @@
                             </td>
 
                             <td>
-                                <input type="text" name="total_weight_required" value="{{ (($purchaseOrderReceivingData->qty ?? 0) * ($purchaseOrderReceivingData?->purchase_order_data?->min_weight ?? 0)) }}" id="total_weight_required" value="Total Weight Required"
+                                <input type="text" name="total_weight_required" value="{{ (($purchaseOrderReceivingData->qty ?? 0) * ($purchaseOrderReceivingData?->purchase_order_data?->min_weight ?? 0)) / 1000 }}" id="total_weight_required" value="Total Weight Required"
                                     readonly class="form-control">
                             </td>
 
