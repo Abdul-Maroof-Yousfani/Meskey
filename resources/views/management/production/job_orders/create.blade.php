@@ -360,8 +360,9 @@
                                             <tr>
                                                 <th class="col-2">Bag Type/Product</th>
 
-                                                <th>Packing Size (kg) </th>
+                                                <th>Bag Size </th>
                                                 <th>No of Primary Bags fit in master bag</th>
+                                                <th>Packing Size (kg)</th>
                                                 <th>No. of Bags</th>
                                                 <th>Empty Bags</th>
                                                 <th>Extra Bags</th>
@@ -544,6 +545,9 @@
                 <input type="number" name="packing_items[INDEX][sub_items][SUB_INDEX][no_of_primary_bags]"
                     class="form-control form-control-sm sub-no-of-primary-bags"
                     placeholder="Enter No of Primary Bags fit in master bag">
+            </td>
+            <td>
+                <input type="number" step="0.01" name="packing_items[INDEX][sub_items][SUB_INDEX][packing_size]" readonly class="form-control form-control-sm sub-calculated-packing-size" placeholder="Auto calc">
             </td>
 
             <td>
@@ -1178,6 +1182,11 @@
         function calculateSubItemNoOfBags(subRow, packingItem) {
             var noOfBagsPrimary = parseInt(packingItem.find('.no-of-bags').val()) || 0;
             var noOfPrimaryBags = parseInt(subRow.find('.sub-no-of-primary-bags').val()) || 0;
+
+            // Also calculate calculated packing size (kg)
+            var parentBagSize = parseFloat(packingItem.find('.bag-size').val()) || 0;
+            var calculatedPackingSize = parentBagSize * noOfPrimaryBags;
+            subRow.find('.sub-calculated-packing-size').val(calculatedPackingSize > 0 ? calculatedPackingSize.toFixed(2) : '0');
 
             if (noOfBagsPrimary > 0 && noOfPrimaryBags > 0) {
                 var noOfBags = Math.floor(noOfBagsPrimary / noOfPrimaryBags);

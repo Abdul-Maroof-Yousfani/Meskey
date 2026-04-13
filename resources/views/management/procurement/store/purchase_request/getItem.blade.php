@@ -271,7 +271,7 @@
 
             <td class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">
                 @php
-                    $sub_jo_size = $sub_packing_item->bagSize->size ?? '';
+                    $sub_jo_size = $sub_packing_item->packing_size ?? '';
                 @endphp
                 <input type="text" name="size[]" id="size_{{ $i }}"
                     class="form-control size-input-check" placeholder="Size"
