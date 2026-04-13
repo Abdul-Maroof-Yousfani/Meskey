@@ -262,11 +262,11 @@
     
     
     <div class="row bottom-button-bar">
-        <div class="col-12 text-end">
+        <!-- <div class="col-12 text-end">
             <a type="button"
             class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton me-2">Close</a>
             <button type="submit" class="btn btn-primary submitbutton" disabled>Save</button>
-        </div>
+        </div> -->
     </div>
 </form>
 <div class="row">
