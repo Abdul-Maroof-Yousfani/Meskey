@@ -10,7 +10,7 @@ use App\Traits\HasApproval;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class ExportDeliveryOrder extends Model
+class ExportDeliveryOrder extends DeliveryOrder
 {
     use HasFactory, HasApproval;
     protected $table = "delivery_order";
@@ -26,48 +26,48 @@ class ExportDeliveryOrder extends Model
         });
 
         static::updating(function ($model) {
-            $model->type = 'export_order';  
+            $model->type = 'export_order';
         });
 
         static::addGlobalScope('export_type', function ($builder) {
-            $builder->where('type', 'export_order');
+            $builder->withoutGlobalScope('sale_type')->where('type', 'export_order');
         });
     }
 
-    public function customer()
-    {
-        return $this->belongsTo(Customer::class, 'customer_id');
-    }
+    // public function customer()
+    // {
+    //     return $this->belongsTo(Customer::class, 'customer_id');
+    // }
 
     public function exportFormE()
     {
         return $this->belongsTo(\App\Models\Export\ExportFormE::class, 'export_form_e_id');
     }
 
-    public function locations()
-    {
-        return $this->morphMany(Location::class, 'locationable');
-    }
+    // public function locations()
+    // {
+    //     return $this->morphMany(Location::class, 'locationable');
+    // }
 
-    public function arrivalLocation()
-    {
-        return $this->belongsTo(\App\Models\Master\ArrivalLocation::class, "arrival_location_id");
-    }
+    // public function arrivalLocation()
+    // {
+    //     return $this->belongsTo(\App\Models\Master\ArrivalLocation::class, "arrival_location_id");
+    // }
 
-    public function subArrivalLocation()
-    {
-        return $this->belongsTo(\App\Models\Master\ArrivalSubLocation::class, "sub_arrival_location_id");
-    }
+    // public function subArrivalLocation()
+    // {
+    //     return $this->belongsTo(\App\Models\Master\ArrivalSubLocation::class, "sub_arrival_location_id");
+    // }
 
     public function loadingProgram()
     {
         return $this->hasOne(ExportLoadingProgram::class, "delivery_order_id");
     }
 
-    public function loadingProgramItems()
-    {
-        return $this->hasMany(LoadingProgramItem::class, "delivery_order_id");
-    }
+    // public function loadingProgramItems()
+    // {
+    //     return $this->hasMany(LoadingProgramItem::class, "delivery_order_id");
+    // }
     public function exportOrder()
     {
         return $this->belongsTo(\App\Models\Export\ExportOrder::class, 'export_order_id');
@@ -86,29 +86,29 @@ class ExportDeliveryOrder extends Model
     /**
      * Override createApprovalRows from HasApproval trait to handle duplicates safely
      */
-    public function createApprovalRows()
-    {
-        $module = $this->getApprovalModule();
-        if (!$module) {
-            return;
-        }
+    // public function createApprovalRows()
+    // {
+    //     $module = $this->getApprovalModule();
+    //     if (!$module) {
+    //         return;
+    //     }
 
-        $currentCycle = $this->getCurrentApprovalCycle();
+    //     $currentCycle = $this->getCurrentApprovalCycle();
 
-        foreach ($module->roles as $moduleRole) {
-            \App\Models\ApprovalsModule\ApprovalRow::updateOrCreate(
-                [
-                    'module_id' => $module->id,
-                    'record_id' => $this->id,
-                    'role_id' => $moduleRole->role_id,
-                    'approval_cycle' => $currentCycle,
-                ],
-                [
-                    'required_count' => $moduleRole->approval_count,
-                    'current_count' => 0,
-                    'status' => 'pending'
-                ]
-            );
-        }
-    }
+    //     foreach ($module->roles as $moduleRole) {
+    //         \App\Models\ApprovalsModule\ApprovalRow::updateOrCreate(
+    //             [
+    //                 'module_id' => $module->id,
+    //                 'record_id' => $this->id,
+    //                 'role_id' => $moduleRole->role_id,
+    //                 'approval_cycle' => $currentCycle,
+    //             ],
+    //             [
+    //                 'required_count' => $moduleRole->approval_count,
+    //                 'current_count' => 0,
+    //                 'status' => 'pending'
+    //             ]
+    //         );
+    //     }
+    // }
 }
