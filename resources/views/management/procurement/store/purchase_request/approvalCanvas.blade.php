@@ -102,10 +102,10 @@
 
     <div class="row form-mar">
         <div class="col-12 text-right mb-2">
-            <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()"
+            <!-- <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()"
                 id="addRowBtn">
                 <i class="fa fa-plus"></i> &nbsp; Add New Item
-            </button>
+            </button> -->
         </div>
 
         <div class="col-md-12">
