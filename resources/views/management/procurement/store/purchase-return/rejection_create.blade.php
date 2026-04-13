@@ -31,7 +31,8 @@
                                     'id' => $data->item_id,
                                     'name' => $data->item->name ?? '',
                                     'qty' => $data->qc->rejected_quantity ?? 0,
-                                    'uom' => $data->item->unitOfMeasure->name ?? ''
+                                    'uom' => $data->item->unitOfMeasure->name ?? '',
+                                    'rate' => $data->purchase_order_data->rate ?? 0
                                 ];
                             })->values();
                         @endphp
@@ -80,8 +81,9 @@
                 <table class="table table-bordered text-left" id="rejectionReturnTable" style="width:100%;">
                     <thead>
                         <tr>
-                            <th style="min-width: 400px;" class="text-left">Item</th>
-                            <th style="min-width: 200px;" class="text-left">Rejected Qty</th>
+                            <th style="min-width: 300px;" class="text-left">Item</th>
+                            <th style="min-width: 150px;" class="text-left">Rate</th>
+                            <th style="min-width: 150px;" class="text-left">Rejected Qty</th>
                             <th style="min-width: 200px;" class="text-left">Weight (grams)</th>
                         </tr>
                     </thead>
@@ -125,7 +127,7 @@
 
         if (!option.val()) {
             $('#truck_no').val('');
-            $('#rejectionReturnBody').html('<tr><td colspan="3" class="text-center py-4 text-muted">Please select a GRN to load rejected items.</td></tr>');
+            $('#rejectionReturnBody').html('<tr><td colspan="4" class="text-center py-4 text-muted">Please select a GRN to load rejected items.</td></tr>');
             return;
         }
 
@@ -145,6 +147,10 @@
                             <input type="hidden" name="item_id[]" value="${item.id}">
                         </td>
                         <td class="text-left">
+                            <input type="text" class="form-control text-left" value="${item.rate}" disabled>
+                            <input type="hidden" name="rate[]" value="${item.rate}">
+                        </td>
+                        <td class="text-left">
                             <input type="text" class="form-control text-left" value="${item.qty}" disabled>
                             <input type="hidden" name="qty[]" value="${item.qty}">
                         </td>
@@ -157,7 +163,7 @@
             $('#rejectionReturnBody').html(html);
             $('.select2').select2({ width: '100%' });
         } else {
-            $('#rejectionReturnBody').html('<tr><td colspan="3" class="text-center py-4 text-warning">No rejected items found for this GRN.</td></tr>');
+            $('#rejectionReturnBody').html('<tr><td colspan="4" class="text-center py-4 text-warning">No rejected items found for this GRN.</td></tr>');
         }
     }
 </script>

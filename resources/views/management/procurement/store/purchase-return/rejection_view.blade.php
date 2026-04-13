@@ -67,8 +67,9 @@
                     <table class="table table-bordered text-left" id="rejectionReturnTable" style="width:100%;">
                         <thead>
                             <tr>
-                                <th style="min-width: 400px;" class="text-left">Item</th>
-                                <th style="min-width: 200px;" class="text-left">Rejected Qty</th>
+                                <th style="min-width: 300px;" class="text-left">Item</th>
+                                <th style="min-width: 150px;" class="text-left">Rate</th>
+                                <th style="min-width: 150px;" class="text-left">Rejected Qty</th>
                                 <th style="min-width: 200px;" class="text-left">Weight (grams)</th>
                             </tr>
                         </thead>
@@ -79,6 +80,9 @@
                                     <select class="form-control select2" disabled>
                                         <option selected>{{ $item->item->name ?? 'N/A' }}</option>
                                     </select>
+                                </td>
+                                <td class="text-left">
+                                    <input type="text" class="form-control text-left" value="{{ $item->rate }}" disabled>
                                 </td>
                                 <td class="text-left">
                                     <input type="text" class="form-control text-left" value="{{ $item->quantity }} {{ $item->item->unitOfMeasure->name ?? '' }}" disabled>

@@ -23,14 +23,6 @@ class PurchaseBagQC extends Model
         return $this->hasMany(QCItems::class, "qc_id");
     }
     
-    // public static function booted() {
-    //     static::updated(function($bag_qc) {
-    //         if($bag_qc->wasChanged('am_approval_status') && $bag_qc->am_approval_status == "approved") {
-    //             approve_qc($bag_qc);
-    //         }
-    //     });
-
-    // }
 
     public function onApprovalComplete() {
         $this->am_approval_status = "approved";

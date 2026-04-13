@@ -2110,34 +2110,4 @@ function approve_qc(PurchaseBagQC $bag_qc)
     if (!$product) {
         return;
     }
-
-
-    $stock = Stock::create([
-        "product_id" => $product->account_id,
-        "voucher_type" => "qc",
-        "voucher_no" => "qc",
-        "qty" => $bag_qc->rejected_quantity,
-        "type" => "stock-out",
-        "narration" => "Qc Item rejection",
-        "price" => $bag_qc->rejected_quantity * $rate,
-        "avg_price_per_kg" => $bag_qc->rejected_quantity * $rate,
-        'parent_id' => $bag_qc->grn->purchase_order_data_id
-    ]);
-
-
-    createTransaction(
-        $bag_qc->rejected_quantity * $rate,
-        $product->account_id,
-        9,
-        '-',
-        'credit',
-        'no',
-        [
-            'grn_no' => $bag_qc->grn->purchase_order_receiving_no,
-            'purpose' => 'purchase-bag-qc',
-            'against_reference_number' => $bag_qc->grn->purchase_order_receiving_no,
-            'payment_against' => "QC",
-            'remarks' => "Purchase Bag QC"
-        ]
-    );
 }
