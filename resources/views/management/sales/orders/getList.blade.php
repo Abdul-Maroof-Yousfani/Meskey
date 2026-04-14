@@ -8,7 +8,8 @@
                         <th width="18%">Customer</th>
                         <th width="25%">Item Description</th>
                         <th width="10%" class="text-right">Qty</th>
-                        <th width="10%" class="text-right">Rate</th>
+                        <th width="10%" class="text-right">Rate (kg)</th>
+                        <th width="10%" class="text-right">Rate (mond)</th>
                         <th width="10%" class="text-right">Amount</th>
                         <th width="10%">Date</th>
                         <th width="8%">Status</th>
@@ -55,8 +56,11 @@
                                 </td>
 
                                 <td class="text-right align-middle">
-                                    {{ number_format($itemRow['item_data']->rate, 2) }}<span class="text-muted">/kg</span>
-                                    {{ number_format($itemRow['item_data']->rate_per_mond, 2) }}<span class="text-muted">/mond</span>
+                                    {{ number_format($itemRow['item_data']->rate, 2) }}
+                                </td>
+
+                                <td class="text-right align-middle">
+                                    {{ number_format($itemRow['item_data']->rate_per_mond, 2) }}
                                 </td>
 
                                 <td class="text-right align-middle">
@@ -116,7 +120,7 @@
                         @endforeach
                     @empty
                         <tr>
-                            <td colspan="10" class="text-center py-5">
+                            <td colspan="11" class="text-center py-5">
                                 <div class="my-5">
                                     <svg width="64" height="41" viewBox="0 0 64 41" xmlns="http://www.w3.org/2000/svg">
                                         <g transform="translate(0 1)" fill="none" fill-rule="evenodd">
