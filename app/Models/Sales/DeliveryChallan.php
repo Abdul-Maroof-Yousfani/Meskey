@@ -11,6 +11,9 @@ use Illuminate\Database\Eloquent\Model;
 class DeliveryChallan extends Model
 {
     use HasFactory, HasApproval;
+
+    protected $table = 'delivery_challans';
+
     protected $fillable = [
         "customer_id",
         "reference_number",
@@ -36,6 +39,21 @@ class DeliveryChallan extends Model
         "am_approval_status",
         "am_change_made"
     ];
+
+    protected static function booted()
+    {
+        static::creating(function ($model) {
+            $model->type = 'sale_delivery_challan';
+        });
+
+        static::updating(function ($model) {
+            $model->type = 'sale_delivery_challan';
+        });
+
+        static::addGlobalScope('sale_type', function ($builder) {
+            $builder->where('delivery_challans.type', 'sale_delivery_challan');
+        });
+    }
     
 
     public function delivery_challan_data() {

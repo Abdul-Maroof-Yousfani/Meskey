@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Models\Sales;
+namespace App\Models\Export;
 
 use App\Traits\HasApproval;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class SalesQc extends Model
+class ExportQc extends Model
 {
     use HasFactory, HasApproval;
 
@@ -17,21 +17,21 @@ class SalesQc extends Model
     protected static function booted()
     {
         static::creating(function ($model) {
-            $model->type = 'sales_qc';
+            $model->type = 'export_qc';
         });
 
         static::updating(function ($model) {
-            $model->type = 'sales_qc';
+            $model->type = 'export_qc';
         });
 
-        static::addGlobalScope('sales_type', function ($builder) {
-            $builder->where('type', 'sales_qc');
+        static::addGlobalScope('export_type', function ($builder) {
+            $builder->where('type', 'export_qc');
         });
     }
 
     public function loadingProgramItem()
     {
-        return $this->belongsTo(LoadingProgramItem::class);
+        return $this->belongsTo(\App\Models\Sales\LoadingProgramItem::class);
     }
 
     public function createdBy()
@@ -41,6 +41,6 @@ class SalesQc extends Model
 
     public function attachments()
     {
-        return $this->hasMany(SalesQcAttachment::class);
+        return $this->hasMany(ExportQcAttachment::class, 'sales_qc_id');
     }
 }

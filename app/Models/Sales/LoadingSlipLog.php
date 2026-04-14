@@ -27,7 +27,8 @@ class LoadingSlipLog extends Model
         'remarks',
         'labour',
         'qc_remarks',
-        'edited_by'
+        'edited_by',
+        // 'delivery_order_id'
     ];
 
     protected $casts = [

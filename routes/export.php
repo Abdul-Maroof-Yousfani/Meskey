@@ -14,6 +14,11 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Export\QuotationController;
 use App\Http\Controllers\Export\ExportDeliveryOrderController;
 use App\Http\Controllers\Export\ExportFirstWeighBridgeController;
+use App\Http\Controllers\Export\ExportLoadingSlipController;
+use App\Http\Controllers\Export\ExportQcController;
+use App\Http\Controllers\Export\ExportDispatchQcController;
+use App\Http\Controllers\Export\ExportDeliveryChallanController;
+use App\Http\Controllers\Export\ExportSecondWeighBridgeController;
 
 // mode of terms
 Route::resource('modeofterms', ModeOfTermController::class);
@@ -61,6 +66,39 @@ Route::resource('export-first-weighbridge', ExportFirstWeighBridgeController::cl
 Route::post('/get-export-first-weighbridge', [ExportFirstWeighBridgeController::class, 'getList'])->name('get.export-first-weighbridge');
 Route::get('/get-export-first-weighbridge-related-data', [ExportFirstWeighBridgeController::class, 'getFirstWeighbridgeRelatedData'])->name('export.getFirstWeighbridgeRelatedData');
 Route::get('/get-export-weighbridge-amount', [ExportFirstWeighBridgeController::class, 'getWeighbridgeAmount'])->name('export.getWeighbridgeAmount');
+
+// export qc
+Route::resource('export-qc', ExportQcController::class);
+Route::post('/get-export-qc', [ExportQcController::class, 'getList'])->name('get.export-qc');
+Route::get('/get-ticket-related-data-for-qc', [ExportQcController::class, 'getTicketRelatedData'])->name('export.getTicketRelatedDataForQc');
+
+// export loading slip
+Route::resource('export-loading-slip', ExportLoadingSlipController::class);
+Route::post('/get-export-loading-slip', [ExportLoadingSlipController::class, 'getList'])->name('get.export-loading-slip');
+Route::get('/get-export-loading-slip-ticket-data', [ExportLoadingSlipController::class, 'getTicketRelatedData'])->name('export.getLoadingSlipTicketData');
+
+// export dispatch qc
+Route::resource('export-dispatch-qc', ExportDispatchQcController::class);
+Route::post('/get-export-dispatch-qc', [ExportDispatchQcController::class, 'getList'])->name('get.export-dispatch-qc');
+Route::get('/get-export-dispatch-qc-ticket-data', [ExportDispatchQcController::class, 'getTicketRelatedData'])->name('export.getDispatchQcTicketData');
+
+// export second weighbridge
+Route::resource('export-second-weighbridge', ExportSecondWeighBridgeController::class);
+Route::post('/get-export-second-weighbridge', [ExportSecondWeighBridgeController::class, 'getList'])->name('get.export-second-weighbridge');
+Route::get('/get-export-second-weighbridge-related-data', [ExportSecondWeighBridgeController::class, 'getSecondWeighbridgeRelatedData'])->name('export.getSecondWeighbridgeRelatedData');
+Route::get('/get-delivery-orders-by-export-order-second', [ExportSecondWeighBridgeController::class, 'getDeliveryOrdersByExportOrder'])->name('getDeliveryOrdersByExportOrderSecond');
+Route::get('/get-export-delivery-order-balance-against-second-weighbridge', [ExportSecondWeighBridgeController::class, 'getBalanceAgainstSecondWeighbridge'])->name('export.balance-against-second-weighbridge');
+
+// export delivery challan
+Route::resource('export-delivery-challan', ExportDeliveryChallanController::class);
+Route::post('/get-export-delivery-challan', [ExportDeliveryChallanController::class, 'getList'])->name('get.export-delivery-challan.list');
+Route::get('/export-delivery-challan/{delivery_challan}/view', [ExportDeliveryChallanController::class, 'view'])->name('export-delivery-challan.view');
+Route::get('/get/export/dc-no', [ExportDeliveryChallanController::class, 'getNumber'])->name('get.export-delivery-challan.getNumber');
+Route::get('/export-delivery-challan/get-do-against-customer', [ExportDeliveryChallanController::class, 'get_delivery_orders'])->name('get.export-delivery-challan.get-do');
+Route::get('/get-export-delivery-challan-ticket-items', [ExportDeliveryChallanController::class, 'getItemsByTickets'])->name('export-delivery-challan.get-ticket-items');
+Route::get('/get-export-delivery-challan-tickets', [ExportDeliveryChallanController::class, 'getTickets'])->name('export-delivery-challan.get-tickets');
+Route::get('/get-export-tickets-with-dispatch-qc', [ExportDeliveryChallanController::class, 'getTicketsWithDispatchQc'])->name('export-delivery-challan.get-tickets-with-dispatch-qc');
+Route::get('/get-export-ticket-data-for-dc', [ExportDeliveryChallanController::class, 'getTicketDataForDC'])->name('export-delivery-challan.get-ticket-data');
 
 // export form-e
 Route::resource('export-form-e', App\Http\Controllers\Export\ExportFormEController::class);

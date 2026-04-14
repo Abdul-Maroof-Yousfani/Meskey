@@ -13,6 +13,21 @@ class SecondWeighbridge extends Model
 
     protected $guarded = ["id", "created_at", "updated_at"];
 
+    protected static function booted()
+    {
+        static::creating(function ($model) {
+            $model->type = 'sale_order';
+        });
+
+        static::updating(function ($model) {
+            $model->type = 'sale_order';
+        });
+
+        static::addGlobalScope('sale_type', function ($builder) {
+            $builder->where('type', 'sale_order');
+        });
+    }
+
     public function loadingSlip() {
         return $this->belongsTo(LoadingSlip::class, "loading_slip_id");
     }

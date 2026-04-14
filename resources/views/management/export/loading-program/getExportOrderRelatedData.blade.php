@@ -86,7 +86,7 @@
                             <div class="col-xs-12 col-sm-6 col-md-4">
                                 <div class="form-group">
                                     <label>Balance MT:</label>
-                                    <input type="text" value="{{ number_format(getLoadingProgramBalance($do->id), 3) }}" disabled class="form-control" readonly />
+                                    <input type="text" value="{{ number_format(get_second_weighbridge_balance_by_delivery_order($do->id), 3) }}" disabled class="form-control" readonly />
                                 </div>
                             </div>
                         </div>

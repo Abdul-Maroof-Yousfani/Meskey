@@ -1,0 +1,51 @@
+@if($SecondWeighbridges->count() > 0)
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th class="col-sm-1">Ticket No.</th>
+                <th class="col-sm-2">Customer</th>
+                <th class="col-sm-2">Commodity</th>
+                <th class="col-sm-1">Net Weight(KG)</th>
+                <th class="col-sm-2">Created</th>
+                <th class="col-sm-1">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($SecondWeighbridges as $secondWeighbridge)
+                <tr>
+                    <td>
+                        {{ $secondWeighbridge->loadingSlip->loadingProgramItem->transaction_number ?? 'N/A' }}
+                    </td>
+                    <td>
+                        {{ $secondWeighbridge->loadingSlip->customer ?? 'N/A' }}
+                    </td>
+                    <td>
+                        {{ $secondWeighbridge->loadingSlip->commodity ?? 'N/A' }}
+                    </td>
+                    <td>
+                        {{ $secondWeighbridge->net_weight ?? 'N/A' }}
+                    </td>
+                    <td>
+                        {{ $secondWeighbridge->created_at->format('d-m-Y H:i') }}
+                    </td>
+                    <td>
+                        <a onclick="openModal(this,'{{ route('export-second-weighbridge.edit', $secondWeighbridge->id) }}','View Export Second Weighbridge', true)"
+                            class="info p-1 text-center mr-2 position-relative">
+                            <i class="ft-eye font-medium-3"></i>
+                        </a>
+                    </td>
+                </tr>
+            @endforeach
+        </tbody>
+    </table>
+
+    <div class="row d-flex" id="paginationLinks">
+        <div class="col-md-12 text-right">
+            {{ $SecondWeighbridges->links() }}
+        </div>
+    </div>
+@else
+    <div class="text-center py-5">
+        <h5 class="text-muted">No Export Second Weighbridges found</h5>
+    </div>
+@endif

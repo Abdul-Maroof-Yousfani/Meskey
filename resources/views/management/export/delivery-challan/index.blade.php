@@ -1,18 +1,19 @@
 @extends('management.layouts.master')
 @section('title')
-    Export First Weighbridge
+    Export Delivery Challan
 @endsection
 @section('content')
     <div class="content-wrapper">
         <section id="extended">
             <div class="row w-100 mx-auto">
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-                    <h2 class="page-title"> Export First Weighbridge</h2>
+                    <h2 class="page-title">Export Delivery Challan</h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
-                    <button onclick="openModal(this,'{{ route('export-first-weighbridge.create') }}','Add Export First Weighbridge')"
-                        type="button" class="btn btn-primary position-relative ">
-                        Create Export First Weighbridge
+                    <button
+                        onclick="openModal(this,'{{ route('export-delivery-challan.create') }}','Create Export Delivery Challan',false,'60%')"
+                        type="button" class="btn btn-primary position-relative">
+                        Create Export Delivery Challan
                     </button>
                 </div>
             </div>
@@ -36,18 +37,21 @@
                                     </div>
                                 </div>
                             </form>
+                            {{-- <a href="{{ route('export-roles') }}" class="btn btn-warning">Export Roles</a> --}}
                         </div>
                         <div class="card-content">
                             <div class="card-body table-responsive" id="filteredData">
                                 <table class="table m-0">
                                     <thead>
                                         <tr>
-                                            <th class="col-sm-1">DO No.</th>
-                                            <th class="col-sm-2">Buyer</th>
-                                            <th class="col-sm-2">Commodity</th>
-                                            <th class="col-sm-1">Weight(KG)</th>
-                                            <th class="col-sm-2">Created</th>
-                                            <th class="col-sm-1">Action</th>
+                                            <th class="col-3">SO NO</th>
+                                            {{-- <th class="col-2">Location</th> --}}
+                                            <th class="col-4">Customer</th>
+                                            <th class="col-2 text-right">Qty</th>
+                                            {{-- <th class="col-1 text-right">Approved Qty</th> --}}
+                                            <th class="col-1">Contract Type</th>
+                                            <th class="col-1">Status</th>
+                                            <th class="col-1">Action</th>
                                         </tr>
                                     </thead>
                                 </table>
@@ -57,12 +61,14 @@
                 </div>
             </div>
         </section>
+
+
     </div>
 @endsection
 @section('script')
     <script>
-        $(document).ready(function() {
-            filterationCommon(`{{ route('get.export-first-weighbridge') }}`)
+        $(document).ready(function () {
+            filterationCommon(`{{ route('get.export-delivery-challan.list') }}`)
         });
     </script>
 @endsection

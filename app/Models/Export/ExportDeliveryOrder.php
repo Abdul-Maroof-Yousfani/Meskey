@@ -30,7 +30,7 @@ class ExportDeliveryOrder extends DeliveryOrder
         });
 
         static::addGlobalScope('export_type', function ($builder) {
-            $builder->withoutGlobalScope('sale_type')->where('type', 'export_order');
+            $builder->withoutGlobalScope('sale_type')->where('delivery_order.type', 'export_order');
         });
     }
 
@@ -81,6 +81,11 @@ class ExportDeliveryOrder extends DeliveryOrder
     public function firstWeighbridge()
     {
         return $this->hasOne(ExportFirstWeighbridge::class, "delivery_order_id");
+    }
+
+    public function loadingSlips()
+    {
+        return $this->hasMany(ExportLoadingSlip::class, "delivery_order_id");
     }
 
     /**

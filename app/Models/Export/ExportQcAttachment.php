@@ -1,0 +1,25 @@
+<?php
+
+namespace App\Models\Export;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class ExportQcAttachment extends Model
+{
+    use HasFactory;
+
+    protected $table = 'sales_qc_attachments';
+
+    protected $guarded = ['id', 'created_at', 'updated_at'];
+
+    public function exportQc()
+    {
+        return $this->belongsTo(ExportQc::class, 'sales_qc_id');
+    }
+
+    public function uploadedBy()
+    {
+        return $this->belongsTo(\App\Models\User::class, 'uploaded_by');
+    }
+}

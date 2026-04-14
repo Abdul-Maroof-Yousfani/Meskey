@@ -871,6 +871,41 @@
                                     data-i18n="Extended">First Weighbridge</span></a>
                         </li>
 
+                        <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                href="{{ route('export-qc.index') }}"
+                                onclick="loadPageContent('{{ route('export-qc.index') }}')"
+                                data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                    data-i18n="Extended">QC</span></a>
+                        </li>
+
+                        <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                href="{{ route('export-loading-slip.index') }}"
+                                onclick="loadPageContent('{{ route('export-loading-slip.index') }}')"
+                                data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                    data-i18n="Extended">Loading Slip</span></a>
+                        </li>
+
+                        <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                href="{{ route('export-dispatch-qc.index') }}"
+                                onclick="loadPageContent('{{ route('export-dispatch-qc.index') }}')"
+                                data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                    data-i18n="Extended">Dispatch QC</span></a>
+                        </li>
+
+                        <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                href="{{ route('export-second-weighbridge.index') }}"
+                                onclick="loadPageContent('{{ route('export-second-weighbridge.index') }}')"
+                                data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                    data-i18n="Extended">Second Weighbridge</span></a>
+                        </li>
+
+                        <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                href="{{ route('export-delivery-challan.index') }}"
+                                onclick="loadPageContent('{{ route('export-delivery-challan.index') }}')"
+                                data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                    data-i18n="Extended">Delivery Challan</span></a>
+                        </li>
+
                         {{-- @canAccess('commercial-invoice')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('commercial-invoice.index') }}" onclick="loadPageContent('{{ route('commercial-invoice.index') }}')"
