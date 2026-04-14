@@ -410,6 +410,9 @@
             populateSections();
         });
 
+        window.populateFactories = populateFactories;
+        window.populateSections = populateSections;
+
         populateFactories();
         populateSections();
     });
@@ -513,10 +516,19 @@
         $(`#bag_type_${index}`).select2();
         $(`#bag_size_${index}`).select2();
         $(`#brand_id_${index}`).select2();
+        
+        // Enable remove buttons if more than one row
+        if ($('#salesInquiryBody tr').length > 1) {
+            $('.removeRowBtn').prop('disabled', false);
+        }
     }
 
     function removeRow(index) {
         $('#row_' + index).remove();
+        // If only one row left, disable its remove button
+        if ($('#salesInquiryBody tr').length === 1) {
+            $('#salesInquiryBody tr .removeRowBtn').prop('disabled', true);
+        }
     }
 
     function get_inquiries() {
@@ -828,16 +840,22 @@
     }
 
     function enableInquiryFields() {
-        // Enable fields when no inquiry selected
-        $("#delivery_date").prop('readonly', false);
-        $("#customer_id").prop('disabled', false);
-        $("#sauda_type").prop('disabled', false);
-        $("#locations").prop('disabled', false);
-        $("#token_money").prop('readonly', false);
+        // Enable fields and reset values when no inquiry selected
+        $("#delivery_date").prop('readonly', false).val('');
+        $("#customer_id").prop('disabled', false).val('').trigger('change.select2');
+        $("#sauda_type").prop('disabled', false).val('').trigger('change.select2');
+        $("#locations").prop('disabled', false).val([]).trigger('change.select2');
+        $("#token_money").prop('readonly', false).val('');
         $("#contact_person").prop('readonly', false).val('');
-        $("#arrival_location_id").prop('disabled', false).val('').trigger('change.select2');
-        $("#arrival_sub_location_id").prop('disabled', false).val('').trigger('change.select2');
-        $("#token_money").val(''); // Clear token money when no inquiry
+        $("#arrival_location_id").prop('disabled', false).val([]).trigger('change.select2');
+        $("#arrival_sub_location_id").prop('disabled', false).val([]).trigger('change.select2');
+        $("#remarks").val('');
+        $("#so_reference_no").val('');
+        $("#reference_no").val('');
+        $("#order_date").val('');
+
+        if(window.populateFactories) window.populateFactories();
+        if(window.populateSections) window.populateSections();
 
         // Restore name attributes and remove hidden inputs
         $("#customer_id").attr('name', 'customer_id');
@@ -852,6 +870,13 @@
         $('.arrival_location_hidden').remove();
         $('.arrival_sub_location_hidden').remove();
         
+        // Refresh line items
+        $("#salesInquiryBody").empty();
+        salesInquiryRowIndex = 0;
+        addRow();
+        // Disable remove button for the first row
+        $('#salesInquiryBody tr:first .removeRowBtn').prop('disabled', true);
+
         enableTableFields();
     }
 
