@@ -317,7 +317,7 @@
 
 <div class="row">
     <div class="col-12">
-        <x-approval-status :model="$delivery_challan" />
+        <x-approval-status :model="$delivery_challan" :list-refresh="route('sales.get.delivery-challan.list')"/>
     </div>
 </div>
 
