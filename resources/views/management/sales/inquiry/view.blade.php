@@ -284,7 +284,7 @@
         </div>
     </div>
 </form>
-<x-approval-status :model="$sales_inquiry" />
+<x-approval-status :model="$sales_inquiry" :list-refresh="route('sales.get.sales-inquiry.list')" />
 
 <script>
     salesInquiryRowIndex = "{{ $i }}";

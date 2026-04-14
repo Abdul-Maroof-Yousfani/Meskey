@@ -313,7 +313,7 @@
 </form>
 <div class="row">
     <div class="col-12">
-        <x-approval-status :model="$sale_order" />
+        <x-approval-status :model="$sale_order" :list-refresh="route('sales.get.sales-order.list')" />
     </div>
 </div>
 
