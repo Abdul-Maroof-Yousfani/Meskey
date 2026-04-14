@@ -238,7 +238,7 @@ class SaleOrderController extends Controller
         $perPage = $request->get('per_page', 25);
 
         // Eager load the inquiry + all its items + related product
-        $SalesOrders = SalesOrder::with(['sale_inquiry', 'sales_order_data.item.unitOfMeasure'])
+        $SalesOrders = SalesOrder::with(['sale_inquiry', 'sales_order_data.item.unitOfMeasure', 'locations.companyLocation'])
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . strtolower($request->search) . '%';
                 return $q->where(function ($sq) use ($searchTerm) {

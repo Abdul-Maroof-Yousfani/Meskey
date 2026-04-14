@@ -3,15 +3,16 @@
             <table class="table table-hover m-0">
                 <thead class="bg-light">
                     <tr>
-                        <th width="12%">So No</th>
-                        <th width="12%">Sale Inquiry No</th>
-                        <th width="18%">Customer</th>
-                        <th width="25%">Item Description</th>
-                        <th width="10%" class="text-right">Qty</th>
-                        <th width="10%" class="text-right">Rate (kg)</th>
-                        <th width="10%" class="text-right">Rate (mond)</th>
-                        <th width="10%" class="text-right">Amount</th>
-                        <th width="10%">Date</th>
+                        <th width="8%">So No</th>
+                        <th width="8%">Sale Inquiry No</th>
+                        <th width="12%">Customer</th>
+                        <th width="12%">Location</th>
+                        <th width="15%">Item Description</th>
+                        <th width="8%" class="text-right">Qty</th>
+                        <th width="8%" class="text-right">Rate (kg)</th>
+                        <th width="8%" class="text-right">Rate (mond)</th>
+                        <th width="8%" class="text-right">Amount</th>
+                        <th width="8%">Date</th>
                         <th width="8%">Status</th>
                         <th width="7%">Action</th>
                     </tr>
@@ -38,6 +39,10 @@
                                     <td rowspan="{{ $group['rowspan'] }}" class="align-middle" style="background-color: #e3f2fd;">
                                         <strong>{{ get_customer_name($group["customer_id"]) }}</strong>
                                         
+                                    </td>
+
+                                    <td rowspan="{{ $group['rowspan'] }}" class="align-middle">
+                                        {{ $group['sale_order']->locations->pluck('companyLocation.name')->implode(', ') }}
                                     </td>
                                 @endif
                                 
@@ -120,7 +125,7 @@
                         @endforeach
                     @empty
                         <tr>
-                            <td colspan="11" class="text-center py-5">
+                            <td colspan="12" class="text-center py-5">
                                 <div class="my-5">
                                     <svg width="64" height="41" viewBox="0 0 64 41" xmlns="http://www.w3.org/2000/svg">
                                         <g transform="translate(0 1)" fill="none" fill-rule="evenodd">
