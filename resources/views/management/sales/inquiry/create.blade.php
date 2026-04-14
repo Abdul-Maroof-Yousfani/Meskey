@@ -263,26 +263,15 @@
     }
 
     function calculateRates(el) {
-
         if(!$(el).val()) {
-            $(el).closest("tr").find(".rate_per_kg").removeAttr("readonly", "readonly");
-            $(el).closest("tr").find(".rate_per_mond").removeAttr("readonly", "readonly");
-
-            $(el).closest("tr").find(".rate_per_kg").val("");
-            $(el).closest("tr").find(".rate_per_mond").val("");
             return;
         }
 
         if($(el).hasClass("rate_per_kg")) {
-            $(el).closest("tr").find(".rate_per_mond").attr("readonly", "readonly");
             $(el).closest("tr").find(".rate_per_mond").val(calculateForRatePerMond($(el).val()));
         } else {
-            $(el).closest("tr").find(".rate_per_kg").attr("readonly", "readonly");
             $(el).closest("tr").find(".rate_per_kg").val(calculateForRatePerKg($(el).val()));
-            
         }
-
-
     }
 
     $(document).ready(function() {
@@ -410,7 +399,11 @@
                                     step="0.01" min="0" onkeyup="calc(this)" onchange="calc(this)">
                             </td>
                             <td>
-                                <input type="number" name="rate[]" id="rate_${index}" class="form-control"
+                                <input onkeyup="calculateRates(this)" type="number" name="rate[]" id="rate_${index}" class="form-control rate_per_kg"
+                                    step="0.01" min="0">
+                            </td>
+                            <td>
+                                <input onkeyup="calculateRates(this)" type="number" name="rate_per_mond[]" id="rate_per_mond_${index}" class="form-control rate_per_mond"
                                     step="0.01" min="0">
                             </td>
                             <td>
