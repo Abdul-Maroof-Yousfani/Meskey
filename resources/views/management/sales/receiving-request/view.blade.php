@@ -160,6 +160,6 @@
         </div>
     </div>
 
-    <x-approval-status :model="$receivingRequest" />
+    <x-approval-status :model="$receivingRequest" :list-refresh="route('sales.get.receiving-request.list')"/>
 
 </div>
