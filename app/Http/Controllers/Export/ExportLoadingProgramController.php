@@ -117,39 +117,21 @@ class ExportLoadingProgramController extends Controller
                 $loadingProgram->deliveryOrders()->sync($request->delivery_order_id);
             }
 
-            // Prepare virtual balance tracking to handle multiple rows using same DO
-            $virtualBalances = [];
-
             foreach ($request->loading_program_items as $index => $itemData) {
                 $selectedDoIds = $itemData['delivery_order_id'] ?? [];
                 $selectedEoIds = $itemData['export_order_id'] ?? [];
-                
-                // Calculate aggregate balance for this row
-                $totalRowBalance = 0;
+
                 foreach ($selectedDoIds as $do_id) {
-                    if (!isset($virtualBalances[$do_id])) {
-                        $lpBal = getLoadingProgramBalance($do_id);
-                        $swbBal = get_second_weighbridge_balance_by_delivery_order($do_id);
-                        $virtualBalances[$do_id] = min($lpBal, $swbBal);
+                    $swbBalance = get_second_weighbridge_balance_by_delivery_order($do_id);
+                    $balance = $swbBalance;
+                    $qty = $itemData['qty'] ?? 0;
+
+                    if ($balance < $qty) {
+                        DB::rollBack();
+                        return response()->json([
+                            'errors' => ["loading_program_items.$index.qty" => ["Your available balance (taking Second Weighbridge into account) for DO $do_id is $balance, you can not exceed that balance."]]
+                        ], 422);
                     }
-                    $totalRowBalance += $virtualBalances[$do_id];
-                }
-
-                $qty = $itemData['qty'] ?? 0;
-                if ($totalRowBalance < $qty) {
-                    DB::rollBack();
-                    return response()->json([
-                        'errors' => ["loading_program_items.$index.qty" => ["Your aggregate available balance for selected DOs in this row is $totalRowBalance, you cannot exceed that balance."]]
-                    ], 422);
-                }
-
-                // Update virtual balances (FIFO distribution)
-                $remainingToDeduct = $qty;
-                foreach ($selectedDoIds as $do_id) {
-                    $deduct = min($remainingToDeduct, $virtualBalances[$do_id]);
-                    $virtualBalances[$do_id] -= $deduct;
-                    $remainingToDeduct -= $deduct;
-                    if ($remainingToDeduct <= 0) break;
                 }
 
                 $loadingProgramItem = LoadingProgramItem::create([
@@ -339,46 +321,19 @@ class ExportLoadingProgramController extends Controller
 
             $loadingProgram->loadingProgramItems()->whereDoesntHave('firstWeighbridge')->delete();
 
-            // Prepare virtual balance tracking
-            $virtualBalances = [];
-
             foreach ($request->loading_program_items as $index => $itemData) {
                 $selectedDoIds = $itemData['delivery_order_id'] ?? [];
-                
-                // Calculate aggregate balance for this row
-                $totalRowBalance = 0;
+
                 foreach ($selectedDoIds as $do_id) {
-                    if (!isset($virtualBalances[$do_id])) {
-                        $lpBal = getLoadingProgramBalance($do_id);
-                        
-                        // In update mode, since we are re-validating, we need to account for what this LP is ALREADY using
-                        // so we don't block ourselves. However, getLoadingProgramBalance already subtracts ALL LPs.
-                        // We should add back the Qty of this specific LP if we want a true current balance check.
-                        // But since update deletes items first, the items are gone? 
-                        // Wait, line 295 deletes them. So getLoadingProgramBalance will be correct AFTER delete.
-                        // But we are inside the transaction, so we should check.
-                        
-                        $swbBal = get_second_weighbridge_balance_by_delivery_order($do_id);
-                        $virtualBalances[$do_id] = min($lpBal, $swbBal);
+                    $swbBalance = get_second_weighbridge_balance_by_delivery_order($do_id);
+                    $balance = $swbBalance;
+                    $qty = $itemData['qty'] ?? 0;
+                    if ($balance < $qty) {
+                        DB::rollBack();
+                        return response()->json([
+                            'errors' => ["loading_program_items.$index.qty" => ["Your available balance (taking Second Weighbridge into account) for DO $do_id is $balance, you can not exceed that balance."]]
+                        ], 422);
                     }
-                    $totalRowBalance += $virtualBalances[$do_id];
-                }
-
-                $qty = $itemData['qty'] ?? 0;
-                if ($totalRowBalance < $qty) {
-                    DB::rollBack();
-                    return response()->json([
-                        'errors' => ["loading_program_items.$index.qty" => ["Your aggregate available balance for selected DOs in this row is $totalRowBalance, you cannot exceed that balance."]]
-                    ], 422);
-                }
-
-                // Update virtual balances (FIFO distribution)
-                $remainingToDeduct = $qty;
-                foreach ($selectedDoIds as $do_id) {
-                    $deduct = min($remainingToDeduct, $virtualBalances[$do_id]);
-                    $virtualBalances[$do_id] -= $deduct;
-                    $remainingToDeduct -= $deduct;
-                    if ($remainingToDeduct <= 0) break;
                 }
 
                 $loadingProgramItem = LoadingProgramItem::create([
@@ -477,15 +432,12 @@ class ExportLoadingProgramController extends Controller
             $linkedDoIds = LoadingProgramItem::where('loading_program_id', $lpId)->pluck('delivery_order_id')->unique()->toArray();
         }
 
-        // Removed DO balance rejection logic as requested
-        /*
         $DeliveryOrders = $DeliveryOrders->reject(function ($deliveryOrder) use ($linkedDoIds) {
             if (in_array($deliveryOrder->id, $linkedDoIds)) {
                 return false;
             }
-            return getLoadingProgramBalance($deliveryOrder->id) <= 0 || get_second_weighbridge_balance_by_delivery_order($deliveryOrder->id) <= 0;
+            return get_second_weighbridge_balance_by_delivery_order($deliveryOrder->id) <= 0;
         });
-        */
         $html = view('management.export.loading-program.getExportOrderRelatedData', compact('ExportOrders', 'DeliveryOrders'))->render();
 
         $firstEO = $ExportOrders->first();
@@ -532,15 +484,12 @@ class ExportLoadingProgramController extends Controller
             $linkedDoIds = LoadingProgramItem::where('loading_program_id', $lpId)->pluck('delivery_order_id')->unique()->toArray();
         }
 
-        // Removed rejection logic to show all DOs as requested
-        /*
         $deliveryOrders = $deliveryOrders->reject(function ($deliveryOrder) use ($linkedDoIds) {
             if (in_array($deliveryOrder->id, $linkedDoIds)) {
                 return false;
             }
-            return getLoadingProgramBalance($deliveryOrder->id) <= 0 || get_second_weighbridge_balance_by_delivery_order($deliveryOrder->id) <= 0;
+            return get_second_weighbridge_balance_by_delivery_order($deliveryOrder->id) <= 0;
         });
-        */
 
         $deliveryOrders = $deliveryOrders->map(function ($deliveryOrder) {
             $locationIds = explode(',', $deliveryOrder->location_id);
@@ -569,6 +518,33 @@ class ExportLoadingProgramController extends Controller
             })
             ->with(['exportPackingItems', 'saleSecondWeighbridge'])
             ->get();
+
+        $lpId = $request->loading_program_id;
+        $linkedDoIds = [];
+        if ($lpId) {
+            $linkedDoIds = LoadingProgramItem::where('loading_program_id', $lpId)
+                ->with('deliveryOrders:id')
+                ->get()
+                ->flatMap(function ($item) {
+                    $ids = $item->deliveryOrders->pluck('id')->toArray();
+                    if (empty($ids) && $item->delivery_order_id) {
+                        $ids = [$item->delivery_order_id];
+                    }
+                    return $ids;
+                })
+                ->filter()
+                ->unique()
+                ->values()
+                ->toArray();
+        }
+
+        $deliveryOrders = $deliveryOrders->reject(function ($deliveryOrder) use ($linkedDoIds) {
+            if (in_array($deliveryOrder->id, $linkedDoIds)) {
+                return false;
+            }
+
+            return get_second_weighbridge_balance_by_delivery_order($deliveryOrder->id) <= 0;
+        });
 
         $deliveryOrders = $deliveryOrders->map(function ($deliveryOrder) {
             $locationIds = explode(',', $deliveryOrder->location_id);

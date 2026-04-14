@@ -27,7 +27,7 @@ class DeliveryOrder extends Model
         });
 
         static::addGlobalScope('sale_type', function ($builder) {
-            $builder->where('type', 'sale_order');
+            $builder->where('delivery_order.type', 'sale_order');
         });
     }
 

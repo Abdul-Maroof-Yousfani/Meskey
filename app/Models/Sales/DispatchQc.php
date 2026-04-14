@@ -11,6 +11,21 @@ class DispatchQc extends Model
     protected $table = "dispatch_qc";
     protected $guarded = ['id', 'created_at', 'updated_at'];
 
+    protected static function booted()
+    {
+        static::creating(function ($model) {
+            $model->type = 'sale_dispatch_qc';
+        });
+
+        static::updating(function ($model) {
+            $model->type = 'sale_dispatch_qc';
+        });
+
+        static::addGlobalScope('sale_type', function ($builder) {
+            $builder->where('type', 'sale_dispatch_qc');
+        });
+    }
+
     public function loadingProgramItem()
     {
         return $this->belongsTo(LoadingProgramItem::class);

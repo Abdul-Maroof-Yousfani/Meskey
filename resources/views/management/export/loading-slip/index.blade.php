@@ -1,18 +1,19 @@
 @extends('management.layouts.master')
 @section('title')
-    Export First Weighbridge
+    Export Loading Slip
 @endsection
 @section('content')
     <div class="content-wrapper">
+
         <section id="extended">
             <div class="row w-100 mx-auto">
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-                    <h2 class="page-title"> Export First Weighbridge</h2>
+                    <h2 class="page-title"> Export Loading Slip</h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
-                    <button onclick="openModal(this,'{{ route('export-first-weighbridge.create') }}','Add Export First Weighbridge')"
+                    <button onclick="openModal(this,'{{ route('export-loading-slip.create') }}','Add Export Loading Slip')"
                         type="button" class="btn btn-primary position-relative ">
-                        Create Export First Weighbridge
+                        Create Export Loading Slip
                     </button>
                 </div>
             </div>
@@ -39,18 +40,6 @@
                         </div>
                         <div class="card-content">
                             <div class="card-body table-responsive" id="filteredData">
-                                <table class="table m-0">
-                                    <thead>
-                                        <tr>
-                                            <th class="col-sm-1">DO No.</th>
-                                            <th class="col-sm-2">Buyer</th>
-                                            <th class="col-sm-2">Commodity</th>
-                                            <th class="col-sm-1">Weight(KG)</th>
-                                            <th class="col-sm-2">Created</th>
-                                            <th class="col-sm-1">Action</th>
-                                        </tr>
-                                    </thead>
-                                </table>
                             </div>
                         </div>
                     </div>
@@ -62,7 +51,7 @@
 @section('script')
     <script>
         $(document).ready(function() {
-            filterationCommon(`{{ route('get.export-first-weighbridge') }}`)
+            filterationCommon(`{{ route('get.export-loading-slip') }}`)
         });
     </script>
 @endsection

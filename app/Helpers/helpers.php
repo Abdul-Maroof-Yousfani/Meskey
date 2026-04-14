@@ -886,15 +886,19 @@ function get_second_weighbridge_balance(LoadingSlip $loadingSlip, $delivery_orde
 
     // If a specific DO is requested, use it
     if ($delivery_order_id) {
-        $deliveryOrders->push(DeliveryOrder::with(['delivery_order_data', 'saleSecondWeighbridge'])->find($delivery_order_id));
+        $deliveryOrders->push(
+            DeliveryOrder::withoutGlobalScopes()
+                ->with(['delivery_order_data', 'exportPackingItems', 'saleSecondWeighbridge'])
+                ->find($delivery_order_id)
+        );
     }
     // Otherwise, if the ticket (item) has multiple DOs, use all of them (Aggregate Balance)
     elseif ($item && $item->deliveryOrders->isNotEmpty()) {
-        $deliveryOrders = $item->deliveryOrders->loadMissing(['delivery_order_data', 'saleSecondWeighbridge']);
+        $deliveryOrders = $item->deliveryOrders->loadMissing(['delivery_order_data', 'exportPackingItems', 'saleSecondWeighbridge']);
     }
     // Fallback to the single DO on the loading slip if it exists
     elseif ($loadingSlip->deliveryOrder) {
-        $deliveryOrders->push($loadingSlip->deliveryOrder->loadMissing(['delivery_order_data', 'saleSecondWeighbridge']));
+        $deliveryOrders->push($loadingSlip->deliveryOrder->loadMissing(['delivery_order_data', 'exportPackingItems', 'saleSecondWeighbridge']));
     }
 
     if ($deliveryOrders->isEmpty()) {
@@ -907,7 +911,11 @@ function get_second_weighbridge_balance(LoadingSlip $loadingSlip, $delivery_orde
     foreach ($deliveryOrders as $do) {
         if (!$do)
             continue;
-        $overall_quantities += $do->delivery_order_data->sum("qty");
+        if ($do->type == 'export_order') {
+            $overall_quantities += $do->exportPackingItems->sum("metric_tons");
+        } else {
+            $overall_quantities += $do->delivery_order_data->sum("qty");
+        }
         $spent_quantities += $do->saleSecondWeighbridge->sum("net_weight");
     }
 

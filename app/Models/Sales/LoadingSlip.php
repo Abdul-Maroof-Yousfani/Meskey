@@ -10,6 +10,8 @@ class LoadingSlip extends Model
 {
     use HasFactory;
 
+    protected $table = 'loading_slips';
+
     protected $fillable = [
         'loading_program_item_id',
         'customer',
@@ -35,6 +37,21 @@ class LoadingSlip extends Model
         'kilogram' => 'decimal:2',
         'no_of_bags' => 'integer'
     ];
+
+    protected static function booted()
+    {
+        static::creating(function ($model) {
+            $model->type = 'sale_loading_slip';
+        });
+
+        static::updating(function ($model) {
+            $model->type = 'sale_loading_slip';
+        });
+
+        static::addGlobalScope('sale_type', function ($builder) {
+            $builder->where('type', 'sale_loading_slip');
+        });
+    }
 
     public function loadingProgramItem(): BelongsTo
     {

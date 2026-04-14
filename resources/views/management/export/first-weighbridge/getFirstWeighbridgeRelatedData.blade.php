@@ -52,7 +52,7 @@
                                 </div>
                                 <div class="col-xs-12 col-sm-6 col-md-6">
                                     <div class="form-group">
-                                        <label>DO Qty:</label>
+                                        <label>DO Qty(MT):</label>
                                         <input type="text" value="{{ $do->exportPackingItems->sum('metric_tons') }}" disabled class="form-control" readonly />
                                     </div>
                                 </div>
@@ -128,7 +128,7 @@
 
 <div class="col-xs-12 col-sm-4 col-md-4">
     <div class="form-group">
-        <label>First Weight:</label>
+        <label>First Weight(KG):</label>
         <input type="number" name="first_weight" placeholder="Enter First Weight"
             value="{{ isset($FirstWeighbridge) ? $FirstWeighbridge->first_weight : '' }}"
             class="form-control" autocomplete="off" step="0.01" />

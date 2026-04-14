@@ -20,21 +20,26 @@ class LoadingProgramItem extends Model
         return $this->belongsTo(LoadingProgram::class)->withoutGlobalScopes();
     }
 
+    public function exportLoadingProgram()
+    {
+        return $this->belongsTo(\App\Models\Export\ExportLoadingProgram::class, 'loading_program_id');
+    }
+
     public function saleOrders()
     {
         return $this->belongsToMany(SalesOrder::class, 'loading_program_item_sale_order', 'loading_program_item_id', 'sale_order_id')->withTimestamps();
     }
-
+    
+    public function exportOrders()
+    {
+        return $this->belongsToMany(\App\Models\Export\ExportOrder::class, 'loading_program_item_export_order', 'loading_program_item_id', 'export_order_id')->withTimestamps();
+    }
+    
     public function deliveryOrders()
     {
         return $this->belongsToMany(DeliveryOrder::class, 'loading_program_item_delivery_order', 'loading_program_item_id', 'delivery_order_id')
             ->withoutGlobalScopes()
             ->withTimestamps();
-    }
-
-    public function exportOrders()
-    {
-        return $this->belongsToMany(\App\Models\Export\ExportOrder::class, 'loading_program_item_export_order', 'loading_program_item_id', 'export_order_id')->withTimestamps();
     }
 
     public function arrivalLocation()
@@ -56,8 +61,41 @@ class LoadingProgramItem extends Model
     {
         return $this->hasOne(\App\Models\Sales\FirstWeighbridge::class, "loading_program_item_id");
     }
+
+    public function exportFirstWeighbridge()
+    {
+        return $this->hasOne(\App\Models\Export\ExportFirstWeighbridge::class, "loading_program_item_id");
+    }
     public function salesQc() {
         return $this->hasOne(\App\Models\Sales\SalesQc::class);
+    }
+
+    public function exportQc() {
+        return $this->hasOne(\App\Models\Export\ExportQc::class);
+    }
+
+    public function exportDispatchQcs() {
+        return $this->hasMany(\App\Models\Export\ExportDispatchQc::class);
+    }
+
+    public function exportDispatchQc() {
+        return $this->hasOne(\App\Models\Export\ExportDispatchQc::class)->latestOfMany();
+    }
+
+    public function acceptedExportDispatchQc() {
+        return $this->hasOne(\App\Models\Export\ExportDispatchQc::class)
+            ->where('status', 'accept')
+            ->latestOfMany();
+    }
+
+    public function latestRejectedExportDispatchQc() {
+        return $this->hasOne(\App\Models\Export\ExportDispatchQc::class)
+            ->where('status', 'reject')
+            ->latestOfMany();
+    }
+
+    public function hasAcceptedExportDispatchQc(): bool {
+        return $this->exportDispatchQcs()->where('status', 'accept')->exists();
     }
     
     /**
@@ -109,6 +147,22 @@ class LoadingProgramItem extends Model
 
     public function loadingSlip() {
         return $this->hasOne(\App\Models\Sales\LoadingSlip::class);
+    }
+
+    public function exportLoadingSlip() {
+        return $this->hasOne(\App\Models\Export\ExportLoadingSlip::class, "loading_program_item_id");
+    }
+
+    public function exportSecondWeighbridge()
+    {
+        return $this->hasOneThrough(
+            \App\Models\Export\ExportSecondWeighbridge::class,
+            \App\Models\Export\ExportLoadingSlip::class,
+            'loading_program_item_id',
+            'loading_slip_id',
+            'id',
+            'id'
+        );
     }
 
     public function delivery_challan_data() {
