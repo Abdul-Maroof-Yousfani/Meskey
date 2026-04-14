@@ -327,26 +327,15 @@
     }
 
     function calculateRates(el) {
-
         if(!$(el).val()) {
-            $(el).closest("tr").find(".rate_per_kg").removeAttr("readonly", "readonly");
-            $(el).closest("tr").find(".rate_per_mond").removeAttr("readonly", "readonly");
-
-            $(el).closest("tr").find(".rate_per_kg").val("");
-            $(el).closest("tr").find(".rate_per_mond").val("");
             return;
         }
 
         if($(el).hasClass("rate_per_kg")) {
-            $(el).closest("tr").find(".rate_per_mond").attr("readonly", "readonly");
             $(el).closest("tr").find(".rate_per_mond").val(calculateForRatePerMond($(el).val()));
         } else {
-            $(el).closest("tr").find(".rate_per_kg").attr("readonly", "readonly");
             $(el).closest("tr").find(".rate_per_kg").val(calculateForRatePerKg($(el).val()));
-            
         }
-
-
     }
     function is_type_credit(el) {
         const type = $(el).val();
@@ -493,7 +482,10 @@
                 <input type="number" name="qty[]" id="qty_${index}" onkeyup="calcBagTypes(this)" onchange="calcBagTypes(this)" class="form-control qty" step="0.01" min="0">
             </td>
             <td>
-                <input type="number" name="rate[]" id="rate_${index}" onkeyup="calc(this)" class="form-control rate" step="0.01" min="0">
+                <input onkeyup="calc(this); calculateRates(this)" type="number" name="rate[]" id="rate_${index}" class="form-control rate rate_per_kg" step="0.01" min="0">
+            </td>
+            <td>
+                <input onkeyup="calc(this); calculateRates(this)" type="number" name="rate_per_mond[]" id="rate_per_mond_${index}" class="form-control rate_per_mond" step="0.01" min="0">
             </td>
             <td>
                 <select name="brand_id[]" id="brand_id_${index}" class="form-control select2">
