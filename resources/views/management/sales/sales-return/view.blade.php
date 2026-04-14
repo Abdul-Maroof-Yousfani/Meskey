@@ -317,7 +317,7 @@
         </div>
     </div>
 </form>
-<x-approval-status :model="$saleReturn" />
+<x-approval-status :model="$saleReturn" :list-refresh="route('sales.get.sales-return.list')" />
 
 <script>
     salesInvoiceRowIndex = 1;
