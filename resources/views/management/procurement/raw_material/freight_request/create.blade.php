@@ -646,7 +646,7 @@
     @php
         $is_pending = isset($isRequestApprovalPage) && $isRequestApprovalPage && $paymentRequest && $paymentRequest->status == "pending";
     @endphp
-    @if(!($has_pendings > 0 && isset($paymentRequestData) && $paymentRequestData->is_paid_by_supplier) && $is_pending)
+    @if(!($has_pendings > 0 && isset($paymentRequestData) && $paymentRequestData->is_paid_by_supplier))
     <div class="row bottom-button-bar">
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
