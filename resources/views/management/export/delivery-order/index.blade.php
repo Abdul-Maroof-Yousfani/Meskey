@@ -11,7 +11,8 @@
                     <h2 class="page-title">Export Delivery Order</h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
-                    <button onclick="openModal(this,'{{ route('export-delivery-order.create') }}','Add Export Delivery Order',false,'90%')"
+                    <button
+                        onclick="openModal(this,'{{ route('export-delivery-order.create') }}','Add Export Delivery Order',false,'90%')"
                         type="button" class="btn btn-primary position-relative ">
                         Create Delivery Order
                     </button>
@@ -44,14 +45,14 @@
                                 <table class="table m-0">
                                     <thead>
                                         <tr>
-                                            <th width="5%">S no.</th>
-                                            <th width="15%">Do No</th>
-                                            <th width="12%">Export Order No</th>
-                                            <th width="12%">Form-E No</th>
-                                            <th width="15%">Buyer</th>
-                                            <th width="15%">Delivery Date</th>
-                                            <th width="15%">Shipment Date</th>
-                                            <th width="20%">Action</th>
+                                            <th width="3%">S no.</th>
+                                            <th width="12%">DO No</th>
+                                            <th width="15%">Customer</th>
+                                            <th width="15%">Product/Commodity</th>
+                                            <th width="10%">QTY (MT)</th>
+                                            <th width="10%">Rate</th>
+                                            <th width="10%">Status</th>
+                                            <th width="10%">Action</th>
                                         </tr>
                                     </thead>
 
@@ -67,7 +68,7 @@
 @endsection
 @section('script')
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             filterationCommon(`{{ route('get.export-delivery-order') }}`)
         });
     </script>

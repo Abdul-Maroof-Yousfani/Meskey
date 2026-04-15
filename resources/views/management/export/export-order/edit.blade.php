@@ -1320,12 +1320,12 @@
 
             // Bi-directional Stuffing & Containers based on MT
             if (sourceField === 'metric-tons' || sourceField === 'no_of_bags' || sourceField === 'bag-size') {
-                if (containers > 0) {
-                    stuffing = metricTons / containers;
-                    row.find('.stuffing').val(stuffing.toFixed(3));
-                } else if (stuffing > 0) {
+                if (stuffing > 0) {
                     containers = Math.ceil(metricTons / stuffing);
                     row.find('.containers').val(containers);
+                } else if (containers > 0) {
+                    stuffing = metricTons / containers;
+                    row.find('.stuffing').val(stuffing.toFixed(3));
                 }
             } else if (sourceField === 'stuffing') {
                 if (stuffing > 0) {
