@@ -48,7 +48,7 @@
                     <div class="form-group">
                         <label class="form-label">Date:</label>
                         <input type="date" onchange="validateExpiry()" name="order_date" id="order_date" value="{{ $sale_order->order_date }}"
-                            class="form-control">
+                            class="form-control" min="{{ date('Y-m-d') }}">
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -78,7 +78,7 @@
                     <div class="form-group">
                         <label class="form-label">Delivery Date:</label>
                         <input type="date" name="delivery_date" onchange="validateExpiry()" value="{{ $sale_order->delivery_date }}" 
-                            id="delivery_date" class="form-control">
+                            id="delivery_date" class="form-control" min="{{ date('Y-m-d') }}">
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -368,20 +368,36 @@
         }
     }
     function validateExpiry() {
-        // console.log('validateExpiry');
-        // const orderDate = $('#order_date').val();
-        // const deliveryDate = $('#delivery_date').val();
-        // if (orderDate && deliveryDate) {
-        //     if (orderDate > deliveryDate) {
-        //         $('#delivery_date').addClass('is-invalid');
-        //         Swal.fire({
-        //             icon: 'error',
-        //             title: 'Expired!',
-        //             text: 'Order date cannot be greater than delivery date.',
-        //             confirmButtonText: 'OK'
-        //         });
-        //     }
-        // }
+        const inquiryId = $('#inquiry_id').val();
+        
+        if (inquiryId) {
+            $('#order_date').removeAttr('min');
+            $('#delivery_date').removeAttr('min');
+            return;
+        } else {
+            $('#order_date').attr('min', "{{ date('Y-m-d') }}");
+            const orderDate = $('#order_date').val();
+            if (orderDate) {
+                $('#delivery_date').attr('min', orderDate);
+            } else {
+                $('#delivery_date').attr('min', "{{ date('Y-m-d') }}");
+            }
+        }
+
+        const orderDate = $('#order_date').val();
+        const deliveryDate = $('#delivery_date').val();
+
+        if (orderDate && deliveryDate) {
+            if (orderDate > deliveryDate) {
+                $('#delivery_date').val('');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Invalid Date!',
+                    text: 'Order date cannot be greater than delivery date.',
+                    confirmButtonText: 'OK'
+                });
+            }
+        }
     }
     
 
@@ -599,6 +615,7 @@
             disableInquiryFields();
             disableTableFields();
         }
+        validateExpiry();
     });
 
     function addRow() {

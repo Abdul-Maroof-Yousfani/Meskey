@@ -35,6 +35,31 @@
         <div class="col-md-12">
             <div class="row">
                 <div class="col-12">
+                    <h6 class="header-heading-sepration">Customer & Order Details</h6>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Customer:</label>
+                        <select name="customer_id" id="customer_id" onchange="get_sale_orders(); get_receipt_vouchers()"
+                            class="form-control select2">
+                            <option value="">Select Customer</option>
+                            @foreach ($customers ?? [] as $customer)
+                                <option value="{{ $customer->id }}">{{ $customer->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Sale Orders:</label>
+                        <select name="sale_order_id" id="sale_order"
+                            onchange="get_so_detail(), get_so_items(), check_so_type(); validate_expiry(); get_receipt_vouchers()" class="form-control select2">
+                            <option value="">Select SO</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-12 mt-3">
                     <h6 class="header-heading-sepration">General Information</h6>
                 </div>
                 <div class="col-md-6">
@@ -77,31 +102,6 @@
                     <div class="form-group">
                         <label class="form-label">Reference Number:</label>
                         <input type="text" name="ref_no" id="ref_no" class="form-control">
-                    </div>
-                </div>
-
-                <div class="col-12 mt-3">
-                    <h6 class="header-heading-sepration">Customer & Order Details</h6>
-                </div>
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label class="form-label">Customer:</label>
-                        <select name="customer_id" id="customer_id" onchange="get_sale_orders(); get_receipt_vouchers()"
-                            class="form-control select2">
-                            <option value="">Select Customer</option>
-                            @foreach ($customers ?? [] as $customer)
-                                <option value="{{ $customer->id }}">{{ $customer->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label class="form-label">Sale Orders:</label>
-                        <select name="sale_order_id" id="sale_order"
-                            onchange="get_so_detail(), get_so_items(), check_so_type(); validate_expiry(); get_receipt_vouchers()" class="form-control select2">
-                            <option value="">Select SO</option>
-                        </select>
                     </div>
                 </div>
 

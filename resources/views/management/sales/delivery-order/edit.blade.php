@@ -36,6 +36,37 @@
         <div class="col-md-12">
             <div class="row">
                 <div class="col-12">
+                    <h6 class="header-heading-sepration">Customer & Order Details</h6>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Customer:</label>
+                        <select name="customer_id" id="customer_id" onchange="get_sale_orders()"
+                            class="form-control select2">
+                            <option value="">Select Customer</option>
+                            @foreach ($customers ?? [] as $customer)
+                                <option value="{{ $customer->id }}" @selected($delivery_order->customer_id == $customer->id)>{{ $customer->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Sale Orders:</label>
+                        <select name="sale_order_id" id="sale_order"
+                            onchange="get_so_detail(), get_receipt_vouchers(), get_so_items(), check_so_type(); validate_expiry()"
+                            class="form-control select2">
+                            <option value="">Select SO</option>
+                            @foreach ($sale_orders as $sale_order)
+                                <option value="{{ $sale_order->id }}" data-type="{{ $sale_order->pay_type_id }}" @selected($delivery_order->so_id == $sale_order->id)>
+                                    {{ $sale_order->reference_no }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-12 mt-3">
                     <h6 class="header-heading-sepration">General Information</h6>
                 </div>
                 <div class="col-md-6">
@@ -76,37 +107,6 @@
                         <label class="form-label">Reference Number:</label>
                         <input type="text" name="ref_no" id="ref_no" class="form-control"
                             value="{{ $delivery_order->ref_no }}">
-                    </div>
-                </div>
-
-                <div class="col-12 mt-3">
-                    <h6 class="header-heading-sepration">Customer & Order Details</h6>
-                </div>
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label class="form-label">Customer:</label>
-                        <select name="customer_id" id="customer_id" onchange="get_sale_orders()"
-                            class="form-control select2">
-                            <option value="">Select Customer</option>
-                            @foreach ($customers ?? [] as $customer)
-                                <option value="{{ $customer->id }}" @selected($delivery_order->customer_id == $customer->id)>{{ $customer->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label class="form-label">Sale Orders:</label>
-                        <select name="sale_order_id" id="sale_order"
-                            onchange="get_so_detail(), get_receipt_vouchers(), get_so_items(), check_so_type(); validate_expiry()"
-                            class="form-control select2">
-                            <option value="">Select SO</option>
-                            @foreach ($sale_orders as $sale_order)
-                                <option value="{{ $sale_order->id }}" data-type="{{ $sale_order->pay_type_id }}" @selected($delivery_order->so_id == $sale_order->id)>
-                                    {{ $sale_order->reference_no }}</option>
-                            @endforeach
-                        </select>
                     </div>
                 </div>
                 
