@@ -263,7 +263,7 @@
             <tr><td><strong>Incoterms:</strong></td><td>{{ $exportOrder->incoterm?->name ?? 'N/A' }}</td></tr>
             <tr><td><strong>Shipment Period:</strong></td><td>{{ \Carbon\Carbon::parse($exportOrder->shipment_delivery_date_from)->format('d-M-Y') }} To {{ \Carbon\Carbon::parse($exportOrder->shipment_delivery_date_to)->format('d-M-Y') }}</td></tr>
             <tr><td><strong>Shipping Marks:</strong></td><td>{!! nl2br(e($exportOrder->marking_labeling ?? 'N/A')) !!}</td></tr>
-            <tr><td><strong>Packing Details:</strong></td><td>{!! nl2br(e($exportOrder->packing_description ?? 'N/A')) !!}</td></tr>
+            <!-- <tr><td><strong>Packing Details:</strong></td><td>{!! nl2br(e($exportOrder->packing_description ?? 'N/A')) !!}</td></tr> -->
             @if($exportOrder->other_condition)<tr><td><strong>Other Conditions:</strong></td><td>{!! $exportOrder->other_condition !!}</td></tr>@endif
             @if($exportOrder->force_majure)<tr><td><strong>Force Majeure:</strong></td><td>{!! $exportOrder->force_majure !!}</td></tr>@endif
             @if($exportOrder->application_law)<tr><td><strong>Application Law:</strong></td><td>{!! $exportOrder->application_law !!}</td></tr>@endif

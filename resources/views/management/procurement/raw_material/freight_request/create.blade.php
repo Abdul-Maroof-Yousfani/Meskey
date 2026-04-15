@@ -175,13 +175,13 @@
             ? $paymentRequests->where("module_type", "freight_payment")->whereIn('status', ['pending', 'approved'])->count()
             : 0;
     @endphp
-    @if($ticket->saudaType?->name == 'Pohanch' && $has_pendings == 0)
+    @if($ticket->saudaType?->name == 'Pohanch')
         <div class="row">
             <div class="col-md-12">
                 <div class="form-group">
                     <div class="custom-control custom-checkbox">
                         <input type="checkbox" onchange="isPaidBySupplier()" class="custom-control-input"
-                            id="paid_by_supplier" name="is_paid_by_supplier" value="1" {{ (isset($paymentRequestData) && $paymentRequestData->is_paid_by_supplier) ? 'checked' : '' }}>
+                            id="paid_by_supplier" name="is_paid_by_supplier" @checked(isset($paymentRequestData) && $paymentRequestData->is_paid_by_supplier == 1) @disabled($has_pendings > 0) value="1">
                         <label class="custom-control-label font-weight-bold" for="paid_by_supplier">Paid By Supplier</label>
                     </div>
                 </div>
@@ -643,12 +643,17 @@
         </div>
     @endif
 
+    @php
+        $is_pending = isset($isRequestApprovalPage) && $isRequestApprovalPage && $paymentRequest && $paymentRequest->status == "pending";
+    @endphp
+    @if(!($has_pendings > 0 && isset($paymentRequestData) && $paymentRequestData->is_paid_by_supplier))
     <div class="row bottom-button-bar">
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
             <button type="submit" class="btn btn-primary submitbutton" id="saveButton">Save</button>
         </div>
     </div>
+    @endif
 </form>
 <script>
 

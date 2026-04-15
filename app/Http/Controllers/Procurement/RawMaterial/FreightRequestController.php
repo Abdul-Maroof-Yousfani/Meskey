@@ -785,9 +785,9 @@ class FreightRequestController extends Controller
 
         $paymentRequestData = PaymentRequestData::where('ticket_id', $arrivalTicket->id)
             ->where('module_type', 'freight_payment')
-            ->when($paymentRequest->first() && ($paymentRequest->first())->is_without_contract == 0, function ($query) use ($arrivalTicket) {
-                $query->where('purchase_order_id', $arrivalTicket->arrival_purchase_order_id);
-            })
+            // ->when($paymentRequest->first() && ($paymentRequest->first())->is_without_contract == 0, function ($query) use ($arrivalTicket) {
+            //     $query->where('purchase_order_id', $arrivalTicket->arrival_purchase_order_id);
+            // })
             ->latest()
             ->first();
 

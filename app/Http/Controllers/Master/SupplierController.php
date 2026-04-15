@@ -365,21 +365,35 @@ class SupplierController extends Controller
             }
 
             // Cleanup & Format data
+            $companyName = trim($rowData[0] ?? '');
+            $ownerName = trim($rowData[1] ?? '');
+            if ($ownerName === '') {
+                $ownerName = $companyName;
+            }
+
             $mobile = trim($rowData[2] ?? '');
             // Auto-fix leading zero if stripped by Excel (if 10 digits starting with 3, prepend 0)
             if (strlen($mobile) == 10 && str_starts_with($mobile, '3')) {
                 $mobile = '0' . $mobile;
             }
 
+            // Type & Status Normalization
+            $rawType = trim($rowData[4] ?? '');
+            $type = !empty($rawType) ? strtolower(str_replace([' ', '-'], '_', $rawType)) : 'raw_material';
+            
+            $rawStatus = trim($rowData[5] ?? '');
+            $status = !empty($rawStatus) ? strtolower($rawStatus) : 'active';
+            if ($status === 'in_active') $status = 'inactive';
+
             // Mapping
             $data = [
                 'company_id' => $meskeyCompanyId,
-                'company_name' => $rowData[0] ?? '',
-                'owner_name' => $rowData[1] ?? '',
+                'company_name' => $companyName,
+                'owner_name' => $ownerName,
                 'owner_mobile_no' => $mobile,
                 'owner_cnic_no' => $rowData[3] ?? '',
-                'type' => $rowData[4] ?? '',
-                'status' => $rowData[5] ?? '',
+                'type' => $type,
+                'status' => $status,
                 'email' => $rowData[6] ?? null,
                 'phone' => $rowData[7] ?? null,
                 'address' => $rowData[8] ?? null,
@@ -395,33 +409,41 @@ class SupplierController extends Controller
                 'company_name' => 'required|string|max:255',
                 'owner_name' => 'required',
                 'owner_mobile_no' => 'required',
-                'owner_cnic_no' => 'required',
-                'type' => 'required',
-                'status' => 'required',
+                'type' => 'required|in:raw_material,store_supplier',
+                'status' => 'required|in:active,inactive',
             ]);
 
             if ($validator->fails()) {
                 throw new \Exception(implode(', ', $validator->errors()->all()));
             }
 
-            // check unique company name for this Meskey company
-            $exists = Supplier::where('company_name', $data['company_name'])
-                ->where('company_id', $meskeyCompanyId)
-                ->exists();
-            if ($exists) {
-                throw new \Exception("Supplier company name already exists for this company.");
+            // Check if supplier exists by company_name OR owner_name for this Meskey company
+            $supplier = Supplier::where('company_id', $meskeyCompanyId)
+                ->where(function ($q) use ($companyName, $ownerName) {
+                    $q->where('company_name', $companyName)
+                      ->orWhere('owner_name', $ownerName);
+                })
+                ->first();
+
+            if ($supplier) {
+                // Update existing supplier
+                $supplier->update($data);
+                if ($supplier->account) {
+                    $supplier->account->update(['name' => $companyName]);
+                }
+            } else {
+                // Create new supplier
+                $account = Account::create(getParamsForAccountCreationByPath($meskeyCompanyId, $companyName, '2-2', 'suppliers'));
+                $data['account_id'] = $account->id;
+                $data['unique_no'] = generateUniqueNumber('suppliers', null, null, 'unique_no');
+                $data['name'] = $companyName;
+                $supplier = Supplier::create($data);
             }
-
-            // Account Creation
-            $account = Account::create(getParamsForAccountCreationByPath($meskeyCompanyId, $data['company_name'], '2-2', 'suppliers'));
-            $data['account_id'] = $account->id;
-            $data['unique_no'] = generateUniqueNumber('suppliers', null, null, 'unique_no');
-            $data['name'] = $data['company_name'];
-
-            $supplier = Supplier::create($data);
 
             // Company Bank Detail (Columns 12-16: Name, Branch, Code, Title, Acc)
             if (!empty($rowData[12])) {
+                // Refresh or update company bank detail
+                $supplier->companyBankDetails()->delete();
                 SupplierCompanyBankDetail::create([
                     'supplier_id' => $supplier->id,
                     'bank_name' => $rowData[12],
@@ -434,6 +456,7 @@ class SupplierController extends Controller
 
             // Owner Bank Detail (Columns 17-21: Name, Branch, Code, Title, Acc)
             if (!empty($rowData[17])) {
+                $supplier->ownerBankDetails()->delete();
                 SupplierOwnerBankDetail::create([
                     'supplier_id' => $supplier->id,
                     'bank_name' => $rowData[17],
