@@ -8,7 +8,7 @@
     $paymentRequest = isset($paymentRequest) ? $paymentRequest : null;
     $isUpdated = isset($isUpdated) ? $isUpdated : null;
     $approval = isset($approval) ? $approval : null;
-    
+
 @endphp
 <style>
     .hide,
@@ -526,7 +526,8 @@
         <div class="col-md-2">
             <div class="form-group">
                 <label class="font-weight-bold">Total Commision</label>
-                <input type="text" class="form-control bg-light total_commision" name="total_commision" value="" readonly>
+                <input type="text" class="form-control bg-light total_commision" name="total_commision" value=""
+                    readonly>
             </div>
         </div>
         <div class="col-md-2">
@@ -647,12 +648,12 @@
         $is_pending = isset($isRequestApprovalPage) && $isRequestApprovalPage && $paymentRequest && $paymentRequest->status == "pending";
     @endphp
     @if(!($has_pendings > 0 && isset($paymentRequestData) && $paymentRequestData->is_paid_by_supplier))
-    <div class="row bottom-button-bar">
-        <div class="col-12">
-            <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
-            <button type="submit" class="btn btn-primary submitbutton" id="saveButton">Save</button>
+        <div class="row bottom-button-bar">
+            <div class="col-12">
+                <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
+                <button type="submit" class="btn btn-primary submitbutton" id="saveButton">Save</button>
+            </div>
         </div>
-    </div>
     @endif
 </form>
 <script>
@@ -800,8 +801,6 @@
             let totalCommision = parseFloat(commissionAmount || 0);
 
 
-            let netAmount = grossAmount - godownPenalty - totalCommision - totalLabour;
-
 
             const commissionPercent = parseFloat($('.commission-percent').val()) || 0;
             //  const freightRs = parseFloat($('.freight-rs').val()) || 0;
@@ -811,13 +810,15 @@
                 const commissionAmount = (grossAfterDeductAmount * commissionPercent) / 100;
                 $('.commission-amount').val(commissionAmount.toFixed(2));
                 $(".total_commision").val(commissionAmount.toFixed(2));
-                
+
             } else {
-                $('.commission-amount').val('0'); 
+                $('.commission-amount').val('0');
                 $(".total_commision").val('0');
 
             }
-
+            var commissionAmountttt = (grossAfterDeductAmount * commissionPercent) / 100;
+            let netAmount = grossAmount - godownPenalty - commissionAmountttt - totalLabour;
+            console.log(grossAmount, godownPenalty, commissionAmountttt, totalLabour, netAmount);
 
             $('[name="gross_amount"]').val(grossAmount.toFixed(2));
             $('[name="total_deductions"]').val(totalDeductions.toFixed(2));
