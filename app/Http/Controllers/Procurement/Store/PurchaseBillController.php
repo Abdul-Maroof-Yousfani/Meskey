@@ -322,8 +322,8 @@ class PurchaseBillController extends Controller
 
         $dataItems = PurchaseOrderReceivingData::where(function ($q) {
             $q->whereHas('qc', function ($query) {
-                $query->where('am_approval_status', 'approved')
-                        ->where("accepted_quantity", ">", 0);
+                $query->where('am_approval_status', 'approved');
+                        // ->where("accepted_quantity", ">", 0);
             })->orWhere('category_id', '!=', 38);
         })
             ->whereDoesntHave('bill')
