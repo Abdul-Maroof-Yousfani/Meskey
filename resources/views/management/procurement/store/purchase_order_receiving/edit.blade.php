@@ -130,7 +130,7 @@
                      <th>Job Order</th>
                      <th>Qty</th>
 @if(optional($purchaseOrderReceiving->purchase_request)->category_id == 38)
-                     <th>Receive Weight (grams)</th>
+                     <th>Receive Weight (kg)</th>
                      <th>Accepted Quantity</th>
                      <th>Rejected Quantity</th>
                      <th>Deduction Per KG</th>
