@@ -512,14 +512,12 @@
                         @disabled($paramlabour_vendor_id)>
                         <option value="">Select Labour Party</option>
                         @foreach ($vendors as $vendor)
-                            <option value="{{ $vendor->id }}" @selected(isset($paymentRequestData) && $paymentRequestData->payment_to == $vendor->id)>
+                            <option value="{{ $vendor->id }}" @selected(isset($paymentRequestData) && $paymentRequestData->labour_vendor_id == $vendor->id)>
                                 {{ $vendor->name }}
                             </option>
                         @endforeach
                     </select>
-                    @if (isset($isRequestApprovalPage, $paymentRequestData->payment_to))
-                        <input type="hidden" name="labour_vendor_id" value="{{ $paymentRequestData->payment_to }}" readonly>
-                    @endif
+
                 </div>
             @endif
         </div>
