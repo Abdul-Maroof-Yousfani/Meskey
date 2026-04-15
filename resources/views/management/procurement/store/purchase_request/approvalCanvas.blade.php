@@ -129,7 +129,6 @@
                 <th class="bag-only" style="min-width: 200px;">Micron</th>
                 <th class="bag-only" style="min-width: 450px;">Printing Sample</th>
                 <th style="min-width: 400px;">line desc</th>
-                <th style="min-width: 150px;">Action</th>
             </tr>
         </thead>
         <tbody id="purchaseRequestBody">
@@ -257,8 +256,6 @@
                 <td style="min-width: 400px;"><input type="text" name="remarks[]" id="remark_{{ $rowIdApproval }}" class="form-control bg-white"
                         placeholder="line desc" value="{{ $item->remarks }}" readonly></td>
 
-                <td style="min-width: 150px;"><button disabled type="button" class="btn btn-danger btn-sm removeRowBtn"
-                        onclick="removeRow('{{ $rowIdApproval }}')" style="width:120px;"><i class="fa fa-trash"></i></button></td>
             </tr>
             @endforeach
         </tbody>
