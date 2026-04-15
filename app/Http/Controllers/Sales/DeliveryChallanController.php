@@ -49,9 +49,9 @@ class DeliveryChallanController extends Controller
 
         // delivery order's delivery date should not be greater than date
         $delivery_order = DeliveryOrder::find($do_id);
-        if(strtotime($delivery_order->dispatch_date) <= strtotime($request->date)) {
-            return response()->json("Selected Delivery order is expired. Please select a different Delivery order", 422);
-        }
+        // if(strtotime($delivery_order->dispatch_date) <= strtotime($request->date)) {
+        //     return response()->json("Selected Delivery order is expired. Please select a different Delivery order", 422);
+        // }
         
         
         try {
@@ -185,9 +185,9 @@ class DeliveryChallanController extends Controller
         // delivery order's delivery date should not be greater than date
 
         $delivery_order = DeliveryOrder::find($do_id);
-        if(strtotime($delivery_order->dispatch_date) < strtotime($request->date)) {
-            return response()->json("Selected Delivery order is expired. Please select a different Delivery order", 422);
-        }
+        // if(strtotime($delivery_order->dispatch_date) < strtotime($request->date)) {
+        //     return response()->json("Selected Delivery order is expired. Please select a different Delivery order", 422);
+        // }
 
         try {
 
