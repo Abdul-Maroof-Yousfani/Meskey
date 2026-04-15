@@ -867,7 +867,11 @@
 
     function get_sale_orders() {
         const customer_id = $("#customer_id").val();
-        // get-sale-inquiries-against-customer
+        
+        if (!customer_id) {
+            $("#sale_order").empty().append('<option value="" selected>Select Sale Order</option>').trigger('change');
+            return;
+        }
 
         $.ajax({
             url: "{{ route('sales.get.delivery-order.getSoAgainstCustomer') }}",
@@ -877,12 +881,13 @@
             },
             dataType: "json",
             success: function(res) {
+                const data = res.processedData;
                 $("#sale_order").empty();
 
                 // Add default "Select Sale Order" option first
                 $("#sale_order").append('<option value="" selected>Select Sale Order</option>');
 
-                res.forEach(item => {
+                data.forEach(item => {
                     $("#sale_order").append(`
                         <option value="${item.id}" 
                                 data-type="${item.type || ''}">
@@ -897,8 +902,6 @@
 
             }
         });
-
-        // get-sale-inquiry-data
     }
 
     function get_inquiry_data() {
@@ -995,6 +998,9 @@
         if (!soId) {
             applySaudaType('');
             updateLocations([]);
+            soFactoryMap = {};
+            soSectionMap = {};
+            $("#delivery_date").val('').prop("readonly", false);
             return;
         }
 
@@ -1043,12 +1049,26 @@
     // get.delivery-order.getRvAgainstSo
 
     function get_receipt_vouchers() {
+        const customer_id = $("#customer_id").val();
+        const sale_order_id = $("#sale_order").val();
+
+        if (!customer_id) {
+            let select = $("#receipt_vouchers");
+            select.empty();
+            select.append(
+                `<option value='' data-amount="0">Select Receipt Voucher</option>`
+            );
+            select.trigger('change.select2');
+            add_advance_amount();
+            return;
+        }
+
         $.ajax({
             url: "{{ route('sales.get.delivery-order.getRvAgainstSo') }}",
             method: "GET",
             data: {
-                customer_id: $("#customer_id").val(),
-                sale_order_id: $("#sale_order").val()
+                customer_id: customer_id,
+                sale_order_id: sale_order_id
             },
             dataType: "json",
             success: function(res) {
@@ -1097,11 +1117,17 @@
     }
 
     function get_so_items() {
+        const soId = $("#sale_order").val();
+        if (!soId) {
+            $('#soTableBody').empty();
+            return;
+        }
+
         $.ajax({
             url: "{{ route('sales.get.delivery-order.getSoItems') }}",
             method: "GET",
             data: {
-                so_id: $("#sale_order").val(),
+                so_id: soId,
             },
             dataType: "html",
             success: function(res) {
