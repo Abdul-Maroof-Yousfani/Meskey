@@ -517,7 +517,10 @@
                             </option>
                         @endforeach
                     </select>
-
+                    @if (isset($isRequestApprovalPage, $paymentRequestData->labour_vendor_id))
+                        <input type="hidden" name="labour_vendor_id" value="{{ $paymentRequestData->labour_vendor_id }}"
+                            readonly>
+                    @endif
                 </div>
             @endif
         </div>
