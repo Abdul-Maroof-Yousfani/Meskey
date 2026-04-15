@@ -155,7 +155,7 @@ class FreightRequestController extends Controller
                             $approvedPaymentSum += $pRequest->total_amount;
                         }
                     } else {
-                        if ($pRequest->status == 'pending' || $pRequest->status == 'approved') {
+                        if ($pRequest->status == 'pending' || $pRequest->status == 'approved' && $pRequest->request_type == 'freight_payment') {
                             $totalFreightSum += $pRequest->total_amount;
                         }
                         if ($pRequest->status == 'approved') {
@@ -244,7 +244,6 @@ class FreightRequestController extends Controller
         })
             ->where('status', '!=', 'rejected')
             ->where('module_type', 'freight_payment')
-            ->where('request_type', 'freight_payment')
             ->sum('amount');
 
 
@@ -770,6 +769,7 @@ class FreightRequestController extends Controller
         })
             ->where('status', '!=', 'rejected')
             ->where('module_type', 'freight_payment')
+            ->where('request_type', 'freight_payment')
             ->sum('amount');
 
         $paymentRequest = PaymentRequest::whereHas('paymentRequestData', function ($q) use ($arrivalTicket) {
