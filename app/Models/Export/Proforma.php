@@ -24,6 +24,6 @@ class Proforma extends Model
             return \App\Models\CustomerCompanyBankDetail::find($this->customer_bank_id);
         }
 
-        return $this->exportOrder->customer_bank ?? null;
+        return $this->exportOrder?->customer_bank ?? null;
     }
 }
