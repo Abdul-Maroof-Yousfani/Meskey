@@ -8,6 +8,7 @@
             <th width="15%">Product</th>
             <th width="10%">Broker</th>
             <th width="10%">Currency</th>
+            <th class="col-1">Status</th>
             <th width="15%">Action</th>
         </tr>
     </thead>
@@ -36,6 +37,21 @@
                                 <small class="text-muted">Rate: {{ $export->currency->rate }}</small>
                             @endif
                         </div>
+                    </td>
+                    <td>
+                        @php
+                            $status = $export->am_approval_status ?? 'pending';
+                            $badge = match(strtolower($status)) {
+                                'approved' => 'badge-success',
+                                'rejected' => 'badge-danger',
+                                'pending'  => 'badge-warning',
+                                'reverted' => 'badge-secondary',
+                                default    => 'badge-secondary',
+                            };
+                        @endphp
+                        <span class="badge {{ $badge }} px-2 py-1">
+                            {{ ucfirst($status) }}
+                        </span>
                     </td>
                     <td>
                         {{-- @canAccess('export-order-show') --}}

@@ -52,6 +52,7 @@
                                             <th width="15%">Product</th>
                                             <th width="10%">Broker</th>
                                             <th width="10%">Currency</th>
+                                            <th class="col-1">Status</th>
                                             <th width="15%">Action</th>
                                         </tr>
                                     </thead>

@@ -137,7 +137,7 @@ class ExportOrderController extends Controller
             ));
 
             // CLEANUP orphaned approval rows (if record ID 1 is being reused)
-            \App\Models\ApprovalsModule\ApprovalRow::where('module_id', 13)->where('record_id', $exportOrder->id)->delete();
+            \App\Models\ApprovalsModule\ApprovalRow::where('module_id', 31)->where('record_id', $exportOrder->id)->delete();
             $exportOrder->createApprovalRows(); // Manually trigger to be safe if event was weird, or let HasApproval handle it.
             // Actually, HasApproval trait already calls it on 'created' event.
             // But deleting HERE is fine because it's after create() and inside transaction.
