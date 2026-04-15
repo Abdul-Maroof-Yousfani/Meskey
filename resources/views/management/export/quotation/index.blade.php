@@ -45,7 +45,7 @@
                                         <th width="15%">Company</th>
                                         <th width="15%">Product</th>
                                         <th width="10%">Currency</th>
-                                        <th width="10%">Rate/MT</th>
+                                        {{-- <th width="10%">Rate/MT</th> --}}
                                         <th width="10%">Total Amount</th>
                                         <th width="10%">Action</th>
                                     </tr>

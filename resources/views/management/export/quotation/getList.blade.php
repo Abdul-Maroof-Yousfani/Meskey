@@ -7,7 +7,7 @@
             <th width="15%">Company</th>
             <th width="15%">Product</th>
             <th width="10%">Currency</th>
-            <th width="10%">Rate/MT</th>
+            {{-- <th width="10%">Rate/MT</th> --}}
             <th width="10%">Total Amount</th>
             <th width="10%">Action</th>
         </tr>
@@ -21,8 +21,8 @@
                     <td>{{ $quotation->buyer->name ?? 'N/A' }}</td>
                     <td>{{ $quotation->company->name ?? 'N/A' }}</td>
                     <td>{{ Str::limit($quotation->product->name ?? 'N/A', 30) }}</td>
-                    <td>{{ $quotation->currency->currency_code ?? '' }}</td>
-                    <td>{{ number_format($quotation->rate, 2) }}</td>
+                    <td>{{ $quotation->currency->currency_code ?? '' }} ({{ number_format($quotation->currency_rate, 2) ?? '' }})</td>
+                    {{-- <td>{{ number_format($quotation->rate, 2) }}</td> --}}
                     <td>{{ number_format($quotation->total_amount, 2) }}</td>
                     <td>
                         <a class="info p-1 text-center position-relative"
