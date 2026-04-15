@@ -18,7 +18,7 @@
                     <td>
                         <div>
                             <strong class="d-block">{{ $proforma->exportOrder?->voucher_no ?? 'N/A' }}</strong>
-                            @if ($proforma->exportOrder->contract_no)
+                            @if ($proforma->exportOrder?->contract_no)
                                 <small class="text-muted">Contract: {{ $proforma->exportOrder?->contract_no }}</small>
                             @endif
                         </div>

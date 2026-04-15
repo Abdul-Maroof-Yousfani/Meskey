@@ -6,31 +6,31 @@ use App\Http\Controllers\Controller;
 use App\Models\BagCondition;
 use App\Models\BagPacking;
 use App\Models\BagType;
-use App\Models\Country;
 use App\Models\Export\Bank;
 use App\Models\Export\Currency;
 use App\Models\Export\ExportOrder;
+use App\Models\Export\ExportSodaField;
 use App\Models\Export\IncoTerm;
 use App\Models\Export\ModeOfTerm;
 use App\Models\Export\ModeOfTransport;
 use App\Models\Export\Proforma;
+use App\Models\Export\Quotation;
 use App\Models\Master\Brands;
 use App\Models\Master\Broker;
 use App\Models\Master\Color;
 use App\Models\Master\CompanyLocation;
+use App\Models\Master\Country;
 use App\Models\Master\HsCode;
 use App\Models\Master\Port;
+use App\Models\Master\ProductSlab;
+use App\Models\Master\Size;
+use App\Models\Master\Stitching;
+use App\Models\Master\FumigationCompany;
 use App\Models\Product;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use App\Models\Master\Customer;
-use App\Models\Export\ExportOrderPackingItem;
-use App\Http\Requests\Export\ExportOrderRequest;
-use App\Models\CustomerCompanyBankDetail;
-use App\Models\CustomerOwnerBankDetail;
-use App\Models\Master\ProductSlab;
 
 class ProformaController extends Controller
 {
@@ -48,8 +48,11 @@ class ProformaController extends Controller
                 $searchTerm = '%'.$request->search.'%';
 
                 return $q->where(function ($sq) use ($searchTerm) {
-                    $sq->where('voucher_no', 'like', $searchTerm)
-                        ->orWhere('contract_no', 'like', $searchTerm);
+                    $sq->where('proforma_no', 'like', $searchTerm)
+                        ->orWhereHas('exportOrder', function ($oq) use ($searchTerm) {
+                            $oq->where('voucher_no', 'like', $searchTerm)
+                                ->orWhere('contract_no', 'like', $searchTerm);
+                        });
                 });
             })
             ->latest()
@@ -60,7 +63,7 @@ class ProformaController extends Controller
 
     public function selectExportOrder(): View
     {
-        $export_orders = ExportOrder::with(['specifications', 'packingItems', 'product', 'modeOfTerm', 'buyer'])
+        $export_orders = ExportOrder::with(['specifications', 'packingItems.subItems', 'product', 'modeOfTerm', 'buyer'])
             ->where('am_approval_status', 'approved')
             ->whereDoesntHave('proforma')
             ->orderBy('id', 'ASC')
@@ -71,50 +74,12 @@ class ProformaController extends Controller
 
     public function create($exportOrderId): View
     {
-        $exportOrder = ExportOrder::with(['specifications', 'packingItems', 'product'])->findOrFail($exportOrderId);
+        $exportOrder = ExportOrder::with(['specifications', 'packingItems.subItems', 'product'])->findOrFail($exportOrderId);
+        $formData = $this->getExportOrderFormData();
 
-        $products = Product::where('status', 1)->get();
-        $companyLocations = CompanyLocation::where('status', 'active')->get();
-        $bagTypes = BagType::where('status', 1)->get();
-        $bagConditions = BagCondition::where('status', 1)->get();
-        $bagPackings = BagPacking::where('status', 1)->get();
-        $brands = Brands::where('status', 1)->get();
-        $bagColors = Color::where('status', 1)->get();
-        $users = Customer::get(); // buyer
-        $banks = Bank::where('status', 1)->get();
-        $brokers = Broker::where('status', 1)->get();
-        $incoterms = IncoTerm::where('status', 1)->get();
-        $modeofterms = ModeOfTerm::where('status', 1)->get();
-        $modeoftransport = ModeOfTransport::where('status', 1)->get();
-        $countries = Country::get();
-        $ports = Port::where('status', 1)->get();
-        $hscodes = HsCode::where('status', 1)->get();
-        $currencies = Currency::where('status', 1)->get();
-        $companyBanks = CustomerCompanyBankDetail::where('customer_id', $exportOrder->buyer_id)->get();
-        $ownerBanks = CustomerOwnerBankDetail::where('customer_id', $exportOrder->buyer_id)->get();
-
-        return view('management.export.proforma.create', compact(
-            'exportOrder',
-            'products',
-            'companyLocations',
-            'bagTypes',
-            'bagConditions',
-            'bagPackings',
-            'brands',
-            'bagColors',
-            'users',
-            'banks',
-            'brokers',
-            'incoterms',
-            'modeofterms',
-            'modeoftransport',
-            'countries',
-            'ports',
-            'hscodes',
-            'currencies',
-            'companyBanks',
-            'ownerBanks',
-        ));
+        return view('management.export.proforma.create', array_merge($formData, [
+            'exportOrder' => $exportOrder,
+        ]));
     }
 
     public function store(Request $request, $exportOrderId)
@@ -123,54 +88,14 @@ class ProformaController extends Controller
 
         try {
             $exportOrder = ExportOrder::findOrFail($exportOrderId);
-
             $request->validate([
-                'consigned_details' => 'nullable|string|max:5000',
+                'consigned_details' => 'nullable|string',
             ]);
 
-            // Update Export Order details if provided (matching update logic)
-            $exportOrderData = $request->only([
-                'company_id', 'buyer_id', 'product_id', 'voucher_no', 'contract_no',
-                'voucher_date', 'voucher_heading', 'shipment_delivery_date_from',
-                'shipment_delivery_date_to', 'other_specifications', 'customer_bank_id',
-                'customer_bank_type', 'correspondent_bank_id', 'incoterm_id', 'packing_type', 
-                'mode_of_term_id', 'mode_of_transport_id', 'origin_country_id', 
-                'port_of_discharge_id', 'port_of_loading_id', 'hs_code_id', 
-                'partial_payment', 'transhipment', 'part_shipment', 
-                'insurance_covered_by', 'advance_payment', 'payment_days',
-                'currency_id', 'currency_rate', 'marking_labeling', 'shipping_instructions',
-                'documents_to_be_provided', 'other_condition', 'force_majure',
-                'application_law', 'broker_id',
-            ]);
-
-            $exportOrder->update($exportOrderData);
-
-            // Update Packing Items
-            if ($request->has('packing_items')) {
-                foreach ($request->packing_items as $itemData) {
-                    if (isset($itemData['id'])) {
-                        $packingItem = ExportOrderPackingItem::find($itemData['id']);
-                        if ($packingItem) {
-                            $packingItem->update($itemData);
-                        }
-                    } else {
-                        $exportOrder->packingItems()->create($itemData);
-                    }
-                }
-            }
-
-            // Update Specifications
-            if ($request->has('specifications')) {
-                $exportOrder->specifications()->delete();
-                foreach ($request->specifications as $spec) {
-                    $exportOrder->specifications()->create([
-                        'product_slab_type_id' => $spec['product_slab_type_id'],
-                        'spec_name' => $spec['spec_name'],
-                        'spec_value' => $spec['spec_value'],
-                        'uom' => $spec['uom'] ?? null,
-                        'value_type' => $spec['value_type'] ?? null,
-                    ]);
-                }
+            if ($exportOrder->proforma()->exists()) {
+                return response()->json([
+                    'error' => 'Proforma already exists against this Export Order',
+                ], 422);
             }
 
             // Create Proforma
@@ -208,204 +133,46 @@ class ProformaController extends Controller
     public function show($id): View
     {
         $proforma = Proforma::with(['exportOrder', 'exportOrder.modeOfTerm', 'exportOrder.buyer'])->findOrFail($id);
-        $exportOrder = ExportOrder::with(['specifications', 'packingItems', 'product'])->findOrFail($proforma->export_order_id);
+        $exportOrder = ExportOrder::with(['specifications', 'packingItems.subItems', 'product'])->findOrFail($proforma->export_order_id);
+        $formData = $this->getExportOrderFormData();
 
-        $products = Product::where('status', 1)->get();
-        $companyLocations = CompanyLocation::where('status', 'active')->get();
-        $bagTypes = BagType::where('status', 1)->get();
-        $bagConditions = BagCondition::where('status', 1)->get();
-        $bagPackings = BagPacking::where('status', 1)->get();
-        $brands = Brands::where('status', 1)->get();
-        $bagColors = Color::where('status', 1)->get();
-        $users = Customer::get(); // buyer
-        $banks = Bank::where('status', 1)->get();
-        $brokers = Broker::where('status', 1)->get();
-        $incoterms = IncoTerm::where('status', 1)->get();
-        $modeofterms = ModeOfTerm::where('status', 1)->get();
-        $modeoftransport = ModeOfTransport::where('status', 1)->get();
-        $countries = Country::get();
-        $ports = Port::where('status', 1)->get();
-        $hscodes = HsCode::where('status', 1)->get();
-        $currencies = Currency::where('status', 1)->get();
-        $companyBanks = CustomerCompanyBankDetail::where('customer_id', $exportOrder->buyer_id)->get();
-        $ownerBanks = CustomerOwnerBankDetail::where('customer_id', $exportOrder->buyer_id)->get();
-
-        return view('management.export.proforma.show', compact(
-            'proforma',
-            'exportOrder',
-            'products',
-            'companyLocations',
-            'bagTypes',
-            'bagConditions',
-            'bagPackings',
-            'brands',
-            'bagColors',
-            'users',
-            'banks',
-            'brokers',
-            'incoterms',
-            'modeofterms',
-            'modeoftransport',
-            'countries',
-            'ports',
-            'hscodes',
-            'currencies',
-            'companyBanks',
-            'ownerBanks',
-        ));
+        return view('management.export.proforma.show', array_merge($formData, [
+            'proforma' => $proforma,
+            'exportOrder' => $exportOrder,
+        ]));
     }
 
     public function edit($id): View
     {
         $proforma = Proforma::findOrFail($id);
-        $exportOrder = ExportOrder::with(['specifications', 'packingItems', 'product'])->findOrFail($proforma->export_order_id);
+        $exportOrder = ExportOrder::with(['specifications', 'packingItems.subItems', 'product'])->findOrFail($proforma->export_order_id);
+        $formData = $this->getExportOrderFormData();
 
-        $products = Product::where('status', 1)->get();
-        $companyLocations = CompanyLocation::where('status', 'active')->get();
-        $bagTypes = BagType::where('status', 1)->get();
-        $bagConditions = BagCondition::where('status', 1)->get();
-        $bagPackings = BagPacking::where('status', 1)->get();
-        $brands = Brands::where('status', 1)->get();
-        $bagColors = Color::where('status', 1)->get();
-        $users = Customer::get(); // buyer
-        $banks = Bank::where('status', 1)->get();
-        $brokers = Broker::where('status', 1)->get();
-        $incoterms = IncoTerm::where('status', 1)->get();
-        $modeofterms = ModeOfTerm::where('status', 1)->get();
-        $modeoftransport = ModeOfTransport::where('status', 1)->get();
-        $countries = Country::get();
-        $ports = Port::where('status', 1)->get();
-        $hscodes = HsCode::where('status', 1)->get();
-        $currencies = Currency::where('status', 1)->get();
-        $companyBanks = CustomerCompanyBankDetail::where('customer_id', $exportOrder->buyer_id)->get();
-        $ownerBanks = CustomerOwnerBankDetail::where('customer_id', $exportOrder->buyer_id)->get();
-
-        return view('management.export.proforma.edit', compact(
-            'proforma',
-            'exportOrder',
-            'products',
-            'companyLocations',
-            'bagTypes',
-            'bagConditions',
-            'bagPackings',
-            'brands',
-            'bagColors',
-            'users',
-            'banks',
-            'brokers',
-            'incoterms',
-            'modeofterms',
-            'modeoftransport',
-            'countries',
-            'ports',
-            'hscodes',
-            'currencies',
-            'companyBanks',
-            'ownerBanks',
-        ));
+        return view('management.export.proforma.edit', array_merge($formData, [
+            'proforma' => $proforma,
+            'exportOrder' => $exportOrder,
+        ]));
     }
 
-    public function update(ExportOrderRequest $request, $id)
+    public function update(Request $request, $id)
     {
         DB::beginTransaction();
 
         try {
             $proforma = Proforma::findOrFail($id);
-            $exportOrder = ExportOrder::findOrFail($proforma->export_order_id);
-
-            // Update main export order
-            $exportOrderData = $request->only([
-                'company_id', 'buyer_id', 'product_id', 'voucher_no', 'contract_no',
-                'voucher_date', 'voucher_heading', 'shipment_delivery_date_from',
-                'shipment_delivery_date_to', 'other_specifications', 'customer_bank_id',
-                'customer_bank_type', 'correspondent_bank_id', 'incoterm_id', 'packing_type',
-                'mode_of_transport_id', 'origin_country_id', 'port_of_discharge_id',
-                'port_of_loading_id', 'hs_code_id', 'partial_payment', 'transhipment',
-                'part_shipment', 'insurance_covered_by', 'advance_payment', 'payment_days',
-                'currency_id', 'currency_rate', 'marking_labeling', 'shipping_instructions',
-                'documents_to_be_provided', 'other_condition', 'force_majure',
-                'application_law', 'broker_id',
+            $request->validate([
+                'consigned_details' => 'nullable|string',
             ]);
 
-            $updateData = [
-                ...$exportOrderData,
-                'company_location_ids' => $request->company_location_ids,
-                'arrival_location_ids' => $request->arrival_location_ids,
-                'arrival_sub_location_ids' => $request->arrival_sub_location_ids,
-                'am_change_made' => 1,
-            ];
-
-            if ($exportOrder->am_approval_status === 'reverted') {
-                $updateData['am_approval_status'] = 'pending';
-            }
-
-            $exportOrder->update($updateData);
-
-            // // Merge the location arrays
-            // $exportOrder->update(array_merge(
-            //     $exportOrderData,
-            //     [
-            //         'company_location_ids' => $request->company_location_ids,
-            //         'arrival_location_ids' => $request->arrival_location_ids,
-            //         'arrival_sub_location_ids' => $request->arrival_sub_location_ids,
-            //     ]
-            // ));
-
-            // $updateData = [
-            //     'am_change_made' => 1,
-            // ];
-
-            // if ($exportOrder->am_approval_status == 'reverted') {
-            //     $updateData['am_approval_status'] = 'pending';
-            // }
-
-            // $exportOrder->update($updateData);
-
-            // Update specifications
-            $exportOrder->specifications()->delete();
-            if ($request->has('specifications')) {
-                foreach ($request->specifications as $spec) {
-                    $exportOrder->specifications()->create([
-                        'product_slab_type_id' => $spec['product_slab_type_id'],
-                        'spec_name' => $spec['spec_name'],
-                        'spec_value' => $spec['spec_value'],
-                        'uom' => $spec['uom'] ?? null,
-                        'value_type' => $spec['value_type'] ?? null,
-                    ]);
-                }
-            }
-
-            // Optional: update packing items
-            if ($request->filled('packing_items')) {
-                $exportOrder->packingItems()->delete();
-                foreach ($request->packing_items as $item) {
-                    $exportOrder->packingItems()->create([
-                        'brand_id' => $item['brand_id'],
-                        'bag_type_id' => $item['bag_type_id'],
-                        'bag_packing_id' => $item['bag_packing_id'] ?? null,
-                        'bag_condition_id' => $item['bag_condition_id'],
-                        'bag_color_id' => $item['bag_color_id'],
-                        'bag_size' => $item['bag_size'] ?? 0,
-                        'metric_tons' => $item['metric_tons'] ?? 0,
-                        'maunds' => $item['maunds'] ?? 0,
-                        'no_of_bags' => $item['no_of_bags'] ?? 0,
-                        'total_kgs' => $item['total_kgs'] ?? 0,
-                        'stuffing_in_container' => $item['stuffing_in_container'] ?? 0,
-                        'stuffing_maunds' => $item['stuffing_maunds'] ?? 0,
-                        'no_of_containers' => $item['no_of_containers'] ?? 0,
-                        'rate' => $item['rate'] ?? 0,
-                        'rate_per_maund' => $item['rate_per_maund'] ?? 0,
-                        'amount' => $item['amount'] ?? 0,
-                        'amount_pkr' => $item['amount_pkr'] ?? 0,
-                    ]);
-                }
-            }
+            $proforma->update([
+                'consigned_details' => $request->consigned_details,
+            ]);
 
             DB::commit();
 
             return response()->json([
-                'success' => 'Export Order updated successfully',
-                'data' => $exportOrder->load(['product', 'company', 'specifications', 'packingItems']),
+                'success' => 'Proforma updated successfully',
+                'data' => $proforma->load(['exportOrder.product', 'exportOrder.company', 'exportOrder.specifications', 'exportOrder.packingItems.subItems']),
             ], 200);
 
         } catch (\Throwable $e) {
@@ -567,5 +334,34 @@ class ProformaController extends Controller
             ->values(); // Array keys reset karega
 
         return view('management.export.proforma.partials.product_specs', compact('specs'));
+    }
+
+    private function getExportOrderFormData(): array
+    {
+        return [
+            'products' => Product::where('status', 1)->get(),
+            'bagTypes' => BagType::where('status', 1)->get(),
+            'bagPackings' => BagPacking::where('status', 1)->get(),
+            'brands' => Brands::where('status', 1)->get(),
+            'bagColors' => Color::where('status', 1)->get(),
+            'users' => Customer::get(),
+            'banks' => Bank::where('status', 1)->get(),
+            'brokers' => Broker::where('status', 1)->get(),
+            'incoterms' => IncoTerm::where('status', 1)->get(),
+            'modeofterms' => ModeOfTerm::where('status', 1)->get(),
+            'modeoftransport' => ModeOfTransport::where('status', 1)->get(),
+            'countries' => Country::get(),
+            'ports' => Port::where('status', 1)->get(),
+            'hscodes' => HsCode::where('status', 1)->get(),
+            'currencies' => Currency::where('status', 1)->get(),
+            'exportSodas' => ExportSodaField::latest()->get(),
+            'quotations' => Quotation::latest()->get(),
+            'companyLocations' => CompanyLocation::where('status', 'active')->get(),
+            'bagConditions' => BagCondition::where('status', 1)->get(),
+            'bagSizes' => Size::where('status', 'active')->get(),
+            'stitchings' => Stitching::where('status', 'active')->get(),
+            'threadColors' => Color::where('status', 1)->get(),
+            'inspectionCompanies' => FumigationCompany::where('status', 'active')->get(),
+        ];
     }
 }
