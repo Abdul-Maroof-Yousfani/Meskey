@@ -804,7 +804,6 @@ class FreightRequestController extends Controller
             'isRequestApprovalPage' => false,
             'isTicketApprovalPage' => false,
             'isTicketPage' => true,
-            'approval' => $paymentRequests->approval,
             'paymentRequestData' => $paymentRequestData,
             "has_pending_or_approved" => $has_pending_or_approved,
             'paymentRequests' => $paymentRequests,
