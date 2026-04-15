@@ -137,7 +137,7 @@ class FreightRequestController extends Controller
             $requestStatus = NULL;
 
             $isWithoutContract = false;
-            foreach ($ticket->paymentRequestData->where('request_type', 'freight_payment') as $data) {
+            foreach ($ticket->paymentRequestData->where('module_type', 'freight_payment') as $data) {
                 $totalAmount = $data->total_amount ?? 0;
                 $paidAmount = $data->paid_amount ?? 0;
 
