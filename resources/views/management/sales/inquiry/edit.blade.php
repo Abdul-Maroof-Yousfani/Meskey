@@ -61,7 +61,7 @@
                     <div class="form-group">
                         <label class="form-label">Inquiry Date: <span class="text-danger">*</span></label>
                         <input type="date" name="inquiry_date" onchange="getNumber(); validateExpiry()" id="inquiry_date"
-                            value="{{ $sales_inquiry->date }}" class="form-control">
+                            value="{{ $sales_inquiry->date }}" class="form-control" min="{{ date('Y-m-d') }}">
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -78,7 +78,7 @@
                     <div class="form-group">
                         <label class="form-label">Delivery Date: <span class="text-danger">*</span></label>
                         <input type="date" name="required_date" id="required_date" onchange="validateExpiry()"
-                            value="{{ $sales_inquiry->required_date }}" class="form-control">
+                            value="{{ $sales_inquiry->required_date }}" class="form-control" min="{{ date('Y-m-d') }}">
                     </div>
                 </div>
 
@@ -360,6 +360,7 @@
 
         populateFactories();
         populateSections();
+        validateExpiry();
     });
 
     function calc(el) {
@@ -379,20 +380,24 @@
     }
 
     function validateExpiry() {
-        // const inquiryDate = $('#inquiry_date').val();
-        // const requiredDate = $('#required_date').val();
-        // if (inquiryDate && requiredDate) {
-        //     if (inquiryDate > requiredDate) {
-        //         $('#required_date').addClass('is-invalid');
+        const inquiryDate = $('#inquiry_date').val();
+        const requiredDate = $('#required_date').val();
 
-        //         Swal.fire({
-        //             icon: 'error',
-        //             title: 'Expired!',
-        //             text: 'Inquiry date cannot be greater than required date.',
-        //             confirmButtonText: 'OK'
-        //         });
-        //     }
-        // }
+        if (inquiryDate) {
+            $('#required_date').attr('min', inquiryDate);
+        }
+
+        if (inquiryDate && requiredDate) {
+            if (inquiryDate > requiredDate) {
+                $('#required_date').val('');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Invalid Date!',
+                    text: 'Delivery date cannot be earlier than inquiry date.',
+                    confirmButtonText: 'OK'
+                });
+            }
+        }
     }
 
     function addRow() {
