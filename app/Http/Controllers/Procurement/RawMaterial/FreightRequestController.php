@@ -155,7 +155,9 @@ class FreightRequestController extends Controller
                             $approvedPaymentSum += $pRequest->total_amount;
                         }
                     } else {
-                        $totalFreightSum += $pRequest->total_amount;
+                        if ($pRequest->status == 'pending' || $pRequest->status == 'approved') {
+                            $totalFreightSum += $pRequest->total_amount;
+                        }
                         if ($pRequest->status == 'approved') {
                             $approvedFreightSum += $pRequest->total_amount;
                         }
@@ -848,7 +850,7 @@ class FreightRequestController extends Controller
             'isTicketPage' => true,
         ];
         $data['vendors'] = Vendor::get();
-        
+
         return view('management.procurement.raw_material.freight_request.create', $data);
     }
 
