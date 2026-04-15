@@ -644,7 +644,7 @@
     @endif
 
     @php
-        $is_rejected_or_approved = isset($isRequestApprovalPage) && $isRequestApprovalPage && $approval->status != "pending";
+        $is_rejected_or_approved = isset($isRequestApprovalPage) && $isRequestApprovalPage && $approval && $approval->status != "pending";
     @endphp
     @if(!($has_pendings > 0 && isset($paymentRequestData) && $paymentRequestData->is_paid_by_supplier) || !$is_rejected_or_approved)
     <div class="row bottom-button-bar">
