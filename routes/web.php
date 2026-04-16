@@ -71,7 +71,7 @@ Route::get("get-all-vouchers", function() {
 });
 
 Route::get("/teste", function() {
-    $sales_order = SalesOrder::query()->where("reference_no", "SO-2026-04-16-002")->first();
+    $sales_order = SalesOrder::query()->where("reference_no", "SO-2026-04-16-002")->get();
     dd($sales_order);
 });
 
