@@ -670,7 +670,9 @@ $(document).on("submit", "#ajaxSubmit", function (e) {
           var listRefresh = form.find("#listRefresh");
           // var listRefresh = form.find("#listRefresh").val();
           var ajaxLoadFlag = form.find("#ajaxLoadFlag").val();
-          $(formhunyr).parents(".modal-sidebar").removeClass("open");
+          var $modal = $(formhunyr).parents(".modal-sidebar");
+          $modal.removeClass("open");
+          $modal.find(".modal-tab-content").html(""); // Empty content
           $(".main-content").css("cursor", "auto");
 
           var afterAjaxElement = form.find("#afterAjax");
@@ -864,7 +866,9 @@ $(document).on("submit", "#ajaxSubmit2", function (e) {
           var url = form.find("#url").val();
           var listRefresh = form.find("#listRefresh").val();
           var ajaxLoadFlag = form.find("#ajaxLoadFlag").val();
-          $(formhunyr).parents(".modal-sidebar").removeClass("open");
+          var $modal = $(formhunyr).parents(".modal-sidebar");
+          $modal.removeClass("open");
+          $modal.find(".modal-tab-content").html(""); // Empty content
           $(".main-content").css("cursor", "auto");
 
           var afterAjaxElement = form.find("#afterAjax");
