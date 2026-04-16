@@ -133,7 +133,6 @@
                     <div class="form-group">
                         <label class="form-label">Factory:</label>
                         <select name="arrival_location_id[]" id="arrival_location_id" class="form-control select2" multiple disabled>
-                            <option value="">Select Factory</option>
                             @foreach ($arrivalLocations as $factory)
                                 <option value="{{ $factory->id }}" data-company="{{ $factory->company_location_id ?? '' }}" @selected(in_array($factory->id, $selectedFactories))>{{ $factory->name }} ({{ $factory->companyLocation->name }})</option>
                             @endforeach
@@ -144,7 +143,6 @@
                     <div class="form-group">
                         <label class="form-label">Section:</label>
                         <select name="arrival_sub_location_id[]" id="arrival_sub_location_id" class="form-control select2" multiple disabled>
-                            <option value="">Select Section</option>
                             @foreach ($arrivalSubLocations as $section)
                                 <option value="{{ $section->id }}" data-factory="{{ $section->arrival_location_id }}" @selected(in_array($section->id, $selectedSections))>{{ $section->name }} - ({{ $section->arrivalLocation->name }})</option>
                             @endforeach
