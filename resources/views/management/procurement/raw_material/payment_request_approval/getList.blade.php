@@ -1,14 +1,14 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-2">Ticket No / Contract No</th>
-            <th class="col-sm-2">Supplier</th>
-            <th class="col-sm-2">Sauda Type</th>
-            <th class="col-sm-2">Type</th>
-            <th class="col-sm-1">Amount</th>
-            <th class="col-sm-2">Status</th>
-            <th class="col-sm-1">Created</th>
-            <th class="col-sm-1">Action</th>
+            <th style="width: 15%;">Ticket No / Contract No</th>
+            <th style="width: 15%;">Supplier</th>
+            <th style="width: 10%;">Sauda Type</th>
+            <th style="width: 10%;">Type</th>
+            <th style="width: 10%;">Amount</th>
+            <th style="width: 10%;">Status</th>
+            <th style="width: 20%;">Created</th>
+            <th style="width: 10%;">Action</th>
         </tr>
     </thead>
     <tbody>
