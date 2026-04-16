@@ -172,7 +172,6 @@
                     <div class="form-group">
                         <label class="form-label">Locations:</label>
                         <select name="locations[]" id="locations" class="form-control select2" multiple>
-                            <option value="">Select Locations</option>
                             @foreach (get_locations() as $location)
                                 <option value="{{ $location->id }}" @selected(in_array($location->id, $sale_order->locations->pluck('location_id')->toArray()))>{{ $location->name }}
                                 </option>
@@ -184,7 +183,6 @@
                     <div class="form-group">
                         <label class="form-label">Factory:</label>
                         <select name="arrival_location_id[]" id="arrival_location_id" class="form-control select2" multiple @if($sale_order->inquiry_id) disabled @endif>
-                            <option value="">Select Factory</option>
                             @foreach ($arrivalLocations as $factory)
                                 <option value="{{ $factory->id }}" data-company="{{ $factory->company_location_id }}" @selected(in_array($factory->id, $oldFactories))>{{ $factory->name }}</option>
                             @endforeach
@@ -195,7 +193,6 @@
                     <div class="form-group">
                         <label class="form-label">Section:</label>
                         <select name="arrival_sub_location_id[]" id="arrival_sub_location_id" class="form-control select2" multiple @if($sale_order->inquiry_id) disabled @endif>
-                            <option value="">Select Section</option>
                             @foreach ($arrivalSubLocations as $section)
                                 <option value="{{ $section->id }}" data-factory="{{ $section->arrival_location_id }}" @selected(in_array($section->id, $oldSections))>{{ $section->name }}</option>
                             @endforeach
@@ -568,7 +565,7 @@
         function populateFactories() {
             const selectedLocations = $('#locations').val() || [];
             const currentValues = $('#arrival_location_id').val() || initialFactories;
-            $('#arrival_location_id').empty().append('<option value=\"\">Select Factory</option>');
+            $('#arrival_location_id').empty();
 
             factories
                 .filter(f => selectedLocations.length === 0 || selectedLocations.includes(String(f.company_location_id)))
@@ -582,7 +579,7 @@
         function populateSections() {
             const factoryIds = $('#arrival_location_id').val() || initialFactories;
             const currentSections = $('#arrival_sub_location_id').val() || initialSections;
-            $('#arrival_sub_location_id').empty().append('<option value=\"\">Select Section</option>');
+            $('#arrival_sub_location_id').empty();
 
             sections
                 .filter(s => factoryIds.length === 0 || factoryIds.includes(String(s.arrival_location_id)))
