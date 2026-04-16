@@ -1571,14 +1571,23 @@ function initializeDynamicDependentSelect2(
         };
       },
       processResults: function (data) {
+        const items = isAllowClear
+          ? [{ id: "all", text: "Select an option" }, ...data.items]
+          : data.items;
         return {
-          results: data.items,
+          results: items,
         };
       },
     },
     minimumInputLength: 0,
-    allowClear: true,
-    placeholder: "Select options",
+    allowClear: isAllowClear,
+    placeholder: "Select an option",
+  });
+
+  $targetEl.on("select2:select", function (e) {
+    if (e.params.data.id === "all") {
+      $(this).val("").trigger("change");
+    }
   });
 
   $el.select2({
