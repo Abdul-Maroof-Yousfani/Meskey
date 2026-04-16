@@ -118,11 +118,18 @@
                         </div>
                     </div>
 
-                    <div class="col-md-12">
+                    <div class="col-md-6">
                         <div class="form-group">
                             <label>Marking/labeling:</label>
                             <input type="text" name="marking_labeling" class="form-control"
                                 value="{{ old('marking_labeling', $exportOrder->marking_labeling) }}">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Vessel Name:</label>
+                            <input type="text" name="vessel_name" class="form-control"
+                                value="{{ old('vessel_name', $exportOrder->vessel_name) }}">
                         </div>
                     </div>
                 </div>

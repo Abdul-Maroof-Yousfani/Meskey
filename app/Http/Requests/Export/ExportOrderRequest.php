@@ -43,6 +43,7 @@ class ExportOrderRequest extends FormRequest
                 'after_or_equal:shipment_delivery_date_from',
             ],
 
+            'vessel_name' => ['required', 'string'],
             'other_specifications' => ['required', 'string'],
             'additional_info' => ['nullable', 'string'],
 
