@@ -316,6 +316,7 @@
 </form>
 
 <script>
+    $("#order_date").trigger("change");
     salesInquiryRowIndex = 1;
 
     function calculateForRatePerKg(mond) {
