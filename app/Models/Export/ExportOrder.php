@@ -210,4 +210,9 @@ class ExportOrder extends Model
     {
         return $this->hasMany(ExportDeliveryOrder::class, 'export_order_id');
     }
+
+    public function consignee()
+    {
+        return $this->belongsTo(\App\Models\CustomerConsignee::class, 'consignee_id');
+    }
 }

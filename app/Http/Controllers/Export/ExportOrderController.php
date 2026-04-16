@@ -133,6 +133,7 @@ class ExportOrderController extends Controller
                 [
                     'created_by' => auth()->user()->id,
                     'additional_info' => $request->additional_info,
+                    'consignee_id' => $request->consignee_id,
                 ]
             ));
 
@@ -338,6 +339,7 @@ class ExportOrderController extends Controller
             $updateData = array_merge($exportOrderData, [
                 'am_change_made' => 1,
                 'additional_info' => $request->additional_info,
+                'consignee_id' => $request->consignee_id,
             ]);
 
             if ($exportOrder->am_approval_status === 'reverted') {
@@ -558,5 +560,11 @@ class ExportOrderController extends Controller
         }
 
         return response()->json($banks);
+    }
+
+    public function getCustomerConsignees($customerId)
+    {
+        $customer = Customer::with(['consignees'])->findOrFail($customerId);
+        return response()->json($customer->consignees);
     }
 }

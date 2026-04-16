@@ -10,6 +10,38 @@ function getUniversalNumber(options, callback) {
   });
 }
 
+// Global listener to close modals/drawers on Escape key
+$(document).on("keydown", function (e) {
+  if (e.key === "Escape") {
+    // 1. Close standard modal sidebars
+    $(".modal-sidebar.open").removeClass("open");
+    $(".modal-sidebar .modal-tab-content").html(""); // Remove form content
+    $("body").removeClass("drawer-opened");
+
+    // 2. Close settings/other modals if they are visible
+    $("#settinsgs, #modal2, #deletemodal").addClass("d-none").hide();
+    $("#settinsgs .modal-body, #modal2 .modal-body").html(""); // Clear modals
+
+    // 3. Close "clean" sidebar drawers
+    $(".clean-sidebar-drawer").each(function () {
+      const $drawer = $(this);
+      const drawerWidth = $drawer.css("width");
+      $drawer.css("right", `-${drawerWidth}`);
+      setTimeout(() => {
+        $drawer.remove();
+        if ($(".clean-sidebar-drawer").length === 0 && !$(".modal-sidebar.open").length) {
+          $("body").removeClass("drawer-opened");
+        }
+      }, 350);
+    });
+  }
+});
+
+// Clear content when clicking the close button
+$(document).on("click", ".modal-sidebar-close", function () {
+  $(".modal-sidebar .modal-tab-content").html("");
+});
+
 function filterationCommonoldat12Dec2025(
   url,
   loadmore = false,
@@ -326,6 +358,8 @@ function filterationCommon(
 
   // Get the form element
   var $form = $("#" + formId);
+
+
 
   // Fallback to filterForm if specified form doesn't exist
   if ($form.length === 0) {
@@ -661,7 +695,9 @@ $(document).on("submit", "#ajaxSubmit", function (e) {
           var listRefresh = form.find("#listRefresh");
           // var listRefresh = form.find("#listRefresh").val();
           var ajaxLoadFlag = form.find("#ajaxLoadFlag").val();
-          $(formhunyr).parents(".modal-sidebar").removeClass("open");
+          var $modal = $(formhunyr).parents(".modal-sidebar");
+          $modal.removeClass("open");
+          $modal.find(".modal-tab-content").html(""); // Empty content
           $(".main-content").css("cursor", "auto");
 
           var afterAjaxElement = form.find("#afterAjax");
@@ -855,7 +891,9 @@ $(document).on("submit", "#ajaxSubmit2", function (e) {
           var url = form.find("#url").val();
           var listRefresh = form.find("#listRefresh").val();
           var ajaxLoadFlag = form.find("#ajaxLoadFlag").val();
-          $(formhunyr).parents(".modal-sidebar").removeClass("open");
+          var $modal = $(formhunyr).parents(".modal-sidebar");
+          $modal.removeClass("open");
+          $modal.find(".modal-tab-content").html(""); // Empty content
           $(".main-content").css("cursor", "auto");
 
           var afterAjaxElement = form.find("#afterAjax");

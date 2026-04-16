@@ -123,6 +123,7 @@ Route::get('get-product-specs/{productId}', [ExportOrderController::class, 'getP
 Route::post('/get-arrival-locations', [ExportOrderController::class, 'getArrivalLocationsByCompanyLocations']);
 Route::post('/get-arrival-sub-locations', [ExportOrderController::class, 'getArrivalSubLocationsByArrivalLocations']);
 Route::get('/export-order/customer-banks/{customerId}', [ExportOrderController::class, 'getCustomerBanks'])->name('export-order.customer-banks');
+Route::get('/export-order/customer-consignees/{customerId}', [ExportOrderController::class, 'getCustomerConsignees'])->name('export-order.customer-consignees');
 
 // proforma
 Route::resource('proforma', ProformaController::class)->except(['create', 'store']);

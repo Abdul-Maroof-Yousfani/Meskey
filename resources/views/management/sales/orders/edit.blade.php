@@ -553,11 +553,13 @@
             }
         });
     }
+    allLocations = @json(get_locations());
+    factories = @json($arrivalLocations);
+    sections = @json($arrivalSubLocations);
+
     $(document).ready(function() {
         $('.select2').select2();
 
-        const factories = @json($arrivalLocations);
-        const sections = @json($arrivalSubLocations);
         const initialFactories = @json($oldFactories ?? []);
         const initialSections = @json($oldSections ?? []);
         const inquirySelected = "{{ $sale_order->inquiry_id ? 1 : 0 }}";
@@ -860,15 +862,19 @@
         $("#delivery_date").prop('readonly', false).val('');
         $("#customer_id").prop('disabled', false).val('').trigger('change.select2');
         $("#sauda_type").prop('disabled', false).val('').trigger('change.select2');
-        $("#locations").prop('disabled', false).val([]).trigger('change.select2');
-        $("#token_money").prop('readonly', false).val('');
-        $("#contact_person").prop('readonly', false).val('');
-        $("#arrival_location_id").prop('disabled', false).val([]).trigger('change.select2');
-        $("#arrival_sub_location_id").prop('disabled', false).val([]).trigger('change.select2');
+        $("#locations").empty().append('<option value="">Select Locations</option>');
+        allLocations.forEach(loc => {
+            $("#locations").append(`<option value="${loc.id}">${loc.name}</option>`);
+        });
+        $("#locations").prop('disabled', false).removeAttr('disabled').val([]).trigger('change');
+        $("#token_money").prop('readonly', false).removeAttr('readonly').val('');
+        $("#contact_person").prop('readonly', false).removeAttr('readonly').val('');
+        $("#arrival_location_id").prop('disabled', false).removeAttr('disabled').val([]).trigger('change');
+        $("#arrival_sub_location_id").prop('disabled', false).removeAttr('disabled').val([]).trigger('change');
         $("#remarks").val('');
         $("#so_reference_no").val('');
-        $("#reference_no").val('');
-        $("#order_date").val('');
+        $("#reference_no").val("{{ $sale_order->reference_no }}");
+        $("#order_date").val("{{ $sale_order->order_date }}");
 
         if(window.populateFactories) window.populateFactories();
         if(window.populateSections) window.populateSections();
