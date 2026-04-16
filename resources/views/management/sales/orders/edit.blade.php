@@ -873,7 +873,7 @@
         $("#arrival_sub_location_id").prop('disabled', false).removeAttr('disabled').val([]).trigger('change');
         $("#remarks").val('');
         $("#so_reference_no").val('');
-        $("#reference_no").val('');
+        $("#reference_no").val("{{ $sale_order->reference_no }}");
         $("#order_date").val("{{ $sale_order->order_date }}");
 
         if(window.populateFactories) window.populateFactories();
