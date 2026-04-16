@@ -98,7 +98,7 @@ class ExportSecondWeighBridgeController extends Controller
             return response()->json('Second Weight can not be less than First Weight', 422);
         }
 
-        $balance = get_second_weighbridge_balance($loadingSlip);
+        $balance = get_second_weighbridge_balance_kg($loadingSlip);
         if ($net_weight > $balance) {
             return response()->json('Your total remaining net weight balance for all associated DOs on this ticket is: ' . number_format($balance, 2), 422);
         }
@@ -136,7 +136,7 @@ class ExportSecondWeighBridgeController extends Controller
                 break;
             }
 
-            $doBalance = get_second_weighbridge_balance_by_delivery_order($do->id);
+            $doBalance = get_second_weighbridge_balance_by_delivery_order_kg($do->id);
             if ($doBalance > 0) {
                 $deduct = min($doBalance, $remainingWeight);
                 SecondWeighbridgeItem::create([
@@ -186,11 +186,21 @@ class ExportSecondWeighBridgeController extends Controller
         $data['deliveryOrders'] = collect();
 
         if ($data['needsDeliveryOrder']) {
-            $exportOrderIds = $loadingSlip->loadingProgramItem->exportOrders->pluck('id')->toArray();
+            $exportOrderIds = $loadingSlip->loadingProgramItem->exportOrders
+                ->where('am_approval_status', 'approved')
+                ->pluck('id')
+                ->toArray();
             if (empty($exportOrderIds) && $loadingSlip->loadingProgramItem->exportLoadingProgram?->exportOrders?->isNotEmpty()) {
-                $exportOrderIds = $loadingSlip->loadingProgramItem->exportLoadingProgram->exportOrders->pluck('id')->toArray();
+                $exportOrderIds = $loadingSlip->loadingProgramItem->exportLoadingProgram->exportOrders
+                    ->where('am_approval_status', 'approved')
+                    ->pluck('id')
+                    ->toArray();
             }
-            if (empty($exportOrderIds) && $loadingSlip->loadingProgramItem->exportLoadingProgram?->exportOrder) {
+            if (
+                empty($exportOrderIds)
+                && $loadingSlip->loadingProgramItem->exportLoadingProgram?->exportOrder
+                && $loadingSlip->loadingProgramItem->exportLoadingProgram->exportOrder->am_approval_status === 'approved'
+            ) {
                 $exportOrderIds = [$loadingSlip->loadingProgramItem->exportLoadingProgram->exportOrder->id];
             }
 
@@ -242,7 +252,7 @@ class ExportSecondWeighBridgeController extends Controller
             return response()->json('Second Weight can not be less than First Weight', 422);
         }
 
-        $current_balance = get_second_weighbridge_balance($loadingSlip);
+        $current_balance = get_second_weighbridge_balance_kg($loadingSlip);
         $available_balance = $current_balance + $secondWeighbridge->net_weight;
 
         if ($net_weight > $available_balance) {
@@ -275,7 +285,7 @@ class ExportSecondWeighBridgeController extends Controller
                 break;
             }
 
-            $doBalance = get_second_weighbridge_balance_by_delivery_order($do->id);
+            $doBalance = get_second_weighbridge_balance_by_delivery_order_kg($do->id);
             if ($doBalance > 0) {
                 $deduct = min($doBalance, $remainingWeight);
                 SecondWeighbridgeItem::create([
@@ -324,11 +334,21 @@ class ExportSecondWeighBridgeController extends Controller
         $deliveryOrders = collect();
 
         if ($needsDeliveryOrder) {
-            $exportOrderIds = $LoadingSlip->loadingProgramItem->exportOrders->pluck('id')->toArray();
+            $exportOrderIds = $LoadingSlip->loadingProgramItem->exportOrders
+                ->where('am_approval_status', 'approved')
+                ->pluck('id')
+                ->toArray();
             if (empty($exportOrderIds) && $LoadingSlip->loadingProgramItem->exportLoadingProgram?->exportOrders?->isNotEmpty()) {
-                $exportOrderIds = $LoadingSlip->loadingProgramItem->exportLoadingProgram->exportOrders->pluck('id')->toArray();
+                $exportOrderIds = $LoadingSlip->loadingProgramItem->exportLoadingProgram->exportOrders
+                    ->where('am_approval_status', 'approved')
+                    ->pluck('id')
+                    ->toArray();
             }
-            if (empty($exportOrderIds) && $LoadingSlip->loadingProgramItem->exportLoadingProgram?->exportOrder) {
+            if (
+                empty($exportOrderIds)
+                && $LoadingSlip->loadingProgramItem->exportLoadingProgram?->exportOrder
+                && $LoadingSlip->loadingProgramItem->exportLoadingProgram->exportOrder->am_approval_status === 'approved'
+            ) {
                 $exportOrderIds = [$LoadingSlip->loadingProgramItem->exportLoadingProgram->exportOrder->id];
             }
 
@@ -368,6 +388,6 @@ class ExportSecondWeighBridgeController extends Controller
 
     public function getBalanceAgainstSecondWeighbridge(Request $request)
     {
-        return get_second_weighbridge_balance_by_delivery_order($request->delivery_order_id);
+        return get_second_weighbridge_balance_by_delivery_order_kg($request->delivery_order_id);
     }
 }

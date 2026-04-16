@@ -64,6 +64,7 @@ class FreightRequestController extends Controller
                 $query->with([
                     'paymentRequests' => function ($q) {
                         $q->selectRaw('payment_request_data_id, request_type, status, SUM(amount) as total_amount')
+                            ->where("status", "!=", "rejected")
                             ->groupBy('payment_request_data_id', 'request_type', 'status');
                     }
                 ]);
@@ -75,6 +76,32 @@ class FreightRequestController extends Controller
             })
             ->when($request->filled('supplier_id'), function ($q) use ($request) {
                 return $q->where('accounts_of_id', $request->supplier_id);
+            })
+            ->when($request->filled('contract_no'), function ($q) use ($request) {
+                return $q->whereHas('purchaseOrder', function ($query) use ($request) {
+                    $query->where('contract_no', 'like', "%{$request->contract_no}%");
+                });
+            })
+            ->when($request->filled('bilty_no'), function ($q) use ($request) {
+                return $q->where('bilty_no', 'like', "%{$request->bilty_no}%");
+            })
+            ->when($request->filled('truck_no'), function ($q) use ($request) {
+                return $q->where('truck_no', 'like', "%{$request->truck_no}%");
+            })
+            ->when($request->filled('loading_date'), function ($q) use ($request) {
+                return $q->whereDate('loading_date', $request->loading_date);
+            })
+            ->when($request->filled('amount'), function ($q) use ($request) {
+                return $q->whereHas('paymentRequestData', function ($query) use ($request) {
+                    $query->where('total_amount', 'like', "%{$request->amount}%");
+                });
+            })
+            ->when($request->filled('requested_amount'), function ($q) use ($request) {
+                return $q->whereHas('paymentRequestData', function ($query) use ($request) {
+                    $query->whereHas('paymentRequests', function ($pq) use ($request) {
+                        $pq->where('amount', 'like', "%{$request->requested_amount}%");
+                    });
+                });
             })
             ->when($request->filled('daterange'), function ($q) use ($request) {
                 $dates = explode(' - ', $request->daterange);
@@ -290,7 +317,7 @@ class FreightRequestController extends Controller
                 $data['suggested_vendor_id'] = $suggestedVendor->id;
             }
         }
-
+        
         $html = view('management.procurement.raw_material.freight_request.create', $data)->render();
 
         return response()->json([
@@ -812,6 +839,7 @@ class FreightRequestController extends Controller
             'paymentRequests' => $paymentRequests,
         ];
         $data['vendors'] = Vendor::get();
+        
         return view('management.procurement.raw_material.freight_request.create', $data);
     }
 

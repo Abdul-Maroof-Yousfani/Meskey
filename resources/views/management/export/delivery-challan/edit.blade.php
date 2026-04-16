@@ -35,7 +35,7 @@
     }
 </style>
 
-<form action="{{ route('export-delivery-challan.update', [ 'delivery_challan' => $delivery_challan->id ]) }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form action="{{ route('export-delivery-challan.update', [ 'export_delivery_challan' => $delivery_challan->id ]) }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
     {{ method_field("PUT") }}
     <input type="hidden" id="listRefresh" value="{{ route('get.export-delivery-challan.list') }}" />
@@ -102,15 +102,7 @@
                     </div>
                 </div>
                 <div class="col-md-6">
-                    <div class="form-group">
-                        <label class="form-label">Contract Type:</label>
-                        <select name="sauda_type" id="sauda_type" class="form-control select2" disabled>
-                            <option value="">Select Contract type</option>
-                            <option value="pohanch" @selected($delivery_challan->sauda_type == 'pohanch')>Pohanch</option>
-                            <option value="x-mill" @selected($delivery_challan->sauda_type == 'x-mill')>X-mill</option>
-                        </select>
-                        <input type="hidden" name="sauda_type" id="sauda_type_hidden" value="{{ $delivery_challan->sauda_type }}">
-                    </div>
+                    <input type="hidden" name="sauda_type" id="sauda_type_hidden" value="export">
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
@@ -132,7 +124,7 @@
                             $sauda_type = strtolower($delivery_challan->sauda_type ?? '');
                             $is_labour_editable = ($sauda_type == 'x-mill' || $sauda_type == 'xmill');
                         @endphp
-                        <select name="labour_status" id="labour_status" class="form-control select2" {{ !$is_labour_editable ? 'disabled' : '' }}>
+                        <select name="labour_status" id="labour_status" class="form-control select2" disabled>
                             <option value="paid" @selected($ticketLabour == 'paid')>Paid</option>
                             <option value="not_paid" @selected($ticketLabour == 'not_paid')>Not Paid</option>
                         </select>
@@ -148,7 +140,7 @@
                         <select name="locations[]" id="locations" class="form-control select2" disabled>
                             <option value="">Select Locations</option>
                             @foreach (get_locations() as $location)
-                                <option value="{{ $location->id }}" @selected($location->id == $delivery_challan->location_id)>
+                                <option value="{{ $location->id }}" @selected(($locationIds ?? collect())->contains($location->id) || ($locationIds ?? collect())->contains((string) $location->id))>
                                     {{ $location->name }}
                                 </option>
                             @endforeach
@@ -207,8 +199,9 @@
                         <label class="form-label">Transporter:</label>
                         <select name="transporter" id="transporter" class="form-control select2">
                             <option value="">Select Transporter</option>
-                            <option value="1" @selected($delivery_challan->transporter == 1)>Transporter 1</option>
-                            <option value="2" @selected($delivery_challan->transporter == 2)>Transporter 2</option>
+                            @foreach ($Transporters ?? [] as $transporter)
+                                <option value="{{ $transporter->id }}" @selected($delivery_challan->transporter == $transporter->id)>{{ $transporter->name }}</option>
+                            @endforeach
                         </select>
                     </div>
                 </div>
@@ -290,9 +283,9 @@
                                 <th>Bag Type</th>
                                 <th style="min-width: 130px; width: 130px;">Packing</th>
                                 <th>No of Bags</th>
-                                <th>Quantity (kg)</th>
-                                <th>Rate (Kg)</th>
-                                <th>Rate (Mond)</th>
+                                <th>Quantity (MT)</th>
+                                <th>Rate per MT</th>
+                                <th style="display:none;">Rate (Mond)</th>
                                 <th>Amount</th>
                                 <th>Brand</th>
                                 <th>Truck No.</th>
@@ -344,7 +337,7 @@
                                 <td>
                                     <input type="text" name="rate[]" id="rate_{{ $index }}" value="{{ $data->rate }}" class="form-control rate" readonly>
                                 </td>
-                                <td>
+                                <td style="display:none;">
                                     <input type="text" name="rate_per_mond[]" id="rate_per_mond_{{ $index }}"
                                         value="{{ $data->deliveryOrderData->deliveryOrder->exportOrder->packingItems->first()->rate_per_maund ?? '' }}" class="form-control rate" readonly>
                                 </td>
@@ -484,10 +477,10 @@
 
                     // Set Labour Rate
                     $("#standard_labour_rate").val(response.rate || 'N/A');
+                    calculateLabourAmount();
 
                     // Set Sauda Type
-                    $("#sauda_type").val(response.delivery_order.sauda_type).trigger('change');
-                    $("#sauda_type_hidden").val(response.delivery_order.sauda_type);
+                    $("#sauda_type_hidden").val('export');
 
                     // Set Customer
                     $("#customer_id_display").val(response.customer.id).trigger('change');
@@ -499,6 +492,10 @@
                     doSelect.append(`<option value="${response.delivery_order.id}" selected>${response.delivery_order.reference_no}</option>`);
                     doSelect.trigger('change');
                     $("#delivery_order_id").val(response.delivery_order.id);
+
+                    if (response.transporter_id && !$("#transporter").val()) {
+                        $("#transporter").val(response.transporter_id).trigger('change');
+                    }
 
                     // Set Locations
                     const locSelect = $("#locations");
@@ -558,7 +555,9 @@
     function resetFormFields() {
         $("#labour_status").val('paid').trigger('change').prop('disabled', true);
         $("#standard_labour_rate, #customer_id, #delivery_order_id, #arrival_location_csv, #storage_location_csv").val('');
-        $("#customer_id_display, #do_no, #sauda_type, #locations, #arrivals, #storages").val('').trigger('change');
+        $("#customer_id_display, #do_no, #locations, #arrivals, #storages, #transporter").val('').trigger('change');
+        $("#sauda_type_hidden").val('export');
+        $("#labour_amount").val(0);
         $("#dcTableBody").empty();
         addedTicketIds = [];
     }
@@ -716,7 +715,7 @@
             return;
         }
 
-        const bagsResult = (qtyVal / bagSizeVal).toFixed();
+        const bagsResult = ((qtyVal * 1000) / bagSizeVal).toFixed();
 
         no_of_bags.val(bagsResult);
         calcAmount(el);

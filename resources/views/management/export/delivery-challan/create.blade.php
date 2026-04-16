@@ -87,16 +87,9 @@
                         <input type='hidden' name="delivery_order_id" id="delivery_order_id" />
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label class="form-label">Contract Type:</label>
-                        <select name="sauda_type" id="sauda_type" class="form-control select2">
-                            <option value="">Select Contract type</option>
-                            <option value="pohanch">Pohanch</option>
-                            <option value="x-mill">X-mill</option>
-                        </select>
-                    </div>
-                </div>
+                <!-- <div class="col-md-6">
+                    <input type="hidden" name="sauda_type" id="sauda_type_hidden" value="export">
+                </div> -->
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Reference Number:</label>
@@ -132,9 +125,7 @@
                             <option value="">Select Factory</option>
                         </select>
                         <div id="arrivals_hidden">
-                            <div id="storages_hidden">
-                                <input type="hidden" name="arrival_location_csv" id="arrival_location_csv" />
-                            </div>
+                            <input type="hidden" name="arrival_location_csv" id="arrival_location_csv" />
                         </div>
                     </div>
                 </div>
@@ -168,8 +159,9 @@
                         <label class="form-label">Transporter:</label>
                         <select name="transporter" id="transporter" onchange="" class="form-control select2">
                             <option value="">Select Transporter</option>
-                            <option value="1">Transporter 1</option>
-                            <option value="2">Transporter 2</option>
+                            @foreach ($Transporters ?? [] as $transporter)
+                                <option value="{{ $transporter->id }}">{{ $transporter->name }}</option>
+                            @endforeach
                         </select>
                     </div>
                 </div>
@@ -241,9 +233,9 @@
                             <th>Bag Type</th>
                             <th style="min-width: 130px; width: 130px;">Packing</th>
                             <th>No of Bags</th>
-                            <th>Quantity (kg)</th>
-                            <th>Rate per Kg</th>
-                            <th>Rate per Mond</th>
+                            <th>Quantity (MT)</th>
+                            <th>Rate per MT</th>
+                            <th style="display:none;">Rate per Mond</th>
                             <th>Amount</th>
                             <th>Brand</th>
                             <th>Truck No.</th>
@@ -356,15 +348,8 @@
                         $("#labour_amount").val(0);
                     }
 
-                    // Set Contract Type (readonly)
-                    $("#sauda_type").val(response.delivery_order.sauda_type).trigger('change');
                     $("#delivery_order_id").val(response.delivery_order.id);
-                    $("#sauda_type").prop('disabled', true);
-                    // Add hidden field for sauda_type so it gets submitted
-                    if (!$("#sauda_type_hidden").length) {
-                        $("#sauda_type").after('<input type="hidden" name="sauda_type" id="sauda_type_hidden">');
-                    }
-                    $("#sauda_type_hidden").val(response.delivery_order.sauda_type);
+                    // $("#sauda_type_hidden").val('export');
 
                     // Set Customer (readonly)
                     $("#customer_id_display").val(response.customer.id).trigger('change');
@@ -375,6 +360,10 @@
                     doSelect.empty().append('<option value="">Select Delivery Order</option>');
                     doSelect.append(`<option value="${response.delivery_order.id}" selected>${response.delivery_order.reference_no}</option>`);
                     doSelect.trigger('change');
+
+                    if (response.transporter_id) {
+                        $("#transporter").val(response.transporter_id).trigger('change');
+                    }
 
                     // Enable Reference Number field (don't auto-populate, leave it editable)
                     $("#reference_number").prop('disabled', false);
@@ -450,7 +439,7 @@
     }
 
     function resetFormFields() {
-        $("#sauda_type").val('').trigger('change').prop('disabled', false);
+        // $("#sauda_type_hidden").val('export');
         $("#customer_id_display").val('').trigger('change');
         $("#customer_id").val('');
         $("#do_no").empty().append('<option value="">Select Delivery Order</option>').trigger('change');
@@ -463,6 +452,10 @@
         $("#add_ticket_id").empty().append('<option value="">Select Ticket to Add</option>');
         $("#labour_status").val('paid').trigger('change').prop('disabled', true);
         $("#standard_labour_rate").val('');
+        $("#labour_amount").val(0);
+        $("#arrival_location_csv").val('');
+        $("#storage_location_csv").val('');
+        $("#transporter").val('').trigger('change');
         addedTicketIds = [];
         doMeta = {};
     }

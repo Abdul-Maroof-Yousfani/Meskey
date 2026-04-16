@@ -49,6 +49,7 @@
 
             $total_qty = $do->exportPackingItems->sum('metric_tons');
             $current_balance = get_second_weighbridge_balance_by_delivery_order($do->id);
+            $current_balance_kg = get_second_weighbridge_balance_by_delivery_order_kg($do->id);
 
             $orders[] = [
                 'id' => $do->id,
@@ -59,6 +60,7 @@
                 'eo_qty' => $do->exportOrder?->packingItems?->sum('metric_tons') ?? 0,
                 'do_qty' => $current_balance,
                 'balance' => $current_balance,
+                'balance_kg' => $current_balance_kg,
                 'total_qty' => $total_qty,
                 'factory_names' => $factoryNames,
                 'gala_names' => $galaNames
@@ -91,14 +93,19 @@
         }
 
         if (isset($SecondWeighbridge) && $SecondWeighbridge->net_weight > 0) {
-            $weightToRestore = $SecondWeighbridge->net_weight;
+            $weightToRestoreKg = $SecondWeighbridge->net_weight;
+            $weightToRestoreMt = $SecondWeighbridge->net_weight / 1000;
             foreach ($orders as &$order) {
-                if ($order['type'] === 'DO' && $weightToRestore > 0) {
-                    $room = $order['total_qty'] - $order['balance'];
-                    if ($room > 0) {
-                        $restore = min($room, $weightToRestore);
-                        $order['balance'] += $restore;
-                        $weightToRestore -= $restore;
+                if ($order['type'] === 'DO' && ($weightToRestoreKg > 0 || $weightToRestoreMt > 0)) {
+                    $roomMt = $order['total_qty'] - $order['balance'];
+                    $roomKg = ($order['total_qty'] * 1000) - ($order['balance_kg'] ?? 0);
+                    if ($roomMt > 0 || $roomKg > 0) {
+                        $restoreMt = min($roomMt, $weightToRestoreMt);
+                        $restoreKg = min($roomKg, $weightToRestoreKg);
+                        $order['balance'] += $restoreMt;
+                        $order['balance_kg'] = ($order['balance_kg'] ?? 0) + $restoreKg;
+                        $weightToRestoreMt -= $restoreMt;
+                        $weightToRestoreKg -= $restoreKg;
                     }
                 }
             }
@@ -150,6 +157,12 @@
                             <div class="form-group">
                                 <label>Balance Qty (MT):</label>
                                 <input type="number" value="{{ $order['balance'] }}" class="form-control" readonly disabled />
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-sm-6 col-md-2">
+                            <div class="form-group">
+                                <label>Balance Qty (KG):</label>
+                                <input type="number" value="{{ $order['balance_kg'] ?? 0 }}" class="form-control" readonly disabled />
                             </div>
                         </div>
                     </div>
@@ -236,12 +249,25 @@
             @php
                 $baseBalance = (isset($SecondWeighbridge) && isset($SecondWeighbridge->balance_kg))
                     ? ($SecondWeighbridge->balance_kg + $SecondWeighbridge->net_weight)
-                    : get_second_weighbridge_balance($LoadingSlip);
+                    : get_second_weighbridge_balance_kg($LoadingSlip);
                 $balance = (isset($SecondWeighbridge) && isset($SecondWeighbridge->balance_kg))
                     ? $SecondWeighbridge->balance_kg
-                    : get_second_weighbridge_balance($LoadingSlip);
+                    : get_second_weighbridge_balance_kg($LoadingSlip);
+                $baseBalanceMt = $baseBalance / 1000;
+                $balanceMt = $balance / 1000;
             @endphp
             <input type="text" id="weight_difference" value="{{ number_format($balance, 2, '.', '') }}" data-base-balance="{{ number_format($baseBalance, 2, '.', '') }}" name="weight_difference" placeholder="Weight Difference" readonly="" class="form-control" autocomplete="off">
+        </div>
+    </fieldset>
+</div>
+
+<div class="col-xs-12 col-sm-12 col-md-12 mt-2">
+    <fieldset>
+        <div class="input-group">
+            <div class="input-group-prepend">
+                <button class="btn btn-primary" type="button">Balance (MT)</button>
+            </div>
+            <input type="text" id="weight_difference_mt" value="{{ number_format($balanceMt, 3, '.', '') }}" data-base-balance-mt="{{ number_format($baseBalanceMt, 3, '.', '') }}" readonly class="form-control" autocomplete="off">
         </div>
     </fieldset>
 </div>
@@ -264,6 +290,9 @@
             dataType: 'json',
             success: function (response) {
                 $("#weight_difference").val(response);
+                $("#weight_difference_mt").val((parseFloat(response || 0) / 1000).toFixed(3));
+                $("#weight_difference").attr('data-base-balance', parseFloat(response || 0).toFixed(2));
+                $("#weight_difference_mt").attr('data-base-balance-mt', (parseFloat(response || 0) / 1000).toFixed(3));
             }
         });
     }
@@ -279,6 +308,7 @@
             const netWeight = secondWeight - firstWeight;
             $('#net_weight').val(netWeight.toFixed(2));
             $('#weight_difference').val((baseBalance - netWeight).toFixed(2));
+            $('#weight_difference_mt').val(((baseBalance - netWeight) / 1000).toFixed(3));
         });
     });
 </script>

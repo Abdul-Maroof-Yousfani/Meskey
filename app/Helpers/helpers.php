@@ -913,10 +913,11 @@ function get_second_weighbridge_balance(LoadingSlip $loadingSlip, $delivery_orde
             continue;
         if ($do->type == 'export_order') {
             $overall_quantities += $do->exportPackingItems->sum("metric_tons");
+            $spent_quantities += ($do->saleSecondWeighbridge->sum("net_weight") / 1000);
         } else {
             $overall_quantities += $do->delivery_order_data->sum("qty");
+            $spent_quantities += $do->saleSecondWeighbridge->sum("net_weight");
         }
-        $spent_quantities += $do->saleSecondWeighbridge->sum("net_weight");
     }
 
     return $overall_quantities - $spent_quantities;
@@ -930,15 +931,75 @@ function get_second_weighbridge_balance_by_delivery_order($delivery_order_id)
 
     if ($delivery_order->type == 'export_order') {
         $overall_quantities = $delivery_order->exportPackingItems->sum("metric_tons");
+        $spent_quantities = $delivery_order->saleSecondWeighbridge->sum("net_weight") / 1000;
     } else {
         $overall_quantities = $delivery_order->delivery_order_data->sum("qty");
+        $spent_quantities = $delivery_order->saleSecondWeighbridge->sum("net_weight");
     }
-    
-    // Check second weights. If linked to multiple DOs, again distribution logic is ideal, 
-    // but usually weighing is per ticket.
-    $spent_quantities = $delivery_order->saleSecondWeighbridge->sum("net_weight");
 
     return $overall_quantities - $spent_quantities;
+}
+
+function get_second_weighbridge_balance_kg(LoadingSlip $loadingSlip, $delivery_order_id = null)
+{
+    $item = $loadingSlip->loadingProgramItem;
+    $deliveryOrders = collect();
+
+    if ($delivery_order_id) {
+        $deliveryOrders->push(
+            DeliveryOrder::withoutGlobalScopes()
+                ->with(['delivery_order_data', 'exportPackingItems', 'saleSecondWeighbridge'])
+                ->find($delivery_order_id)
+        );
+    } elseif ($item && $item->deliveryOrders->isNotEmpty()) {
+        $deliveryOrders = $item->deliveryOrders->loadMissing(['delivery_order_data', 'exportPackingItems', 'saleSecondWeighbridge']);
+    } elseif ($loadingSlip->deliveryOrder) {
+        $deliveryOrders->push($loadingSlip->deliveryOrder->loadMissing(['delivery_order_data', 'exportPackingItems', 'saleSecondWeighbridge']));
+    }
+
+    if ($deliveryOrders->isEmpty()) {
+        return 0;
+    }
+
+    $overallQuantitiesKg = 0;
+    $spentQuantitiesKg = 0;
+
+    foreach ($deliveryOrders as $do) {
+        if (!$do) {
+            continue;
+        }
+
+        if ($do->type == 'export_order') {
+            $overallQuantitiesKg += ($do->exportPackingItems->sum('metric_tons') * 1000);
+        } else {
+            $overallQuantitiesKg += $do->delivery_order_data->sum('qty');
+        }
+
+        $spentQuantitiesKg += $do->saleSecondWeighbridge->sum('net_weight');
+    }
+
+    return $overallQuantitiesKg - $spentQuantitiesKg;
+}
+
+function get_second_weighbridge_balance_by_delivery_order_kg($delivery_order_id)
+{
+    $delivery_order = DeliveryOrder::withoutGlobalScopes()
+        ->with(['delivery_order_data', 'exportPackingItems', 'saleSecondWeighbridge'])
+        ->find($delivery_order_id);
+
+    if (!$delivery_order) {
+        return 0;
+    }
+
+    if ($delivery_order->type == 'export_order') {
+        $overallQuantitiesKg = $delivery_order->exportPackingItems->sum('metric_tons') * 1000;
+    } else {
+        $overallQuantitiesKg = $delivery_order->delivery_order_data->sum('qty');
+    }
+
+    $spentQuantitiesKg = $delivery_order->saleSecondWeighbridge->sum('net_weight');
+
+    return $overallQuantitiesKg - $spentQuantitiesKg;
 }
 
 

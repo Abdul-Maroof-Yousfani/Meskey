@@ -273,13 +273,22 @@ class ExportQcController extends Controller
         }
 
         $orders = [];
-        $deliveryOrders = $LoadingProgramItem->deliveryOrders->where('type', 'export_order')->values();
+        $deliveryOrders = $LoadingProgramItem->deliveryOrders
+            ->where('type', 'export_order')
+            ->where('am_approval_status', 'approved')
+            ->values();
 
         if ($deliveryOrders->isEmpty() && $LoadingProgramItem->exportLoadingProgram?->deliveryOrders?->isNotEmpty()) {
-            $deliveryOrders = $LoadingProgramItem->exportLoadingProgram->deliveryOrders->values();
+            $deliveryOrders = $LoadingProgramItem->exportLoadingProgram->deliveryOrders
+                ->where('am_approval_status', 'approved')
+                ->values();
         }
 
-        if ($deliveryOrders->isEmpty() && $LoadingProgramItem->exportLoadingProgram?->deliveryOrder) {
+        if (
+            $deliveryOrders->isEmpty()
+            && $LoadingProgramItem->exportLoadingProgram?->deliveryOrder
+            && $LoadingProgramItem->exportLoadingProgram->deliveryOrder->am_approval_status === 'approved'
+        ) {
             $deliveryOrders = collect([$LoadingProgramItem->exportLoadingProgram->deliveryOrder]);
         }
 
@@ -299,13 +308,21 @@ class ExportQcController extends Controller
         }
 
         if (empty($orders)) {
-            $exportOrders = $LoadingProgramItem->exportOrders;
+            $exportOrders = $LoadingProgramItem->exportOrders
+                ->where('am_approval_status', 'approved')
+                ->values();
 
             if ($exportOrders->isEmpty() && $LoadingProgramItem->exportLoadingProgram?->exportOrders?->isNotEmpty()) {
-                $exportOrders = $LoadingProgramItem->exportLoadingProgram->exportOrders;
+                $exportOrders = $LoadingProgramItem->exportLoadingProgram->exportOrders
+                    ->where('am_approval_status', 'approved')
+                    ->values();
             }
 
-            if ($exportOrders->isEmpty() && $LoadingProgramItem->exportLoadingProgram?->exportOrder) {
+            if (
+                $exportOrders->isEmpty()
+                && $LoadingProgramItem->exportLoadingProgram?->exportOrder
+                && $LoadingProgramItem->exportLoadingProgram->exportOrder->am_approval_status === 'approved'
+            ) {
                 $exportOrders = collect([$LoadingProgramItem->exportLoadingProgram->exportOrder]);
             }
 

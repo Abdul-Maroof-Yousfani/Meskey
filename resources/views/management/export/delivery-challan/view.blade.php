@@ -80,16 +80,6 @@
             </div>
             <div class="col-md-6">
                 <div class="form-group">
-                    <label class="form-label">Contract Type:</label>
-                    <select class="form-control select2" disabled>
-                        <option value="">Select Contract type</option>
-                        <option value="pohanch" @selected($delivery_challan->sauda_type == 'pohanch')>Pohanch</option>
-                        <option value="x-mill" @selected($delivery_challan->sauda_type == 'x-mill')>X-mill</option>
-                    </select>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="form-group">
                     <label class="form-label">Reference Number:</label>
                     <input type="text" value="{{ $delivery_challan->reference_number }}" class="form-control" readonly>
                 </div>
@@ -118,7 +108,7 @@
                     <select class="form-control select2" multiple disabled>
                         <option value="">Select Locations</option>
                         @foreach (($locations ?? collect()) as $location)
-                            <option value="{{ $location->id }}" @selected(($locationIds ?? collect())->contains($location->id))>
+                            <option value="{{ $location->id }}" @selected(($locationIds ?? collect())->contains($location->id) || ($locationIds ?? collect())->contains((string) $location->id))>
                                 {{ $location->name }}
                             </option>
                         @endforeach
@@ -170,8 +160,9 @@
                     <label class="form-label">Transporter:</label>
                     <select class="form-control select2" disabled>
                         <option value="">Select Transporter</option>
-                        <option value="1" @selected($delivery_challan->transporter == 1)>Transporter 1</option>
-                        <option value="2" @selected($delivery_challan->transporter == 2)>Transporter 2</option>
+                        @foreach ($Transporters ?? [] as $transporter)
+                            <option value="{{ $transporter->id }}" @selected($delivery_challan->transporter == $transporter->id)>{{ $transporter->name }}</option>
+                        @endforeach
                     </select>
                 </div>
             </div>
@@ -235,9 +226,9 @@
                         <th>Bag Type</th>
                         <th style="width: 250px;">Packing</th>
                         <th>No of Bags</th>
-                        <th>Quantity (kg)</th>
-                        <th>Rate per Kg</th>
-                        <th>Rate per Mond</th>
+                        <th>Quantity (MT)</th>
+                        <th>Rate per MT</th>
+                        <th style="display:none;">Rate per Mond</th>
                         <th>Amount</th>
                         <th>Brand</th>
                         <th>Truck No.</th>
@@ -282,7 +273,7 @@
                         <td>
                             <input type="text" value="{{ $data->rate }}" class="form-control" readonly>
                         </td>
-                        <td>
+                        <td style="display:none;">
                             <input type="text" value="{{ $data->deliveryOrderData->deliveryOrder->exportOrder->packingItems->first()->rate_per_maund ?? '' }}" class="form-control" readonly>
                         </td>
                         <td>

@@ -55,6 +55,7 @@ class AdvancePaymentRequestController extends Controller
                 'supplier',
                 'product',
                 'qcProduct',
+                'location',
                 'paymentRequestData' => function ($query) {
                     $query->with(['paymentRequests' => function ($q) {
                         $q->selectRaw('payment_request_data_id, request_type, status, SUM(amount) as total_amount')
@@ -94,7 +95,29 @@ class AdvancePaymentRequestController extends Controller
             $query->where('qc_product', $request->product_id);
         }
 
-        if ($request->has('search') && $request->search != '') {
+        if ($request->has('contract_no') && $request->contract_no != '') {
+        $query->where('contract_no', 'like', "%{$request->contract_no}%");
+    }
+
+    if ($request->has('amount') && $request->amount != '') {
+        $query->whereHas('paymentRequestData', function ($q) use ($request) {
+            $q->where('is_advance_payment', 1)
+              ->where('total_amount', 'like', "%{$request->amount}%");
+        });
+    }
+
+    if ($request->has('requested_amount') && $request->requested_amount != '') {
+        $query->whereHas('paymentRequestData', function ($q) use ($request) {
+            $q->where('is_advance_payment', 1)
+              ->where(function($sq) use ($request) {
+                  $sq->whereHas('paymentRequests', function ($pq) use ($request) {
+                      $pq->where('amount', 'like', "%{$request->requested_amount}%");
+                  });
+              });
+        });
+    }
+
+    if ($request->has('search') && $request->search != '') {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('unique_no', 'like', "%{$search}%")

@@ -81,6 +81,7 @@ Route::get('/get-export-loading-slip-ticket-data', [ExportLoadingSlipController:
 Route::resource('export-dispatch-qc', ExportDispatchQcController::class);
 Route::post('/get-export-dispatch-qc', [ExportDispatchQcController::class, 'getList'])->name('get.export-dispatch-qc');
 Route::get('/get-export-dispatch-qc-ticket-data', [ExportDispatchQcController::class, 'getTicketRelatedData'])->name('export.getDispatchQcTicketData');
+Route::get('/export-dispatch-qc/{id}/gate-out', [ExportDispatchQcController::class, 'get_gate_out'])->name('export.get.dispatch-qc.gate-out');
 
 // export second weighbridge
 Route::resource('export-second-weighbridge', ExportSecondWeighBridgeController::class);
