@@ -49,6 +49,7 @@ class PaymentRequestController extends Controller
                 'paymentRequestData.paymentRequests',
                 'paymentRequestData.paymentRequests.approvals',
                 'purchaseOrder.supplier',
+                'purchaseOrder.location',
                 'product',
                 'qcProduct',
                 'purchaseFreight',
@@ -69,7 +70,29 @@ class PaymentRequestController extends Controller
                     $query->where('supplier_id', $request->supplier_id);
                 });
             })
-            ->when($request->filled('daterange'), function ($q) use ($request) {
+            ->when($request->filled('contract_no'), function ($q) use ($request) {
+                return $q->whereHas('purchaseOrder', function ($query) use ($request) {
+                    $query->where('contract_no', 'like', "%{$request->contract_no}%");
+                });
+            })
+            ->when($request->filled('amount'), function ($q) use ($request) {
+                return $q->whereHas('paymentRequestData', function ($query) use ($request) {
+                    $query->where('total_amount', 'like', "%{$request->amount}%");
+                });
+            })
+            ->when($request->filled('requested_amount'), function ($q) use ($request) {
+                return $q->whereHas('paymentRequestData', function ($query) use ($request) {
+                    $query->whereHas('paymentRequests', function ($pq) use ($request) {
+                        $pq->where('amount', 'like', "%{$request->requested_amount}%");
+                    });
+                });
+            })
+            ->when($request->filled('loading_date'), function ($q) use ($request) {
+            return $q->whereHas('purchaseFreight', function ($query) use ($request) {
+                $query->whereDate('loading_date', $request->loading_date);
+            });
+        })
+        ->when($request->filled('daterange'), function ($q) use ($request) {
                 $dates = explode(' - ', $request->daterange);
                 $startDate = \Carbon\Carbon::parse( trim($dates[0]))->format('Y-m-d');
                 $endDate = \Carbon\Carbon::parse( trim($dates[1]))->format('Y-m-d');
