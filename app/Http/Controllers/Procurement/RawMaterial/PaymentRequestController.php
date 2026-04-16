@@ -115,7 +115,9 @@ class PaymentRequestController extends Controller
         // }
 
         if ($request->has('product_id') && $request->product_id != '') {
-            $query->where('qc_product', $request->product_id);
+            $query->whereHas('purchaseOrder', function ($q) use ($request) {
+                $q->where('qc_product', $request->product_id);
+            });
         }
 
         if ($request->has('search') && $request->search != '') {
