@@ -18,26 +18,38 @@
                         <div class="card-header">
                             <form id="filterForm" class="form">
                                 <div class="row mx-0">
-                                    <div class="px-1 text-left" style="width: 15%;">
+                                    <div class="px-1 text-left" style="width: 12%;">
                                         <label for="contract_no" class="form-label">Ticket / Contract</label>
                                         <input type="text" class="form-control" id="contract_no"
                                             placeholder="No" name="contract_no"
                                             value="{{ request('contract_no', '') }}">
                                     </div>
-                                    <div class="px-1 text-left" style="width: 15%;">
+                                    <div class="px-1 text-left" style="width: 12%;">
                                         <label for="supplier_id_f" class="form-label">Supplier</label>
                                         <select name="supplier_id" id="supplier_id_f"
                                             class="form-control select2">
                                             <option value="">Supplier</option>
                                         </select>
                                     </div>
-                                    <div class="px-1 text-left" style="width: 10%;">
+                                    <div class="px-1 text-left" style="width: 8%;">
                                         <label for="sauda_type" class="form-label">Sauda Type</label>
                                         <select name="sauda_type_id" id="sauda_type_id" class="form-control select2">
                                             <option value="">Sauda</option>
                                         </select>
                                     </div>
-                                    <div class="px-1 text-left" style="width: 10%;">
+                                    <div class="px-1 text-left" style="width: 8%;">
+                                        <label for="truck_no" class="form-label">Truck No</label>
+                                        <input type="text" class="form-control" id="truck_no"
+                                            placeholder="Truck" name="truck_no"
+                                            value="{{ request('truck_no', '') }}">
+                                    </div>
+                                    <div class="px-1 text-left" style="width: 8%;">
+                                        <label for="bilty_no" class="form-label">Bilty No</label>
+                                        <input type="text" class="form-control" id="bilty_no"
+                                            placeholder="Bilty" name="bilty_no"
+                                            value="{{ request('bilty_no', '') }}">
+                                    </div>
+                                    <div class="px-1 text-left" style="width: 8%;">
                                         <label for="request_type" class="form-label">Type</label>
                                         <select name="request_type" id="request_type" class="form-control select2">
                                             <option value="">Type</option>
@@ -45,7 +57,7 @@
                                             <option value="freight_payment" {{ request('request_type') == 'freight_payment' ? 'selected' : '' }}>Freight Payment</option>
                                         </select>
                                     </div>
-                                    <div class="px-1 text-left" style="width: 10%;">
+                                    <div class="px-1 text-left" style="width: 8%;">
                                         <label for="amount" class="form-label">Amount</label>
                                         <input type="text" class="form-control" id="amount"
                                             placeholder="Amt" name="amount"
@@ -60,14 +72,14 @@
                                             <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
                                         </select>
                                     </div>
-                                    <div class="px-1 text-left" style="width: 20%;">
+                                    <div class="px-1 text-left" style="width: 18%;">
                                          <label for="daterange" class="form-label">Created Date</label>
                                          <input type="text" name="daterange" id="daterange" class="form-control"
                                              value="{{ request('daterange', \Carbon\Carbon::now()->subMonth()->format('m/d/Y') . ' - ' . \Carbon\Carbon::now()->format('m/d/Y')) }}" />
                                          <input type="hidden" name="page" value="{{ request('page', 1) }}">
                                          <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
                                      </div>
-                                     <div class="px-1 text-left" style="width: 10%;">
+                                     <div class="px-1 text-left" style="width: 8%;">
                                         <!-- Actions Column -->
                                      </div>
                                 </div>
@@ -78,14 +90,16 @@
                                 <table class="table m-0">
                                     <thead>
                                         <tr>
-                                            <th style="width: 15%;">Ticket No / Contract No</th>
-                                            <th style="width: 15%;">Supplier</th>
-                                            <th style="width: 10%;">Sauda Type</th>
+                                            <th style="width: 12%;">Ticket No / Contract No</th>
+                                            <th style="width: 12%;">Supplier</th>
+                                            <th style="width: 8%;">Sauda Type</th>
+                                            <th style="width: 8%;">Truck No</th>
+                                            <th style="width: 8%;">Bilty No</th>
                                             <th style="width: 10%;">Type</th>
-                                            <th style="width: 10%;">Amount</th>
-                                            <th style="width: 10%;">Status</th>
-                                            <th style="width: 20%;">Created</th>
-                                            <th style="width: 10%;">Action</th>
+                                            <th style="width: 8%;">Amount</th>
+                                            <th style="width: 8%;">Status</th>
+                                            <th style="width: 18%;">Created</th>
+                                            <th style="width: 8%;">Action</th>
                                         </tr>
                                     </thead>
                                 </table>

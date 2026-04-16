@@ -1,14 +1,16 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th style="width: 15%;">Ticket No / Contract No</th>
-            <th style="width: 15%;">Supplier</th>
-            <th style="width: 10%;">Sauda Type</th>
+            <th style="width: 12%;">Ticket No / Contract No</th>
+            <th style="width: 12%;">Supplier</th>
+            <th style="width: 8%;">Sauda Type</th>
+            <th style="width: 8%;">Truck No</th>
+            <th style="width: 8%;">Bilty No</th>
             <th style="width: 10%;">Type</th>
-            <th style="width: 10%;">Amount</th>
-            <th style="width: 10%;">Status</th>
-            <th style="width: 20%;">Created</th>
-            <th style="width: 10%;">Action</th>
+            <th style="width: 8%;">Amount</th>
+            <th style="width: 8%;">Status</th>
+            <th style="width: 18%;">Created</th>
+            <th style="width: 8%;">Action</th>
         </tr>
     </thead>
     <tbody>
@@ -32,6 +34,8 @@
                     <td>{{ $request->paymentRequestData->supplier_name ?? ($request->purchaseOrder->purchaseOrderData[0]->supplier->name ?? 'N/A') }}
                     </td>
                     <td>{{ $request->sauda_type }}</td>
+                    <td>{{ $request->paymentRequestData->truck_no ?? ($request->freight_data->truck_no ?? 'N/A') }}</td>
+                    <td>{{ $request->paymentRequestData->bilty_no ?? ($request->freight_data->bilty_no ?? 'N/A') }}</td>
                     <td>
                         @if ($request->payment_type !== null)
                             @if ($request->payment_type == 'advance')
