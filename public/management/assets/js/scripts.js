@@ -15,10 +15,12 @@ $(document).on("keydown", function (e) {
   if (e.key === "Escape") {
     // 1. Close standard modal sidebars
     $(".modal-sidebar.open").removeClass("open");
+    $(".modal-sidebar .modal-tab-content").html(""); // Remove form content
     $("body").removeClass("drawer-opened");
 
     // 2. Close settings/other modals if they are visible
     $("#settinsgs, #modal2, #deletemodal").addClass("d-none").hide();
+    $("#settinsgs .modal-body, #modal2 .modal-body").html(""); // Clear modals
 
     // 3. Close "clean" sidebar drawers
     $(".clean-sidebar-drawer").each(function () {
@@ -33,6 +35,11 @@ $(document).on("keydown", function (e) {
       }, 350);
     });
   }
+});
+
+// Clear content when clicking the close button
+$(document).on("click", ".modal-sidebar-close", function () {
+  $(".modal-sidebar .modal-tab-content").html("");
 });
 
 function filterationCommonoldat12Dec2025(
