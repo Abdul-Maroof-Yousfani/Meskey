@@ -876,7 +876,7 @@
         $("#remarks").val('');
         $("#so_reference_no").val('');
         $("#reference_no").val('');
-        $("#order_date").val('');
+        $("#order_date").val("{{ date('Y-m-d') }}");
 
         if(window.populateFactories) window.populateFactories();
         if(window.populateSections) window.populateSections();
