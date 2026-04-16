@@ -382,9 +382,9 @@
         }
     }
     
-    const allLocations = @json(get_locations());
-    const factories = @json($arrivalLocations);
-    const sections = @json($arrivalSubLocations);
+    allLocations = @json(get_locations());
+    factories = @json($arrivalLocations);
+    sections = @json($arrivalSubLocations);
 
     $(document).ready(function() {
         $('.select2').select2();
