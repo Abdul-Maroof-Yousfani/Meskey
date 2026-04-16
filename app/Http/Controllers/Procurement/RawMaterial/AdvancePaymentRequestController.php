@@ -101,15 +101,19 @@ class AdvancePaymentRequestController extends Controller
 
     if ($request->has('amount') && $request->amount != '') {
         $query->whereHas('paymentRequestData', function ($q) use ($request) {
-            $q->where('total_amount', 'like', "%{$request->amount}%");
+            $q->where('is_advance_payment', 1)
+              ->where('total_amount', 'like', "%{$request->amount}%");
         });
     }
 
     if ($request->has('requested_amount') && $request->requested_amount != '') {
         $query->whereHas('paymentRequestData', function ($q) use ($request) {
-            $q->whereHas('paymentRequests', function ($pq) use ($request) {
-                $pq->where('total_amount', 'like', "%{$request->requested_amount}%");
-            });
+            $q->where('is_advance_payment', 1)
+              ->where(function($sq) use ($request) {
+                  $sq->whereHas('paymentRequests', function ($pq) use ($request) {
+                      $pq->where('total_amount', 'like', "%{$request->requested_amount}%");
+                  })->orWhere('paid_amount', 'like', "%{$request->requested_amount}%");
+              });
         });
     }
 
