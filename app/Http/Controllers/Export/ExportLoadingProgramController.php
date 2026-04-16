@@ -89,7 +89,7 @@ class ExportLoadingProgramController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $exportOrders = ExportOrder::whereIn('id', $request->export_order_id)->get();
+        $exportOrders = ExportOrder::where('am_approval_status', 'approved')->whereIn('id', $request->export_order_id)->get();
         $exportOrder = $exportOrders->first();
         $deliveryOrders = DeliveryOrder::whereIn('id', $request->delivery_order_id)->get();
 
@@ -210,6 +210,7 @@ class ExportLoadingProgramController extends Controller
             ->with(['deliveryOrders' => function ($q) {
                 $q->where('am_approval_status', 'approved');
             }])
+            ->where('am_approval_status', 'approved')
             ->where(function ($query) use ($selectedExportOrderIds, $companyLocationIds) {
                 if (!empty($selectedExportOrderIds)) {
                     $query->whereIn('id', $selectedExportOrderIds);
@@ -296,7 +297,7 @@ class ExportLoadingProgramController extends Controller
         }
 
         $loadingProgram = LoadingProgram::findOrFail($id);
-        $exportOrders = ExportOrder::whereIn('id', $request->export_order_id)->get();
+        $exportOrders = ExportOrder::where('am_approval_status', 'approved')->whereIn('id', $request->export_order_id)->get();
         $exportOrder = $exportOrders->first();
         $deliveryOrders = DeliveryOrder::whereIn('id', $request->delivery_order_id)->get();
 
@@ -393,7 +394,8 @@ class ExportLoadingProgramController extends Controller
             ->filter()
             ->toArray();
 
-        $exportOrders = ExportOrder::whereIn('id', $exportOrderIds)
+        $exportOrders = ExportOrder::where('am_approval_status', 'approved')
+            ->whereIn('id', $exportOrderIds)
             ->get()
             ->map(function($eo) {
                 return [
@@ -414,6 +416,7 @@ class ExportLoadingProgramController extends Controller
         $company_location_id = $request->company_location_id;
 
         $ExportOrders = ExportOrder::with(['packingItems', 'deliveryOrders'])
+            ->where('am_approval_status', 'approved')
             ->whereIn('id', $export_order_ids)
             ->get();
 

@@ -30,6 +30,7 @@
         $packing = $packing ?: 1;
         $rate = $export_order_packing->rate ?? 0;
         $rate_per_maund = $export_order_packing->rate_per_maund ?? 0;
+        $bags = $packing > 0 ? round(($net_weight * 1000) / $packing) : 0;
     @endphp
     <tr id="row_{{ $index }}">
         <td>
@@ -57,7 +58,7 @@
             </select>
         </td>
         <td>
-            <input type="text" name="no_of_bags[]" id="no_of_bags_{{ $index }}" value="{{ round($net_weight / $packing) }}" class="form-control no_of_bags" readonly>
+            <input type="text" name="no_of_bags[]" id="no_of_bags_{{ $index }}" value="{{ $bags }}" class="form-control no_of_bags" readonly>
         </td>
         <td>
             <input type="text" name="qty[]" id="qty_{{ $index }}" value="{{ round($net_weight, 3) }}" class="form-control qty" step="0.01" min="0" oninput="calc(this)" readonly>
@@ -65,7 +66,7 @@
         <td>
             <input type="text" name="rate[]" id="rate_{{ $index }}" value="{{ $rate }}" class="form-control rate" step="0.01" min="0" readonly>
         </td>
-        <td>
+        <td style="display:none;">
             <input type="text" name="rate_per_mond[]" id="rate_per_mond_{{ $index }}" value="{{ $rate_per_maund }}" class="form-control rate" step="0.01" min="0" readonly>
         </td>
         <td>
@@ -125,7 +126,7 @@
             return;
         }
 
-        const bagsResult = (qtyVal / bagSizeVal).toFixed();
+        const bagsResult = ((qtyVal * 1000) / bagSizeVal).toFixed();
         no_of_bags.val(bagsResult);
         calcAmount(el);
     }

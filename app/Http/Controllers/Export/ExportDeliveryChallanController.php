@@ -12,6 +12,7 @@ use App\Models\Master\ArrivalSubLocation;
 use App\Models\Master\CompanyLocation;
 use App\Models\Master\Customer;
 use App\Models\Product;
+use App\Models\Master\Transporter;
 use App\Models\Sales\LoadingProgramItem;
 use App\Models\Sales\ReceivingRequest;
 use App\Models\Sales\ReceivingRequestItem;
@@ -29,6 +30,7 @@ class ExportDeliveryChallanController extends Controller
     public function create()
     {
         $customers = Customer::all();
+        $Transporters = Transporter::where('status', 'active')->get();
         $delivery_orders = DeliveryOrder::select('delivery_order.id', 'delivery_order.reference_no')
             ->join('loading_slips', 'delivery_order.id', '=', 'loading_slips.delivery_order_id')
             ->join('sales_second_weighbridges', 'loading_slips.id', '=', 'sales_second_weighbridges.loading_slip_id')
@@ -36,7 +38,7 @@ class ExportDeliveryChallanController extends Controller
             ->distinct()
             ->get();
 
-        return view('management.export.delivery-challan.create', compact('customers', 'delivery_orders'));
+        return view('management.export.delivery-challan.create', compact('customers', 'delivery_orders', 'Transporters'));
     }
 
     public function store(DeliveryChallanRequest $request)
@@ -49,9 +51,9 @@ class ExportDeliveryChallanController extends Controller
             return response()->json('Selected Delivery order not found.', 422);
         }
 
-        if (strtotime($delivery_order->dispatch_date) <= strtotime($request->date)) {
-            return response()->json('Selected Delivery order is expired. Please select a different Delivery order', 422);
-        }
+        // if (strtotime($delivery_order->dispatch_date) <= strtotime($request->date)) {
+        //     return response()->json('Selected Delivery order is expired. Please select a different Delivery order', 422);
+        // }
 
         try {
             $arrival_location_csv = $request->arrival_location_csv;
@@ -65,7 +67,7 @@ class ExportDeliveryChallanController extends Controller
                 'section_id' => $storage_location_csv,
                 'dispatch_date' => $request->date,
                 'dc_no' => $request->dc_no,
-                'sauda_type' => $request->sauda_type,
+                // 'sauda_type' => $request->sauda_type,
                 'labour_status' => $request->labour_status ?? 'paid',
                 'company_id' => $request->company_id,
                 'labour' => $request->labour,
@@ -102,36 +104,36 @@ class ExportDeliveryChallanController extends Controller
                 $createdItems[] = $dcData;
             }
 
-            $receivingRequest = ReceivingRequest::create([
-                'delivery_challan_id' => $delivery_challan->id,
-                'dc_no' => $delivery_challan->dc_no,
-                'dc_date' => $delivery_challan->dispatch_date,
-                'truck_number' => $request->truck_no[0] ?? null,
-                'bilty' => $request->bilty_no[0] ?? null,
-                'labour' => $delivery_challan->labour,
-                'transporter' => $delivery_challan->transporter,
-                'inhouse_weighbridge' => $delivery_challan->{'inhouse-weighbridge'} ?? null,
-                'labour_amount' => $delivery_challan->labour_amount ?? 0,
-                'transporter_amount' => $delivery_challan->transporter_amount ?? 0,
-                'inhouse_weighbridge_amount' => $delivery_challan->{'weighbridge-amount'} ?? 0,
-                'company_id' => $delivery_challan->company_id,
-                'created_by_id' => $delivery_challan->created_by_id,
-            ]);
+            // $receivingRequest = ReceivingRequest::create([
+            //     'delivery_challan_id' => $delivery_challan->id,
+            //     'dc_no' => $delivery_challan->dc_no,
+            //     'dc_date' => $delivery_challan->dispatch_date,
+            //     'truck_number' => $request->truck_no[0] ?? null,
+            //     'bilty' => $request->bilty_no[0] ?? null,
+            //     'labour' => $delivery_challan->labour,
+            //     'transporter' => $delivery_challan->transporter,
+            //     'inhouse_weighbridge' => $delivery_challan->{'inhouse-weighbridge'} ?? null,
+            //     'labour_amount' => $delivery_challan->labour_amount ?? 0,
+            //     'transporter_amount' => $delivery_challan->transporter_amount ?? 0,
+            //     'inhouse_weighbridge_amount' => $delivery_challan->{'weighbridge-amount'} ?? 0,
+            //     'company_id' => $delivery_challan->company_id,
+            //     'created_by_id' => $delivery_challan->created_by_id,
+            // ]);
 
-            foreach ($createdItems as $dcData) {
-                $product = Product::find($dcData->item_id);
-                ReceivingRequestItem::create([
-                    'receiving_request_id' => $receivingRequest->id,
-                    'delivery_challan_data_id' => $dcData->id,
-                    'item_id' => $dcData->item_id,
-                    'item_name' => $product?->name ?? 'N/A',
-                    'dispatch_weight' => $dcData->qty ?? 0,
-                    'receiving_weight' => 0,
-                    'difference_weight' => $dcData->qty ?? 0,
-                    'seller_portion' => 0,
-                    'remaining_amount' => $dcData->qty ?? 0,
-                ]);
-            }
+            // foreach ($createdItems as $dcData) {
+            //     $product = Product::find($dcData->item_id);
+            //     ReceivingRequestItem::create([
+            //         'receiving_request_id' => $receivingRequest->id,
+            //         'delivery_challan_data_id' => $dcData->id,
+            //         'item_id' => $dcData->item_id,
+            //         'item_name' => $product?->name ?? 'N/A',
+            //         'dispatch_weight' => $dcData->qty ?? 0,
+            //         'receiving_weight' => 0,
+            //         'difference_weight' => $dcData->qty ?? 0,
+            //         'seller_portion' => 0,
+            //         'remaining_amount' => $dcData->qty ?? 0,
+            //     ]);
+            // }
 
             DB::commit();
         } catch (\Exception $e) {
@@ -175,7 +177,7 @@ class ExportDeliveryChallanController extends Controller
                 'reference_number' => $request->reference_number,
                 'dispatch_date' => $request->date,
                 'dc_no' => $request->dc_no,
-                'sauda_type' => $request->sauda_type,
+                // 'sauda_type' => $request->sauda_type,
                 'labour_status' => $request->labour_status ?? 'paid',
                 'company_id' => $request->company_id,
                 'labour' => $request->labour,
@@ -215,53 +217,53 @@ class ExportDeliveryChallanController extends Controller
                 $createdItems[] = $dcData;
             }
 
-            $receivingRequest = $delivery_challan->receivingRequest;
-            if ($receivingRequest) {
-                $receivingRequest->update([
-                    'dc_no' => $delivery_challan->dc_no,
-                    'dc_date' => $delivery_challan->dispatch_date,
-                    'truck_number' => $request->truck_no[0] ?? null,
-                    'bilty' => $request->bilty_no[0] ?? null,
-                    'labour' => $delivery_challan->labour,
-                    'transporter' => $delivery_challan->transporter,
-                    'inhouse_weighbridge' => $delivery_challan->{'inhouse-weighbridge'} ?? null,
-                    'labour_amount' => $delivery_challan->labour_amount ?? 0,
-                    'transporter_amount' => $delivery_challan->transporter_amount ?? 0,
-                    'inhouse_weighbridge_amount' => $delivery_challan->{'weighbridge-amount'} ?? 0,
-                ]);
-            } else {
-                $receivingRequest = ReceivingRequest::create([
-                    'delivery_challan_id' => $delivery_challan->id,
-                    'dc_no' => $delivery_challan->dc_no,
-                    'dc_date' => $delivery_challan->dispatch_date,
-                    'truck_number' => $request->truck_no[0] ?? null,
-                    'bilty' => $request->bilty_no[0] ?? null,
-                    'labour' => $delivery_challan->labour,
-                    'transporter' => $delivery_challan->transporter,
-                    'inhouse_weighbridge' => $delivery_challan->{'inhouse-weighbridge'} ?? null,
-                    'labour_amount' => $delivery_challan->labour_amount ?? 0,
-                    'transporter_amount' => $delivery_challan->transporter_amount ?? 0,
-                    'inhouse_weighbridge_amount' => $delivery_challan->{'weighbridge-amount'} ?? 0,
-                    'company_id' => $delivery_challan->company_id,
-                    'created_by_id' => $delivery_challan->created_by_id,
-                ]);
-            }
+            // $receivingRequest = $delivery_challan->receivingRequest;
+            // if ($receivingRequest) {
+            //     $receivingRequest->update([
+            //         'dc_no' => $delivery_challan->dc_no,
+            //         'dc_date' => $delivery_challan->dispatch_date,
+            //         'truck_number' => $request->truck_no[0] ?? null,
+            //         'bilty' => $request->bilty_no[0] ?? null,
+            //         'labour' => $delivery_challan->labour,
+            //         'transporter' => $delivery_challan->transporter,
+            //         'inhouse_weighbridge' => $delivery_challan->{'inhouse-weighbridge'} ?? null,
+            //         'labour_amount' => $delivery_challan->labour_amount ?? 0,
+            //         'transporter_amount' => $delivery_challan->transporter_amount ?? 0,
+            //         'inhouse_weighbridge_amount' => $delivery_challan->{'weighbridge-amount'} ?? 0,
+            //     ]);
+            // } else {
+            //     $receivingRequest = ReceivingRequest::create([
+            //         'delivery_challan_id' => $delivery_challan->id,
+            //         'dc_no' => $delivery_challan->dc_no,
+            //         'dc_date' => $delivery_challan->dispatch_date,
+            //         'truck_number' => $request->truck_no[0] ?? null,
+            //         'bilty' => $request->bilty_no[0] ?? null,
+            //         'labour' => $delivery_challan->labour,
+            //         'transporter' => $delivery_challan->transporter,
+            //         'inhouse_weighbridge' => $delivery_challan->{'inhouse-weighbridge'} ?? null,
+            //         'labour_amount' => $delivery_challan->labour_amount ?? 0,
+            //         'transporter_amount' => $delivery_challan->transporter_amount ?? 0,
+            //         'inhouse_weighbridge_amount' => $delivery_challan->{'weighbridge-amount'} ?? 0,
+            //         'company_id' => $delivery_challan->company_id,
+            //         'created_by_id' => $delivery_challan->created_by_id,
+            //     ]);
+            // }
 
-            $receivingRequest->items()->delete();
-            foreach ($createdItems as $dcData) {
-                $product = Product::find($dcData->item_id);
-                ReceivingRequestItem::create([
-                    'receiving_request_id' => $receivingRequest->id,
-                    'delivery_challan_data_id' => $dcData->id,
-                    'item_id' => $dcData->item_id,
-                    'item_name' => $product?->name ?? 'N/A',
-                    'dispatch_weight' => $dcData->qty ?? 0,
-                    'receiving_weight' => 0,
-                    'difference_weight' => $dcData->qty ?? 0,
-                    'seller_portion' => 0,
-                    'remaining_amount' => $dcData->qty ?? 0,
-                ]);
-            }
+            // $receivingRequest->items()->delete();
+            // foreach ($createdItems as $dcData) {
+            //     $product = Product::find($dcData->item_id);
+            //     ReceivingRequestItem::create([
+            //         'receiving_request_id' => $receivingRequest->id,
+            //         'delivery_challan_data_id' => $dcData->id,
+            //         'item_id' => $dcData->item_id,
+            //         'item_name' => $product?->name ?? 'N/A',
+            //         'dispatch_weight' => $dcData->qty ?? 0,
+            //         'receiving_weight' => 0,
+            //         'difference_weight' => $dcData->qty ?? 0,
+            //         'seller_portion' => 0,
+            //         'remaining_amount' => $dcData->qty ?? 0,
+            //     ]);
+            // }
 
             DB::commit();
         } catch (\Exception $e) {
@@ -276,10 +278,11 @@ class ExportDeliveryChallanController extends Controller
     {
         $delivery_challan = ExportDeliveryChallan::with(['delivery_order.exportPackingItems', 'delivery_challan_data'])->findOrFail($id);
         $customers = Customer::all();
+        $Transporters = Transporter::where('status', 'active')->get();
         $delivery_orders = $delivery_challan->delivery_order;
-        $locationIds = $delivery_orders->pluck('location_id')->filter()->unique();
-        $arrivalLocationIds = $delivery_orders->pluck('arrival_location_id')->filter()->unique();
-        $sectionIds = $delivery_orders->pluck('sub_arrival_location_id')->filter()->unique();
+        $locationIds = $delivery_orders->flatMap(fn ($order) => explode(',', (string) $order->location_id))->filter()->unique()->values();
+        $arrivalLocationIds = $delivery_orders->flatMap(fn ($order) => explode(',', (string) $order->arrival_location_id))->filter()->unique()->values();
+        $sectionIds = $delivery_orders->flatMap(fn ($order) => explode(',', (string) $order->sub_arrival_location_id))->filter()->unique()->values();
 
         $locations = CompanyLocation::whereIn('id', $locationIds)->get();
         $arrivalLocations = ArrivalLocation::whereIn('id', explode(',', (string) $delivery_challan->arrival_id))->get();
@@ -294,7 +297,8 @@ class ExportDeliveryChallanController extends Controller
             'sections',
             'locationIds',
             'arrivalLocationIds',
-            'sectionIds'
+            'sectionIds',
+            'Transporters'
         ));
     }
 
@@ -302,10 +306,11 @@ class ExportDeliveryChallanController extends Controller
     {
         $delivery_challan = ExportDeliveryChallan::with(['delivery_order.exportPackingItems', 'delivery_challan_data'])->findOrFail($id);
         $customers = Customer::all();
+        $Transporters = Transporter::where('status', 'active')->get();
         $delivery_orders = $delivery_challan->delivery_order;
-        $locationIds = $delivery_orders->pluck('location_id')->filter()->unique();
-        $arrivalLocationIds = $delivery_orders->pluck('arrival_location_id')->filter()->unique();
-        $sectionIds = $delivery_orders->pluck('sub_arrival_location_id')->filter()->unique();
+        $locationIds = $delivery_orders->flatMap(fn ($order) => explode(',', (string) $order->location_id))->filter()->unique()->values();
+        $arrivalLocationIds = $delivery_orders->flatMap(fn ($order) => explode(',', (string) $order->arrival_location_id))->filter()->unique()->values();
+        $sectionIds = $delivery_orders->flatMap(fn ($order) => explode(',', (string) $order->sub_arrival_location_id))->filter()->unique()->values();
 
         $locations = CompanyLocation::whereIn('id', $locationIds)->get();
         $arrivalLocations = ArrivalLocation::whereIn('id', explode(',', (string) $delivery_challan->arrival_id))->get();
@@ -320,7 +325,8 @@ class ExportDeliveryChallanController extends Controller
             'sections',
             'locationIds',
             'arrivalLocationIds',
-            'sectionIds'
+            'sectionIds',
+            'Transporters'
         ));
     }
 
@@ -531,6 +537,9 @@ class ExportDeliveryChallanController extends Controller
         }
 
         $companyLocationIds = $loadingProgram->company_locations ?? [];
+        if (!is_array($companyLocationIds)) {
+            $companyLocationIds = array_values(array_filter(explode(',', (string) $companyLocationIds)));
+        }
         $companyLocations = [];
         if (!empty($companyLocationIds)) {
             $companyLocations = CompanyLocation::whereIn('id', $companyLocationIds)
@@ -583,6 +592,7 @@ class ExportDeliveryChallanController extends Controller
         }
 
         $loadingSlipLabour = $ticket->exportLoadingSlip?->labour ?? null;
+        $transporterId = $ticket->transporter_id ?? $loadingProgram->transporter_id ?? null;
 
         return response()->json([
             'success' => true,
@@ -610,7 +620,8 @@ class ExportDeliveryChallanController extends Controller
                 'sub_arrival_location_ids' => $subArrivalLocationIds,
             ],
             'loading_slip_labour' => $loadingSlipLabour,
-            'is_labour_editable' => (strtolower($deliveryOrder->sauda_type ?? '') == 'x-mill' || strtolower($deliveryOrder->sauda_type ?? '') == 'xmill'),
+            'transporter_id' => $transporterId,
+            'is_labour_editable' => false,
         ]);
     }
 }
