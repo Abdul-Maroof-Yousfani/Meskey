@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Master;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Master\CustomerRequest;
 use App\Models\CustomerCompanyBankDetail;
+use App\Models\CustomerConsignee;
 use App\Models\CustomerOwnerBankDetail;
 use App\Models\Master\Account\Account;
 use App\Models\Master\Broker;
@@ -126,6 +127,24 @@ class CustomerController extends Controller
                 }
             }
 
+            // Save consignees
+            if ($request->has('has_consignee') && $request->has_consignee) {
+                $consigneeNames = $request->consignee_name ?? [];
+                foreach ($consigneeNames as $key => $consigneeName) {
+                    if (empty($consigneeName)) {
+                        continue;
+                    }
+                    CustomerConsignee::create([
+                        'customer_id'    => $customer->id,
+                        'name'           => $consigneeName,
+                        'address'        => $request->consignee_address[$key] ?? '',
+                        'contact'        => $request->consignee_contact[$key] ?? '',
+                        'contact_person' => $request->consignee_contact_person[$key] ?? '',
+                        'email'          => $request->consignee_email[$key] ?? '',
+                    ]);
+                }
+            }
+
             if ($request->has('create_as_broker') && $request->create_as_broker) {
 
                 $Brokeraccount = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-3', 'brokers'));
@@ -170,6 +189,7 @@ class CustomerController extends Controller
         $customer = Customer::with([
             'companyBankDetails',
             'ownerBankDetails',
+            'consignees',
         ])->findOrFail($id);
 
         $companyLocations = CompanyLocation::all();
@@ -233,6 +253,16 @@ class CustomerController extends Controller
                 'ownerBankDetails'
             );
 
+            // Update consignees
+            $this->updateConsignees(
+                $customer,
+                $request->has('has_consignee') && $request->has_consignee ? ($request->consignee_name ?? []) : [],
+                $request->consignee_address ?? [],
+                $request->consignee_contact ?? [],
+                $request->consignee_contact_person ?? [],
+                $request->consignee_email ?? []
+            );
+
             if ($request->has('create_as_broker')) {
                 $brokerData = [
                     'company_id' => $customer->company_id ?? null,
@@ -274,6 +304,25 @@ class CustomerController extends Controller
                 'error' => 'Failed to update Customer. Please try again.',
                 'details' => config('app.debug') ? $e->getMessage() : null,
             ], 500);
+        }
+    }
+
+    protected function updateConsignees($customer, $names, $addresses, $contacts, $contactPersons, $emails = [])
+    {
+        // Delete all existing and recreate (simple approach for consignees)
+        $customer->consignees()->delete();
+
+        foreach ($names as $index => $name) {
+            if (empty($name)) {
+                continue;
+            }
+            $customer->consignees()->create([
+                'name'           => $name,
+                'address'        => $addresses[$index] ?? '',
+                'contact'        => $contacts[$index] ?? '',
+                'contact_person' => $contactPersons[$index] ?? '',
+                'email'          => $emails[$index] ?? '',
+            ]);
         }
     }
 

@@ -119,6 +119,44 @@
                     </div>
                     
                 </div>
+                
+                {{-- Consignee Details --}}
+                <div class="row">
+                    <div class="col-12">
+                        <h6 class="header-heading-sepration">Consignee Details</h6>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label><span class="text-danger">*</span> Select Consignee:</label>
+                            <select name="consignee_id" id="consigneeSelect" class="form-control select2" required>
+                                <option value="">-- Select Consignee --</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="consigneeInfoSection" class="col-md-12" style="display:none; margin-bottom: 20px;">
+                        <div class="card bg-light border-0 shadow-sm" style="border-radius: 8px; background-color: #e0e0e0;">
+                            <div class="card-body p-3">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <p class="mb-1"><small class="text-black-50 d-block">Name</small><strong id="cons_name"></strong></p>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <p class="mb-1"><small class="text-black-50 d-block">Contact Person</small><strong id="cons_person"></strong></p>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <p class="mb-1"><small class="text-black-50 d-block">Contact</small><strong id="cons_contact"></strong></p>
+                                    </div>
+                                    <div class="col-md-6 mt-2">
+                                        <p class="mb-1"><small class="text-black-50 d-block">Email</small><strong id="cons_email"></strong></p>
+                                    </div>
+                                    <div class="col-md-12 mt-2">
+                                        <p class="mb-0"><small class="text-black-50 d-block">Address</small><span id="cons_address"></span></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
             </div>
 
@@ -1276,8 +1314,16 @@
         // Bank Details
         $('select[name="buyer_id"]').on('change', function() {
             let customerId = $(this).val();
+
+            // Handle Banks
             $('#bankSelect').html('<option value="">-- Select Bank --</option>').trigger('change');
+            
+            // Handle Consignees
+            $('#consigneeSelect').html('<option value="">-- Select Consignee --</option>').trigger('change');
+            $('#consigneeInfoSection').hide();
+
             if (!customerId) return;
+
             $.get('{{ route('export-order.customer-banks', '') }}/' + customerId, function(response) {
                 let options = '<option value="">-- Select Bank --</option>';
                 response.forEach(function(bank) {
@@ -1292,6 +1338,35 @@
                 });
                 $('#bankSelect').html(options).trigger('change');
             });
+
+            $.get('{{ route('export-order.customer-consignees', '') }}/' + customerId, function(response) {
+                let options = '<option value="">-- Select Consignee --</option>';
+                response.forEach(function(cons) {
+                    options += `<option value="${cons.id}" 
+                        data-name="${cons.name}"
+                        data-person="${cons.contact_person}"
+                        data-contact="${cons.contact}"
+                        data-email="${cons.email || ''}"
+                        data-address="${cons.address}">
+                        ${cons.name} (${cons.contact_person})
+                    </option>`;
+                });
+                $('#consigneeSelect').html(options).trigger('change');
+            });
+        });
+
+        $('#consigneeSelect').on('change', function() {
+            let selected = $(this).find(':selected');
+            if (!selected.val()) {
+                $('#consigneeInfoSection').hide();
+                return;
+            }
+            $('#cons_name').text(selected.data('name') || '');
+            $('#cons_person').text(selected.data('person') || '');
+            $('#cons_contact').text(selected.data('contact') || '');
+            $('#cons_email').text(selected.data('email') || 'N/A');
+            $('#cons_address').text(selected.data('address') || '');
+            $('#consigneeInfoSection').fadeIn(300);
         });
 
         $('#bankSelect').on('change', function() {

@@ -93,6 +93,32 @@
                 </div>
             </div>
         </div>
+        
+        {{-- Consignee Details --}}
+        <div class="col-md-12 mt-2">
+            <h6 class="header-heading-sepration">Consignee Details</h6>
+            <div class="card bg-light border-0 shadow-sm" style="border-radius: 8px; background-color: #e0e0e0;">
+                <div class="card-body p-3">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <p class="mb-1"><small class="text-black-50 d-block">Name</small><strong>{{ $exportOrder->consignee?->name ?? 'N/A' }}</strong></p>
+                        </div>
+                        <div class="col-md-4">
+                            <p class="mb-1"><small class="text-black-50 d-block">Contact Person</small><strong>{{ $exportOrder->consignee?->contact_person ?? 'N/A' }}</strong></p>
+                        </div>
+                        <div class="col-md-4">
+                            <p class="mb-1"><small class="text-black-50 d-block">Contact</small><strong>{{ $exportOrder->consignee?->contact ?? 'N/A' }}</strong></p>
+                        </div>
+                        <div class="col-md-6 mt-2">
+                            <p class="mb-1"><small class="text-black-50 d-block">Email</small><strong>{{ $exportOrder->consignee?->email ?? 'N/A' }}</strong></p>
+                        </div>
+                        <div class="col-md-12 mt-2">
+                            <p class="mb-0"><small class="text-black-50 d-block">Address</small><span>{{ $exportOrder->consignee?->address ?? 'N/A' }}</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         {{-- ====== PRODUCT & SPECS ====== --}}
         <div class="col-md-12 mt-2">
