@@ -34,13 +34,15 @@
             //  $arrivedTrucks = $row->arrivalTickets()->sum('closing_trucks_qty');
             $arrivedTrucks = $row->approvedArrivalTickets()->sum('closing_trucks_qty');
             $rejectedTrucks = $row->rejectedArrivalTickets->count();
+            $rejectedHalfTrucks = $row->rejectedHalfArrivalTickets->count() != 0 ? $row->rejectedHalfArrivalTickets->count() / 2 : 0;
+            $totalRejectedTrucks = $rejectedTrucks + $rejectedHalfTrucks;
             $inTransitTrucks = $row->stockInTransitTickets->count();
             $orderedTrucks = $row->no_of_trucks ?? 0;
 
             if ($row->is_replacement == 1) {
                 $balanceTrucks = $orderedTrucks - $arrivedTrucks - $inTransitTrucks;
             } else {
-                $balanceTrucks = $orderedTrucks - $arrivedTrucks - $inTransitTrucks - $rejectedTrucks;
+                $balanceTrucks = $orderedTrucks - $arrivedTrucks - $inTransitTrucks - $totalRejectedTrucks;
             }
         @endphp
 
@@ -98,7 +100,7 @@
                 {{ (($row->min_quantity ?? 0) - ($row->totalArrivedNetWeight->total_arrived_net_weight ?? 0) ?? '-') . ' - ' . (($row->max_quantity ?? 0) - ($row->totalArrivedNetWeight->total_arrived_net_weight ?? 0) ?? '-') }}
             </td>
             <td>{{ $row->stockInTransitTickets->count() }}</td>
-            <td>{{ $rejectedTrucks }}</td>
+            <td>{{ $totalRejectedTrucks }}</td>
             <td>
                 @if ($row->status == 'completed')
                     <span class="badge badge-success">Closed</span>

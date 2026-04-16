@@ -89,7 +89,8 @@ class ArrivalPurchaseOrder extends Model
         'delivery_date' => 'date',
     ];
 
-    public function hasExpired() {
+    public function hasExpired()
+    {
         return $this->status == 'draft' && $this->delivery_date < now();
     }
 
@@ -253,6 +254,13 @@ class ArrivalPurchaseOrder extends Model
     {
         return $this->hasMany(ArrivalTicket::class, 'arrival_purchase_order_id')
             ->where('first_qc_status', 'rejected');
+    }
+
+    public function rejectedHalfArrivalTickets()
+    {
+        return $this->hasMany(ArrivalTicket::class, 'arrival_purchase_order_id')
+            ->where('document_approval_status', 'half_approved')
+            ->where('arrival_slip_status', 'generated');
     }
     public function approvedArrivalTickets()
     {

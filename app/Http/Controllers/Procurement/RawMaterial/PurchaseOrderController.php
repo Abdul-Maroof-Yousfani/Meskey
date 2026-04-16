@@ -41,6 +41,7 @@ class PurchaseOrderController extends Controller
         $arrivalPurchaseOrder = ArrivalPurchaseOrder::with([
             'stockInTransitTickets',
             'rejectedArrivalTickets',
+            'rejectedHalfArrivalTickets',
         ])->when($request->filled('search'), function ($q) use ($request) {
             $searchTerm = '%' . $request->search . '%';
             return $q->where(function ($sq) use ($searchTerm) {

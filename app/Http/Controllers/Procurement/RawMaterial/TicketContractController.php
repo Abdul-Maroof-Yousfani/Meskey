@@ -375,8 +375,8 @@ class TicketContractController extends Controller
                         );
                     }
 
-                    $supplierTxn = Transaction::where('grn_no', $grnNo)
-                        //where('voucher_no', $contractNo)
+                    $supplierTxn = Transaction::where('voucher_no', $contractNo)
+                        // ->where('grn_no', $grnNo)
                         ->where('purpose', 'supplier-payable')
                         // ->where('against_reference_no', "$freightTruckMatches/$freightBiltyMatches")
                         ->first();
@@ -577,6 +577,7 @@ class TicketContractController extends Controller
             'saudaType',
             'createdByUser',
             'rejectedArrivalTickets',
+            'rejectedHalfArrivalTickets',
             'stockInTransitTickets'
         ])
             ->where('status', 'draft')
@@ -610,6 +611,8 @@ class TicketContractController extends Controller
             $totalClosingTrucks = $c->approvedArrivalTickets()->sum('closing_trucks_qty') ?? 0;
             $totalClosingTrucksWithoutTicket = $c->totalClosingTrucksQtyWithoutOwnTicket->first()->total_closing_trucks_qty ?? 0;
             $rejectedTrucks = $c->rejectedArrivalTickets->count();
+            $rejectedHalfTrucks = $c->rejectedHalfArrivalTickets->count() != 0 ? $c->rejectedHalfArrivalTickets->count() / 2 : 0;
+            $totalRejectedTrucks = $rejectedTrucks + $rejectedHalfTrucks;
             $stockInTransitTrucks = $c->stockInTransitTickets->count();
 
             $purchaseFreights = PurchaseFreight::where('arrival_purchase_order_id', $c->id)
@@ -674,7 +677,8 @@ class TicketContractController extends Controller
                 'total_loading_weight' => $c->totalArrivedNetWeight->total_arrived_net_weight ?? 0,
                 'closed_arrivals' => $totalClosingTrucks,
                 'closed_arrivals_without_own' => $totalClosingTrucksWithoutTicket,
-                'rejected_trucks' => $rejectedTrucks,
+                // 'rejected_trucks' => $rejectedTrucks,
+                'rejected_trucks' => $totalRejectedTrucks,
                 'stock_in_transit_trucks' => $stockInTransitTrucks,
                 'purchase_type' => $c->purchase_type,
                 'purchase_freights' => $purchaseFreights,
@@ -695,6 +699,7 @@ class TicketContractController extends Controller
                         $query->where('id', '!=', $ticketId);
                     },
                     'rejectedArrivalTickets',
+                    'rejectedHalfArrivalTickets',
                     'stockInTransitTickets'
                 ]);
             }
@@ -703,6 +708,8 @@ class TicketContractController extends Controller
             $linkedClosingTrucks = $linkedPurchaseOrder->approvedArrivalTickets()->sum('closing_trucks_qty') ?? 0;
             $linkedClosingTrucksWithoutOwn = $linkedPurchaseOrder->totalClosingTrucksQtyWithoutOwnTicket->first()->total_closing_trucks_qty ?? 0;
             $linkedRejectedTrucks = $linkedPurchaseOrder->rejectedArrivalTickets->count();
+            $linkedRejectedHalfTrucks = $linkedPurchaseOrder->rejectedHalfArrivalTickets->count() != 0 ? $linkedPurchaseOrder->rejectedHalfArrivalTickets->count() / 2 : 0;
+            $linkedTotalRejectedTrucks = $linkedRejectedTrucks + $linkedRejectedHalfTrucks;
             $linkedStockInTransitTrucks = $linkedPurchaseOrder->stockInTransitTickets->count();
 
             $linkedPurchaseFreights = PurchaseFreight::where('arrival_purchase_order_id', $linkedPurchaseOrder->id)
@@ -774,7 +781,8 @@ class TicketContractController extends Controller
                 'total_loading_weight' => $linkedPurchaseOrder->totalArrivedNetWeight->total_arrived_net_weight ?? 0,
                 'closed_arrivals' => $linkedClosingTrucks,
                 'closed_arrivals_without_own' => $linkedClosingTrucksWithoutOwn,
-                'rejected_trucks' => $linkedRejectedTrucks,
+                // 'rejected_trucks' => $linkedRejectedTrucks,
+                'rejected_trucks' => $linkedTotalRejectedTrucks,
                 'stock_in_transit_trucks' => $linkedStockInTransitTrucks,
                 'purchase_type' => $linkedPurchaseOrder->purchase_type,
                 'is_linked' => true,
