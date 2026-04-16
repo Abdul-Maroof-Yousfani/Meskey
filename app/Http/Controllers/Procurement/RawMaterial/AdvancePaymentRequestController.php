@@ -111,8 +111,8 @@ class AdvancePaymentRequestController extends Controller
             $q->where('is_advance_payment', 1)
               ->where(function($sq) use ($request) {
                   $sq->whereHas('paymentRequests', function ($pq) use ($request) {
-                      $pq->where('total_amount', 'like', "%{$request->requested_amount}%");
-                  })->orWhere('paid_amount', 'like', "%{$request->requested_amount}%");
+                      $pq->where('amount', 'like', "%{$request->requested_amount}%");
+                  });
               });
         });
     }
