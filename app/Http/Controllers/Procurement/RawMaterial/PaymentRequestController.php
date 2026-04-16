@@ -88,11 +88,21 @@ class PaymentRequestController extends Controller
                 });
             })
             ->when($request->filled('loading_date'), function ($q) use ($request) {
-            return $q->whereHas('purchaseFreight', function ($query) use ($request) {
-                $query->whereDate('loading_date', $request->loading_date);
-            });
-        })
-        ->when($request->filled('daterange'), function ($q) use ($request) {
+                return $q->whereHas('purchaseFreight', function ($query) use ($request) {
+                    $query->whereDate('loading_date', $request->loading_date);
+                });
+            })
+            ->when($request->filled('truck_no'), function ($q) use ($request) {
+                return $q->whereHas('purchaseFreight', function ($query) use ($request) {
+                    $query->where('truck_no', 'like', "%{$request->truck_no}%");
+                });
+            })
+            ->when($request->filled('bilty_no'), function ($q) use ($request) {
+                return $q->whereHas('purchaseFreight', function ($query) use ($request) {
+                    $query->where('bilty_no', 'like', "%{$request->bilty_no}%");
+                });
+            })
+            ->when($request->filled('daterange'), function ($q) use ($request) {
                 $dates = explode(' - ', $request->daterange);
                 $startDate = \Carbon\Carbon::parse( trim($dates[0]))->format('Y-m-d');
                 $endDate = \Carbon\Carbon::parse( trim($dates[1]))->format('Y-m-d');
