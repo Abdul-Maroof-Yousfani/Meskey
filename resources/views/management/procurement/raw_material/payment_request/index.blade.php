@@ -73,10 +73,7 @@
                                              placeholder="Req Amt" name="requested_amount"
                                              value="{{ request('requested_amount', '') }}">
                                      </div>
-                                     <div class="px-1 text-left" style="width: 8%;">
-                                         <label class="form-label" style="visibility: hidden;">Created</label>
-                                     </div>
-                                     <div class="px-1 text-left" style="width: 8%;">
+                                     <div class="px-1 text-left" style="width: 16%;">
                                          <label for="daterange" class="form-label">Date Filter</label>
                                          <input type="text" name="daterange" id="daterange" class="form-control"
                                              value="{{ request('daterange', \Carbon\Carbon::now()->subMonth()->format('m/d/Y') . ' - ' . \Carbon\Carbon::now()->format('m/d/Y')) }}" />
