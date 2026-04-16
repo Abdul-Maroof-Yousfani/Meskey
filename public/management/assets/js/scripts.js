@@ -10,6 +10,31 @@ function getUniversalNumber(options, callback) {
   });
 }
 
+// Global listener to close modals/drawers on Escape key
+$(document).on("keydown", function (e) {
+  if (e.key === "Escape") {
+    // 1. Close standard modal sidebars
+    $(".modal-sidebar.open").removeClass("open");
+    $("body").removeClass("drawer-opened");
+
+    // 2. Close settings/other modals if they are visible
+    $("#settinsgs, #modal2, #deletemodal").addClass("d-none").hide();
+
+    // 3. Close "clean" sidebar drawers
+    $(".clean-sidebar-drawer").each(function () {
+      const $drawer = $(this);
+      const drawerWidth = $drawer.css("width");
+      $drawer.css("right", `-${drawerWidth}`);
+      setTimeout(() => {
+        $drawer.remove();
+        if ($(".clean-sidebar-drawer").length === 0 && !$(".modal-sidebar.open").length) {
+          $("body").removeClass("drawer-opened");
+        }
+      }, 350);
+    });
+  }
+});
+
 function filterationCommonoldat12Dec2025(
   url,
   loadmore = false,
@@ -306,6 +331,8 @@ function filterationCommon(
 
   // Get the form element
   var $form = $("#" + formId);
+
+
 
   // Fallback to filterForm if specified form doesn't exist
   if ($form.length === 0) {
