@@ -50,6 +50,7 @@ class ExportOrderRequest extends FormRequest
 
             'company_id' => ['required', 'exists:companies,id'],
             'buyer_id' => ['required', 'exists:customers,id'],
+            'consignee_id' => ['required', 'exists:customer_consignees,id'],
             'product_id' => ['required', 'exists:products,id'],
             'bank_id' => ['required', 'string'],
             'correspondent_bank_id' => ['required', 'exists:banks,id'],

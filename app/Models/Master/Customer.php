@@ -4,6 +4,7 @@ namespace App\Models\Master;
 
 use App\Models\Acl\Company;
 use App\Models\CustomerCompanyBankDetail;
+use App\Models\CustomerConsignee;
 use App\Models\CustomerOwnerBankDetail;
 use App\Models\Master\Account\Account;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -55,6 +56,11 @@ class Customer extends Model
     public function ownerBankDetails()
     {
         return $this->hasMany(CustomerOwnerBankDetail::class);
+    }
+
+    public function consignees()
+    {
+        return $this->hasMany(CustomerConsignee::class);
     }
 
     // public function arrivalPurchaseOrders()

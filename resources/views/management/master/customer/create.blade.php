@@ -244,6 +244,75 @@
         </div>
     </div>
 
+    {{-- Consignee Details Section --}}
+    <div class="row form-mar mb-2">
+        <div class="col-12">
+            <h6 class="header-heading-sepration">
+                Consignee Details
+            </h6>
+        </div>
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="checkbox">
+                <input name="has_consignee" type="checkbox" id="has_consignee" value="1">
+                <label for="has_consignee"><span>Add Consignee(s) for this customer</span></label>
+            </div>
+        </div>
+    </div>
+
+    <div id="consignee-section" class="row" style="display:none;">
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <div id="consignee-container" class="mb-4">
+                <div class="consignee-card border-1">
+                    <div class="row">
+                        <div class="col-xs-6 col-sm-6 col-md-6">
+                            <div class="form-group">
+                                <label><span class="text-danger required-asterisk">*</span>Name:</label>
+                                <input type="text" name="consignee_name[]" placeholder="Consignee Name"
+                                    class="form-control consignee-required" autocomplete="off" />
+                            </div>
+                        </div>
+                        <div class="col-xs-6 col-sm-6 col-md-6">
+                            <div class="form-group">
+                                <label><span class="text-danger required-asterisk">*</span>Contact:</label>
+                                <input type="text" name="consignee_contact[]" placeholder="Contact Number"
+                                    class="form-control consignee-required" autocomplete="off" />
+                            </div>
+                        </div>
+                        <div class="col-xs-6 col-sm-6 col-md-6">
+                            <div class="form-group">
+                                <label><span class="text-danger required-asterisk">*</span>Contact Person:</label>
+                                <input type="text" name="consignee_contact_person[]" placeholder="Contact Person Name"
+                                    class="form-control consignee-required" autocomplete="off" />
+                            </div>
+                        </div>
+                        <div class="col-xs-6 col-sm-6 col-md-6">
+                            <div class="form-group">
+                                <label>Email:</label>
+                                <input type="email" name="consignee_email[]" placeholder="Email Address"
+                                    class="form-control" autocomplete="off" />
+                            </div>
+                        </div>
+                        <div class="col-xs-6 col-sm-6 col-md-6">
+                            <div class="form-group">
+                                <label><span class="text-danger required-asterisk">*</span>Address:</label>
+                                <input type="text" name="consignee_address[]" placeholder="Consignee Address"
+                                    class="form-control consignee-required" autocomplete="off" />
+                            </div>
+                        </div>
+                        <div class="col-xs-2 col-sm-2 col-md-2 d-flex align-items-end">
+                            <div>
+                                <button type="button" class="btn btn-warning btn-icon add-consignee mr-1"><i
+                                        class="fa fa-plus"></i></button>
+                                <button type="button" class="btn btn-danger btn-icon remove-consignee mr-1"
+                                    style="display:none;"><i class="fa fa-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="row ">
         <div class="col-12">
             <h6 class="header-heading-sepration">
@@ -286,7 +355,7 @@
         }
     }
 
-    $(document).on('input', '.cnic-input', function() {
+    $(document).off('input', '.cnic-input').on('input', '.cnic-input', function() {
         let value = $(this).val().replace(/\D/g, '');
         let formattedValue = '';
 
@@ -305,7 +374,7 @@
 
     toggleRemoveButton();
 
-    $('body').off('click', '.add-more').on('click', '.add-more', function(e) {
+    $(document).off('click', '.add-more').on('click', '.add-more', function(e) {
         e.preventDefault();
         var lastCard = $('#card-container .clonecard:last');
         var newCard = lastCard.clone();
@@ -315,7 +384,7 @@
         toggleRemoveButton();
     });
 
-    $(document).on('click', '.remove-card', function() {
+    $(document).off('click', '.remove-card').on('click', '.remove-card', function() {
         if ($('#card-container .clonecard').length > 1) {
             $(this).closest('.clonecard').remove();
             toggleRemoveButton();
@@ -333,7 +402,7 @@
 
     toggleRemoveButton2();
 
-    $('body').off('click', '.add-more2').on('click', '.add-more2', function(e) {
+    $(document).off('click', '.add-more2').on('click', '.add-more2', function(e) {
         e.preventDefault();
         var lastCard = $('#card-container2 .clonecard2:last');
         var newCard = lastCard.clone();
@@ -343,10 +412,58 @@
         toggleRemoveButton2();
     });
 
-    $(document).on('click', '.remove-card2', function() {
+    $(document).off('click', '.remove-card2').on('click', '.remove-card2', function() {
         if ($('#card-container2 .clonecard2').length > 1) {
             $(this).closest('.clonecard2').remove();
             toggleRemoveButton2();
         }
     });
+
+    // Consignee Details JS
+    function toggleConsigneeRequired(enable) {
+        $('#consignee-section .consignee-required').each(function() {
+            if (enable) {
+                $(this).attr('required', 'required');
+            } else {
+                $(this).removeAttr('required');
+            }
+        });
+    }
+
+    function toggleConsigneeRemoveBtn() {
+        var count = $('#consignee-container .consignee-card').length;
+        if (count === 1) {
+            $('#consignee-container .consignee-card .remove-consignee').hide();
+        } else {
+            $('#consignee-container .consignee-card .remove-consignee').show();
+        }
+    }
+
+    $(document).off('change', '#has_consignee').on('change', '#has_consignee', function() {
+        if ($(this).is(':checked')) {
+            $('#consignee-section').slideDown(200);
+            toggleConsigneeRequired(true);
+        } else {
+            $('#consignee-section').slideUp(200);
+            toggleConsigneeRequired(false);
+        }
+    });
+
+    $(document).off('click', '.add-consignee').on('click', '.add-consignee', function(e) {
+        e.preventDefault();
+        var lastCard = $('#consignee-container .consignee-card:last');
+        var newCard = lastCard.clone();
+        newCard.find('input').val('');
+        newCard.find('.remove-consignee').show();
+        lastCard.after(newCard);
+        toggleConsigneeRemoveBtn();
+    });
+
+    $(document).off('click', '.remove-consignee').on('click', '.remove-consignee', function() {
+        if ($('#consignee-container .consignee-card').length > 1) {
+            $(this).closest('.consignee-card').remove();
+            toggleConsigneeRemoveBtn();
+        }
+    });
 </script>
+
