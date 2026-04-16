@@ -498,10 +498,19 @@ class TicketContractController extends Controller
                 ]);
 
             DB::commit();
+            // dd(route('raw-material.ticket-contracts.index', request()->query()));
+
+            $query = $request->query_string;
 
             return response()->json([
                 'success' => 'Ticket successfully linked to contract',
-                'redirect' => route('raw-material.ticket-contracts.index')
+                'redirect' => route('raw-material.ticket-contracts.index') . ($query ? '?' . $query : '')
+            ]);
+
+            return response()->json([
+                'success' => 'Ticket successfully linked to contract',
+                // 'redirect' => route('raw-material.ticket-contracts.index'),
+                'redirect' => route('raw-material.ticket-contracts.index', request()->query()),
             ]);
         } catch (\Exception $e) {
             DB::rollBack();

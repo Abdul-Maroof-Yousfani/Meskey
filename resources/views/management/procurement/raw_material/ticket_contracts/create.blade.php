@@ -35,6 +35,7 @@
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
+                        
                         <h4 class="card-title">
                             Link Arrival Ticket To Contract: #{{ $arrivalTicket->unique_no }}
                             @if ($arrivalTicket->first_qc_status == 'rejected')
@@ -51,7 +52,7 @@
                                 value="{{ route('raw-material.ticket-contracts.index') }}" />
                             <input type="hidden" name="arrival_ticket_id" value="{{ $arrivalTicket->id }}">
                             <input type="hidden" name="selected_freight" id="selected_freight_input">
-
+<input type="hidden" name="query_string" value="{{ request()->getQueryString() }}">
                             <div class="row">
                                 <div class="col-12">
                                     <div class="card shadow">

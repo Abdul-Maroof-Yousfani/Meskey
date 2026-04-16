@@ -259,6 +259,26 @@ function filterationCommonoldat12Dec2025(
   }
 }
 
+
+function attachQueryParams() {
+  let queryString = window.location.search;
+
+  document.querySelectorAll('.action-link').forEach(function (link) {
+    let url = new URL(link.href);
+
+    let params = new URLSearchParams(window.location.search);
+
+    params.forEach((value, key) => {
+      url.searchParams.append(key, value);
+    });
+
+    link.href = url.toString();
+  });
+}
+
+
+
+
 function filterationCommon(
   url,
   loadmore = false,
@@ -442,8 +462,13 @@ function filterationCommon(
         // Update the container with the new data
         $("#" + `${appenddiv}`).html(data);
         $(".selectWithoutAjax").select2();
+
+
         // Reinitialize Daterangepicker after AJAX content is loaded
         initializeDaterangepicker();
+
+        attachQueryParams(); // 🔥 important
+
       },
       error: function (xhr, status, error) {
         console.error(error);
