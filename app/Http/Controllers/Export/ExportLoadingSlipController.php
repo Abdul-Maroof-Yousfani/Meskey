@@ -338,9 +338,11 @@ class ExportLoadingSlipController extends Controller
 
     private function resolveDeliveryOrder(LoadingProgramItem $item): ?ExportDeliveryOrder
     {
-        $deliveryOrder = $item->exportLoadingProgram?->deliveryOrders?->first()
-            ?? $item->exportLoadingProgram?->deliveryOrder
-            ?? $item->deliveryOrders->where('type', 'export_order')->first();
+        $deliveryOrder = $item->exportLoadingProgram?->deliveryOrders?->where('am_approval_status', 'approved')?->first()
+            ?? (($item->exportLoadingProgram?->deliveryOrder && $item->exportLoadingProgram->deliveryOrder->am_approval_status === 'approved')
+                ? $item->exportLoadingProgram->deliveryOrder
+                : null)
+            ?? $item->deliveryOrders->where('type', 'export_order')->where('am_approval_status', 'approved')->first();
 
         if (!$deliveryOrder) {
             return null;
@@ -356,9 +358,13 @@ class ExportLoadingSlipController extends Controller
         }
 
         $orders = [];
-        $deliveryOrders = $item->exportLoadingProgram?->deliveryOrders?->values() ?? collect();
+        $deliveryOrders = $item->exportLoadingProgram?->deliveryOrders?->where('am_approval_status', 'approved')->values() ?? collect();
 
-        if ($deliveryOrders->isEmpty() && $item->exportLoadingProgram?->deliveryOrder) {
+        if (
+            $deliveryOrders->isEmpty()
+            && $item->exportLoadingProgram?->deliveryOrder
+            && $item->exportLoadingProgram->deliveryOrder->am_approval_status === 'approved'
+        ) {
             $deliveryOrders = collect([$item->exportLoadingProgram->deliveryOrder]);
         }
 
@@ -375,7 +381,9 @@ class ExportLoadingSlipController extends Controller
                     'exportOrder.product',
                     'exportOrder.packingItems',
                     'exportPackingItems.bagType',
-                ])->whereIn('id', $exportDeliveryOrderIds)->get();
+                ])->where('am_approval_status', 'approved')
+                    ->whereIn('id', $exportDeliveryOrderIds)
+                    ->get();
             }
         }
 
@@ -394,13 +402,21 @@ class ExportLoadingSlipController extends Controller
         }
 
         if (empty($orders)) {
-            $exportOrders = $item->exportOrders;
+            $exportOrders = $item->exportOrders
+                ->where('am_approval_status', 'approved')
+                ->values();
 
             if ($exportOrders->isEmpty() && $item->exportLoadingProgram?->exportOrders?->isNotEmpty()) {
-                $exportOrders = $item->exportLoadingProgram->exportOrders;
+                $exportOrders = $item->exportLoadingProgram->exportOrders
+                    ->where('am_approval_status', 'approved')
+                    ->values();
             }
 
-            if ($exportOrders->isEmpty() && $item->exportLoadingProgram?->exportOrder) {
+            if (
+                $exportOrders->isEmpty()
+                && $item->exportLoadingProgram?->exportOrder
+                && $item->exportLoadingProgram->exportOrder->am_approval_status === 'approved'
+            ) {
                 $exportOrders = collect([$item->exportLoadingProgram->exportOrder]);
             }
 

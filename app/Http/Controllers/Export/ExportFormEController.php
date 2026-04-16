@@ -65,7 +65,7 @@ class ExportFormEController extends Controller
     public function getExportOrderDetails($id)
     {
         try {
-            $exportOrder = ExportOrder::with([
+            $exportOrder = ExportOrder::where('am_approval_status', 'approved')->with([
                 'product', 
                 'specifications', 
                 'packingItems.bagType', 
@@ -132,7 +132,7 @@ class ExportFormEController extends Controller
         DB::beginTransaction();
 
         try {
-            $exportOrder = ExportOrder::with([
+            $exportOrder = ExportOrder::where('am_approval_status', 'approved')->with([
                 'product', 
                 'specifications', 
                 'packingItems.bagType', 
@@ -228,7 +228,7 @@ class ExportFormEController extends Controller
             $formE = ExportFormE::findOrFail($id);
             $buyers = Customer::get();
             $job_orders = JobOrder::latest()->get();
-            $export_orders = ExportOrder::latest()->get();
+            $export_orders = ExportOrder::where('am_approval_status', 'approved')->latest()->get();
         } catch (QueryException $e) {
             $formE = new ExportFormE();
             $buyers = collect();
@@ -254,7 +254,7 @@ class ExportFormEController extends Controller
             // The requirement only says to create multi Form-E but not exceed. 
             // If they update, we should check again.
             if ($request->has('input_quantity')) {
-                $exportOrder = ExportOrder::with(['packingItems'])->findOrFail($formE->export_order_id);
+                $exportOrder = ExportOrder::where('am_approval_status', 'approved')->with(['packingItems'])->findOrFail($formE->export_order_id);
                 $totalQuantity = 0;
                 foreach ($exportOrder->packingItems as $item) {
                     $totalQuantity += (float) ($item->metric_tons ?? 0);
@@ -334,7 +334,7 @@ class ExportFormEController extends Controller
     public function getOrdersByBuyer($buyer_id)
     {
         try {
-            $export_orders = ExportOrder::with(['packingItems'])->where('id', '>', 0)->where('buyer_id', $buyer_id)->latest()->get();
+            $export_orders = ExportOrder::with(['packingItems'])->where('id', '>', 0)->where('buyer_id', $buyer_id)->where('am_approval_status', 'approved')->latest()->get();
             
             $filtered_orders = $export_orders->filter(function($order) {
                 // Total quantity of all packing items

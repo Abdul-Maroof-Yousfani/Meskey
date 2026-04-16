@@ -6,7 +6,7 @@
                         <th width="12%">Do No</th>
                         <th width="18%">Customer</th>
                         <th width="25%">Item Description</th>
-                        <th width="10%" class="text-right">Qty</th>
+                        <th width="10%" class="text-right">Qty(KG)</th>
                         <th width="10%" class="text-right">Rate</th>
                         <th width="10%" class="text-right">Amount</th>
                         <th width="10%">Date</th>
@@ -88,17 +88,30 @@
                                                 <i class="ft-eye"></i>
                                             </a>
 
+                                            @if(strtolower($group['status']) === 'approved')
+                                                @foreach($group['items'] as $item)
+                                                    @if(!empty($item['accepted_qc_id']))
+                                                        <a onclick="openModal(this,'{{ route('export.get.dispatch-qc.gate-out', $item['accepted_qc_id']) }}', 'Export Gate Out', true, '100%')"
+                                                            class="btn btn-sm btn-success"
+                                                            title="Gate Out Pass"
+                                                            style="margin-right: 10px;">
+                                                            <i class="ft-file"></i>
+                                                        </a>
+                                                    @endif
+                                                @endforeach
+                                            @endif
+
                                             @if(auth()->user()->id == $group['created_by_id'])
                                                 @if($group['status'] === 'pending' || $group['status'] === 'reverted')
                                         
                                                     <button 
-                                                        onclick="openModal(this,'{{ route('export-delivery-challan.edit', ['delivery_challan' => $group['id']]) }}','Edit Export Delivery Challan', false, '60%')"
+                                                        onclick="openModal(this,'{{ route('export-delivery-challan.edit', ['export_delivery_challan' => $group['id']]) }}','Edit Export Delivery Challan', false, '60%')"
                                                         class="btn btn-sm btn-warning" title="Edit" style="margin-right: 10px;">
                                                         <i class="ft-edit"></i>
                                                     </button>
 
                                                     
-                                                    <button onclick="deletemodal('{{ route('export-delivery-challan.destroy', ['delivery_challan' => $group['id']]) }}', '{{ route('get.export-delivery-challan.list') }}')" type="button"
+                                                    <button onclick="deletemodal('{{ route('export-delivery-challan.destroy', ['export_delivery_challan' => $group['id']]) }}', '{{ route('get.export-delivery-challan.list') }}')" type="button"
                                                             onclick="confirmDelete(this.closest('form'))"
                                                             class="btn btn-sm btn-danger" title="Delete">
                                                         <i class="ft-trash-2"></i>
