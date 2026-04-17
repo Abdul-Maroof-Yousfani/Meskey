@@ -351,7 +351,7 @@ class PurchaseOrderController extends Controller
                 'min_bags' => $data['min_bags'] ?? null,
                 'max_bags' => $data['max_bags'] ?? null,
                 'contract_status' => $data['contract_status'] ?? null,
-                'status' => $data['contract_status'] == 'close-contract-due-to-market-down' || $data['contract_status'] == 'close-with-market-rate-penalty' ? 'cancelled' : 'draft',
+                'status' => $data['contract_status'] == 'close-contract-due-to-market-down' || $data['contract_status'] == 'close-with-market-rate-penalty' ? 'cancelled' : 'completed',
                 'remarks' => $data['remarks'] ?? null,
             ];
 
