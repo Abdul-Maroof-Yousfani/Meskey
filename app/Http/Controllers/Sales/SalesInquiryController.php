@@ -51,7 +51,7 @@ class SalesInquiryController extends Controller
                         ->orWhereRaw('LOWER(`reference_number`) LIKE ?', [$searchTerm]);
                 });
             })
-            ->latest()
+            ->orderBy('inquiry_no', 'desc')
             ->paginate($perPage);
 
         $groupedData = [];
