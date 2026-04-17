@@ -28,7 +28,7 @@ use App\Models\Production\JobOrder\JobOrder;
 use App\Models\ReceiptVoucher;
 use App\Models\Sales\DeliveryChallan;
 
-
+use App\Models\ArrivalPurchaseOrder;
 use App\Models\Sales\DeliveryOrder;
 use App\Models\Sales\FirstWeighbridge;
 use App\Models\Sales\LoadingProgram;
@@ -388,6 +388,14 @@ Route::get('/clear-all-cache', function () {
         'message' => 'Multiple caches cleared successfully.',
         'details' => $output
     ]);
+});
+
+Route::get("arrival-po", function() {
+    $purchase_orders = ArrivalPurchaseOrder::all();
+    foreach($purchase_orders as $purchase_order) {
+        $purchase_order->am_approval_status = "approved";
+        $purchase_order->save();
+    }
 });
 
 Route::get('/migrate-specific/{id}', function ($id) {
