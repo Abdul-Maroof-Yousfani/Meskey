@@ -322,6 +322,8 @@
             const customerId = $(this).val();
             let selectedLocations = $('#locations').val() || [];
 
+            $('#locations, #arrival_location_id, #arrival_sub_location_id').prop('disabled', true).trigger('change.select2');
+
             if (!isInitialLoad) {
                 $('#locations').empty().trigger('change.select2');
                 $('#arrival_location_id').empty().trigger('change.select2');
@@ -344,12 +346,16 @@
                         populateFactories();
                         populateSections();
                         isInitialLoad = false;
+                    },
+                    complete: function() {
+                        $('#locations, #arrival_location_id, #arrival_sub_location_id').prop('disabled', false).trigger('change.select2');
                     }
                 });
             } else {
                 $('#locations').empty().trigger('change.select2');
                 $('#arrival_location_id').empty().trigger('change.select2');
                 $('#arrival_sub_location_id').empty().trigger('change.select2');
+                $('#locations, #arrival_location_id, #arrival_sub_location_id').prop('disabled', false).trigger('change.select2');
                 if (!isInitialLoad) {
                     isInitialLoad = false;
                 }
