@@ -352,10 +352,19 @@
             populateSections();
         });
 
+        let isInitialLoad = true;
+
         $('#customer').on('change', function() {
             const customerId = $(this).val();
-            const selectedLocations = $('#locations').val() || [];
+            let selectedLocations = $('#locations').val() || [];
             
+            if (!isInitialLoad) {
+                $('#locations').empty().trigger('change.select2');
+                $('#arrival_location_id').empty().trigger('change.select2');
+                $('#arrival_sub_location_id').empty().trigger('change.select2');
+                selectedLocations = [];
+            }
+
             if (customerId) {
                 $.ajax({
                     url: "{{ route('sales.get-customer-locations') }}",
@@ -370,10 +379,16 @@
                         $('#locations').trigger('change.select2');
                         populateFactories();
                         populateSections();
+                        isInitialLoad = false;
                     }
                 });
             } else {
                 $('#locations').empty().trigger('change.select2');
+                $('#arrival_location_id').empty().trigger('change.select2');
+                $('#arrival_sub_location_id').empty().trigger('change.select2');
+                if (!isInitialLoad) {
+                    isInitialLoad = false;
+                }
             }
         });
 
