@@ -43,4 +43,9 @@ class ExportFormE extends Model
     {
         return $this->belongsTo(\App\Models\Production\JobOrder\JobOrder::class, 'job_order_id');
     }
+
+    public function deliveryOrders()
+    {
+        return $this->hasMany(\App\Models\Export\ExportDeliveryOrder::class, 'export_form_e_id');
+    }
 }

@@ -112,8 +112,8 @@
                     <div class="alert alert-info mt-3" id="qty_info_alert" style="display: none; padding: 10px; margin-bottom:15px; border-radius: 5px; border-left: 5px solid #17a2b8;">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <strong>Quantity Capacity:</strong>
-                                Total EO: <span id="lbl_total_eo_mt" class="font-weight-bold">0.000</span> MT &nbsp;|&nbsp;
+                                <strong>Form-E Capacity:</strong>
+                                Total Allowed: <span id="lbl_total_eo_mt" class="font-weight-bold">0.000</span> MT &nbsp;|&nbsp;
                                 Prev DO'd: <span id="lbl_consumed_mt" class="font-weight-bold">0.000</span> MT &nbsp;|&nbsp;
                                 Current Request: <span id="lbl_current_request_mt" class="font-weight-bold text-primary">0.000</span> MT
                             </div>
@@ -124,7 +124,7 @@
                     </div>
 
                     <div id="qty_error_msg" class="alert alert-danger mt-2" style="display: none; font-weight: bold; border-left: 5px solid #dc3545;">
-                        <i class="fas fa-exclamation-triangle mr-2"></i> ERROR: Quantity exceeds Export Order capacity!
+                        <i class="fas fa-exclamation-triangle mr-2"></i> ERROR: Quantity exceeds Export Form-E capacity!
                     </div>
                     
                     <h6 class="header-heading-sepration">Basic Information</h6>
@@ -772,6 +772,8 @@
                         opts += '<option value="'+fe.id+'">'+(fe.form_e_no || 'FE-'+fe.id)+' (Qty: '+fe.input_quantity+' MT)</option>';
                     });
                     $('#export_form_e_id').html(opts).trigger('change');
+                    // Hide qty alert until a Form-E is actually selected
+                    $('#qty_info_alert').hide();
                 }
             });
 
@@ -806,6 +808,35 @@
                 error: function(err) {
                     console.error("Failed to fetch order details", err);
                     alert("Failed to fetch export order details.");
+                }
+            });
+        });
+
+        $('#export_form_e_id').on('change', function() {
+            var formEId = $(this).val();
+            if (!formEId) {
+                $('#qty_info_alert').hide();
+                return;
+            }
+
+            $.ajax({
+                url: "{{ route('export-delivery-order.form-e-usage', '') }}/" + formEId,
+                type: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        $('#qty_info_alert').show();
+                        $('#lbl_total_eo_mt').text(parseFloat(response.total).toFixed(3));
+                        $('#lbl_consumed_mt').text(parseFloat(response.consumed).toFixed(3));
+                        $('#lbl_remaining_mt').text(parseFloat(response.remaining).toFixed(3));
+                        
+                        // Trigger checkCapacity to account for any already entered packing items
+                        if (typeof checkCapacity === "function") {
+                            checkCapacity();
+                        }
+                    }
+                },
+                error: function(err) {
+                    console.error("Failed to fetch Form-E usage details", err);
                 }
             });
         });
