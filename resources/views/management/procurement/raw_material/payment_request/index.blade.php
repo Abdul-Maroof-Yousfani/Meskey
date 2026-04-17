@@ -1,7 +1,7 @@
 @extends('management.layouts.master')
 
 @section('title')
-    Payment Request
+    Payment Request (Thadda)
 @endsection
 
 @section('content')
@@ -9,7 +9,7 @@
         <section id="extended">
             <div class="row w-100 mx-auto">
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-                    <h2 class="page-title">Payment Request</h2>
+                    <h2 class="page-title">Payment Request (Thadda)</h2>
                 </div>
             </div>
             <div class="row">
