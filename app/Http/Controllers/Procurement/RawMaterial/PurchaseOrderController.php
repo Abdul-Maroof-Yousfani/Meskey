@@ -87,10 +87,10 @@ class PurchaseOrderController extends Controller
             ->when(auth()->user()->user_type != 'super-admin', function ($q) {
                 return $q->whereIn('company_location_id', getUserCurrentCompanyLocations());
             })
-            ->when(auth()->user()->parent_user_id != null, function ($q) {
+            ->when(!auth()->user()->can("procurement-raw-purchase-approval") && auth()->user()->parent_user_id != null, function ($q) {
                 return $q->where('created_by', auth()->user()->id);
             })
-            ->when(canAccess("procurement-raw-purchase-approval"), function ($q) {
+            ->when(auth()->user()->can("procurement-raw-purchase-approval"), function ($q) {
                 return $q->where("decision_of_id", auth()->user()->parent_user_id);
             })
             ->when(auth()->user()->parent_user_id == null, function ($q) {
