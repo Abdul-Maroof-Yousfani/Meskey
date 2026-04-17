@@ -163,6 +163,7 @@ class TicketController extends Controller
         // Contracts filtering: for gate_buying, skip those with tickets; for regular, include all
         $contracts = ArrivalPurchaseOrder::with(['product', 'supplier', 'saudaType'])
             ->where('company_location_id', $locationId)
+            ->where("am_approval_status", "approved")
             ->where(function ($q) {
                 $q->where('purchase_type', 'regular')
                     ->orWhere(function ($q2) {
