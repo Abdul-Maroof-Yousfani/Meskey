@@ -359,7 +359,7 @@ class PurchaseOrderController extends Controller
                 'contract_status' => $data['contract_status'] ?? null,
                 'status' => $data['contract_status'] == 'close-contract-due-to-market-down' || $data['contract_status'] == 'close-with-market-rate-penalty' ? 'cancelled' : $arrivalPurchaseOrder->status,
                 "am_approval_status" => "pending",
-                "am_change_made" => 1,
+                "am_change_made" => 0,
                 'remarks' => $data['remarks'] ?? null,
             ];
 
