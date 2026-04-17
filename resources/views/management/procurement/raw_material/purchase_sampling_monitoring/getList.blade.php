@@ -24,8 +24,8 @@
                 } else {
                     $color = 'grey';
                 }
-                
-                ?>
+
+                        ?>
                 <tr class="bg-{{ $color }}">
                     <td>
                         <p class="m-0">
@@ -72,12 +72,10 @@
                         </p>
                     </td>
                     <td>
-                        @can('role-edit')
-                            <a onclick="openModal(this,'{{ route('raw-material.sampling-monitoring.edit', $row->id) }}','View Approval Requests (Purchase)')"
-                                class="info p-1 text-center mr-2 position-relative">
-                                <i class="ft-eye font-medium-3"></i>
-                            </a>
-                        @endcan
+                        <a onclick="openModal(this,'{{ route('raw-material.sampling-monitoring.edit', $row->id) }}','View Approval Requests (Purchase)')"
+                            class="info p-1 text-center mr-2 position-relative">
+                            <i class="ft-eye font-medium-3"></i>
+                        </a>
                     </td>
                 </tr>
             @endforeach
@@ -139,7 +137,7 @@
                         request_id: requestId,
                         status: status
                     },
-                    beforeSend: function() {
+                    beforeSend: function () {
                         Swal.fire({
                             title: "Processing...",
                             text: "Please wait",
@@ -150,7 +148,7 @@
                             }
                         });
                     },
-                    success: function(response) {
+                    success: function (response) {
                         Swal.fire({
                             title: "Success!",
                             text: response.message,
@@ -159,7 +157,7 @@
                             location.reload();
                         });
                     },
-                    error: function(xhr) {
+                    error: function (xhr) {
                         Swal.fire({
                             title: "Error!",
                             text: xhr.responseJSON.message || "Something went wrong!",
