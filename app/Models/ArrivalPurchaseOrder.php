@@ -13,6 +13,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use App\Traits\HasApproval;
+use App\Models\ApprovalsModule\ApprovalModule;
+use App\Models\ApprovalsModule\ApprovalRow;
+
 
 class ArrivalPurchaseOrder extends Model
 {
@@ -264,6 +267,7 @@ class ArrivalPurchaseOrder extends Model
             ->where('document_approval_status', 'half_approved')
             ->where('arrival_slip_status', 'generated');
     }
+
     public function approvedArrivalTickets()
     {
         return $this->hasMany(ArrivalTicket::class, 'arrival_purchase_order_id')
