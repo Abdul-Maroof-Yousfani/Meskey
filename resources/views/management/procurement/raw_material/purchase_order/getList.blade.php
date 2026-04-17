@@ -24,6 +24,7 @@
     <th>Balance Quantity</th>
     <th>Stock in Transit Trucks</th>
     <th>Rejected Trucks</th>
+    <th>Contract Status</th>
     <th>Status</th>
     <th>Created By</th>
     <th>Action</th>
@@ -102,6 +103,13 @@
             </td>
             <td>{{ $row->stockInTransitTickets->count() }}</td>
             <td>{{ $totalRejectedTrucks }}</td>
+            <td>
+                @if ($row->status == 'completed')
+                    <span class="badge badge-success">Closed</span>
+                @else
+                    <span class="badge badge-warning">Pending</span>
+                @endif
+            </td>
             <td>
                 @php
                     $amStatus = $row->am_approval_status ?? 'pending';
