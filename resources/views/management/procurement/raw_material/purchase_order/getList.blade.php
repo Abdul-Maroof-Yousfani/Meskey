@@ -1,7 +1,7 @@
 <style>
     .expired td {
-        background-color: orange !important;
-        color: white;
+        background-color: #ffe4b1 !important;
+        color: black;
     }
 </style>
 <x-sticky-table :items="$arrivalPurchaseOrder" :leftSticky="3" :rightSticky="1" :emptyMessage="'No purchase orders found'" :pagination="$arrivalPurchaseOrder->links()">
