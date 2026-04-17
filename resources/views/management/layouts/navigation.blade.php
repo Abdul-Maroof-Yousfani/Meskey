@@ -167,12 +167,13 @@
                     </li>
                     @endcanAccess
 
-                    @canAccess("procurement-purchase-sampling")
+
                     <li class="dropdown dropdown-submenu" data-menu="dropdown-submenu"><a
                             class="dropdown-item d-flex align-items-center dropdown-toggle" href="javascript:;"
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
                                 data-i18n="Bootstrap Tables">Purchase Sampling</span></a>
                         <ul class="dropdown-menu">
+                            @canAccess("procurement-purchase-sampling")
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                     href="{{ route('raw-material.purchase-sampling-request.index') }}"
                                     onclick="loadPageContent('{{ route('raw-material.purchase-sampling-request.index') }}')"
@@ -194,6 +195,7 @@
                                     <span data-i18n="Task Board">Purchase Re-Sampling/QC</span>
                                 </a>
                             </li>
+                            @endcanAccess
                             @canAccess('thadda-purchaser-approval')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                     href="{{ route('raw-material.sampling-monitoring.index') }}"
@@ -215,7 +217,7 @@
 
                         </ul>
                     </li>
-                    @endcanAccess
+
 
 
                     @canAccess('procurement-raw-material-payment-management')
