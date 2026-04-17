@@ -46,6 +46,12 @@ class SalesReturnController extends Controller
     public function update(SaleReturnRequest $request, int $id) {
         DB::beginTransaction();
         $saleReturn = SalesReturn::find($id);
+
+
+        if($saleReturn->am_approval_status == "approved" || $saleReturn->am_approval_status == 'rejected') {
+            return response()->json("Sales Return has been approved and cannot be updated.", 400);
+        }
+
         try {
 
             $saleReturn->update([

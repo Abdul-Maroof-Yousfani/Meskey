@@ -91,19 +91,25 @@
                 <div class="col-12 mt-3">
                     <h6 class="header-heading-sepration">Customer Details</h6>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Customer:</label>
                         <input type="text" value="{{ get_customer_name($sale_order->customer_id) }}" class="form-control" readonly>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="form-label">Broker:</label>
+                        <input type="text" value="{{ $sale_order->broker->name ?? 'N/A' }}" class="form-control" readonly>
+                    </div>
+                </div>
+                <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Contact Person:</label>
                         <input type="text" name="contact_person" id="contact_person" value="{{ $sale_order->contact_person }}" class="form-control" readonly>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Token Money:</label>
                         <input type="number" name="token_money" id="token_money" value="{{ $sale_order->token_money }}" class="form-control" step="0.01" min="0" readonly>

@@ -58,6 +58,11 @@ class ReceivingRequestController extends Controller
         try {
             $receivingRequest = ReceivingRequest::findOrFail($id);
 
+
+            if($receivingRequest->am_approval_status == "approved" || $receivingRequest->am_approval_status == 'rejected') {
+                return response()->json("Receiving Request has been approved and cannot be updated.", 400);
+            }
+
             // Update main receiving request
             $receivingRequest->update([
                 'labour' => $request->labour,

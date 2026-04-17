@@ -94,7 +94,7 @@
                 <div class="col-12 mt-3">
                     <h6 class="header-heading-sepration">Customer Details</h6>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Customer:</label>
                         <select name="customer_id" id="customer_id" onchange="get_inquiries()" class="form-control select2">
@@ -105,13 +105,24 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="form-label">Broker:</label>
+                        <select name="broker_id" id="broker_id" class="form-control select2">
+                            <option value="">Select Broker</option>
+                            @foreach ($brokers ?? [] as $broker)
+                                <option value="{{ $broker->id }}">{{ $broker->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Contact Person:</label>
                         <input type="text" name="contact_person" id="contact_person" class="form-control">
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Token Money:</label>
                         <input type="number" name="token_money" id="token_money" class="form-control" step="0.01" min="0">

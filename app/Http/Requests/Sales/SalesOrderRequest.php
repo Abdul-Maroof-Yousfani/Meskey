@@ -30,6 +30,7 @@ class SalesOrderRequest extends FormRequest
             "so_reference_no" => "nullable|string|max:255",
             "transporter_used" => "nullable|in:yes,no",
             "customer_id" => "required|numeric",
+            "broker_id" => "nullable|numeric",
             "inquiry_id" => "nullable|numeric",
             "sauda_type" => "required|in:pohanch,x-mill,thadda",
             "company_id" => "required",

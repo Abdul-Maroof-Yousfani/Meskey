@@ -147,6 +147,12 @@ class SalesInvoiceController extends Controller
     public function update(SalesInvoiceRequest $request, SalesInvoice $sales_invoice)
     {
         DB::beginTransaction();
+
+
+        if($sales_invoice->am_approval_status == "approved" || $sales_invoice->am_approval_status == 'rejected') {
+            return response()->json("Sales Invoice has been approved and cannot be updated.", 400);
+        }
+        
         $dc_ids = $request->dc_no;
         
         // Sale Invoice's invoice dat should not be previous than delivery challans's date, and also tell that which delivery order is breaking it along with its date and transation number

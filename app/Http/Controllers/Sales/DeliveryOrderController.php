@@ -623,6 +623,12 @@ class DeliveryOrderController extends Controller
     {
         DB::beginTransaction();
         $withhold_rv_id = null;
+
+
+        if($delivery_order->am_approval_status == "approved" || $delivery_order->am_approval_status == 'rejected') {
+            return response()->json("Delivery Order has been approved and cannot be updated.", 400);
+        }
+
         if ($request->withhold_for_rv && str_starts_with($request->withhold_for_rv, 'rv_')) {
             $withhold_rv_id = str_replace('rv_', '', $request->withhold_for_rv);
         }

@@ -189,6 +189,10 @@ class DeliveryChallanController extends Controller
         //     return response()->json("Selected Delivery order is expired. Please select a different Delivery order", 422);
         // }
 
+        if($delivery_challan->am_approval_status == "approved" || $delivery_challan->am_approval_status == 'rejected') {
+            return response()->json("Delivery Challan has been approved and cannot be updated.", 400);
+        }
+
         try {
 
             $arrival_location_csv = $request->arrival_location_csv;

@@ -13,6 +13,7 @@ use App\Models\Master\Customer;
 use App\Models\Master\PayType;
 use App\Models\PaymentTerm;
 use App\Models\Product;
+use App\Models\Master\Broker;
 use App\Models\Sales\SalesInquiry;
 use App\Models\Sales\SalesOrder;
 use Carbon\Carbon;
@@ -47,7 +48,8 @@ class SaleOrderController extends Controller
             return $matches[0];
         })->unique()->sort()->values();
 
-        return view('management.sales.orders.create', compact('payment_terms', 'customers', 'inquiries', 'items', 'pay_types', 'bag_types', 'arrivalLocations', 'arrivalSubLocations', 'packings'));
+        $brokers = Broker::where('status', 'active')->get();
+        return view('management.sales.orders.create', compact('payment_terms', 'customers', 'inquiries', 'items', 'pay_types', 'bag_types', 'arrivalLocations', 'arrivalSubLocations', 'packings', 'brokers'));
     }
 
     public function edit(int $id)
@@ -69,7 +71,8 @@ class SaleOrderController extends Controller
             return $matches[0];
         })->unique()->sort()->values();
 
-        return view('management.sales.orders.edit', compact('payment_terms', 'customers', 'inquiries', 'items', 'sale_order', 'pay_types', 'bag_types', 'arrivalLocations', 'arrivalSubLocations', 'packings'));
+        $brokers = Broker::where('status', 'active')->get();
+        return view('management.sales.orders.edit', compact('payment_terms', 'customers', 'inquiries', 'items', 'sale_order', 'pay_types', 'bag_types', 'arrivalLocations', 'arrivalSubLocations', 'packings', 'brokers'));
     }
 
     public function view(Request $request, int $id)
@@ -89,7 +92,8 @@ class SaleOrderController extends Controller
             return $matches[0];
         })->unique()->sort()->values();
 
-        return view('management.sales.orders.view', compact('payment_terms', 'customers', 'inquiries', 'items', 'sale_order', 'arrivalLocations', 'arrivalSubLocations', 'packings'));
+        $brokers = Broker::where('status', 'active')->get();
+        return view('management.sales.orders.view', compact('payment_terms', 'customers', 'inquiries', 'items', 'sale_order', 'arrivalLocations', 'arrivalSubLocations', 'packings', 'brokers'));
     }
 
     public function store(SalesOrderRequest $request)
@@ -107,7 +111,6 @@ class SaleOrderController extends Controller
         $payload["so_reference_no"]  =  !$request->so_reference_no ? '' : $request->so_reference_no;
         $payload["transporter_used"]  =  !$request->transporter_used ? 'no' : $request->transporter_used;
         $payload["payment_term_id"]  =  !$request->payment_term_id ? PaymentTerm::first()->id : $request->payment_term_id;
-        // $payload["reference_n"]  =  !$request->contact_person ? '' : $request->contact_person;
         
         DB::beginTransaction();
         try {
@@ -156,6 +159,10 @@ class SaleOrderController extends Controller
         DB::beginTransaction();
         try {
             $sales_order = SalesOrder::find($id);
+            
+            if($sales_order->am_approval_status == "approved" || $sales_order->am_approval_status == 'rejected') {
+                return response()->json("Sales Order has been approved and cannot be updated.", 400);
+            }
 
             $factoryIds = $request->arrival_location_id ?? [];
             $sectionIds = $request->arrival_sub_location_id ?? [];
@@ -239,7 +246,7 @@ class SaleOrderController extends Controller
         $perPage = $request->get('per_page', 25);
 
         // Eager load the inquiry + all its items + related product
-        $SalesOrders = SalesOrder::with(['sale_inquiry', 'sales_order_data.item.unitOfMeasure', 'locations.companyLocation'])
+        $SalesOrders = SalesOrder::with(['sale_inquiry', 'sales_order_data.item.unitOfMeasure', 'locations.companyLocation', 'broker'])
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . strtolower($request->search) . '%';
                 return $q->where(function ($sq) use ($searchTerm) {

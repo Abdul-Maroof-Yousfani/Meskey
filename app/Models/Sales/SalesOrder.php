@@ -35,7 +35,8 @@ class SalesOrder extends Model
         "arrival_sub_location_id",
         "created_by",
         "am_change_made",
-        "transporter_used"
+        "transporter_used",
+        "broker_id"
     ];
 
     protected function paymentTermId(): Attribute{
@@ -94,5 +95,9 @@ class SalesOrder extends Model
 
     public function logistics() {
         return $this->hasMany(Logistics::class, "sale_order_id");
+    }
+
+    public function broker() {
+        return $this->belongsTo(\App\Models\Master\Broker::class, "broker_id");
     }
 }

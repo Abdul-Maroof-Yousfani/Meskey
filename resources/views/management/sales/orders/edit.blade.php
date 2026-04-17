@@ -101,7 +101,7 @@
                 <div class="col-12 mt-3">
                     <h6 class="header-heading-sepration">Customer Details</h6>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Customer:</label>
                         <select @if(!$sale_order->inquiry_id) name="customer_id" @endif id="customer_id" class="form-control select2">
@@ -113,13 +113,24 @@
                         <input type="hidden" @if($sale_order->inquiry_id) name="customer_id" @endif value="{{ $sale_order->customer_id }}" />
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="form-label">Broker:</label>
+                        <select name="broker_id" id="broker_id" class="form-control select2">
+                            <option value="">Select Broker</option>
+                            @foreach ($brokers ?? [] as $broker)
+                                <option value="{{ $broker->id }}" @selected($broker->id == $sale_order->broker_id)>{{ $broker->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Contact Person:</label>
                         <input type="text" name="contact_person" id="contact_person" value="{{ $sale_order->contact_person }}" class="form-control" @if($sale_order->inquiry_id) readonly @endif>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Token Money:</label>
                         <input type="number" name="token_money" id="token_money" value="{{ $sale_order->token_money }}" class="form-control" step="0.01" min="0">

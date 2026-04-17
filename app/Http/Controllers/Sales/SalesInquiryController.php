@@ -135,7 +135,7 @@ class SalesInquiryController extends Controller
             $factoryIds = $request->arrival_location_id ?? [];
             $sectionIds = $request->arrival_sub_location_id ?? [];
             $sales_inquiry = SalesInquiry::create([
-                "inquiry_no" =>   $request->reference_no,
+                "inquiry_no" => self::getNumber($request, null, $request->inquiry_date),
                 "date" => $request->inquiry_date,
                 "customer" => $request->customer,
                 "contract_type" => $request->contract_type,
@@ -204,6 +204,10 @@ class SalesInquiryController extends Controller
         // if($request->inquiry_date > $request->required_date) {
         //     return response()->json("Inquiry date cannot be greater than required date.", 400);
         // }
+
+        if($sales_inquiry->am_approval_status == "approved" || $sales_inquiry->am_approval_status == "rejected") {
+            return response()->json("Sales Inquiry has been approved and cannot be updated.", 400);
+        }
 
         DB::beginTransaction();
         try {
