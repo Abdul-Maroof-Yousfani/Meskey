@@ -135,7 +135,7 @@ class SalesInquiryController extends Controller
             $factoryIds = $request->arrival_location_id ?? [];
             $sectionIds = $request->arrival_sub_location_id ?? [];
             $sales_inquiry = SalesInquiry::create([
-                "inquiry_no" => $request->reference_no,
+                "inquiry_no" =>   $request->reference_no,
                 "date" => $request->inquiry_date,
                 "customer" => $request->customer,
                 "contract_type" => $request->contract_type,

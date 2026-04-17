@@ -85,10 +85,16 @@
                         <input type="text" class="form-control" value="{{ $exportOrder->shipment_delivery_date_to ? $exportOrder->shipment_delivery_date_to->format('d-M-Y') : '-' }}" readonly>
                     </div>
                 </div>
-                <div class="col-md-12">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label>Marking/Labeling:</label>
                         <input type="text" class="form-control" value="{{ $exportOrder->marking_labeling ?? '-' }}" readonly>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Vessel Name:</label>
+                        <input type="text" class="form-control" value="{{ $exportOrder->vessel_name ?? '-' }}" readonly>
                     </div>
                 </div>
             </div>

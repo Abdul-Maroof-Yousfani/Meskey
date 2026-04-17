@@ -70,6 +70,11 @@ Route::get("get-all-vouchers", function() {
     dd(TransactionVoucherType::all());
 });
 
+Route::get("/teste", function() {
+    $sales_order = SalesOrder::query()->where("reference_no", "SO-2026-04-16-002")->get();
+    dd($sales_order);
+});
+
 Route::get("voucher-types", function() {
 
     $transaction = TransactionVoucherType::create([

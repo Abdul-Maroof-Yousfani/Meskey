@@ -111,10 +111,16 @@
                         </div>
                     </div>
 
-                    <div class="col-md-12">
+                    <div class="col-md-6">
                         <div class="form-group">
                             <label>Marking/labeling:</label>
                             <input type="text" name="marking_labeling" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Vessel Name:</label>
+                            <input type="text" name="vessel_name" class="form-control">
                         </div>
                     </div>
                     
