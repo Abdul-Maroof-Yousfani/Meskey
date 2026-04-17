@@ -71,6 +71,16 @@ class ExportDeliveryChallan extends Model
         return $this->hasOne(ReceivingRequest::class, 'delivery_challan_id');
     }
 
+    public function customer()
+    {
+        return $this->belongsTo(\App\Models\Master\Customer::class, 'customer_id');
+    }
+
+    public function billOfLading()
+    {
+        return $this->hasOne(BillOfLading::class, 'export_delivery_challan_id');
+    }
+
     public function factories()
     {
         return $this->morphMany(FactoryLocation::class, 'factoryable');

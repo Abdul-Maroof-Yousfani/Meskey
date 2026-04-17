@@ -45,7 +45,7 @@
                                 </td>
 
                                 <td class="text-right align-middle">
-                                    {{ number_format($itemRow['item_data']->qty, 2) }}
+                                    {{ number_format(((float) $itemRow['item_data']->qty) * 1000, 2) }}
                                     <small class="text-muted">{{ $itemRow['item']->unitOfMeasure->name ?? '' }}</small>
                                 </td>
 

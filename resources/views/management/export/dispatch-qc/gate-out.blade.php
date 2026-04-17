@@ -141,6 +141,7 @@
     $netWeight = $secondWeighbridge?->net_weight ?? 0;
     $companyLocationId = $item?->exportLoadingProgram?->company_locations[0] ?? null;
     $noOfBags = $loadingSlip?->no_of_bags ?? $deliveryOrder?->exportPackingItems?->first()?->no_of_bags ?? 'N/A';
+    $dcQtyKg = ((float) ($item?->delivery_challan_data?->qty ?? 0)) * 1000;
 @endphp
 
 <div class="gate-out-pass" id="gate-out-pass">
@@ -228,6 +229,15 @@
                     <label><i class="ft-map-pin mr-1"></i>Gala</label>
                     <div class="value">
                         {{ $DispatchQc->gala ?? ($item->subArrivalLocation->name ?? 'N/A') }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-12">
+                <div class="gate-out-field">
+                    <label><i class="ft-package mr-1"></i>Delivery Challan Qty</label>
+                    <div class="value highlight">
+                        <span style="font-size: 18px;">{{ number_format($dcQtyKg, 2) }} Kg</span>
                     </div>
                 </div>
             </div>

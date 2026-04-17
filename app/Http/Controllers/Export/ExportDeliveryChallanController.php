@@ -59,14 +59,17 @@ class ExportDeliveryChallanController extends Controller
             $arrival_location_csv = $request->arrival_location_csv;
             $storage_location_csv = $request->storage_location_csv;
 
+            $dispatch_date = $request->date;
+
             $delivery_challan = ExportDeliveryChallan::create([
                 'customer_id' => $request->customer_id,
                 'reference_number' => $request->reference_number,
                 'location_id' => $request->locations[0] ?? null,
                 'arrival_id' => $arrival_location_csv,
                 'section_id' => $storage_location_csv,
-                'dispatch_date' => $request->date,
-                'dc_no' => $request->dc_no,
+                'dispatch_date' => $dispatch_date,
+                // 'dc_no' => $request->dc_no,
+                'dc_no' => self::getNumber($request, null, $dispatch_date),
                 // 'sauda_type' => $request->sauda_type,
                 'labour_status' => $request->labour_status ?? 'paid',
                 'company_id' => $request->company_id,
@@ -82,14 +85,14 @@ class ExportDeliveryChallanController extends Controller
             ]);
 
             $delivery_challan->delivery_order()->sync([
-                $do_id => ['qty' => $request->qty[0] ?? 0],
+                $do_id => ['qty' => $this->normalizeQtyToMt($request->qty[0] ?? 0, $request->bag_size[0] ?? 0, $request->no_of_bags[0] ?? 0)],
             ]);
 
             $createdItems = [];
             foreach ($request->item_id as $index => $item) {
                 $dcData = $delivery_challan->delivery_challan_data()->create([
                     'item_id' => $request->item_id[$index],
-                    'qty' => $request->qty[$index],
+                    'qty' => $this->normalizeQtyToMt($request->qty[$index] ?? 0, $request->bag_size[$index] ?? 0, $request->no_of_bags[$index] ?? 0),
                     'rate' => $request->rate[$index],
                     'brand_id' => $request->brand_id[$index],
                     'no_of_bags' => $request->no_of_bags[$index],
@@ -176,7 +179,7 @@ class ExportDeliveryChallanController extends Controller
                 'customer_id' => $request->customer_id,
                 'reference_number' => $request->reference_number,
                 'dispatch_date' => $request->date,
-                'dc_no' => $request->dc_no,
+                // 'dc_no' => $request->dc_no,
                 // 'sauda_type' => $request->sauda_type,
                 'labour_status' => $request->labour_status ?? 'paid',
                 'company_id' => $request->company_id,
@@ -195,14 +198,16 @@ class ExportDeliveryChallanController extends Controller
                 'am_change_made' => 1,
             ]);
 
-            $delivery_challan->delivery_order()->sync([$do_id]);
+            $delivery_challan->delivery_order()->sync([
+                $do_id => ['qty' => $this->normalizeQtyToMt($request->qty[0] ?? 0, $request->bag_size[0] ?? 0, $request->no_of_bags[0] ?? 0)],
+            ]);
             $delivery_challan->delivery_challan_data()->delete();
 
             $createdItems = [];
             foreach ($request->item_id as $index => $item) {
                 $dcData = $delivery_challan->delivery_challan_data()->create([
                     'item_id' => $request->item_id[$index],
-                    'qty' => $request->qty[$index],
+                    'qty' => $this->normalizeQtyToMt($request->qty[$index] ?? 0, $request->bag_size[$index] ?? 0, $request->no_of_bags[$index] ?? 0),
                     'rate' => $request->rate[$index],
                     'brand_id' => $request->brand_id[$index],
                     'no_of_bags' => $request->no_of_bags[$index],
@@ -623,5 +628,26 @@ class ExportDeliveryChallanController extends Controller
             'transporter_id' => $transporterId,
             'is_labour_editable' => false,
         ]);
+    }
+
+    protected function normalizeQtyToMt($qty, $bagSize = 0, $noOfBags = 0): float
+    {
+        $qty = (float) $qty;
+        $bagSize = (float) $bagSize;
+        $noOfBags = (float) $noOfBags;
+
+        if ($qty <= 0) {
+            return 0.0;
+        }
+
+        $calculatedMt = ($bagSize > 0 && $noOfBags > 0) ? (($bagSize * $noOfBags) / 1000) : 0;
+        if ($calculatedMt > 0 && $qty > ($calculatedMt * 10)) {
+            $qty = $qty / 1000;
+        } elseif ($calculatedMt <= 0 && $qty > 500) {
+            // Fallback guard for legacy forms posting KG.
+            $qty = $qty / 1000;
+        }
+
+        return round($qty, 3);
     }
 }
