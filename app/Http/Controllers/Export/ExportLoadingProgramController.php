@@ -117,23 +117,27 @@ class ExportLoadingProgramController extends Controller
                 $loadingProgram->deliveryOrders()->sync($request->delivery_order_id);
             }
 
-            foreach ($request->loading_program_items as $index => $itemData) {
-                $selectedDoIds = $itemData['delivery_order_id'] ?? [];
-                $selectedEoIds = $itemData['export_order_id'] ?? [];
-
-                foreach ($selectedDoIds as $do_id) {
-                    $swbBalance = get_second_weighbridge_balance_by_delivery_order($do_id);
-                    $balance = $swbBalance;
-                    $qty = $itemData['qty'] ?? 0;
-
-                    if ($balance < $qty) {
-                        DB::rollBack();
-                        return response()->json([
-                            'errors' => ["loading_program_items.$index.qty" => ["Your available balance (taking Second Weighbridge into account) for DO $do_id is $balance, you can not exceed that balance."]]
-                        ], 422);
-                    }
+            // 1. Aggregated Validation per DO across all items
+            $totalRequestedPerDo = [];
+            foreach ($request->loading_program_items as $itemData) {
+                $dos = (array)($itemData['delivery_order_id'] ?? []);
+                $qty = (float)($itemData['qty'] ?? 0);
+                foreach ($dos as $do_id) {
+                    $totalRequestedPerDo[$do_id] = ($totalRequestedPerDo[$do_id] ?? 0) + $qty;
                 }
+            }
 
+            foreach ($totalRequestedPerDo as $do_id => $totalQty) {
+                $balance = get_second_weighbridge_balance_by_delivery_order($do_id);
+                if ($balance < ($totalQty - 0.0001)) {
+                    DB::rollBack();
+                    return response()->json([
+                        'errors' => ["delivery_order_id" => ["Total requested quantity for DO #$do_id ($totalQty MT) exceeds its available balance ($balance MT)."]]
+                    ], 422);
+                }
+            }
+
+            foreach ($request->loading_program_items as $index => $itemData) {
                 $loadingProgramItem = LoadingProgramItem::create([
                     'loading_program_id' => $loadingProgram->id,
                     'transaction_number' => $this->getNumber($request),
@@ -322,21 +326,27 @@ class ExportLoadingProgramController extends Controller
 
             $loadingProgram->loadingProgramItems()->whereDoesntHave('firstWeighbridge')->delete();
 
-            foreach ($request->loading_program_items as $index => $itemData) {
-                $selectedDoIds = $itemData['delivery_order_id'] ?? [];
-
-                foreach ($selectedDoIds as $do_id) {
-                    $swbBalance = get_second_weighbridge_balance_by_delivery_order($do_id);
-                    $balance = $swbBalance;
-                    $qty = $itemData['qty'] ?? 0;
-                    if ($balance < $qty) {
-                        DB::rollBack();
-                        return response()->json([
-                            'errors' => ["loading_program_items.$index.qty" => ["Your available balance (taking Second Weighbridge into account) for DO $do_id is $balance, you can not exceed that balance."]]
-                        ], 422);
-                    }
+            // 1. Aggregated Validation per DO across all items
+            $totalRequestedPerDo = [];
+            foreach ($request->loading_program_items as $itemData) {
+                $dos = (array)($itemData['delivery_order_id'] ?? []);
+                $qty = (float)($itemData['qty'] ?? 0);
+                foreach ($dos as $do_id) {
+                    $totalRequestedPerDo[$do_id] = ($totalRequestedPerDo[$do_id] ?? 0) + $qty;
                 }
+            }
 
+            foreach ($totalRequestedPerDo as $do_id => $totalQty) {
+                $balance = get_second_weighbridge_balance_by_delivery_order($do_id);
+                if ($balance < ($totalQty - 0.0001)) {
+                    DB::rollBack();
+                    return response()->json([
+                        'errors' => ["delivery_order_id" => ["Total requested quantity for DO #$do_id ($totalQty MT) exceeds its available balance ($balance MT)."]]
+                    ], 422);
+                }
+            }
+
+            foreach ($request->loading_program_items as $index => $itemData) {
                 $loadingProgramItem = LoadingProgramItem::create([
                     'loading_program_id' => $loadingProgram->id,
                     'transaction_number' => $itemData['transaction_number'] ?? $this->getNumber($request),

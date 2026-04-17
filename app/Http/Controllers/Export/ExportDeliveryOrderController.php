@@ -201,10 +201,10 @@ class ExportDeliveryOrderController extends Controller
 
         DB::beginTransaction();
 
-        $eo = ExportOrder::where('am_approval_status', 'approved')->with(['packingItems'])->findOrFail($request->export_order_id);
-        $totalAllowedMt = $eo->packingItems->sum('metric_tons');
+        $formE = ExportFormE::findOrFail($request->export_form_e_id);
+        $totalAllowedMt = (float) $formE->input_quantity;
         $alreadyConsumedMt = DeliveryOrder::with(['exportPackingItems'])
-            ->where('export_order_id', $request->export_order_id)
+            ->where('export_form_e_id', $request->export_form_e_id)
             ->get()
             ->sum(function ($do) {
                 return $do->exportPackingItems->sum('metric_tons');
@@ -223,7 +223,7 @@ class ExportDeliveryOrderController extends Controller
             DB::rollBack();
             return response()->json([
                 'status' => 'error',
-                'message' => "Total Metric Tons ($currentRequestMt) exceeds the remaining capacity of Export Order (" . round($totalAllowedMt - $alreadyConsumedMt, 3) . " MT)."
+                'message' => "Total Metric Tons ($currentRequestMt) exceeds the remaining capacity of Export Form-E (" . round($totalAllowedMt - $alreadyConsumedMt, 2) . " MT)."
             ], 422);
         }
 
@@ -328,10 +328,10 @@ class ExportDeliveryOrderController extends Controller
         
         $exportOrderData = $deliveryOrder->exportOrder;
 
-        // Calculate quantity variables for the view
-        $totalAllowedMt = (float) $deliveryOrder->exportOrder->packingItems->sum('metric_tons');
+        // Calculate quantity variables for the view (Form-E centric)
+        $totalAllowedMt = (float) ($deliveryOrder->exportFormE->input_quantity ?? 0);
         $alreadyConsumedMt = (float) DeliveryOrder::with(['exportPackingItems'])
-            ->where('export_order_id', $deliveryOrder->export_order_id)
+            ->where('export_form_e_id', $deliveryOrder->export_form_e_id)
             ->where('id', '!=', $id)
             ->get()
             ->sum(function ($do) {
@@ -376,10 +376,10 @@ class ExportDeliveryOrderController extends Controller
         $buyers = Customer::get();
         $export_orders = ExportOrder::where('am_approval_status', 'approved')->latest()->get();
 
-        // Calculate quantity variables for the view
-        $totalAllowedMt = (float) $deliveryOrder->exportOrder->packingItems->sum('metric_tons');
+        // Calculate quantity variables for the view (Form-E centric)
+        $totalAllowedMt = (float) ($deliveryOrder->exportFormE->input_quantity ?? 0);
         $alreadyConsumedMt = (float) DeliveryOrder::with(['exportPackingItems'])
-            ->where('export_order_id', $deliveryOrder->export_order_id)
+            ->where('export_form_e_id', $deliveryOrder->export_form_e_id)
             ->where('id', '!=', $id)
             ->get()
             ->sum(function ($do) {
@@ -427,10 +427,10 @@ class ExportDeliveryOrderController extends Controller
         DB::beginTransaction();
 
         $exportOrderId = $deliveryOrder->export_order_id;
-        $eo = ExportOrder::where('am_approval_status', 'approved')->with(['packingItems'])->findOrFail($exportOrderId);
-        $totalAllowedMt = $eo->packingItems->sum('metric_tons');
+        $formE = ExportFormE::findOrFail($request->export_form_e_id);
+        $totalAllowedMt = (float) $formE->input_quantity;
         $alreadyConsumedMt = DeliveryOrder::with(['exportPackingItems'])
-            ->where('export_order_id', $exportOrderId)
+            ->where('export_form_e_id', $request->export_form_e_id)
             ->where('id', '!=', $id)
             ->get()
             ->sum(function ($do) {
@@ -449,7 +449,7 @@ class ExportDeliveryOrderController extends Controller
             DB::rollBack();
             return response()->json([
                 'status' => 'error',
-                'message' => "Total Metric Tons ($currentRequestMt) exceeds the remaining capacity of Export Order (" . round($totalAllowedMt - $alreadyConsumedMt, 3) . " MT)."
+                'message' => "Total Metric Tons ($currentRequestMt) exceeds the remaining capacity of Export Form-E (" . round($totalAllowedMt - $alreadyConsumedMt, 2) . " MT)."
             ], 422);
         }
 
@@ -594,5 +594,24 @@ class ExportDeliveryOrderController extends Controller
         }
 
         return response()->json($data);
+    }
+    public function getFormEUsage($id)
+    {
+        $formE = ExportFormE::findOrFail($id);
+        $totalAllowed = (float) $formE->input_quantity;
+
+        $consumed = DeliveryOrder::with(['exportPackingItems'])
+            ->where('export_form_e_id', $id)
+            ->get()
+            ->sum(function ($do) {
+                return $do->exportPackingItems->sum('metric_tons');
+            });
+
+        return response()->json([
+            'success' => true,
+            'total' => round($totalAllowed, 2),
+            'consumed' => round($consumed, 2),
+            'remaining' => round(max(0, $totalAllowed - $consumed), 2)
+        ]);
     }
 }
