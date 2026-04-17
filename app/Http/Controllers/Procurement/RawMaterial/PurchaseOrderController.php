@@ -177,6 +177,7 @@ class PurchaseOrderController extends Controller
 
             $arrivalPOData['is_replacement'] = $request->is_replacement == '1';
             $arrivalPOData['contract_status'] = $request->contract_status;
+            $arrivalPOData["am_approval_status"] = "pending";
 
             if (isset($data['truck_size_range'])) {
                 $arrivalPOData['truck_size_range_id'] = $data['truck_size_range'];
