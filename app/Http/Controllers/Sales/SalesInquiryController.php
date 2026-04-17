@@ -326,4 +326,20 @@ class SalesInquiryController extends Controller
 
         return response()->json(['success' => 'Sales Inquiry deleted successfully.'], 200);
     }
+
+    public function getCustomerLocations(Request $request) {
+        $customer = Customer::find($request->customer_id);
+        if (!$customer) {
+            return response()->json([]);
+        }
+
+        $locationIds = $customer->company_location_ids ?? [];
+        if (!is_array($locationIds)) {
+            $locationIds = [];
+        }
+        
+        $locations = \App\Models\Master\CompanyLocation::whereIn('id', $locationIds)->get(['id', 'name']);
+
+        return response()->json($locations);
+    }
 }

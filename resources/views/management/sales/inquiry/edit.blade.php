@@ -352,12 +352,38 @@
             populateSections();
         });
 
+        $('#customer').on('change', function() {
+            const customerId = $(this).val();
+            const selectedLocations = $('#locations').val() || [];
+            
+            if (customerId) {
+                $.ajax({
+                    url: "{{ route('sales.get-customer-locations') }}",
+                    method: "GET",
+                    data: { customer_id: customerId },
+                    success: function(res) {
+                        $('#locations').empty();
+                        res.forEach(loc => {
+                            const isSelected = selectedLocations.includes(String(loc.id));
+                            $('#locations').append(`<option value="${loc.id}" ${isSelected ? 'selected' : ''}>${loc.name}</option>`);
+                        });
+                        $('#locations').trigger('change.select2');
+                        populateFactories();
+                        populateSections();
+                    }
+                });
+            } else {
+                $('#locations').empty().trigger('change.select2');
+            }
+        });
+
         $('#arrival_location_id').on('change', function() {
             populateSections();
         });
 
         populateFactories();
         populateSections();
+        $('#customer').trigger('change');
         validateExpiry();
     });
 
