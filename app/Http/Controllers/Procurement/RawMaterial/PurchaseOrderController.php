@@ -41,7 +41,6 @@ class PurchaseOrderController extends Controller
         $arrivalPurchaseOrder = ArrivalPurchaseOrder::with([
             'stockInTransitTickets',
             'rejectedArrivalTickets',
-            'rejectedHalfArrivalTickets',
         ])->when($request->filled('search'), function ($q) use ($request) {
             $searchTerm = '%' . $request->search . '%';
             return $q->where(function ($sq) use ($searchTerm) {
@@ -86,6 +85,11 @@ class PurchaseOrderController extends Controller
                     ->whereDate('created_at', '<=', $endDate);
             })->when(auth()->user()->user_type != 'super-admin', function ($q) {
                 return $q->where('company_location_id', auth()->user()->company_location_id);
+            })->when(auth()->user()->parent_user_id != null, function ($q) {
+                return $q->where('created_by', auth()->user()->id);
+            })
+            ->when(auth()->user()->parent_user_id == null, function ($q) {
+                return $q->where('decision_of_id', auth()->user()->id);
             })
             ->where('purchase_type', 'regular')
             ->latest()
