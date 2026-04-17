@@ -25,7 +25,7 @@
     <th>Stock in Transit Trucks</th>
     <th>Rejected Trucks</th>
     <th>Contract Status</th>
-    <th>Status</th>
+    <th>Approval Status</th>
     <th>Created By</th>
     <th>Action</th>
     @endslot
