@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Export\BankController;
+use App\Http\Controllers\Export\BillOfLadingController;
 use App\Http\Controllers\Export\CommercialInvoiceController;
 use App\Http\Controllers\Export\CurrencyController;
 use App\Http\Controllers\Export\ExportOrderController;
@@ -100,6 +101,14 @@ Route::get('/get-export-delivery-challan-ticket-items', [ExportDeliveryChallanCo
 Route::get('/get-export-delivery-challan-tickets', [ExportDeliveryChallanController::class, 'getTickets'])->name('export-delivery-challan.get-tickets');
 Route::get('/get-export-tickets-with-dispatch-qc', [ExportDeliveryChallanController::class, 'getTicketsWithDispatchQc'])->name('export-delivery-challan.get-tickets-with-dispatch-qc');
 Route::get('/get-export-ticket-data-for-dc', [ExportDeliveryChallanController::class, 'getTicketDataForDC'])->name('export-delivery-challan.get-ticket-data');
+
+// bill of lading
+Route::resource('bill-of-lading', BillOfLadingController::class);
+Route::post('/get-bill-of-lading', [BillOfLadingController::class, 'getList'])->name('get.bill-of-lading');
+Route::get('/get-bill-of-lading-related-data', [BillOfLadingController::class, 'getRelatedData'])->name('get.bill-of-lading.related.data');
+Route::get('/get/export/bill-of-lading-no', [BillOfLadingController::class, 'getNumber'])->name('get.bill-of-lading.getNumber');
+Route::get('/get-bill-of-lading-form-es', [BillOfLadingController::class, 'getFormEsByExportOrder'])->name('get.bill-of-lading.form-es');
+Route::get('/get-bill-of-lading-delivery-challans', [BillOfLadingController::class, 'getDeliveryChallansByFormEs'])->name('get.bill-of-lading.delivery-challans');
 
 // export form-e
 Route::resource('export-form-e', App\Http\Controllers\Export\ExportFormEController::class);

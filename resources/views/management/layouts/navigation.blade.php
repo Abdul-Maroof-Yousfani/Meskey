@@ -899,6 +899,13 @@
                                     data-i18n="Extended">Delivery Challan</span></a>
                         </li>
 
+                        <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                href="{{ route('bill-of-lading.index') }}"
+                                onclick="loadPageContent('{{ route('bill-of-lading.index') }}')"
+                                data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                    data-i18n="Extended">Bill Of Lading</span></a>
+                        </li>
+
                         {{-- @canAccess('commercial-invoice')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('commercial-invoice.index') }}" onclick="loadPageContent('{{ route('commercial-invoice.index') }}')"

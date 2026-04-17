@@ -30,7 +30,8 @@
         $packing = $packing ?: 1;
         $rate = $export_order_packing->rate ?? 0;
         $rate_per_maund = $export_order_packing->rate_per_maund ?? 0;
-        $bags = $packing > 0 ? round(($net_weight * 1000) / $packing) : 0;
+        // second_weighbridge->net_weight is stored in KG
+        $bags = $packing > 0 ? round($net_weight / $packing) : 0;
     @endphp
     <tr id="row_{{ $index }}">
         <td>
@@ -61,7 +62,7 @@
             <input type="text" name="no_of_bags[]" id="no_of_bags_{{ $index }}" value="{{ $bags }}" class="form-control no_of_bags" readonly>
         </td>
         <td>
-            <input type="text" name="qty[]" id="qty_{{ $index }}" value="{{ round($net_weight, 3) }}" class="form-control qty" step="0.01" min="0" oninput="calc(this)" readonly>
+            <input type="text" name="qty[]" id="qty_{{ $index }}" value="{{ round(($net_weight / 1000), 3) }}" class="form-control qty" step="0.01" min="0" oninput="calc(this)" readonly>
         </td>
         <td>
             <input type="text" name="rate[]" id="rate_{{ $index }}" value="{{ $rate }}" class="form-control rate" step="0.01" min="0" readonly>
@@ -70,7 +71,7 @@
             <input type="text" name="rate_per_mond[]" id="rate_per_mond_{{ $index }}" value="{{ $rate_per_maund }}" class="form-control rate" step="0.01" min="0" readonly>
         </td>
         <td>
-            <input type="text" name="amount[]" id="amount_{{ $index }}" value="{{ $rate * $net_weight }}" class="form-control amount" readonly>
+            <input type="text" name="amount[]" id="amount_{{ $index }}" value="{{ $rate * ($net_weight / 1000) }}" class="form-control amount" readonly>
         </td>
         <td>
             <input type="text" value="{{ getBrandById($brand_id)?->name }}" class="form-control brand_id" readonly>
