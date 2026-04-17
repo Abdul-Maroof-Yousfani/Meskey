@@ -368,6 +368,28 @@ Route::get('/migrate-refresh', function () {
     return 'Migrations rolled back and seeders executed successfully.';
 });
 
+Route::get('/clear-all-cache', function () {
+    $commands = [
+        'cache:clear',
+        'config:clear',
+        'route:clear',
+        'view:clear',
+    ];
+
+    $output = [];
+
+    foreach ($commands as $command) {
+        $result = Artisan::call($command);
+        $output[] = "✓ {$command} executed successfully.";
+    }
+
+    return response()->json([
+        'status'  => 'success',
+        'message' => 'Multiple caches cleared successfully.',
+        'details' => $output
+    ]);
+});
+
 Route::get('/migrate-specific/{id}', function ($id) {
     // Run a specific migration
     $migrationPath = 'database/migrations/' . $id;
