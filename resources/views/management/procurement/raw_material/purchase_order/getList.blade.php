@@ -103,17 +103,29 @@
             <td>{{ $row->stockInTransitTickets->count() }}</td>
             <td>{{ $totalRejectedTrucks }}</td>
             <td>
-                @if ($row->status == 'completed')
-                    <span class="badge badge-success">Closed</span>
-                @else
-                    <span class="badge badge-warning">Pending</span>
-                @endif
-
+                @php
+                    $amStatus = $row->am_approval_status ?? 'pending';
+                    $amBadge = match (strtolower($amStatus)) {
+                        'approved' => 'badge-success',
+                        'rejected' => 'badge-danger',
+                        'reverted' => 'badge-info',
+                        'pending' => 'badge-warning',
+                        'draft' => 'badge-secondary',
+                        default => 'badge-secondary',
+                    };
+                @endphp
+                <span class="badge {{ $amBadge }}">
+                    {{ ucfirst($amStatus) }}
+                </span>
             </td>
             <td>
                 {{ $row->createdByUser->name ?? 'N/A' }}
             </td>
             <td>
+                <a onclick="openModal(this,'{{ route('raw-material.purchase-order.view', $row->id) }}','View Purchase Order')"
+                    class="success p-1 text-center mr-2 position-relative">
+                    <i class="ft-eye font-medium-3"></i>
+                </a>
                 @canAccess('procurement-raw-purchase-order-edit')
                 <a onclick="openModal(this,'{{ route($row->purchase_type == 'gate_buying' ? 'raw-material.gate-buying.edit' : 'raw-material.purchase-order.edit', $row->id) }}','{{ $row->purchase_type == 'gate_buying' ? 'Edit Gate Buying' : 'Edit Purchase Order' }}')"
                     class="info p-1 text-center mr-2 position-relative">

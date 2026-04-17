@@ -12,10 +12,11 @@ use App\Models\Procurement\PurchaseFreight;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use App\Traits\HasApproval;
 
 class ArrivalPurchaseOrder extends Model
 {
-    use HasFactory;
+    use HasFactory, HasApproval;
 
     protected $fillable = [
         'company_id',
@@ -82,6 +83,7 @@ class ArrivalPurchaseOrder extends Model
         'truck_no',
         'contract_status',
         'created_by',
+        'am_approval_status',
     ];
 
     protected $casts = [

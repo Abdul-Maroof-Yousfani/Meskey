@@ -226,6 +226,47 @@ class PurchaseOrderController extends Controller
         ], 201);
     }
 
+    public function view($id)
+    {
+        $data['arrivalPurchaseOrder'] = ArrivalPurchaseOrder::findOrFail($id);
+        $data['bagPackings'] = [];
+        $data['truckSizeRanges'] = TruckSizeRange::where('status', 'active')->get();
+        $data['products'] = Product::where('product_type', 'raw_material')->get();
+        $data['brokers'] = Broker::all();
+        $po = $data['arrivalPurchaseOrder'];
+        $data['ticketcounts'] = $po->arrivalTickets()->count() ?? 0;
+        
+        $getSlabs = ProductSlabForRmPo::with('slabType')
+            ->where('product_id', $data['arrivalPurchaseOrder']->product_id)
+            ->where('company_id', $data['arrivalPurchaseOrder']->company_id)
+            ->where('arrival_purchase_order_id', $id)
+            ->get()
+            ->groupBy('product_slab_type_id')
+            ->map(function ($group) {
+                return $group->sortBy(function ($item) {
+                    return (float) $item->from;
+                })->first();
+            })
+            ->values()
+            ->map(function ($item) {
+                $item['slab_type_name'] = $item->slabType->name ?? null;
+                $item['id'] = $item->slab_id ?? null;
+                return $item;
+            });
+
+        if (!count($getSlabs)) {
+            $ids = [
+                'product_id' => $data['arrivalPurchaseOrder']->product_id,
+                'company_id' => $data['arrivalPurchaseOrder']->company_id
+            ];
+            $data['slabsHtml'] = $this->getMainSlabByProduct(request(), $ids, true);
+        } else {
+            $data['slabsHtml'] = view('management.procurement.raw_material.purchase_order.slab-form', ['slabs' => $getSlabs, 'success' => '.'])->render();
+        }
+
+        return view('management.procurement.raw_material.purchase_order.view', $data);
+    }
+
     /**
      * Show the form for editing the specified resource.
      */
