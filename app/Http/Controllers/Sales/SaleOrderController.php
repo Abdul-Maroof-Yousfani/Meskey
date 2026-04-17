@@ -161,7 +161,7 @@ class SaleOrderController extends Controller
             $sales_order = SalesOrder::find($id);
             
             if($sales_order->am_approval_status == "approved" || $sales_order->am_approval_status == 'rejected') {
-                return response()->json("Sales Order has been approved and cannot be updated.", 400);
+                return response()->json("Sales Order has been approved/rejected and cannot be updated.", 400);
             }
 
             $factoryIds = $request->arrival_location_id ?? [];

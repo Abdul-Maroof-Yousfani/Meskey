@@ -60,7 +60,7 @@ class ReceivingRequestController extends Controller
 
 
             if($receivingRequest->am_approval_status == "approved" || $receivingRequest->am_approval_status == 'rejected') {
-                return response()->json("Receiving Request has been approved and cannot be updated.", 400);
+                return response()->json("Receiving Request has been approved/rejected and cannot be updated.", 400);
             }
 
             // Update main receiving request

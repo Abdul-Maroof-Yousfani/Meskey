@@ -150,7 +150,7 @@ class SalesInvoiceController extends Controller
 
 
         if($sales_invoice->am_approval_status == "approved" || $sales_invoice->am_approval_status == 'rejected') {
-            return response()->json("Sales Invoice has been approved and cannot be updated.", 400);
+            return response()->json("Sales Invoice has been approved/rejected and cannot be updated.", 400);
         }
         
         $dc_ids = $request->dc_no;

@@ -206,7 +206,7 @@ class SalesInquiryController extends Controller
         // }
 
         if($sales_inquiry->am_approval_status == "approved" || $sales_inquiry->am_approval_status == "rejected") {
-            return response()->json("Sales Inquiry has been approved and cannot be updated.", 400);
+            return response()->json("Sales Inquiry has been approved/rejected and cannot be updated.", 400);
         }
 
         DB::beginTransaction();

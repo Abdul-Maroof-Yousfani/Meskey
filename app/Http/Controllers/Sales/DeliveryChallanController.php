@@ -190,7 +190,7 @@ class DeliveryChallanController extends Controller
         // }
 
         if($delivery_challan->am_approval_status == "approved" || $delivery_challan->am_approval_status == 'rejected') {
-            return response()->json("Delivery Challan has been approved and cannot be updated.", 400);
+            return response()->json("Delivery Challan has been approved/rejected and cannot be updated.", 400);
         }
 
         try {

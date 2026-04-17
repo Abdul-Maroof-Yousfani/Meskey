@@ -49,7 +49,7 @@ class SalesReturnController extends Controller
 
 
         if($saleReturn->am_approval_status == "approved" || $saleReturn->am_approval_status == 'rejected') {
-            return response()->json("Sales Return has been approved and cannot be updated.", 400);
+            return response()->json("Sales Return has been approved/rejected and cannot be updated.", 400);
         }
 
         try {

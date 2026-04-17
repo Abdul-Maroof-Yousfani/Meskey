@@ -626,7 +626,7 @@ class DeliveryOrderController extends Controller
 
 
         if($delivery_order->am_approval_status == "approved" || $delivery_order->am_approval_status == 'rejected') {
-            return response()->json("Delivery Order has been approved and cannot be updated.", 400);
+            return response()->json("Delivery Order has been approved/rejected and cannot be updated.", 400);
         }
 
         if ($request->withhold_for_rv && str_starts_with($request->withhold_for_rv, 'rv_')) {
