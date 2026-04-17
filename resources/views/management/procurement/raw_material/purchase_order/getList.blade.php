@@ -25,6 +25,7 @@
     <th>Stock in Transit Trucks</th>
     <th>Rejected Trucks</th>
     <th>Status</th>
+    <th>Created By</th>
     <th>Action</th>
     @endslot
 
@@ -54,7 +55,7 @@
             <td>{{ $row->purchase_type == 'gate_buying' ? $row->supplier_name ?? 'N/A' : $row->supplier->name ?? 'N/A' }}
             </td>
             <td>{{ $row->broker_one_name ?? ($row->broker_two_name ?? ($row->broker_three_name ?? 'N/A')) }}</td>
-            <td>{{ $row->createdByUser->name ?? 'N/A' }}</td>
+            <td>{{ $row->decisionOfUser->name ?? 'N/A' }}</td>
             <td>
                 {{ $row->rate_per_kg ?? 'N/A' }}
                 <div class="d-none div-box-b">
@@ -107,6 +108,10 @@
                 @else
                     <span class="badge badge-warning">Pending</span>
                 @endif
+
+            </td>
+            <td>
+                {{ $row->createdByUser->name ?? 'N/A' }}
             </td>
             <td>
                 <a onclick="openModal(this,'{{ route($row->purchase_type == 'gate_buying' ? 'raw-material.gate-buying.edit' : 'raw-material.purchase-order.edit', $row->id) }}','{{ $row->purchase_type == 'gate_buying' ? 'Edit Gate Buying' : 'Edit Purchase Order' }}')"
