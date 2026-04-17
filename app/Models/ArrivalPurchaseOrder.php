@@ -87,6 +87,7 @@ class ArrivalPurchaseOrder extends Model
         'contract_status',
         'created_by',
         'am_approval_status',
+        'am_change_made'
     ];
 
     protected $casts = [
