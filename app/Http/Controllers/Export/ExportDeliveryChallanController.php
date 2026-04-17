@@ -51,9 +51,9 @@ class ExportDeliveryChallanController extends Controller
             return response()->json('Selected Delivery order not found.', 422);
         }
 
-        if (strtotime($delivery_order->dispatch_date) <= strtotime($request->date)) {
-            return response()->json('Selected Delivery order is expired. Please select a different Delivery order', 422);
-        }
+        // if (strtotime($delivery_order->dispatch_date) <= strtotime($request->date)) {
+        //     return response()->json('Selected Delivery order is expired. Please select a different Delivery order', 422);
+        // }
 
         try {
             $arrival_location_csv = $request->arrival_location_csv;
@@ -167,9 +167,9 @@ class ExportDeliveryChallanController extends Controller
             return response()->json('Selected Delivery order not found.', 422);
         }
 
-        if (strtotime($delivery_order->dispatch_date) < strtotime($request->date)) {
-            return response()->json('Selected Delivery order is expired. Please select a different Delivery order', 422);
-        }
+        // if (strtotime($delivery_order->dispatch_date) < strtotime($request->date)) {
+        //     return response()->json('Selected Delivery order is expired. Please select a different Delivery order', 422);
+        // }
 
         try {
             $arrival_location_csv = $request->arrival_location_csv;

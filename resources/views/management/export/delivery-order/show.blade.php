@@ -133,8 +133,19 @@
         <div class="row form-mar">
             <div class="col-8">
                 <!-- Basic Information -->
-                <div class="">
-
+                <div class="alert alert-info mt-3" id="qty_info_alert" style="padding: 10px; margin-bottom:15px; border-radius: 5px; border-left: 5px solid #17a2b8;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>Form-E Capacity:</strong>
+                                Total Allowed: <span id="lbl_total_eo_mt" class="font-weight-bold">{{ round($totalAllowedMt, 3) }}</span> MT &nbsp;|&nbsp;
+                                Prev DO'd (Others): <span id="lbl_consumed_mt" class="font-weight-bold">{{ round($alreadyConsumedMt, 3) }}</span> MT &nbsp;|&nbsp;
+                                Current Request: <span id="lbl_current_request_mt" class="font-weight-bold text-primary">{{ round($currentRequestMt, 3) }}</span> MT
+                            </div>
+                            <div class="badge badge-pill badge-light p-2" style="font-size: 1rem;">
+                                Balance: <span id="lbl_remaining_mt" class="font-weight-bold">{{ round($remainingMt, 3) }}</span> MT
+                            </div>
+                        </div>
+                    </div>
 
                     <h6 class="header-heading-sepration">Basic Information</h6>
                     <div class="row mt-2">
@@ -183,7 +194,6 @@
                             <input type="text" id="snap_marking_labeling_edit" class="form-control" disabled>
                         </div>
                     </div>
-                </div>
 
                 <!-- Product Selection -->
                 <div class=" mt-3">

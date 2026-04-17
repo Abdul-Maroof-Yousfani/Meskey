@@ -109,6 +109,7 @@ Route::get('/get-bill-of-lading-related-data', [BillOfLadingController::class, '
 Route::get('/get/export/bill-of-lading-no', [BillOfLadingController::class, 'getNumber'])->name('get.bill-of-lading.getNumber');
 Route::get('/get-bill-of-lading-form-es', [BillOfLadingController::class, 'getFormEsByExportOrder'])->name('get.bill-of-lading.form-es');
 Route::get('/get-bill-of-lading-delivery-challans', [BillOfLadingController::class, 'getDeliveryChallansByFormEs'])->name('get.bill-of-lading.delivery-challans');
+Route::get('/get-form-e-usage-details/{id}', [ExportDeliveryOrderController::class, 'getFormEUsage'])->name('export-delivery-order.form-e-usage');
 
 // export form-e
 Route::resource('export-form-e', App\Http\Controllers\Export\ExportFormEController::class);

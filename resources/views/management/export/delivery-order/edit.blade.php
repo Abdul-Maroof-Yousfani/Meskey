@@ -141,8 +141,8 @@
                     <div class="alert alert-info mt-3" id="qty_info_alert" style="padding: 10px; margin-bottom:15px; border-radius: 5px; border-left: 5px solid #17a2b8;">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <strong>Quantity Capacity:</strong>
-                                Total EO: <span id="lbl_total_eo_mt" class="font-weight-bold">{{ round($totalAllowedMt, 3) }}</span> MT &nbsp;|&nbsp;
+                                <strong>Form-E Capacity:</strong>
+                                Total Allowed: <span id="lbl_total_eo_mt" class="font-weight-bold">{{ round($totalAllowedMt, 3) }}</span> MT &nbsp;|&nbsp;
                                 Prev DO'd (Others): <span id="lbl_consumed_mt" class="font-weight-bold">{{ round($alreadyConsumedMt, 3) }}</span> MT &nbsp;|&nbsp;
                                 Current Request: <span id="lbl_current_request_mt" class="font-weight-bold text-primary">{{ round($currentRequestMt, 3) }}</span> MT
                             </div>
@@ -153,7 +153,7 @@
                     </div>
 
                     <div id="qty_error_msg" class="alert alert-danger mt-2" style="display: none; font-weight: bold; border-left: 5px solid #dc3545;">
-                        <i class="fas fa-exclamation-triangle mr-2"></i> ERROR: Quantity exceeds Export Order capacity!
+                        <i class="fas fa-exclamation-triangle mr-2"></i> ERROR: Quantity exceeds Export Form-E capacity!
                     </div>
 
                     <h6 class="header-heading-sepration">Basic Information</h6>
@@ -684,6 +684,49 @@
             $("#storages").select2();
         }, 100);
 
+        $('#export_form_e_id').on('change', function() {
+            var formEId = $(this).val();
+            if (!formEId) {
+                $('#qty_info_alert').hide();
+                return;
+            }
+
+            $.ajax({
+                url: "{{ route('export-delivery-order.form-e-usage', '') }}/" + formEId,
+                type: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        $('#qty_info_alert').show();
+                        $('#lbl_total_eo_mt').text(parseFloat(response.total).toFixed(3));
+                        // For Edit mode, we need to handle that response.consumed might include current DO depending on implementation.
+                        // But the endpoint getFormEUsage filters by export_form_e_id and sums ALL DOs.
+                        // In Edit, we want to show alreadyConsumed excluding current DO.
+                        // So we subtract current DO metric tons from response.consumed if it's the same Form-E.
+                        
+                        let originalFormEId = "{{ $deliveryOrder->export_form_e_id }}";
+                        let consumedVal = parseFloat(response.consumed);
+                        
+                        if (formEId == originalFormEId) {
+                             // If user stays on original Form-E, we need to exclude CURRENT DO from 'Already Consumed'
+                             // to match the 'Others' label logic.
+                             let currentMtOnLoad = parseFloat("{{ $deliveryOrder->exportPackingItems->sum('metric_tons') }}") || 0;
+                             consumedVal = Math.max(0, consumedVal - currentMtOnLoad);
+                        }
+
+                        $('#lbl_consumed_mt').text(consumedVal.toFixed(3));
+                        $('#lbl_remaining_mt').text((parseFloat(response.total) - consumedVal - parseFloat($('#lbl_current_request_mt').text())).toFixed(3));
+                        
+                        if (typeof checkCapacity === "function") {
+                            checkCapacity();
+                        }
+                    }
+                },
+                error: function(err) {
+                    console.error("Failed to fetch Form-E usage details", err);
+                }
+            });
+        });
+
         function populateSnapshotEdit(data, packingItemsAuto) {
             $('#snap_quotation_edit').val(data.quotation ? (data.quotation.reference || '#' + data.quotation_id) + ' - ' + (data.quotation.product ? data.quotation.product.name : '') : (data.quotation_id ? '#' + data.quotation_id : '---'));
             $('#snap_export_soda_edit').val(data.export_soda ? (data.export_soda.voucher_no || '#' + data.export_soda_id) + ' - ' + (data.export_soda.product ? data.export_soda.product.name : '') : (data.export_soda_id ? '#' + data.export_soda_id : '---'));
@@ -1006,7 +1049,7 @@
 
             if (balance < -0.001) {
                 $('#lbl_remaining_mt').removeClass('text-success').addClass('text-danger');
-                let errMsg = `Total Metric Tons (${currentRequest.toFixed(3)}) exceeds the remaining capacity of Export Order (${remaining.toFixed(3)} MT).`;
+                let errMsg = `Total Metric Tons (${currentRequest.toFixed(3)}) exceeds the remaining capacity of Export Form-E (${remaining.toFixed(3)} MT).`;
                 $('#qty_error_msg').html(`<i class="fas fa-exclamation-triangle mr-2"></i> ERROR: ${errMsg}`).slideDown();
                 $('.submitbutton').attr('disabled', true);
             } else {

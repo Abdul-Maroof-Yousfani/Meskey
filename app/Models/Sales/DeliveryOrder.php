@@ -33,7 +33,7 @@ class DeliveryOrder extends Model
 
     public function delivery_order_data()
     {
-        return $this->hasMany(DeliveryOrderData::class);
+        return $this->hasMany(DeliveryOrderData::class, 'delivery_order_id');
     }
 
     public function receipt_vouchers()
