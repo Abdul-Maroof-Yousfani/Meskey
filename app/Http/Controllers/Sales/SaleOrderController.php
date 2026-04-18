@@ -32,7 +32,9 @@ class SaleOrderController extends Controller
         $payment_terms = PaymentTerm::all();
         $customers = Customer::all();
         $inquiries = SalesInquiry::where('am_approval_status', 'approved')
-            ->whereDoesntHave('sale_order')
+            ->whereDoesntHave('sale_order', function($query) {
+                $query->whereNot("am_approval_status", "rejected");
+            })
             ->select('id', 'inquiry_no', 'contact_person')
             ->get();
         $items = Product::all();
