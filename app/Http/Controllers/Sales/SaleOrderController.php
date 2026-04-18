@@ -253,6 +253,7 @@ class SaleOrderController extends Controller
                     $sq->whereRaw('LOWER(`reference_no`) LIKE ?', [$searchTerm]);
                 });
             })
+            ->orderBy("reference_no", "desc")
             ->latest()
             ->paginate($perPage);
        
