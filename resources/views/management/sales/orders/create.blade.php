@@ -97,7 +97,7 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Customer:</label>
-                        <select name="customer_id" id="customer_id" onchange="get_inquiries()" class="form-control select2">
+                        <select name="customer_id" id="customer_id" class="form-control select2">
                             <option value="">Select Customer</option>
                             @foreach ($customers ?? [] as $customer)
                                 <option value="{{ $customer->id }}">{{ $customer->name }}</option>
@@ -166,9 +166,6 @@
                     <div class="form-group">
                         <label class="form-label">Locations:</label>
                         <select name="locations[]" id="locations" class="form-control select2" multiple>
-                            @foreach (get_locations() as $location)
-                                <option value="{{ $location->id }}">{{ $location->name }}</option>
-                            @endforeach
                         </select>
                     </div>
                 </div>
@@ -401,6 +398,11 @@
         const initialSections = @json($selectedSections ?? []);
 
         function populateFactories() {
+            const customer_id = $('#customer_id').val();
+            if (!customer_id) {
+                $('#arrival_location_id').empty().trigger('change.select2');
+                return;
+            }
             const selectedLocations = $('#locations').val() || [];
             const currentValues = $('#arrival_location_id').val() || initialFactories;
             $('#arrival_location_id').empty();
@@ -415,6 +417,11 @@
         }
 
         function populateSections() {
+            const customer_id = $('#customer_id').val();
+            if (!customer_id) {
+                $('#arrival_sub_location_id').empty().trigger('change.select2');
+                return;
+            }
             const factoryIds = $('#arrival_location_id').val() || initialFactories;
             const currentSections = $('#arrival_sub_location_id').val() || initialSections;
             $('#arrival_sub_location_id').empty();
@@ -439,6 +446,10 @@
 
         window.populateFactories = populateFactories;
         window.populateSections = populateSections;
+
+        $('#customer_id').on('change', function() {
+            get_customer_related_data();
+        });
 
         populateFactories();
         populateSections();
@@ -559,9 +570,17 @@
         }
     }
 
+    function get_customer_related_data() {
+        get_inquiries();
+        getCustomerLocations();
+    }
+
     function get_inquiries() {
         const customer_id = $("#customer_id").val();
-        // get-sale-inquiries-against-customer
+        if (!customer_id) {
+            $("#inquiry_id").empty().append('<option value="">Select Inquiry (Optional)</option>').trigger('change');
+            return;
+        }
 
         $.ajax({
             url: "{{ route('sales.get-sale-inquiries-against-customer') }}",
@@ -576,11 +595,43 @@
                 });
             },
             error: function(error) {
-
+                console.error("Error fetching inquiries:", error);
             }
         });
+    }
 
-        // get-sale-inquiry-data
+    function getCustomerLocations() {
+        const customer_id = $("#customer_id").val();
+        if (!customer_id) {
+            $("#locations").empty().trigger('change');
+            return;
+        }
+
+        // Disable location fields during fetch
+        $("#locations, #arrival_location_id, #arrival_sub_location_id").prop('disabled', true);
+
+        $.ajax({
+            url: "{{ route('sales.get-customer-locations') }}",
+            method: "GET",
+            data: {
+                customer_id: customer_id
+            },
+            dataType: "json",
+            success: function(res) {
+                $("#locations").empty();
+                if (res && res.length > 0) {
+                    res.forEach(loc => {
+                        $("#locations").append(new Option(loc.name, loc.id));
+                    });
+                }
+                $("#locations").prop('disabled', false).trigger('change');
+                $("#arrival_location_id, #arrival_sub_location_id").prop('disabled', false);
+            },
+            error: function(error) {
+                console.error("Error fetching customer locations:", error);
+                $("#locations, #arrival_location_id, #arrival_sub_location_id").prop('disabled', false);
+            }
+        });
     }
 
     function get_inquiry_data() {
@@ -872,10 +923,7 @@
         $("#delivery_date").prop('readonly', false).val('');
         $("#customer_id").prop('disabled', false).val('').trigger('change.select2');
         $("#sauda_type").prop('disabled', false).val('').trigger('change.select2');
-        $("#locations").empty().append('<option value="">Select Locations</option>');
-        allLocations.forEach(loc => {
-            $("#locations").append(`<option value="${loc.id}">${loc.name}</option>`);
-        });
+        $("#locations").empty();
         $("#locations").prop('disabled', false).removeAttr('disabled').val([]).trigger('change');
         $("#token_money").prop('readonly', false).removeAttr('readonly').val('');
         $("#contact_person").prop('readonly', false).removeAttr('readonly').val('');

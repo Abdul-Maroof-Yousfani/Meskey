@@ -183,9 +183,18 @@
                     <div class="form-group">
                         <label class="form-label">Locations:</label>
                         <select name="locations[]" id="locations" class="form-control select2" multiple>
-                            @foreach (get_locations() as $location)
-                                <option value="{{ $location->id }}" @selected(in_array($location->id, $sale_order->locations->pluck('location_id')->toArray()))>{{ $location->name }}
-                                </option>
+                            @php
+                                $customerLocations = [];
+                                if ($sale_order->customer_id) {
+                                    $customer = \App\Models\Master\Customer::find($sale_order->customer_id);
+                                    if ($customer && !empty($customer->company_location_ids)) {
+                                        $customerLocations = \App\Models\Master\CompanyLocation::whereIn('id', $customer->company_location_ids)->get();
+                                    }
+                                }
+                                $selectedLocations = $sale_order->locations->pluck('location_id')->toArray();
+                            @endphp
+                            @foreach ($customerLocations as $location)
+                                <option value="{{ $location->id }}" @selected(in_array($location->id, $selectedLocations))>{{ $location->name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -354,6 +363,61 @@
 
 <script>
     salesInquiryRowIndex = {{ count($sale_order->sales_order_data) }};
+
+    function get_customer_related_data() {
+        // Only if not disabled (i.e. not locked by inquiry)
+        if ($("#customer_id").is(":disabled")) return;
+        
+        get_inquiries();
+        getCustomerLocations();
+    }
+
+    function get_inquiries() {
+        const customer_id = $("#customer_id").val();
+        if (!customer_id) return;
+
+        $.ajax({
+            url: "{{ route('sales.get-sale-inquiries-against-customer') }}",
+            method: "GET",
+            data: { customer_id: customer_id },
+            dataType: "json",
+            success: function(res) {
+                $("#inquiry_id").select2({
+                    data: res
+                });
+            }
+        });
+    }
+
+    function getCustomerLocations() {
+        const customer_id = $("#customer_id").val();
+        if (!customer_id) {
+            $("#locations").empty().trigger('change');
+            return;
+        }
+
+        $("#locations, #arrival_location_id, #arrival_sub_location_id").prop('disabled', true);
+
+        $.ajax({
+            url: "{{ route('sales.get-customer-locations') }}",
+            method: "GET",
+            data: { customer_id: customer_id },
+            dataType: "json",
+            success: function(res) {
+                $("#locations").empty();
+                if (res && res.length > 0) {
+                    res.forEach(loc => {
+                        $("#locations").append(new Option(loc.name, loc.id));
+                    });
+                }
+                $("#locations").prop('disabled', false).trigger('change');
+                $("#arrival_location_id, #arrival_sub_location_id").prop('disabled', false);
+            },
+            error: function() {
+                $("#locations, #arrival_location_id, #arrival_sub_location_id").prop('disabled', false);
+            }
+        });
+    }
 
 
     function calculateForRatePerKg(mond) {
@@ -568,12 +632,21 @@
     $(document).ready(function() {
         $('.select2').select2();
 
+        $('#customer_id').on('change', function() {
+            get_customer_related_data();
+        });
+
         const initialFactories = @json($oldFactories ?? []);
         const initialSections = @json($oldSections ?? []);
         const inquirySelected = "{{ $sale_order->inquiry_id ? 1 : 0 }}";
         let isInitializing = true;
 
         function populateFactories() {
+            const customer_id = $('#customer_id').val();
+            if (!customer_id) {
+                $('#arrival_location_id').empty().trigger('change.select2');
+                return;
+            }
             const selectedLocations = $('#locations').val() || [];
             const currentValues = $('#arrival_location_id').val() || initialFactories;
             $('#arrival_location_id').empty();
@@ -588,6 +661,11 @@
         }
 
         function populateSections() {
+            const customer_id = $('#customer_id').val();
+            if (!customer_id) {
+                $('#arrival_sub_location_id').empty().trigger('change.select2');
+                return;
+            }
             const factoryIds = $('#arrival_location_id').val() || initialFactories;
             const currentSections = $('#arrival_sub_location_id').val() || initialSections;
             $('#arrival_sub_location_id').empty();
@@ -870,10 +948,7 @@
         $("#delivery_date").prop('readonly', false).val('');
         $("#customer_id").prop('disabled', false).val('').trigger('change.select2');
         $("#sauda_type").prop('disabled', false).val('').trigger('change.select2');
-        $("#locations").empty().append('<option value="">Select Locations</option>');
-        allLocations.forEach(loc => {
-            $("#locations").append(`<option value="${loc.id}">${loc.name}</option>`);
-        });
+        $("#locations").empty();
         $("#locations").prop('disabled', false).removeAttr('disabled').val([]).trigger('change');
         $("#token_money").prop('readonly', false).removeAttr('readonly').val('');
         $("#contact_person").prop('readonly', false).removeAttr('readonly').val('');
