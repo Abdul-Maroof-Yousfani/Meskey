@@ -150,9 +150,6 @@
                         <select name="location_id" id="locations" onchange="selectLocation(this)"
                             class="form-control select2">
                             <option value="">Select Locations</option>
-                            @foreach (get_locations() as $location)
-                                <option value="{{ $location->id }}">{{ $location->name }}</option>
-                            @endforeach
                         </select>
                     </div>
                 </div>
@@ -162,9 +159,6 @@
                         <select name="arrival_id[]" id="arrivals" onchange="selectStorage(this)"
                             class="form-control select2" disabled multiple>
                             <option value="">Select Factory </option>
-                            @foreach (get_locations() as $location)
-                                <option value="{{ $location->id }}">{{ $location->name }}</option>
-                            @endforeach
                         </select>
                     </div>
                 </div>
@@ -173,9 +167,6 @@
                         <label class="form-label">Section:</label>
                         <select name="storage_id[]" id="storages" class="form-control select2" disabled multiple>
                             <option value="">Select Section</option>
-                            @foreach (get_locations() as $location)
-                                <option value="{{ $location->id }}">{{ $location->name }}</option>
-                            @endforeach
                         </select>
                     </div>
                 </div>
