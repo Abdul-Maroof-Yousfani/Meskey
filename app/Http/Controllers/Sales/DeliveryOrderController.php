@@ -56,8 +56,9 @@ class DeliveryOrderController extends Controller
         });
         
         $sale_order_of_delivery_order = SalesOrder::find($delivery_order->so_id);
+        $latestLog = $delivery_order->approvalLogs()->with(['user', 'role'])->latest()->first();
 
-        return view('management.sales.delivery-order.view', compact('sale_order_of_delivery_order', 'payment_terms', 'delivery_order', 'customers', 'sales_orders', 'receipt_vouchers'));
+        return view('management.sales.delivery-order.view', compact('sale_order_of_delivery_order', 'payment_terms', 'delivery_order', 'customers', 'sales_orders', 'receipt_vouchers', 'latestLog'));
     }
 
     public function create()
@@ -235,6 +236,7 @@ class DeliveryOrderController extends Controller
 
         // Eager load the inquiry + all its items + related product
         $delivery_orders = DeliveryOrder::latest()
+            ->orderBy("reference_no", "desc")
             ->paginate($perPage);
 
         $groupedData = [];
@@ -613,9 +615,9 @@ class DeliveryOrderController extends Controller
         }
 
         $receipt_vouchers = $advancesList->concat($rvsList)->values();
+        $latestLog = $delivery_order->approvalLogs()->with(['user', 'role'])->latest()->first();
 
-
-        return view('management.sales.delivery-order.edit', compact('sale_order_of_delivery_order', 'payment_terms', 'customers', 'items', 'sale_orders', 'delivery_order', 'receipt_vouchers', 'bag_types'));
+        return view('management.sales.delivery-order.edit', compact('sale_order_of_delivery_order', 'payment_terms', 'customers', 'items', 'sale_orders', 'delivery_order', 'receipt_vouchers', 'bag_types', 'latestLog'));
 
     }
 
