@@ -71,8 +71,9 @@ class SaleOrderController extends Controller
             return $matches[0];
         })->unique()->sort()->values();
 
+        $latestLog = $sale_order->approvalLogs()->with(['user', 'role'])->latest()->first();
         $brokers = Broker::where('status', 'active')->get();
-        return view('management.sales.orders.edit', compact('payment_terms', 'customers', 'inquiries', 'items', 'sale_order', 'pay_types', 'bag_types', 'arrivalLocations', 'arrivalSubLocations', 'packings', 'brokers'));
+        return view('management.sales.orders.edit', compact('payment_terms', 'customers', 'inquiries', 'items', 'sale_order', 'pay_types', 'bag_types', 'arrivalLocations', 'arrivalSubLocations', 'packings', 'brokers', 'latestLog'));
     }
 
     public function view(Request $request, int $id)
@@ -93,7 +94,9 @@ class SaleOrderController extends Controller
         })->unique()->sort()->values();
 
         $brokers = Broker::where('status', 'active')->get();
-        return view('management.sales.orders.view', compact('payment_terms', 'customers', 'inquiries', 'items', 'sale_order', 'arrivalLocations', 'arrivalSubLocations', 'packings', 'brokers'));
+        $latestLog = $sale_order->approvalLogs()->with(['user', 'role'])->latest()->first();
+
+        return view('management.sales.orders.view', compact('payment_terms', 'customers', 'inquiries', 'items', 'sale_order', 'arrivalLocations', 'arrivalSubLocations', 'packings', 'brokers', 'latestLog'));
     }
 
     public function store(SalesOrderRequest $request)

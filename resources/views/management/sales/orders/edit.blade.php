@@ -184,16 +184,20 @@
                         <label class="form-label">Locations:</label>
                         <select name="locations[]" id="locations" class="form-control select2" multiple>
                             @php
+                                $selectedLocations = $sale_order->locations->pluck('location_id')->map(fn($id) => (int)$id)->toArray() ?? [];
                                 $customerLocations = [];
                                 if ($sale_order->customer_id) {
                                     $customer = \App\Models\Master\Customer::find($sale_order->customer_id);
                                     if ($customer && !empty($customer->company_location_ids)) {
-                                        $customerLocations = \App\Models\Master\CompanyLocation::whereIn('id', $customer->company_location_ids)->get();
+                                        $customerLocations = array_map('intval', $customer->company_location_ids);
                                     }
                                 }
-                                $selectedLocations = $sale_order->locations->pluck('location_id')->toArray();
+                                
+                                // Merge selected with customer locations
+                                $allVisibleIds = array_unique(array_merge($customerLocations, $selectedLocations));
+                                $visibleLocations = \App\Models\Master\CompanyLocation::whereIn('id', $allVisibleIds)->get();
                             @endphp
-                            @foreach ($customerLocations as $location)
+                            @foreach ($visibleLocations as $location)
                                 <option value="{{ $location->id }}" @selected(in_array($location->id, $selectedLocations))>{{ $location->name }}</option>
                             @endforeach
                         </select>
@@ -351,6 +355,24 @@
     </div>
 
     <input type="hidden" id="rowCount" value="0">
+
+    @if ($sale_order->am_approval_status === 'reverted' || $sale_order->am_change_made == 0)
+        <div class="alert alert-primary border-start border-primary border-3 mb-4 mx-2">
+            <div class="d-flex align-items-center">
+                <i class="fa fa-exclamation-triangle me-3 text-primary" style="font-size: 20px;"></i>
+                <div>
+                    <strong>Approval Authority Comments</strong><br>
+                    @if($latestLog)
+                        <div class="small mb-1">
+                            <strong>{{ $latestLog->user->name ?? 'N/A' }}</strong>
+                            <span class="">({{ $latestLog->role->name ?? 'Role N/A' }})</span>
+                        </div>
+                        {{ $latestLog->comments ?? 'No comments available' }}
+                    @endif
+                </div>
+            </div>
+        </div>
+    @endif
 
     <div class="row bottom-button-bar">
         <div class="col-12 text-end">
