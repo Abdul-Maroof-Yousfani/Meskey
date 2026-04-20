@@ -22,7 +22,7 @@ class SalesInquiryController extends Controller
     }
 
     public function create() {
-        $customers = Customer::all();
+        $customers = Customer::where('type', 'local')->get();
         $items = Product::all();
         $bag_types = BagType::select("id", "name")->where("status", 1)->get();
         $arrivalLocations = ArrivalLocation::with("companyLocation")->select('id', 'name', 'company_location_id')->where('status', 'active')->get();
@@ -284,7 +284,7 @@ class SalesInquiryController extends Controller
 
     public function view(SalesInquiry $sales_inquiry) {
         $sales_inquiry->load("sales_inquiry_data");
-        $customers = Customer::all();
+        $customers = Customer::where('type', 'local')->get();
         $items = Product::all();
         $bag_types = BagType::select("id", "name")->where("status", 1)->get();
         $arrivalLocations = ArrivalLocation::with("companyLocation")->select('id', 'name', 'company_location_id')->where('status', 'active')->get();
@@ -303,7 +303,7 @@ class SalesInquiryController extends Controller
 
     public function edit(SalesInquiry $sales_inquiry) {
         $sales_inquiry->load("sales_inquiry_data", "locations", "factories", "sections");
-        $customers = Customer::all();
+        $customers = Customer::where('type', 'local')->get();
         $items = Product::all();
         $bag_types = BagType::select("id", "name")->where("status", 1)->get(); 
 
