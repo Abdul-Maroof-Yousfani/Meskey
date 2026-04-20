@@ -308,13 +308,13 @@
                                 </td>
                                 <td>
                                     <input type="number" name="rate[]" id="rate_{{ $index }}"
-                                        value="{{ $data->rate }}" onkeyup="calc(this); calculateRates(this)" class="form-control rate rate_per_kg"
+                                        value="{{ $data->rate }}" onkeyup="calculateRates(this)" class="form-control rate rate_per_kg"
                                         step="0.01" min="0">
                                 </td>
 
                                   <td>
                                     <input type="number" name="rate_per_mond[]" id="rate_per_mond_{{ $index }}"
-                                        value="{{ $data->rate_per_mond }}" onkeyup="calc(this); calculateRates(this)" class="form-control rate rate_per_mond"
+                                        value="{{ $data->rate_per_mond }}" onkeyup="calculateRates(this)" class="form-control rate rate_per_mond"
                                         step="0.01" min="0">
                                 </td>
                                 <td>
@@ -455,11 +455,14 @@
             return;
         }
 
+        const tr = $(el).closest("tr");
         if($(el).hasClass("rate_per_kg")) {
-            $(el).closest("tr").find(".rate_per_mond").val(calculateForRatePerMond($(el).val()));
+            tr.find(".rate_per_mond").val(calculateForRatePerMond($(el).val()));
         } else {
-            $(el).closest("tr").find(".rate_per_kg").val(calculateForRatePerKg($(el).val()));
+            tr.find(".rate_per_kg").val(calculateForRatePerKg($(el).val()));
         }
+
+        calc(el);
     }
     function validateExpiry() {
         const inquiryId = $('#inquiry_id').val();
@@ -764,10 +767,10 @@
                 <input type="number" name="qty[]" id="qty_${index}" class="form-control qty" step="0.01" min="0" onkeyup="calcBagTypes(this)" onchange="calcBagTypes(this)">
             </td>
             <td>
-                <input onkeyup="calc(this); calculateRates(this)" type="number" name="rate[]" id="rate_${index}" class="form-control rate rate_per_kg" step="0.01" min="0">
+                <input onkeyup="calculateRates(this)" type="number" name="rate[]" id="rate_${index}" class="form-control rate rate_per_kg" step="0.01" min="0">
             </td>
             <td>
-                <input onkeyup="calc(this); calculateRates(this)" type="number" name="rate_per_mond[]" id="rate_per_mond_${index}" class="form-control rate rate_per_mond" step="0.01" min="0">
+                <input onkeyup="calculateRates(this)" type="number" name="rate_per_mond[]" id="rate_per_mond_${index}" class="form-control rate_per_mond" step="0.01" min="0">
             </td>
             <td>
                 <input type="text" name="amount[]" id="amount_${index}" class="form-control amount" readonly>
@@ -1004,12 +1007,12 @@
     function calc(el) {
         const element = $(el).closest("tr");
 
-        const rate = parseFloat($(element).find(".rate").val()) || 0;
+        const rate = parseFloat($(element).find(".rate_per_kg").val()) || 0;
         const qty = parseFloat($(element).find(".qty").val()) || 0;
 
         const amount = $(element).find(".amount");
 
-        amount.val(rate * qty);
+        amount.val((rate * qty).toFixed(2));
     }
 
     function calcBagTypes(el) {
