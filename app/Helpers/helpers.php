@@ -2180,3 +2180,22 @@ function approve_qc(PurchaseBagQC $bag_qc)
         return;
     }
 }
+
+if (!function_exists('getStockByItem')) {
+    function getStockByItem($productId, $brandId, $subArrivalId)
+    {
+        $stockIn = \App\Models\Master\Account\Stock::where('product_id', $productId)
+            ->where('brand_id', $brandId)
+            ->where('subarrival_id', $subArrivalId)
+            ->where('type', 'stock-in')
+            ->sum('qty');
+
+        $stockOut = \App\Models\Master\Account\Stock::where('product_id', $productId)
+            ->where('brand_id', $brandId)
+            ->where('subarrival_id', $subArrivalId)
+            ->where('type', 'stock-out')
+            ->sum('qty');
+
+        return $stockIn - $stockOut;
+    }
+}
