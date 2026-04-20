@@ -501,15 +501,18 @@ class BillOfLadingController extends Controller
             $noOfBags = (int) round($items->sum(function ($item) {
                 return (float) ($item->no_of_bags ?? 0);
             }));
-            $extraBags = (int) round($items->sum(function ($item) {
-                return (float) ($item->deliveryOrderData->extra_bags ?? 0);
-            }));
-            $emptyBags = (int) round($items->sum(function ($item) {
-                return (float) ($item->deliveryOrderData->empty_bags ?? 0);
-            }));
-            $grossBags = $noOfBags + $extraBags + $emptyBags;
             $netWeightKg = round($quantityMt * 1000, 2);
-            $grossWeightKg = round($grossBags * $packingKg, 2);
+            $extraBags = (float) $items->sum(function ($item) {
+                return $this->getProRatedBagCount($item, 'extra_bags');
+            });
+            $emptyBags = (float) $items->sum(function ($item) {
+                return $this->getProRatedBagCount($item, 'empty_bags');
+            });
+            $emptyBagWeightGram = (float) ($first->deliveryOrderData->min_weight_empty_bags ?? 0);
+            $emptyBagWeightKg = $emptyBagWeightGram / 1000;
+
+            $grossBags = $noOfBags + $extraBags + $emptyBags;
+            $grossWeightKg = round($netWeightKg + ($grossBags * $emptyBagWeightKg), 2);
 
             return [
                 'row_label' => chr(65 + $index),
@@ -520,9 +523,9 @@ class BillOfLadingController extends Controller
                 'bag_type' => $bagTypeName,
                 'brand_name' => $brandName,
                 'no_of_bags' => $noOfBags,
-                'extra_bags' => $extraBags,
-                'empty_bags' => $emptyBags,
-                'gross_bags' => $grossBags,
+                'extra_bags' => round($extraBags, 2),
+                'empty_bags' => round($emptyBags, 2),
+                'gross_bags' => round($grossBags, 2),
                 'net_weight_kg' => $netWeightKg,
                 'gross_weight_kg' => $grossWeightKg,
                 'bag_markings' => trim($brandName . ($packingText ? ' - ' . $packingText : '')),
@@ -569,6 +572,30 @@ class BillOfLadingController extends Controller
     protected function parsePackingKg(string $packingText): float
     {
         return (float) preg_replace('/[^0-9.]/', '', $packingText);
+    }
+
+    protected function getProRatedBagCount($deliveryChallanData, string $field): float
+    {
+        $deliveryOrderData = $deliveryChallanData->deliveryOrderData;
+        if (!$deliveryOrderData) {
+            return 0;
+        }
+
+        $sourceCount = (float) ($deliveryOrderData->{$field} ?? 0);
+        if ($sourceCount <= 0) {
+            return 0;
+        }
+
+        $sourceMetricTons = (float) ($deliveryOrderData->metric_tons ?? 0);
+        $dispatchMetricTons = (float) ($deliveryChallanData->qty ?? 0);
+
+        if ($sourceMetricTons <= 0 || $dispatchMetricTons <= 0) {
+            return 0;
+        }
+
+        $ratio = min(max($dispatchMetricTons / $sourceMetricTons, 0), 1);
+
+        return round($sourceCount * $ratio, 2);
     }
 
     protected function formatPort($port): ?string
