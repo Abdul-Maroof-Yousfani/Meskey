@@ -11,6 +11,7 @@ use App\Models\Master\Account\Account;
 use App\Models\Master\Broker;
 use App\Models\Master\CompanyLocation;
 use App\Models\Master\Customer;
+use App\Models\Export\ExportOrder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -256,6 +257,7 @@ class CustomerController extends Controller
             // Update consignees
             $this->updateConsignees(
                 $customer,
+                $request->consignee_id ?? [],
                 $request->has('has_consignee') && $request->has_consignee ? ($request->consignee_name ?? []) : [],
                 $request->consignee_address ?? [],
                 $request->consignee_contact ?? [],
@@ -307,22 +309,64 @@ class CustomerController extends Controller
         }
     }
 
-    protected function updateConsignees($customer, $names, $addresses, $contacts, $contactPersons, $emails = [])
+    protected function updateConsignees($customer, $ids, $names, $addresses, $contacts, $contactPersons, $emails = [])
     {
-        // Delete all existing and recreate (simple approach for consignees)
-        $customer->consignees()->delete();
+        $existingConsignees = $customer->consignees()->get()->keyBy('id');
+        $keptIds = [];
 
         foreach ($names as $index => $name) {
             if (empty($name)) {
                 continue;
             }
-            $customer->consignees()->create([
-                'name'           => $name,
-                'address'        => $addresses[$index] ?? '',
-                'contact'        => $contacts[$index] ?? '',
+
+            $payload = [
+                'name' => $name,
+                'address' => $addresses[$index] ?? '',
+                'contact' => $contacts[$index] ?? '',
                 'contact_person' => $contactPersons[$index] ?? '',
-                'email'          => $emails[$index] ?? '',
-            ]);
+                'email' => $emails[$index] ?? '',
+            ];
+
+            $consigneeId = isset($ids[$index]) && $ids[$index] !== '' ? (int) $ids[$index] : null;
+
+            if ($consigneeId && $existingConsignees->has($consigneeId)) {
+                $existingConsignees[$consigneeId]->update($payload);
+                $keptIds[] = $consigneeId;
+            } else {
+                $newConsignee = $customer->consignees()->create($payload);
+                $keptIds[] = $newConsignee->id;
+            }
+        }
+
+        $toDeleteIds = $existingConsignees->keys()->diff($keptIds)->values();
+
+        if ($toDeleteIds->isEmpty()) {
+            return;
+        }
+
+        $referencedIds = ExportOrder::withoutGlobalScopes()
+            ->whereIn('consignee_id', $toDeleteIds)
+            ->pluck('consignee_id')
+            ->unique()
+            ->all();
+
+        $deletableIds = $toDeleteIds->diff($referencedIds)->values();
+
+        if (!empty($referencedIds)) {
+            $linkedConsigneeNames = $existingConsignees
+                ->only($referencedIds)
+                ->pluck('name')
+                ->filter()
+                ->implode(', ');
+
+            throw new \RuntimeException(
+                'Cannot remove consignee(s) already linked with Export Order: ' .
+                ($linkedConsigneeNames ?: implode(', ', $referencedIds))
+            );
+        }
+
+        if ($deletableIds->isNotEmpty()) {
+            $customer->consignees()->whereIn('id', $deletableIds)->delete();
         }
     }
 

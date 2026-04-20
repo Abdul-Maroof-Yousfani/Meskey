@@ -31,12 +31,7 @@ class ExportDeliveryChallanController extends Controller
     {
         $customers = Customer::all();
         $Transporters = Transporter::where('status', 'active')->get();
-        $delivery_orders = DeliveryOrder::select('delivery_order.id', 'delivery_order.reference_no')
-            ->join('loading_slips', 'delivery_order.id', '=', 'loading_slips.delivery_order_id')
-            ->join('sales_second_weighbridges', 'loading_slips.id', '=', 'sales_second_weighbridges.loading_slip_id')
-            ->where('sales_second_weighbridges.type', 'export_order')
-            ->distinct()
-            ->get();
+        $delivery_orders = collect();
 
         return view('management.export.delivery-challan.create', compact('customers', 'delivery_orders', 'Transporters'));
     }
@@ -49,6 +44,12 @@ class ExportDeliveryChallanController extends Controller
         $delivery_order = DeliveryOrder::find($do_id);
         if (!$delivery_order) {
             return response()->json('Selected Delivery order not found.', 422);
+        }
+
+        $preparedItems = $this->prepareDeliveryChallanItems($request);
+        if ($preparedItems['error']) {
+            DB::rollBack();
+            return response()->json(['error' => $preparedItems['error']], 422);
         }
 
         // if (strtotime($delivery_order->dispatch_date) <= strtotime($request->date)) {
@@ -85,24 +86,24 @@ class ExportDeliveryChallanController extends Controller
             ]);
 
             $delivery_challan->delivery_order()->sync([
-                $do_id => ['qty' => $this->normalizeQtyToMt($request->qty[0] ?? 0, $request->bag_size[0] ?? 0, $request->no_of_bags[0] ?? 0)],
+                $do_id => ['qty' => $preparedItems['total_qty']],
             ]);
 
             $createdItems = [];
-            foreach ($request->item_id as $index => $item) {
+            foreach ($preparedItems['items'] as $itemData) {
                 $dcData = $delivery_challan->delivery_challan_data()->create([
-                    'item_id' => $request->item_id[$index],
-                    'qty' => $this->normalizeQtyToMt($request->qty[$index] ?? 0, $request->bag_size[$index] ?? 0, $request->no_of_bags[$index] ?? 0),
-                    'rate' => $request->rate[$index],
-                    'brand_id' => $request->brand_id[$index],
-                    'no_of_bags' => $request->no_of_bags[$index],
-                    'bag_size' => $request->bag_size[$index],
-                    'description' => $request->desc[$index] ?? '',
-                    'truck_no' => $request->truck_no[$index],
-                    'container_number' => $request->container_number[$index],
-                    'do_data_id' => $request->do_data_id[$index],
-                    'bag_type' => $request->bag_type[$index],
-                    'ticket_id' => $request->ticket_id[$index],
+                    'item_id'          => $itemData['item_id'],
+                    'qty'              => $itemData['qty'],
+                    'rate'             => $itemData['rate'],
+                    'brand_id'         => $itemData['brand_id'],
+                    'no_of_bags'       => $itemData['no_of_bags'],
+                    'bag_size'         => $itemData['bag_size'],
+                    'description'      => $itemData['description'],
+                    'truck_no'         => $itemData['truck_no'],
+                    'container_number' => $itemData['container_number'],
+                    'do_data_id'       => $itemData['do_data_id'],
+                    'bag_type'         => $itemData['bag_type'],
+                    'ticket_id'        => $itemData['ticket_id'],
                 ]);
                 $createdItems[] = $dcData;
             }
@@ -144,7 +145,9 @@ class ExportDeliveryChallanController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
 
-        return response()->json(['message' => 'Export Delivery Challan has been created']);
+        return response()->json([
+            'success' => 'Export Delivery Challan has been created successfully.',
+        ]);
     }
 
     public function destroy($id)
@@ -153,7 +156,9 @@ class ExportDeliveryChallanController extends Controller
         $delivery_challan->receivingRequest()?->delete();
         $delivery_challan->delete();
 
-        return response()->json(['message' => 'Export Delivery Challan has been deleted!']);
+        return response()->json([
+            'success' => 'Export Delivery Challan has been deleted successfully.',
+        ]);
     }
 
     public function update(DeliveryChallanRequest $request, $id)
@@ -167,9 +172,11 @@ class ExportDeliveryChallanController extends Controller
             return response()->json('Selected Delivery order not found.', 422);
         }
 
-        // if (strtotime($delivery_order->dispatch_date) < strtotime($request->date)) {
-        //     return response()->json('Selected Delivery order is expired. Please select a different Delivery order', 422);
-        // }
+        $preparedItems = $this->prepareDeliveryChallanItems($request);
+        if ($preparedItems['error']) {
+            DB::rollBack();
+            return response()->json(['error' => $preparedItems['error']], 422);
+        }
 
         try {
             $arrival_location_csv = $request->arrival_location_csv;
@@ -199,25 +206,25 @@ class ExportDeliveryChallanController extends Controller
             ]);
 
             $delivery_challan->delivery_order()->sync([
-                $do_id => ['qty' => $this->normalizeQtyToMt($request->qty[0] ?? 0, $request->bag_size[0] ?? 0, $request->no_of_bags[0] ?? 0)],
+                $do_id => ['qty' => $preparedItems['total_qty']],
             ]);
             $delivery_challan->delivery_challan_data()->delete();
 
             $createdItems = [];
-            foreach ($request->item_id as $index => $item) {
+            foreach ($preparedItems['items'] as $itemData) {
                 $dcData = $delivery_challan->delivery_challan_data()->create([
-                    'item_id' => $request->item_id[$index],
-                    'qty' => $this->normalizeQtyToMt($request->qty[$index] ?? 0, $request->bag_size[$index] ?? 0, $request->no_of_bags[$index] ?? 0),
-                    'rate' => $request->rate[$index],
-                    'brand_id' => $request->brand_id[$index],
-                    'no_of_bags' => $request->no_of_bags[$index],
-                    'bag_size' => $request->bag_size[$index],
-                    'description' => $request->desc[$index] ?? '',
-                    'truck_no' => $request->truck_no[$index],
-                    'container_number' => $request->container_number[$index],
-                    'ticket_id' => $request->ticket_id[$index],
-                    'do_data_id' => $request->do_data_id[$index],
-                    'bag_type' => $request->bag_type[$index],
+                    'item_id'          => $itemData['item_id'],
+                    'qty'              => $itemData['qty'],
+                    'rate'             => $itemData['rate'],
+                    'brand_id'         => $itemData['brand_id'],
+                    'no_of_bags'       => $itemData['no_of_bags'],
+                    'bag_size'         => $itemData['bag_size'],
+                    'description'      => $itemData['description'],
+                    'truck_no'         => $itemData['truck_no'],
+                    'container_number' => $itemData['container_number'],
+                    'ticket_id'        => $itemData['ticket_id'],
+                    'do_data_id'       => $itemData['do_data_id'],
+                    'bag_type'         => $itemData['bag_type'],
                 ]);
                 $createdItems[] = $dcData;
             }
@@ -276,7 +283,9 @@ class ExportDeliveryChallanController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
 
-        return response()->json(['message' => 'Export Delivery Challan has been updated']);
+        return response()->json([
+            'success' => 'Export Delivery Challan has been updated successfully.',
+        ]);
     }
 
     public function edit($id)
@@ -415,16 +424,24 @@ class ExportDeliveryChallanController extends Controller
     public function getItemsByTickets(Request $request)
     {
         $ticket_id = $request->ticket_id;
+        $delivery_challan_id = $request->delivery_challan_id;
         $loading_programs = LoadingProgramItem::with([
-            'exportLoadingProgram.deliveryOrder.exportOrder.packingItems',
-            'exportLoadingProgram.exportOrder.packingItems',
-            'exportLoadingSlip.deliveryOrder.exportPackingItems',
+            'exportLoadingProgram.deliveryOrder.exportOrder.packingItems.bagType',
+            'exportLoadingProgram.deliveryOrder.exportOrder.packingItems.brand',
+            'exportLoadingSlip.deliveryOrder.exportPackingItems.bagType',
+            'exportLoadingSlip.deliveryOrder.exportPackingItems.brand',
             'exportLoadingSlip.deliveryOrder.exportOrder.packingItems',
             'exportLoadingSlip.secondWeighbridge',
         ])->where('id', $ticket_id)->get();
         $items = Product::select('id', 'name')->get();
+        $existingRows = collect();
 
-        return view('management.export.delivery-challan.getItem', compact('loading_programs', 'items'));
+        if ($delivery_challan_id) {
+            $existingRows = ExportDeliveryChallan::with('delivery_challan_data')
+                ->find($delivery_challan_id)?->delivery_challan_data?->keyBy('do_data_id') ?? collect();
+        }
+
+        return view('management.export.delivery-challan.getItem', compact('loading_programs', 'items', 'existingRows'));
     }
 
     public function getTickets(Request $request)
@@ -602,6 +619,7 @@ class ExportDeliveryChallanController extends Controller
         return response()->json([
             'success' => true,
             'rate' => $labour_rate ? $labour_rate->rate : 'N/A',
+            'second_weighbridge_qty_mt' => round(($loadingSlip->secondWeighbridge->net_weight ?? 0) / 1000, 3),
             'ticket' => [
                 'id' => $ticket->id,
                 'transaction_number' => $ticket->transaction_number,
@@ -649,5 +667,94 @@ class ExportDeliveryChallanController extends Controller
         }
 
         return round($qty, 3);
+    }
+
+    protected function prepareDeliveryChallanItems(Request $request): array
+    {
+        $itemIds = $request->item_id ?? [];
+        $ticketIds = array_values(array_filter(array_map('intval', $request->ticket_id ?? [])));
+        $uniqueTicketIds = array_values(array_unique($ticketIds));
+
+        if (count($uniqueTicketIds) !== 1) {
+            return ['error' => 'Exactly one ticket is required for export delivery challan.', 'items' => [], 'total_qty' => 0];
+        }
+
+        $ticketId = $uniqueTicketIds[0];
+        $availableQtyMt = $this->getSecondWeighbridgeQtyMt($ticketId);
+
+        if ($availableQtyMt <= 0) {
+            return ['error' => 'Selected ticket does not have a valid second weighbridge quantity.', 'items' => [], 'total_qty' => 0];
+        }
+
+        $items = [];
+        $totalQty = 0;
+
+        foreach ($itemIds as $index => $itemId) {
+            $itemId = (int) $itemId;
+            $doDataId = (int) ($request->do_data_id[$index] ?? 0);
+
+            if (!$itemId || !$doDataId) {
+                continue;
+            }
+
+            $qty = round((float) ($request->qty[$index] ?? 0), 3);
+            $noOfBags = (int) ($request->no_of_bags[$index] ?? 0);
+            $bagSize = round((float) ($request->bag_size[$index] ?? 0), 3);
+
+            if ($qty < 0) {
+                return ['error' => 'Line item quantity cannot be negative.', 'items' => [], 'total_qty' => 0];
+            }
+
+            $items[] = [
+                'item_id' => $itemId,
+                'qty' => $qty,
+                'rate' => round((float) ($request->rate[$index] ?? 0), 2),
+                'brand_id' => $request->brand_id[$index] ?? null,
+                'no_of_bags' => $noOfBags,
+                'bag_size' => $bagSize,
+                'description' => $request->desc[$index] ?? '',
+                'truck_no' => $request->truck_no[$index] ?? null,
+                'container_number' => $request->container_number[$index] ?? null,
+                'do_data_id' => $doDataId,
+                'bag_type' => $request->bag_type[$index] ?? null,
+                'ticket_id' => (int) ($request->ticket_id[$index] ?? 0),
+            ];
+
+            $totalQty += $qty;
+        }
+
+        $totalQty = round($totalQty, 3);
+
+        if (empty($items)) {
+            return ['error' => 'At least one delivery challan line item is required.', 'items' => [], 'total_qty' => 0];
+        }
+
+        if ($totalQty > $availableQtyMt + 0.001) {
+            return [
+                'error' => "Total QTY ({$totalQty} MT) 2nd Weighbridge quantity ({$availableQtyMt} MT) se zyada hai.",
+                'items' => [],
+                'total_qty' => 0,
+            ];
+        }
+
+        return [
+            'error' => null,
+            'items' => $items,
+            'total_qty' => $totalQty,
+            'available_qty_mt' => $availableQtyMt,
+        ];
+    }
+
+    protected function getSecondWeighbridgeQtyMt(int $ticketId): float
+    {
+        $slip = ExportLoadingSlip::with('secondWeighbridge')
+            ->where('loading_program_item_id', $ticketId)
+            ->first();
+
+        if (!$slip || !$slip->secondWeighbridge) {
+            return 0;
+        }
+
+        return round(((float) $slip->secondWeighbridge->net_weight) / 1000, 3);
     }
 }
