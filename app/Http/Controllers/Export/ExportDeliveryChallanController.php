@@ -46,6 +46,12 @@ class ExportDeliveryChallanController extends Controller
             return response()->json('Selected Delivery order not found.', 422);
         }
 
+        // Check customer account
+        $customer = Customer::find($request->customer_id);
+        if (!$customer || !$customer->account_id) {
+            return response()->json('The selected customer does not have an account assigned. Please set the customer account first.', 422);
+        }
+
         $preparedItems = $this->prepareDeliveryChallanItems($request);
         if ($preparedItems['error']) {
             DB::rollBack();
@@ -170,6 +176,12 @@ class ExportDeliveryChallanController extends Controller
         $delivery_order = DeliveryOrder::find($do_id);
         if (!$delivery_order) {
             return response()->json('Selected Delivery order not found.', 422);
+        }
+
+        // Check customer account
+        $customer = Customer::find($request->customer_id);
+        if (!$customer || !$customer->account_id) {
+            return response()->json('The selected customer does not have an account assigned. Please set the customer account first.', 422);
         }
 
         $preparedItems = $this->prepareDeliveryChallanItems($request);
