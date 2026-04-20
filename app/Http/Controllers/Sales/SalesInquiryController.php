@@ -321,6 +321,10 @@ class SalesInquiryController extends Controller
     }
 
     public function destroy(SalesInquiry $sales_inquiry) {
+        if($sales_inquiry->am_approval_status == "approved" || $sales_inquiry->am_approval_status == "rejected") {
+            return response()->json("Sales Inquiry has been approved/rejected and cannot be updated.", 400);
+        }
+
         $sales_inquiry->sales_inquiry_data()->delete();
         $sales_inquiry->delete();
 
