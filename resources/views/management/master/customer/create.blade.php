@@ -267,6 +267,7 @@
                         <div class="col-xs-6 col-sm-6 col-md-6">
                             <div class="form-group">
                                 <label><span class="text-danger required-asterisk">*</span>Name:</label>
+                                <input type="hidden" name="consignee_id[]" value="">
                                 <input type="text" name="consignee_name[]" placeholder="Consignee Name"
                                     class="form-control consignee-required" autocomplete="off" />
                             </div>

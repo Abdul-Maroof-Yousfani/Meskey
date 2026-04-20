@@ -1,136 +1,95 @@
-@foreach ($loading_programs as $index => $loading_program_item)
+@php
+    $existingRows = $existingRows ?? collect();
+@endphp
+
+@foreach ($loading_programs as $loading_program_item)
     @php
         $loading_slip = $loading_program_item->exportLoadingSlip;
         $delivery_order = $loading_slip?->deliveryOrder;
-        $second_weighbridge = $loading_slip?->secondWeighbridge;
+        $second_wb = $loading_slip?->secondWeighbridge;
 
-        if (!$delivery_order || !$second_weighbridge) {
+        if (!$delivery_order || !$second_wb) {
             continue;
         }
 
-        $delivery_order_data = $delivery_order->exportPackingItems->first();
-        if (!$delivery_order_data) {
+        $packing_items = $delivery_order->exportPackingItems;
+        if ($packing_items->isEmpty()) {
             continue;
         }
 
-        $export_order_packing = $delivery_order->exportOrder?->packingItems
-            ?->firstWhere('brand_id', $delivery_order_data->brand_id)
-            ?? $delivery_order->exportOrder?->packingItems?->firstWhere('bag_size', $delivery_order_data->bag_size)
-            ?? $delivery_order->exportOrder?->packingItems?->first();
-
+        $ticket_id = $loading_program_item->id;
+        $sw_mt = round(((float) ($second_wb->net_weight ?? 0)) / 1000, 3);
         $item_id = $delivery_order->exportOrder?->product_id;
-        $bag_type = $delivery_order_data->bag_type_id;
-        $truck_no = $loading_program_item->truck_number;
-        $brand_id = $delivery_order_data->brand_id ?? $loading_program_item->brand_id;
-        $index = 'TICKET-' . $loading_program_item->id;
-
-        $net_weight = $second_weighbridge->net_weight ?? 0;
-        $packing_raw = $loading_program_item->packing ?: ($delivery_order_data->bag_size ?: 1);
-        $packing = is_numeric($packing_raw) ? $packing_raw : (float) explode(',', (string) $packing_raw)[0];
-        $packing = $packing ?: 1;
-        $rate = $export_order_packing->rate ?? 0;
-        $rate_per_maund = $export_order_packing->rate_per_maund ?? 0;
-        // second_weighbridge->net_weight is stored in KG
-        $bags = $packing > 0 ? round($net_weight / $packing) : 0;
+        $truck_no = $loading_program_item->truck_number ?? 'N/A';
+        $container_no = $loading_program_item->container_number ?? 'N/A';
+        $eo_packings = $delivery_order->exportOrder?->packingItems ?? collect();
+        $total_mt_do = (float) $packing_items->sum('metric_tons');
     @endphp
-    <tr id="row_{{ $index }}">
-        <td>
-            <input type="text" value="{{ getItem($item_id)?->name }}" class="form-control bag_type" readonly>
-            <input type="hidden" name="item_id[]" id="item_id_{{ $index }}" value="{{ $item_id }}" class="form-control item_id">
-            <input type="hidden" name="ticket_id[]" id="ticket_id_{{ $index }}" value="{{ $loading_program_item->id }}" class="form-control ticket_id">
-            <input type="hidden" name="do_data_id[]" id="do_data_id_{{ $index }}" value="{{ $delivery_order_data->id }}" class="form-control do_data_id">
-        </td>
-        <td>
-            <input type="text" value="{{ bag_type_name($bag_type) }}" class="form-control bag_type" readonly>
-            <input type="hidden" name="bag_type[]" id="bag_type_{{ $index }}" value="{{ $bag_type }}" class="form-control bag_type">
-            <input type="hidden" name="so_data_id[]" id="so_data_id_{{ $index }}" value="{{ $delivery_order->export_order_id }}" class="form-control so_data_id">
-        </td>
-        <td>
-            <input type="hidden" name="bag_size[]" id="bag_size_{{ $index }}" value="{{ $loading_program_item->packing }}" class="form-control bag_size">
-            <select class="form-select select2 packing-select" multiple disabled>
-                @php
-                    $packings = explode(',', (string) $loading_program_item->packing);
-                @endphp
-                @foreach($packings as $p)
-                    @if(trim($p))
-                        <option value="{{ trim($p) }}" selected>{{ trim($p) }}</option>
-                    @endif
-                @endforeach
-            </select>
-        </td>
-        <td>
-            <input type="text" name="no_of_bags[]" id="no_of_bags_{{ $index }}" value="{{ $bags }}" class="form-control no_of_bags" readonly>
-        </td>
-        <td>
-            <input type="text" name="qty[]" id="qty_{{ $index }}" value="{{ round(($net_weight / 1000), 3) }}" class="form-control qty" step="0.01" min="0" oninput="calc(this)" readonly>
-        </td>
-        <td>
-            <input type="text" name="rate[]" id="rate_{{ $index }}" value="{{ $rate }}" class="form-control rate" step="0.01" min="0" readonly>
-        </td>
-        <td style="display:none;">
-            <input type="text" name="rate_per_mond[]" id="rate_per_mond_{{ $index }}" value="{{ $rate_per_maund }}" class="form-control rate" step="0.01" min="0" readonly>
-        </td>
-        <td>
-            <input type="text" name="amount[]" id="amount_{{ $index }}" value="{{ $rate * ($net_weight / 1000) }}" class="form-control amount" readonly>
-        </td>
-        <td>
-            <input type="text" value="{{ getBrandById($brand_id)?->name }}" class="form-control brand_id" readonly>
-            <input type="hidden" name="brand_id[]" id="brand_id_{{ $index }}" value="{{ $brand_id }}" class="form-control item_id">
-        </td>
-        <td>
-            <input type="text" name="truck_no[]" id="truck_no_{{ $index }}" value="{{ $truck_no }}" class="form-control truck_no" readonly>
-        </td>
-        <td>
-            <input type="text" name="container_number[]" id="container_number_{{ $index }}" value="{{ $loading_program_item->container_number }}" class="form-control container_number" readonly>
-        </td>
-        <td>
-            <input type="text" name="desc[]" id="desc_{{ $index }}" class="form-control">
-        </td>
-        <td>
-            <button type="button" class="btn btn-danger btn-sm removeRowBtn"
-                data-ticket-id="{{ $loading_program_item->id }}"
-                data-ticket-text="{{ $loading_program_item->transaction_number }} -- {{ $loading_program_item->truck_number }}"
-                onclick="removeTicketRow(this)" style="width:60px;">
-                <i class="fa fa-trash"></i>
-            </button>
-        </td>
-    </tr>
+
+    @foreach ($packing_items as $packingItem)
+        @php
+            $existingRow = $existingRows->get($packingItem->id);
+            $bag_type_id = $packingItem->bag_type_id;
+            $brand_id = $packingItem->brand_id;
+            $bag_size = round((float) ($packingItem->bag_size ?? 0), 3);
+            $eo_packing = $eo_packings->firstWhere('brand_id', $brand_id)
+                ?? $eo_packings->firstWhere('bag_size', $bag_size)
+                ?? $eo_packings->first();
+            $rate = round((float) ($eo_packing->rate ?? 0), 2);
+            $row_key = 'T' . $ticket_id . 'P' . $packingItem->id;
+            $proportion = ($total_mt_do > 0 && (float) $packingItem->metric_tons > 0)
+                ? ((float) $packingItem->metric_tons / $total_mt_do)
+                : (1 / max($packing_items->count(), 1));
+            $initial_qty = $existingRow
+                ? round((float) $existingRow->qty, 3)
+                : round($sw_mt * $proportion, 3);
+            $initial_bags = $existingRow
+                ? (int) $existingRow->no_of_bags
+                : ($bag_size > 0 ? (int) round(($initial_qty * 1000) / $bag_size) : 0);
+        @endphp
+        <tr class="dc-item-row" data-ticket-id="{{ $ticket_id }}">
+            <td>
+                <input type="text" class="form-control" value="{{ getItem($item_id)?->name ?? 'N/A' }}" readonly>
+                <input type="hidden" name="item_id[]" value="{{ $item_id }}">
+                <input type="hidden" name="ticket_id[]" value="{{ $ticket_id }}">
+                <input type="hidden" name="do_data_id[]" value="{{ $packingItem->id }}">
+            </td>
+            <td>
+                <input type="text" class="form-control" value="{{ $packingItem->bagType?->name ?? bag_type_name($bag_type_id) ?? '-' }}" readonly>
+                <input type="hidden" name="bag_type[]" value="{{ $bag_type_id }}">
+            </td>
+            <td>
+                <input type="text" class="form-control" value="{{ $bag_size > 0 ? rtrim(rtrim(number_format($bag_size, 3, '.', ''), '0'), '.') . ' KG' : '-' }}" readonly>
+                <input type="hidden" name="bag_size[]" value="{{ $bag_size }}" class="bag_size">
+            </td>
+            <td>
+                <input type="number" name="no_of_bags[]" value="{{ $initial_bags }}" class="form-control no_of_bags" min="0" step="1" oninput="syncQtyFromBags(this)">
+            </td>
+            <td>
+                <input type="number" name="qty[]" value="{{ $initial_qty }}" class="form-control qty" min="0" step="0.001" oninput="syncBagsFromQty(this)">
+            </td>
+            <td>
+                <input type="number" name="rate[]" value="{{ $rate }}" class="form-control rate" readonly>
+            </td>
+            <td style="display: none;">
+                <input type="text" value="{{ $eo_packing->rate_per_maund ?? '' }}" class="form-control" readonly>
+            </td>
+            <td>
+                <input type="text" name="amount[]" value="{{ number_format($initial_qty * $rate, 2, '.', '') }}" class="form-control amount" readonly>
+            </td>
+            <td>
+                <input type="text" class="form-control" value="{{ $packingItem->brand?->name ?? getBrandById($brand_id)?->name ?? '-' }}" readonly>
+                <input type="hidden" name="brand_id[]" value="{{ $brand_id }}">
+            </td>
+            <td>
+                <input type="text" name="truck_no[]" value="{{ $existingRow->truck_no ?? $truck_no }}" class="form-control" readonly>
+            </td>
+            <td>
+                <input type="text" name="container_number[]" value="{{ $existingRow->container_number ?? $container_no }}" class="form-control" readonly>
+            </td>
+            <td>
+                <input type="text" name="desc[]" value="{{ $existingRow->description ?? '' }}" class="form-control">
+            </td>
+        </tr>
+    @endforeach
 @endforeach
-
-<script>
-    function calcAmount(el) {
-        const element = $(el).closest("tr");
-        const qty = $(element).find(".qty");
-        const rate = $(element).find(".rate");
-        const amount = $(element).find(".amount");
-
-        if (!qty.val() || !rate.val()) {
-            amount.val("");
-            return;
-        }
-        const result = parseFloat(qty.val()) * parseFloat(rate.val());
-        amount.val(result);
-    }
-
-    function calc(el) {
-        const element = $(el).closest("tr");
-        const bag_size = $(element).find(".bag_size");
-        const no_of_bags = $(element).find(".no_of_bags");
-        const qty = $(element).find(".qty");
-
-        const bagSizeVal = parseFloat(bag_size.val());
-        const qtyVal = parseFloat(qty.val());
-
-        if (!bagSizeVal || !qtyVal) {
-            no_of_bags.val("");
-            calcAmount(el);
-            return;
-        }
-
-        const bagsResult = ((qtyVal * 1000) / bagSizeVal).toFixed();
-        no_of_bags.val(bagsResult);
-        calcAmount(el);
-    }
-
-    $(".select2").select2({ width: '100%' });
-</script>
