@@ -23,7 +23,7 @@ class SalesInvoiceController extends Controller
 
     public function create()
     {
-        $customers = Customer::all();
+        $customers = Customer::where("type", "local")->get();
         $items = Product::all();
 
         return view("management.sales.sales-invoice.create", compact("customers", "items"));
@@ -119,7 +119,7 @@ class SalesInvoiceController extends Controller
     public function edit(SalesInvoice $sales_invoice)
     {
         $sales_invoice->load("delivery_challans.delivery_challan_data", "sales_invoice_data");
-        $customers = Customer::all();
+        $customers = Customer::where("type", "local")->get();
         $items = Product::all();
 
         // Get delivery challans with available balance or already selected
@@ -252,7 +252,7 @@ class SalesInvoiceController extends Controller
     public function view(SalesInvoice $sales_invoice)
     {
         $sales_invoice->load("delivery_challans.delivery_challan_data", "sales_invoice_data");
-        $customers = Customer::all();
+        $customers = Customer::where("type", "local")->get();
         $items = Product::all();
         
         // Get the delivery challans that are already associated with this sales invoice
