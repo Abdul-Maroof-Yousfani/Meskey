@@ -462,19 +462,17 @@
         const qty = parseFloat($(element).find(".qty").val());
         const no_of_bags = $(element).find(".no_of_bags");
 
+        // Calculate amount regardless of bag size
+        calc(el);
+
         if (isNaN(bag_size) || isNaN(qty)) {
             no_of_bags.val('');
             return;
         }
 
-        // No of bags = bag size * quantity
+        // No of bags = quantity / bag size
         const result = (qty / bag_size).toFixed();
         no_of_bags.val(result);
-
-        
-        
-        // Also calculate amount
-        calc(el);
     }
 
     function calc(el) {
