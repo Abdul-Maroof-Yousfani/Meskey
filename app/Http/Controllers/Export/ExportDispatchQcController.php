@@ -250,7 +250,7 @@ class ExportDispatchQcController extends Controller
         ]);
     }
 
-    public function get_gate_out(int $id)
+    public function get_gate_out(Request $request, int $id)
     {
         $DispatchQc = ExportDispatchQc::with([
             'loadingProgramItem.exportLoadingProgram.deliveryOrder.customer',
@@ -262,6 +262,7 @@ class ExportDispatchQcController extends Controller
             'loadingProgramItem.subArrivalLocation',
             'loadingProgramItem.exportLoadingSlip.secondWeighbridge',
             'loadingProgramItem.exportLoadingSlip.deliveryOrder.exportPackingItems',
+            'loadingProgramItem.delivery_challan_data.deliveryChallan.delivery_challan_data',
             'createdBy',
         ])->findOrFail($id);
 
@@ -269,7 +270,21 @@ class ExportDispatchQcController extends Controller
             return response()->json(['error' => 'Gate Out Pass is only available for accepted Export Dispatch QC.'], 403);
         }
 
-        return view('management.export.dispatch-qc.gate-out', compact('DispatchQc'));
+        $deliveryChallan = null;
+
+        if ($request->filled('delivery_challan_id')) {
+            $deliveryChallan = \App\Models\Export\ExportDeliveryChallan::with('delivery_challan_data')
+                ->find($request->delivery_challan_id);
+        }
+
+        if (!$deliveryChallan) {
+            $deliveryChallan = optional($DispatchQc->loadingProgramItem->delivery_challan_data->first())->deliveryChallan;
+            if ($deliveryChallan) {
+                $deliveryChallan->loadMissing('delivery_challan_data');
+            }
+        }
+
+        return view('management.export.dispatch-qc.gate-out', compact('DispatchQc', 'deliveryChallan'));
     }
 
     private function ticketQuery()
