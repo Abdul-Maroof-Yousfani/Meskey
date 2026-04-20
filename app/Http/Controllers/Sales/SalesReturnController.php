@@ -19,7 +19,7 @@ class SalesReturnController extends Controller
     }
 
     public function create() {
-        $customers = Customer::all();
+        $customers = Customer::where("type", "local")->get();
         $items = Product::all();
 
         return view("management.sales.sales-return.create", compact("customers", "items"));
@@ -29,7 +29,7 @@ class SalesReturnController extends Controller
         $saleReturn = SalesReturn::with("sale_return_data", "sale_invoices:id,si_no")->find($id);
         
 
-        $customers = Customer::all();
+        $customers = Customer::where("type", "local")->get();
         $items = Product::all();
 
         return view("management.sales.sales-return.view", compact("customers", "items", "saleReturn"));
@@ -37,7 +37,7 @@ class SalesReturnController extends Controller
 
     public function edit(int $id) {
         $saleReturn  = SalesReturn::with("sale_invoices:id,si_no")->find($id);
-        $customers = Customer::all();
+        $customers = Customer::where("type", "local")->get();
         $items = Product::all();
 
         return view("management.sales.sales-return.edit", compact("customers", "items", "saleReturn"));
