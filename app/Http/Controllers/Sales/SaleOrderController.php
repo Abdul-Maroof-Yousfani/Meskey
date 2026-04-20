@@ -241,6 +241,9 @@ class SaleOrderController extends Controller
     public function destroy(int $id)
     {
         $sales_order = SalesOrder::find($id);
+        if($sales_order->am_approval_status == "approved" || $sales_order->am_approval_status == 'rejected') {
+            return response()->json("Sales Order has been approved/rejected and cannot be updated.", 400);
+        }
         $sales_order->sales_order_data()->delete();
         $sales_order->delete();
 
