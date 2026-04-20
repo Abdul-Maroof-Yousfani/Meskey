@@ -30,7 +30,7 @@ class SaleOrderController extends Controller
     public function create()
     {
         $payment_terms = PaymentTerm::all();
-        $customers = Customer::all();
+        $customers = Customer::where("type", "local")->get();
         $inquiries = SalesInquiry::where('am_approval_status', 'approved')
             ->whereDoesntHave('sale_order', function($query) {
                 $query->whereNot("am_approval_status", "rejected");
@@ -58,7 +58,7 @@ class SaleOrderController extends Controller
     {
         $sale_order = SalesOrder::with(['locations', 'factories', 'sections', 'sales_order_data', 'pay_type', 'sales_order_data.sale_inquiry_data'])->find($id);
         $payment_terms = PaymentTerm::all();
-        $customers = Customer::all();
+        $customers = Customer::where("type", "local")->get();
         $inquiries = SalesInquiry::all();
         $items = Product::all();
         $pay_types = PayType::select('id', 'name')->where('status', 'active')->get();
@@ -82,7 +82,7 @@ class SaleOrderController extends Controller
     {
         $sale_order = SalesOrder::with('sales_order_data', 'locations', 'factories', 'sections', 'sales_order_data.sale_inquiry_data', 'pay_type', 'sale_inquiry')->find($id);
         $payment_terms = PaymentTerm::all();
-        $customers = Customer::all();
+        $customers = Customer::where("type", "local")->get();
         $inquiries = SalesInquiry::all();
         $items = Product::all();
         $arrivalLocations = ArrivalLocation::with("companyLocation")->select('id', 'name', 'company_location_id')->where('status', 'active')->get();
