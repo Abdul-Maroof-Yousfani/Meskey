@@ -332,6 +332,15 @@
             }
 
             if (customerId) {
+                if (!isInitialLoad) {
+                    Swal.fire({
+                        title: 'Fetching Locations...',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading()
+                        }
+                    });
+                }
                 $.ajax({
                     url: "{{ route('sales.get-customer-locations') }}",
                     method: "GET",
@@ -346,9 +355,15 @@
                         populateFactories();
                         populateSections();
                         isInitialLoad = false;
+                        if (Swal.isVisible()) {
+                            Swal.close();
+                        }
                     },
                     complete: function() {
                         $('#locations, #arrival_location_id, #arrival_sub_location_id').prop('disabled', false).trigger('change.select2');
+                        if (Swal.isVisible()) {
+                            Swal.close();
+                        }
                     }
                 });
             } else {
