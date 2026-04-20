@@ -30,7 +30,7 @@ class DeliveryOrderController extends Controller
     {
 
         $payment_terms = PaymentTerm::select('id', 'desc')->where('status', 'active')->get();
-        $customers = Customer::all();
+        $customers = Customer::where("type", "local")->get();
         $delivery_order = DeliveryOrder::with(['delivery_order_data', 'receipt_vouchers.advances', 'withheld_receipt_voucher'])->find($id);
         $sales_orders = SalesOrder::where('customer_id', $delivery_order->customer_id)
             ->where('am_approval_status', 'approved')
@@ -74,7 +74,7 @@ class DeliveryOrderController extends Controller
             //     return true;
             // });
         $payment_terms = PaymentTerm::all();
-        $customers = Customer::all();
+        $customers = Customer::where("type", "local")->get();
         $items = Product::all();
         $pay_types = PayType::select('name', 'id')->where('status', 'active')->get();
 
@@ -550,7 +550,7 @@ class DeliveryOrderController extends Controller
             //     return true;
             // });
         $payment_terms = PaymentTerm::all();
-        $customers = Customer::all();
+        $customers = Customer::where("type", "local")->get();
         $items = Product::all();
         $bag_types = BagType::select('id', 'name')->get();
            
