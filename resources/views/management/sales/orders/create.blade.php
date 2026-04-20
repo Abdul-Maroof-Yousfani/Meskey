@@ -107,6 +107,12 @@
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
+                        <label class="form-label">Parent User:</label>
+                        <input type="text" class="form-control" value="{{ auth()->user()->parent?->name ?? 'N/A' }}" readonly>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
                         <label class="form-label">Broker:</label>
                         <select name="broker_id" id="broker_id" class="form-control select2">
                             <option value="">Select Broker</option>

@@ -99,6 +99,12 @@
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
+                        <label class="form-label">Parent User:</label>
+                        <input type="text" class="form-control" value="{{ $sale_order->parent_user->name ?? 'N/A' }}" readonly>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
                         <label class="form-label">Broker:</label>
                         <input type="text" value="{{ $sale_order->broker->name ?? 'N/A' }}" class="form-control" readonly>
                     </div>
@@ -305,6 +311,24 @@
 
     
     <input type="hidden" id="rowCount" value="0">
+
+    @if ($sale_order->am_approval_status === 'reverted' || $sale_order->am_change_made == 0)
+        <div class="alert alert-primary border-start border-primary border-3 mb-4 mx-2">
+            <div class="d-flex align-items-center">
+                <i class="fa fa-exclamation-triangle me-3 text-primary" style="font-size: 20px;"></i>
+                <div>
+                    <strong>Approval Authority Comments</strong><br>
+                    @if($latestLog)
+                        <div class="small mb-1">
+                            <strong>{{ $latestLog->user->name ?? 'N/A' }}</strong>
+                            <span class="">({{ $latestLog->role->name ?? 'Role N/A' }})</span>
+                        </div>
+                        {{ $latestLog->comments ?? 'No comments available' }}
+                    @endif
+                </div>
+            </div>
+        </div>
+    @endif
     
     <div class="row bottom-button-bar">
         <div class="col-12 text-end">

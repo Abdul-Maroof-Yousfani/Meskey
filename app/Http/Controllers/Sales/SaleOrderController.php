@@ -110,6 +110,7 @@ class SaleOrderController extends Controller
         $payload['arrival_location_id'] = $factoryIds[0] ?? null;
         $payload['arrival_sub_location_id'] = $sectionIds[0] ?? null;
         $payload['created_by'] = auth()->user()->id;
+        $payload['parent_user_id'] = auth()->user()->parent_user_id;
         $payload["remarks"] = !$request->remarks ? '' : $request->remarks;
         $payload["reference_no"] = self::getNumber($request, null, $request->order_date);
         $payload["contact_person"]  =  !$request->contact_person ? '' : $request->contact_person;
@@ -176,6 +177,7 @@ class SaleOrderController extends Controller
             $payload['arrival_sub_location_id'] = $sectionIds[0] ?? null;
             $payload['am_approval_status'] = 'pending';
             $payload['am_change_made'] = 1;
+            $payload['parent_user_id'] = auth()->user()->parent_user_id;
             $payload["remarks"] = !$request->remarks ? '' : $request->remarks;
             $payload["contact_person"]  =  !$request->contact_person ? '' : $request->contact_person;
             $payload["so_reference_no"]  =  !$request->so_reference_no ? '' : $request->so_reference_no;
@@ -310,10 +312,13 @@ class SaleOrderController extends Controller
         $customer_id = $request->customer_id;
 
         $sale_inquiries = SalesInquiry::where('am_approval_status', 'approved')
-            ->whereDoesntHave('sale_order')
+            ->whereDoesntHave('sale_order', function($query) {
+                $query->whereNot("am_approval_status", "rejected");
+            })
             ->where('customer', $customer_id)
             ->select('inquiry_no', 'id')
             ->get();
+
 
         $data = [];
 
