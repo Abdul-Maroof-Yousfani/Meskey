@@ -88,16 +88,17 @@
                                             </a>
 
                                             @if(strtolower($group['status']) === 'approved')
-                                                @foreach($group['items'] as $item)
-                                                    @if(!empty($item['accepted_qc_id']))
-                                                        <a onclick="openModal(this,'{{ route('export.get.dispatch-qc.gate-out', $item['accepted_qc_id']) }}', 'Export Gate Out', true, '100%')"
-                                                            class="btn btn-sm btn-success"
-                                                            title="Gate Out Pass"
-                                                            style="margin-right: 10px;">
-                                                            <i class="ft-file"></i>
-                                                        </a>
-                                                    @endif
-                                                @endforeach
+                                                @php
+                                                    $acceptedQcId = collect($group['items'])->pluck('accepted_qc_id')->filter()->unique()->first();
+                                                @endphp
+                                                @if($acceptedQcId)
+                                                    <a onclick="openModal(this,'{{ route('export.get.dispatch-qc.gate-out', $acceptedQcId) }}?delivery_challan_id={{ $group['id'] }}', 'Export Gate Out', true, '100%')"
+                                                        class="btn btn-sm btn-success"
+                                                        title="Gate Out Pass"
+                                                        style="margin-right: 10px;">
+                                                        <i class="ft-file"></i>
+                                                    </a>
+                                                @endif
                                             @endif
 
                                             @if(auth()->user()->id == $group['created_by_id'])

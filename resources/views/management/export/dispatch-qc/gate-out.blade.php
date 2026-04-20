@@ -141,7 +141,15 @@
     $netWeight = $secondWeighbridge?->net_weight ?? 0;
     $companyLocationId = $item?->exportLoadingProgram?->company_locations[0] ?? null;
     $noOfBags = $loadingSlip?->no_of_bags ?? $deliveryOrder?->exportPackingItems?->first()?->no_of_bags ?? 'N/A';
-    $dcQtyKg = ((float) ($item?->delivery_challan_data?->qty ?? 0)) * 1000;
+    $dcItems = $deliveryChallan?->delivery_challan_data ?? collect();
+    $groupedDcItems = $dcItems->groupBy('brand_id')->map(function ($rows) {
+        return [
+            'brand' => getBrandById($rows->first()->brand_id)?->name ?? 'N/A',
+            'qty_mt' => (float) $rows->sum('qty'),
+            'qty_kg' => (float) $rows->sum('qty') * 1000,
+        ];
+    })->values();
+    $dcQtyKg = (float) $groupedDcItems->sum('qty_kg');
 @endphp
 
 <div class="gate-out-pass" id="gate-out-pass">
@@ -175,15 +183,6 @@
                     <label><i class="ft-package mr-1"></i>Commodity</label>
                     <div class="value">
                         {{ $DispatchQc->commodity ?? ($deliveryOrder->exportOrder->product->name ?? 'N/A') }}
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="gate-out-field">
-                    <label><i class="ft-package mr-1"></i>Brand</label>
-                    <div class="value">
-                        {{ getBrandById($item->brand_id)?->name ?? 'N/A' }}
                     </div>
                 </div>
             </div>
@@ -242,6 +241,26 @@
                 </div>
             </div>
 
+            @if($groupedDcItems->isNotEmpty())
+                <div class="col-md-12">
+                    <div class="gate-out-field">
+                        <label><i class="ft-layers mr-1"></i>Brand / Qty</label>
+                        <div class="value">
+                            <div class="row">
+                                @foreach($groupedDcItems as $dcItem)
+                                    <div class="col-md-6 mb-2">
+                                        <strong>{{ $dcItem['brand'] }}</strong>
+                                    </div>
+                                    <div class="col-md-6 mb-2 text-right">
+                                        {{ number_format($dcItem['qty_mt'], 3) }} MT
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             <div class="col-md-12">
                 <div class="gate-out-field">
                     <label><i class="ft-activity mr-1"></i>Net Weight</label>
@@ -250,17 +269,6 @@
                     </div>
                 </div>
             </div>
-
-            @if($DispatchQc->qc_remarks)
-                <div class="col-md-12">
-                    <div class="gate-out-field">
-                        <label><i class="ft-message-square mr-1"></i>QC Remarks</label>
-                        <div class="value">
-                            {{ $DispatchQc->qc_remarks }}
-                        </div>
-                    </div>
-                </div>
-            @endif
         </div>
 
         <div class="gate-out-footer">
