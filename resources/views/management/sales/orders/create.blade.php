@@ -760,32 +760,22 @@
         $("#arrival_sub_location_id").prop('disabled', true);
 
         // Add hidden input for customer_id
-        if (!$('#customer_id_hidden').length) {
-            $('<input>').attr({
-                type: 'hidden',
-                name: 'customer_id',
-                id: 'customer_id_hidden',
-                value: $("#customer_id").val()
-            }).appendTo('form');
-        } else {
-            $('#sauda_type_hidden').val(
-                $("#sauda_type").val().toLowerCase().replace(/ /g, '-').replace(/[^a-z0-9\-]/g, '')
-            );
-        }
+        $('#customer_id_hidden').remove();
+        $('<input>').attr({
+            type: 'hidden',
+            name: 'customer_id',
+            id: 'customer_id_hidden',
+            value: $("#customer_id").val()
+        }).appendTo('#ajaxSubmit');
 
         // Add hidden input for sauda_type (contract type)
-        if (!$('#sauda_type_hidden').length) {
-            $('<input>').attr({
-                type: 'hidden',
-                name: 'sauda_type',
-                id: 'sauda_type_hidden',
-                value: $("#sauda_type").val()
-            }).appendTo('form');
-        } else {
-            $('#sauda_type_hidden').val(
-                $("#sauda_type").val().toLowerCase().replace(/ /g, '-').replace(/[^a-z0-9\-]/g, '')
-            );
-        }
+        $('#sauda_type_hidden').remove();
+        $('<input>').attr({
+            type: 'hidden',
+            name: 'sauda_type',
+            id: 'sauda_type_hidden',
+            value: $("#sauda_type").val()
+        }).appendTo('#ajaxSubmit');
 
         // Add hidden inputs for locations (multiple)
         $('.locations_hidden').remove(); // Remove existing hidden inputs first
@@ -797,7 +787,7 @@
                     name: 'locations[]',
                     class: 'locations_hidden',
                     value: loc
-                }).appendTo('form');
+                }).appendTo('#ajaxSubmit');
             });
         }
 
@@ -810,7 +800,7 @@
                 name: 'arrival_location_id[]',
                 class: 'arrival_location_hidden',
                 value: id
-            }).appendTo('form');
+            }).appendTo('#ajaxSubmit');
         });
 
         // Add hidden for arrival_sub_location_id (multiple)
@@ -822,7 +812,7 @@
                 name: 'arrival_sub_location_id[]',
                 class: 'arrival_sub_location_hidden',
                 value: id
-            }).appendTo('form');
+            }).appendTo('#ajaxSubmit');
         });
 
         // Remove the name from disabled selects to avoid conflict

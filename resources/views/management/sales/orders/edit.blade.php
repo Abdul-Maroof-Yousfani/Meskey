@@ -821,27 +821,21 @@
         $("#arrival_sub_location_id").prop('disabled', true);
 
         // Preserve disabled values for submit
-        if (!$('#customer_id_hidden').length) {
-            $('<input>').attr({
-                type: 'hidden',
-                name: 'customer_id',
-                id: 'customer_id_hidden',
-                value: $("#customer_id").val()
-            }).appendTo('form');
-        } else {
-            $('#customer_id_hidden').val($("#customer_id").val());
-        }
+        $('#customer_id_hidden').remove();
+        $('<input>').attr({
+            type: 'hidden',
+            name: 'customer_id',
+            id: 'customer_id_hidden',
+            value: $("#customer_id").val()
+        }).appendTo('#ajaxSubmit');
 
-        if (!$('#sauda_type_hidden').length) {
-            $('<input>').attr({
-                type: 'hidden',
-                name: 'sauda_type',
-                id: 'sauda_type_hidden',
-                value: $("#sauda_type").val()
-            }).appendTo('form');
-        } else {
-            $('#sauda_type_hidden').val($("#sauda_type").val());
-        }
+        $('#sauda_type_hidden').remove();
+        $('<input>').attr({
+            type: 'hidden',
+            name: 'sauda_type',
+            id: 'sauda_type_hidden',
+            value: $("#sauda_type").val()
+        }).appendTo('#ajaxSubmit');
 
         // Preserve locations (multi)
         $('.locations_hidden').remove();
@@ -852,7 +846,7 @@
                 name: 'locations[]',
                 class: 'locations_hidden',
                 value: loc
-            }).appendTo('form');
+            }).appendTo('#ajaxSubmit');
         });
 
         // Preserve factories (multi)
@@ -864,7 +858,7 @@
                 name: 'arrival_location_id[]',
                 class: 'arrival_location_hidden',
                 value: id
-            }).appendTo('form');
+            }).appendTo('#ajaxSubmit');
         });
 
         // Preserve sections (multi)
@@ -876,7 +870,7 @@
                 name: 'arrival_sub_location_id[]',
                 class: 'arrival_sub_location_hidden',
                 value: id
-            }).appendTo('form');
+            }).appendTo('#ajaxSubmit');
         });
     }
 
