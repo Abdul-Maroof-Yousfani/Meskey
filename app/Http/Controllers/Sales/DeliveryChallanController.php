@@ -60,7 +60,7 @@ class DeliveryChallanController extends Controller
           
             $delivery_challan = DeliveryChallan::create([
                 "customer_id" => $request->customer_id,
-                "reference_number" => $request->reference_number,
+                "reference_number" => self::getNumber($request, null, $request->date),
                 "location_id" => $request->locations[0],
                 "arrival_id" => $arrival_location_csv,
                 "section_id" => $storage_location_csv,
