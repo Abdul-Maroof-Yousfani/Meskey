@@ -180,7 +180,6 @@
                             <th>Brands</th>
                             <th style="display: none;">Pack Size</th>
                             <th>Description</th>
-                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody id="salesInquiryBody">
@@ -254,12 +253,6 @@
                                 <td>
                                     <input type="text" name="desc[]" id="desc_{{ $i }}"
                                         value="{{ $data->description }}" class="form-control" readonly>
-                                </td>
-                                <td>
-                                    <button type="button" class="btn btn-danger btn-sm removeRowBtn" disabled
-                                        onclick="removeRow({{ $i }})" style="width:60px;">
-                                        <i class="fa fa-trash"></i>
-                                    </button>
                                 </td>
                             </tr>
                             @php
