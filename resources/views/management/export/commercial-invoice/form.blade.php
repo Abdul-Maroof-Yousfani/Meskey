@@ -34,7 +34,7 @@
             </div>
 
             <div class="form-group">
-                <label>Export Order (Approved)</label>
+                <label>Export Order</label>
                 @if ($isEdit)
                     <input type="hidden" name="export_order_id" value="{{ $commercialInvoice->export_order_id }}">
                 @endif
@@ -52,7 +52,7 @@
             </div>
 
             <div class="form-group">
-                <label>Bill Of Lading (Multiple)</label>
+                <label>Bill Of Lading</label>
                 @if ($isEdit && !empty($selectedBillIds))
                     @foreach($selectedBillIds as $bId)
                         <input type="hidden" name="bill_of_lading_ids[]" value="{{ $bId }}">
