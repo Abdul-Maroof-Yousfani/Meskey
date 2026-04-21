@@ -16,7 +16,7 @@ return new class extends Migration {
                 ->on('export_order_packing_items')
                 ->cascadeOnDelete();
             $table->foreignId('bag_type_id')->nullable()->constrained('bag_types');
-            $table->foreignId('bag_size_id')->nullable()->constrained('sizes');
+            $table->foreignId('bag_size_id')->nullable()->constrained('bag_packings');
             $table->integer('no_of_primary_bags')->nullable()->default(0);
             $table->integer('no_of_bags')->default(0);
             $table->integer('empty_bags')->default(0);

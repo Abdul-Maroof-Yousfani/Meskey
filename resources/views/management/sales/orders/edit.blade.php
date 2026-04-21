@@ -46,9 +46,16 @@
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label class="form-label">Date:</label>
+                        <label class="form-label">Entry Date:</label>
                         <input type="date" onchange="validateExpiry()" name="order_date" id="order_date" value="{{ $sale_order->order_date }}"
                             class="form-control" min="{{ date('Y-m-d') }}">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Delivery Date:</label>
+                        <input type="date" name="delivery_date" onchange="validateExpiry()" value="{{ $sale_order->delivery_date }}" 
+                            id="delivery_date" class="form-control" min="{{ date('Y-m-d') }}">
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -72,13 +79,6 @@
                             <option value="x-mill" @selected( strtolower($sale_order->sauda_type) == 'x-mill')>X-mill</option>
                         </select>
                         <input type="hidden" @if($sale_order->inquiry_id) name="sauda_type" @endif value="{{ strtolower($sale_order->sauda_type) }}" />
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label class="form-label">Delivery Date:</label>
-                        <input type="date" name="delivery_date" onchange="validateExpiry()" value="{{ $sale_order->delivery_date }}" 
-                            id="delivery_date" class="form-control" min="{{ date('Y-m-d') }}">
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -115,6 +115,12 @@
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
+                        <label class="form-label">Sell By:</label>
+                        <input type="text" class="form-control" value="{{ $sale_order->parent_user->name ?? 'N/A' }}" readonly>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
                         <label class="form-label">Broker:</label>
                         <select name="broker_id" id="broker_id" class="form-control select2">
                             <option value="">Select Broker</option>
@@ -122,6 +128,12 @@
                                 <option value="{{ $broker->id }}" @selected($broker->id == $sale_order->broker_id)>{{ $broker->name }}</option>
                             @endforeach
                         </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="form-label">Comission RS per KG:</label>
+                        <input type="number" name="commission_per_kg" id="commission_per_kg" class="form-control" step="0.01" min="0" value="{{ $sale_order->commission_per_kg ?? 0 }}">
                     </div>
                 </div>
                 <div class="col-md-3">
@@ -183,9 +195,22 @@
                     <div class="form-group">
                         <label class="form-label">Locations:</label>
                         <select name="locations[]" id="locations" class="form-control select2" multiple>
-                            @foreach (get_locations() as $location)
-                                <option value="{{ $location->id }}" @selected(in_array($location->id, $sale_order->locations->pluck('location_id')->toArray()))>{{ $location->name }}
-                                </option>
+                            @php
+                                $selectedLocations = $sale_order->locations->pluck('location_id')->map(fn($id) => (int)$id)->toArray() ?? [];
+                                $customerLocations = [];
+                                if ($sale_order->customer_id) {
+                                    $customer = \App\Models\Master\Customer::find($sale_order->customer_id);
+                                    if ($customer && !empty($customer->company_location_ids)) {
+                                        $customerLocations = array_map('intval', $customer->company_location_ids);
+                                    }
+                                }
+                                
+                                // Merge selected with customer locations
+                                $allVisibleIds = array_unique(array_merge($customerLocations, $selectedLocations));
+                                $visibleLocations = \App\Models\Master\CompanyLocation::whereIn('id', $allVisibleIds)->get();
+                            @endphp
+                            @foreach ($visibleLocations as $location)
+                                <option value="{{ $location->id }}" @selected(in_array($location->id, $selectedLocations))>{{ $location->name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -295,19 +320,19 @@
                                 </td>
                                 <td>
                                     <input type="number" name="rate[]" id="rate_{{ $index }}"
-                                        value="{{ $data->rate }}" onkeyup="calc(this); calculateRates(this)" class="form-control rate rate_per_kg"
+                                        value="{{ $data->rate }}" onkeyup="calculateRates(this)" class="form-control rate rate_per_kg"
                                         step="0.01" min="0">
                                 </td>
 
                                   <td>
                                     <input type="number" name="rate_per_mond[]" id="rate_per_mond_{{ $index }}"
-                                        value="{{ $data->rate_per_mond }}" onkeyup="calc(this); calculateRates(this)" class="form-control rate rate_per_mond"
+                                        value="{{ $data->rate_per_mond }}" onkeyup="calculateRates(this)" class="form-control rate rate_per_mond"
                                         step="0.01" min="0">
                                 </td>
                                 <td>
                                     <input type="number" name="amount[]" id="amount_{{ $index }}"
-                                        value="{{ $data->rate * $data->qty }}" onkeyup="calc(this)"
-                                        class="form-control amount" step="0.01" min="0">
+                                        value="{{ round($data->rate * $data->qty) }}" onkeyup="calc(this)"
+                                        class="form-control amount" step="1" min="0">
                                 </td>
                                 <td>
                                     <select name="brand_id[]" id="brand_id_{{ $index }}"
@@ -343,6 +368,24 @@
 
     <input type="hidden" id="rowCount" value="0">
 
+    @if ($sale_order->am_approval_status === 'reverted' || $sale_order->am_change_made == 0)
+        <div class="alert alert-primary border-start border-primary border-3 mb-4 mx-2">
+            <div class="d-flex align-items-center">
+                <i class="fa fa-exclamation-triangle me-3 text-primary" style="font-size: 20px;"></i>
+                <div>
+                    <strong>Approval Authority Comments</strong><br>
+                    @if($latestLog)
+                        <div class="small mb-1">
+                            <strong>{{ $latestLog->user->name ?? 'N/A' }}</strong>
+                            <span class="">({{ $latestLog->role->name ?? 'Role N/A' }})</span>
+                        </div>
+                        {{ $latestLog->comments ?? 'No comments available' }}
+                    @endif
+                </div>
+            </div>
+        </div>
+    @endif
+
     <div class="row bottom-button-bar">
         <div class="col-12 text-end">
             <a type="button"
@@ -354,6 +397,61 @@
 
 <script>
     salesInquiryRowIndex = {{ count($sale_order->sales_order_data) }};
+
+    function get_customer_related_data() {
+        // Only if not disabled (i.e. not locked by inquiry)
+        if ($("#customer_id").is(":disabled")) return;
+        
+        get_inquiries();
+        getCustomerLocations();
+    }
+
+    function get_inquiries() {
+        const customer_id = $("#customer_id").val();
+        if (!customer_id) return;
+
+        $.ajax({
+            url: "{{ route('sales.get-sale-inquiries-against-customer') }}",
+            method: "GET",
+            data: { customer_id: customer_id },
+            dataType: "json",
+            success: function(res) {
+                $("#inquiry_id").select2({
+                    data: res
+                });
+            }
+        });
+    }
+
+    function getCustomerLocations() {
+        const customer_id = $("#customer_id").val();
+        if (!customer_id) {
+            $("#locations").empty().trigger('change');
+            return;
+        }
+
+        $("#locations, #arrival_location_id, #arrival_sub_location_id").prop('disabled', true);
+
+        $.ajax({
+            url: "{{ route('sales.get-customer-locations') }}",
+            method: "GET",
+            data: { customer_id: customer_id },
+            dataType: "json",
+            success: function(res) {
+                $("#locations").empty();
+                if (res && res.length > 0) {
+                    res.forEach(loc => {
+                        $("#locations").append(new Option(loc.name, loc.id));
+                    });
+                }
+                $("#locations").prop('disabled', false).trigger('change');
+                $("#arrival_location_id, #arrival_sub_location_id").prop('disabled', false);
+            },
+            error: function() {
+                $("#locations, #arrival_location_id, #arrival_sub_location_id").prop('disabled', false);
+            }
+        });
+    }
 
 
     function calculateForRatePerKg(mond) {
@@ -369,11 +467,14 @@
             return;
         }
 
+        const tr = $(el).closest("tr");
         if($(el).hasClass("rate_per_kg")) {
-            $(el).closest("tr").find(".rate_per_mond").val(calculateForRatePerMond($(el).val()));
+            tr.find(".rate_per_mond").val(calculateForRatePerMond($(el).val()));
         } else {
-            $(el).closest("tr").find(".rate_per_kg").val(calculateForRatePerKg($(el).val()));
+            tr.find(".rate_per_kg").val(calculateForRatePerKg($(el).val()));
         }
+
+        calc(el);
     }
     function validateExpiry() {
         const inquiryId = $('#inquiry_id').val();
@@ -568,12 +669,21 @@
     $(document).ready(function() {
         $('.select2').select2();
 
+        $('#customer_id').on('change', function() {
+            get_customer_related_data();
+        });
+
         const initialFactories = @json($oldFactories ?? []);
         const initialSections = @json($oldSections ?? []);
         const inquirySelected = "{{ $sale_order->inquiry_id ? 1 : 0 }}";
         let isInitializing = true;
 
         function populateFactories() {
+            const customer_id = $('#customer_id').val();
+            if (!customer_id) {
+                $('#arrival_location_id').empty().trigger('change.select2');
+                return;
+            }
             const selectedLocations = $('#locations').val() || [];
             const currentValues = $('#arrival_location_id').val() || initialFactories;
             $('#arrival_location_id').empty();
@@ -588,6 +698,11 @@
         }
 
         function populateSections() {
+            const customer_id = $('#customer_id').val();
+            if (!customer_id) {
+                $('#arrival_sub_location_id').empty().trigger('change.select2');
+                return;
+            }
             const factoryIds = $('#arrival_location_id').val() || initialFactories;
             const currentSections = $('#arrival_sub_location_id').val() || initialSections;
             $('#arrival_sub_location_id').empty();
@@ -664,10 +779,10 @@
                 <input type="number" name="qty[]" id="qty_${index}" class="form-control qty" step="0.01" min="0" onkeyup="calcBagTypes(this)" onchange="calcBagTypes(this)">
             </td>
             <td>
-                <input onkeyup="calc(this); calculateRates(this)" type="number" name="rate[]" id="rate_${index}" class="form-control rate rate_per_kg" step="0.01" min="0">
+                <input onkeyup="calculateRates(this)" type="number" name="rate[]" id="rate_${index}" class="form-control rate rate_per_kg" step="0.01" min="0">
             </td>
             <td>
-                <input onkeyup="calc(this); calculateRates(this)" type="number" name="rate_per_mond[]" id="rate_per_mond_${index}" class="form-control rate rate_per_mond" step="0.01" min="0">
+                <input onkeyup="calculateRates(this)" type="number" name="rate_per_mond[]" id="rate_per_mond_${index}" class="form-control rate_per_mond" step="0.01" min="0">
             </td>
             <td>
                 <input type="text" name="amount[]" id="amount_${index}" class="form-control amount" readonly>
@@ -721,27 +836,21 @@
         $("#arrival_sub_location_id").prop('disabled', true);
 
         // Preserve disabled values for submit
-        if (!$('#customer_id_hidden').length) {
-            $('<input>').attr({
-                type: 'hidden',
-                name: 'customer_id',
-                id: 'customer_id_hidden',
-                value: $("#customer_id").val()
-            }).appendTo('form');
-        } else {
-            $('#customer_id_hidden').val($("#customer_id").val());
-        }
+        $('#customer_id_hidden').remove();
+        $('<input>').attr({
+            type: 'hidden',
+            name: 'customer_id',
+            id: 'customer_id_hidden',
+            value: $("#customer_id").val()
+        }).appendTo('#ajaxSubmit');
 
-        if (!$('#sauda_type_hidden').length) {
-            $('<input>').attr({
-                type: 'hidden',
-                name: 'sauda_type',
-                id: 'sauda_type_hidden',
-                value: $("#sauda_type").val()
-            }).appendTo('form');
-        } else {
-            $('#sauda_type_hidden').val($("#sauda_type").val());
-        }
+        $('#sauda_type_hidden').remove();
+        $('<input>').attr({
+            type: 'hidden',
+            name: 'sauda_type',
+            id: 'sauda_type_hidden',
+            value: $("#sauda_type").val()
+        }).appendTo('#ajaxSubmit');
 
         // Preserve locations (multi)
         $('.locations_hidden').remove();
@@ -752,7 +861,7 @@
                 name: 'locations[]',
                 class: 'locations_hidden',
                 value: loc
-            }).appendTo('form');
+            }).appendTo('#ajaxSubmit');
         });
 
         // Preserve factories (multi)
@@ -764,7 +873,7 @@
                 name: 'arrival_location_id[]',
                 class: 'arrival_location_hidden',
                 value: id
-            }).appendTo('form');
+            }).appendTo('#ajaxSubmit');
         });
 
         // Preserve sections (multi)
@@ -776,7 +885,7 @@
                 name: 'arrival_sub_location_id[]',
                 class: 'arrival_sub_location_hidden',
                 value: id
-            }).appendTo('form');
+            }).appendTo('#ajaxSubmit');
         });
     }
 
@@ -870,10 +979,7 @@
         $("#delivery_date").prop('readonly', false).val('');
         $("#customer_id").prop('disabled', false).val('').trigger('change.select2');
         $("#sauda_type").prop('disabled', false).val('').trigger('change.select2');
-        $("#locations").empty().append('<option value="">Select Locations</option>');
-        allLocations.forEach(loc => {
-            $("#locations").append(`<option value="${loc.id}">${loc.name}</option>`);
-        });
+        $("#locations").empty();
         $("#locations").prop('disabled', false).removeAttr('disabled').val([]).trigger('change');
         $("#token_money").prop('readonly', false).removeAttr('readonly').val('');
         $("#contact_person").prop('readonly', false).removeAttr('readonly').val('');
@@ -913,12 +1019,12 @@
     function calc(el) {
         const element = $(el).closest("tr");
 
-        const rate = parseFloat($(element).find(".rate").val()) || 0;
+        const rate = parseFloat($(element).find(".rate_per_kg").val()) || 0;
         const qty = parseFloat($(element).find(".qty").val()) || 0;
 
         const amount = $(element).find(".amount");
-
-        amount.val(rate * qty);
+      
+        amount.val((rate * qty).toFixed(0));
     }
 
     function calcBagTypes(el) {
@@ -927,6 +1033,9 @@
         const qty = parseFloat($(element).find(".qty").val());
         const no_of_bags = $(element).find(".no_of_bags");
         
+        // Calculate amount regardless of bag size
+        calc(el);
+
         if (isNaN(bag_size) || isNaN(qty)) {
             no_of_bags.val('');
             return;
@@ -935,7 +1044,6 @@
         const result = (qty / bag_size).toFixed();
         
         no_of_bags.val(result);
-        calc(el);
     }
 
     function getNumber() {

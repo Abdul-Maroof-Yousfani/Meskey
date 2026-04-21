@@ -23,7 +23,6 @@ use App\Models\Master\Country;
 use App\Models\Master\HsCode;
 use App\Models\Master\Port;
 use App\Models\Master\ProductSlab;
-use App\Models\Master\Size;
 use App\Models\Master\Stitching;
 use App\Models\Master\FumigationCompany;
 use App\Models\Product;
@@ -358,7 +357,7 @@ class ProformaController extends Controller
             'quotations' => Quotation::latest()->get(),
             'companyLocations' => CompanyLocation::where('status', 'active')->get(),
             'bagConditions' => BagCondition::where('status', 1)->get(),
-            'bagSizes' => Size::where('status', 'active')->get(),
+            'bagSizes' => BagPacking::where('status', 1)->get(),
             'stitchings' => Stitching::where('status', 'active')->get(),
             'threadColors' => Color::where('status', 1)->get(),
             'inspectionCompanies' => FumigationCompany::where('status', 'active')->get(),

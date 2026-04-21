@@ -127,9 +127,9 @@
                 </div>
                 <div class="col-md-3 advanced" style="display: none">
                     <div class="form-group">
-                        <label class="form-label">Withhold Amount:</label>
-                        <input type="number" step="any" name="withhold_amount" value="0" onkeyup="change_withhold_amount()"
-                            id="withhold_amount" class="form-control">
+                        <label class="form-label">Withhold Amount (10% of Advance):</label>
+                        <input type="number" step="any" name="withhold_amount" value="0"
+                            id="withhold_amount" class="form-control" readonly>
                     </div>
                 </div>
                 <div class="col-md-3 advanced" style="display: none">
@@ -150,9 +150,6 @@
                         <select name="location_id" id="locations" onchange="selectLocation(this)"
                             class="form-control select2">
                             <option value="">Select Locations</option>
-                            @foreach (get_locations() as $location)
-                                <option value="{{ $location->id }}">{{ $location->name }}</option>
-                            @endforeach
                         </select>
                     </div>
                 </div>
@@ -162,9 +159,6 @@
                         <select name="arrival_id[]" id="arrivals" onchange="selectStorage(this)"
                             class="form-control select2" disabled multiple>
                             <option value="">Select Factory </option>
-                            @foreach (get_locations() as $location)
-                                <option value="{{ $location->id }}">{{ $location->name }}</option>
-                            @endforeach
                         </select>
                     </div>
                 </div>
@@ -173,9 +167,6 @@
                         <label class="form-label">Section:</label>
                         <select name="storage_id[]" id="storages" class="form-control select2" disabled multiple>
                             <option value="">Select Section</option>
-                            @foreach (get_locations() as $location)
-                                <option value="{{ $location->id }}">{{ $location->name }}</option>
-                            @endforeach
                         </select>
                     </div>
                 </div>
@@ -440,11 +431,39 @@
 
 
         if (sum > 0) {
-            $("#advance_amount").val(sum.toFixed(2));
+            $("#advance_amount").val(sum.toFixed(0));
+            $("#withhold_amount").val((sum * 0.1).toFixed(0));
         } else {
             $("#advance_amount").val("");
+            $("#withhold_amount").val("0");
         }
 
+        update_delivery_date_min();
+    }
+
+    function update_delivery_date_min() {
+        let maxDate = "";
+        $("#receipt_vouchers option:selected").each(function() {
+            let date = $(this).data("date");
+            if (date && (!maxDate || date > maxDate)) {
+                maxDate = date;
+            }
+        });
+        
+        if (maxDate) {
+            $("#delivery_date").attr("min", maxDate);
+            if ($("#delivery_date").val() && $("#delivery_date").val() < maxDate) {
+                $("#delivery_date").val(maxDate);
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Delivery Date Adjusted',
+                    text: 'Delivery date cannot be before the latest receipt voucher date (' + maxDate + ').',
+                    confirmButtonText: 'OK'
+                });
+            }
+        } else {
+            // $("#delivery_date").removeAttr("min");
+        }
     }
 
     function change_withhold_amount() {
@@ -461,7 +480,7 @@
                 const qtyVal = ((remaining_amount / rate)).toFixed(2);
                 $("#qty_0").val(qtyVal);
                 $("#qty_0").prop("readonly", true);
-                $("#amount_0").val((parseFloat(rate) * parseFloat(qtyVal)).toFixed(2));
+                $("#amount_0").val((parseFloat(rate) * parseFloat(qtyVal)).toFixed(0));
                 
                 if (bag_size > 0) {
                     const no_of_bags = Math.round(parseFloat(qtyVal) / parseFloat(bag_size));
@@ -580,7 +599,7 @@
         // Calculate amount from qty * rate
         const qtyVal = parseFloat(qty.val()) || 0;
         const rateVal = parseFloat(rate.val()) || 0;
-        amount.val((qtyVal * rateVal).toFixed(2));
+        amount.val((qtyVal * rateVal).toFixed(0));
     }
 
     function validateBagsBeforeSubmit() {
@@ -725,8 +744,8 @@
         }
 
         $("#advance_amount").prop("disabled", true);
-        $("#advance_amount").val(result);
-
+        $("#advance_amount").val(result.toFixed(0));
+        $("#withhold_amount").val((result * 0.1).toFixed(0));
     }
 
     function manualChecking() {
@@ -780,7 +799,7 @@
                 so_amount = res.so_amount;
 
                 $("#delivery_date").val(res.delivery_date);
-                $("#delivery_date").prop("readonly", true);
+                $("#delivery_date").prop("readonly", false);
                 validate_expiry();
 
                 // $("#locations").val(res.locations).trigger("change");
@@ -831,7 +850,8 @@
                 res.forEach(item => {
                     select.append(
                         `<option value="${item.id}"
-                                data-amount="${item.amount}">
+                                data-amount="${item.amount}"
+                                data-date="${item.date}">
                             ${item.text}
                         </option>`
                     );

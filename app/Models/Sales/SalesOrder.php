@@ -36,8 +36,14 @@ class SalesOrder extends Model
         "created_by",
         "am_change_made",
         "transporter_used",
-        "broker_id"
+        "broker_id",
+        "parent_user_id",
+        "commission_per_kg"
     ];
+
+    public function parent_user() {
+        return $this->belongsTo(\App\Models\User::class, "parent_user_id");
+    }
 
     protected function paymentTermId(): Attribute{
         return Attribute::make(

@@ -134,6 +134,7 @@
                                 @endphp
                                 <option value="{{ $item->unified_id }}"
                                     data-amount="{{ $item->remaining_amount }}"
+                                    data-date="{{ $item->date }}"
                                     @selected($isSelected)>
                                     {{ $item->unified_text }}
                                 </option>
@@ -151,10 +152,10 @@
                 </div>
                 <div class="col-md-3 advanced" style="display: {{ $sale_order_of_delivery_order->pay_type_id == 10 ? 'block' : 'none' }}">
                     <div class="form-group">
-                        <label class="form-label">Withhold Amount:</label>
+                        <label class="form-label">Withhold Amount (10% of Advance):</label>
                         <input type="number" step="any" name="withhold_amount" value="{{ $delivery_order->withhold_amount }}"
-                            onkeyup="change_withhold_amount()" id="withhold_amount"
-                            class="form-control">
+                            id="withhold_amount"
+                            class="form-control" readonly>
                     </div>
                 </div>
                 <div class="col-md-3 advanced" style="display: {{ $sale_order_of_delivery_order->pay_type_id == 10 ? 'block' : 'none' }}">
@@ -358,7 +359,7 @@
                                 </td>
                                 <td>
                                     <input type="text" name="amount[]" id="amount_{{ $index }}"
-                                        value="{{ $data->rate * ($data->qty ?? 0) }}" class="form-control amount"
+                                        value="{{ round($data->rate * ($data->qty ?? 0)) }}" class="form-control amount"
                                         readonly>
                                 </td>
                                 <td>
@@ -394,6 +395,24 @@
 
     <input type="hidden" id="rowCount" value="0">
 
+    @if ($delivery_order->am_approval_status === 'reverted' || $delivery_order->am_change_made == 0)
+        <div class="alert alert-primary border-start border-primary border-3 mb-4 mx-2">
+            <div class="d-flex align-items-center">
+                <i class="fa fa-exclamation-triangle me-3 text-primary" style="font-size: 20px;"></i>
+                <div>
+                    <strong>Approval Authority Comments</strong><br>
+                    @if($latestLog)
+                        <div class="small mb-1">
+                            <strong>{{ $latestLog->user->name ?? 'N/A' }}</strong>
+                            <span class="">({{ $latestLog->role->name ?? 'Role N/A' }})</span>
+                        </div>
+                        {{ $latestLog->comments ?? 'No comments available' }}
+                    @endif
+                </div>
+            </div>
+        </div>
+    @endif
+
     <div class="row bottom-button-bar">
         <div class="col-12 text-end">
             <a type="button"
@@ -406,11 +425,13 @@
 <script>
     salesInquiryRowIndex = 1;
 
+    var isInitialLoad = true;
     $(document).ready(function() {
         $('.select2').select2();
         applySaudaType(`{{ strtolower($delivery_order->sauda_type) }}`);
         // Initialize location options based on current sale order locations
         get_so_detail();
+        update_delivery_date_min();
 
 
     });
@@ -662,11 +683,39 @@
 
 
         if (sum > 0) {
-            $("#advance_amount").val(sum.toFixed(2));
+            $("#advance_amount").val(sum.toFixed(0));
+            $("#withhold_amount").val((sum * 0.1).toFixed(0));
         } else {
             $("#advance_amount").val("");
+            $("#withhold_amount").val("0");
         }
 
+        update_delivery_date_min();
+    }
+
+    function update_delivery_date_min() {
+        let maxDate = "";
+        $("#receipt_vouchers option:selected").each(function() {
+            let date = $(this).data("date");
+            if (date && (!maxDate || date > maxDate)) {
+                maxDate = date;
+            }
+        });
+        
+        if (maxDate) {
+            $("#delivery_date").attr("min", maxDate);
+            if ($("#delivery_date").val() && $("#delivery_date").val() < maxDate) {
+                $("#delivery_date").val(maxDate);
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Delivery Date Adjusted',
+                    text: 'Delivery date cannot be before the latest receipt voucher date (' + maxDate + ').',
+                    confirmButtonText: 'OK'
+                });
+            }
+        } else {
+            // $("#delivery_date").removeAttr("min");
+        }
     }
 
     function change_withhold_amount() {
@@ -683,7 +732,7 @@
                 const qtyVal = ((remaining_amount / rate)).toFixed(2);
                 $("#qty_0").val(qtyVal);
                 $("#qty_0").prop("readonly", true);
-                $("#amount_0").val((parseFloat(rate) * parseFloat(qtyVal)).toFixed(2));
+                $("#amount_0").val((parseFloat(rate) * parseFloat(qtyVal)).toFixed(0));
                 
                 if (bag_size > 0) {
                     const no_of_bags = Math.round(parseFloat(qtyVal) / parseFloat(bag_size));
@@ -828,7 +877,7 @@
         // Calculate amount from qty * rate
         const qtyVal = parseFloat(qty.val()) || 0;
         const rateVal = parseFloat(rate.val()) || 0;
-        amount.val((qtyVal * rateVal).toFixed(2));
+        amount.val((qtyVal * rateVal).toFixed(0));
     }
 
     function validateBagsBeforeSubmit() {
@@ -973,7 +1022,7 @@
 
         $("#advance_amount").prop("disabled", true);
         $("#advance_amount").val(result);
-
+        $("#withhold_amount").val((result * 0.1).toFixed(2));
     }
 
     function manualChecking() {
@@ -1032,8 +1081,11 @@
                 $("#locations").val(String(initialLocationId || ''));
 
 
-                $("#delivery_date").val(res.delivery_date);
-                $("#delivery_date").prop("readonly", true);
+                if (!isInitialLoad) {
+                    $("#delivery_date").val(res.delivery_date);
+                }
+                isInitialLoad = false;
+                $("#delivery_date").prop("readonly", false);
                 // selectLocation(document.getElementById("locations"), true);
 
                 // $("#locations").val(res.locations).trigger("change");

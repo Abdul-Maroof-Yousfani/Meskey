@@ -30,9 +30,11 @@ class SaleOrderController extends Controller
     public function create()
     {
         $payment_terms = PaymentTerm::all();
-        $customers = Customer::all();
+        $customers = Customer::where("type", "local")->get();
         $inquiries = SalesInquiry::where('am_approval_status', 'approved')
-            ->whereDoesntHave('sale_order')
+            ->whereDoesntHave('sale_order', function($query) {
+                $query->whereNot("am_approval_status", "rejected");
+            })
             ->select('id', 'inquiry_no', 'contact_person')
             ->get();
         $items = Product::all();
@@ -48,7 +50,9 @@ class SaleOrderController extends Controller
             return $matches[0];
         })->unique()->sort()->values();
 
-        $brokers = Broker::where('status', 'active')->get();
+        $brokers = Broker::where('status', 'active')
+                            ->where('is_for_sales', 1)
+                            ->get();
         return view('management.sales.orders.create', compact('payment_terms', 'customers', 'inquiries', 'items', 'pay_types', 'bag_types', 'arrivalLocations', 'arrivalSubLocations', 'packings', 'brokers'));
     }
 
@@ -56,7 +60,7 @@ class SaleOrderController extends Controller
     {
         $sale_order = SalesOrder::with(['locations', 'factories', 'sections', 'sales_order_data', 'pay_type', 'sales_order_data.sale_inquiry_data'])->find($id);
         $payment_terms = PaymentTerm::all();
-        $customers = Customer::all();
+        $customers = Customer::where("type", "local")->get();
         $inquiries = SalesInquiry::all();
         $items = Product::all();
         $pay_types = PayType::select('id', 'name')->where('status', 'active')->get();
@@ -71,15 +75,18 @@ class SaleOrderController extends Controller
             return $matches[0];
         })->unique()->sort()->values();
 
-        $brokers = Broker::where('status', 'active')->get();
-        return view('management.sales.orders.edit', compact('payment_terms', 'customers', 'inquiries', 'items', 'sale_order', 'pay_types', 'bag_types', 'arrivalLocations', 'arrivalSubLocations', 'packings', 'brokers'));
+        $latestLog = $sale_order->approvalLogs()->with(['user', 'role'])->latest()->first();
+        $brokers = Broker::where('status', 'active')
+                        ->where('is_for_sales', 1)
+                        ->get();
+        return view('management.sales.orders.edit', compact('payment_terms', 'customers', 'inquiries', 'items', 'sale_order', 'pay_types', 'bag_types', 'arrivalLocations', 'arrivalSubLocations', 'packings', 'brokers', 'latestLog'));
     }
 
     public function view(Request $request, int $id)
     {
         $sale_order = SalesOrder::with('sales_order_data', 'locations', 'factories', 'sections', 'sales_order_data.sale_inquiry_data', 'pay_type', 'sale_inquiry')->find($id);
         $payment_terms = PaymentTerm::all();
-        $customers = Customer::all();
+        $customers = Customer::where("type", "local")->get();
         $inquiries = SalesInquiry::all();
         $items = Product::all();
         $arrivalLocations = ArrivalLocation::with("companyLocation")->select('id', 'name', 'company_location_id')->where('status', 'active')->get();
@@ -92,8 +99,12 @@ class SaleOrderController extends Controller
             return $matches[0];
         })->unique()->sort()->values();
 
-        $brokers = Broker::where('status', 'active')->get();
-        return view('management.sales.orders.view', compact('payment_terms', 'customers', 'inquiries', 'items', 'sale_order', 'arrivalLocations', 'arrivalSubLocations', 'packings', 'brokers'));
+        $brokers = Broker::where('status', 'active')
+                        ->where('is_for_sales', 1)
+                        ->get();
+        $latestLog = $sale_order->approvalLogs()->with(['user', 'role'])->latest()->first();
+
+        return view('management.sales.orders.view', compact('payment_terms', 'customers', 'inquiries', 'items', 'sale_order', 'arrivalLocations', 'arrivalSubLocations', 'packings', 'brokers', 'latestLog'));
     }
 
     public function store(SalesOrderRequest $request)
@@ -105,13 +116,15 @@ class SaleOrderController extends Controller
         $payload['arrival_location_id'] = $factoryIds[0] ?? null;
         $payload['arrival_sub_location_id'] = $sectionIds[0] ?? null;
         $payload['created_by'] = auth()->user()->id;
+        $payload['parent_user_id'] = auth()->user()->parent_user_id;
         $payload["remarks"] = !$request->remarks ? '' : $request->remarks;
         $payload["reference_no"] = self::getNumber($request, null, $request->order_date);
         $payload["contact_person"]  =  !$request->contact_person ? '' : $request->contact_person;
         $payload["so_reference_no"]  =  !$request->so_reference_no ? '' : $request->so_reference_no;
         $payload["transporter_used"]  =  !$request->transporter_used ? 'no' : $request->transporter_used;
         $payload["payment_term_id"]  =  !$request->payment_term_id ? PaymentTerm::first()->id : $request->payment_term_id;
-        
+        $payload["commission_per_kg"] = $request->commission_per_kg ?? 0;
+
         DB::beginTransaction();
         try {
             $sales_order = SalesOrder::create($payload);
@@ -171,12 +184,13 @@ class SaleOrderController extends Controller
             $payload['arrival_sub_location_id'] = $sectionIds[0] ?? null;
             $payload['am_approval_status'] = 'pending';
             $payload['am_change_made'] = 1;
+            $payload['parent_user_id'] = auth()->user()->parent_user_id;
             $payload["remarks"] = !$request->remarks ? '' : $request->remarks;
             $payload["contact_person"]  =  !$request->contact_person ? '' : $request->contact_person;
             $payload["so_reference_no"]  =  !$request->so_reference_no ? '' : $request->so_reference_no;
             $payload["transporter_used"]  =  !$request->transporter_used ? 'no' : $request->transporter_used;
             $payload["payment_term_id"]  =  !$request->payment_term_id ? PaymentTerm::first()->id : $request->payment_term_id;
-     
+            $payload["commission_per_kg"] = $request->commission_per_kg ?? 0;
 
             // Update parent sale order data
             $sales_order->update($payload);
@@ -234,6 +248,9 @@ class SaleOrderController extends Controller
     public function destroy(int $id)
     {
         $sales_order = SalesOrder::find($id);
+        if($sales_order->am_approval_status == "approved" || $sales_order->am_approval_status == 'rejected') {
+            return response()->json("Sales Order has been approved/rejected and cannot be updated.", 400);
+        }
         $sales_order->sales_order_data()->delete();
         $sales_order->delete();
 
@@ -253,6 +270,7 @@ class SaleOrderController extends Controller
                     $sq->whereRaw('LOWER(`reference_no`) LIKE ?', [$searchTerm]);
                 });
             })
+            ->orderBy("reference_no", "desc")
             ->latest()
             ->paginate($perPage);
        
@@ -304,10 +322,13 @@ class SaleOrderController extends Controller
         $customer_id = $request->customer_id;
 
         $sale_inquiries = SalesInquiry::where('am_approval_status', 'approved')
-            ->whereDoesntHave('sale_order')
+            ->whereDoesntHave('sale_order', function($query) {
+                $query->whereNot("am_approval_status", "rejected");
+            })
             ->where('customer', $customer_id)
             ->select('inquiry_no', 'id')
             ->get();
+
 
         $data = [];
 

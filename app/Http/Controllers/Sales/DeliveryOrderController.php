@@ -30,7 +30,7 @@ class DeliveryOrderController extends Controller
     {
 
         $payment_terms = PaymentTerm::select('id', 'desc')->where('status', 'active')->get();
-        $customers = Customer::all();
+        $customers = Customer::where("type", "local")->get();
         $delivery_order = DeliveryOrder::with(['delivery_order_data', 'receipt_vouchers.advances', 'withheld_receipt_voucher'])->find($id);
         $sales_orders = SalesOrder::where('customer_id', $delivery_order->customer_id)
             ->where('am_approval_status', 'approved')
@@ -56,8 +56,9 @@ class DeliveryOrderController extends Controller
         });
         
         $sale_order_of_delivery_order = SalesOrder::find($delivery_order->so_id);
+        $latestLog = $delivery_order->approvalLogs()->with(['user', 'role'])->latest()->first();
 
-        return view('management.sales.delivery-order.view', compact('sale_order_of_delivery_order', 'payment_terms', 'delivery_order', 'customers', 'sales_orders', 'receipt_vouchers'));
+        return view('management.sales.delivery-order.view', compact('sale_order_of_delivery_order', 'payment_terms', 'delivery_order', 'customers', 'sales_orders', 'receipt_vouchers', 'latestLog'));
     }
 
     public function create()
@@ -73,7 +74,7 @@ class DeliveryOrderController extends Controller
             //     return true;
             // });
         $payment_terms = PaymentTerm::all();
-        $customers = Customer::all();
+        $customers = Customer::where("type", "local")->get();
         $items = Product::all();
         $pay_types = PayType::select('name', 'id')->where('status', 'active')->get();
 
@@ -187,7 +188,7 @@ class DeliveryOrderController extends Controller
             }
 
 
-            $spent_qty = $salesOrder->delivery_orders->flatMap->delivery_order_data->sum("qty");
+            $spent_qty = $salesOrder->delivery_orders->where("am_approval_status", "!=", "rejected")->flatMap->delivery_order_data->sum("qty");
             $total_qty = $salesOrder?->sales_order_data?->first()->qty;
             $remaining_qty = $total_qty - $spent_qty;
             
@@ -234,7 +235,8 @@ class DeliveryOrderController extends Controller
         $perPage = $request->get('per_page', 25);
 
         // Eager load the inquiry + all its items + related product
-        $delivery_orders = DeliveryOrder::latest()
+        $delivery_orders = DeliveryOrder::with('salesOrder', 'delivery_order_data', 'customer')->latest()
+            ->orderBy("reference_no", "desc")
             ->paginate($perPage);
 
         $groupedData = [];
@@ -436,10 +438,11 @@ class DeliveryOrderController extends Controller
             ->find($so_id);
 
         $spent = $sale_order->delivery_orders
+            ->where("am_approval_status", "!=", "rejected")
             ->flatMap->delivery_order_data
             ->sum('qty');
        
-        $spent_qty = $sale_order->delivery_orders->flatMap->delivery_order_data->sum("qty");
+        $spent_qty = $sale_order->delivery_orders->where("am_approval_status", "!=", "rejected")->flatMap->delivery_order_data->sum("qty");
         $total_qty = $sale_order?->sales_order_data?->first()->qty;
         $remaining_qty = $total_qty - $spent_qty;
 
@@ -474,6 +477,7 @@ class DeliveryOrderController extends Controller
                 'id' => "adv_{$adv->id}",
                 'text' => "advance ({$adv->net_amount})",
                 'amount' => $adv->remaining_amount,
+                'date' => $adv->receiptVoucher->rv_date->format('Y-m-d'),
             ];
         }
 
@@ -513,6 +517,7 @@ class DeliveryOrderController extends Controller
                         'id' => "rv_{$rv->id}",
                         'text' => "{$rv->unique_no} ({$rv->ref_bill_no})",
                         'amount' => $remaining,
+                        'date' => $rv->rv_date->format('Y-m-d'),
                     ];
                 }
             }
@@ -523,7 +528,10 @@ class DeliveryOrderController extends Controller
 
     public function destroy(DeliveryOrder $delivery_order)
     {
-
+        if($delivery_order->am_approval_status == "approved" || $delivery_order->am_approval_status == 'rejected') {
+            return response()->json("Delivery Order has been approved/rejected and cannot be updated.", 400);
+        }
+        
         if($delivery_order) {
             $delivery_order->delivery_order_data()->delete();
         }
@@ -548,7 +556,7 @@ class DeliveryOrderController extends Controller
             //     return true;
             // });
         $payment_terms = PaymentTerm::all();
-        $customers = Customer::all();
+        $customers = Customer::where("type", "local")->get();
         $items = Product::all();
         $bag_types = BagType::select('id', 'name')->get();
            
@@ -566,6 +574,7 @@ class DeliveryOrderController extends Controller
                 $adv->remaining_amount = doubleval($adv->net_amount) - doubleval($spent);
                 $adv->unified_id = "adv_{$adv->id}";
                 $adv->unified_text = "advance ({$adv->net_amount})";
+                $adv->date = $adv->receiptVoucher->rv_date->format('Y-m-d');
                 return $adv;
             })
             ->filter(function ($adv) use ($delivery_order) {
@@ -605,6 +614,7 @@ class DeliveryOrderController extends Controller
                     $rv->remaining_amount = doubleval($linked_amount) - doubleval($spent);
                     $rv->unified_id = "rv_{$rv->id}";
                     $rv->unified_text = "{$rv->unique_no} ({$rv->ref_bill_no})";
+                    $rv->date = $rv->rv_date->format('Y-m-d');
                     return $rv;
                 })
                 ->filter(function ($rv) use ($delivery_order) {
@@ -613,9 +623,9 @@ class DeliveryOrderController extends Controller
         }
 
         $receipt_vouchers = $advancesList->concat($rvsList)->values();
+        $latestLog = $delivery_order->approvalLogs()->with(['user', 'role'])->latest()->first();
 
-
-        return view('management.sales.delivery-order.edit', compact('sale_order_of_delivery_order', 'payment_terms', 'customers', 'items', 'sale_orders', 'delivery_order', 'receipt_vouchers', 'bag_types'));
+        return view('management.sales.delivery-order.edit', compact('sale_order_of_delivery_order', 'payment_terms', 'customers', 'items', 'sale_orders', 'delivery_order', 'receipt_vouchers', 'bag_types', 'latestLog'));
 
     }
 
@@ -734,7 +744,7 @@ class DeliveryOrderController extends Controller
 
             $salesOrder = SalesOrder::find($delivery_order->so_id);
 
-            $spent_qty = $salesOrder->delivery_orders->flatMap->delivery_order_data->sum("qty");
+            $spent_qty = $salesOrder->delivery_orders->where("am_approval_status", "!=", "rejected")->flatMap->delivery_order_data->sum("qty");
             $total_qty = $salesOrder?->sales_order_data?->first()->qty;
             $remaining_qty = $total_qty - $spent_qty;
 

@@ -279,6 +279,27 @@
 
     <input type="hidden" id="rowCount" value="0">
 
+    @if ($sales_inquiry->am_approval_status === 'reverted' || $sales_inquiry->am_change_made == 0)
+        <div class="alert alert-primary border-start border-primary border-3 mb-4 mx-2">
+            <div class="d-flex align-items-center">
+                <i class="fa fa-exclamation-triangle me-3 text-primary" style="font-size: 20px;"></i>
+                <div>
+                    @php
+                        $latestLog = $sales_inquiry->approvalLogs()->latest()->first();
+                    @endphp
+                    <strong>Approval Authority Comments</strong><br>
+                    @if($latestLog)
+                        <div class="small mb-1">
+                            <strong>{{ $latestLog->user->name ?? 'N/A' }}</strong>
+                            <span class="">({{ $latestLog->role->name ?? 'Role N/A' }})</span>
+                        </div>
+                        {{ $latestLog->comments ?? 'No comments available' }}
+                    @endif
+                </div>
+            </div>
+        </div>
+    @endif
+
     <div class="row bottom-button-bar">
         <div class="col-12 text-end">
             <a type="button"
@@ -368,6 +389,15 @@
             }
 
             if (customerId) {
+                if (!isInitialLoad) {
+                    Swal.fire({
+                        title: 'Fetching Locations...',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading()
+                        }
+                    });
+                }
                 $.ajax({
                     url: "{{ route('sales.get-customer-locations') }}",
                     method: "GET",
@@ -382,9 +412,15 @@
                         populateFactories();
                         populateSections();
                         isInitialLoad = false;
+                        if (Swal.isVisible()) {
+                            Swal.close();
+                        }
                     },
                     complete: function() {
                         $('#locations, #arrival_location_id, #arrival_sub_location_id').prop('disabled', false).trigger('change.select2');
+                        if (Swal.isVisible()) {
+                            Swal.close();
+                        }
                     }
                 });
             } else {

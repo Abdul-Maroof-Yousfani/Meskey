@@ -65,26 +65,31 @@ class BillOfLadingController extends Controller
             $this->ensureChallansAreAvailable($deliveryChallans->pluck('id')->all(), null);
             [$preview, $goodsSummary] = $this->buildDocumentPayload($exportOrder, $formEs, $deliveryChallans, $validated);
 
-            BillOfLading::create([
-                'export_delivery_challan_id' => $deliveryChallans->first()?->id,
-                'delivery_order_id' => $deliveryOrders->first()?->id,
-                'export_order_id' => $exportOrder->id,
-                'selected_form_e_ids' => $formEs->pluck('id')->values()->all(),
-                'selected_delivery_challan_ids' => $deliveryChallans->pluck('id')->values()->all(),
-                'selected_delivery_order_ids' => $deliveryOrders->pluck('id')->values()->all(),
-                'company_id' => $exportOrder->company_id,
-                'customer_id' => $deliveryOrders->first()?->customer_id,
-                'bill_no' => $validated['bill_no'],
-                'bill_date' => $validated['bill_date'] ?? null,
-                'carrier_name' => $validated['carrier_name'] ?? null,
-                'shipped_on_board_date' => $validated['shipped_on_board_date'] ?? null,
-                'charter_party_dated' => $validated['charter_party_dated'] ?? null,
-                'cautions_text' => $validated['cautions_text'] ?? null,
-                'place_of_issue' => $preview['place_of_issue'] ?? null,
-                'snapshot_data' => $preview,
-                'goods_summary' => $goodsSummary,
-                'created_by' => auth()->user()?->id,
-            ]);
+            $billOfLading = \Illuminate\Support\Facades\Cache::lock('export_bol_generation', 10)->block(5, function () use ($request, $exportOrder, $formEs, $deliveryChallans, $deliveryOrders, $validated, $preview, $goodsSummary) {
+                // Re-generate bill_no server-side to ensure uniqueness using the existing getNumber method
+                $bill_no = $this->getNumber($request)->getData()->bill_no;
+
+                return BillOfLading::create([
+                    'export_delivery_challan_id' => $deliveryChallans->first()?->id,
+                    'delivery_order_id' => $deliveryOrders->first()?->id,
+                    'export_order_id' => $exportOrder->id,
+                    'selected_form_e_ids' => $formEs->pluck('id')->values()->all(),
+                    'selected_delivery_challan_ids' => $deliveryChallans->pluck('id')->values()->all(),
+                    'selected_delivery_order_ids' => $deliveryOrders->pluck('id')->values()->all(),
+                    'company_id' => $exportOrder->company_id,
+                    'customer_id' => $deliveryOrders->first()?->customer_id,
+                    'bill_no' => $bill_no,
+                    'bill_date' => $validated['bill_date'] ?? null,
+                    'carrier_name' => $validated['carrier_name'] ?? null,
+                    'shipped_on_board_date' => $validated['shipped_on_board_date'] ?? null,
+                    'charter_party_dated' => $validated['charter_party_dated'] ?? null,
+                    'cautions_text' => $validated['cautions_text'] ?? null,
+                    'place_of_issue' => $preview['place_of_issue'] ?? null,
+                    'snapshot_data' => $preview,
+                    'goods_summary' => $goodsSummary,
+                    'created_by' => auth()->user()?->id,
+                ]);
+            });
 
             DB::commit();
 
@@ -316,7 +321,7 @@ class BillOfLadingController extends Controller
             'export_form_e_ids.*' => ['integer', 'exists:export_form_es,id'],
             'export_delivery_challan_ids' => ['required', 'array', 'min:1'],
             'export_delivery_challan_ids.*' => ['integer', 'exists:delivery_challans,id'],
-            'bill_no' => ['required', 'string', 'max:255', 'unique:bill_of_ladings,bill_no,' . ($billId ?? 'NULL') . ',id'],
+            'bill_no' => ['required', 'string', 'max:255'],
             'bill_date' => ['nullable', 'date'],
             'carrier_name' => ['nullable', 'string', 'max:255'],
             'shipped_on_board_date' => ['nullable', 'date'],
@@ -501,15 +506,18 @@ class BillOfLadingController extends Controller
             $noOfBags = (int) round($items->sum(function ($item) {
                 return (float) ($item->no_of_bags ?? 0);
             }));
-            $extraBags = (int) round($items->sum(function ($item) {
-                return (float) ($item->deliveryOrderData->extra_bags ?? 0);
-            }));
-            $emptyBags = (int) round($items->sum(function ($item) {
-                return (float) ($item->deliveryOrderData->empty_bags ?? 0);
-            }));
-            $grossBags = $noOfBags + $extraBags + $emptyBags;
             $netWeightKg = round($quantityMt * 1000, 2);
-            $grossWeightKg = round($grossBags * $packingKg, 2);
+            $extraBags = (float) $items->sum(function ($item) {
+                return $this->getProRatedBagCount($item, 'extra_bags');
+            });
+            $emptyBags = (float) $items->sum(function ($item) {
+                return $this->getProRatedBagCount($item, 'empty_bags');
+            });
+            $emptyBagWeightGram = (float) ($first->deliveryOrderData->min_weight_empty_bags ?? 0);
+            $emptyBagWeightKg = $emptyBagWeightGram / 1000;
+
+            $grossBags = $noOfBags + $extraBags + $emptyBags;
+            $grossWeightKg = round($netWeightKg + ($grossBags * $emptyBagWeightKg), 2);
 
             return [
                 'row_label' => chr(65 + $index),
@@ -520,9 +528,9 @@ class BillOfLadingController extends Controller
                 'bag_type' => $bagTypeName,
                 'brand_name' => $brandName,
                 'no_of_bags' => $noOfBags,
-                'extra_bags' => $extraBags,
-                'empty_bags' => $emptyBags,
-                'gross_bags' => $grossBags,
+                'extra_bags' => round($extraBags, 2),
+                'empty_bags' => round($emptyBags, 2),
+                'gross_bags' => round($grossBags, 2),
                 'net_weight_kg' => $netWeightKg,
                 'gross_weight_kg' => $grossWeightKg,
                 'bag_markings' => trim($brandName . ($packingText ? ' - ' . $packingText : '')),
@@ -569,6 +577,30 @@ class BillOfLadingController extends Controller
     protected function parsePackingKg(string $packingText): float
     {
         return (float) preg_replace('/[^0-9.]/', '', $packingText);
+    }
+
+    protected function getProRatedBagCount($deliveryChallanData, string $field): float
+    {
+        $deliveryOrderData = $deliveryChallanData->deliveryOrderData;
+        if (!$deliveryOrderData) {
+            return 0;
+        }
+
+        $sourceCount = (float) ($deliveryOrderData->{$field} ?? 0);
+        if ($sourceCount <= 0) {
+            return 0;
+        }
+
+        $sourceMetricTons = (float) ($deliveryOrderData->metric_tons ?? 0);
+        $dispatchMetricTons = (float) ($deliveryChallanData->qty ?? 0);
+
+        if ($sourceMetricTons <= 0 || $dispatchMetricTons <= 0) {
+            return 0;
+        }
+
+        $ratio = min(max($dispatchMetricTons / $sourceMetricTons, 0), 1);
+
+        return round($sourceCount * $ratio, 2);
     }
 
     protected function formatPort($port): ?string

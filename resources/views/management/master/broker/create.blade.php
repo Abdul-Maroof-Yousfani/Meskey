@@ -229,6 +229,25 @@
             </h6>
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group mb-2">
+                <label>Broker Type:</label>
+                <ul class="list-unstyled mb-0">
+                    <li class="d-inline-block mr-2">
+                        <div class="radio radio-primary">
+                            <input name="is_for_sales" type="radio" id="is_for_sales_yes" value="1" checked>
+                            <label for="is_for_sales_yes"><span>For Sales</span></label>
+                        </div>
+                    </li>
+                    <li class="d-inline-block mr-2">
+                        <div class="radio radio-primary">
+                            <input name="is_for_sales" type="radio" id="is_for_sales_no" value="0">
+                            <label for="is_for_sales_no"><span>Not for Sales</span></label>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group ">
                 <label>Status:</label>
                 <select name="status" class="form-control">

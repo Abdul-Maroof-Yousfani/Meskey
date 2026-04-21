@@ -49,7 +49,7 @@ class ExportDeliveryChallanData extends Model
             $voucherNo = $deliveryChallanData->deliveryChallan->dc_no;
             $creditAccountId = $deliveryChallanData->product->account_id ?? null;
 
-            if (!$debitAccount || !$creditAccountId) {
+            if (!$debitAccount?->account_id || !$creditAccountId) {
                 return;
             }
 

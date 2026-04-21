@@ -48,6 +48,7 @@ class BrokerRequest extends FormRequest
             'stn' => 'nullable|string|max:15',
             'attachment' => 'nullable|string|max:255',
             'status' => 'required|in:active,inactive',
+            'is_for_sales' => 'required|boolean',
         ];
     }
 

@@ -392,7 +392,7 @@
                         <div class="form-group">
                             <label>Bag Type/Product:</label>
                             <select name="packing_items[0][bag_product_id]" class="form-control select2" disabled>
-                                <option value="">Select Bag Type/Product</option>
+                                <option value="">Select Bag Type</option>
                                 @foreach($bagTypes as $bagType)
                                     <option value="{{ $bagType->id }}">{{ $bagType->name }}</option>
                                 @endforeach
@@ -1048,7 +1048,7 @@
 
                         // For bag size ID, populate hidden input and show display val
                         subRow.find(`input[name="packing_items[${index}][sub_items][${sIdx}][bag_size_id]"]`).val(sub.bag_size_id);
-                        subRow.find('.sub-bag-size-val').val(sub.bag_size || sub.bag_size_id); // Display value
+                        subRow.find('.sub-bag-size-val').val(sub.bag_size_name || sub.bag_size_id || ''); // Display name instead of ID
 
                         setSubDisabledSelect(`select[name="packing_items[${index}][sub_items][${sIdx}][stitching_id]"]`, sub.stitching_id);
                         setSubDisabledSelect(`select[name="packing_items[${index}][sub_items][${sIdx}][bag_color_id]"]`, sub.bag_color_id);

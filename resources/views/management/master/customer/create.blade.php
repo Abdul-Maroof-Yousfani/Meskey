@@ -19,6 +19,25 @@
             </div>
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group mb-2">
+                <label>Customer Nature:</label>
+                <ul class="list-unstyled mb-0">
+                    <li class="d-inline-block mr-2">
+                        <div class="radio radio-primary">
+                            <input name="nature" type="radio" id="nature_local" value="local" checked>
+                            <label for="nature_local"><span>Local</span></label>
+                        </div>
+                    </li>
+                    <li class="d-inline-block mr-2">
+                        <div class="radio radio-primary">
+                            <input name="nature" type="radio" id="nature_international" value="international">
+                            <label for="nature_international"><span>International</span></label>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label><span class="text-danger required-asterisk">*</span> Company Name:</label>
                 <input type="text" name="company_name" placeholder="Company Name" class="form-control"
@@ -267,6 +286,7 @@
                         <div class="col-xs-6 col-sm-6 col-md-6">
                             <div class="form-group">
                                 <label><span class="text-danger required-asterisk">*</span>Name:</label>
+                                <input type="hidden" name="consignee_id[]" value="">
                                 <input type="text" name="consignee_name[]" placeholder="Consignee Name"
                                     class="form-control consignee-required" autocomplete="off" />
                             </div>

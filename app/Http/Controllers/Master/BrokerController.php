@@ -29,32 +29,46 @@ class BrokerController extends Controller
     }
 
     /**
-     * Get list of categories.
+     * Get list of brokers.
      */
     public function getList(Request $request)
     {
-        // $brokers = Broker::when($request->filled('search'), function ($q) use ($request) {
-        //     $searchTerm = '%' . $request->search . '%';
-        //     return $q->where(function ($sq) use ($searchTerm) {
-        //         $sq->where('name', 'like', $searchTerm);
-        //     });
-        // })
-        //     ->latest()
-        //     ->paginate(request('per_page', 25));
-
-        // return view('management.master.broker.getList', compact('brokers'));
-
-        $brokers = Broker::when($request->filled('search'), function ($q) use ($request) {
-            $searchTerm = '%' . $request->search . '%';
-            return $q->where(function ($sq) use ($searchTerm) {
-                $sq->where('name', 'like', $searchTerm);
-            });
-        })
+        $brokers = Broker::query()
             ->where('company_id', $request->company_id)
+            ->when($request->filled('unique_no'), function ($q) use ($request) {
+                return $q->where('unique_no', 'like', '%' . $request->unique_no . '%');
+            })
+            ->when($request->filled('broker_name'), function ($q) use ($request) {
+                return $q->where('name', 'like', '%' . $request->broker_name . '%');
+            })
+            ->when($request->filled('company_name'), function ($q) use ($request) {
+                return $q->where('company_name', 'like', '%' . $request->company_name . '%');
+            })
+            ->when($request->filled('address'), function ($q) use ($request) {
+                return $q->where('address', 'like', '%' . $request->address . '%');
+            })
+            ->when($request->filled('is_for_sales') && $request->is_for_sales !== 'all', function ($q) use ($request) {
+                return $q->where('is_for_sales', $request->is_for_sales);
+            })
+            ->when($request->filled('date_range'), function ($q) use ($request) {
+                $dates = explode(' - ', $request->date_range);
+                if (count($dates) == 2) {
+                    return $q->whereBetween('created_at', [$dates[0] . ' 00:00:00', $dates[1] . ' 23:59:59']);
+                }
+                return $q->whereDate('created_at', $request->date_range);
+            })
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $searchTerm = '%' . $request->search . '%';
+                return $q->where(function ($sq) use ($searchTerm) {
+                    $sq->where('name', 'like', $searchTerm)
+                        ->orWhere('unique_no', 'like', $searchTerm)
+                        ->orWhere('company_name', 'like', $searchTerm)
+                        ->orWhere('address', 'like', $searchTerm);
+                });
+            })
             ->latest()
             ->paginate(request('per_page', 25));
 
-        //dd($brokers->first()->company_location_ids);
         return view('management.master.broker.getList', compact('brokers'));
     }
 

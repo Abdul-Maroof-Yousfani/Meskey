@@ -6,7 +6,7 @@
                         <th width="12%">Do No</th>
                         <th width="18%">Customer</th>
                         <th width="25%">Item Description</th>
-                        <th width="10%" class="text-right">Qty(KG)</th>
+                        <th width="10%" class="text-right">Qty(MT)</th>
                         <th width="10%" class="text-right">Rate</th>
                         <th width="10%" class="text-right">Amount</th>
                         <th width="10%">Date</th>
@@ -45,8 +45,7 @@
                                 </td>
 
                                 <td class="text-right align-middle">
-                                    {{ number_format(((float) $itemRow['item_data']->qty) * 1000, 2) }}
-                                    <small class="text-muted">{{ $itemRow['item']->unitOfMeasure->name ?? '' }}</small>
+                                    {{ number_format((float) $itemRow['item_data']->qty, 3) }}
                                 </td>
 
                                 <td class="text-right align-middle">
@@ -89,16 +88,17 @@
                                             </a>
 
                                             @if(strtolower($group['status']) === 'approved')
-                                                @foreach($group['items'] as $item)
-                                                    @if(!empty($item['accepted_qc_id']))
-                                                        <a onclick="openModal(this,'{{ route('export.get.dispatch-qc.gate-out', $item['accepted_qc_id']) }}', 'Export Gate Out', true, '100%')"
-                                                            class="btn btn-sm btn-success"
-                                                            title="Gate Out Pass"
-                                                            style="margin-right: 10px;">
-                                                            <i class="ft-file"></i>
-                                                        </a>
-                                                    @endif
-                                                @endforeach
+                                                @php
+                                                    $acceptedQcId = collect($group['items'])->pluck('accepted_qc_id')->filter()->unique()->first();
+                                                @endphp
+                                                @if($acceptedQcId)
+                                                    <a onclick="openModal(this,'{{ route('export.get.dispatch-qc.gate-out', $acceptedQcId) }}?delivery_challan_id={{ $group['id'] }}', 'Export Gate Out', true, '100%')"
+                                                        class="btn btn-sm btn-success"
+                                                        title="Gate Out Pass"
+                                                        style="margin-right: 10px;">
+                                                        <i class="ft-file"></i>
+                                                    </a>
+                                                @endif
                                             @endif
 
                                             @if(auth()->user()->id == $group['created_by_id'])
@@ -109,7 +109,6 @@
                                                         class="btn btn-sm btn-warning" title="Edit" style="margin-right: 10px;">
                                                         <i class="ft-edit"></i>
                                                     </button>
-
                                                     
                                                     <button onclick="deletemodal('{{ route('export-delivery-challan.destroy', ['export_delivery_challan' => $group['id']]) }}', '{{ route('get.export-delivery-challan.list') }}')" type="button"
                                                             onclick="confirmDelete(this.closest('form'))"

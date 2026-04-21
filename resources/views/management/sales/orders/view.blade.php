@@ -99,8 +99,20 @@
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
+                        <label class="form-label">Sell By:</label>
+                        <input type="text" class="form-control" value="{{ $sale_order->parent_user->name ?? 'N/A' }}" readonly>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
                         <label class="form-label">Broker:</label>
                         <input type="text" value="{{ $sale_order->broker->name ?? 'N/A' }}" class="form-control" readonly>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="form-label">Comission RS per KG:</label>
+                        <input type="text" value="{{ $sale_order->commission_per_kg ?? 0 }}" class="form-control" readonly>
                     </div>
                 </div>
                 <div class="col-md-3">
@@ -213,12 +225,12 @@
     </div>
 
     <div class="row form-mar">
-        <div class="col-12 text-right mb-2">
+        <!-- <div class="col-12 text-right mb-2">
             <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()"
                 id="addRowBtn" disabled>
                 <i class="fa fa-plus"></i>&nbsp; Add New Item
             </button>
-        </div>
+        </div> -->
 
         <div class="col-md-12">
             <div class="table-responsive" style="overflow-x: auto; white-space: nowrap;">
@@ -274,7 +286,7 @@
                                         min="0" readonly>
                                 </td>
                                 <td>
-                                    <input type="text" name="amount[]" id="amount_{{ $index }}" value="{{ $data->rate * $data->qty }}" class="form-control amount" readonly>
+                                    <input type="text" name="amount[]" id="amount_{{ $index }}" value="{{ round($data->rate * $data->qty) }}" class="form-control amount" readonly>
                                 </td>
 
                                 <td>
@@ -305,6 +317,7 @@
 
     
     <input type="hidden" id="rowCount" value="0">
+
     
     <div class="row bottom-button-bar">
         <div class="col-12 text-end">

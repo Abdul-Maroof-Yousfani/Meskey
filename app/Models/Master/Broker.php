@@ -34,7 +34,8 @@ class Broker extends Model
         'stn',
         'attachment',
         'status',
-        'company_location_ids'
+        'company_location_ids',
+        'is_for_sales'
 
     ];
 

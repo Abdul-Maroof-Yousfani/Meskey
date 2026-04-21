@@ -4,7 +4,8 @@
             <th class="col-sm-1">S No. </th>
             <th class="col-sm-2">Customer </th>
             <th class="col-sm-2">Company </th>
-            <th class="col-sm-4">Address</th>
+            <th class="col-sm-1">Nature </th>
+            <th class="col-sm-3">Address</th>
             <th class="col-sm-2">Created</th>
             <th class="col-sm-1">Action</th>
         </tr>
@@ -29,6 +30,11 @@
                         <p class="m-0">
                             {{ $row->company_name }} <br>
                             {{-- <small>{{ $row->company_mobile_no ?? '--' }}</small> <br> --}}
+                        </p>
+                    </td>
+                    <td>
+                        <p class="m-0">
+                            {{ ucfirst($row->nature ?? '--') }}
                         </p>
                     </td>
                     <td>
