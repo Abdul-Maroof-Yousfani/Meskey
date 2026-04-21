@@ -11,6 +11,13 @@ class BagPacking extends Model
 
     protected $fillable = ['name'];
 
+    protected $appends = ['size'];
+
+    public function getSizeAttribute()
+    {
+        return $this->name;
+    }
+
     /**
      * Get all arrival approvals for this bag packing.
      */

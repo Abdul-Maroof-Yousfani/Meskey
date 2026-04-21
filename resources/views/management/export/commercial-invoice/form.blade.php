@@ -1,0 +1,198 @@
+@php
+    $isEdit = $mode === 'edit';
+    $formAction = $isEdit
+        ? route('commercial-invoice.update', ['commercial_invoice' => $commercialInvoice->id])
+        : route('commercial-invoice.store');
+    $selectedBillId = old('bill_of_lading_id', $commercialInvoice?->bill_of_lading_id);
+@endphp
+
+<form action="{{ $formAction }}" method="POST" id="ajaxSubmit" autocomplete="off">
+    @csrf
+    @if ($isEdit)
+        @method('PUT')
+    @endif
+
+    <input type="hidden" id="listRefresh" value="{{ route('get.commercial-invoice') }}" />
+
+    <div class="row form-mar">
+        {{-- ===== LEFT: FORM FIELDS ===== --}}
+        <div class="col-md-4">
+            <h6 class="header-heading-sepration">Basic Information</h6>
+
+            <div class="form-group">
+                <label>Commercial Invoice No</label>
+                <input type="text" name="commercial_invoice_no" id="commercial_invoice_no"
+                    class="form-control"
+                    value="{{ old('commercial_invoice_no', $commercialInvoice?->commercial_invoice_no ?? '') }}"
+                    readonly>
+            </div>
+
+            <div class="form-group">
+                <label>Date</label>
+                <input type="date" name="invoice_date" id="invoice_date" class="form-control"
+                    value="{{ old('invoice_date', optional($commercialInvoice?->invoice_date)->format('Y-m-d') ?? date('Y-m-d')) }}">
+            </div>
+
+            <div class="form-group">
+                <label>Export Order (Approved)</label>
+                @if ($isEdit)
+                    <input type="hidden" name="export_order_id" value="{{ $commercialInvoice->export_order_id }}">
+                @endif
+                <select name="export_order_id" id="export_order_id"
+                    class="form-control select2"
+                    {{ $isEdit ? 'disabled' : '' }}>
+                    <option value="">Select Export Order</option>
+                    @foreach ($exportOrders as $exportOrder)
+                        <option value="{{ $exportOrder->id }}"
+                            {{ old('export_order_id', $commercialInvoice?->export_order_id) == $exportOrder->id ? 'selected' : '' }}>
+                            {{ $exportOrder->voucher_no }} — {{ $exportOrder->buyer?->name ?? 'N/A' }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Bill Of Lading</label>
+                @if ($isEdit && $selectedBillId)
+                    <input type="hidden" name="bill_of_lading_id" value="{{ $selectedBillId }}">
+                @endif
+                <select name="bill_of_lading_id" id="bill_of_lading_id"
+                    class="form-control select2"
+                    {{ $isEdit ? 'disabled' : '' }}>
+                </select>
+            </div>
+
+        </div>
+
+        {{-- ===== RIGHT: PREVIEW ===== --}}
+        <div class="col-md-8">
+            <h6 class="header-heading-sepration">Commercial Invoice Preview</h6>
+            <div id="commercialInvoicePreviewContainer">
+                @include('management.export.commercial-invoice.preview', [
+                    'preview'      => $preview ?? [],
+                    'goodsSummary' => $goodsSummary ?? [],
+                ])
+            </div>
+        </div>
+    </div>
+
+    <div class="row bottom-button-bar">
+        <div class="col-12 text-right">
+            <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton me-2">Close</a>
+            <button type="submit" class="btn btn-primary submitbutton">{{ $isEdit ? 'Update' : 'Save' }}</button>
+        </div>
+    </div>
+</form>
+
+<script>
+    var initialBillId    = {{ $selectedBillId ? (int) $selectedBillId : 'null' }};
+    var currentInvoiceId = {{ $isEdit ? (int) $commercialInvoice->id : 'null' }};
+
+    $(document).ready(function() {
+        $('.select2').select2({ width: '100%' });
+
+        if (!$('#commercial_invoice_no').val()) {
+            getCommercialInvoiceNumber();
+        }
+
+        loadBillsByExportOrder(true);
+
+        $('#invoice_date').on('change', function() {
+            getCommercialInvoiceNumber();
+            fetchCommercialInvoicePreview();
+        });
+
+        $('#export_order_id').on('change', function() {
+            getCommercialInvoiceNumber();
+            loadBillsByExportOrder(false);
+        });
+
+        $('#bill_of_lading_id').on('change', function() {
+            fetchCommercialInvoicePreview();
+        });
+    });
+
+    function getCommercialInvoiceNumber() {
+        if ({{ $isEdit ? 'true' : 'false' }}) return; // don't change number in edit mode
+        $.get("{{ route('get.commercial-invoice.getNumber') }}", {
+            invoice_date: $('#invoice_date').val(),
+            export_order_id: $('#export_order_id').val()
+        }, function(res) {
+            if (res.commercial_invoice_no) {
+                $('#commercial_invoice_no').val(res.commercial_invoice_no);
+            }
+        });
+    }
+
+    function loadBillsByExportOrder(isInitial) {
+        var exportOrderId = $('#export_order_id').val();
+        var $bills        = $('#bill_of_lading_id');
+
+        $bills.empty().trigger('change');
+
+        if (!exportOrderId) {
+            showCIHint('Pehle Export Order select karein, phir Bill Of Lading chunein.');
+            return;
+        }
+
+        $.get("{{ route('get.commercial-invoice.bills') }}", {
+            export_order_id:   exportOrderId,
+            current_invoice_id: currentInvoiceId
+        }, function(res) {
+            if (!res.success) return;
+
+            (res.data || []).forEach(function(item) {
+                if (!$bills.find("option[value='" + item.id + "']").length) {
+                    $bills.append(new Option(item.text, item.id, false, false));
+                }
+            });
+
+            $bills.val(isInitial ? initialBillId : null).trigger('change');
+            fetchCommercialInvoicePreview();
+        });
+    }
+
+    function fetchCommercialInvoicePreview() {
+        var exportOrderId  = $('#export_order_id').val();
+        var billOfLadingId = $('#bill_of_lading_id').val();
+
+        if (!exportOrderId || !billOfLadingId) {
+            showCIHint('Export Order aur Bill Of Lading select karein taake preview generate ho.');
+            return;
+        }
+
+        $.ajax({
+            url:      "{{ route('get.commercial-invoice.related.data') }}",
+            method:   'GET',
+            data: {
+                export_order_id:       exportOrderId,
+                bill_of_lading_id:     billOfLadingId,
+                commercial_invoice_no: $('#commercial_invoice_no').val(),
+                invoice_date:          $('#invoice_date').val(),
+                current_invoice_id:    currentInvoiceId,
+            },
+            dataType: 'json',
+            success: function(res) {
+                if (!res.success) return;
+
+                $('#commercialInvoicePreviewContainer').html(res.preview_html);
+
+            },
+            error: function(xhr) {
+                var msg = 'Preview load nahi ho saka.';
+                if (xhr.responseJSON) {
+                    msg = xhr.responseJSON.message || xhr.responseJSON.error || msg;
+                }
+                showCIHint(msg, true);
+            }
+        });
+    }
+
+    function showCIHint(message, isDanger) {
+        isDanger = isDanger || false;
+        var cls  = isDanger ? 'bg-light-danger alert-light-danger' : 'bg-light-warning alert-light-warning';
+        $('#commercialInvoicePreviewContainer').html(
+            '<div class="alert ' + cls + ' mb-2" role="alert"><strong>' + message + '</strong></div>'
+        );
+    }
+</script>

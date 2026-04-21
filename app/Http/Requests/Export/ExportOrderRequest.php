@@ -122,7 +122,7 @@ class ExportOrderRequest extends FormRequest
             'packing_items.*.fumigation_company_id' => ['nullable', 'array'],
             'packing_items.*.sub_items' => ['nullable', 'array'],
             'packing_items.*.sub_items.*.bag_type_id' => ['nullable', 'exists:bag_types,id'],
-            'packing_items.*.sub_items.*.bag_size_id' => ['nullable', 'exists:sizes,id'],
+            'packing_items.*.sub_items.*.bag_size_id' => ['nullable', 'exists:bag_packings,id'],
             'packing_items.*.sub_items.*.no_of_primary_bags' => ['nullable', 'numeric', 'min:0'],
             'packing_items.*.sub_items.*.no_of_bags' => ['nullable', 'numeric', 'min:0'],
             'packing_items.*.sub_items.*.empty_bags' => ['nullable', 'numeric', 'min:0'],

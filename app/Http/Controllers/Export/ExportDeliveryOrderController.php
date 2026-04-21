@@ -96,6 +96,7 @@ class ExportDeliveryOrderController extends Controller
             'product', 
             'specifications.productSlabType', 
             'packingItems.subItems.bagType',
+            'packingItems.subItems.bagSize',
             'packingItems.bagType', 
             'packingItems.bagPacking', 
             'packingItems.brand', 
@@ -140,6 +141,7 @@ class ExportDeliveryOrderController extends Controller
                     'bag_product_id' => $sub->bag_type_id,
                     'bag_type_name'  => $sub->bagType->name ?? '',
                     'bag_size_id'    => $sub->bag_size_id,
+                    'bag_size_name'  => $sub->bagSize->name ?? ($sub->bag_size_id ?? ''),
                     'stitching_id'   => $sub->stitching_id,
                     'bag_color_id'   => $sub->bag_color_id,
                     'brand_id'       => $sub->brand_id,
@@ -358,7 +360,7 @@ class ExportDeliveryOrderController extends Controller
     public function edit($id): View
     {
         $deliveryOrder = DeliveryOrder::with([
-            'exportPackingItems.subItems',
+            'exportPackingItems.subItems.bagSize',
             'exportOrder.quotation.product',
             'exportOrder.exportSoda.product',
             'exportOrder.product',

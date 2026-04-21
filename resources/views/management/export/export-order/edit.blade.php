@@ -941,10 +941,10 @@
                                                                 <select
                                                                     name="packing_items[{{ $pIdx }}][sub_items][{{ $sIdx }}][bag_size_id]"
                                                                     class="form-control form-control-sm select2 sub-bag-size-id">
-                                                                    <option value="">Select Size</option>
+                                                       <option value="">Select Bag Packing</option>
                                                                     @foreach ($bagSizes as $sz)
                                                                         <option value="{{ $sz->id }}" data-size="{{ $sz->size }}" {{ $sub->bag_size_id == $sz->id ? 'selected' : '' }}>
-                                                                            {{ $sz->size }} kg</option>
+                                                                            {{ $sz->size }}</option>
                                                                     @endforeach
                                                                 </select>
                                                             </td>
@@ -1320,7 +1320,7 @@
                     </td>
                     <td>
                         <select name="packing_items[${parentIndex}][sub_items][${subIndex}][bag_size_id]" class="form-control form-control-sm select2 sub-bag-size-id">
-                            <option value="">Select Size</option>
+                            <option value="">Select Bag Packing</option>
                             @foreach ($bagSizes as $sz)
                                 <option value="{{ $sz->id }}" data-size="{{ $sz->name }}">{{ $sz->name }} kg ({{ $sz->size }})</option>
                             @endforeach

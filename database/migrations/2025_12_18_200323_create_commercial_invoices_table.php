@@ -18,36 +18,20 @@ return new class extends Migration
                 ->nullable()
                 ->constrained('export_orders')
                 ->nullOnDelete();
+            $table->foreignId('bill_of_lading_id')
+                ->nullable()
+                ->constrained('bill_of_ladings')
+                ->nullOnDelete();
+            $table->foreignId('created_by')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
 
-            // Commercial Invoice Info
             $table->string('commercial_invoice_no')->nullable();
             $table->date('invoice_date')->nullable();
-
-            // Proforma / Invoice
-            $table->string('proforma_no')->nullable();
             $table->string('invoice_no')->nullable();
-
-            // LC Details
-            $table->string('lc_no')->nullable();
-            $table->date('lc_date')->nullable();
-
-            // Shipping Details
-            $table->string('ship_name')->nullable();
-
-            // Bill of Lading
-            $table->string('bill_of_lading_no')->nullable();
-            $table->date('bill_of_lading_date')->nullable();
-            $table->string('master_bl')->nullable();
-
-            // Consignee Details
-            $table->text('consigned_details')->nullable();
-
-            // E-Form (multiple → JSON best)
-            $table->json('e_forms')->nullable();
-
             $table->timestamps();
         });
-
     }
 
     /**
