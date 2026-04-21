@@ -70,12 +70,18 @@ class PurchaseSamplingMonitoringController extends Controller
                 return $q->whereDate('created_at', '>=', $startDate)
                     ->whereDate('created_at', '<=', $endDate);
             })
-            ->whereIn('company_location_id', getUserCurrentCompanyLocations())
+            ->whereHas('purchaseOrder', function ($query) {
+                $query->whereIn('company_location_id', getUserCurrentCompanyLocations());
+            })
             ->when(auth()->user()->user_type != 'super-admin' && auth()->user()->parent_user_id != null, function ($q) {
-                return $q->where('decision_of_id', auth()->user()->parent_user_id);
+                $q->whereHas('purchaseOrder', function ($query) {
+                    $query->where('decision_of_id', auth()->user()->parent_user_id);
+                });
             })
             ->when(auth()->user()->user_type != 'super-admin' && auth()->user()->parent_user_id == null, function ($q) {
-                return $q->where('decision_of_id', auth()->user()->id);
+                $q->whereHas('purchaseOrder', function ($query) {
+                    $query->where('decision_of_id', auth()->user()->id);
+                });
             })
             ->latest()
             // ->orderBy('created_at', 'asc')
