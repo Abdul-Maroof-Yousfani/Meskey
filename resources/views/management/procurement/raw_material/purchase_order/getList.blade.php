@@ -136,7 +136,7 @@
                 </a>
                 
                 
-                @if($row->created_by == auth()->user()->id && ($row->am_approval_status != 'approved' || $row->am_approval_status != "rejected"))
+                @if($row->created_by == auth()->user()->id && ($row->am_approval_status != 'approved' && $row->am_approval_status != "rejected"))
                     <a onclick="openModal(this,'{{ route($row->purchase_type == 'gate_buying' ? 'raw-material.gate-buying.edit' : 'raw-material.purchase-order.edit', $row->id) }}','{{ $row->purchase_type == 'gate_buying' ? 'Edit Gate Buying' : 'Edit Purchase Order' }}')"
                         class="info p-1 text-center mr-2 position-relative">
                         <i class="ft-edit font-medium-3"></i>
