@@ -50,7 +50,9 @@ class SaleOrderController extends Controller
             return $matches[0];
         })->unique()->sort()->values();
 
-        $brokers = Broker::where('status', 'active')->get();
+        $brokers = Broker::where('status', 'active')
+                            ->where('is_for_sales', 1)
+                            ->get();
         return view('management.sales.orders.create', compact('payment_terms', 'customers', 'inquiries', 'items', 'pay_types', 'bag_types', 'arrivalLocations', 'arrivalSubLocations', 'packings', 'brokers'));
     }
 
@@ -74,7 +76,9 @@ class SaleOrderController extends Controller
         })->unique()->sort()->values();
 
         $latestLog = $sale_order->approvalLogs()->with(['user', 'role'])->latest()->first();
-        $brokers = Broker::where('status', 'active')->get();
+        $brokers = Broker::where('status', 'active')
+                        ->where('is_for_sales', 1)
+                        ->get();
         return view('management.sales.orders.edit', compact('payment_terms', 'customers', 'inquiries', 'items', 'sale_order', 'pay_types', 'bag_types', 'arrivalLocations', 'arrivalSubLocations', 'packings', 'brokers', 'latestLog'));
     }
 
@@ -95,7 +99,9 @@ class SaleOrderController extends Controller
             return $matches[0];
         })->unique()->sort()->values();
 
-        $brokers = Broker::where('status', 'active')->get();
+        $brokers = Broker::where('status', 'active')
+                        ->where('is_for_sales', 1)
+                        ->get();
         $latestLog = $sale_order->approvalLogs()->with(['user', 'role'])->latest()->first();
 
         return view('management.sales.orders.view', compact('payment_terms', 'customers', 'inquiries', 'items', 'sale_order', 'arrivalLocations', 'arrivalSubLocations', 'packings', 'brokers', 'latestLog'));
@@ -117,7 +123,8 @@ class SaleOrderController extends Controller
         $payload["so_reference_no"]  =  !$request->so_reference_no ? '' : $request->so_reference_no;
         $payload["transporter_used"]  =  !$request->transporter_used ? 'no' : $request->transporter_used;
         $payload["payment_term_id"]  =  !$request->payment_term_id ? PaymentTerm::first()->id : $request->payment_term_id;
-        
+        $payload["commission_per_kg"] = $request->commission_per_kg ?? 0;
+
         DB::beginTransaction();
         try {
             $sales_order = SalesOrder::create($payload);
@@ -183,7 +190,7 @@ class SaleOrderController extends Controller
             $payload["so_reference_no"]  =  !$request->so_reference_no ? '' : $request->so_reference_no;
             $payload["transporter_used"]  =  !$request->transporter_used ? 'no' : $request->transporter_used;
             $payload["payment_term_id"]  =  !$request->payment_term_id ? PaymentTerm::first()->id : $request->payment_term_id;
-     
+            $payload["commission_per_kg"] = $request->commission_per_kg ?? 0;
 
             // Update parent sale order data
             $sales_order->update($payload);

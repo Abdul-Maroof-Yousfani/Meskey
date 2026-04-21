@@ -132,6 +132,12 @@
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
+                        <label class="form-label">Comission RS per KG:</label>
+                        <input type="number" name="commission_per_kg" id="commission_per_kg" class="form-control" step="0.01" min="0" value="{{ $sale_order->commission_per_kg ?? 0 }}">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
                         <label class="form-label">Contact Person:</label>
                         <input type="text" name="contact_person" id="contact_person" value="{{ $sale_order->contact_person }}" class="form-control" @if($sale_order->inquiry_id) readonly @endif>
                     </div>

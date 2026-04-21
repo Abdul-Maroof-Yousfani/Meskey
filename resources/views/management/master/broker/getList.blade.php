@@ -4,7 +4,8 @@
             <th class="col-sm-1">S No. </th>
             <th class="col-sm-2">Broker </th>
             <th class="col-sm-2">Company </th>
-            <th class="col-sm-4">Address</th>
+            <th class="col-sm-3">Address</th>
+            <th class="col-sm-1">Type</th>
             <th class="col-sm-2">Created</th>
             <th class="col-sm-1">Action</th>
         </tr>
@@ -34,6 +35,15 @@
                     <td>
                         <p class="m-0">
                             <small> {{ $row->address ?? '--' }}</small>
+                        </p>
+                    </td>
+                    <td>
+                        <p class="m-0">
+                            @if ($row->is_for_sales == 1)
+                                <span class="badge badge-success">Sales</span>
+                            @else
+                                <span class="badge badge-info text-dark">Not for Sales</span>
+                            @endif
                         </p>
                     </td>
                     <td>

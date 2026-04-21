@@ -111,6 +111,12 @@
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
+                        <label class="form-label">Comission RS per KG:</label>
+                        <input type="text" value="{{ $sale_order->commission_per_kg ?? 0 }}" class="form-control" readonly>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
                         <label class="form-label">Contact Person:</label>
                         <input type="text" name="contact_person" id="contact_person" value="{{ $sale_order->contact_person }}" class="form-control" readonly>
                     </div>

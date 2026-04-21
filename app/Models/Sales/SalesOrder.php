@@ -37,7 +37,8 @@ class SalesOrder extends Model
         "am_change_made",
         "transporter_used",
         "broker_id",
-        "parent_user_id"
+        "parent_user_id",
+        "commission_per_kg"
     ];
 
     public function parent_user() {
