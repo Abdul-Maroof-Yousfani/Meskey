@@ -3,6 +3,7 @@
         <tr>
             <th class="col-sm-2">Contract No.</th>
             <th class="col-sm-2">Supplier</th>
+            <th class="col-sm-2">Decision Of</th>
             <th class="col-sm-2">Product</th>
             {{-- <th class="col-sm-1">Type</th> --}}
             <th class="col-sm-3">Remark</th>
@@ -25,7 +26,7 @@
                     $color = 'grey';
                 }
 
-                        ?>
+                                                        ?>
                 <tr class="bg-{{ $color }}">
                     <td>
                         <p class="m-0">
@@ -37,6 +38,12 @@
                         {{-- @dd($row) --}}
                         <p class="m-0">
                             {{ $row->purchaseOrder->supplier->name ?? ($row->supplier_name ?? 'N/A') }} <br>
+                        </p>
+                    </td>
+                    <td>
+                        {{-- @dd($row) --}}
+                        <p class="m-0">
+                            {{ $row->decisionOfUser->name ?? 'N/A' }} <br>
                         </p>
                     </td>
                     <td>

@@ -70,6 +70,13 @@ class PurchaseSamplingMonitoringController extends Controller
                 return $q->whereDate('created_at', '>=', $startDate)
                     ->whereDate('created_at', '<=', $endDate);
             })
+            ->whereIn('company_location_id', getUserCurrentCompanyLocations())
+            ->when(auth()->user()->user_type != 'super-admin' && auth()->user()->parent_user_id != null, function ($q) {
+                return $q->where('decision_of_id', auth()->user()->parent_user_id);
+            })
+            ->when(auth()->user()->user_type != 'super-admin' && auth()->user()->parent_user_id == null, function ($q) {
+                return $q->where('decision_of_id', auth()->user()->id);
+            })
             ->latest()
             // ->orderBy('created_at', 'asc')
             ->paginate(request('per_page', 25));
@@ -272,8 +279,8 @@ class PurchaseSamplingMonitoringController extends Controller
             $ArrivalSamplingRequest->update([
                 'remark' => $request->remarks,
                 'decision_making' => $isDecisionMaking,
-                'lumpsum_deduction' => (float)$request->lumpsum_deduction ?? 0.00,
-                'lumpsum_deduction_kgs' => (float)$request->lumpsum_deduction_kgs ?? 0.00,
+                'lumpsum_deduction' => (float) $request->lumpsum_deduction ?? 0.00,
+                'lumpsum_deduction_kgs' => (float) $request->lumpsum_deduction_kgs ?? 0.00,
                 'is_lumpsum_deduction' => $isLumpsum,
                 'is_done' => 'yes',
                 'done_by' => auth()->user()->id,
@@ -320,11 +327,11 @@ class PurchaseSamplingMonitoringController extends Controller
             if ($request->stage_status == 'resampling') {
                 PurchaseSamplingRequest::create([
                     'company_id' => $ArrivalSamplingRequest->company_id,
-                    'purchase_ticket_id'        => $ArrivalSamplingRequest->purchase_ticket_id,
-                    'arrival_product_id'        => $ArrivalSamplingRequest->arrival_product_id,
-                    'supplier_name'        => $ArrivalSamplingRequest->supplier_name,
-                    'is_custom_qc'        => $ArrivalSamplingRequest->is_custom_qc,
-                    'qc_product_id'             => $ArrivalSamplingRequest->qc_product_id,
+                    'purchase_ticket_id' => $ArrivalSamplingRequest->purchase_ticket_id,
+                    'arrival_product_id' => $ArrivalSamplingRequest->arrival_product_id,
+                    'supplier_name' => $ArrivalSamplingRequest->supplier_name,
+                    'is_custom_qc' => $ArrivalSamplingRequest->is_custom_qc,
+                    'qc_product_id' => $ArrivalSamplingRequest->qc_product_id,
                     'arrival_purchase_order_id' => $ArrivalSamplingRequest->arrival_purchase_order_id,
                     'sampling_type' => $ArrivalSamplingRequest->sampling_type,
                     'is_re_sampling' => 'yes',
@@ -335,8 +342,8 @@ class PurchaseSamplingMonitoringController extends Controller
             }
 
             $updateData = [
-                'lumpsum_deduction' => (float)($request->lumpsum_deduction ?? 0.00),
-                'lumpsum_deduction_kgs' => (float)($request->lumpsum_deduction_kgs ?? 0.00),
+                'lumpsum_deduction' => (float) ($request->lumpsum_deduction ?? 0.00),
+                'lumpsum_deduction_kgs' => (float) ($request->lumpsum_deduction_kgs ?? 0.00),
                 'is_lumpsum_deduction' => $isLumpsum,
                 'decision_making_time' => $decisionMadeOn,
                 'decision_making' => $isDecisionMaking,
