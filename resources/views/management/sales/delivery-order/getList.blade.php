@@ -3,15 +3,16 @@
             <table class="table table-hover m-0">
                 <thead class="bg-light">
                     <tr>
-                        <th width="12%">Do No</th>
-                        <th width="18%">Customer</th>
-                        <th width="25%">Item Description</th>
-                        <th width="10%" class="text-right">Qty</th>
-                        <th width="10%" class="text-right">Rate</th>
+                        <th width="10%">Do No</th>
+                        <th width="10%">So No</th>
+                        <th width="16%">Customer</th>
+                        <th width="14%">Item Description</th>
+                        <th width="8%" class="text-right">Qty</th>
+                        <th width="8%" class="text-right">Rate</th>
                         <th width="10%" class="text-right">Amount</th>
                         <th width="10%">Date</th>
                         <th width="8%">Status</th>
-                        <th width="7%">Action</th>
+                        <th width="6%">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -28,6 +29,12 @@
                                             <small class="text-muted">
                                                 {{ \Carbon\Carbon::parse($group['created_at'])->format('d M Y') }}
                                             </small>
+                                        </div>
+                                    </td>
+
+                                    <td rowspan="{{ $group['rowspan'] }}" class="align-middle text-center font-weight-bold" style="background-color: #fce4ec;">
+                                        <div class="p-2">
+                                            {{ $group['sale_order']->salesOrder->reference_no ?? 'N/A' }}
                                         </div>
                                     </td>
 

@@ -235,7 +235,7 @@ class DeliveryOrderController extends Controller
         $perPage = $request->get('per_page', 25);
 
         // Eager load the inquiry + all its items + related product
-        $delivery_orders = DeliveryOrder::latest()
+        $delivery_orders = DeliveryOrder::with('salesOrder', 'delivery_order_data', 'customer')->latest()
             ->orderBy("reference_no", "desc")
             ->paginate($perPage);
 

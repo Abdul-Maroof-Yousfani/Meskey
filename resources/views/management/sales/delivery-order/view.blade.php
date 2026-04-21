@@ -37,21 +37,28 @@
                 <div class="col-12">
                     <h6 class="header-heading-sepration">General Information</h6>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Do No:</label>
                         <input type="text" name="reference_no" id="reference_no" class="form-control"
                             value="{{ $delivery_order->reference_no }}" readonly>
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">So No:</label>
+                        <input type="text" class="form-control"
+                            value="{{ $sale_order_of_delivery_order->reference_no }}" readonly>
+                    </div>
+                </div>
+                <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Do Date:</label>
                         <input type="date" name="dispatch_date" id="dispatch_date" class="form-control"
                             value="{{ $delivery_order->dispatch_date }}" readonly>
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Contract Type:</label>
                         <select name="sauda_type" id="sauda_type" class="form-control select2" disabled>
@@ -61,14 +68,14 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Delivery Date:</label>
                         <input type="date" name="delivery_date" id="delivery_date" class="form-control"
                             value="{{ $delivery_order->delivery_date ?? $delivery_order->salesOrder->delivery_date }}" readonly>
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Reference Number:</label>
                         <input type="text" name="ref_no" id="ref_no" class="form-control"
