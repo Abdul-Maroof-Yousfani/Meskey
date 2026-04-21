@@ -127,9 +127,9 @@
                 </div>
                 <div class="col-md-3 advanced" style="display: none">
                     <div class="form-group">
-                        <label class="form-label">Withhold Amount:</label>
-                        <input type="number" step="any" name="withhold_amount" value="0" onkeyup="change_withhold_amount()"
-                            id="withhold_amount" class="form-control">
+                        <label class="form-label">Withhold Amount (10% of Advance):</label>
+                        <input type="number" step="any" name="withhold_amount" value="0"
+                            id="withhold_amount" class="form-control" readonly>
                     </div>
                 </div>
                 <div class="col-md-3 advanced" style="display: none">
@@ -432,8 +432,10 @@
 
         if (sum > 0) {
             $("#advance_amount").val(sum.toFixed(2));
+            $("#withhold_amount").val((sum * 0.1).toFixed(2));
         } else {
             $("#advance_amount").val("");
+            $("#withhold_amount").val("0");
         }
 
     }
@@ -717,7 +719,7 @@
 
         $("#advance_amount").prop("disabled", true);
         $("#advance_amount").val(result);
-
+        $("#withhold_amount").val((result * 0.1).toFixed(2));
     }
 
     function manualChecking() {

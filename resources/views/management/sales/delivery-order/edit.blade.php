@@ -151,10 +151,10 @@
                 </div>
                 <div class="col-md-3 advanced" style="display: {{ $sale_order_of_delivery_order->pay_type_id == 10 ? 'block' : 'none' }}">
                     <div class="form-group">
-                        <label class="form-label">Withhold Amount:</label>
+                        <label class="form-label">Withhold Amount (10% of Advance):</label>
                         <input type="number" step="any" name="withhold_amount" value="{{ $delivery_order->withhold_amount }}"
-                            onkeyup="change_withhold_amount()" id="withhold_amount"
-                            class="form-control">
+                            id="withhold_amount"
+                            class="form-control" readonly>
                     </div>
                 </div>
                 <div class="col-md-3 advanced" style="display: {{ $sale_order_of_delivery_order->pay_type_id == 10 ? 'block' : 'none' }}">
@@ -681,8 +681,10 @@
 
         if (sum > 0) {
             $("#advance_amount").val(sum.toFixed(2));
+            $("#withhold_amount").val((sum * 0.1).toFixed(2));
         } else {
             $("#advance_amount").val("");
+            $("#withhold_amount").val("0");
         }
 
     }
@@ -991,7 +993,7 @@
 
         $("#advance_amount").prop("disabled", true);
         $("#advance_amount").val(result);
-
+        $("#withhold_amount").val((result * 0.1).toFixed(2));
     }
 
     function manualChecking() {
