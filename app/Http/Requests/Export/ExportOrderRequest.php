@@ -30,7 +30,7 @@ class ExportOrderRequest extends FormRequest
                 'required',
                 'string',
                 'max:100',
-                Rule::unique('export_orders')->ignore($this->route('export_order')),
+                // Rule::unique check removed from here to allow controller to handle race conditions
             ],
             'contract_no' => ['required', 'string', 'max:100'],
             'voucher_date' => ['required', 'date'],

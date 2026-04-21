@@ -65,26 +65,31 @@ class BillOfLadingController extends Controller
             $this->ensureChallansAreAvailable($deliveryChallans->pluck('id')->all(), null);
             [$preview, $goodsSummary] = $this->buildDocumentPayload($exportOrder, $formEs, $deliveryChallans, $validated);
 
-            BillOfLading::create([
-                'export_delivery_challan_id' => $deliveryChallans->first()?->id,
-                'delivery_order_id' => $deliveryOrders->first()?->id,
-                'export_order_id' => $exportOrder->id,
-                'selected_form_e_ids' => $formEs->pluck('id')->values()->all(),
-                'selected_delivery_challan_ids' => $deliveryChallans->pluck('id')->values()->all(),
-                'selected_delivery_order_ids' => $deliveryOrders->pluck('id')->values()->all(),
-                'company_id' => $exportOrder->company_id,
-                'customer_id' => $deliveryOrders->first()?->customer_id,
-                'bill_no' => $validated['bill_no'],
-                'bill_date' => $validated['bill_date'] ?? null,
-                'carrier_name' => $validated['carrier_name'] ?? null,
-                'shipped_on_board_date' => $validated['shipped_on_board_date'] ?? null,
-                'charter_party_dated' => $validated['charter_party_dated'] ?? null,
-                'cautions_text' => $validated['cautions_text'] ?? null,
-                'place_of_issue' => $preview['place_of_issue'] ?? null,
-                'snapshot_data' => $preview,
-                'goods_summary' => $goodsSummary,
-                'created_by' => auth()->user()?->id,
-            ]);
+            $billOfLading = \Illuminate\Support\Facades\Cache::lock('export_bol_generation', 10)->block(5, function () use ($request, $exportOrder, $formEs, $deliveryChallans, $deliveryOrders, $validated, $preview, $goodsSummary) {
+                // Re-generate bill_no server-side to ensure uniqueness using the existing getNumber method
+                $bill_no = $this->getNumber($request)->getData()->bill_no;
+
+                return BillOfLading::create([
+                    'export_delivery_challan_id' => $deliveryChallans->first()?->id,
+                    'delivery_order_id' => $deliveryOrders->first()?->id,
+                    'export_order_id' => $exportOrder->id,
+                    'selected_form_e_ids' => $formEs->pluck('id')->values()->all(),
+                    'selected_delivery_challan_ids' => $deliveryChallans->pluck('id')->values()->all(),
+                    'selected_delivery_order_ids' => $deliveryOrders->pluck('id')->values()->all(),
+                    'company_id' => $exportOrder->company_id,
+                    'customer_id' => $deliveryOrders->first()?->customer_id,
+                    'bill_no' => $bill_no,
+                    'bill_date' => $validated['bill_date'] ?? null,
+                    'carrier_name' => $validated['carrier_name'] ?? null,
+                    'shipped_on_board_date' => $validated['shipped_on_board_date'] ?? null,
+                    'charter_party_dated' => $validated['charter_party_dated'] ?? null,
+                    'cautions_text' => $validated['cautions_text'] ?? null,
+                    'place_of_issue' => $preview['place_of_issue'] ?? null,
+                    'snapshot_data' => $preview,
+                    'goods_summary' => $goodsSummary,
+                    'created_by' => auth()->user()?->id,
+                ]);
+            });
 
             DB::commit();
 
@@ -316,7 +321,7 @@ class BillOfLadingController extends Controller
             'export_form_e_ids.*' => ['integer', 'exists:export_form_es,id'],
             'export_delivery_challan_ids' => ['required', 'array', 'min:1'],
             'export_delivery_challan_ids.*' => ['integer', 'exists:delivery_challans,id'],
-            'bill_no' => ['required', 'string', 'max:255', 'unique:bill_of_ladings,bill_no,' . ($billId ?? 'NULL') . ',id'],
+            'bill_no' => ['required', 'string', 'max:255'],
             'bill_date' => ['nullable', 'date'],
             'carrier_name' => ['nullable', 'string', 'max:255'],
             'shipped_on_board_date' => ['nullable', 'date'],

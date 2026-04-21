@@ -229,20 +229,41 @@ class ExportDeliveryOrderController extends Controller
             ], 422);
         }
 
-        $deliveryOrder = DeliveryOrder::create([
-            'type' => 'export_order',
-            'export_order_id' => $request->export_order_id,
-            'customer_id' => $request->buyer_id, // Use customer_id consistently
-            'export_form_e_id' => $request->export_form_e_id,
-            'remarks' => $request->remarks,
-            'created_by' => auth()->user() ? auth()->user()->id : null,
-            'reference_no' => $request->reference_no, 
-            'ref_no' => $request->ref_no,
-            'location_id' => $request->location_id ?? null,
-            'arrival_location_id' => $request->arrival_id ? implode(',', (array)$request->arrival_id) : null,
-            'sub_arrival_location_id' => $request->storage_id ? implode(',', (array)$request->storage_id) : null,
-            'am_approval_status' => 'pending',
-        ]);
+        $deliveryOrder = \Illuminate\Support\Facades\Cache::lock('export_do_generation', 10)->block(5, function () use ($request) {
+            // Re-generate reference_no server-side to ensure uniqueness
+            $datePart = Carbon::parse($request->dispatch_date)->format('Y-m-d');
+            $prefix = 'DO-' . $datePart;
+            
+            $latestContract = DeliveryOrder::withoutGlobalScopes()
+                ->where('reference_no', 'like', "$prefix-%")
+                ->orderBy('reference_no', 'desc')
+                ->first();
+
+            if ($latestContract) {
+                $parts = explode('-', $latestContract->reference_no);
+                $lastNumber = (int) end($parts);
+                $newNumber = $lastNumber + 1;
+            } else {
+                $newNumber = 1;
+            }
+
+            $reference_no = $prefix . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+
+            return DeliveryOrder::create([
+                'type' => 'export_order',
+                'export_order_id' => $request->export_order_id,
+                'customer_id' => $request->buyer_id,
+                'export_form_e_id' => $request->export_form_e_id,
+                'remarks' => $request->remarks,
+                'created_by' => auth()->user() ? auth()->user()->id : null,
+                'reference_no' => $reference_no, 
+                'ref_no' => $request->ref_no,
+                'location_id' => $request->location_id ?? null,
+                'arrival_location_id' => $request->arrival_id ? implode(',', (array)$request->arrival_id) : null,
+                'sub_arrival_location_id' => $request->storage_id ? implode(',', (array)$request->storage_id) : null,
+                'am_approval_status' => 'pending',
+            ]);
+        });
 
         foreach ($request->packing_items as $index => $itemData) {
             // Skip dummy row only

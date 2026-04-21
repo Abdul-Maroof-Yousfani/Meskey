@@ -73,14 +73,19 @@ class CommercialInvoiceController extends Controller
         try {
             [$billOfLading, $preview, $goodsSummary] = $this->buildPayloadFromRequest($validated);
 
-            CommercialInvoice::create([
-                'export_order_id' => $billOfLading->export_order_id,
-                'bill_of_lading_id' => $billOfLading->id,
-                'commercial_invoice_no' => $validated['commercial_invoice_no'],
-                'invoice_no' => $validated['commercial_invoice_no'],
-                'invoice_date' => $validated['invoice_date'] ?? null,
-                'created_by' => auth()->user()?->id,
-            ]);
+            $commercialInvoice = \Illuminate\Support\Facades\Cache::lock('export_invoice_generation', 10)->block(5, function () use ($request, $billOfLading, $validated) {
+                // Re-generate invoice number server-side to ensure uniqueness using the existing getNumber method
+                $invoice_no = $this->getNumber($request)->getData()->commercial_invoice_no;
+
+                return CommercialInvoice::create([
+                    'export_order_id' => $billOfLading->export_order_id,
+                    'bill_of_lading_id' => $billOfLading->id,
+                    'commercial_invoice_no' => $invoice_no,
+                    'invoice_no' => $invoice_no,
+                    'invoice_date' => $validated['invoice_date'] ?? null,
+                    'created_by' => auth()->user()?->id,
+                ]);
+            });
 
             DB::commit();
 
@@ -240,7 +245,6 @@ class CommercialInvoiceController extends Controller
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('commercial_invoices', 'commercial_invoice_no')->ignore($invoiceId),
             ],
             'invoice_date' => ['nullable', 'date'],
         ]);
