@@ -785,7 +785,7 @@
                         setSubDisabledSelect(`select[name="packing_items[${index}][sub_items][${sIdx}][bag_product_id]"]`, sub.bag_type_id);
 
                         subRow.find(`input[name="packing_items[${index}][sub_items][${sIdx}][bag_size_id]"]`).val(sub.bag_size_id);
-                        // Can't show display size val purely from relational data unless eager loaded correctly, but it's fine for edit mode.
+                        subRow.find('.sub-bag-size-val').val(sub.bag_size ? sub.bag_size.name : (sub.bag_size_name || sub.bag_size_id || ''));
 
                         setSubDisabledSelect(`select[name="packing_items[${index}][sub_items][${sIdx}][stitching_id]"]`, sub.stitching_id);
                         setSubDisabledSelect(`select[name="packing_items[${index}][sub_items][${sIdx}][bag_color_id]"]`, sub.bag_color_id);

@@ -922,14 +922,12 @@
                                     data-i18n="Extended">Bill Of Lading</span></a>
                         </li>
 
-                        {{-- @canAccess('commercial-invoice')
                         <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                 href="{{ route('commercial-invoice.index') }}"
                                 onclick="loadPageContent('{{ route('commercial-invoice.index') }}')"
                                 data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
-                                    data-i18n="Extended">Commercial Incoice</span></a>
+                                    data-i18n="Extended">Commercial Invoice</span></a>
                         </li>
-                        @endcanAccess --}}
                     </ul>
 
             </li>

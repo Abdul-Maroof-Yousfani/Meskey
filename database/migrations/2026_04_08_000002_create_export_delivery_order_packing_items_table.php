@@ -45,7 +45,7 @@ return new class extends Migration
             $table->unsignedBigInteger('export_delivery_order_packing_item_id');
             $table->foreign('export_delivery_order_packing_item_id', 'fk_ex_do_pk_sub')->references('id')->on('export_delivery_order_packing_items')->onDelete('cascade');
             $table->foreignId('bag_type_id')->nullable()->constrained('bag_types')->nullOnDelete();
-            $table->foreignId('bag_size_id')->nullable()->constrained('sizes')->nullOnDelete();
+            $table->foreignId('bag_size_id')->nullable()->constrained('bag_packings')->nullOnDelete();
             $table->integer('no_of_primary_bags')->nullable()->default(0);
             $table->integer('no_of_bags')->nullable()->default(0);
             $table->integer('empty_bags')->nullable()->default(0);

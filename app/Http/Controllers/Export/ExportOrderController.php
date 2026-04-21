@@ -80,7 +80,7 @@ class ExportOrderController extends Controller
         $quotations          = Quotation::latest()->get();
         $companyLocations    = CompanyLocation::where('status', 'active')->get();
         $bagConditions       = BagCondition::where('status', 1)->get();
-        $bagSizes            = \App\Models\Master\Size::where('status', 'active')->get();
+        $bagSizes            = BagPacking::where('status', 1)->get();
         $stitchings          = \App\Models\Master\Stitching::where('status', 'active')->get();
         $threadColors        = Color::where('status', 1)->get();
         $inspectionCompanies = \App\Models\Master\FumigationCompany::where('status', 'active')->get();
@@ -228,7 +228,7 @@ class ExportOrderController extends Controller
         $quotations          = Quotation::latest()->get();
         $companyLocations    = CompanyLocation::where('status', 'active')->get();
         $bagConditions       = BagCondition::where('status', 1)->get();
-        $bagSizes            = \App\Models\Master\Size::where('status', 'active')->get();
+        $bagSizes            = BagPacking::where('status', 1)->get();
         $stitchings          = \App\Models\Master\Stitching::where('status', 'active')->get();
         $threadColors        = Color::where('status', 1)->get();
         $inspectionCompanies = \App\Models\Master\FumigationCompany::where('status', 'active')->get();
@@ -284,7 +284,7 @@ class ExportOrderController extends Controller
         $quotations          = Quotation::latest()->get();
         $companyLocations    = CompanyLocation::where('status', 'active')->get();
         $bagConditions       = BagCondition::where('status', 1)->get();
-        $bagSizes            = \App\Models\Master\Size::where('status', 'active')->get();
+        $bagSizes            = BagPacking::where('status', 1)->get();
         $stitchings          = \App\Models\Master\Stitching::where('status', 'active')->get();
         $threadColors        = Color::where('status', 1)->get();
         $inspectionCompanies = \App\Models\Master\FumigationCompany::where('status', 'active')->get();

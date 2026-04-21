@@ -1099,9 +1099,9 @@
                     </td>
                     <td>
                         <select name="packing_items[${parentIndex}][sub_items][${subIndex}][bag_size_id]" class="form-control form-control-sm select2 sub-bag-size-id">
-                            <option value="">Select Size</option>
+                            <option value="">Select Bag Packing</option>
                             @foreach ($bagSizes as $sz)
-                                <option value="{{ $sz->id }}" data-size="{{ $sz->size }}">{{ $sz->size }} kg</option>
+                                <option value="{{ $sz->id }}" data-size="{{ $sz->size }}">{{ $sz->size }}</option>
                             @endforeach
                         </select>
                     </td>

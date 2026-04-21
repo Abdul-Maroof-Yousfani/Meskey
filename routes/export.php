@@ -146,6 +146,9 @@ Route::get('/proforma/print/{id}', [ProformaController::class, 'print'])->name('
 // commerical invoice
 Route::resource('commercial-invoice', CommercialInvoiceController::class);
 Route::post('/get-commercial-invoice', [CommercialInvoiceController::class, 'getCommercialInvoiceTable'])->name('get.commercial-invoice');
+Route::get('/get/export/commercial-invoice-no', [CommercialInvoiceController::class, 'getNumber'])->name('get.commercial-invoice.getNumber');
+Route::get('/get-commercial-invoice-bills', [CommercialInvoiceController::class, 'getBillOfLadingsByExportOrder'])->name('get.commercial-invoice.bills');
+Route::get('/get-commercial-invoice-related-data', [CommercialInvoiceController::class, 'getRelatedData'])->name('get.commercial-invoice.related.data');
 
 // export soda field 
 Route::resource('export-soda-field', ExportSodaFieldController::class);
