@@ -52,10 +52,10 @@ class PurchaseSamplingRequestController extends Controller
                     ->whereDate('created_at', '<=', $endDate);
             })
             ->whereIn('company_location_id', getUserCurrentCompanyLocations())
-            ->when(auth()->user()->parent_user_id != null, function ($q) {
+            ->when(!auth()->user()->is_super_admin && auth()->user()->parent_user_id != null, function ($q) {
                 return $q->where('decision_of_id', auth()->user()->parent_user_id);
             })
-            ->when(auth()->user()->parent_user_id == null, function ($q) {
+            ->when(!auth()->user()->is_super_admin && auth()->user()->parent_user_id == null, function ($q) {
                 return $q->where('decision_of_id', auth()->user()->id);
             })
             ->with(['supplier', 'product', 'location'])
