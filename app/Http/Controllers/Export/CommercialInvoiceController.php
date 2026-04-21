@@ -11,6 +11,7 @@ use App\Models\PaymentTerm;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -71,15 +72,16 @@ class CommercialInvoiceController extends Controller
         DB::beginTransaction();
 
         try {
-            [$billOfLading, $preview, $goodsSummary] = $this->buildPayloadFromRequest($validated);
+            [$billOfLadings, $preview, $goodsSummary] = $this->buildPayloadFromRequest($validated);
 
-            $commercialInvoice = \Illuminate\Support\Facades\Cache::lock('export_invoice_generation', 10)->block(5, function () use ($request, $billOfLading, $validated) {
+            $commercialInvoice = \Illuminate\Support\Facades\Cache::lock('export_invoice_generation', 10)->block(5, function () use ($request, $billOfLadings, $validated) {
                 // Re-generate invoice number server-side to ensure uniqueness using the existing getNumber method
                 $invoice_no = $this->getNumber($request)->getData()->commercial_invoice_no;
 
                 return CommercialInvoice::create([
-                    'export_order_id' => $billOfLading->export_order_id,
-                    'bill_of_lading_id' => $billOfLading->id,
+                    'export_order_id' => $billOfLadings->first()->export_order_id,
+                    'bill_of_lading_id' => $billOfLadings->first()->id,
+                    'selected_bill_of_lading_ids' => $billOfLadings->pluck('id')->values()->all(),
                     'commercial_invoice_no' => $invoice_no,
                     'invoice_no' => $invoice_no,
                     'invoice_date' => $validated['invoice_date'] ?? null,
@@ -130,11 +132,12 @@ class CommercialInvoiceController extends Controller
         DB::beginTransaction();
 
         try {
-            [$billOfLading, $preview, $goodsSummary] = $this->buildPayloadFromRequest($validated, $commercialInvoice->id);
+            [$billOfLadings, $preview, $goodsSummary] = $this->buildPayloadFromRequest($validated, $commercialInvoice->id);
 
             $commercialInvoice->update([
-                'export_order_id' => $billOfLading->export_order_id,
-                'bill_of_lading_id' => $billOfLading->id,
+                'export_order_id' => $billOfLadings->first()->export_order_id,
+                'bill_of_lading_id' => $billOfLadings->first()->id,
+                'selected_bill_of_lading_ids' => $billOfLadings->pluck('id')->values()->all(),
                 'commercial_invoice_no' => $validated['commercial_invoice_no'],
                 'invoice_no' => $validated['commercial_invoice_no'],
                 'invoice_date' => $validated['invoice_date'] ?? null,
@@ -213,13 +216,14 @@ class CommercialInvoiceController extends Controller
     {
         $validated = $request->validate([
             'export_order_id' => ['required', 'exists:export_orders,id'],
-            'bill_of_lading_id' => ['required', 'exists:bill_of_ladings,id'],
+            'bill_of_lading_ids' => ['required', 'array', 'min:1'],
+            'bill_of_lading_ids.*' => ['integer', 'exists:bill_of_ladings,id'],
             'commercial_invoice_no' => ['nullable', 'string', 'max:255'],
             'invoice_date' => ['nullable', 'date'],
             'current_invoice_id' => ['nullable', 'integer', 'exists:commercial_invoices,id'],
         ]);
 
-        [$billOfLading, $preview, $goodsSummary] = $this->buildPayloadFromRequest($validated, $validated['current_invoice_id'] ?? null);
+        [$billOfLadings, $preview, $goodsSummary] = $this->buildPayloadFromRequest($validated, $validated['current_invoice_id'] ?? null);
 
         return response()->json([
             'success' => true,
@@ -229,18 +233,23 @@ class CommercialInvoiceController extends Controller
             ])->render(),
             'preview' => $preview,
             'goods_summary' => $goodsSummary,
-            'bill_of_lading' => [
+            'bill_of_ladings' => $billOfLadings->map(fn (BillOfLading $billOfLading) => [
                 'id' => $billOfLading->id,
                 'bill_no' => $billOfLading->bill_no,
-            ],
+            ])->values(),
         ]);
     }
 
     protected function validateCommercialInvoice(Request $request, ?int $invoiceId = null): array
     {
+        $request->merge([
+            'bill_of_lading_ids' => array_values(array_unique(array_map('intval', Arr::wrap($request->input('bill_of_lading_ids', []))))),
+        ]);
+
         return $request->validate([
             'export_order_id' => ['required', 'exists:export_orders,id'],
-            'bill_of_lading_id' => ['required', 'exists:bill_of_ladings,id'],
+            'bill_of_lading_ids' => ['required', 'array', 'min:1'],
+            'bill_of_lading_ids.*' => ['integer', 'exists:bill_of_ladings,id'],
             'commercial_invoice_no' => [
                 'required',
                 'string',
@@ -260,7 +269,9 @@ class CommercialInvoiceController extends Controller
 
     protected function buildPayloadFromRequest(array $validated, ?int $currentInvoiceId = null): array
     {
-        $billOfLading = BillOfLading::with([
+        $billOfLadingIds = array_values(array_unique(array_map('intval', Arr::wrap($validated['bill_of_lading_ids'] ?? []))));
+
+        $billOfLadings = BillOfLading::with([
             'exportOrder.company',
             'exportOrder.product',
             'exportOrder.currency',
@@ -273,15 +284,33 @@ class CommercialInvoiceController extends Controller
             'exportOrder.correspondentBank',
             'exportOrder.consignee',
             'exportDeliveryChallan.customer',
-        ])->findOrFail($validated['bill_of_lading_id']);
+        ])->whereIn('id', $billOfLadingIds)->get();
 
-        if ((int) $billOfLading->export_order_id !== (int) $validated['export_order_id']) {
+        if ($billOfLadings->count() !== count($billOfLadingIds)) {
+            abort(422, 'Some selected Bill of Lading records are invalid.');
+        }
+
+        $invalidBill = $billOfLadings->first(fn (BillOfLading $billOfLading) => (int) $billOfLading->export_order_id !== (int) $validated['export_order_id']);
+        if ($invalidBill) {
             abort(422, 'Selected Bill of Lading does not belong to the selected Export Order.');
         }
 
-        if (!$this->isBillOfLadingAvailableForInvoice($billOfLading->id, $currentInvoiceId)) {
-            abort(422, 'Selected Bill of Lading is already used in another Commercial Invoice.');
+        foreach ($billOfLadingIds as $billOfLadingId) {
+            if (!$this->isBillOfLadingAvailableForInvoice($billOfLadingId, $currentInvoiceId)) {
+                abort(422, 'One or more selected Bill of Lading records are already used in another Commercial Invoice.');
+            }
         }
+
+        $deliveryChallanIds = $billOfLadings
+            ->flatMap(function (BillOfLading $billOfLading) {
+                return collect($billOfLading->selected_delivery_challan_ids ?? [])
+                    ->push($billOfLading->export_delivery_challan_id);
+            })
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
 
         $deliveryChallans = ExportDeliveryChallan::with([
             'customer',
@@ -293,23 +322,23 @@ class CommercialInvoiceController extends Controller
             'delivery_challan_data.deliveryOrderData.subItems.bagSize',
             'delivery_challan_data.product',
         ])
-            ->whereIn('id', $billOfLading->selected_delivery_challan_ids ?? [])
+            ->whereIn('id', $deliveryChallanIds)
             ->get();
 
         $deliveryOrders = $deliveryChallans->flatMap->delivery_order->unique('id')->values();
-        $exportOrder = $billOfLading->exportOrder;
+        $exportOrder = $billOfLadings->first()->exportOrder;
 
         $goodsSummary = $this->buildGoodsSummary($deliveryChallans, $exportOrder);
-        $preview = $this->buildPreviewPayload($billOfLading, $exportOrder, $deliveryOrders, $goodsSummary, $validated);
+        $preview = $this->buildPreviewPayload($billOfLadings, $exportOrder, $deliveryOrders, $deliveryChallans, $goodsSummary, $validated);
 
-        return [$billOfLading, $preview, $goodsSummary];
+        return [$billOfLadings, $preview, $goodsSummary];
     }
 
     protected function buildPayloadFromInvoice(CommercialInvoice $commercialInvoice): array
     {
         $input = [
             'export_order_id' => $commercialInvoice->export_order_id,
-            'bill_of_lading_id' => $commercialInvoice->bill_of_lading_id,
+            'bill_of_lading_ids' => $commercialInvoice->resolved_bill_of_lading_ids,
             'commercial_invoice_no' => $commercialInvoice->invoice_no ?: $commercialInvoice->commercial_invoice_no,
             'invoice_date' => optional($commercialInvoice->invoice_date)->format('Y-m-d'),
         ];
@@ -323,19 +352,24 @@ class CommercialInvoiceController extends Controller
             ->when($currentInvoiceId, function ($query) use ($currentInvoiceId) {
                 $query->where('id', '!=', $currentInvoiceId);
             })
-            ->where('bill_of_lading_id', $billOfLadingId)
+            ->where(function ($query) use ($billOfLadingId) {
+                $query->where('bill_of_lading_id', $billOfLadingId)
+                    ->orWhereJsonContains('selected_bill_of_lading_ids', $billOfLadingId);
+            })
             ->exists();
     }
 
     protected function buildPreviewPayload(
-        BillOfLading $billOfLading,
+        Collection $billOfLadings,
         ExportOrder $exportOrder,
         Collection $deliveryOrders,
+        Collection $deliveryChallans,
         array $goodsSummary,
         array $input
     ): array {
-        $bolSnapshot = $billOfLading->snapshot_data ?? [];
-        $customer = $deliveryOrders->first()?->customer ?? $billOfLading->exportDeliveryChallan?->customer;
+        $primaryBill = $billOfLadings->first();
+        $bolSnapshots = $billOfLadings->map(fn (BillOfLading $billOfLading) => $billOfLading->snapshot_data ?? []);
+        $customer = $deliveryOrders->first()?->customer ?? $deliveryChallans->first()?->customer ?? $primaryBill?->exportDeliveryChallan?->customer;
         
         $consigneeLines = collect([
             $customer?->name ?? null,
@@ -389,14 +423,14 @@ class CommercialInvoiceController extends Controller
             'product_original_name' => $originalName,
             'contents' => $originalName,
             'quantity_summary' => $quantitySummary,
-            'bill_of_lading_no' => $billOfLading->bill_no,
-            'bill_of_lading_date' => $billOfLading->bill_date,
-            'shipped_on_board_date' => $bolSnapshot['shipped_on_board_date'] ?? $billOfLading->shipped_on_board_date,
-            'form_e_no' => $bolSnapshot['form_e_no'] ?? 'N/A',
-            'form_e_date' => $bolSnapshot['form_e_date'] ?? null,
-            'delivery_challan_no' => $bolSnapshot['delivery_challan_no'] ?? 'N/A',
-            'delivery_order_no' => $bolSnapshot['delivery_order_no'] ?? 'N/A',
-            'vessel_name' => $bolSnapshot['vessel_name'] ?? $exportOrder->vessel_name,
+            'bill_of_lading_no' => $billOfLadings->pluck('bill_no')->filter()->unique()->implode(', '),
+            'bill_of_lading_date' => $billOfLadings->pluck('bill_date')->filter()->map(fn ($date) => Carbon::parse($date)->format('d.m.Y'))->unique()->implode(', '),
+            'shipped_on_board_date' => $bolSnapshots->pluck('shipped_on_board_date')->filter()->unique()->implode(', ') ?: $primaryBill?->shipped_on_board_date,
+            'form_e_no' => $bolSnapshots->pluck('form_e_no')->filter()->implode(', ') ?: 'N/A',
+            'form_e_date' => $bolSnapshots->pluck('form_e_date')->filter()->unique()->implode(', '),
+            'delivery_challan_no' => $deliveryChallans->pluck('dc_no')->filter()->unique()->implode(', '),
+            'delivery_order_no' => $deliveryOrders->pluck('reference_no')->filter()->unique()->implode(', '),
+            'vessel_name' => $bolSnapshots->pluck('vessel_name')->filter()->unique()->implode(' / ') ?: $exportOrder->vessel_name,
             'payment_terms' => $paymentTerm?->title ?: ($exportOrder->partial_payment ?: 'As per contract'),
             'incoterm' => $exportOrder->incoterm?->name ?: ($exportOrder->modeOfTerm?->name ?? 'N/A'),
             'mode_of_term' => $exportOrder->modeOfTerm?->name,
@@ -415,7 +449,7 @@ class CommercialInvoiceController extends Controller
             'net_weight_mt' => round(($goodsSummary['totals']['net_weight_kg'] ?? 0) / 1000, 3),
             'total_amount' => $totalAmount,
             'amount_in_words' => $amountInWords,
-            'selected_bol_summary' => trim(($billOfLading->bill_no ?: 'N/A') . ' / ' . ($bolSnapshot['delivery_challan_no'] ?? 'N/A')),
+            'selected_bol_summary' => trim(($billOfLadings->pluck('bill_no')->filter()->unique()->implode(', ') ?: 'N/A') . ' / ' . ($deliveryChallans->pluck('dc_no')->filter()->unique()->implode(', ') ?: 'N/A')),
         ];
     }
 

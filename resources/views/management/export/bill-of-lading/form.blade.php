@@ -30,7 +30,7 @@
             </div>
 
             <div class="form-group">
-                <label>Export Order (Approved)</label>
+                <label>Export Order</label>
                 @if($isEdit)
                     <input type="hidden" name="export_order_id" value="{{ $billOfLading->export_order_id }}">
                 @endif
@@ -46,7 +46,7 @@
             </div>
 
             <div class="form-group">
-                <label>Form-E (Multiple)</label>
+                <label>Form-E</label>
                 @if($isEdit)
                     @foreach($selectedFormEIds as $feId)
                         <input type="hidden" name="export_form_e_ids[]" value="{{ $feId }}">
@@ -57,7 +57,7 @@
             </div>
 
             <div class="form-group">
-                <label>Delivery Challan (Approved, Multiple)</label>
+                <label>Delivery Challan</label>
                 @if($isEdit)
                     @foreach($selectedDcIds as $dcId)
                         <input type="hidden" name="export_delivery_challan_ids[]" value="{{ $dcId }}">
