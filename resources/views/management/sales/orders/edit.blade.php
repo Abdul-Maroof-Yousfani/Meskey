@@ -331,8 +331,8 @@
                                 </td>
                                 <td>
                                     <input type="number" name="amount[]" id="amount_{{ $index }}"
-                                        value="{{ $data->rate * $data->qty }}" onkeyup="calc(this)"
-                                        class="form-control amount" step="0.01" min="0">
+                                        value="{{ round($data->rate * $data->qty) }}" onkeyup="calc(this)"
+                                        class="form-control amount" step="1" min="0">
                                 </td>
                                 <td>
                                     <select name="brand_id[]" id="brand_id_{{ $index }}"
@@ -1023,8 +1023,8 @@
         const qty = parseFloat($(element).find(".qty").val()) || 0;
 
         const amount = $(element).find(".amount");
-
-        amount.val((rate * qty).toFixed(2));
+      
+        amount.val((rate * qty).toFixed(0));
     }
 
     function calcBagTypes(el) {

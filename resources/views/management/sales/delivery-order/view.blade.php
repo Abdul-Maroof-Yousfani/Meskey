@@ -265,7 +265,7 @@
                                 </td>
                                 <td>
                                     <input type="number" class="form-control"
-                                        value="{{ $data->rate * ($data->qty ?? 0) }}" readonly>
+                                        value="{{ round($data->rate * ($data->qty ?? 0)) }}" readonly>
                                 </td>
                                 <td>
                                     <input type="text" class="form-control"

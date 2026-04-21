@@ -46,7 +46,7 @@
             <input type="text" name="rate_per_mond[]" id="rate_per_mond_{{ $index }}" value="{{ $data->rate_per_mond }}" class="form-control rate_per_mond" step="0.01" min="0" readonly>
         </td>
         <td>
-            <input type="text" name="amount[]" id="amount_{{ $index }}" value="{{ $data->rate * ($remaining_qty ?? 0) }}"
+            <input type="text" name="amount[]" id="amount_{{ $index }}" value="{{ round($data->rate * ($remaining_qty ?? 0)) }}"
                 class="form-control amount" readonly>
         </td>
         <td>
@@ -111,7 +111,7 @@ function check_balance(el, target) {
             return;
         }
         const result = parseFloat(qty.val()) * parseFloat(rate.val());
-        amount.val(result);
+        amount.val(result.toFixed(0));
 
     }
 

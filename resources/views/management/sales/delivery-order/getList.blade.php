@@ -56,7 +56,7 @@
                                 </td>
 
                                 <td class="text-right align-middle">
-                                    {{ number_format($itemRow["item_data"]->rate * $itemRow["item_data"]->qty, 2) }}
+                                    {{ number_format($itemRow["item_data"]->rate * $itemRow["item_data"]->qty, 0) }}
                                 </td>
 
                                 {{-- Date & Status - Show only on first row --}}

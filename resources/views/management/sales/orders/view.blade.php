@@ -286,7 +286,7 @@
                                         min="0" readonly>
                                 </td>
                                 <td>
-                                    <input type="text" name="amount[]" id="amount_{{ $index }}" value="{{ $data->rate * $data->qty }}" class="form-control amount" readonly>
+                                    <input type="text" name="amount[]" id="amount_{{ $index }}" value="{{ round($data->rate * $data->qty) }}" class="form-control amount" readonly>
                                 </td>
 
                                 <td>

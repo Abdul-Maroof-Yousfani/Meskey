@@ -498,7 +498,7 @@
 
         const amount = $(element).find(".amount");
       
-        amount.val((rate * qty).toFixed(2));
+        amount.val((rate * qty).toFixed(0));
     }
 
     function addRow() {
