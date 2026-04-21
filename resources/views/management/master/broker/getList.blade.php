@@ -1,13 +1,13 @@
-<table class="table m-0">
+<table class="table m-0" style="table-layout: fixed; width: 100%;">
     <thead>
         <tr>
-            <th class="col-sm-1">S No. </th>
-            <th class="col-sm-2">Broker </th>
-            <th class="col-sm-2">Company </th>
-            <th class="col-sm-3">Address</th>
-            <th class="col-sm-1">Type</th>
-            <th class="col-sm-2">Created</th>
-            <th class="col-sm-1">Action</th>
+            <th style="width: 10%;">S No.</th>
+            <th style="width: 18%;">Broker</th>
+            <th style="width: 18%;">Company</th>
+            <th style="width: 20%;">Address</th>
+            <th style="width: 12%;">Type</th>
+            <th style="width: 12%;">Created</th>
+            <th style="width: 10%;">Action</th>
         </tr>
     </thead>
     <tbody>
@@ -67,7 +67,7 @@
             @endforeach
         @else
             <tr class="ant-table-placeholder">
-                <td colspan="11" class="ant-table-cell text-center">
+                <td colspan="7" class="ant-table-cell text-center">
                     <div class="my-5">
                         <svg width="64" height="41" viewBox="0 0 64 41" xmlns="http://www.w3.org/2000/svg">
                             <g transform="translate(0 1)" fill="none" fill-rule="evenodd">
