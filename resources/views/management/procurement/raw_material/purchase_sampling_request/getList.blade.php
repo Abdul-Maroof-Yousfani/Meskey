@@ -4,6 +4,7 @@
             <th class="col-sm-2">Contract/Ticket Number</th>
             <th class="col-sm-2">Commodity</th>
             <th class="col-sm-2">Supplier Name</th>
+            <th class="col-sm-2">Decision Of</th>
             <th class="col-sm-1">Order Quantity</th>
             <th class="col-sm-1">Remaining Quantity</th>
             <th class="col-sm-1">Loaded Quantity</th>
@@ -30,6 +31,11 @@
                     <td>
                         <p class="m-0">
                             {{ $row->supplier->name ?? '--' }}
+                        </p>
+                    </td>
+                    <td>
+                        <p class="m-0">
+                            {{ $row->decisionOfUser->name ?? '--' }}
                         </p>
                     </td>
                     <td>
