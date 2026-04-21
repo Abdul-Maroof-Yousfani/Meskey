@@ -68,28 +68,31 @@ class ExportDeliveryChallanController extends Controller
 
             $dispatch_date = $request->date;
 
-            $delivery_challan = ExportDeliveryChallan::create([
-                'customer_id' => $request->customer_id,
-                'reference_number' => $request->reference_number,
-                'location_id' => $request->locations[0] ?? null,
-                'arrival_id' => $arrival_location_csv,
-                'section_id' => $storage_location_csv,
-                'dispatch_date' => $dispatch_date,
-                // 'dc_no' => $request->dc_no,
-                'dc_no' => self::getNumber($request, null, $dispatch_date),
-                // 'sauda_type' => $request->sauda_type,
-                'labour_status' => $request->labour_status ?? 'paid',
-                'company_id' => $request->company_id,
-                'labour' => $request->labour,
-                'labour_amount' => $request->labour_amount,
-                'transporter' => $request->transporter,
-                'transporter_amount' => $request->transporter_amount,
-                'inhouse-weighbridge' => $request->weighbridge,
-                'weighbridge-amount' => $request->weighbridge_amount,
-                'remarks' => $request->remarks,
-                'labour_rate' => ($request->labour_rate === 'N/A' || $request->labour_rate === null) ? 0 : $request->labour_rate,
-                'created_by_id' => auth()->user()->id,
-            ]);
+            $delivery_challan = \Illuminate\Support\Facades\Cache::lock('export_dc_generation', 10)->block(5, function () use ($request, $arrival_location_csv, $storage_location_csv, $dispatch_date, $do_id, $preparedItems) {
+                // Re-generate dc_no server-side to ensure uniqueness
+                $dc_no = $this->getNumber($request, null, $dispatch_date);
+
+                return ExportDeliveryChallan::create([
+                    'customer_id' => $request->customer_id,
+                    'reference_number' => $request->reference_number,
+                    'location_id' => $request->locations[0] ?? null,
+                    'arrival_id' => $arrival_location_csv,
+                    'section_id' => $storage_location_csv,
+                    'dispatch_date' => $dispatch_date,
+                    'dc_no' => $dc_no,
+                    'labour_status' => $request->labour_status ?? 'paid',
+                    'company_id' => $request->company_id,
+                    'labour' => $request->labour,
+                    'labour_amount' => $request->labour_amount,
+                    'transporter' => $request->transporter,
+                    'transporter_amount' => $request->transporter_amount,
+                    'inhouse-weighbridge' => $request->weighbridge,
+                    'weighbridge-amount' => $request->weighbridge_amount,
+                    'remarks' => $request->remarks,
+                    'labour_rate' => ($request->labour_rate === 'N/A' || $request->labour_rate === null) ? 0 : $request->labour_rate,
+                    'created_by_id' => auth()->user()->id,
+                ]);
+            });
 
             $delivery_challan->delivery_order()->sync([
                 $do_id => ['qty' => $preparedItems['total_qty']],

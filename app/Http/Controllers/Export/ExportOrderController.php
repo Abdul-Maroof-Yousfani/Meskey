@@ -119,6 +119,16 @@ class ExportOrderController extends Controller
         try {
             $exportOrderData = $request->except(['bank_id', 'specifications', 'packing_items']);
 
+            // Re-generate voucher_no to ensure uniqueness and prevent race conditions
+            $exportOrderData['voucher_no'] = generateUniversalUniqueNo('export_orders', [
+                'prefix'        => 'EXPORT',
+                'column'        => 'voucher_no',
+                'with_date'     => true,
+                'custom_date'   => $request->voucher_date,
+                'date_format'   => 'm-Y',
+                'serial_at_end' => true,
+            ]);
+
             // Parse bank_id (e.g., owner_1, company_2)
             if ($request->bank_id) {
                 $bankParts = explode('_', $request->bank_id);
@@ -128,14 +138,43 @@ class ExportOrderController extends Controller
                 }
             }
 
-            $exportOrder = ExportOrder::create(array_merge(
-                $exportOrderData,
-                [
-                    'created_by' => auth()->user()->id,
-                    'additional_info' => $request->additional_info,
-                    'consignee_id' => $request->consignee_id,
-                ]
-            ));
+            $exportOrder = null;
+            $saved = false;
+            $tries = 0;
+            $maxTries = 5;
+
+            while (!$saved && $tries < $maxTries) {
+                try {
+                    // Re-generate voucher_no to ensure uniqueness and prevent race conditions
+                    $exportOrderData['voucher_no'] = generateUniversalUniqueNo('export_orders', [
+                        'prefix'        => 'EXPORT',
+                        'column'        => 'voucher_no',
+                        'with_date'     => true,
+                        'custom_date'   => $request->voucher_date,
+                        'date_format'   => 'm-Y',
+                        'serial_at_end' => true,
+                    ]);
+
+                    $exportOrder = ExportOrder::create(array_merge(
+                        $exportOrderData,
+                        [
+                            'created_by' => auth()->user()->id,
+                            'additional_info' => $request->additional_info,
+                            'consignee_id' => $request->consignee_id,
+                        ]
+                    ));
+                    $saved = true;
+                } catch (\Illuminate\Database\QueryException $e) {
+                    // Check for duplicate entry error (MySQL code 1062)
+                    if ($e->errorInfo[1] == 1062 && str_contains($e->getMessage(), 'voucher_no')) {
+                        $tries++;
+                        if ($tries >= $maxTries) throw $e;
+                        // Continue loop to try again with a fresh number
+                    } else {
+                        throw $e;
+                    }
+                }
+            }
 
             // CLEANUP orphaned approval rows (if record ID 1 is being reused)
             \App\Models\ApprovalsModule\ApprovalRow::where('module_id', 31)->where('record_id', $exportOrder->id)->delete();
