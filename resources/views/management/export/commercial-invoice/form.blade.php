@@ -3,7 +3,7 @@
     $formAction = $isEdit
         ? route('commercial-invoice.update', ['commercial_invoice' => $commercialInvoice->id])
         : route('commercial-invoice.store');
-    $selectedBillId = old('bill_of_lading_id', $commercialInvoice?->bill_of_lading_id);
+    $selectedBillIds = old('bill_of_lading_ids', $commercialInvoice?->resolved_bill_of_lading_ids ?? []);
 @endphp
 
 <form action="{{ $formAction }}" method="POST" id="ajaxSubmit" autocomplete="off">
@@ -34,7 +34,7 @@
             </div>
 
             <div class="form-group">
-                <label>Export Order (Approved)</label>
+                <label>Export Order</label>
                 @if ($isEdit)
                     <input type="hidden" name="export_order_id" value="{{ $commercialInvoice->export_order_id }}">
                 @endif
@@ -53,11 +53,13 @@
 
             <div class="form-group">
                 <label>Bill Of Lading</label>
-                @if ($isEdit && $selectedBillId)
-                    <input type="hidden" name="bill_of_lading_id" value="{{ $selectedBillId }}">
+                @if ($isEdit && !empty($selectedBillIds))
+                    @foreach($selectedBillIds as $bId)
+                        <input type="hidden" name="bill_of_lading_ids[]" value="{{ $bId }}">
+                    @endforeach
                 @endif
-                <select name="bill_of_lading_id" id="bill_of_lading_id"
-                    class="form-control select2"
+                <select name="bill_of_lading_ids[]" id="bill_of_lading_ids"
+                    class="form-control select2" multiple
                     {{ $isEdit ? 'disabled' : '' }}>
                 </select>
             </div>
@@ -85,7 +87,7 @@
 </form>
 
 <script>
-    var initialBillId    = {{ $selectedBillId ? (int) $selectedBillId : 'null' }};
+    var initialBillIds   = @json(array_values(array_unique(array_map('intval', (array) $selectedBillIds))));
     var currentInvoiceId = {{ $isEdit ? (int) $commercialInvoice->id : 'null' }};
 
     $(document).ready(function() {
@@ -107,7 +109,7 @@
             loadBillsByExportOrder(false);
         });
 
-        $('#bill_of_lading_id').on('change', function() {
+        $('#bill_of_lading_ids').on('change', function() {
             fetchCommercialInvoicePreview();
         });
     });
@@ -126,12 +128,12 @@
 
     function loadBillsByExportOrder(isInitial) {
         var exportOrderId = $('#export_order_id').val();
-        var $bills        = $('#bill_of_lading_id');
+        var $bills        = $('#bill_of_lading_ids');
 
         $bills.empty().trigger('change');
 
         if (!exportOrderId) {
-            showCIHint('Please select the Export Order first, then choose the Bill of Lading.');
+            showCIHint('Please select the Export Order first, then choose Bill of Ladings.');
             return;
         }
 
@@ -147,17 +149,17 @@
                 }
             });
 
-            $bills.val(isInitial ? initialBillId : null).trigger('change');
+            $bills.val(isInitial ? initialBillIds : []).trigger('change');
             fetchCommercialInvoicePreview();
         });
     }
 
     function fetchCommercialInvoicePreview() {
         var exportOrderId  = $('#export_order_id').val();
-        var billOfLadingId = $('#bill_of_lading_id').val();
+        var billOfLadingIds = $('#bill_of_lading_ids').val() || [];
 
-        if (!exportOrderId || !billOfLadingId) {
-            showCIHint('Select both Export Order and Bill of Lading to generate the preview.');
+        if (!exportOrderId || billOfLadingIds.length === 0) {
+            showCIHint('Select both Export Order and Bill of Ladings to generate the preview.');
             return;
         }
 
@@ -166,7 +168,7 @@
             method:   'GET',
             data: {
                 export_order_id:       exportOrderId,
-                bill_of_lading_id:     billOfLadingId,
+                'bill_of_lading_ids[]': billOfLadingIds,
                 commercial_invoice_no: $('#commercial_invoice_no').val(),
                 invoice_date:          $('#invoice_date').val(),
                 current_invoice_id:    currentInvoiceId,

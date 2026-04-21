@@ -13,6 +13,7 @@ class CommercialInvoice extends Model
 
     protected $casts = [
         'invoice_date' => 'date',
+        'selected_bill_of_lading_ids' => 'array',
     ];
 
     public function exportOrder()
@@ -23,6 +24,17 @@ class CommercialInvoice extends Model
     public function billOfLading()
     {
         return $this->belongsTo(BillOfLading::class, 'bill_of_lading_id');
+    }
+
+    public function getResolvedBillOfLadingIdsAttribute(): array
+    {
+        $ids = $this->selected_bill_of_lading_ids ?? [];
+
+        if (empty($ids) && $this->bill_of_lading_id) {
+            $ids = [$this->bill_of_lading_id];
+        }
+
+        return array_values(array_unique(array_map('intval', array_filter($ids))));
     }
 
     public function createdBy()
