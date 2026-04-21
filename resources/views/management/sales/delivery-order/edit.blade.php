@@ -134,6 +134,7 @@
                                 @endphp
                                 <option value="{{ $item->unified_id }}"
                                     data-amount="{{ $item->remaining_amount }}"
+                                    data-date="{{ $item->date }}"
                                     @selected($isSelected)>
                                     {{ $item->unified_text }}
                                 </option>
@@ -424,11 +425,13 @@
 <script>
     salesInquiryRowIndex = 1;
 
+    var isInitialLoad = true;
     $(document).ready(function() {
         $('.select2').select2();
         applySaudaType(`{{ strtolower($delivery_order->sauda_type) }}`);
         // Initialize location options based on current sale order locations
         get_so_detail();
+        update_delivery_date_min();
 
 
     });
@@ -687,6 +690,32 @@
             $("#withhold_amount").val("0");
         }
 
+        update_delivery_date_min();
+    }
+
+    function update_delivery_date_min() {
+        let maxDate = "";
+        $("#receipt_vouchers option:selected").each(function() {
+            let date = $(this).data("date");
+            if (date && (!maxDate || date > maxDate)) {
+                maxDate = date;
+            }
+        });
+        
+        if (maxDate) {
+            $("#delivery_date").attr("min", maxDate);
+            if ($("#delivery_date").val() && $("#delivery_date").val() < maxDate) {
+                $("#delivery_date").val(maxDate);
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Delivery Date Adjusted',
+                    text: 'Delivery date cannot be before the latest receipt voucher date (' + maxDate + ').',
+                    confirmButtonText: 'OK'
+                });
+            }
+        } else {
+            // $("#delivery_date").removeAttr("min");
+        }
     }
 
     function change_withhold_amount() {
@@ -1052,8 +1081,11 @@
                 $("#locations").val(String(initialLocationId || ''));
 
 
-                $("#delivery_date").val(res.delivery_date);
-                $("#delivery_date").prop("readonly", true);
+                if (!isInitialLoad) {
+                    $("#delivery_date").val(res.delivery_date);
+                }
+                isInitialLoad = false;
+                $("#delivery_date").prop("readonly", false);
                 // selectLocation(document.getElementById("locations"), true);
 
                 // $("#locations").val(res.locations).trigger("change");

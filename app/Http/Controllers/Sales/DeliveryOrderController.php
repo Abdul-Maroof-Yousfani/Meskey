@@ -188,7 +188,7 @@ class DeliveryOrderController extends Controller
             }
 
 
-            $spent_qty = $salesOrder->delivery_orders->flatMap->delivery_order_data->sum("qty");
+            $spent_qty = $salesOrder->delivery_orders->where("am_approval_status", "!=", "rejected")->flatMap->delivery_order_data->sum("qty");
             $total_qty = $salesOrder?->sales_order_data?->first()->qty;
             $remaining_qty = $total_qty - $spent_qty;
             
@@ -438,10 +438,11 @@ class DeliveryOrderController extends Controller
             ->find($so_id);
 
         $spent = $sale_order->delivery_orders
+            ->where("am_approval_status", "!=", "rejected")
             ->flatMap->delivery_order_data
             ->sum('qty');
        
-        $spent_qty = $sale_order->delivery_orders->flatMap->delivery_order_data->sum("qty");
+        $spent_qty = $sale_order->delivery_orders->where("am_approval_status", "!=", "rejected")->flatMap->delivery_order_data->sum("qty");
         $total_qty = $sale_order?->sales_order_data?->first()->qty;
         $remaining_qty = $total_qty - $spent_qty;
 
@@ -476,6 +477,7 @@ class DeliveryOrderController extends Controller
                 'id' => "adv_{$adv->id}",
                 'text' => "advance ({$adv->net_amount})",
                 'amount' => $adv->remaining_amount,
+                'date' => $adv->receiptVoucher->rv_date->format('Y-m-d'),
             ];
         }
 
@@ -515,6 +517,7 @@ class DeliveryOrderController extends Controller
                         'id' => "rv_{$rv->id}",
                         'text' => "{$rv->unique_no} ({$rv->ref_bill_no})",
                         'amount' => $remaining,
+                        'date' => $rv->rv_date->format('Y-m-d'),
                     ];
                 }
             }
@@ -571,6 +574,7 @@ class DeliveryOrderController extends Controller
                 $adv->remaining_amount = doubleval($adv->net_amount) - doubleval($spent);
                 $adv->unified_id = "adv_{$adv->id}";
                 $adv->unified_text = "advance ({$adv->net_amount})";
+                $adv->date = $adv->receiptVoucher->rv_date->format('Y-m-d');
                 return $adv;
             })
             ->filter(function ($adv) use ($delivery_order) {
@@ -610,6 +614,7 @@ class DeliveryOrderController extends Controller
                     $rv->remaining_amount = doubleval($linked_amount) - doubleval($spent);
                     $rv->unified_id = "rv_{$rv->id}";
                     $rv->unified_text = "{$rv->unique_no} ({$rv->ref_bill_no})";
+                    $rv->date = $rv->rv_date->format('Y-m-d');
                     return $rv;
                 })
                 ->filter(function ($rv) use ($delivery_order) {
@@ -739,7 +744,7 @@ class DeliveryOrderController extends Controller
 
             $salesOrder = SalesOrder::find($delivery_order->so_id);
 
-            $spent_qty = $salesOrder->delivery_orders->flatMap->delivery_order_data->sum("qty");
+            $spent_qty = $salesOrder->delivery_orders->where("am_approval_status", "!=", "rejected")->flatMap->delivery_order_data->sum("qty");
             $total_qty = $salesOrder?->sales_order_data?->first()->qty;
             $remaining_qty = $total_qty - $spent_qty;
 

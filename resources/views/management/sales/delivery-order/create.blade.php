@@ -438,6 +438,32 @@
             $("#withhold_amount").val("0");
         }
 
+        update_delivery_date_min();
+    }
+
+    function update_delivery_date_min() {
+        let maxDate = "";
+        $("#receipt_vouchers option:selected").each(function() {
+            let date = $(this).data("date");
+            if (date && (!maxDate || date > maxDate)) {
+                maxDate = date;
+            }
+        });
+        
+        if (maxDate) {
+            $("#delivery_date").attr("min", maxDate);
+            if ($("#delivery_date").val() && $("#delivery_date").val() < maxDate) {
+                $("#delivery_date").val(maxDate);
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Delivery Date Adjusted',
+                    text: 'Delivery date cannot be before the latest receipt voucher date (' + maxDate + ').',
+                    confirmButtonText: 'OK'
+                });
+            }
+        } else {
+            // $("#delivery_date").removeAttr("min");
+        }
     }
 
     function change_withhold_amount() {
@@ -773,7 +799,7 @@
                 so_amount = res.so_amount;
 
                 $("#delivery_date").val(res.delivery_date);
-                $("#delivery_date").prop("readonly", true);
+                $("#delivery_date").prop("readonly", false);
                 validate_expiry();
 
                 // $("#locations").val(res.locations).trigger("change");
@@ -824,7 +850,8 @@
                 res.forEach(item => {
                     select.append(
                         `<option value="${item.id}"
-                                data-amount="${item.amount}">
+                                data-amount="${item.amount}"
+                                data-date="${item.date}">
                             ${item.text}
                         </option>`
                     );
