@@ -42,26 +42,17 @@
                         </p>
                     </td>
                     <td>
-                        @can('role-edit')
-                            @if ($row->is_done == 'no')
-                                <a onclick="openModal(this,'{{ route($isResampling ? 'raw-material.purchase-resampling.edit' : 'raw-material.purchase-sampling.edit', $row->id) }}','{{ $isResampling ? 'Create Purchase Re-Sampling' : 'Create Purchase Sampling' }}',false)"
-                                    class="info p-1 text-center mr-2 position-relative">
-                                    <i class="ft-edit font-medium-3"></i>
-                                </a>
-                            @else
-                                <a onclick="openModal(this,'{{ route($isResampling ? 'raw-material.purchase-resampling.edit' : 'raw-material.purchase-sampling.edit', $row->id) }}','{{ $isResampling ? 'View Purchase Re-Sampling' : 'View Purchase Sampling' }}',true)"
-                                    class="info p-1 text-center mr-2 position-relative">
-                                    <i class="ft-eye font-medium-3"></i>
-                                </a>
-                            @endif
-                        @endcan
-                        {{-- @can('role-delete')
-                            <a onclick="deletemodal('{{ route('ticket.destroy', $row->id) }}','{{ route('get.ticket') }}')"
-                                class="danger p-1 text-center mr-2 position-relative ">
-
-                                <i class="ft-x font-medium-3"></i>
+                        @if ($row->is_done == 'no')
+                            <a onclick="openModal(this,'{{ route($isResampling ? 'raw-material.purchase-resampling.edit' : 'raw-material.purchase-sampling.edit', $row->id) }}','{{ $isResampling ? 'Create Purchase Re-Sampling' : 'Create Purchase Sampling' }}',false)"
+                                class="info p-1 text-center mr-2 position-relative">
+                                <i class="ft-edit font-medium-3"></i>
                             </a>
-                        @endcan --}}
+                        @else
+                            <a onclick="openModal(this,'{{ route($isResampling ? 'raw-material.purchase-resampling.edit' : 'raw-material.purchase-sampling.edit', $row->id) }}','{{ $isResampling ? 'View Purchase Re-Sampling' : 'View Purchase Sampling' }}',true)"
+                                class="info p-1 text-center mr-2 position-relative">
+                                <i class="ft-eye font-medium-3"></i>
+                            </a>
+                        @endif
                     </td>
                 </tr>
             @endforeach

@@ -100,31 +100,34 @@ class InnersampleRequestController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $ticket = ArrivalTicket::findOrFail($request->ticket_id);
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($request) {
+            $ticket = ArrivalTicket::where('id', $request->ticket_id)->lockForUpdate()->firstOrFail();
 
-        if ($ticket->document_approval_status === 'fully_approved' || $ticket->document_approval_status === 'half_approved') {
-            return response('This truck has already been approved.', 422);
-        }
+            if ($ticket->document_approval_status === 'fully_approved' || $ticket->document_approval_status === 'half_approved') {
+                return response('This truck has already been approved.', 422);
+            }
 
-        $existingRequest = ArrivalSamplingRequest::where('arrival_ticket_id', $request->ticket_id)
-            ->where('sampling_type', 'inner')
-            ->where('approved_status', 'pending')
-            ->first();
+            $existingRequest = ArrivalSamplingRequest::where('arrival_ticket_id', $request->ticket_id)
+                ->where('sampling_type', 'inner')
+                ->where('approved_status', 'pending')
+                ->lockForUpdate()
+                ->first();
 
-        if ($existingRequest) {
-            return response('A pending inner sampling request already exists for this ticket.', 422);
-        }
+            if ($existingRequest) {
+                return response('A pending inner sampling request already exists for this ticket.', 422);
+            }
 
-        $arrivalSampleReq = ArrivalSamplingRequest::create([
-            'company_id'       => $request->company_id,
-            'arrival_ticket_id' => $request->ticket_id,
-            'sampling_type'    => 'inner',
-            'is_re_sampling'   => 'no',
-            'is_done'          => 'no',
-            'remark'           => null,
-        ]);
+            $arrivalSampleReq = ArrivalSamplingRequest::create([
+                'company_id'       => $request->company_id,
+                'arrival_ticket_id' => $request->ticket_id,
+                'sampling_type'    => 'inner',
+                'is_re_sampling'   => 'no',
+                'is_done'          => 'no',
+                'remark'           => null,
+            ]);
 
-        return response()->json(['success' => 'Inner Sampling Request created successfully.', 'data' => $arrivalSampleReq], 201);
+            return response()->json(['success' => 'Inner Sampling Request created successfully.', 'data' => $arrivalSampleReq], 201);
+        });
     }
 
     /**

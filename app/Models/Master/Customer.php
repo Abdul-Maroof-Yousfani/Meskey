@@ -37,6 +37,7 @@ class Customer extends Model
         'attachment',
         'status',
         'company_location_ids',
+        'nature',
     ];
 
     protected $casts = [

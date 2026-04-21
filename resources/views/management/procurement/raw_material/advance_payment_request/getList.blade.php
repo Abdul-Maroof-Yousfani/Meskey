@@ -1,13 +1,14 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-2"> Contract No</th>
-            <th class="col-sm-2">Supplier</th>
-            <th class="col-sm-1">Commodity</th>
-            <th class="col-sm-2">Amounts</th>
-            <th class="col-sm-2">Total Requested Amount</th>
-            <th class="col-sm-1">Created</th>
-            <th class="col-sm-1">Action</th>
+            <th style="width: 10%;"> Contract No</th>
+            <th style="width: 12%;">Location</th>
+            <th style="width: 18%;">Supplier</th>
+            <th style="width: 10%;">Commodity</th>
+            <th style="width: 15%;">Amounts</th>
+            <th style="width: 15%;">Total Requested Amount</th>
+            <th style="width: 10%;">Created</th>
+            <th style="width: 10%;">Action</th>
         </tr>
     </thead>
     <tbody>
@@ -17,6 +18,7 @@
                     <td>
                         #{{ $ticket->contract_no ?? 'N/A' }}
                     </td>
+                    <td>{{ $ticket->location->name ?? 'N/A' }}</td>
                     <td>{{ $ticket->supplier->name ?? 'N/A' }}</td>
                     <td>{{ $ticket->qcProduct->name ?? 'N/A' }}</td>
                     <td>

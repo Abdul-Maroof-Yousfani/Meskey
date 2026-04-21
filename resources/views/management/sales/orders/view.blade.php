@@ -91,19 +91,37 @@
                 <div class="col-12 mt-3">
                     <h6 class="header-heading-sepration">Customer Details</h6>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Customer:</label>
                         <input type="text" value="{{ get_customer_name($sale_order->customer_id) }}" class="form-control" readonly>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="form-label">Sell By:</label>
+                        <input type="text" class="form-control" value="{{ $sale_order->parent_user->name ?? 'N/A' }}" readonly>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="form-label">Broker:</label>
+                        <input type="text" value="{{ $sale_order->broker->name ?? 'N/A' }}" class="form-control" readonly>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="form-label">Comission RS per KG:</label>
+                        <input type="text" value="{{ $sale_order->commission_per_kg ?? 0 }}" class="form-control" readonly>
+                    </div>
+                </div>
+                <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Contact Person:</label>
                         <input type="text" name="contact_person" id="contact_person" value="{{ $sale_order->contact_person }}" class="form-control" readonly>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Token Money:</label>
                         <input type="number" name="token_money" id="token_money" value="{{ $sale_order->token_money }}" class="form-control" step="0.01" min="0" readonly>
@@ -145,7 +163,6 @@
                     <div class="form-group">
                         <label class="form-label">Locations:</label>
                         <select name="locations[]" id="locations" class="form-control select2" multiple disabled>
-                            <option value="">Select Locations</option>
                             @foreach(get_locations() as $location)
                                 <option value="{{ $location->id }}" @selected(in_array($location->id, $sale_order->locations->pluck("location_id")->toArray()))>{{ $location->name }}</option>
                             @endforeach
@@ -156,7 +173,6 @@
                     <div class="form-group">
                         <label class="form-label">Factory:</label>
                         <select name="arrival_location_id[]" id="arrival_location_id" class="form-control select2" multiple disabled>
-                            <option value="">Select Factory</option>
                             @foreach($arrivalLocations as $factory)
                                 <option value="{{ $factory->id }}" data-company="{{ $factory->company_location_id ?? '' }}" @selected(in_array($factory->id, $selectedFactories))>{{ $factory->name }} ({{ $factory->companyLocation->name }})</option>
                             @endforeach
@@ -174,7 +190,6 @@
                         @endphp
                         <label class="form-label">Section{{ $factoryNamesString }}:</label>
                         <select name="arrival_sub_location_id[]" id="arrival_sub_location_id" class="form-control select2" multiple disabled>
-                            <option value="">Select Section</option>
                             @foreach($arrivalSubLocations as $section)
                                 <option value="{{ $section->id }}" data-factory="{{ $section->arrival_location_id }}" @selected(in_array($section->id, $selectedSections))>{{ $section->name }} ({{ $section->arrivalLocation->name }})</option>
                             @endforeach
@@ -210,12 +225,12 @@
     </div>
 
     <div class="row form-mar">
-        <div class="col-12 text-right mb-2">
+        <!-- <div class="col-12 text-right mb-2">
             <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()"
                 id="addRowBtn" disabled>
                 <i class="fa fa-plus"></i>&nbsp; Add New Item
             </button>
-        </div>
+        </div> -->
 
         <div class="col-md-12">
             <div class="table-responsive" style="overflow-x: auto; white-space: nowrap;">
@@ -271,7 +286,7 @@
                                         min="0" readonly>
                                 </td>
                                 <td>
-                                    <input type="text" name="amount[]" id="amount_{{ $index }}" value="{{ $data->rate * $data->qty }}" class="form-control amount" readonly>
+                                    <input type="text" name="amount[]" id="amount_{{ $index }}" value="{{ round($data->rate * $data->qty) }}" class="form-control amount" readonly>
                                 </td>
 
                                 <td>
@@ -302,6 +317,7 @@
 
     
     <input type="hidden" id="rowCount" value="0">
+
     
     <div class="row bottom-button-bar">
         <div class="col-12 text-end">
@@ -313,7 +329,7 @@
 </form>
 <div class="row">
     <div class="col-12">
-        <x-approval-status :model="$sale_order" />
+        <x-approval-status :model="$sale_order" :list-refresh="route('sales.get.sales-order.list')" />
     </div>
 </div>
 

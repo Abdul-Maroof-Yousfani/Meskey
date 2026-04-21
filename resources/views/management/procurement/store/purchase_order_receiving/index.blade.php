@@ -98,8 +98,6 @@
                                             <th style="width: 90px; min-width: 90px;">Qty</th>
                                             <th style="width: 90px; min-width: 90px;">Rate</th>
                                             <th style="width: 100px; min-width: 100px;">Total Amount</th>
-                                            <th style="width: 110px; min-width: 110px;">QC</th>
-                                            <th style="width: 110px; min-width: 110px;">QC Status</th>
                                             <th style="min-width: 120px;">Action</th>
                                         </tr>
                                     </thead>

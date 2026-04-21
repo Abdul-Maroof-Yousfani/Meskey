@@ -88,7 +88,7 @@
 
         <td>
             <input type="text" name="amount[]" id="pack_size_{{ $i }}"
-                value="{{ $data->qty * $data->rate }}" class="form-control amount" readonly>
+                value="{{ round($data->qty * $data->rate) }}" class="form-control amount" readonly>
         </td>
 
          <td>

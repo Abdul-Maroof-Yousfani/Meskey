@@ -294,8 +294,17 @@
                                 </td> --}}
 
 
+        <td style="min-width: 150px;">
+            @php
+                $deliveryDate = $pqSource ? $pqSource->delivery_date : ($isEditMode ? $data->delivery_date : '');
+            @endphp
+            <input type="date" name="delivery_date[]" value="{{ $deliveryDate }}" 
+                id="delivery_date_{{ $key }}" class="form-control"
+                {{ $pqSource ? 'readonly' : '' }}>
+        </td>
+
         <td style="min-width: 400px;">
-            <input  type="text" name="remarks[]" value=""
+            <input  type="text" name="remarks[]" value="{{ $isEditMode ? $data->remarks : '' }}"
                 id="remark_{{ $key }}" class="form-control">
         </td>
 

@@ -38,10 +38,10 @@ class PurchaseRequestController extends Controller
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $job_orders = JobOrder::with('packing_items.subItems')->where('id', request()->job_order)->get();
         $items = Product::with("unitOfMeasure")->where("product_type", "general_items")->where("status", "active")->get();
-
+        $sizes = Size::all();
 
         $purchase_request_id = request()->purchase_request_id;
-    return view('management.procurement.store.purchase_request.getItem', compact('job_orders', 'categories', 'items', 'purchase_request_id'));
+        return view('management.procurement.store.purchase_request.getItem', compact('job_orders', 'categories', 'items', 'purchase_request_id', 'sizes'));
 
     }
 
@@ -189,9 +189,10 @@ class PurchaseRequestController extends Controller
         $items = Product::with("unitOfMeasure")->where("product_type", "general_items")->where("status", "active")->get();
         $departments = Department::where('status', 'active')->get();
         $request_bies = RequestBy::where('status', 'active')->get();
+        $sizes = Size::all();
 
       
-        return view('management.procurement.store.purchase_request.create', compact('categories', 'job_orders', 'items', 'departments', 'request_bies'));
+        return view('management.procurement.store.purchase_request.create', compact('categories', 'job_orders', 'items', 'departments', 'request_bies', 'sizes'));
     }
 
     /**
@@ -275,6 +276,7 @@ class PurchaseRequestController extends Controller
                     'color' => $request->color[$index] ?? null,
                     'construction_per_square_inch' => $request->construction_per_square_inch[$index] ?? null,
                     'size' => $sizeId,
+                    'size_id' => $request->size_id[$index] ?? null,
                     'stitching' => $stitchingValue,
                     'micron' => $request->micron[$index] ?? null,
                     'printing_sample' => $printingSamplePaths,
@@ -364,8 +366,9 @@ class PurchaseRequestController extends Controller
         $locations = CompanyLocation::all();
         $departments = Department::where('status', 'active')->get();
         $request_bies = RequestBy::where('status', 'active')->get();
+        $sizes = Size::all();
 
-        return view('management.procurement.store.purchase_request.edit', compact('items', 'locations_id', 'location_names', 'purchaseRequest', 'purchaseRequestData', 'categories', 'job_orders', 'locations', 'departments', 'request_bies'));
+        return view('management.procurement.store.purchase_request.edit', compact('items', 'locations_id', 'location_names', 'purchaseRequest', 'purchaseRequestData', 'categories', 'job_orders', 'locations', 'departments', 'request_bies', 'sizes'));
     }
 
     public function manageApprovals($id)
@@ -397,7 +400,8 @@ class PurchaseRequestController extends Controller
             'items' => $items,
             'location_names' => $location_names,
             'departments' => $departments,
-            'request_bies' => $request_bies
+            'request_bies' => $request_bies,
+            'sizes' => Size::all()
         ]);
     }
 
@@ -491,6 +495,7 @@ class PurchaseRequestController extends Controller
                             'color' => $request->color[$index] ?? null,
                             'construction_per_square_inch' => $request->construction_per_square_inch[$index] ?? null,
                             'size' => $sizeId,
+                            'size_id' => $request->size_id[$index] ?? null,
                             'stitching' => $stitchingValue,
                             'printing_sample' => $printingSamplePath,
                             'remarks' => $request->remarks[$index] ?? null,
@@ -569,6 +574,7 @@ class PurchaseRequestController extends Controller
                         'color' => $request->color[$index] ?? null,
                         'construction_per_square_inch' => $request->construction_per_square_inch[$index] ?? null,
                         'size' => $sizeIdNew,
+                        'size_id' => $request->size_id[$index] ?? null,
                         'stitching' => $stitchingValueNew,
                         'printing_sample' => $printingSamplePathNew,
                         'brand_id' => $request->brands[$index] ?? null,

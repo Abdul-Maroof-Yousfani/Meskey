@@ -130,7 +130,7 @@
                      <th>Job Order</th>
                      <th>Qty</th>
 @if(optional($purchaseOrderReceiving->purchase_request)->category_id == 38)
-                     <th>Receive Weight (gm)</th>
+                     <th>Receive Weight (kg)</th>
                      <th>Accepted Quantity</th>
                      <th>Rejected Quantity</th>
                      <th>Deduction Per KG</th>
@@ -154,9 +154,9 @@
                 </thead>
                 <tbody id="purchaseRequestBody">
                     @foreach ($purchaseOrderReceiving->purchaseOrderReceivingData ?? [] as $key => $data)
-                             <button id="modalButton{{ $key }}" style="visibility: hidden;" onclick="openModal(this, '{{ route('store.qc.show-create', ['id' => $data->id, 'grn' => optional($purchaseOrderReceiving)->reference_no]) }}', 'Add QC', false, '100%')">&nbsp;</button>
-                      <button id="modalButtonQc{{ $key }}" style="visibility: hidden;" onclick="openModal(this, '{{ route('store.qc.edit', ['id' => $data->id, 'grn' => optional($purchaseOrderReceiving)->reference_no]) }}', 'Edit QC', false, '100%')">&nbsp;</button>
-                      <button id="modalButtonViewQc{{ $key }}" style="visibility: hidden;" onclick="openModal(this, '{{ route('store.qc.view', ['id' => $data->id, 'grn' => optional($purchaseOrderReceiving)->reference_no]) }}', 'View QC', false, '100%')">&nbsp;</button>
+                             <button id="modalButton{{ $key }}" style="visibility: hidden;" onclick="openModal(this, '{{ route('store.qc.show-create', ['id' => $data->id, 'grn' => optional($purchaseOrderReceiving)->reference_no]) }}', 'Add QC', false, '95%')">&nbsp;</button>
+                      <button id="modalButtonQc{{ $key }}" style="visibility: hidden;" onclick="openModal(this, '{{ route('store.qc.edit', ['id' => $data->id, 'grn' => optional($purchaseOrderReceiving)->reference_no]) }}', 'Edit QC', false, '95%')">&nbsp;</button>
+                      <button id="modalButtonViewQc{{ $key }}" style="visibility: hidden;" onclick="openModal(this, '{{ route('store.qc.view', ['id' => $data->id, 'grn' => optional($purchaseOrderReceiving)->reference_no]) }}', 'View QC', false, '95%')">&nbsp;</button>
              
                         <tr id="row_{{ $key }}">
                             <td style="min-width: 300px;">

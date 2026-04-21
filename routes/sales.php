@@ -17,6 +17,7 @@ Route::name("sales.")->group(function () {
     Route::post("get-sales-inquiry", [SalesInquiryController::class, "getList"])->name("get.sales-inquiry.list");
     Route::get("sales-inquiry/{sales_inquiry}/view", [SalesInquiryController::class, "view"])->name("sales-inquiry.view");
     Route::get("/get/sales-number",  [SalesInquiryController::class, "getNumber"])->name("get.sales-number");
+    Route::get("/get-customer-locations", [SalesInquiryController::class, "getCustomerLocations"])->name("get-customer-locations");
     
     Route::get("/get-sale-inquiry-data-items", [SaleOrderController::class, "get_inquiry_data"])->name("get-sale-inquiry-data");
     Route::get("/get-sale-inquiries-against-customer", [SaleOrderController::class, "get_inquiries"])->name("get-sale-inquiries-against-customer");

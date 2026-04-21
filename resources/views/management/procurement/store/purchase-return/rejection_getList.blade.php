@@ -1,13 +1,14 @@
 <table class="table m-0" style="table-layout: fixed; width: 100%;">
     <thead>
         <tr>
-            <th style="width: 12%;" class="text-left">Return No</th>
-            <th style="width: 12%;" class="text-left">GRN No</th>
+            <th style="width: 10%;" class="text-left">Return No</th>
+            <th style="width: 10%;" class="text-left">GRN No</th>
             <th style="width: 10%;" class="text-left">Truck No</th>
             <th style="width: 15%;" class="text-left">Supplier</th>
             <th style="width: 15%;" class="text-left">Item</th>
+            <th style="width: 10%;" class="text-left">Rate</th>
             <th style="width: 15%;" class="text-left">Rejected Qty</th>
-            <th style="width: 16%;" class="text-left">Action</th>
+            <th style="width: 15%;" class="text-left">Action</th>
         </tr>
     </thead>
     <tbody>
@@ -37,6 +38,10 @@
                             <p class="m-0"><strong>{{ $item['name'] }}</strong></p>
                         </td>
 
+                        <td class="text-left">
+                            <strong>{{ $item['rate'] }}</strong>
+                        </td>
+                        
                         <td class="text-left">
                             <span class="badge badge-danger">{{ $item['rejected_qty'] }} {{ $item['uom'] }}</span>
                         </td>

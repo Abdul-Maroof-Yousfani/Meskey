@@ -1,18 +1,17 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-3">Ticket No / Contract No</th>
-            <th class="col-sm-3">Supplier</th>
-            <th class="col-sm-1">Sauda Type</th>
-            <th class="col-sm-1">Truck No</th>
-
-            <th class="col-sm-1">Builty No</th>
-            <th class="col-sm-2">Commodity</th>
-            <th class="col-sm-1">Loading date</th>
-            <th class="col-sm-2">Amounts</th>
-            <th class="col-sm-2">Total Requested Amount</th>
-            <th class="col-sm-1">Created</th>
-            <th class="col-sm-1">Action</th>
+            <th style="width: 10%;">Ticket No / Contract No</th>
+            <th style="width: 8%;">Bilty No</th>
+            <th style="width: 8%;">Truck No</th>
+            <th style="width: 8%;">Location</th>
+            <th style="width: 12%;">Supplier</th>
+            <th style="width: 8%;">Commodity</th>
+            <th style="width: 8%;">Loading date</th>
+            <th style="width: 12%;">Amounts</th>
+            <th style="width: 10%;">Tot. Req. Amt.</th>
+            <th style="width: 8%;">Created</th>
+            <th style="width: 8%;">Action</th>
         </tr>
     </thead>
     <tbody>
@@ -21,15 +20,12 @@
                 <tr>
                     <td>
                         <strong>Ticket:</strong> #{{ $ticket['unique_no'] ?? 'N/A' }}<br>
-                        <strong>Contract:</strong> #{{ $ticket['purchaseOrder']->contract_no ?? 'N/A' }}<br>
-              
-
+                        <strong>Contract:</strong> #{{ $ticket['purchaseOrder']->contract_no ?? 'N/A' }}
                     </td>
-
-                    <td>{{ $ticket['purchaseOrder']->supplier?->name ?? ($ticket['model']->accountsOf?->name ?? 'N/A') }}</td>
-                    <td>{{ $ticket["model"]->saudaType->name ?? "N/A" }}</td>
-                    <td>{{ $ticket['model']->truck_no ?? 'N/A' }}</td>
                     <td>{{ $ticket['model']->bilty_no ?? 'N/A' }}</td>
+                    <td>{{ $ticket['model']->truck_no ?? 'N/A' }}</td>
+                    <td>{{ $ticket['model']->location->name ?? 'N/A' }}</td>
+                    <td>{{ $ticket['purchaseOrder']->supplier?->name ?? ($ticket['model']->accountsOf?->name ?? 'N/A') }}</td>
                     <td>{{ $ticket['purchaseOrder']->qcProduct?->name ?? ($ticket['qcProduct']?->name ?? 'N/A') }}</td>
                     
                     <td>
@@ -110,7 +106,7 @@
             @endforeach
         @else
             <tr class="ant-table-placeholder">
-                <td colspan="9" class="ant-table-cell text-center">
+                <td colspan="11" class="ant-table-cell text-center">
                     <div class="my-5">
                         <svg width="64" height="41" viewBox="0 0 64 41" xmlns="http://www.w3.org/2000/svg">
                             <g transform="translate(0 1)" fill="none" fill-rule="evenodd">

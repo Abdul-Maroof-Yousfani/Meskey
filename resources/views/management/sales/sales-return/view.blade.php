@@ -155,12 +155,12 @@
     </div>
 
     <div class="row form-mar">
-        <div class="col-12 text-right mb-2">
+        <!-- <div class="col-12 text-right mb-2">
             <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()"
                 id="addRowBtn" disabled>
                 <i class="fa fa-plus"></i>&nbsp; Add New Item
             </button>
-        </div>
+        </div> -->
 
         <div class="col-md-12">
             <div class="table-responsive" style="overflow-x: auto; white-space: nowrap;">
@@ -181,7 +181,6 @@
                             <th>Net Amount</th>
                             <th>Line Desc</th>
                             <th>Truck No</th>
-                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody id="siTableBody">
@@ -293,12 +292,7 @@
                                         id="truck_no_{{ $rowIndex }}" class="form-control truck_no"
                                         value="{{ $truckNo }}">
                                 </td>
-                                <td style="min-width: 80px;">
-                                    <button type="button" class="btn btn-danger btn-sm removeRowBtn"
-                                        onclick="removeRow({{ $rowIndex }})" style="width:60px;">
-                                        <i class="fa fa-trash"></i>
-                                    </button>
-                                </td>
+                             
                             </tr>
                             @php $rowIndex++; @endphp
                         @endforeach
@@ -309,15 +303,15 @@
     </div>
     <input type="hidden" id="rowCount" value="0">
     
-    <div class="row bottom-button-bar">
+    <!-- <div class="row bottom-button-bar">
         <div class="col-12 text-end">
             <a type="button"
             class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton me-2">Close</a>
             <button type="submit" class="btn btn-primary submitbutton">Save</button>
         </div>
-    </div>
+    </div> -->
 </form>
-<x-approval-status :model="$saleReturn" />
+<x-approval-status :model="$saleReturn" :list-refresh="route('sales.get.sales-return.list')" />
 
 <script>
     salesInvoiceRowIndex = 1;

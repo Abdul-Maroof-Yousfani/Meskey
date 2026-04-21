@@ -1,7 +1,7 @@
 <style>
     .expired td {
-        background-color: orange !important;
-        color: white;
+        background-color: #ffe4b1 !important;
+        color: black;
     }
 </style>
 <x-sticky-table :items="$arrivalPurchaseOrder" :leftSticky="3" :rightSticky="1" :emptyMessage="'No purchase orders found'" :pagination="$arrivalPurchaseOrder->links()">
@@ -24,7 +24,9 @@
     <th>Balance Quantity</th>
     <th>Stock in Transit Trucks</th>
     <th>Rejected Trucks</th>
-    <th>Status</th>
+    <th>Contract Status</th>
+    <th>Approval Status</th>
+    <th>Created By</th>
     <th>Action</th>
     @endslot
 
@@ -34,13 +36,15 @@
             //  $arrivedTrucks = $row->arrivalTickets()->sum('closing_trucks_qty');
             $arrivedTrucks = $row->approvedArrivalTickets()->sum('closing_trucks_qty');
             $rejectedTrucks = $row->rejectedArrivalTickets->count();
+            $rejectedHalfTrucks = $row->rejectedHalfArrivalTickets->count() != 0 ? $row->rejectedHalfArrivalTickets->count() / 2 : 0;
+            $totalRejectedTrucks = $rejectedTrucks + $rejectedHalfTrucks;
             $inTransitTrucks = $row->stockInTransitTickets->count();
             $orderedTrucks = $row->no_of_trucks ?? 0;
 
             if ($row->is_replacement == 1) {
                 $balanceTrucks = $orderedTrucks - $arrivedTrucks - $inTransitTrucks;
             } else {
-                $balanceTrucks = $orderedTrucks - $arrivedTrucks - $inTransitTrucks - $rejectedTrucks;
+                $balanceTrucks = $orderedTrucks - $arrivedTrucks - $inTransitTrucks - $totalRejectedTrucks;
             }
         @endphp
 
@@ -52,7 +56,7 @@
             <td>{{ $row->purchase_type == 'gate_buying' ? $row->supplier_name ?? 'N/A' : $row->supplier->name ?? 'N/A' }}
             </td>
             <td>{{ $row->broker_one_name ?? ($row->broker_two_name ?? ($row->broker_three_name ?? 'N/A')) }}</td>
-            <td>{{ $row->createdByUser->name ?? 'N/A' }}</td>
+            <td>{{ $row->decisionOfUser->name ?? 'N/A' }}</td>
             <td>
                 {{ $row->rate_per_kg ?? 'N/A' }}
                 <div class="d-none div-box-b">
@@ -98,7 +102,7 @@
                 {{ (($row->min_quantity ?? 0) - ($row->totalArrivedNetWeight->total_arrived_net_weight ?? 0) ?? '-') . ' - ' . (($row->max_quantity ?? 0) - ($row->totalArrivedNetWeight->total_arrived_net_weight ?? 0) ?? '-') }}
             </td>
             <td>{{ $row->stockInTransitTickets->count() }}</td>
-            <td>{{ $rejectedTrucks }}</td>
+            <td>{{ $totalRejectedTrucks }}</td>
             <td>
                 @if ($row->status == 'completed')
                     <span class="badge badge-success">Closed</span>
@@ -107,14 +111,41 @@
                 @endif
             </td>
             <td>
+                @php
+                    $amStatus = $row->am_approval_status ?? 'pending';
+                    $amBadge = match (strtolower($amStatus)) {
+                        'approved' => 'badge-success',
+                        'rejected' => 'badge-danger',
+                        'reverted' => 'badge-info',
+                        'pending' => 'badge-warning',
+                        'draft' => 'badge-secondary',
+                        default => 'badge-secondary',
+                    };
+                @endphp
+                <span class="badge {{ $amBadge }}">
+                    {{ ucfirst($amStatus) }}
+                </span>
+            </td>
+            <td>
+                {{ $row->createdByUser->name ?? 'N/A' }}
+            </td>
+            <td>
+                <a onclick="openModal(this,'{{ route('raw-material.purchase-order.view', $row->id) }}','View Purchase Order')"
+                    class="success p-1 text-center mr-2 position-relative">
+                    <i class="ft-eye font-medium-3"></i>
+                </a>
+                @canAccess('procurement-raw-purchase-order-edit')
                 <a onclick="openModal(this,'{{ route($row->purchase_type == 'gate_buying' ? 'raw-material.gate-buying.edit' : 'raw-material.purchase-order.edit', $row->id) }}','{{ $row->purchase_type == 'gate_buying' ? 'Edit Gate Buying' : 'Edit Purchase Order' }}')"
                     class="info p-1 text-center mr-2 position-relative">
                     <i class="ft-edit font-medium-3"></i>
                 </a>
+                @endcanAccess
+                @canAccess('procurement-raw-purchase-order-delete')
                 <a onclick="deletemodal('{{ route('raw-material.purchase-order.destroy', $row->id) }}', '{{ route('raw-material.get.purchase-order') }}')"
                     class="danger p-1 text-center mr-2 position-relative">
                     <i class="ft-x font-medium-3"></i>
                 </a>
+                @endcanAccess
             </td>
         </tr>
     @endforeach

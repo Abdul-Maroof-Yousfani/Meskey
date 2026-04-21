@@ -2,7 +2,7 @@
     $previousUrl = url()->previous();
     $refreshRoute = str_contains($previousUrl, 'procurement/store/qc') 
         ? route('store.qc.getList') 
-        : route('store.get.purchase-order-receiving');
+        : route('store.purchase-qc.getList');
 @endphp
 <form action="{{ route('store.qc.store') }}" id="ajaxSubmit">
     <input type="hidden" id="listRefresh" value="{{ $refreshRoute }}">
@@ -48,22 +48,23 @@
         @endcanApprove
         <div class="row" style="margin-top: 10px;">
             <div class="col-md-12">
-                <table class="table table-bordered" id="purchaseRequestTable">
+            <div style="overflow-x: auto; width: 100%;">
+                <table class="table table-bordered" id="purchaseRequestTable" style="min-width: 2500px;">
                     <thead>
                         <tr>
-                            <th>Item</th>
+                            <th style="min-width: 300px;">Item</th>
                             @if($purchaseOrderReceivingData->category_id == 38)
-                            <th>Size</th>
-                            <th>Brand</th>
-                            <th>Job Order</th>
+                            <th style="min-width: 200px;">Size</th>
+                            <th style="min-width: 200px;">Brand</th>
+                            <th style="min-width: 250px;">Job Order</th>
                             @endif
-                            <th>DC No</th>
-                            <th>Required Weight Per Bag (grams)</th>
-                            <th>Tolerance</th>
-                            <th>Average Weight of 1 Bag (grams)</th>
-                            <th>Total Bags</th>
-                            <th>Total Weight Required (grams)</th>
-                            <th>Sample Average Weight (grams)</th>
+                            <th style="min-width: 200px;">DC No</th>
+                            <th style="min-width: 250px;">Required Weight Per Bag (grams)</th>
+                            <!-- <th>Tolerance</th> -->
+                            <th style="min-width: 250px;">Average Weight of 1 Bag (grams)</th>
+                            <th style="min-width: 150px;">Total Bags</th>
+                            <th style="min-width: 250px;">Total Weight Required (kg)</th>
+                            <th style="min-width: 250px;">Sample Average Weight (grams)</th>
                         </tr>
                     </thead>
                     <tbody id="purchaseOrderBody">
@@ -110,13 +111,13 @@
                             <td>
                                 <input type="text" name="required_weight_per_bag" value="{{ $purchaseOrderReceivingData->category_id == 38 ? ($purchaseOrderReceivingData?->purchase_order_data?->min_weight ?? null) : 0 }}" id="required_weight_per_bag" readonly class="form-control">
                             </td>
-                            <td>
+                            <!-- <td>
                                 <input type="text" name="tolerance" value="{{ $purchaseOrderReceivingData->tolerance ?? 0 }}" readonly class="form-control">
-                            </td>
+                            </td> -->
 
                             <td>
                                 <input type="text" name="average_weight_of_one_bag" onkeyup="calculate_total_recieved_weight(this)" id="average_weight_of_1_bag"
-                                     class="form-control" placeholder="Average Weight of One Bag" value="{{ (round($purchaseOrderReceivingData->receive_weight / $purchaseOrderReceivingData->qty, 5)) }}" readonly>
+                                     class="form-control" placeholder="Average Weight of One Bag" value="{{ (round(($purchaseOrderReceivingData->receive_weight * 1000) / $purchaseOrderReceivingData->qty, 5)) }}" readonly>
                             </td>
 
                             <td>
@@ -125,18 +126,19 @@
                             </td>
 
                             <td>
-                                <input type="text" name="total_weight_required" value="{{ (($purchaseOrderReceivingData->qty ?? 0) * ($purchaseOrderReceivingData?->purchase_order_data?->min_weight ?? 0)) }}" id="total_weight_required" value="Total Weight Required"
+                                <input type="text" name="total_weight_required" value="{{ (($purchaseOrderReceivingData->qty ?? 0) * ($purchaseOrderReceivingData?->purchase_order_data?->min_weight / 1000 ?? 0)) }}" id="total_weight_required" value="Total Weight Required"
                                     readonly class="form-control">
                             </td>
 
                             <td>
                                 <input type="text" name="sample_average_weight" id="total_weight_received"
-                                    class="form-control" value="{{ (round($purchaseOrderReceivingData?->receive_weight / ($purchaseOrderReceivingData?->qty ?: 1), 2)) }}" readonly>
+                                    class="form-control" value="" readonly>
                             </td>
 
                         </tr>
                     </tbody>
                 </table>
+            </div>
             </div>
         </div>
 

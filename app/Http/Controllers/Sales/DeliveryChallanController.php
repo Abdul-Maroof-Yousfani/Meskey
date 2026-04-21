@@ -49,9 +49,9 @@ class DeliveryChallanController extends Controller
 
         // delivery order's delivery date should not be greater than date
         $delivery_order = DeliveryOrder::find($do_id);
-        if(strtotime($delivery_order->dispatch_date) <= strtotime($request->date)) {
-            return response()->json("Selected Delivery order is expired. Please select a different Delivery order", 422);
-        }
+        // if(strtotime($delivery_order->dispatch_date) <= strtotime($request->date)) {
+        //     return response()->json("Selected Delivery order is expired. Please select a different Delivery order", 422);
+        // }
         
         
         try {
@@ -60,7 +60,7 @@ class DeliveryChallanController extends Controller
           
             $delivery_challan = DeliveryChallan::create([
                 "customer_id" => $request->customer_id,
-                "reference_number" => $request->reference_number,
+                "reference_number" => self::getNumber($request, null, $request->date),
                 "location_id" => $request->locations[0],
                 "arrival_id" => $arrival_location_csv,
                 "section_id" => $storage_location_csv,
@@ -147,6 +147,7 @@ class DeliveryChallanController extends Controller
             // Create Receiving Request Items for each DC item
             foreach ($createdItems as $dcData) {
                 $product = Product::find($dcData->item_id);
+                
                 ReceivingRequestItem::create([
                     'receiving_request_id' => $receivingRequest->id,
                     'delivery_challan_data_id' => $dcData->id,
@@ -170,6 +171,9 @@ class DeliveryChallanController extends Controller
     }
 
     public function destroy(DeliveryChallan $delivery_challan) {
+        if($delivery_challan->am_approval_status == "approved" || $delivery_challan->am_approval_status == 'rejected') {
+            return response()->json("Delivery Challan has been approved/rejected and cannot be updated.", 400);
+        }
         $delivery_challan->receivingRequest()->delete();
         $delivery_challan->delete();
 
@@ -185,8 +189,12 @@ class DeliveryChallanController extends Controller
         // delivery order's delivery date should not be greater than date
 
         $delivery_order = DeliveryOrder::find($do_id);
-        if(strtotime($delivery_order->dispatch_date) < strtotime($request->date)) {
-            return response()->json("Selected Delivery order is expired. Please select a different Delivery order", 422);
+        // if(strtotime($delivery_order->dispatch_date) < strtotime($request->date)) {
+        //     return response()->json("Selected Delivery order is expired. Please select a different Delivery order", 422);
+        // }
+
+        if($delivery_challan->am_approval_status == "approved" || $delivery_challan->am_approval_status == 'rejected') {
+            return response()->json("Delivery Challan has been approved/rejected and cannot be updated.", 400);
         }
 
         try {

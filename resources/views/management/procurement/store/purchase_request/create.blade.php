@@ -103,6 +103,7 @@
             <tr>
                 <th style="min-width: 450px;">Item</th>
                 <th style="min-width: 200px;">Item UOM</th>
+                <th class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">Pack Size (KG)</th>
                 <th style="min-width: 150px;">Qty</th>
                 <th class="bag-only" style="min-width: 450px;">Job Orders</th>
                 <th class="bag-only" style="min-width: 300px;">Brands</th>
@@ -111,7 +112,7 @@
                 <th class="bag-only" style="min-width: 150px;">Tolerance %</th>
                 <th class="bag-only" style="min-width: 300px;">Color</th>
                 <th class="bag-only" style="min-width: 300px;">Cons./sq. in.</th>
-                <th class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">Size</th>
+                <th class="bag-only" style="min-width: 250px;">Size</th>
                 <th class="bag-only" style="min-width: 350px;">Stitching</th>
                 <th class="bag-only" style="min-width: 200px;">Micron</th>
                 <th class="bag-only" style="min-width: 450px;">Printing Sample</th>
@@ -296,6 +297,9 @@
                     <td style="min-width: 200px;">
                         <input type="text" name="uom[]" id="uom_${index}" class="form-control uom" readonly>
                     </td>
+                    <td class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">
+                        <input type="text" name="size[]" id="size_${index}" class="form-control size-input-check" placeholder="Size">
+                    </td>
                     <td style="min-width: 150px;">
                         <input type="number" name="qty[]" id="qty_${index}" class="form-control bg-white" step="0.01"
                             min="0" placeholder="Qty">
@@ -364,8 +368,13 @@
                             </div>
                         </div>
                     </td>
-                    <td class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">
-                        <input type="text" name="size[]" id="size_${index}" class="form-control size-input-check" placeholder="Size">
+                    <td class="bag-only" style="min-width: 250px;">
+                        <select name="size_id[]" id="size_id_${index}" class="form-control item-select size-id-select">
+                            <option value="">Select Size</option>
+                            @foreach($sizes as $sz)
+                                <option value="{{ $sz->id }}">{{ $sz->size }}</option>
+                            @endforeach
+                        </select>
                     </td>
                     <td class="bag-only" style="min-width: 350px;">
                         <div class="loop-fields">
@@ -423,6 +432,7 @@
         $("#brands_" + index).select2();
         $("#color_" + index).select2();
         $("#stitching_" + index).select2();
+        $("#size_id_" + index).select2();
 
 
         $('.removeRowBtn').prop('disabled', false);

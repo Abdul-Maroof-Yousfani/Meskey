@@ -9,10 +9,8 @@
             <th style="width: 200px; min-width: 200px;">Supplier</th>
             <th style="width: 90px; min-width: 90px;">Qty</th>
             <th style="width: 90px; min-width: 90px;">Rate</th>
-            <th style="width: 100px; min-width: 100px;">Total Amount</th>
-            <th style="width: 110px; min-width: 110px;">QC</th>
-            <th style="width: 110px; min-width: 110px;">QC Status</th>
-            <th style="min-width: 120px;">Action</th>
+            <th style="width: 130px; min-width: 100px;">Total Amount</th>
+            <th style="min-width: 50px;">Action</th>
         </tr>
     </thead>
     <tbody>
@@ -32,8 +30,8 @@
                             $approvalStatus = ucwords($requestGroup['request_status'] ?? 'N/A');
                             @endphp
 
-                                      <button style="visibility: hidden;" id="modalButton{{ $itemGroup['item_data']->id }}" onclick="openModal(this, '{{ route('store.qc.show-create', ['id' => $itemGroup['item_data']->id, 'grn' => get_grn($itemGroup['item_data']->purchase_order_receiving_id)]) }}', 'Add QC', false, '100%')">{{ $itemGroup['item_data']->id }}</button>
-                          <button style="visibility: hidden;" id="modalButtonQc{{ $itemGroup['item_data']->id }}" onclick="openModal(this, '{{ route('store.qc.edit', ['id' => $itemGroup['item_data']->id, 'grn' => get_grn($itemGroup['item_data']->purchase_order_receiving_id), 'refresh_url' => route('store.get.purchase-order-receiving')]) }}', 'Edit QC', false, '100%')">{{ $itemGroup['item_data']->id }}</button>
+                                      <button style="visibility: hidden;" id="modalButton{{ $itemGroup['item_data']->id }}" onclick="openModal(this, '{{ route('store.qc.show-create', ['id' => $itemGroup['item_data']->id, 'grn' => get_grn($itemGroup['item_data']->purchase_order_receiving_id)]) }}', 'Add QC', false, '95%')">{{ $itemGroup['item_data']->id }}</button>
+                          <button style="visibility: hidden;" id="modalButtonQc{{ $itemGroup['item_data']->id }}" onclick="openModal(this, '{{ route('store.qc.edit', ['id' => $itemGroup['item_data']->id, 'grn' => get_grn($itemGroup['item_data']->purchase_order_receiving_id), 'refresh_url' => route('store.get.purchase-order-receiving')]) }}', 'Edit QC', false, '95%')">{{ $itemGroup['item_data']->id }}</button>
                       
                         <tr>
                             {{-- Purchase Order No --}}
@@ -129,76 +127,7 @@
                                 </p>
                             </td>
 
-                            <td>
-                                @if($requestGroup['created_by_id'] == auth()->user()->id || $requestGroup["canApprove"])
-                                    @if($supplierRow['data']->category_id == 38)
-                                        @if($itemGroup["qc_status"] != 'pending' && $itemGroup["qc_status"] != 'approved' && $itemGroup["qc_status"] != 'rejected')
-                                            <button onclick="createQc('{{ $itemGroup['item_data']->id }}', '{{ $itemGroup['item_data']->id }}')" style="width: 100px;" type="button" class="btn btn-success btn-sm createQc">Create QC</button>
-                                        @elseif($itemGroup["qc_status"] != "approved")
-                                            <span
-                                                data-bs-toggle="tooltip"
-                                                data-bs-placement="top"
-                                                title="testing"
-                                            >
-                                                <button onclick="editQc('{{ $itemGroup['item_data']->id }}', '{{ $itemGroup['item_data']->id }}')"  style="width: 100px;" type="button" class="btn btn-warning btn-sm createQc">Edit QC</button>
-                                            </span>
-                                        @else
-                                            <span
-                                                data-bs-toggle="tooltip"
-                                                data-bs-placement="top"
-                                                title="QC has been created and approved"
-                                            >
-                                                <button
-                                                    style="width: 100px;"
-                                                    type="button"
-                                                    class="btn btn-warning btn-sm createQc"
-                                                    disabled
-                                                >
-                                                    Edit QC
-                                                </button>
-                                            </span>
-                                        @endif
-                                    @else
-                                        <span class="badge badge-secondary">Not a bag</span>
-                                    @endif
-                                @else
-                                    <button style="width: 100px;" type="button" class="btn btn-secondary" disabled>Edit QC</button>
-                                @endif
-                            </td>
-                            <td>
-                                <p class="m-0 text-right">
-                                    @php
-                                        $badgeClass = match (strtolower($approvalStatus)) {
-                                            'approved' => 'badge-success',
-                                            'rejected' => 'badge-danger',
-                                            'pending' => 'badge-warning',
-                                            'returned' => 'badge-info',
-                                            default => 'badge-secondary',
-                                        };
-                                    @endphp
-                                    @if($supplierRow['data']->category_id == 38)
-                                        @if($itemGroup["qc_status"] == 'pending')
-                                            <span class="badge badge-warning">
-                                                Pending
-                                            </span>
-                                        @elseif($itemGroup["qc_status"] == 'approved')
-                                            <span class="badge badge-success">
-                                                Approved
-                                            </span>
-                                        @elseif($itemGroup["qc_status"] == 'rejected')
-                                            <span class="badge badge-danger">
-                                                Rejected
-                                            </span>
-                                        @else
-                                            <span class="badge badge-info">
-                                                Not Created
-                                            </span>
-                                        @endif
-                                    @else
-                                        <span class="badge badge-secondary">Not a bag</span>
-                                    @endif
-                                </p>
-                            </td>
+
                             {{-- Created Date --}}
                             {{-- <td>
                                 <p class="m-0 white-nowrap">
@@ -283,14 +212,7 @@
         {{ $PurchaseOrderReceiving->links() }}
     </div>
 </div>
-<script>
-    function createQc(id, key) {
-        $("#modalButton" + key).trigger("click");
-    }
-    function editQc(id, key) {
-        $("#modalButtonQc" + key).trigger("click");
-    }
-</script>
+
 <script>
     function approveItem(url) {
         Swal.fire({

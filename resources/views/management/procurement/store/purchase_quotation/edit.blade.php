@@ -188,11 +188,17 @@
 
 
                                     <td style="min-width: 150px;">
+                                        @php
+                                            $totalQuotedForThisItem = $all_quoted[$data->purchase_request_data_id] ?? 0;
+                                            $quotedByOthers = $totalQuotedForThisItem - $data->qty;
+                                            $remainingFromPR = ($data->purchase_request->qty ?? 0) - $quotedByOthers;
+                                            $maxQty = max($remainingFromPR, $data->qty);
+                                        @endphp
                                         <input  name="qty[{{ $data->id }}]" type="number"
                                             value="{{ $data->qty }}" id="qty_{{ $key }}"
                                             onkeyup="calc('{{ $key }}')"
                                             class="form-control" step="0.01" min="0"
-                                            max="{{ $data->qty }}">
+                                            max="{{ $maxQty }}">
                                     </td>
 
                                     <td style="min-width: 150px;">
