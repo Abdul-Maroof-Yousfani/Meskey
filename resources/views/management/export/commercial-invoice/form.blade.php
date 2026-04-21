@@ -131,7 +131,7 @@
         $bills.empty().trigger('change');
 
         if (!exportOrderId) {
-            showCIHint('Pehle Export Order select karein, phir Bill Of Lading chunein.');
+            showCIHint('Please select the Export Order first, then choose the Bill of Lading.');
             return;
         }
 
@@ -157,7 +157,7 @@
         var billOfLadingId = $('#bill_of_lading_id').val();
 
         if (!exportOrderId || !billOfLadingId) {
-            showCIHint('Export Order aur Bill Of Lading select karein taake preview generate ho.');
+            showCIHint('Select both Export Order and Bill of Lading to generate the preview.');
             return;
         }
 
