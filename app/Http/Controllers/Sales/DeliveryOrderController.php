@@ -525,7 +525,10 @@ class DeliveryOrderController extends Controller
 
     public function destroy(DeliveryOrder $delivery_order)
     {
-
+        if($delivery_order->am_approval_status == "approved" || $delivery_order->am_approval_status == 'rejected') {
+            return response()->json("Delivery Order has been approved/rejected and cannot be updated.", 400);
+        }
+        
         if($delivery_order) {
             $delivery_order->delivery_order_data()->delete();
         }
