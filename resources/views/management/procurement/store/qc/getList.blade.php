@@ -125,11 +125,11 @@
                             {{-- Approval Status + Actions --}}
                              <td style="vertical-align: middle;">
                             <div class="d-flex" style="gap: 5px; justify-content: center;">
-                                    <a onclick="openModal(this, '{{ route('store.qc.view', ['id' => $supplierRow['data']->id, 'grn' => $requestGroup['request_no']]) }}', 'View QC', false, '70%')"
+                                    <a onclick="openModal(this, '{{ route('store.qc.view', ['id' => $supplierRow['data']->id, 'grn' => $requestGroup['request_no']]) }}', 'View QC', false, '95%')"
                                         class="bg-info text-white p-1 text-center position-relative" title="Approval" style="border-radius: 4px; min-width: 60px; font-size: 12px;">
                                         Approval
                                     </a>
-                                    <a onclick="openModal(this, '{{ route('store.qc.view', ['id' => $supplierRow['data']->id, 'grn' => $requestGroup['request_no'], 'type' => 'view']) }}', 'View QC', false, '70%')"
+                                    <a onclick="openModal(this, '{{ route('store.qc.view', ['id' => $supplierRow['data']->id, 'grn' => $requestGroup['request_no'], 'type' => 'view']) }}', 'View QC', false, '95%')"
                                         class="bg-primary text-white p-1 text-center position-relative" title="View" style="border-radius: 4px; min-width: 50px; font-size: 12px;">
                                         View
                                     </a>

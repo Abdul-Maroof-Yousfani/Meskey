@@ -151,7 +151,19 @@
 
                     const row = dataRows[index];
                     // Improved CSV parsing: handles quotes and multi-word names with spaces
-                    const data = row.match(/(".*?"|[^,]+)/g) || [];
+                    // Robust CSV parsing to handle empty columns and quotes
+                    const data = [];
+                    let start = 0;
+                    let inQuotes = false;
+                    for (let i = 0; i < row.length; i++) {
+                        if (row[i] === '"') inQuotes = !inQuotes;
+                        if (row[i] === ',' && !inQuotes) {
+                            data.push(row.substring(start, i));
+                            start = i + 1;
+                        }
+                    }
+                    data.push(row.substring(start));
+
                     const sanitizedData = data.map(s => s.trim().replace(/^"|"$/g, '').replace(/^=/, '').replace(/^"|"$/g, ''));
 
                     const supplierName = sanitizedData[0] || 'Unknown';

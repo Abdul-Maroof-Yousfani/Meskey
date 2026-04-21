@@ -370,6 +370,7 @@ class PurchaseOrderController extends Controller
                     'micron' => $request->micron[$index],
                     'brand' => $request->brand[$index],
                     'tolerance' => $request->tolerance[$index] ?? null,
+                    'delivery_date' => $request->delivery_date[$index] ?? null,
                     'printing_sample' => is_string($request->printing_sample[$index]) ? json_decode($request->printing_sample[$index], true) : $request->printing_sample[$index],
 
                     'remarks' => $request->remarks[$index] ?? null,
@@ -461,6 +462,7 @@ class PurchaseOrderController extends Controller
             'purchase_request.PurchaseData',
             'purchaseOrderData.purchase_request_data.purchase_order_data.purchase_order',
             'purchaseOrderData.purchase_quotation_data.purchase_order_data.purchase_order',
+            'purchaseOrderData.purchase_quotation_data',
             'purchaseOrderData.item',
             'purchase_quotation.quotation_data',
             'purchaseOrderData.purchase_request_data.JobOrder.job_order_data'
@@ -527,6 +529,7 @@ class PurchaseOrderController extends Controller
                     'micron' => $request->input('micron.'.$index),
                     'tolerance' => $request->input('tolerance.'.$index),
                     'printing_sample' => is_string($request->input('printing_sample.'.$index)) ? json_decode($request->input('printing_sample.'.$index), true) : $request->input('printing_sample.'.$index),
+                    'delivery_date' => $request->input('delivery_date.'.$index),
                     'remarks' => $request->input('remarks.'.$index),
                     
                 ]);
@@ -580,6 +583,7 @@ class PurchaseOrderController extends Controller
             'purchaseOrderData.item',
             'purchaseOrderData.supplier',
             'purchaseOrderData.purchase_request_data.JobOrder.job_order_data',
+            'purchaseOrderData.purchase_quotation_data',
             'purchase_quotation'
         ])->findOrFail($id);
 

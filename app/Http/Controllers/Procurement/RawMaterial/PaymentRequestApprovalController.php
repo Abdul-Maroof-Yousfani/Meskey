@@ -54,6 +54,49 @@ class PaymentRequestApprovalController extends Controller
                     $query->where('supplier_id', $request->supplier_id);
                 });
             })
+            ->when($request->filled('status'), function ($q) use ($request) {
+                return $q->where('status', $request->status);
+            })
+            ->when($request->filled('contract_no'), function ($q) use ($request) {
+                return $q->whereHas('paymentRequestData.purchaseOrder', function ($query) use ($request) {
+                    $query->where('contract_no', 'like', "%{$request->contract_no}%");
+                });
+            })
+            ->when($request->filled('request_type'), function ($q) use ($request) {
+                return $q->where('request_type', $request->request_type);
+            })
+            ->when($request->filled('truck_no'), function ($q) use ($request) {
+                return $q->whereHas('paymentRequestData', function ($query) use ($request) {
+                    $query->where('truck_no', 'like', "%{$request->truck_no}%");
+                });
+            })
+            ->when($request->filled('bilty_no'), function ($q) use ($request) {
+                return $q->whereHas('paymentRequestData', function ($query) use ($request) {
+                    $query->where('bilty_no', 'like', "%{$request->bilty_no}%");
+                });
+            })
+            ->when($request->filled('amount'), function ($q) use ($request) {
+                return $q->where('amount', 'like', "%{$request->amount}%");
+            })
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $search = $request->search;
+                return $q->where(function ($query) use ($search) {
+                    $query->where('amount', 'like', "%{$search}%")
+                        ->orWhere('status', 'like', "%{$search}%")
+                        ->orWhereHas('paymentRequestData.purchaseOrder', function ($sub) use ($search) {
+                            $sub->where('contract_no', 'like', "%{$search}%")
+                                ->orWhereHas('supplier', function ($s) use ($search) {
+                                    $s->where('name', 'like', "%{$search}%");
+                                });
+                        })
+                        ->orWhereHas('paymentRequestData.purchaseTicket', function ($sub) use ($search) {
+                            $sub->where('unique_no', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('paymentRequestData.arrivalTicket', function ($sub) use ($search) {
+                            $sub->where('unique_no', 'like', "%{$search}%");
+                        });
+                });
+            })
             ->when($request->filled('daterange'), function ($q) use ($request) {
                 $dates = explode(' - ', $request->daterange);
                 $startDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[0]))->format('Y-m-d');
@@ -601,14 +644,13 @@ class PaymentRequestApprovalController extends Controller
 
         $isUpdated = 0;
         $approval = null;
-
         if (!$paymentRequest->canBeApproved()) {
             $approval = PaymentRequestApproval::where('payment_request_id', $paymentRequestId)
                 ->latest()
                 ->first();
+            
             $isUpdated = 1;
         }
-
         $moduleType = $paymentRequest->paymentRequestData->module_type;
         $ticket = null;
         if ($moduleType == 'ticket' || $moduleType == 'freight_payment') {

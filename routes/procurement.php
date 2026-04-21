@@ -32,7 +32,8 @@ use App\Http\Controllers\Procurement\Store\{
     PurchaseQuotationController,
     PurchaseReturnController,
     PurchaseRequestController as StorePurchaseRequestController,
-    QcController
+    QcController,
+    BagIssuanceController
 };
 
 
@@ -48,6 +49,7 @@ Route::prefix('raw-material')->name('raw-material.')->group(function () {
 
 
     Route::resource('purchase-order', PurchaseOrderController::class);
+    Route::get('purchase-order/{id}/view', [PurchaseOrderController::class, 'view'])->name('purchase-order.view');
     Route::post('get-purchase-order', [PurchaseOrderController::class, 'getList'])->name('get.purchase-order');
     Route::post('purchase-order/mark-completed', [PurchaseOrderController::class, 'markAsCompleted'])->name('purchase-order.mark-completed');
     Route::get('/getMainSlabByProduct', [PurchaseOrderController::class, 'getMainSlabByProduct'])->name('getMainSlabByProduct');
@@ -137,6 +139,12 @@ Route::prefix('store')->name('store.')->group(function () {
     Route::resource('purchase-request', StorePurchaseRequestController::class);
     Route::get("job-order/get", [StorePurchaseRequestController::class, "getItems"])->name("get.jobOrdersDataForPurchaseRequest");
 
+    Route::resource("bag-issuance", BagIssuanceController::class);
+    Route::post("get/bag-issuance", [BagIssuanceController::class, "getList"])->name("get.bag-issuance");
+    Route::get("get/bag-issuance/number", [BagIssuanceController::class, "getNumber"])->name("bag-issuance.get-number");
+    Route::get("get/bag-issuance/detail/{id}", [BagIssuanceController::class, "getBagRequestDetails"])->name("bag-issuance.get-bag-request-details");
+
+
     Route::post('get-purchase-request', [StorePurchaseRequestController::class, 'getList'])->name('get.purchase-request');
     Route::get('purchase-request-approvals/{id}', [StorePurchaseRequestController::class, 'manageApprovals'])->name('purchase-request.approvals');
     Route::get('get-unique-number/{locationId}/{contractDate}', [StorePurchaseRequestController::class, 'getNumber'])->name('get-unique-umber');
@@ -159,6 +167,8 @@ Route::prefix('store')->name('store.')->group(function () {
 
 
     Route::post("qc/create", [PurchaseOrderReceivingController::class, "createQc"])->name("qc.create");
+    Route::get("/purchase-qc", [QcController::class, "purchaseQcIndex"])->name("purchase-qc.index");
+    Route::post("/purchase-qc/getList", [QcController::class, "purchaseQcGetList"])->name("purchase-qc.getList");
     Route::get("/qc", [QcController::class, "index"])->name("qc.get");
     Route::post("/qc", [QcController::class, "index"])->name("qc.get");
     Route::post("/qc/getList", [QcController::class, "getList"])->name("qc.getList");

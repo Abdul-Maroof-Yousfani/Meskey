@@ -62,6 +62,30 @@ class SITVehicleController extends Controller
                     $query->where('supplier_id', $request->supplier_id);
                 });
             })
+            ->when($request->filled('broker_id'), function ($q) use ($request) {
+                return $q->whereHas('purchaseOrder', function ($query) use ($request) {
+                    $query->where(function ($sub) use ($request) {
+                        $sub->where('broker_one_id', $request->broker_id)
+                            ->orWhere('broker_two_id', $request->broker_id)
+                            ->orWhere('broker_three_id', $request->broker_id);
+                    });
+                });
+            })
+            ->when($request->filled('contract_no'), function ($q) use ($request) {
+                return $q->whereHas('purchaseOrder', function ($query) use ($request) {
+                    $query->where('contract_no', 'like', "%{$request->contract_no}%");
+                });
+            })
+            ->when($request->filled('truck_no'), function ($q) use ($request) {
+                return $q->whereHas('purchaseFreight', function ($query) use ($request) {
+                    $query->where('truck_no', 'like', "%{$request->truck_no}%");
+                });
+            })
+            ->when($request->filled('bilty_no'), function ($q) use ($request) {
+                return $q->whereHas('purchaseFreight', function ($query) use ($request) {
+                    $query->where('bilty_no', 'like', "%{$request->bilty_no}%");
+                });
+            })
             ->when($request->filled('daterange'), function ($q) use ($request) {
                 $dates = explode(' - ', $request->daterange);
                 $startDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[0]))->format('Y-m-d');

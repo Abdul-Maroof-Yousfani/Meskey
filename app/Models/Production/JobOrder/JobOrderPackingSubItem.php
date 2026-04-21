@@ -15,6 +15,7 @@ class JobOrderPackingSubItem extends Model
         'bag_product_id',
         'bag_size_id',
         'no_of_primary_bags',
+        'packing_size',
         'no_of_bags',
         'empty_bags',
         'extra_bags',

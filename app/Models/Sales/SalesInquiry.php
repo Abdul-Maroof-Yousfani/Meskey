@@ -8,13 +8,14 @@ use App\Models\Procurement\Store\SectionLocation;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\HasApproval;
+use App\Traits\PreventsUpdateWhenApproved;
 
 class SalesInquiry extends Model
 {
     use HasFactory, HasApproval;
     protected $table = "sales_inquiries";
     protected $guarded = ["id", "created_at", "updated_at"];
-
+    
     public function sales_inquiry_data()
     {
         return $this->hasMany(SalesInquiryData::class, "inquiry_id", "id");

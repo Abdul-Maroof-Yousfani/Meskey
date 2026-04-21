@@ -147,7 +147,7 @@
                     </button>
                 </td>
                 <td>
-                    @if (!$row->purchaseOrder || ($row->purchaseOrder->status ?? '') == 'draft')
+                    <!-- @if (!$row->purchaseOrder || ($row->purchaseOrder->status ?? '') == 'draft')
                         <a href="{{ route('raw-material.ticket-contracts.create', ['ticket_id' => $row->id]) }}"
                             class="info p-1 text-center mx-2 position-relative">
                             <i class="ft-edit font-medium-3"></i>
@@ -157,7 +157,20 @@
                             class="info p-1 text-center mx-2 position-relative">
                             <i class="ft-eye font-medium-3"></i>
                         </a>
-                    @endif
+                    @endif -->
+
+
+                    @if (!$row->purchaseOrder || ($row->purchaseOrder->status ?? '') == 'draft')
+    <a href="{{ route('raw-material.ticket-contracts.create', ['ticket_id' => $row->id]) }}"
+        class="info p-1 text-center mx-2 position-relative action-link">
+        <i class="ft-edit font-medium-3"></i>
+    </a>
+@else
+    <a href="{{ route('raw-material.ticket-contracts.edit', $row->id) }}"
+        class="info p-1 text-center mx-2 position-relative action-link">
+        <i class="ft-eye font-medium-3"></i>
+    </a>
+@endif
                 </td>
             </tr>
         @endforeach

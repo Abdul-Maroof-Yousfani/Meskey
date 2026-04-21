@@ -49,7 +49,7 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Inquiry Date: <span class="text-danger">*</span></label>
-                        <input type="date" name="inquiry_date" onchange="getNumber(); validateExpiry()" id="inquiry_date" class="form-control" value="{{ date('Y-m-d') }}">
+                        <input type="date" name="inquiry_date" onchange="getNumber(); validateExpiry()" id="inquiry_date" class="form-control" value="{{ date('Y-m-d') }}" min="{{ date('Y-m-d') }}">
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -65,7 +65,7 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Delivery Date: <span class="text-danger">*</span></label>
-                        <input type="date" name="required_date" id="required_date" onchange="validateExpiry()" class="form-control">
+                        <input type="date" name="required_date" id="required_date" onchange="validateExpiry()" class="form-control" min="{{ date('Y-m-d') }}">
                     </div>
                 </div>
 
@@ -119,7 +119,6 @@
                     <div class="form-group">
                         <label class="form-label">Factory:</label>
                         <select name="arrival_location_id[]" id="arrival_location_id" class="form-control select2" multiple>
-                            <option value="">Select Factory</option>
                             @foreach ($arrivalLocations as $factory)
                                 <option value="{{ $factory->id }}" data-company="{{ $factory->company_location_id }}" @selected(in_array($factory->id, $selectedFactories))>{{ $factory->name }}</option>
                             @endforeach
@@ -130,7 +129,6 @@
                     <div class="form-group">
                         <label class="form-label">Section:</label>
                         <select name="arrival_sub_location_id[]" id="arrival_sub_location_id" class="form-control select2" multiple>
-                            <option value="">Select Section</option>
                             @foreach ($arrivalSubLocations as $section)
                                 <option value="{{ $section->id }}" data-factory="{{ $section->arrival_location_id }}" @selected(in_array($section->id, $selectedSections))>{{ $section->name }}</option>
                             @endforeach
@@ -263,26 +261,15 @@
     }
 
     function calculateRates(el) {
-
         if(!$(el).val()) {
-            $(el).closest("tr").find(".rate_per_kg").removeAttr("readonly", "readonly");
-            $(el).closest("tr").find(".rate_per_mond").removeAttr("readonly", "readonly");
-
-            $(el).closest("tr").find(".rate_per_kg").val("");
-            $(el).closest("tr").find(".rate_per_mond").val("");
             return;
         }
 
         if($(el).hasClass("rate_per_kg")) {
-            $(el).closest("tr").find(".rate_per_mond").attr("readonly", "readonly");
             $(el).closest("tr").find(".rate_per_mond").val(calculateForRatePerMond($(el).val()));
         } else {
-            $(el).closest("tr").find(".rate_per_kg").attr("readonly", "readonly");
             $(el).closest("tr").find(".rate_per_kg").val(calculateForRatePerKg($(el).val()));
-            
         }
-
-
     }
 
     $(document).ready(function() {
@@ -296,7 +283,7 @@
         function populateFactories() {
             const selectedLocations = $('#locations').val() || [];
             const currentValues = $('#arrival_location_id').val() || initialFactories;
-            $('#arrival_location_id').empty().append('<option value="">Select Factory</option>');
+            $('#arrival_location_id').empty();
 
             factories
                 .filter(f => selectedLocations.length === 0 || selectedLocations.includes(String(f.company_location_id)))
@@ -312,7 +299,7 @@
         function populateSections() {
             const factoryIds = $('#arrival_location_id').val() || initialFactories;
             const currentSections = $('#arrival_sub_location_id').val() || initialSections;
-            $('#arrival_sub_location_id').empty().append('<option value="">Select Section</option>');
+            $('#arrival_sub_location_id').empty();
 
             sections
                 .filter(s => factoryIds.length === 0 || factoryIds.includes(String(s.arrival_location_id)))
@@ -329,12 +316,74 @@
             populateSections();
         });
 
+        let isInitialLoad = true;
+
+        $('#customer').on('change', function() {
+            const customerId = $(this).val();
+            let selectedLocations = $('#locations').val() || [];
+
+            $('#locations, #arrival_location_id, #arrival_sub_location_id').prop('disabled', true).trigger('change.select2');
+
+            if (!isInitialLoad) {
+                $('#locations').empty().trigger('change.select2');
+                $('#arrival_location_id').empty().trigger('change.select2');
+                $('#arrival_sub_location_id').empty().trigger('change.select2');
+                selectedLocations = [];
+            }
+
+            if (customerId) {
+                if (!isInitialLoad) {
+                    Swal.fire({
+                        title: 'Fetching Locations...',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading()
+                        }
+                    });
+                }
+                $.ajax({
+                    url: "{{ route('sales.get-customer-locations') }}",
+                    method: "GET",
+                    data: { customer_id: customerId },
+                    success: function(res) {
+                        $('#locations').empty();
+                        res.forEach(loc => {
+                            const isSelected = selectedLocations.includes(String(loc.id));
+                            $('#locations').append(`<option value="${loc.id}" ${isSelected ? 'selected' : ''}>${loc.name}</option>`);
+                        });
+                        $('#locations').trigger('change.select2');
+                        populateFactories();
+                        populateSections();
+                        isInitialLoad = false;
+                        if (Swal.isVisible()) {
+                            Swal.close();
+                        }
+                    },
+                    complete: function() {
+                        $('#locations, #arrival_location_id, #arrival_sub_location_id').prop('disabled', false).trigger('change.select2');
+                        if (Swal.isVisible()) {
+                            Swal.close();
+                        }
+                    }
+                });
+            } else {
+                $('#locations').empty().trigger('change.select2');
+                $('#arrival_location_id').empty().trigger('change.select2');
+                $('#arrival_sub_location_id').empty().trigger('change.select2');
+                $('#locations, #arrival_location_id, #arrival_sub_location_id').prop('disabled', false).trigger('change.select2');
+                if (!isInitialLoad) {
+                    isInitialLoad = false;
+                }
+            }
+        });
+
         $('#arrival_location_id').on('change', function() {
             populateSections();
         });
 
         populateFactories();
         populateSections();
+        $('#customer').trigger('change');
         $('#inquiry_date').trigger('change');
     });
 
@@ -354,22 +403,26 @@
         no_of_bags.val(result);
     }
 
-    function validateExpiry(){
-        // const inquiryDate = $('#inquiry_date').val();
-        // const requiredDate = $('#required_date').val();
-        // if (inquiryDate && requiredDate) {
-        //     if (inquiryDate > requiredDate) {
-        //         $('#required_date').addClass('is-invalid');
+    function validateExpiry() {
+        const inquiryDate = $('#inquiry_date').val();
+        const requiredDate = $('#required_date').val();
 
-        //         Swal.fire({
-        //             icon: 'error',
-        //             title: 'Expired!',
-        //             text: 'Inquiry date cannot be greater than required date.',
-        //             confirmButtonText: 'OK'
-        //         });
-        //     }
-        // }
+        if (inquiryDate) {
+            $('#required_date').attr('min', inquiryDate);
         }
+
+        if (inquiryDate && requiredDate) {
+            if (inquiryDate > requiredDate) {
+                $('#required_date').val('');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Invalid Date!',
+                    text: 'Delivery date cannot be earlier than inquiry date.',
+                    confirmButtonText: 'OK'
+                });
+            }
+        }
+    }
 
     function addRow() {
         let index = salesInquiryRowIndex++;
@@ -410,7 +463,11 @@
                                     step="0.01" min="0" onkeyup="calc(this)" onchange="calc(this)">
                             </td>
                             <td>
-                                <input type="number" name="rate[]" id="rate_${index}" class="form-control"
+                                <input onkeyup="calculateRates(this)" type="number" name="rate[]" id="rate_${index}" class="form-control rate_per_kg"
+                                    step="0.01" min="0">
+                            </td>
+                            <td>
+                                <input onkeyup="calculateRates(this)" type="number" name="rate_per_mond[]" id="rate_per_mond_${index}" class="form-control rate_per_mond"
                                     step="0.01" min="0">
                             </td>
                             <td>

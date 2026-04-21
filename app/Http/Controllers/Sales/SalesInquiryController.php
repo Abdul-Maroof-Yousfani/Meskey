@@ -22,7 +22,7 @@ class SalesInquiryController extends Controller
     }
 
     public function create() {
-        $customers = Customer::all();
+        $customers = Customer::where('type', 'local')->get();
         $items = Product::all();
         $bag_types = BagType::select("id", "name")->where("status", 1)->get();
         $arrivalLocations = ArrivalLocation::with("companyLocation")->select('id', 'name', 'company_location_id')->where('status', 'active')->get();
@@ -51,7 +51,7 @@ class SalesInquiryController extends Controller
                         ->orWhereRaw('LOWER(`reference_number`) LIKE ?', [$searchTerm]);
                 });
             })
-            ->latest()
+            ->orderBy('inquiry_no', 'desc')
             ->paginate($perPage);
 
         $groupedData = [];
@@ -135,7 +135,7 @@ class SalesInquiryController extends Controller
             $factoryIds = $request->arrival_location_id ?? [];
             $sectionIds = $request->arrival_sub_location_id ?? [];
             $sales_inquiry = SalesInquiry::create([
-                "inquiry_no" => $request->reference_no,
+                "inquiry_no" => self::getNumber($request, null, $request->inquiry_date),
                 "date" => $request->inquiry_date,
                 "customer" => $request->customer,
                 "contract_type" => $request->contract_type,
@@ -204,6 +204,10 @@ class SalesInquiryController extends Controller
         // if($request->inquiry_date > $request->required_date) {
         //     return response()->json("Inquiry date cannot be greater than required date.", 400);
         // }
+
+        if($sales_inquiry->am_approval_status == "approved" || $sales_inquiry->am_approval_status == "rejected") {
+            return response()->json("Sales Inquiry has been approved/rejected and cannot be updated.", 400);
+        }
 
         DB::beginTransaction();
         try {
@@ -280,7 +284,7 @@ class SalesInquiryController extends Controller
 
     public function view(SalesInquiry $sales_inquiry) {
         $sales_inquiry->load("sales_inquiry_data");
-        $customers = Customer::all();
+        $customers = Customer::where('type', 'local')->get();
         $items = Product::all();
         $bag_types = BagType::select("id", "name")->where("status", 1)->get();
         $arrivalLocations = ArrivalLocation::with("companyLocation")->select('id', 'name', 'company_location_id')->where('status', 'active')->get();
@@ -299,7 +303,7 @@ class SalesInquiryController extends Controller
 
     public function edit(SalesInquiry $sales_inquiry) {
         $sales_inquiry->load("sales_inquiry_data", "locations", "factories", "sections");
-        $customers = Customer::all();
+        $customers = Customer::where('type', 'local')->get();
         $items = Product::all();
         $bag_types = BagType::select("id", "name")->where("status", 1)->get(); 
 
@@ -317,9 +321,29 @@ class SalesInquiryController extends Controller
     }
 
     public function destroy(SalesInquiry $sales_inquiry) {
+        if($sales_inquiry->am_approval_status == "approved" || $sales_inquiry->am_approval_status == "rejected") {
+            return response()->json("Sales Inquiry has been approved/rejected and cannot be updated.", 400);
+        }
+
         $sales_inquiry->sales_inquiry_data()->delete();
         $sales_inquiry->delete();
 
         return response()->json(['success' => 'Sales Inquiry deleted successfully.'], 200);
+    }
+
+    public function getCustomerLocations(Request $request) {
+        $customer = Customer::find($request->customer_id);
+        if (!$customer) {
+            return response()->json([]);
+        }
+
+        $locationIds = $customer->company_location_ids ?? [];
+        if (!is_array($locationIds)) {
+            $locationIds = [];
+        }
+        
+        $locations = \App\Models\Master\CompanyLocation::whereIn('id', $locationIds)->get(['id', 'name']);
+
+        return response()->json($locations);
     }
 }

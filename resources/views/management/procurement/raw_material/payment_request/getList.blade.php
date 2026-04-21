@@ -1,14 +1,17 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-2">Ticket No / Contract No</th>
-            <th class="col-sm-2">Supplier</th>
-            <th class="col-sm-1">Commodity</th>
-            <th class="col-sm-1">Loading date</th>
-            <th class="col-sm-2">Amounts</th>
-            <th class="col-sm-2">Total Requested Amount</th>
-            <th class="col-sm-1">Created</th>
-            <th class="col-sm-1">Action</th>
+            <th style="width: 10%;">Ticket No / Contract No</th>
+            <th style="width: 8%;">Bilty No</th>
+            <th style="width: 8%;">Truck No</th>
+            <th style="width: 8%;">Location</th>
+            <th style="width: 12%;">Supplier</th>
+            <th style="width: 8%;">Commodity</th>
+            <th style="width: 8%;">Loading date</th>
+            <th style="width: 12%;">Amounts</th>
+            <th style="width: 10%;">Tot. Req. Amt.</th>
+            <th style="width: 8%;">Created</th>
+            <th style="width: 8%;">Action</th>
         </tr>
     </thead>
     <tbody>
@@ -18,8 +21,10 @@
                     <td>
                         <strong>Ticket:</strong> #{{ $ticket->unique_no ?? 'N/A' }}<br>
                         <strong>Contract:</strong> #{{ $ticket->purchaseOrder->contract_no ?? 'N/A' }}<br>
-                        {{-- <small>{{ $ticket->product->name ?? ($ticket->product->name ?? 'N/A') }}</small> --}}
                     </td>
+                    <td>{{ $ticket->purchaseFreight->bilty_no ?? 'N/A' }}</td>
+                    <td>{{ $ticket->purchaseFreight->truck_no ?? 'N/A' }}</td>
+                    <td>{{ $ticket->purchaseOrder->location->name ?? 'N/A' }}</td>
                     <td>{{ $ticket->purchaseOrder->supplier->name ?? 'N/A' }}</td>
                     <td>{{ $ticket->purchaseOrder->qcProduct->name ?? 'N/A' }}</td>
                     <td>

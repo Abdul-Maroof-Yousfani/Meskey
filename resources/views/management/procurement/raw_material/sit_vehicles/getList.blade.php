@@ -1,13 +1,15 @@
  <table class="table m-0">
      <thead>
          <tr>
-             <th class="col-sm-2 col-md-2 col-lg-2">Contract No.</th>
-             <th class="col-sm-2 col-md-2 col-lg-2">Supplier</th>
-             <th class="col-sm-2 col-md-2 col-lg-2">Broker</th>
-             <th class="col-sm-2 col-md-2 col-lg-2">Product</th>
-             <th class="col-sm-2 col-md-2 col-lg-2">Vehicle No</th>
-             <th class="col-sm-1 col-md-1 col-lg-1">Status</th>
-             <th class="col-sm-1 col-md-1 col-lg-1">Action</th>
+             <th style="width: 12%;">Date</th>
+             <th style="width: 10%;">Location</th>
+             <th style="width: 10%;">Contract No</th>
+             <th style="width: 12%;">Supplier</th>
+             <th style="width: 12%;">Broker</th>
+             <th style="width: 12%;">Product</th>
+             <th style="width: 12%;">Vehicle No (Truck/Bilty)</th>
+             <th style="width: 10%;">Status</th>
+             <th style="width: 10%;">Action</th>
          </tr>
      </thead>
      <tbody>
@@ -37,6 +39,8 @@
                      }
                  @endphp
                  <tr class="{{ $isNowGreaterThanAllowedTime ? 'bg-red' : '' }}">
+                     <td>{{ $ticket->created_at->format('Y-m-d H:i') }}</td>
+                     <td>{{ $ticket->purchaseOrder->location->name ?? 'N/A' }}</td>
                      <td>
                          #{{ $ticket->purchaseOrder->contract_no ?? 'N/A' }}
                          <br>#{{ $ticket->unique_no ?? 'N/A' }}
@@ -50,8 +54,8 @@
                      <td> {{ $ticket->purchaseOrder->supplier->name ?? 'N/A' }}</td>
                      <td> {{ $ticket->purchaseOrder->broker_one_name ?? ($ticket->purchaseOrder->broker_two_name ?? ($ticket->purchaseOrder->broker_three_name ?? 'N/A')) }}
                      </td>
-                     <td> {{ $ticket->purchaseOrder->qcProduct->name ?? 'N/A' }}</td>
-                     <td> Truck No: {{ $ticket->purchaseFreight->truck_no ?? 'N/A' }} <br> Bilty No:
+                     <td> {{ $ticket->purchaseOrder->qcProduct->name ?? ($ticket->purchaseOrder->product->name ?? 'N/A') }}</td>
+                     <td> Truck: {{ $ticket->purchaseFreight->truck_no ?? 'N/A' }} <br> Bilty:
                          {{ $ticket->purchaseFreight->bilty_no ?? 'N/A' }}</td>
                      <td>
                          <span class="badge badge-{{ $ticket->freight_status == 'pending' ? 'warning' : 'success' }}">
@@ -68,7 +72,7 @@
              @endforeach
          @else
              <tr class="ant-table-placeholder">
-                 <td colspan="7" class="ant-table-cell text-center">
+                 <td colspan="9" class="ant-table-cell text-center">
                      <div class="my-5">
                          <svg width="64" height="41" viewBox="0 0 64 41" xmlns="http://www.w3.org/2000/svg">
                              <g transform="translate(0 1)" fill="none" fill-rule="evenodd">

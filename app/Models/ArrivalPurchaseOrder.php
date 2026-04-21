@@ -12,10 +12,14 @@ use App\Models\Procurement\PurchaseFreight;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use App\Traits\HasApproval;
+use App\Models\ApprovalsModule\ApprovalModule;
+use App\Models\ApprovalsModule\ApprovalRow;
+
 
 class ArrivalPurchaseOrder extends Model
 {
-    use HasFactory;
+    use HasFactory, HasApproval;
 
     protected $fillable = [
         'company_id',
@@ -82,6 +86,8 @@ class ArrivalPurchaseOrder extends Model
         'truck_no',
         'contract_status',
         'created_by',
+        'am_approval_status',
+        'am_change_made'
     ];
 
     protected $casts = [
@@ -89,7 +95,8 @@ class ArrivalPurchaseOrder extends Model
         'delivery_date' => 'date',
     ];
 
-    public function hasExpired() {
+    public function hasExpired()
+    {
         return $this->status == 'draft' && $this->delivery_date < now();
     }
 
@@ -254,6 +261,14 @@ class ArrivalPurchaseOrder extends Model
         return $this->hasMany(ArrivalTicket::class, 'arrival_purchase_order_id')
             ->where('first_qc_status', 'rejected');
     }
+
+    public function rejectedHalfArrivalTickets()
+    {
+        return $this->hasMany(ArrivalTicket::class, 'arrival_purchase_order_id')
+            ->where('document_approval_status', 'half_approved')
+            ->where('arrival_slip_status', 'generated');
+    }
+
     public function approvedArrivalTickets()
     {
         return $this->hasMany(ArrivalTicket::class, 'arrival_purchase_order_id')

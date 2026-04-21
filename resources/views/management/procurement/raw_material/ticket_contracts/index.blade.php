@@ -27,6 +27,12 @@
                                                     <select name="company_location_id" id="company_location"
                                                         class="form-control select2">
                                                         <option value="">Location</option>
+                                                        @foreach ($companyLocations as $location)
+                                                            <option value="{{ $location->id }}"
+                                                                {{ request('company_location_id') == $location->id ? 'selected' : '' }}>
+                                                                {{ $location->name }}
+                                                            </option>
+                                                        @endforeach
                                                     </select>
                                                 </div>
                                             </div>

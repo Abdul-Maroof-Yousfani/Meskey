@@ -83,8 +83,18 @@ class PurchaseOrderController extends Controller
 
                 return $q->whereDate('created_at', '>=', $startDate)
                     ->whereDate('created_at', '<=', $endDate);
-            })->when(auth()->user()->user_type != 'super-admin', function ($q) {
-                return $q->where('company_location_id', auth()->user()->company_location_id);
+            })
+            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                return $q->whereIn('company_location_id', getUserCurrentCompanyLocations());
+            })
+            ->when(!auth()->user()->can("procurement-raw-purchase-approval") && auth()->user()->parent_user_id != null, function ($q) {
+                return $q->where('created_by', auth()->user()->id);
+            })
+            ->when(auth()->user()->can("procurement-raw-purchase-approval"), function ($q) {
+                return $q->where("decision_of_id", auth()->user()->parent_user_id);
+            })
+            ->when(auth()->user()->parent_user_id == null, function ($q) {
+                return $q->where('decision_of_id', auth()->user()->id);
             })
             ->where('purchase_type', 'regular')
             ->latest()
@@ -172,6 +182,7 @@ class PurchaseOrderController extends Controller
 
             $arrivalPOData['is_replacement'] = $request->is_replacement == '1';
             $arrivalPOData['contract_status'] = $request->contract_status;
+            $arrivalPOData["am_approval_status"] = "pending";
 
             if (isset($data['truck_size_range'])) {
                 $arrivalPOData['truck_size_range_id'] = $data['truck_size_range'];
@@ -219,6 +230,47 @@ class PurchaseOrderController extends Controller
             'success' => 'Purchase Order Created Successfully.',
             'data' => $arrivalPurchaseOrder
         ], 201);
+    }
+
+    public function view($id)
+    {
+        $data['arrivalPurchaseOrder'] = ArrivalPurchaseOrder::findOrFail($id);
+        $data['bagPackings'] = [];
+        $data['truckSizeRanges'] = TruckSizeRange::where('status', 'active')->get();
+        $data['products'] = Product::where('product_type', 'raw_material')->get();
+        $data['brokers'] = Broker::all();
+        $po = $data['arrivalPurchaseOrder'];
+        $data['ticketcounts'] = $po->arrivalTickets()->count() ?? 0;
+        
+        $getSlabs = ProductSlabForRmPo::with('slabType')
+            ->where('product_id', $data['arrivalPurchaseOrder']->product_id)
+            ->where('company_id', $data['arrivalPurchaseOrder']->company_id)
+            ->where('arrival_purchase_order_id', $id)
+            ->get()
+            ->groupBy('product_slab_type_id')
+            ->map(function ($group) {
+                return $group->sortBy(function ($item) {
+                    return (float) $item->from;
+                })->first();
+            })
+            ->values()
+            ->map(function ($item) {
+                $item['slab_type_name'] = $item->slabType->name ?? null;
+                $item['id'] = $item->slab_id ?? null;
+                return $item;
+            });
+
+        if (!count($getSlabs)) {
+            $ids = [
+                'product_id' => $data['arrivalPurchaseOrder']->product_id,
+                'company_id' => $data['arrivalPurchaseOrder']->company_id
+            ];
+            $data['slabsHtml'] = $this->getMainSlabByProduct(request(), $ids, true);
+        } else {
+            $data['slabsHtml'] = view('management.procurement.raw_material.purchase_order.slab-form', ['slabs' => $getSlabs, 'success' => '.'])->render();
+        }
+
+        return view('management.procurement.raw_material.purchase_order.view', $data);
     }
 
     /**
@@ -305,7 +357,9 @@ class PurchaseOrderController extends Controller
                 'min_bags' => $data['min_bags'] ?? null,
                 'max_bags' => $data['max_bags'] ?? null,
                 'contract_status' => $data['contract_status'] ?? null,
-                'status' => $data['contract_status'] == 'close-contract-due-to-market-down' || $data['contract_status'] == 'close-with-market-rate-penalty' ? 'cancelled' : 'draft',
+                'status' => $data['contract_status'] == 'close-contract-due-to-market-down' || $data['contract_status'] == 'close-with-market-rate-penalty' ? 'cancelled' : $arrivalPurchaseOrder->status,
+                "am_approval_status" => "pending",
+                "am_change_made" => 1,
                 'remarks' => $data['remarks'] ?? null,
             ];
 

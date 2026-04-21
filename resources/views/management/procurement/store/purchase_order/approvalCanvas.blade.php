@@ -125,6 +125,7 @@
                                 <th>Micron</th>
                                 <th>Printing Sample</th>
                             @endif
+                            <th>Delivery Date</th>
                             <th>Remarks</th>
                             <th>Net Amount</th>
                             <th>Action</th>
@@ -317,6 +318,11 @@
                                     </div>
                                 </td>
                                 @endif
+                                <td style="width: 15%">
+                                    <input style="width: 100px" type="date"
+                                        value="{{ $data->purchase_quotation_data->delivery_date ?? $data->delivery_date }}" 
+                                        class="form-control" readonly disabled>
+                                </td>
                                 <td style="width: 25%">
                                     <input style="width: 100px" name="remarks[]" type="text"
                                         value="{{ $data->remarks }}" id="remark_{{ $key }}"

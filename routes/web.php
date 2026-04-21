@@ -28,7 +28,7 @@ use App\Models\Production\JobOrder\JobOrder;
 use App\Models\ReceiptVoucher;
 use App\Models\Sales\DeliveryChallan;
 
-
+use App\Models\ArrivalPurchaseOrder;
 use App\Models\Sales\DeliveryOrder;
 use App\Models\Sales\FirstWeighbridge;
 use App\Models\Sales\LoadingProgram;
@@ -68,6 +68,11 @@ Route::get("testing-endpoint", function() {
 
 Route::get("get-all-vouchers", function() {
     dd(TransactionVoucherType::all());
+});
+
+Route::get("/teste", function() {
+    $sales_order = SalesOrder::query()->where("reference_no", "SO-2026-04-16-002")->get();
+    dd($sales_order);
 });
 
 Route::get("voucher-types", function() {
@@ -361,6 +366,36 @@ Route::get('/migrate-refresh', function () {
     Artisan::call('db:seed', ['--class' => 'CreateAdminUserSeeder']);
 
     return 'Migrations rolled back and seeders executed successfully.';
+});
+
+Route::get('/clear-all-cache', function () {
+    $commands = [
+        'cache:clear',
+        'config:clear',
+        'route:clear',
+        'view:clear',
+    ];
+
+    $output = [];
+
+    foreach ($commands as $command) {
+        $result = Artisan::call($command);
+        $output[] = "✓ {$command} executed successfully.";
+    }
+
+    return response()->json([
+        'status'  => 'success',
+        'message' => 'Multiple caches cleared successfully.',
+        'details' => $output
+    ]);
+});
+
+Route::get("arrival-po", function() {
+    $purchase_orders = ArrivalPurchaseOrder::all();
+    foreach($purchase_orders as $purchase_order) {
+        $purchase_order->am_approval_status = "approved";
+        $purchase_order->save();
+    }
 });
 
 Route::get('/migrate-specific/{id}', function ($id) {

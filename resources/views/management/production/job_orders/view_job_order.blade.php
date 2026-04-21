@@ -256,16 +256,17 @@
                     @if($item->subItems && $item->subItems->count() > 0)
                         @foreach($item->subItems as $subIndex => $sub)
                             <tr class="sub-section-header">
-                                <th colspan="9" class="py-0 px-2 small font-italic text-center">MASTER PACKING ({{ $subIndex + 1 }})</th>
+                                <th colspan="10" class="py-0 px-2 small font-italic text-center">MASTER PACKING ({{ $subIndex + 1 }})</th>
                             </tr>
                             <tr>
                                 <th class="text-uppercase bg-light small pl-3">MP Bag</th>
-                                <th class="text-uppercase bg-light small pl-3">MP Bag Size</th>
+                                <th class="text-uppercase bg-light small pl-3">Bag Size</th>
                                 <th class="text-uppercase bg-light small pl-3">MP Brand</th>
                                 <th class="text-uppercase bg-light small pl-3">MP Color</th>
                                 <th class="text-uppercase bg-light small pl-3">MP Thread</th>
                                 <th class="text-uppercase bg-light small pl-3">MP Stitching</th>
                                 <th class="text-uppercase bg-light small pl-3">Primaries/MP</th>
+                                <th class="text-uppercase bg-light small pl-3">Packing Size (kg)</th>
                                 <th class="text-uppercase bg-light small pl-3">Total MP Bags</th>
                                 <th class="text-uppercase bg-light small pl-3">MP Bag Wt.</th>
                             </tr>
@@ -291,6 +292,9 @@
                                 @if($sub->no_of_primary_bags)
                                     <td class="small">{{ $sub->no_of_primary_bags }}</td>
                                 @endif
+                                <td class="small">
+                                    {{ ($item->bag_size ?? 0) * ($sub->no_of_primary_bags ?? 0) }}
+                                </td>
                                 @if($sub->total_bags)
                                     <td class="small font-weight-bold">{{ number_format($sub->total_bags) }} @if($sub->extra_bags_percentage > 0) ({{ $sub->extra_bags_percentage }}% Extra) @endif</td>
                                 @endif

@@ -244,7 +244,7 @@
         </div>
     </div>
 </div>
-<x-approval-status :model="$sales_invoice" />
+<x-approval-status :model="$sales_invoice" :list-refresh="route('sales.get.sales-invoice.list')" />
 <div class="row bottom-button-bar">
     <div class="col-12 text-end">
         <a type="button"

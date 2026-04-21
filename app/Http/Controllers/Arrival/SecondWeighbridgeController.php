@@ -102,16 +102,23 @@ class SecondWeighbridgeController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $request['created_by'] = auth()->user()->id;
-        $request['weight'] = $request->second_weight ?? 0;
-        $arrival_locations = SecondWeighbridge::create($request->all());
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($request) {
+            $ticket = ArrivalTicket::where('id', $request->arrival_ticket_id)->lockForUpdate()->firstOrFail();
 
-        ArrivalTicket::where('id', $request->arrival_ticket_id)
-            ->update(
+            if ($ticket->second_weighbridge_status === 'completed') {
+                return response()->json(['errors' => ['arrival_ticket_id' => ['Second Weighbridge has already been recorded for this ticket.']]], 422);
+            }
+
+            $request['created_by'] = auth()->user()->id;
+            $request['weight'] = $request->second_weight ?? 0;
+            $arrival_locations = SecondWeighbridge::create($request->all());
+
+            $ticket->update(
                 ['second_weighbridge_status' => 'completed', 'arrived_net_weight' => $request->weighbridge_net_weight, 'freight_status' => 'pending']
             );
 
-        return response()->json(['success' => 'Second Weighbridge created successfully.', 'data' => $arrival_locations], 201);
+            return response()->json(['success' => 'Second Weighbridge created successfully.', 'data' => $arrival_locations], 201);
+        });
     }
 
     /**

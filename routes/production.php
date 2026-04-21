@@ -10,7 +10,7 @@ use App\Http\Controllers\Production\ProductionVoucherController;
 use App\Models\Production\JobOrder\JobOrderRawMaterialQc;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Production\PlantBreakdownController;
-
+use App\Http\Controllers\Production\BagRequestController;
 
 
 
@@ -19,6 +19,15 @@ Route::get('job-orders/{id}/print', [JobOrderController::class, 'printJobOrder']
 Route::post('get-job-orders', [JobOrderController::class, 'getList'])->name('get.job_orders');
 Route::get('get-product-specs/{productId}', [JobOrderController::class, 'getProductSpecs'])->name('get.product_specs');
 Route::get('get-export-order-details/{id}', [JobOrderController::class, 'getExportOrderDetails'])->name('get.export_order_details');
+
+Route::resource("bag-requests", BagRequestController::class);
+Route::post("get/bag-request", [BagRequestController::class, "getList"])->name("get.bag-requests");
+Route::get("bag-request/getNumber", [BagRequestController::class, "getNumber"])->name("bag-requests.get-number");
+Route::get("bag-request/getArrivalLocation", [BagRequestController::class, "getArrivalLocations"])->name("bag-requests.get-arrival-locations");
+Route::get("bag-request/getGalas", [BagRequestController::class, "getGalas"])->name("bag-requests.get-galas");
+Route::get("bag-request/getJobOrders", [BagRequestController::class, "getJobOrders"])->name("bag-requests.get-job-orders");
+Route::get("bag-request/getJobOrderItems", [BagRequestController::class, "getJobOrderItems"])->name("get.job-order-items");
+
 
 Route::resource('job-order-rm-qc', JobOrderRawMaterialQcController::class);
 Route::post('get-job-order-rm-qc', [JobOrderRawMaterialQcController::class, 'getList'])->name('get.job_order_rm_qc');

@@ -102,10 +102,10 @@
 
     <div class="row form-mar">
         <div class="col-12 text-right mb-2">
-            <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()"
+            <!-- <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()"
                 id="addRowBtn">
                 <i class="fa fa-plus"></i> &nbsp; Add New Item
-            </button>
+            </button> -->
         </div>
 
         <div class="col-md-12">
@@ -115,6 +115,7 @@
             <tr>
                 <th style="min-width: 450px;">Item</th>
                 <th style="min-width: 200px;">Item UOM</th>
+                <th class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">Pack Size (KG)</th>
                 <th style="min-width: 150px;">Qty</th>
                 <th class="bag-only" style="min-width: 450px;">Job Orders</th>
                 <th class="bag-only" style="min-width: 300px;">Brands</th>
@@ -123,12 +124,11 @@
                 <th class="bag-only" style="min-width: 150px;">Tolerance %</th>
                 <th class="bag-only" style="min-width: 300px;">Color</th>
                 <th class="bag-only" style="min-width: 300px;">Cons./sq. in.</th>
-                <th class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">Size</th>
+                <th class="bag-only" style="min-width: 250px;">Size</th>
                 <th class="bag-only" style="min-width: 350px;">Stitching</th>
                 <th class="bag-only" style="min-width: 200px;">Micron</th>
                 <th class="bag-only" style="min-width: 450px;">Printing Sample</th>
                 <th style="min-width: 400px;">line desc</th>
-                <th style="min-width: 150px;">Action</th>
             </tr>
         </thead>
         <tbody id="purchaseRequestBody">
@@ -154,6 +154,15 @@
 
                 <td style="min-width: 200px;"><input type="text" name="uom[]" id="uom_{{ $rowIdApproval }}" class="form-control uom" readonly
                         value="{{ $item->item->unitOfMeasure->name ?? '' }}"></td>
+
+                <td class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">
+                    @php
+                        $current_size_app = $item->size;
+                        $display_size_app = (getSizeById($current_size_app)->size ?? $current_size_app);
+                    @endphp
+                    <input type="text" id="size_{{ $rowIdApproval }}" name="size[]" class="form-control" readonly
+                        value="{{ $display_size_app }}">
+                </td>
 
                 <td style="min-width: 150px;"><input type="number" name="qty[]" id="qty_{{ $rowIdApproval }}" class="form-control bg-white"
                         step="0.01" min="0" placeholder="Qty" value="{{ $item->qty }}" readonly></td>
@@ -206,13 +215,13 @@
                         class="form-control" step="0.01" min="0" value="{{ $item->construction_per_square_inch }}"
                         placeholder="Cons./sq. in." readonly></td>
                 
-                <td class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">
-                    @php
-                        $current_size_app = $item->size;
-                        $display_size_app = (getSizeById($current_size_app)->size ?? $current_size_app);
-                    @endphp
-                    <input type="text" id="size_{{ $rowIdApproval }}" name="size[]" class="form-control" readonly
-                        value="{{ $display_size_app }}">
+                <td class="bag-only" style="min-width: 250px;">
+                    <select name="size_id[]" id="size_id_{{ $rowIdApproval }}" class="form-control select2Dropdown" disabled>
+                        <option value="">Select Size</option>
+                        @foreach($sizes as $sz)
+                            <option value="{{ $sz->id }}" @selected($sz->id == $item->size_id)>{{ $sz->size }}</option>
+                        @endforeach
+                    </select>
                 </td>
 
                 <td class="bag-only" style="min-width: 350px;">
@@ -247,8 +256,6 @@
                 <td style="min-width: 400px;"><input type="text" name="remarks[]" id="remark_{{ $rowIdApproval }}" class="form-control bg-white"
                         placeholder="line desc" value="{{ $item->remarks }}" readonly></td>
 
-                <td style="min-width: 150px;"><button disabled type="button" class="btn btn-danger btn-sm removeRowBtn"
-                        onclick="removeRow('{{ $rowIdApproval }}')" style="width:120px;"><i class="fa fa-trash"></i></button></td>
             </tr>
             @endforeach
         </tbody>
@@ -296,6 +303,7 @@
             $("#color_{{ $jsIndexApproval }}").select2();
             $("#brands_{{ $jsIndexApproval }}").select2();
             $("#stitching_{{ $jsIndexApproval }}").select2();
+            $("#size_id_{{ $jsIndexApproval }}").select2();
             $('#job_order_id_{{ $jsIndexApproval }}').select2({
                 placeholder: 'Please Select Job Order',
                 width: '100%'
@@ -405,6 +413,9 @@
                     <td style="min-width: 200px;">
                         <input type="text" name="uom[]" id="uom_${index}" class="form-control uom" readonly>
                     </td>
+                    <td class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">
+                        <input type="text" name="size[]" id="size_${index}" class="form-control size-input-check" placeholder="Size">
+                    </td>
                     <td style="min-width: 150px;">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
@@ -483,8 +494,13 @@
                             </div>
                         </div>
                     </td>
-                    <td class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">
-                        <input type="text" name="size[]" id="size_${index}" class="form-control size-input-check" placeholder="Size">
+                    <td class="bag-only" style="min-width: 250px;">
+                        <select name="size_id[]" id="size_id_${index}" class="form-control item-select size-id-select">
+                            <option value="">Select Size</option>
+                            @foreach($sizes as $sz)
+                                <option value="{{ $sz->id }}">{{ $sz->size }}</option>
+                            @endforeach
+                        </select>
                     </td>
                     <td style="min-width: 350px;" class="bag-only">
                         <div class="loop-fields">
@@ -530,6 +546,7 @@
             placeholder: 'Please Select Job Order',
             width: '100%'
         });
+        $('#size_id_' + index).select2();
 
         filter_items($('#category_id_header').val(), index);
         toggleVisibility($('#category_id_header').val());

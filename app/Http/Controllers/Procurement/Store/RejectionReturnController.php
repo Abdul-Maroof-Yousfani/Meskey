@@ -25,6 +25,7 @@ class RejectionReturnController extends Controller
                 return [
                     'name' => $data->item->name ?? 'N/A',
                     'rejected_qty' => $data->quantity,
+                    'rate' => $data->rate ?? 0,
                     'uom' => $data->item->unitOfMeasure->name ?? ''
                 ];
             })->toArray();
@@ -79,6 +80,7 @@ class RejectionReturnController extends Controller
                 if (isset($request->qty[$index]) && $request->qty[$index] > 0) {
                     $rejectionReturn->items()->create([
                         'item_id' => $itemId,
+                        'rate' => $request->rate[$index] ?? 0,
                         'quantity' => $request->qty[$index],
                         'weight' => $request->weight[$index] ?? null,
                     ]);
@@ -96,9 +98,7 @@ class RejectionReturnController extends Controller
     public function create()
     {
         $approvedGRNs = PurchaseOrderReceiving::whereHas('purchaseOrderReceivingData.qc', function($q) {
-                $q->where('deduction_type', 'no_deduction')
-                  ->where('deduction_per_bag', 0)
-                  ->where('rejected_quantity', '>', 0);
+                $q->where('deduction_type', 'no_deduction');
             })
             ->where(function($query) {
                 // Either no rejection return yet
@@ -153,6 +153,7 @@ class RejectionReturnController extends Controller
                 if (isset($request->qty[$index]) && $request->qty[$index] > 0) {
                     $rejectionReturn->items()->create([
                         'item_id' => $itemId,
+                        'rate' => $request->rate[$index] ?? 0,
                         'quantity' => $request->qty[$index],
                         'weight' => $request->weight[$index] ?? null,
                     ]);

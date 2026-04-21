@@ -12,13 +12,10 @@ use App\Models\Master\ArrivalLocation;
 use App\Models\FirstWeighbridge;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
 class FirstWeighbridgeController extends Controller
 {
-
-
-
-    
     function __construct()
     {
         $this->middleware('check.company:arrival-first-weighbridge', ['only' => ['index']]);
@@ -93,21 +90,23 @@ class FirstWeighbridgeController extends Controller
      */
     public function store(FirstWeighbridgeRequest $request)
     {
-        $arrivalTicket = ArrivalTicket::findOrFail($request->arrival_ticket_id);
+        return DB::transaction(function () use ($request) {
+            $arrivalTicket = ArrivalTicket::where('id', $request->arrival_ticket_id)->lockForUpdate()->firstOrFail();
 
-        if ($arrivalTicket->first_weighbridge_status !== 'pending') {
-            return response('First weighbridge has already been completed and cannot be performed again.', 422);
-        }
+            if ($arrivalTicket->first_weighbridge_status !== 'pending') {
+                return response('First weighbridge has already been completed and cannot be performed again.', 422);
+            }
 
-        $request['created_by'] = auth()->user()->id;
-        $request['weight'] = $request->first_weight ?? 0;
-        $arrival_locations = FirstWeighbridge::create($request->all());
+            $request['created_by'] = auth()->user()->id;
+            $request['weight'] = $request->first_weight ?? 0;
+            $arrival_locations = FirstWeighbridge::create($request->all());
 
-        $arrivalTicket->update([
-            'first_weighbridge_status' => 'completed'
-        ]);
+            $arrivalTicket->update([
+                'first_weighbridge_status' => 'completed'
+            ]);
 
-        return response()->json(['success' => 'First weighbridge created successfully.', 'data' => $arrival_locations], 201);
+            return response()->json(['success' => 'First weighbridge created successfully.', 'data' => $arrival_locations], 201);
+        });
     }
 
     /**

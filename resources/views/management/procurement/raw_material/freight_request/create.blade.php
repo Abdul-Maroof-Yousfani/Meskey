@@ -8,7 +8,7 @@
     $paymentRequest = isset($paymentRequest) ? $paymentRequest : null;
     $isUpdated = isset($isUpdated) ? $isUpdated : null;
     $approval = isset($approval) ? $approval : null;
-    
+
 @endphp
 <style>
     .hide,
@@ -175,13 +175,13 @@
             ? $paymentRequests->where("module_type", "freight_payment")->whereIn('status', ['pending', 'approved'])->count()
             : 0;
     @endphp
-    @if($ticket->saudaType?->name == 'Pohanch' && $has_pendings == 0)
+    @if($ticket->saudaType?->name == 'Pohanch')
         <div class="row">
             <div class="col-md-12">
                 <div class="form-group">
                     <div class="custom-control custom-checkbox">
                         <input type="checkbox" onchange="isPaidBySupplier()" class="custom-control-input"
-                            id="paid_by_supplier" name="is_paid_by_supplier" value="1" {{ (isset($paymentRequestData) && $paymentRequestData->is_paid_by_supplier) ? 'checked' : '' }}>
+                            id="paid_by_supplier" name="is_paid_by_supplier" @checked(isset($paymentRequestData) && $paymentRequestData->is_paid_by_supplier == 1) @disabled($has_pendings > 0) value="1">
                         <label class="custom-control-label font-weight-bold" for="paid_by_supplier">Paid By Supplier</label>
                     </div>
                 </div>
@@ -512,13 +512,14 @@
                         @disabled($paramlabour_vendor_id)>
                         <option value="">Select Labour Party</option>
                         @foreach ($vendors as $vendor)
-                            <option value="{{ $vendor->id }}" @selected(isset($paymentRequestData) && $paymentRequestData->payment_to == $vendor->id)>
+                            <option value="{{ $vendor->id }}" @selected(isset($paymentRequestData) && $paymentRequestData->labour_vendor_id == $vendor->id)>
                                 {{ $vendor->name }}
                             </option>
                         @endforeach
                     </select>
-                    @if (isset($isRequestApprovalPage, $paymentRequestData->payment_to))
-                        <input type="hidden" name="labour_vendor_id" value="{{ $paymentRequestData->payment_to }}" readonly>
+                    @if (isset($isRequestApprovalPage, $paymentRequestData->labour_vendor_id))
+                        <input type="hidden" name="labour_vendor_id" value="{{ $paymentRequestData->labour_vendor_id }}"
+                            readonly>
                     @endif
                 </div>
             @endif
@@ -526,7 +527,8 @@
         <div class="col-md-2">
             <div class="form-group">
                 <label class="font-weight-bold">Total Commision</label>
-                <input type="text" class="form-control bg-light total_commision" name="total_commision" value="" readonly>
+                <input type="text" class="form-control bg-light total_commision" name="total_commision" value=""
+                    readonly>
             </div>
         </div>
         <div class="col-md-2">
@@ -643,12 +645,17 @@
         </div>
     @endif
 
-    <div class="row bottom-button-bar">
-        <div class="col-12">
-            <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
-            <button type="submit" class="btn btn-primary submitbutton" id="saveButton">Save</button>
+    @php
+        $is_pending = isset($isRequestApprovalPage) && $isRequestApprovalPage && $paymentRequest && $paymentRequest->status == "pending";
+    @endphp
+    @if(!($has_pendings > 0 && isset($paymentRequestData) && $paymentRequestData->is_paid_by_supplier))
+        <div class="row bottom-button-bar">
+            <div class="col-12">
+                <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
+                <button type="submit" class="btn btn-primary submitbutton" id="saveButton">Save</button>
+            </div>
         </div>
-    </div>
+    @endif
 </form>
 <script>
 
@@ -795,8 +802,6 @@
             let totalCommision = parseFloat(commissionAmount || 0);
 
 
-            let netAmount = grossAmount - godownPenalty - totalCommision - totalLabour;
-
 
             const commissionPercent = parseFloat($('.commission-percent').val()) || 0;
             //  const freightRs = parseFloat($('.freight-rs').val()) || 0;
@@ -806,13 +811,15 @@
                 const commissionAmount = (grossAfterDeductAmount * commissionPercent) / 100;
                 $('.commission-amount').val(commissionAmount.toFixed(2));
                 $(".total_commision").val(commissionAmount.toFixed(2));
-                
+
             } else {
-                $('.commission-amount').val('0'); 
+                $('.commission-amount').val('0');
                 $(".total_commision").val('0');
 
             }
-
+            var commissionAmountttt = (grossAfterDeductAmount * commissionPercent) / 100;
+            let netAmount = grossAmount - godownPenalty - commissionAmountttt - totalLabour;
+            console.log(grossAmount, godownPenalty, commissionAmountttt, totalLabour, netAmount);
 
             $('[name="gross_amount"]').val(grossAmount.toFixed(2));
             $('[name="total_deductions"]').val(totalDeductions.toFixed(2));

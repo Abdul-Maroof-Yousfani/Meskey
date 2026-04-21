@@ -118,6 +118,7 @@
             <tr>
                 <th style="min-width: 450px;">Item</th>
                 <th style="min-width: 200px;">Item UOM</th>
+                <th class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">Pack Size (KG)</th>
                 <th style="min-width: 150px;">Qty</th>
                 <th class="bag-only" style="min-width: 450px;">Job Orders</th>
                 <th class="bag-only" style="min-width: 300px;">Brands</th>
@@ -126,7 +127,7 @@
                 <th class="bag-only" style="min-width: 150px;">Tolerance %</th>
                 <th class="bag-only" style="min-width: 300px;">Color</th>
                 <th class="bag-only" style="min-width: 300px;">Cons./sq. in.</th>
-                <th class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">Size</th>
+                <th class="bag-only" style="min-width: 250px;">Size</th>
                 <th class="bag-only" style="min-width: 350px;">Stitching</th>
                 <th class="bag-only" style="min-width: 200px;">Micron</th>
                 <th class="bag-only" style="min-width: 450px;">Printing Sample</th>
@@ -162,6 +163,16 @@
 
                 <td style="min-width: 200px;"><input type="text" name="uom[]" id="uom_{{ $rowId }}" class="form-control uom" readonly
                         value="{{ $item->item->unitOfMeasure->name ?? '' }}"></td>
+
+                <td class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">
+                    @php
+                        $jo_size = $jo_data->bag_size ?? ($jo_data?->bagSize?->size ?? '');
+                        $current_size = $item->size;
+                        $display_size = (is_numeric($jo_size) && $jo_size > 0) ? $jo_size : (getSizeById($current_size)->size ?? $current_size);
+                    @endphp
+                    <input type="text" id="size_{{ $rowId }}" name="size[]" class="form-control size-input-check" placeholder="Size"
+                        value="{{ $display_size }}" {{ (is_numeric($jo_size) && $jo_size > 0) ? 'readonly' : '' }}>
+                </td>
 
                 <td style="min-width: 150px;">
                     @php
@@ -260,14 +271,13 @@
                         class="form-control" step="0.01" min="0" value="{{ $item->construction_per_square_inch }}"
                         placeholder="Cons./sq. in."></td>
 
-                <td class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">
-                    @php
-                        $jo_size = $jo_data->bag_size ?? ($jo_data?->bagSize?->size ?? '');
-                        $current_size = $item->size;
-                        $display_size = (is_numeric($jo_size) && $jo_size > 0) ? $jo_size : (getSizeById($current_size)->size ?? $current_size);
-                    @endphp
-                    <input type="text" id="size_{{ $rowId }}" name="size[]" class="form-control size-input-check" placeholder="Size"
-                        value="{{ $display_size }}" {{ (is_numeric($jo_size) && $jo_size > 0) ? 'readonly' : '' }}>
+                <td class="bag-only" style="min-width: 250px;">
+                    <select name="size_id[]" id="size_id_{{ $rowId }}" class="form-control select2Dropdown">
+                        <option value="">Select Size</option>
+                        @foreach($sizes as $sz)
+                            <option value="{{ $sz->id }}" @selected($sz->id == $item->size_id)>{{ $sz->size }}</option>
+                        @endforeach
+                    </select>
                 </td>
 
                 <td class="bag-only" style="min-width: 350px;">
@@ -347,6 +357,7 @@
             $("#color_{{ $jsIndex }}").select2();
             $("#brands_{{ $jsIndex }}").select2();
             $("#stitching_{{ $jsIndex }}").select2();
+            $("#size_id_{{ $jsIndex }}").select2();
             $('#job_order_id_{{ $jsIndex }}').select2({
                 placeholder: 'Please Select Job Order',
                 width: '100%'
@@ -476,6 +487,9 @@
                     <td style="min-width: 200px;">
                         <input type="text" name="uom[]" id="uom_${index}" class="form-control uom" readonly>
                     </td>
+                    <td class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">
+                        <input type="text" name="size[]" id="size_${index}" class="form-control size-input-check" placeholder="Size">
+                    </td>
                     <td style="min-width: 150px;">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
@@ -544,8 +558,13 @@
                             </div>
                         </div>
                     </td>
-                    <td class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">
-                        <input type="text" name="size[]" id="size_${index}" class="form-control size-input-check" placeholder="Size">
+                    <td class="bag-only" style="min-width: 250px;">
+                        <select name="size_id[]" id="size_id_${index}" class="form-control select2Dropdown">
+                            <option value="">Select Size</option>
+                            @foreach($sizes as $sz)
+                                <option value="{{ $sz->id }}">{{ $sz->size }}</option>
+                            @endforeach
+                        </select>
                     </td>
                    <td class="bag-only" style="min-width: 350px;">
                         <div class="loop-fields">
@@ -604,6 +623,7 @@
             placeholder: 'Please Select Job Order',
             width: '100%'
         });
+        $('#size_id_' + index).select2();
 
         filter_items($('#category_id_header').val(), index);
         toggleVisibility($('#category_id_header').val());

@@ -112,6 +112,7 @@
                             <th class="bag-only">Stitching</th>
                             <th class="bag-only">Micron</th>
                             <th class="bag-only">Printing Sample</th>
+                            <th>Delivery Date</th>
                             <th>Remarks</th>
                             <th>Action</th>
                         </tr>
