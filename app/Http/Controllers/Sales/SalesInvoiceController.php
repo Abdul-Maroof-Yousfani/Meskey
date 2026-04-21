@@ -66,7 +66,7 @@ class SalesInvoiceController extends Controller
                 "arrival_id" => $request->arrival_locations,
                 "si_no" => $request->si_no,
                 "invoice_date" => $request->invoice_date,
-                "reference_number" => $request->reference_number,
+                "reference_number" => self::getNumber($request, null, $request->invoice_date),
                 "sauda_type" => $request->sauda_type,
                 "remarks" => $request->remarks,
                 "company_id" => request()->company_id,
@@ -243,6 +243,9 @@ class SalesInvoiceController extends Controller
 
     public function destroy(SalesInvoice $sales_invoice)
     {
+        if($sales_invoice->am_approval_status == "approved" || $sales_invoice->am_approval_status == 'rejected') {
+            return response()->json("Sales Invoice has been approved/rejected and cannot be updated.", 400);
+        }
         $sales_invoice->delete();
         $sales_invoice->sales_invoice_data()->delete();
 

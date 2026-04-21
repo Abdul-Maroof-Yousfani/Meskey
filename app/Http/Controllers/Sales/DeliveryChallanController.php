@@ -147,6 +147,7 @@ class DeliveryChallanController extends Controller
             // Create Receiving Request Items for each DC item
             foreach ($createdItems as $dcData) {
                 $product = Product::find($dcData->item_id);
+                
                 ReceivingRequestItem::create([
                     'receiving_request_id' => $receivingRequest->id,
                     'delivery_challan_data_id' => $dcData->id,
@@ -170,6 +171,9 @@ class DeliveryChallanController extends Controller
     }
 
     public function destroy(DeliveryChallan $delivery_challan) {
+        if($delivery_challan->am_approval_status == "approved" || $delivery_challan->am_approval_status == 'rejected') {
+            return response()->json("Delivery Challan has been approved/rejected and cannot be updated.", 400);
+        }
         $delivery_challan->receivingRequest()->delete();
         $delivery_challan->delete();
 

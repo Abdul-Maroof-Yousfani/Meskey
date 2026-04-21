@@ -313,6 +313,11 @@ class SalesReturnController extends Controller
     }
 
     public function destroy(SalesReturn $sales_return) {
+
+        if($sales_return->am_approval_status == "approved" || $sales_return->am_approval_status == 'rejected') {
+            return response()->json("Sales Return has been approved/rejected and cannot be updated.", 400);
+        }
+
         $sales_return->delete();
         $sales_return->sale_return_data()->delete();
 
