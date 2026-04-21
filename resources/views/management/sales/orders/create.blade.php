@@ -612,6 +612,7 @@
             }
         });
     }
+    
 
     function getCustomerLocations() {
         const customer_id = $("#customer_id").val();
