@@ -28,7 +28,7 @@
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ $row->decisionOfUser->name ?? 'N/A' }} <br>
+                            {{ $row->purchaseOrder->decisionOfUser->name ?? 'N/A' }} <br>
                         </p>
                     </td>
                     <td>
