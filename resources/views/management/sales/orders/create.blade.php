@@ -44,8 +44,14 @@
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label class="form-label">Date:</label>
+                        <label class="form-label">Entry Date:</label>
                         <input type="date" name="order_date" id="order_date" onchange="getNumber(); validateExpiry()" class="form-control" value="{{ date('Y-m-d') }}" min="{{ date('Y-m-d') }}">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Delivery Date:</label>
+                        <input type="date" name="delivery_date" id="delivery_date" onchange="validateExpiry()" class="form-control" min="{{ date('Y-m-d') }}">
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -67,12 +73,6 @@
                             <option value="pohanch">Pohanch</option>
                             <option value="x-mill">X-mill</option>
                         </select>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label class="form-label">Delivery Date:</label>
-                        <input type="date" name="delivery_date" id="delivery_date" onchange="validateExpiry()" class="form-control" min="{{ date('Y-m-d') }}">
                     </div>
                 </div>
                 <div class="col-md-6">

@@ -46,9 +46,16 @@
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label class="form-label">Date:</label>
+                        <label class="form-label">Entry Date:</label>
                         <input type="date" onchange="validateExpiry()" name="order_date" id="order_date" value="{{ $sale_order->order_date }}"
                             class="form-control" min="{{ date('Y-m-d') }}">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Delivery Date:</label>
+                        <input type="date" name="delivery_date" onchange="validateExpiry()" value="{{ $sale_order->delivery_date }}" 
+                            id="delivery_date" class="form-control" min="{{ date('Y-m-d') }}">
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -72,13 +79,6 @@
                             <option value="x-mill" @selected( strtolower($sale_order->sauda_type) == 'x-mill')>X-mill</option>
                         </select>
                         <input type="hidden" @if($sale_order->inquiry_id) name="sauda_type" @endif value="{{ strtolower($sale_order->sauda_type) }}" />
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label class="form-label">Delivery Date:</label>
-                        <input type="date" name="delivery_date" onchange="validateExpiry()" value="{{ $sale_order->delivery_date }}" 
-                            id="delivery_date" class="form-control" min="{{ date('Y-m-d') }}">
                     </div>
                 </div>
                 <div class="col-md-6">
