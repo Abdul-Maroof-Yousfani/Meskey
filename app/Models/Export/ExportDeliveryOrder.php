@@ -116,4 +116,9 @@ class ExportDeliveryOrder extends DeliveryOrder
     //         );
     //     }
     // }
+
+    public function delivery_challans()
+    {
+        return $this->belongsToMany(ExportDeliveryChallan::class, 'delivery_challan_delivery_order', 'delivery_order_id', 'delivery_challan_id')->withPivot('qty');
+    }
 }

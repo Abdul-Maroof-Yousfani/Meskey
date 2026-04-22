@@ -6,6 +6,7 @@ use App\Models\Acl\Company;
 use App\Models\ExportOrderSpecification;
 use App\Models\Master\Broker;
 use App\Models\Master\CompanyLocation;
+use App\Models\Master\Customer;
 use App\Models\Product;
 use App\Models\User;
 use App\Traits\HasApproval;
@@ -116,7 +117,7 @@ class ExportOrder extends Model
 
     public function buyer()
     {
-        return $this->belongsTo(User::class, 'buyer_id');
+        return $this->belongsTo(Customer::class, 'buyer_id');
     }
 
     public function proforma()
@@ -214,5 +215,15 @@ class ExportOrder extends Model
     public function consignee()
     {
         return $this->belongsTo(\App\Models\CustomerConsignee::class, 'consignee_id');
+    }
+
+    public function billOfLadings()
+    {
+        return $this->hasMany(BillOfLading::class, 'export_order_id');
+    }
+
+    public function commercialInvoices()
+    {
+        return $this->hasMany(CommercialInvoice::class, 'export_order_id');
     }
 }
