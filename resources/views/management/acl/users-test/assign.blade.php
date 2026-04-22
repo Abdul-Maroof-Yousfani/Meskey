@@ -43,6 +43,8 @@
                             options</small>
                     </div>
                 </div>
+
+      
             </div>
 
 
@@ -165,7 +167,23 @@
                 </div>
             </div>
 
-
+          <!-- Purchase Order Approval -->
+            <div class="col-md-12 mt-3">
+                <div class="d-flex align-items-center">
+                    <input type="checkbox" name="purchase_order_approval[0]" class="mr-2 po-approval-checkbox" id="po_approval_0" value="1" style="width: 20px; height: 20px;">
+                    <label class="font-weight-bold mb-0" for="po_approval_0">Purchase Order Approval</label>
+                </div>
+                    <div class="mt-3 p-3 bg-light-info rounded border-left-info shadow-sm" style="background-color: #e7f3f5; border-left: 5px solid #17a2b8;">
+                        <h6 class="text-info font-weight-bold mb-2"><i class="ft-info mr-2"></i> Important Information</h6>
+                        <p class="text-dark mb-0" style="font-size: 14px; line-height: 1.6;">
+                            If your account does not have a parent user, the system simply uses your own account’s most recent access setting. 
+                            However, if your account does have a parent, the system first looks up the parent account and then checks among 
+                            its child users to find the one who has <strong>“Purchase Order Approval”</strong> enabled. Once it finds that 
+                            specific child, it uses that child user’s most recent access setting instead. It’s important to note that only one 
+                            child user can have the “Purchase Order Approval” option enabled at any given time.
+                        </p>
+                    </div>
+            </div>
         </div>
     </div>
 </div>
@@ -379,6 +397,8 @@
             newCard.find('.location-select').attr('name', `company_location_id[${totalCards}][]`);
             newCard.find('.role-select').attr('name', `role[${totalCards}]`);
             newCard.find('.company-select').attr('name', `company[${totalCards}]`);
+            newCard.find('.po-approval-checkbox').attr('name', `purchase_order_approval[${totalCards}]`).attr('id', `po_approval_${totalCards}`).prop('checked', false);
+            newCard.find('label[for^="po_approval_"]').attr('for', `po_approval_${totalCards}`);
 
             // Append new card
             $('#card-container').append(newCard);
