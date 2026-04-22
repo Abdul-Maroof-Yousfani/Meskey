@@ -13,6 +13,7 @@ use App\Models\ReceiptVoucherItem;
 use App\Models\Sales\SalesInvoice;
 use App\Models\Sales\SalesOrder;
 use App\Models\Master\Account\Transaction;
+use App\Models\ReceiptVoucherBankDetail;
 use Auth;
 use Carbon\Carbon;
 use Exception;
@@ -190,7 +191,11 @@ class ReceiptVoucherController extends Controller
 
         $taxes = Tax::select('id', 'name', 'percentage')->where('status', 'active')->get();
 
-        return view('management.finance.receipt_voucher.create', compact('customers', 'saleOrders', 'salesInvoices', 'taxes'));
+        $accounts = Account::whereHas('parent', function ($q) {
+            $q->whereIn('hierarchy_path', ['1-1', '1-4']);
+        })->get();
+
+        return view('management.finance.receipt_voucher.create', compact('customers', 'saleOrders', 'salesInvoices', 'taxes', 'accounts'));
     }
 
     public function edit($id)
@@ -474,6 +479,15 @@ class ReceiptVoucherController extends Controller
                 return $item['net_amount'] ?? ($amount + $taxAmount);
             });
 
+
+            // Validation: Bank Details Total <= Reference Total
+            $totalBankDetailsAmount = collect($request->bank_details ?? [])
+                ->sum(fn($detail) => (float)($detail['amount'] ?? 0));
+
+            // if ($totalBankDetailsAmount > $totalNetAmount) {
+            //     throw new \Exception("Total Bank/Account amount ($totalBankDetailsAmount) cannot exceed the total Selected References amount ($totalNetAmount).");
+            // }
+
             $customer = Customer::with('account')->findOrFail($payload['customer_id']);
             $customerAccountId = $customer->account_id;
             if (!$customerAccountId) {
@@ -527,25 +541,54 @@ class ReceiptVoucherController extends Controller
             $purpose = "RV-{$receiptVoucher->id}-{$receiptVoucher->unique_no}";
             $remarks = $payload['remarks'] ?? null;
 
-            createTransaction(
-                $totalNetAmount,
-                $payload['account_id'],
-                1,
-                $receiptVoucher->unique_no,
-                'debit',
-                'no',
-                [
-                    'purpose' => $purpose,
-                    'payment_against' => $receiptVoucher->unique_no,
-                    'counter_account_id' => $customerAccountId,
-                    'remarks' => $remarks
-                ]
-            );
+            // Save Bank Details and create Debit Transactions
+            if ($request->filled('bank_details')) {
+                foreach ($request->bank_details as $detail) {
+                    if (!empty($detail['account_id']) && !empty($detail['amount'])) {
+                        $receiptVoucher->bankDetails()->create([
+                            'account_id' => $detail['account_id'],
+                            'amount' => $detail['amount'],
+                            'cheque_no' => $detail['cheque_no'] ?? null,
+                        ]);
 
+                        createTransaction(
+                            $detail['amount'],
+                            $detail['account_id'],
+                            $request->company_id,
+                            $receiptVoucher->unique_no,
+                            'debit',
+                            'no',
+                            [
+                                'purpose' => $purpose,
+                                'payment_against' => $receiptVoucher->unique_no,
+                                'counter_account_id' => $customerAccountId,
+                                'remarks' => $remarks . ($detail['cheque_no'] ? " (Cheque: {$detail['cheque_no']})" : "")
+                            ]
+                        );
+                    }
+                }
+            } else {
+                createTransaction(
+                    $totalNetAmount,
+                    $payload['account_id'],
+                    $request->company_id,
+                    $receiptVoucher->unique_no,
+                    'debit',
+                    'no',
+                    [
+                        'purpose' => $purpose,
+                        'payment_against' => $receiptVoucher->unique_no,
+                        'counter_account_id' => $customerAccountId,
+                        'remarks' => $remarks
+                    ]
+                );
+            }
+
+            // Always credit the customer for the total net amount
             createTransaction(
                 $totalNetAmount,
                 $customerAccountId,
-                1,
+                $request->company_id,
                 $receiptVoucher->unique_no,
                 'credit',
                 'no',
@@ -666,7 +709,7 @@ class ReceiptVoucherController extends Controller
 
     public function show($id)
     {
-        $receiptVoucher = ReceiptVoucher::with(['account', 'customer', 'items.account', 'advances.customer'])->findOrFail($id);
+        $receiptVoucher = ReceiptVoucher::with(['account', 'customer', 'items.account', 'advances.customer', 'bankDetails.account'])->findOrFail($id);
 
         // resolve items
         $standardItems = $receiptVoucher->items->map(function ($item) {
