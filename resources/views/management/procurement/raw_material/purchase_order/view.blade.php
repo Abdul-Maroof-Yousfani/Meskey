@@ -342,7 +342,7 @@
          </div>
      </div>
  </div>
-<x-approval-status :model="$arrivalPurchaseOrder" />
+<x-approval-status-special :model="$arrivalPurchaseOrder" :list-refresh="route('raw-material.get.purchase-order')" />
 
  <script>
      $(document).ready(function() {

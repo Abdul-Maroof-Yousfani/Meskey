@@ -62,4 +62,9 @@ class ReceiptVoucher extends Model
     {
         return $this->hasMany(ReceiptVoucherAdvance::class, 'receipt_voucher_id');
     }
+
+    public function bankDetails()
+    {
+        return $this->hasMany(ReceiptVoucherBankDetail::class, 'receipt_voucher_id');
+    }
 }
