@@ -7,6 +7,7 @@ use App\Models\Export\ExportFirstWeighbridge;
 use App\Models\Master\ArrivalTruckType;
 use App\Models\Master\WeighbridgeAmount;
 use App\Models\Sales\LoadingProgramItem;
+use DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -65,61 +66,75 @@ class ExportFirstWeighBridgeController extends Controller
 
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'loading_program_item_id' => 'required|exists:loading_program_items,id',
-            'first_weight' => 'required|numeric',
-            'truck_type_id' => 'required|exists:arrival_truck_types,id',
-            'remark' => 'nullable|string',
-            'weighbridge_amount' => 'required|numeric',
-        ]);
+        DB::beginTransaction();
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
+        try {
+            $validator = Validator::make($request->all(), [
+                'loading_program_item_id' => 'required|exists:loading_program_items,id',
+                'first_weight' => 'required|numeric',
+                'truck_type_id' => 'required|exists:arrival_truck_types,id',
+                'remark' => 'nullable|string',
+                'weighbridge_amount' => 'required|numeric',
+            ]);
 
-        $loadingProgramItem = LoadingProgramItem::whereHas('loadingProgram', function ($query) {
-            $query->where('type', 'export_order');
-        })->findOrFail($request->loading_program_item_id);
-
-        $existingFirstWeighbridge = ExportFirstWeighbridge::where('loading_program_item_id', $request->loading_program_item_id)->first();
-        if ($existingFirstWeighbridge) {
-            return response()->json(['errors' => ['loading_program_item_id' => 'This ticket already has a first weighbridge.']], 422);
-        }
-
-        $loadingProgramItem->load(['deliveryOrders', 'loadingProgram']);
-        $deliveryOrders = $loadingProgramItem->deliveryOrders;
-
-        $request['created_by'] = auth()->user()->id;
-        $request['company_id'] = $request->company_id;
-
-        $companyLocationId = null;
-
-        if ($deliveryOrders->isNotEmpty()) {
-            $companyLocationId = $deliveryOrders->first()->location_id;
-            $request['delivery_order_id'] = $deliveryOrders->first()->id;
-        } else {
-            $companyLocationIds = $loadingProgramItem->loadingProgram->company_locations ?? [];
-            $companyLocationId = is_array($companyLocationIds) ? ($companyLocationIds[0] ?? null) : $companyLocationIds;
-            $request['delivery_order_id'] = null;
-        }
-
-        if ($companyLocationId) {
-            $weighbridgeAmount = WeighbridgeAmount::where('truck_type_id', $request->truck_type_id)
-                ->where('company_location_id', $companyLocationId)
-                ->first();
-
-            if (!$weighbridgeAmount) {
-                return response()->json(['errors' => ['truck_type_id' => 'Weighbridge amount not found for selected truck type and arrival location.']], 422);
+            if ($validator->fails()) {
+                return response()->json(['errors' => $validator->errors()], 422);
             }
 
-            $request['weighbridge_amount'] = $weighbridgeAmount->weighbridge_amount;
-        } else {
-            return response()->json(['errors' => ['truck_type_id' => 'Company location not found to fetch weighbridge amount.']], 422);
+            $loadingProgramItem = LoadingProgramItem::whereHas('loadingProgram', function ($query) {
+                $query->where('type', 'export_order');
+            })->findOrFail($request->loading_program_item_id);
+
+            $existingFirstWeighbridge = ExportFirstWeighbridge::where('loading_program_item_id', $request->loading_program_item_id)->first();
+            if ($existingFirstWeighbridge) {
+                return response()->json(['errors' => ['loading_program_item_id' => 'This ticket already has a first weighbridge.']], 422);
+            }
+
+            $loadingProgramItem->load(['deliveryOrders', 'loadingProgram']);
+            $deliveryOrders = $loadingProgramItem->deliveryOrders;
+
+            $request['created_by'] = auth()->user()->id;
+            $request['company_id'] = $request->company_id;
+
+            $companyLocationId = null;
+
+            if ($deliveryOrders->isNotEmpty()) {
+                $companyLocationId = $deliveryOrders->first()->location_id;
+                $request['delivery_order_id'] = $deliveryOrders->first()->id;
+            } else {
+                $companyLocationIds = $loadingProgramItem->loadingProgram->company_locations ?? [];
+                $companyLocationId = is_array($companyLocationIds) ? ($companyLocationIds[0] ?? null) : $companyLocationIds;
+                $request['delivery_order_id'] = null;
+            }
+
+            if ($companyLocationId) {
+                $weighbridgeAmount = WeighbridgeAmount::where('truck_type_id', $request->truck_type_id)
+                    ->where('company_location_id', $companyLocationId)
+                    ->first();
+
+                if (!$weighbridgeAmount) {
+                    return response()->json(['errors' => ['truck_type_id' => 'Weighbridge amount not found for selected truck type and arrival location.']], 422);
+                }
+
+                $request['weighbridge_amount'] = $weighbridgeAmount->weighbridge_amount;
+            } else {
+                return response()->json(['errors' => ['truck_type_id' => 'Company location not found to fetch weighbridge amount.']], 422);
+            }
+
+            $firstWeighbridge = ExportFirstWeighbridge::create($request->all());
+
+            DB::commit();
+
+            return response()->json(['success' => 'Export First Weighbridge created successfully.', 'data' => $firstWeighbridge], 201);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Something went wrong',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $firstWeighbridge = ExportFirstWeighbridge::create($request->all());
-
-        return response()->json(['success' => 'Export First Weighbridge created successfully.', 'data' => $firstWeighbridge], 201);
     }
 
     public function edit($id)
@@ -141,70 +156,117 @@ class ExportFirstWeighBridgeController extends Controller
 
     public function update(Request $request, $id)
     {
-        $validator = Validator::make($request->all(), [
-            'loading_program_item_id' => 'required|exists:loading_program_items,id',
-            'first_weight' => 'required|numeric',
-            'truck_type_id' => 'required|exists:arrival_truck_types,id',
-            'remark' => 'nullable|string',
-            'weighbridge_amount' => 'required|numeric',
-        ]);
+        DB::beginTransaction();
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
+        try {
+            $validator = Validator::make($request->all(), [
+                'loading_program_item_id' => 'required|exists:loading_program_items,id',
+                'first_weight' => 'required|numeric',
+                'truck_type_id' => 'required|exists:arrival_truck_types,id',
+                'remark' => 'nullable|string',
+                'weighbridge_amount' => 'required|numeric',
+            ]);
 
-        $loadingProgramItem = LoadingProgramItem::whereHas('loadingProgram', function ($query) {
-            $query->where('type', 'export_order');
-        })->findOrFail($request->loading_program_item_id);
-
-        $existingFirstWeighbridge = ExportFirstWeighbridge::where('loading_program_item_id', $request->loading_program_item_id)
-            ->where('id', '!=', $id)
-            ->first();
-        if ($existingFirstWeighbridge) {
-            return response()->json(['errors' => ['loading_program_item_id' => 'This ticket already has a first weighbridge.']], 422);
-        }
-
-        $firstWeighbridge = ExportFirstWeighbridge::findOrFail($id);
-        $loadingProgramItem->load(['deliveryOrders', 'loadingProgram']);
-        $deliveryOrders = $loadingProgramItem->deliveryOrders;
-        $request['company_id'] = $request->company_id;
-
-        $companyLocationId = null;
-
-        if ($deliveryOrders->isNotEmpty()) {
-            $companyLocationId = $deliveryOrders->first()->location_id;
-            $request['delivery_order_id'] = $deliveryOrders->first()->id;
-        } else {
-            $companyLocationIds = $loadingProgramItem->loadingProgram->company_locations ?? [];
-            $companyLocationId = is_array($companyLocationIds) ? ($companyLocationIds[0] ?? null) : $companyLocationIds;
-            $request['delivery_order_id'] = null;
-        }
-
-        if ($companyLocationId) {
-            $weighbridgeAmount = WeighbridgeAmount::where('truck_type_id', $request->truck_type_id)
-                ->where('company_location_id', $companyLocationId)
-                ->first();
-
-            if (!$weighbridgeAmount) {
-                return response()->json(['errors' => ['truck_type_id' => 'Weighbridge amount not found for selected truck type and arrival location.']], 422);
+            if ($validator->fails()) {
+                return response()->json(['errors' => $validator->errors()], 422);
             }
 
-            $request['weighbridge_amount'] = $weighbridgeAmount->weighbridge_amount;
-        } else {
-            return response()->json(['errors' => ['truck_type_id' => 'Company location not found to fetch weighbridge amount.']], 422);
+            $firstWeighbridge = ExportFirstWeighbridge::lockForUpdate()->find($id);
+
+            if (!$firstWeighbridge) {
+                DB::rollBack();
+                return response()->json([
+                    'errors' => ['first_weighbridge' => 'Record already deleted or not found.']
+                ], 404);
+            }
+
+            $loadingProgramItem = LoadingProgramItem::whereHas('loadingProgram', function ($query) {
+                $query->where('type', 'export_order');
+            })->findOrFail($request->loading_program_item_id);
+
+            $existingFirstWeighbridge = ExportFirstWeighbridge::where('loading_program_item_id', $request->loading_program_item_id)
+                ->where('id', '!=', $id)
+                ->first();
+            if ($existingFirstWeighbridge) {
+                return response()->json(['errors' => ['loading_program_item_id' => 'This ticket already has a first weighbridge.']], 422);
+            }
+
+            $firstWeighbridge = ExportFirstWeighbridge::findOrFail($id);
+            $loadingProgramItem->load(['deliveryOrders', 'loadingProgram']);
+            $deliveryOrders = $loadingProgramItem->deliveryOrders;
+            $request['company_id'] = $request->company_id;
+
+            $companyLocationId = null;
+
+            if ($deliveryOrders->isNotEmpty()) {
+                $companyLocationId = $deliveryOrders->first()->location_id;
+                $request['delivery_order_id'] = $deliveryOrders->first()->id;
+            } else {
+                $companyLocationIds = $loadingProgramItem->loadingProgram->company_locations ?? [];
+                $companyLocationId = is_array($companyLocationIds) ? ($companyLocationIds[0] ?? null) : $companyLocationIds;
+                $request['delivery_order_id'] = null;
+            }
+
+            if ($companyLocationId) {
+                $weighbridgeAmount = WeighbridgeAmount::where('truck_type_id', $request->truck_type_id)
+                    ->where('company_location_id', $companyLocationId)
+                    ->first();
+
+                if (!$weighbridgeAmount) {
+                    return response()->json(['errors' => ['truck_type_id' => 'Weighbridge amount not found for selected truck type and arrival location.']], 422);
+                }
+
+                $request['weighbridge_amount'] = $weighbridgeAmount->weighbridge_amount;
+            } else {
+                return response()->json(['errors' => ['truck_type_id' => 'Company location not found to fetch weighbridge amount.']], 422);
+            }
+
+            $firstWeighbridge->update($request->all());
+
+            DB::commit();
+
+            return response()->json(['success' => 'Export First Weighbridge updated successfully.', 'data' => $firstWeighbridge], 200);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
         }
-
-        $firstWeighbridge->update($request->all());
-
-        return response()->json(['success' => 'Export First Weighbridge updated successfully.', 'data' => $firstWeighbridge], 200);
     }
 
     public function destroy($id)
     {
-        $firstWeighbridge = ExportFirstWeighbridge::findOrFail($id);
-        $firstWeighbridge->delete();
+        DB::beginTransaction();
 
-        return response()->json(['success' => 'Export First Weighbridge deleted successfully.'], 200);
+        try {
+            $firstWeighbridge = ExportFirstWeighbridge::lockForUpdate()->find($id);
+
+            if (!$firstWeighbridge) {
+                DB::rollBack();
+
+                return response()->json([
+                    'success' => 'Record already deleted or not found.'
+                ], 404);
+            }
+
+            $firstWeighbridge->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => 'Export First Weighbridge deleted successfully.'
+            ], 200);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => 'Something went wrong.',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function getFirstWeighbridgeRelatedData(Request $request)

@@ -105,9 +105,9 @@ class QuotationController extends Controller
                 foreach ($request->specifications as $spec) {
                     $quotation->specifications()->create([
                         'product_slab_type_id' => $spec['product_slab_type_id'],
-                        'spec_name'  => $spec['spec_name'],
+                        'spec_name' => $spec['spec_name'],
                         'spec_value' => $spec['spec_value'],
-                        'uom'        => $spec['uom'] ?? null,
+                        'uom' => $spec['uom'] ?? null,
                         'value_type' => $spec['value_type'] ?? null,
                     ]);
                 }
@@ -119,18 +119,18 @@ class QuotationController extends Controller
                 foreach ($request->packing_items as $item) {
                     $totalAmount += $item['amount'] ?? 0;
                     $quotation->packingItems()->create([
-                        'bag_type_id'     => $item['bag_type_id'] ?? null,
-                        'bag_packing_id'  => $item['bag_packing_id'] ?? null,
+                        'bag_type_id' => $item['bag_type_id'] ?? null,
+                        'bag_packing_id' => $item['bag_packing_id'] ?? null,
                         // 'bag_color_id'    => $item['bag_color_id'] ?? null,
-                        'bag_size'        => $item['bag_size'] ?? 0,
-                        'metric_tons'     => $item['metric_tons'] ?? 0,
-                        'maunds'          => $item['maunds'] ?? 0,
-                        'no_of_bags'      => $item['no_of_bags'] ?? 0,
-                        'total_kgs'       => $item['total_kgs'] ?? 0,
-                        'rate'            => $item['rate'] ?? 0,
-                        'rate_per_maund'  => $item['rate_per_maund'] ?? 0,
-                        'amount'          => $item['amount'] ?? 0,
-                        'amount_pkr'      => $item['amount_pkr'] ?? 0,
+                        'bag_size' => $item['bag_size'] ?? 0,
+                        'metric_tons' => $item['metric_tons'] ?? 0,
+                        'maunds' => $item['maunds'] ?? 0,
+                        'no_of_bags' => $item['no_of_bags'] ?? 0,
+                        'total_kgs' => $item['total_kgs'] ?? 0,
+                        'rate' => $item['rate'] ?? 0,
+                        'rate_per_maund' => $item['rate_per_maund'] ?? 0,
+                        'amount' => $item['amount'] ?? 0,
+                        'amount_pkr' => $item['amount_pkr'] ?? 0,
                     ]);
                 }
             }
@@ -142,14 +142,14 @@ class QuotationController extends Controller
 
             return response()->json([
                 'success' => 'Quotation created successfully',
-                'data'    => $quotation->load(['product']),
+                'data' => $quotation->load(['product']),
             ], 201);
 
         } catch (\Throwable $e) {
             DB::rollBack();
             return response()->json([
                 'success' => 'Something went wrong',
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -233,6 +233,16 @@ class QuotationController extends Controller
         DB::beginTransaction();
 
         try {
+            $quotation = Quotation::lockForUpdate()->find($quotation->id);
+
+            if (!$quotation) {
+                DB::rollBack();
+
+                return response()->json([
+                    'success' => 'Quotation already deleted or not found.',
+                ], 404);
+            }
+
             $quotationData = $request->except(['specifications', 'packing_items']);
 
             $quotation->update(array_merge($quotationData, [
@@ -246,9 +256,9 @@ class QuotationController extends Controller
                 foreach ($request->specifications as $spec) {
                     $quotation->specifications()->create([
                         'product_slab_type_id' => $spec['product_slab_type_id'],
-                        'spec_name'  => $spec['spec_name'],
+                        'spec_name' => $spec['spec_name'],
                         'spec_value' => $spec['spec_value'],
-                        'uom'        => $spec['uom'] ?? null,
+                        'uom' => $spec['uom'] ?? null,
                         'value_type' => $spec['value_type'] ?? null,
                     ]);
                 }
@@ -261,18 +271,18 @@ class QuotationController extends Controller
                 foreach ($request->packing_items as $item) {
                     $totalAmount += $item['amount'] ?? 0;
                     $quotation->packingItems()->create([
-                        'bag_type_id'     => $item['bag_type_id'] ?? null,
-                        'bag_packing_id'  => $item['bag_packing_id'] ?? null,
+                        'bag_type_id' => $item['bag_type_id'] ?? null,
+                        'bag_packing_id' => $item['bag_packing_id'] ?? null,
                         // 'bag_color_id'    => $item['bag_color_id'] ?? null,
-                        'bag_size'        => $item['bag_size'] ?? 0,
-                        'metric_tons'     => $item['metric_tons'] ?? 0,
-                        'maunds'          => $item['maunds'] ?? 0,
-                        'no_of_bags'      => $item['no_of_bags'] ?? 0,
-                        'total_kgs'       => $item['total_kgs'] ?? 0,
-                        'rate'            => $item['rate'] ?? 0,
-                        'rate_per_maund'  => $item['rate_per_maund'] ?? 0,
-                        'amount'          => $item['amount'] ?? 0,
-                        'amount_pkr'      => $item['amount_pkr'] ?? 0,
+                        'bag_size' => $item['bag_size'] ?? 0,
+                        'metric_tons' => $item['metric_tons'] ?? 0,
+                        'maunds' => $item['maunds'] ?? 0,
+                        'no_of_bags' => $item['no_of_bags'] ?? 0,
+                        'total_kgs' => $item['total_kgs'] ?? 0,
+                        'rate' => $item['rate'] ?? 0,
+                        'rate_per_maund' => $item['rate_per_maund'] ?? 0,
+                        'amount' => $item['amount'] ?? 0,
+                        'amount_pkr' => $item['amount_pkr'] ?? 0,
                     ]);
                 }
             }
@@ -284,14 +294,14 @@ class QuotationController extends Controller
 
             return response()->json([
                 'success' => 'Quotation updated successfully',
-                'data'    => $quotation->load(['product', 'packingItems']),
+                'data' => $quotation->load(['product', 'packingItems']),
             ], 200);
 
         } catch (\Throwable $e) {
             DB::rollBack();
             return response()->json([
                 'success' => 'Something went wrong',
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -301,24 +311,36 @@ class QuotationController extends Controller
         DB::beginTransaction();
 
         try {
-            $quotation = Quotation::with(['packingItems'])->findOrFail($id);
+            $quotation = Quotation::with(['packingItems'])
+                ->lockForUpdate()
+                ->find($id);
 
+            if (!$quotation) {
+                DB::rollBack();
+
+                return response()->json([
+                    'success' => 'Quotation already deleted or not found.',
+                ], 404);
+            }
+
+            // delete children first
             $quotation->packingItems()->delete();
+
+            // delete parent
             $quotation->delete();
 
             DB::commit();
 
             return response()->json([
-                'success' => true,
-                'message' => 'Quotation deleted successfully.',
+                'success' => 'Quotation deleted successfully.',
             ], 200);
 
         } catch (\Throwable $e) {
             DB::rollBack();
+
             return response()->json([
-                'success' => false,
-                'message' => 'Failed to delete Quotation',
-                'error'   => $e->getMessage(),
+                'success' => 'Failed to delete Quotation',
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -333,10 +355,10 @@ class QuotationController extends Controller
             ->map(function ($slabs) {
                 $firstSlab = $slabs->first();
                 return [
-                    'id'         => $firstSlab->slabType->id,
-                    'spec_name'  => $firstSlab->slabType->name ?? '',
+                    'id' => $firstSlab->slabType->id,
+                    'spec_name' => $firstSlab->slabType->name ?? '',
                     'spec_value' => $firstSlab->deduction_value ?? 0,
-                    'uom'        => $firstSlab->slabType->qc_symbol ?? '',
+                    'uom' => $firstSlab->slabType->qc_symbol ?? '',
                 ];
             })
             ->values();

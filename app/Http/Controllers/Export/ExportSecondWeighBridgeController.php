@@ -7,6 +7,7 @@ use App\Models\Export\ExportDeliveryOrder;
 use App\Models\Export\ExportLoadingSlip;
 use App\Models\Export\ExportSecondWeighbridge;
 use App\Models\Sales\SecondWeighbridgeItem;
+use DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -164,11 +165,11 @@ class ExportSecondWeighBridgeController extends Controller
         ])->findOrFail($id);
 
         $data['LoadingSlips'] = ExportLoadingSlip::where(function ($q) use ($data) {
-                $q->whereDoesntHave('secondWeighbridge')
-                    ->whereHas('loadingProgramItem.exportDispatchQcs', function ($query) {
-                        $query->where('status', 'accept');
-                    });
-            })
+            $q->whereDoesntHave('secondWeighbridge')
+                ->whereHas('loadingProgramItem.exportDispatchQcs', function ($query) {
+                    $query->where('status', 'accept');
+                });
+        })
             ->orWhere('id', $data['SecondWeighbridge']->loading_slip_id)
             ->with([
                 'loadingProgramItem.deliveryOrders.customer',
@@ -217,94 +218,145 @@ class ExportSecondWeighBridgeController extends Controller
 
     public function update(Request $request, $id)
     {
-        $secondWeighbridge = ExportSecondWeighbridge::findOrFail($id);
+        DB::beginTransaction();
 
-        $loadingSlip = ExportLoadingSlip::with('loadingProgramItem.exportFirstWeighbridge')->find($request->loading_slip_id);
-        if (!$loadingSlip) {
-            return response()->json(['errors' => ['loading_slip_id' => 'Loading slip not found.']], 422);
-        }
+        try {
+            $secondWeighbridge = ExportSecondWeighbridge::lockForUpdate()->find($id);
 
-        $validationRules = [
-            'loading_slip_id' => 'required|exists:loading_slips,id',
-            'second_weight' => 'required|numeric',
-            'remark' => 'nullable|string',
-        ];
-
-        if (!$loadingSlip->delivery_order_id) {
-            $validationRules['delivery_order_id'] = 'required|exists:delivery_order,id';
-        }
-
-        $validator = Validator::make($request->all(), $validationRules);
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
-        $firstWeighbridge = $loadingSlip->loadingProgramItem->exportFirstWeighbridge;
-        if (!$firstWeighbridge) {
-            return response()->json(['errors' => ['loading_slip_id' => 'First weighbridge not found for this loading slip.']], 422);
-        }
-
-        $first_weight = $firstWeighbridge->first_weight;
-        $second_weight = $request->second_weight;
-        $net_weight = $second_weight - $first_weight;
-
-        if ($second_weight < $first_weight) {
-            return response()->json('Second Weight can not be less than First Weight', 422);
-        }
-
-        $current_balance = get_second_weighbridge_balance_kg($loadingSlip);
-        $available_balance = $current_balance + $secondWeighbridge->net_weight;
-
-        if ($net_weight > $available_balance) {
-            return response()->json('Your total remaining net weight balance for all associated DOs on this ticket is: ' . number_format($available_balance, 2), 422);
-        }
-
-        if (!$loadingSlip->delivery_order_id && $request->delivery_order_id) {
-            $loadingSlip->update(['delivery_order_id' => $request->delivery_order_id]);
-        }
-
-        $updateData = $request->all();
-        $updateData['first_weight'] = $first_weight;
-        $updateData['net_weight'] = $net_weight;
-        $updateData['balance_kg'] = $available_balance - $net_weight;
-
-        $secondWeighbridge->update($updateData);
-
-        $secondWeighbridge->items()->delete();
-        $remainingWeight = $net_weight;
-        $item = $loadingSlip->loadingProgramItem;
-        $deliveryOrders = collect();
-        if ($item && $item->deliveryOrders->isNotEmpty()) {
-            $deliveryOrders = $item->deliveryOrders->where('type', 'export_order')->sortBy('id');
-        } elseif ($loadingSlip->deliveryOrder) {
-            $deliveryOrders->push($loadingSlip->deliveryOrder);
-        }
-
-        foreach ($deliveryOrders as $do) {
-            if ($remainingWeight <= 0) {
-                break;
+            if (!$secondWeighbridge) {
+                DB::rollBack();
+                return response()->json([
+                    'errors' => 'Export Second Weighbridge already deleted or not found.'
+                ], 404);
             }
 
-            $doBalance = get_second_weighbridge_balance_by_delivery_order_kg($do->id);
-            if ($doBalance > 0) {
-                $deduct = min($doBalance, $remainingWeight);
-                SecondWeighbridgeItem::create([
-                    'second_weighbridge_id' => $secondWeighbridge->id,
-                    'delivery_order_id' => $do->id,
-                    'net_weight' => $deduct,
-                ]);
-                $remainingWeight -= $deduct;
+            $loadingSlip = ExportLoadingSlip::with('loadingProgramItem.exportFirstWeighbridge')->find($request->loading_slip_id);
+            if (!$loadingSlip) {
+                DB::rollBack();
+                return response()->json(['errors' => ['loading_slip_id' => 'Loading slip not found.']], 422);
             }
-        }
 
-        return response()->json(['success' => 'Export Second Weighbridge updated successfully.', 'data' => $secondWeighbridge], 200);
+            $validationRules = [
+                'loading_slip_id' => 'required|exists:loading_slips,id',
+                'second_weight' => 'required|numeric',
+                'remark' => 'nullable|string',
+            ];
+
+            if (!$loadingSlip->delivery_order_id) {
+                $validationRules['delivery_order_id'] = 'required|exists:delivery_order,id';
+            }
+
+            $validator = Validator::make($request->all(), $validationRules);
+            if ($validator->fails()) {
+                DB::rollBack();
+                return response()->json(['errors' => $validator->errors()], 422);
+            }
+
+            $firstWeighbridge = $loadingSlip->loadingProgramItem->exportFirstWeighbridge;
+            if (!$firstWeighbridge) {
+                DB::rollBack();
+                return response()->json(['errors' => ['loading_slip_id' => 'First weighbridge not found for this loading slip.']], 422);
+            }
+
+            $first_weight = $firstWeighbridge->first_weight;
+            $second_weight = $request->second_weight;
+            $net_weight = $second_weight - $first_weight;
+
+            if ($second_weight < $first_weight) {
+                DB::rollBack();
+                return response()->json('Second Weight can not be less than First Weight', 422);
+            }
+
+            $current_balance = get_second_weighbridge_balance_kg($loadingSlip);
+            $available_balance = $current_balance + $secondWeighbridge->net_weight;
+
+            if ($net_weight > $available_balance) {
+                DB::rollBack();
+                return response()->json('Your total remaining net weight balance for all associated DOs on this ticket is: ' . number_format($available_balance, 2), 422);
+            }
+
+            if (!$loadingSlip->delivery_order_id && $request->delivery_order_id) {
+                $loadingSlip->update(['delivery_order_id' => $request->delivery_order_id]);
+            }
+
+            $updateData = $request->all();
+            $updateData['first_weight'] = $first_weight;
+            $updateData['net_weight'] = $net_weight;
+            $updateData['balance_kg'] = $available_balance - $net_weight;
+
+            $secondWeighbridge->update($updateData);
+
+            $secondWeighbridge->items()->delete();
+            $remainingWeight = $net_weight;
+            $item = $loadingSlip->loadingProgramItem;
+            $deliveryOrders = collect();
+            if ($item && $item->deliveryOrders->isNotEmpty()) {
+                $deliveryOrders = $item->deliveryOrders->where('type', 'export_order')->sortBy('id');
+            } elseif ($loadingSlip->deliveryOrder) {
+                $deliveryOrders->push($loadingSlip->deliveryOrder);
+            }
+
+            foreach ($deliveryOrders as $do) {
+                if ($remainingWeight <= 0) {
+                    break;
+                }
+
+                $doBalance = get_second_weighbridge_balance_by_delivery_order_kg($do->id);
+                if ($doBalance > 0) {
+                    $deduct = min($doBalance, $remainingWeight);
+                    SecondWeighbridgeItem::create([
+                        'second_weighbridge_id' => $secondWeighbridge->id,
+                        'delivery_order_id' => $do->id,
+                        'net_weight' => $deduct,
+                    ]);
+                    $remainingWeight -= $deduct;
+                }
+            }
+
+            DB::commit();
+
+            return response()->json(['success' => 'Export Second Weighbridge updated successfully.', 'data' => $secondWeighbridge], 200);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => 'Something went wrong',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function destroy($id)
     {
-        $secondWeighbridge = ExportSecondWeighbridge::findOrFail($id);
-        $secondWeighbridge->delete();
-        return response()->json(['success' => 'Export Second Weighbridge deleted successfully.'], 200);
+        DB::beginTransaction();
+
+        try {
+            $secondWeighbridge = ExportSecondWeighbridge::lockForUpdate()->find($id);
+
+            if (!$secondWeighbridge) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => 'Export Second Weighbridge already deleted or not found.'
+                ], 404);
+            }
+
+            $secondWeighbridge->items()->delete();
+            $secondWeighbridge->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => 'Export Second Weighbridge deleted successfully.'
+            ], 200);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => 'Something went wrong.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function getSecondWeighbridgeRelatedData(Request $request)

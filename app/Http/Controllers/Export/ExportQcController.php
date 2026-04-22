@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Export\ExportQc;
 use App\Models\Export\ExportQcAttachment;
 use App\Models\Sales\LoadingProgramItem;
+use DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -57,44 +58,59 @@ class ExportQcController extends Controller
 
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'loading_program_item_id' => 'required|exists:loading_program_items,id',
-            'customer' => 'required|string',
-            'commodity' => 'required|string',
-            'so_qty' => 'required|numeric',
-            'do_qty' => 'required|numeric',
-            'factory' => 'required|string',
-            'gala' => 'required|string',
-            'qc_remarks' => 'nullable|string',
-            'status' => 'required|in:accept,reject',
-            'attachments' => 'nullable|array',
-            'attachments.*' => 'file|mimes:jpeg,jpg,png,pdf,doc,docx|max:10240',
-            'company_id' => 'required|numeric',
-        ]);
+        DB::beginTransaction();
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+        try {
+            $validator = Validator::make($request->all(), [
+                'loading_program_item_id' => 'required|exists:loading_program_items,id',
+                'customer' => 'required|string',
+                'commodity' => 'required|string',
+                'so_qty' => 'required|numeric',
+                'do_qty' => 'required|numeric',
+                'factory' => 'required|string',
+                'gala' => 'required|string',
+                'qc_remarks' => 'nullable|string',
+                'status' => 'required|in:accept,reject',
+                'attachments' => 'nullable|array',
+                'attachments.*' => 'file|mimes:jpeg,jpg,png,pdf,doc,docx|max:10240',
+                'company_id' => 'required|numeric',
+            ]);
+
+            if ($validator->fails()) {
+                DB::rollBack();
+                return response()->json(['errors' => $validator->errors()], 422);
+            }
+
+            $existingExportQc = ExportQc::where('loading_program_item_id', $request->loading_program_item_id)->first();
+            if ($existingExportQc) {
+                DB::rollBack();
+                return response()->json(['errors' => ['loading_program_item_id' => 'This ticket already has an Export QC.']], 422);
+            }
+
+            $LoadingProgramItem = $this->ticketQuery()
+                ->with($this->ticketRelations())
+                ->findOrFail($request->loading_program_item_id);
+
+            $exportQc = ExportQc::create(
+                $this->makeQcPayload($request, $LoadingProgramItem) + [
+                    'created_by' => auth()->user()->id,
+                    'company_id' => $request->company_id,
+                ]
+            );
+
+            $this->storeAttachments($exportQc, $request);
+
+            DB::commit();
+
+            return response()->json(['success' => 'Export QC created successfully.', 'data' => $exportQc], 201);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => 'Something went wrong',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $existingExportQc = ExportQc::where('loading_program_item_id', $request->loading_program_item_id)->first();
-        if ($existingExportQc) {
-            return response()->json(['errors' => ['loading_program_item_id' => 'This ticket already has an Export QC.']], 422);
-        }
-
-        $LoadingProgramItem = $this->ticketQuery()
-            ->with($this->ticketRelations())
-            ->findOrFail($request->loading_program_item_id);
-
-        $exportQc = ExportQc::create(
-            $this->makeQcPayload($request, $LoadingProgramItem) + [
-                'created_by' => auth()->user()->id,
-                'company_id' => $request->company_id,
-            ]
-        );
-
-        $this->storeAttachments($exportQc, $request);
-
-        return response()->json(['success' => 'Export QC created successfully.', 'data' => $exportQc], 201);
     }
 
     public function show(string $id)
@@ -118,7 +134,7 @@ class ExportQcController extends Controller
             'attachments',
         ])->findOrFail($id);
 
-        $ExportQc->loadMissing(['loadingProgramItem' => fn ($query) => $query->with($this->ticketRelations())]);
+        $ExportQc->loadMissing(['loadingProgramItem' => fn($query) => $query->with($this->ticketRelations())]);
 
         $Tickets = $this->ticketQuery()
             ->whereHas('exportFirstWeighbridge')
@@ -136,57 +152,97 @@ class ExportQcController extends Controller
 
     public function update(Request $request, string $id)
     {
-        $validator = Validator::make($request->all(), [
-            'loading_program_item_id' => 'required|exists:loading_program_items,id',
-            'customer' => 'nullable|string',
-            'commodity' => 'nullable|string',
-            'so_qty' => 'nullable|numeric',
-            'do_qty' => 'nullable|numeric',
-            'factory' => 'nullable|string',
-            'gala' => 'nullable|string',
-            'qc_remarks' => 'nullable|string',
-            'status' => 'required|in:accept,reject',
-            'attachments' => 'nullable|array',
-            'attachments.*' => 'file|mimes:jpeg,jpg,png,pdf,doc,docx|max:10240',
-        ]);
+        DB::beginTransaction();
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
+        try {
+            $validator = Validator::make($request->all(), [
+                'loading_program_item_id' => 'required|exists:loading_program_items,id',
+                'customer' => 'nullable|string',
+                'commodity' => 'nullable|string',
+                'so_qty' => 'nullable|numeric',
+                'do_qty' => 'nullable|numeric',
+                'factory' => 'nullable|string',
+                'gala' => 'nullable|string',
+                'qc_remarks' => 'nullable|string',
+                'status' => 'required|in:accept,reject',
+                'attachments' => 'nullable|array',
+                'attachments.*' => 'file|mimes:jpeg,jpg,png,pdf,doc,docx|max:10240',
+            ]);
 
-        $existingExportQc = ExportQc::where('loading_program_item_id', $request->loading_program_item_id)
-            ->where('id', '!=', $id)
-            ->first();
-        if ($existingExportQc) {
-            return response()->json(['errors' => ['loading_program_item_id' => 'This ticket already has an Export QC.']], 422);
-        }
-
-        $exportQc = ExportQc::with('attachments')->findOrFail($id);
-
-        $LoadingProgramItem = $this->ticketQuery()
-            ->with($this->ticketRelations())
-            ->findOrFail($request->loading_program_item_id);
-
-        $exportQc->update($this->makeQcPayload($request, $LoadingProgramItem));
-
-        if ($request->hasFile('attachments')) {
-            foreach ($exportQc->attachments as $attachment) {
-                if (Storage::exists(str_replace('storage/', 'public/', $attachment->file_path))) {
-                    Storage::delete(str_replace('storage/', 'public/', $attachment->file_path));
-                }
-                $attachment->delete();
+            if ($validator->fails()) {
+                DB::rollBack();
+                return response()->json(['errors' => $validator->errors()], 422);
             }
 
-            $this->storeAttachments($exportQc, $request);
-        }
+            $exportQc = ExportQc::with('attachments')
+                ->lockForUpdate()
+                ->findOrFail($id);
 
-        return response()->json(['success' => 'Export QC updated successfully.', 'data' => $exportQc], 200);
+            if (!$exportQc) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => 'Export QC already deleted or not found.'
+                ], 404);
+            }
+
+            $existingExportQc = ExportQc::where('loading_program_item_id', $request->loading_program_item_id)
+                ->where('id', '!=', $id)
+                ->first();
+
+            if ($existingExportQc) {
+                DB::rollBack();
+                return response()->json([
+                    'errors' => ['loading_program_item_id' => 'This ticket already has an Export QC.']
+                ], 422);
+            }
+
+            $LoadingProgramItem = $this->ticketQuery()
+                ->with($this->ticketRelations())
+                ->findOrFail($request->loading_program_item_id);
+
+            $exportQc->update($this->makeQcPayload($request, $LoadingProgramItem));
+
+            if ($request->hasFile('attachments')) {
+                foreach ($exportQc->attachments as $attachment) {
+                    if (Storage::exists(str_replace('storage/', 'public/', $attachment->file_path))) {
+                        Storage::delete(str_replace('storage/', 'public/', $attachment->file_path));
+                    }
+                    $attachment->delete();
+                }
+
+                $this->storeAttachments($exportQc, $request);
+            }
+
+            DB::commit();
+
+            return response()->json(['success' => 'Export QC updated successfully.', 'data' => $exportQc], 200);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Something went wrong',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function destroy(string $id)
     {
+        DB::beginTransaction();
+
         try {
-            $exportQc = ExportQc::with('attachments')->findOrFail($id);
+            $exportQc = ExportQc::with('attachments')
+                ->lockForUpdate()
+                ->findOrFail($id);
+
+            if (!$exportQc) {
+                DB::rollBack();
+
+                return response()->json([
+                    'success' => 'Export QC already deleted or not found.'
+                ], 404);
+            }
 
             foreach ($exportQc->attachments as $attachment) {
                 try {
@@ -194,17 +250,23 @@ class ExportQcController extends Controller
                     if (Storage::exists($filePath)) {
                         Storage::delete($filePath);
                     }
+
+                    $attachment->delete();
+
                 } catch (\Exception $e) {
                     \Log::error('Failed to delete attachment file: ' . $attachment->file_path . ' - ' . $e->getMessage());
                 }
-
-                $attachment->delete();
             }
 
             $exportQc->delete();
 
+            DB::commit();
+
             return response()->json(['success' => 'Export QC deleted successfully.'], 200);
         } catch (\Exception $e) {
+
+            DB::rollBack();
+
             \Log::error('Export QC deletion failed: ' . $e->getMessage());
 
             return response()->json(['error' => 'Failed to delete Export QC.', 'details' => $e->getMessage()], 422);

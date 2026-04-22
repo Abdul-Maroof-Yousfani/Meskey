@@ -126,12 +126,20 @@ class CommercialInvoiceController extends Controller
 
     public function update(Request $request, $id): JsonResponse
     {
-        $commercialInvoice = CommercialInvoice::findOrFail($id);
-        $validated = $this->validateCommercialInvoice($request, $commercialInvoice->id);
-
         DB::beginTransaction();
 
         try {
+            $commercialInvoice = CommercialInvoice::lockForUpdate()->find($id);
+
+            if (!$commercialInvoice) {
+                DB::rollBack();
+                return response()->json([
+                    'error' => 'Commercial Invoice already deleted or not found.'
+                ], 404);
+            }
+
+            $validated = $this->validateCommercialInvoice($request, $commercialInvoice->id);
+
             [$billOfLadings, $preview, $goodsSummary] = $this->buildPayloadFromRequest($validated, $commercialInvoice->id);
 
             $commercialInvoice->update([
@@ -155,10 +163,31 @@ class CommercialInvoiceController extends Controller
 
     public function destroy($id): JsonResponse
     {
-        $commercialInvoice = CommercialInvoice::findOrFail($id);
-        $commercialInvoice->delete();
+        DB::beginTransaction();
 
-        return response()->json(['message' => 'Commercial Invoice has been deleted']);
+        try {
+            $commercialInvoice = CommercialInvoice::lockForUpdate()->find($id);
+
+            if (!$commercialInvoice) {
+                DB::rollBack();
+                return response()->json([
+                    'error' => 'Commercial Invoice already deleted or not found.'
+                ], 404);
+            }
+
+            $commercialInvoice->delete();
+
+            DB::commit();
+
+            return response()->json(['message' => 'Commercial Invoice has been deleted']);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function getNumber(Request $request): JsonResponse
@@ -235,7 +264,7 @@ class CommercialInvoiceController extends Controller
             ])->render(),
             'preview' => $preview,
             'goods_summary' => $goodsSummary,
-            'bill_of_ladings' => $billOfLadings->map(fn (BillOfLading $billOfLading) => [
+            'bill_of_ladings' => $billOfLadings->map(fn(BillOfLading $billOfLading) => [
                 'id' => $billOfLading->id,
                 'bill_no' => $billOfLading->bill_no,
             ])->values(),
@@ -301,7 +330,7 @@ class CommercialInvoiceController extends Controller
             abort(422, 'Some selected Bill of Lading records are invalid.');
         }
 
-        $invalidBill = $billOfLadings->first(fn (BillOfLading $billOfLading) => (int) $billOfLading->export_order_id !== (int) $validated['export_order_id']);
+        $invalidBill = $billOfLadings->first(fn(BillOfLading $billOfLading) => (int) $billOfLading->export_order_id !== (int) $validated['export_order_id']);
         if ($invalidBill) {
             abort(422, 'Selected Bill of Lading does not belong to the selected Export Order.');
         }
@@ -318,7 +347,7 @@ class CommercialInvoiceController extends Controller
                     ->push($billOfLading->export_delivery_challan_id);
             })
             ->filter()
-            ->map(fn ($id) => (int) $id)
+            ->map(fn($id) => (int) $id)
             ->unique()
             ->values()
             ->all();
@@ -379,9 +408,9 @@ class CommercialInvoiceController extends Controller
         array $input
     ): array {
         $primaryBill = $billOfLadings->first();
-        $bolSnapshots = $billOfLadings->map(fn (BillOfLading $billOfLading) => $billOfLading->snapshot_data ?? []);
+        $bolSnapshots = $billOfLadings->map(fn(BillOfLading $billOfLading) => $billOfLading->snapshot_data ?? []);
         $customer = $deliveryOrders->first()?->customer ?? $deliveryChallans->first()?->customer ?? $primaryBill?->exportDeliveryChallan?->customer;
-        
+
         $consigneeLines = collect([
             $customer?->name ?? null,
             $customer?->address ?? null,
@@ -391,7 +420,7 @@ class CommercialInvoiceController extends Controller
         $bank = $exportOrder->correspondentBank ?: $exportOrder->customer_bank;
         $paymentTermId = $deliveryOrders->pluck('payment_term_id')->filter()->first();
         $paymentTerm = PaymentTerm::find($paymentTermId);
-        
+
         $company = $exportOrder->company;
         $originName = $exportOrder->originCountry?->name ?? 'Pakistan';
         $visualName = $exportOrder->visual_name ?: ($exportOrder->product?->name ?: 'N/A');
@@ -410,7 +439,7 @@ class CommercialInvoiceController extends Controller
         }
 
         $quantitySummary = collect($goodsSummary['rows'] ?? [])
-            ->map(fn ($row) => number_format((float) ($row['quantity_mt'] ?? 0), 3) . ' MTS')
+            ->map(fn($row) => number_format((float) ($row['quantity_mt'] ?? 0), 3) . ' MTS')
             ->filter()
             ->implode(' + ');
 
@@ -435,7 +464,7 @@ class CommercialInvoiceController extends Controller
             'contents' => $originalName,
             'quantity_summary' => $quantitySummary,
             'bill_of_lading_no' => $billOfLadings->pluck('bill_no')->filter()->unique()->implode(', '),
-            'bill_of_lading_date' => $billOfLadings->pluck('bill_date')->filter()->map(fn ($date) => Carbon::parse($date)->format('d.m.Y'))->unique()->implode(', '),
+            'bill_of_lading_date' => $billOfLadings->pluck('bill_date')->filter()->map(fn($date) => Carbon::parse($date)->format('d.m.Y'))->unique()->implode(', '),
             'shipped_on_board_date' => $bolSnapshots->pluck('shipped_on_board_date')->filter()->unique()->implode(', ') ?: $primaryBill?->shipped_on_board_date,
             'form_e_no' => $bolSnapshots->pluck('form_e_no')->filter()->implode(', ') ?: 'N/A',
             'form_e_date' => $bolSnapshots->pluck('form_e_date')->filter()->unique()->implode(', '),

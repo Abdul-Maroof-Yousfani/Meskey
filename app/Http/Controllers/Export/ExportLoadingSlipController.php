@@ -42,10 +42,10 @@ class ExportLoadingSlipController extends Controller
                 return $q->where(function ($sq) use ($searchTerm) {
                     $sq->whereHas('loadingProgramItem', function ($query) use ($searchTerm) {
                         $query->where('transaction_number', 'like', $searchTerm)
-                              ->orWhere('truck_number', 'like', $searchTerm);
+                            ->orWhere('truck_number', 'like', $searchTerm);
                     })
-                    ->orWhere('customer', 'like', $searchTerm)
-                    ->orWhere('commodity', 'like', $searchTerm);
+                        ->orWhere('customer', 'like', $searchTerm)
+                        ->orWhere('commodity', 'like', $searchTerm);
                 });
             })
             ->latest()
@@ -161,7 +161,7 @@ class ExportLoadingSlipController extends Controller
             'logs.editedBy',
         ])->findOrFail($id);
 
-        $loadingSlip->loadMissing(['loadingProgramItem' => fn ($query) => $query->with($this->ticketRelations())]);
+        $loadingSlip->loadMissing(['loadingProgramItem' => fn($query) => $query->with($this->ticketRelations())]);
 
         $Orders = $this->buildOrders($loadingSlip->loadingProgramItem);
         $canEdit = $loadingSlip->canBeEdited();
@@ -176,45 +176,57 @@ class ExportLoadingSlipController extends Controller
 
     public function update(Request $request, string $id)
     {
-        $validator = Validator::make($request->all(), [
-            'customer' => 'required|string|max:255',
-            'commodity' => 'required|string|max:255',
-            'so_qty' => 'required|numeric|min:0',
-            'do_qty' => 'required|numeric|min:0',
-            'factory' => 'required|string|max:255',
-            'gala' => 'nullable|string|max:255',
-            'no_of_bags' => 'required|integer|min:1',
-            'bag_size' => 'required|numeric|min:0',
-            'kilogram' => 'required|numeric|min:0',
-            'remarks' => 'nullable|string',
-            'labour' => 'required|in:paid,not_paid',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
-        $loadingSlip = ExportLoadingSlip::with('loadingProgramItem.exportDispatchQc')->findOrFail($id);
-
-        if (!$loadingSlip->canBeEdited()) {
-            return response()->json(['error' => 'This loading slip cannot be edited because its Dispatch QC has been accepted.'], 422);
-        }
-
-        $LoadingProgramItem = $this->ticketQuery()->with($this->ticketRelations())->findOrFail($loadingSlip->loading_program_item_id);
-        $DeliveryOrder = $this->resolveDeliveryOrder($LoadingProgramItem);
-
-        if ($DeliveryOrder) {
-            $totalBags = $DeliveryOrder->exportPackingItems->sum('no_of_bags');
-            $usedBags = $DeliveryOrder->loadingSlips->sum('no_of_bags');
-            $availableBags = ($totalBags - $usedBags) + $loadingSlip->no_of_bags;
-
-            if ($request->no_of_bags > $availableBags) {
-                return response()->json(['errors' => ['no_of_bags' => ["Your balance is $availableBags."]]], 422);
-            }
-        }
+        DB::beginTransaction();
 
         try {
-            DB::beginTransaction();
+            $validator = Validator::make($request->all(), [
+                'customer' => 'required|string|max:255',
+                'commodity' => 'required|string|max:255',
+                'so_qty' => 'required|numeric|min:0',
+                'do_qty' => 'required|numeric|min:0',
+                'factory' => 'required|string|max:255',
+                'gala' => 'nullable|string|max:255',
+                'no_of_bags' => 'required|integer|min:1',
+                'bag_size' => 'required|numeric|min:0',
+                'kilogram' => 'required|numeric|min:0',
+                'remarks' => 'nullable|string',
+                'labour' => 'required|in:paid,not_paid',
+            ]);
+
+            if ($validator->fails()) {
+                DB::rollBack();
+                return response()->json(['errors' => $validator->errors()], 422);
+            }
+
+            $loadingSlip = ExportLoadingSlip::with('loadingProgramItem.exportDispatchQc')
+                ->lockForUpdate()
+                ->find($id);
+
+            if (!$loadingSlip) {
+                DB::rollBack();
+                return response()->json([
+                    'error' => 'Loading Slip already deleted or not found.'
+                ], 404);
+            }
+
+            if (!$loadingSlip->canBeEdited()) {
+                DB::rollBack();
+                return response()->json(['error' => 'This loading slip cannot be edited because its Dispatch QC has been accepted.'], 422);
+            }
+
+            $LoadingProgramItem = $this->ticketQuery()->with($this->ticketRelations())->findOrFail($loadingSlip->loading_program_item_id);
+            $DeliveryOrder = $this->resolveDeliveryOrder($LoadingProgramItem);
+
+            if ($DeliveryOrder) {
+                $totalBags = $DeliveryOrder->exportPackingItems->sum('no_of_bags');
+                $usedBags = $DeliveryOrder->loadingSlips->sum('no_of_bags');
+                $availableBags = ($totalBags - $usedBags) + $loadingSlip->no_of_bags;
+
+                if ($request->no_of_bags > $availableBags) {
+                    DB::rollBack();
+                    return response()->json(['errors' => ['no_of_bags' => ["Your balance is $availableBags."]]], 422);
+                }
+            }
 
             $rejectedDispatchQc = $loadingSlip->loadingProgramItem?->latestRejectedExportDispatchQc;
             if ($rejectedDispatchQc) {
@@ -255,22 +267,48 @@ class ExportLoadingSlipController extends Controller
             DB::commit();
 
             return response()->json(['success' => 'Export Loading Slip updated successfully.', 'data' => $loadingSlip], 200);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
-            return response()->json(['error' => 'Failed to update Loading Slip.', 'details' => $e->getMessage()], 422);
+
+            return response()->json([
+                'error' => 'Failed to update Loading Slip.',
+                'details' => $e->getMessage()
+            ], 500);
         }
     }
 
     public function destroy(string $id)
     {
+        DB::beginTransaction();
+
         try {
-            $loadingSlip = ExportLoadingSlip::findOrFail($id);
+            $loadingSlip = ExportLoadingSlip::with('loadingProgramItem.exportDispatchQc')
+                ->lockForUpdate()
+                ->find($id);
+
+            if (!$loadingSlip) {
+                DB::rollBack();
+                return response()->json([
+                    'error' => 'Loading Slip already deleted or not found.'
+                ], 404);
+            }
+
             $loadingSlip->loadingProgramItem?->exportDispatchQcs()->delete();
             $loadingSlip->delete();
 
-            return response()->json(['success' => 'Export Loading Slip deleted successfully.'], 200);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Failed to delete Loading Slip.', 'details' => $e->getMessage()], 422);
+            DB::commit();
+
+            return response()->json([
+                'success' => 'Export Loading Slip deleted successfully.'
+            ], 200);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'error' => 'Failed to delete Loading Slip.',
+                'details' => $e->getMessage()
+            ], 500);
         }
     }
 

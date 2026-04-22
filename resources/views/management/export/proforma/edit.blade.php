@@ -335,12 +335,12 @@
                 </div>
             </div>
 
-            <div class="col-md-12">
+            <!-- <div class="col-md-12">
                 <div class="form-group">
                     <label>Consignee Details:</label>
                     <textarea name="consigned_details" id="consigned_details" class="form-control" rows="4">{{ old('consigned_details', $proforma->consigned_details) }}</textarea>
                 </div>
-            </div>
+            </div> -->
 
             {{-- shipping instructions --}}
             <div class="col-md-12 mb-4">

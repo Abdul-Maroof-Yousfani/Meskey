@@ -336,12 +336,12 @@
             </div>
 
             {{-- consignee details  --}}
-            <div class="col-md-12">
+            <!-- <div class="col-md-12">
                 <div class="form-group">
                     <label>Consignee Details:</label>
                     <textarea name="consigned_details" class="form-control" rows="4"></textarea>
                 </div>
-            </div>
+            </div> -->
 
             {{-- shipping instructions --}}
             <div class="col-md-12 mb-4">

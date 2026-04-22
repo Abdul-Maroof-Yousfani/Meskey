@@ -126,12 +126,20 @@ class BillOfLadingController extends Controller
 
     public function update(Request $request, $id): JsonResponse
     {
-        $billOfLading = BillOfLading::findOrFail($id);
-        $validated = $this->validateBillOfLading($request, $billOfLading->id);
-
         DB::beginTransaction();
 
         try {
+            $billOfLading = BillOfLading::lockForUpdate()->find($id);
+
+            if (!$billOfLading) {
+                DB::rollBack();
+                return response()->json([
+                    'error' => 'Bill of Lading already deleted or not found.'
+                ], 404);
+            }
+
+            $validated = $this->validateBillOfLading($request, $billOfLading->id);
+
             [$exportOrder, $formEs, $deliveryChallans, $deliveryOrders] = $this->resolveSelections($validated);
             $this->ensureFormEsAreAvailable($formEs->pluck('id')->all(), $billOfLading->id);
             $this->ensureChallansAreAvailable($deliveryChallans->pluck('id')->all(), $billOfLading->id);
@@ -169,10 +177,31 @@ class BillOfLadingController extends Controller
 
     public function destroy($id): JsonResponse
     {
-        $billOfLading = BillOfLading::findOrFail($id);
-        $billOfLading->delete();
+        DB::beginTransaction();
 
-        return response()->json(['message' => 'Bill of Lading has been deleted']);
+        try {
+            $billOfLading = BillOfLading::lockForUpdate()->find($id);
+
+            if (!$billOfLading) {
+                DB::rollBack();
+                return response()->json([
+                    'error' => 'Bill of Lading already deleted or not found.'
+                ], 404);
+            }
+
+            $billOfLading->delete();
+
+            DB::commit();
+
+            return response()->json(['message' => 'Bill of Lading has been deleted']);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function getRelatedData(Request $request): JsonResponse
@@ -341,7 +370,7 @@ class BillOfLadingController extends Controller
         $takenChallanIds = BillOfLading::query()
             ->when($currentBolId, fn($q) => $q->where('id', '!=', $currentBolId))
             ->get()
-            ->flatMap(function($bol) {
+            ->flatMap(function ($bol) {
                 $ids = is_array($bol->selected_delivery_challan_ids) ? $bol->selected_delivery_challan_ids : [];
                 if ($bol->export_delivery_challan_id) {
                     $ids[] = $bol->export_delivery_challan_id;
@@ -353,7 +382,7 @@ class BillOfLadingController extends Controller
             ->where('am_approval_status', 'approved')
             ->whereHas('deliveryOrders.delivery_challans', function ($q) use ($takenChallanIds) {
                 $q->whereNotIn('delivery_challans.id', $takenChallanIds)
-                  ->where('delivery_challans.am_approval_status', 'approved');
+                    ->where('delivery_challans.am_approval_status', 'approved');
             })
             ->latest()
             ->get();
@@ -411,8 +440,8 @@ class BillOfLadingController extends Controller
             abort(422, 'Selected Delivery Challans do not match the selected Export Order / Form-E.');
         }
 
-        $selectedFormEIds = $formEs->pluck('id')->map(fn ($id) => (int) $id)->values()->all();
-        $coveredFormEIds = $deliveryOrders->pluck('export_form_e_id')->map(fn ($id) => (int) $id)->filter()->unique()->values()->all();
+        $selectedFormEIds = $formEs->pluck('id')->map(fn($id) => (int) $id)->values()->all();
+        $coveredFormEIds = $deliveryOrders->pluck('export_form_e_id')->map(fn($id) => (int) $id)->filter()->unique()->values()->all();
         $uncoveredFormEIds = array_values(array_diff($selectedFormEIds, $coveredFormEIds));
         if (!empty($uncoveredFormEIds)) {
             abort(422, 'Please select at least one Delivery Challan against every selected Form-E.');
@@ -496,7 +525,7 @@ class BillOfLadingController extends Controller
             'port_of_discharge' => $this->formatPort($exportOrder->portOfDischarge),
             'product_name' => $exportOrder->visual_name ?: ($exportOrder->product?->name ?: 'N/A'),
             'form_e_no' => $formEs->pluck('form_e_no')->filter()->implode(', '),
-            'form_e_date' => $formEs->pluck('form_e_date')->filter()->map(fn ($date) => Carbon::parse($date)->format('d.m.Y'))->implode(', '),
+            'form_e_date' => $formEs->pluck('form_e_date')->filter()->map(fn($date) => Carbon::parse($date)->format('d.m.Y'))->implode(', '),
             'delivery_challan_no' => $deliveryChallans->pluck('dc_no')->filter()->implode(', '),
             'delivery_order_no' => $deliveryChallans->flatMap->delivery_order->pluck('reference_no')->filter()->unique()->implode(', '),
             'export_order_no' => $exportOrder->voucher_no,
@@ -522,7 +551,7 @@ class BillOfLadingController extends Controller
             $first = $items->first();
             $packingText = $this->normalizePackingText($first->bag_size);
             $packingKg = $this->parsePackingKg($packingText);
-            $brandName = $items->pluck('brand_id')->map(fn ($id) => getBrandById($id)?->name)->filter()->unique()->implode(', ');
+            $brandName = $items->pluck('brand_id')->map(fn($id) => getBrandById($id)?->name)->filter()->unique()->implode(', ');
             $bagTypeName = $first->bag_type ? bag_type_name($first->bag_type) : 'N/A';
             $quantityMt = round((float) $items->sum(function ($item) {
                 return (float) ($item->qty ?? 0);

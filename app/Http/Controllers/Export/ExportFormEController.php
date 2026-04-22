@@ -31,7 +31,7 @@ class ExportFormEController extends Controller
         try {
             $form_es = ExportFormE::with(['exportOrder', 'buyer', 'jobOrder'])
                 ->when($request->filled('search'), function ($q) use ($request) {
-                    $searchTerm = '%'.$request->search.'%';
+                    $searchTerm = '%' . $request->search . '%';
                     return $q->whereHas('exportOrder', function ($sq) use ($searchTerm) {
                         $sq->where('voucher_no', 'like', $searchTerm)
                             ->orWhere('contract_no', 'like', $searchTerm);
@@ -55,10 +55,30 @@ class ExportFormEController extends Controller
         try {
             $buyers = Customer::get();
             $job_orders = JobOrder::latest()->get();
-        } catch (QueryException $e) {}
+        } catch (QueryException $e) {
+        }
 
         return view('management.export.form-e.create', compact(
-            'buyers', 'job_orders', 'export_orders', 'products', 'bagTypes', 'bagPackings', 'brands', 'bagColors', 'users', 'banks', 'brokers', 'incoterms', 'modeofterms', 'modeoftransport', 'countries', 'ports', 'hscodes', 'currencies', 'exportSodas', 'quotations'
+            'buyers',
+            'job_orders',
+            'export_orders',
+            'products',
+            'bagTypes',
+            'bagPackings',
+            'brands',
+            'bagColors',
+            'users',
+            'banks',
+            'brokers',
+            'incoterms',
+            'modeofterms',
+            'modeoftransport',
+            'countries',
+            'ports',
+            'hscodes',
+            'currencies',
+            'exportSodas',
+            'quotations'
         ));
     }
 
@@ -66,13 +86,13 @@ class ExportFormEController extends Controller
     {
         try {
             $exportOrder = ExportOrder::where('am_approval_status', 'approved')->with([
-                'product', 
-                'specifications', 
-                'packingItems.bagType', 
-                'packingItems.bagPacking', 
-                'packingItems.brand', 
+                'product',
+                'specifications',
+                'packingItems.bagType',
+                'packingItems.bagPacking',
+                'packingItems.brand',
                 'packingItems.bagColor',
-                'broker', 
+                'broker',
                 'currency',
                 'incoterm',
                 'originCountry',
@@ -98,9 +118,10 @@ class ExportFormEController extends Controller
                 // Table might not exist yet
                 $usedQuantity = 0;
             }
-            
+
             $remainingQuantity = $totalQuantity - $usedQuantity;
-            if ($remainingQuantity < 0) $remainingQuantity = 0;
+            if ($remainingQuantity < 0)
+                $remainingQuantity = 0;
 
             return response()->json([
                 'success' => true,
@@ -133,13 +154,13 @@ class ExportFormEController extends Controller
 
         try {
             $exportOrder = ExportOrder::where('am_approval_status', 'approved')->with([
-                'product', 
-                'specifications', 
-                'packingItems.bagType', 
-                'packingItems.bagPacking', 
-                'packingItems.brand', 
+                'product',
+                'specifications',
+                'packingItems.bagType',
+                'packingItems.bagPacking',
+                'packingItems.brand',
                 'packingItems.bagColor',
-                'broker', 
+                'broker',
                 'currency',
                 'incoterm',
                 'originCountry',
@@ -149,7 +170,7 @@ class ExportFormEController extends Controller
                 'modeOfTerm',
                 'modeOfTransport'
             ])->findOrFail($request->export_order_id);
-            
+
             // Re-calculate to ensure it does not exceed remaining quantity
             $totalQuantity = 0;
             foreach ($exportOrder->packingItems as $item) {
@@ -237,22 +258,53 @@ class ExportFormEController extends Controller
         }
 
         return view('management.export.form-e.edit', compact(
-            'formE', 'buyers', 'job_orders', 'export_orders', 'products', 'bagTypes', 'bagPackings', 'brands', 'bagColors', 'users', 'banks', 'brokers', 'incoterms', 'modeofterms', 'modeoftransport', 'countries', 'ports', 'hscodes', 'currencies', 'exportSodas', 'quotations'
+            'formE',
+            'buyers',
+            'job_orders',
+            'export_orders',
+            'products',
+            'bagTypes',
+            'bagPackings',
+            'brands',
+            'bagColors',
+            'users',
+            'banks',
+            'brokers',
+            'incoterms',
+            'modeofterms',
+            'modeoftransport',
+            'countries',
+            'ports',
+            'hscodes',
+            'currencies',
+            'exportSodas',
+            'quotations'
         ));
     }
 
     public function update(Request $request, $id)
     {
         try {
-            $formE = ExportFormE::findOrFail($id);
+            $formE = ExportFormE::lockForUpdate()->find($id);
+
+            if (!$formE) {
+                DB::rollBack();
+
+                return response()->json([
+                    'success' => 'Form-E already deleted or not found.',
+                ], 404);
+            }
+
             $request->validate([
                 'form_e_no' => 'required|string|unique:export_form_es,form_e_no,' . $id,
                 'form_e_date' => 'required|date',
                 'input_quantity' => 'required|numeric|min:0.01',
             ]);
+
             // Re-calculate quantities if they update input_quantity. 
             // The requirement only says to create multi Form-E but not exceed. 
             // If they update, we should check again.
+
             if ($request->has('input_quantity')) {
                 $exportOrder = ExportOrder::where('am_approval_status', 'approved')->with(['packingItems'])->findOrFail($formE->export_order_id);
                 $totalQuantity = 0;
@@ -264,21 +316,22 @@ class ExportFormEController extends Controller
                 $usedQuantity = 0;
                 try {
                     $usedQuantity = ExportFormE::where('export_order_id', $exportOrder->id)
-                                               ->where('id', '!=', $id)
-                                               ->sum('input_quantity');
+                        ->where('id', '!=', $id)
+                        ->sum('input_quantity');
                 } catch (\Exception $e) {
                     $usedQuantity = 0;
                 }
-                
+
                 $remainingQuantity = $totalQuantity - $usedQuantity;
 
                 if ($request->input_quantity > $remainingQuantity) {
+                    DB::rollBack();
+
                     return response()->json([
-                        'success' => false,
-                        'error' => 'Input quantity cannot exceed remaining quantity (' . $remainingQuantity . ')',
+                        'success' => 'Input quantity cannot exceed remaining quantity (' . $remainingQuantity . ')',
                     ], 422);
                 }
-                
+
                 $data = $request->only(['input_quantity', 'buyer_id', 'job_order_id', 'form_e_no', 'form_e_date']);
                 if ($request->hasFile('attachment')) {
                     if ($formE->attachment) {
@@ -288,7 +341,7 @@ class ExportFormEController extends Controller
                 }
 
                 $formE->update(array_merge($data, [
-                     'remaining_quantity' => $remainingQuantity - $request->input_quantity,
+                    'remaining_quantity' => $remainingQuantity - $request->input_quantity,
                 ]));
             } else {
                 $data = $request->only(['buyer_id', 'job_order_id', 'form_e_no', 'form_e_date']);
@@ -307,8 +360,7 @@ class ExportFormEController extends Controller
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
-                'success' => false,
-                'message' => 'Something went wrong: ' . $e->getMessage()
+                'success' => 'Something went wrong: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -316,14 +368,28 @@ class ExportFormEController extends Controller
     public function destroy($id)
     {
         try {
-            $formE = ExportFormE::findOrFail($id);
+            $formE = ExportFormE::lockForUpdate()->find($id);
+
+            if (!$formE) {
+                DB::rollBack();
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Form-E already deleted or not found.',
+                ], 404);
+            }
+
             $formE->delete();
+            DB::commit();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Export Form-E deleted successfully.'
             ], 200);
         } catch (\Exception $e) {
+
+            DB::rollBack();
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to delete Form-E'
@@ -335,8 +401,8 @@ class ExportFormEController extends Controller
     {
         try {
             $export_orders = ExportOrder::with(['packingItems'])->where('id', '>', 0)->where('buyer_id', $buyer_id)->where('am_approval_status', 'approved')->latest()->get();
-            
-            $filtered_orders = $export_orders->filter(function($order) {
+
+            $filtered_orders = $export_orders->filter(function ($order) {
                 // Total quantity of all packing items
                 $totalQuantity = 0;
                 foreach ($order->packingItems as $item) {
