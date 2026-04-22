@@ -3,6 +3,7 @@
 use App\Http\Controllers\Export\BankController;
 use App\Http\Controllers\Export\BillOfLadingController;
 use App\Http\Controllers\Export\CommercialInvoiceController;
+use App\Http\Controllers\Export\PackingListController;
 use App\Http\Controllers\Export\CurrencyController;
 use App\Http\Controllers\Export\ExportOrderController;
 use App\Http\Controllers\Export\ExportSodaFieldController;
@@ -149,6 +150,12 @@ Route::post('/get-commercial-invoice', [CommercialInvoiceController::class, 'get
 Route::get('/get/export/commercial-invoice-no', [CommercialInvoiceController::class, 'getNumber'])->name('get.commercial-invoice.getNumber');
 Route::get('/get-commercial-invoice-bills', [CommercialInvoiceController::class, 'getBillOfLadingsByExportOrder'])->name('get.commercial-invoice.bills');
 Route::get('/get-commercial-invoice-related-data', [CommercialInvoiceController::class, 'getRelatedData'])->name('get.commercial-invoice.related.data');
+
+// packing list
+Route::resource('packing-list', PackingListController::class);
+Route::post('/get-packing-list', [PackingListController::class, 'getPackingListTable'])->name('get.packing-list');
+Route::get('/get-packing-list-related-data', [PackingListController::class, 'getRelatedData'])->name('get.packing-list.related.data');
+Route::get('/get-packing-list-commercial-invoices', [PackingListController::class, 'getCommercialInvoicesByExportOrder'])->name('get.packing-list.commercial-invoices');
 
 // export soda field 
 Route::resource('export-soda-field', ExportSodaFieldController::class);

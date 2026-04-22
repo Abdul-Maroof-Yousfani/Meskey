@@ -47,7 +47,7 @@ class BillOfLadingController extends Controller
     {
         return view('management.export.bill-of-lading.create', [
             'billOfLading' => null,
-            'exportOrders' => $this->getApprovedExportOrders()->get(),
+            'exportOrders' => $this->getApprovedExportOrders(),
             'preview' => null,
             'goodsSummary' => [],
         ]);
@@ -118,7 +118,7 @@ class BillOfLadingController extends Controller
 
         return view('management.export.bill-of-lading.edit', [
             'billOfLading' => $billOfLading,
-            'exportOrders' => $this->getApprovedExportOrders()->get(),
+            'exportOrders' => $this->getApprovedExportOrders($billOfLading->id),
             'preview' => $billOfLading->snapshot_data ?? [],
             'goodsSummary' => $billOfLading->goods_summary ?? [],
         ]);
@@ -273,6 +273,7 @@ class BillOfLadingController extends Controller
         return response()->json(['success' => true, 'data' => $challans]);
     }
 
+
     public function getFormEsByExportOrder(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -295,7 +296,12 @@ class BillOfLadingController extends Controller
             ->latest('id')
             ->get()
             ->filter(function (ExportFormE $formE) use ($validated) {
-                return $this->isFormEAvailableForBill($formE->id, $validated['current_bill_id'] ?? null);
+                // A Form-E is available if it has at least one DC available
+                return ExportDeliveryChallan::whereHas('delivery_order', function ($q) use ($formE) {
+                    $q->where('delivery_order.export_form_e_id', $formE->id);
+                })->get()->contains(function ($challan) use ($validated) {
+                    return $this->isChallanAvailableForBill($challan->id, $validated['current_bill_id'] ?? null);
+                });
             })
             ->values()
             ->map(function (ExportFormE $formE) {
@@ -330,9 +336,27 @@ class BillOfLadingController extends Controller
         ]);
     }
 
-    protected function getApprovedExportOrders()
+    protected function getApprovedExportOrders(?int $currentBolId = null)
     {
-        return ExportOrder::with(['buyer'])->where('am_approval_status', 'approved')->latest();
+        $takenChallanIds = BillOfLading::query()
+            ->when($currentBolId, fn($q) => $q->where('id', '!=', $currentBolId))
+            ->get()
+            ->flatMap(function($bol) {
+                $ids = is_array($bol->selected_delivery_challan_ids) ? $bol->selected_delivery_challan_ids : [];
+                if ($bol->export_delivery_challan_id) {
+                    $ids[] = $bol->export_delivery_challan_id;
+                }
+                return $ids;
+            })->unique()->filter()->values()->all();
+
+        return ExportOrder::with(['buyer'])
+            ->where('am_approval_status', 'approved')
+            ->whereHas('deliveryOrders.delivery_challans', function ($q) use ($takenChallanIds) {
+                $q->whereNotIn('delivery_challans.id', $takenChallanIds)
+                  ->where('delivery_challans.am_approval_status', 'approved');
+            })
+            ->latest()
+            ->get();
     }
 
     protected function resolveSelections(array $validated): array

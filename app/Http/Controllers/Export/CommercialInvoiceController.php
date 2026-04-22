@@ -59,7 +59,7 @@ class CommercialInvoiceController extends Controller
     {
         return view('management.export.commercial-invoice.create', [
             'commercialInvoice' => null,
-            'exportOrders' => $this->getEligibleExportOrders()->get(),
+            'exportOrders' => $this->getEligibleExportOrders(),
             'preview' => null,
             'goodsSummary' => [],
         ]);
@@ -118,9 +118,9 @@ class CommercialInvoiceController extends Controller
 
         return view('management.export.commercial-invoice.edit', [
             'commercialInvoice' => $commercialInvoice,
-            'exportOrders' => $this->getEligibleExportOrders()->get(),
-            'preview' => $preview,
-            'goodsSummary' => $goodsSummary,
+            'exportOrders' => $this->getEligibleExportOrders($commercialInvoice->id),
+            'preview' => $commercialInvoice->snapshot_data ?? [],
+            'goodsSummary' => $commercialInvoice->goods_summary ?? [],
         ]);
     }
 
@@ -172,6 +172,9 @@ class CommercialInvoiceController extends Controller
 
         $companyPrefix = strtoupper(trim((string) ($exportOrder?->company?->prefix ?: 'MFT')));
         $companyPrefix = preg_replace('/[^A-Z0-9]/', '', $companyPrefix) ?: 'MFT';
+        if ($companyPrefix === 'MF') {
+            $companyPrefix = 'MFT';
+        }
         $prefix = 'INV/' . $companyPrefix . '/' . $date->format('Y');
         $latest = CommercialInvoice::where('invoice_no', 'like', $prefix . '/%')->latest('id')->first();
         $next = 1;
@@ -194,8 +197,7 @@ class CommercialInvoiceController extends Controller
             'current_invoice_id' => ['nullable', 'integer', 'exists:commercial_invoices,id'],
         ]);
 
-        $billOfLadings = BillOfLading::with('exportOrder')
-            ->where('export_order_id', $validated['export_order_id'])
+        $billOfLadings = BillOfLading::where('export_order_id', $validated['export_order_id'])
             ->latest()
             ->get()
             ->filter(function (BillOfLading $billOfLading) use ($validated) {
@@ -259,12 +261,21 @@ class CommercialInvoiceController extends Controller
         ]);
     }
 
-    protected function getEligibleExportOrders()
+    protected function getEligibleExportOrders(?int $currentInvoiceId = null)
     {
+        $takenBolIds = CommercialInvoice::query()
+            ->when($currentInvoiceId, fn($q) => $q->where('id', '!=', $currentInvoiceId))
+            ->get()
+            ->flatMap->resolved_bill_of_lading_ids
+            ->unique()->values()->all();
+
         return ExportOrder::with(['buyer'])
             ->where('am_approval_status', 'approved')
-            ->whereIn('id', BillOfLading::query()->select('export_order_id')->whereNotNull('export_order_id'))
-            ->latest();
+            ->whereHas('billOfLadings', function ($query) use ($takenBolIds) {
+                $query->whereNotIn('id', $takenBolIds);
+            })
+            ->latest()
+            ->get();
     }
 
     protected function buildPayloadFromRequest(array $validated, ?int $currentInvoiceId = null): array
