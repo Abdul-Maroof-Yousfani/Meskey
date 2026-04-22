@@ -10,7 +10,7 @@
         $userAlreadyActed = $userAlreadyApproved;
         $changesRequired = $model->am_change_made == 0;
         $currentApprovals = $model->getCurrentApprovals();
-        $approvalCycles = $model->approvalRows()->orderBy('approval_cycle', 'desc')->get()->groupBy('approval_cycle');
+        $approvalCycles = $model->approvalRows()->where('module_id', $module->id)->orderBy('approval_cycle', 'desc')->get()->groupBy('approval_cycle');
 
     @endphp
 
@@ -86,7 +86,7 @@
                     // Group rows by role_id to avoid duplicate role displays
                     $rowsByRole = $rows->sortBy('id')->groupBy('role_id');
                 @endphp
-                
+
                 @foreach ($rowsByRole as $role_id => $roleRows)
                     @php
                         $role = $roleRows->first()->role; // Get the role from the first row
@@ -333,9 +333,9 @@
 
             .approval-cycle-section {
                 /* border: 1px solid #e9ecef;
-                                border-radius: 8px;
-                                padding: 15px;
-                                background-color: #f8f9fa; */
+                                                border-radius: 8px;
+                                                padding: 15px;
+                                                background-color: #f8f9fa; */
             }
 
             .cycle-header {
@@ -409,7 +409,7 @@
                         let validationFailed = false;
                         let errorMsg = '';
 
-                        $('.item-checkbox:checked').each(function() {
+                        $('.item-checkbox:checked').each(function () {
                             let $row = $(this).closest('tr');
                             let prDataId = $row.data('pr-data-id');
                             let prQty = parseFloat($row.data('pr-qty')) || 0;
@@ -449,7 +449,7 @@
                                 approvedQtys.push(dataId);
                             }
                         });
-                        
+
                         if (approvedQtys.length === 0) {
                             Swal.fire('Warning', 'Please select at least one item.', 'warning');
                             return;
