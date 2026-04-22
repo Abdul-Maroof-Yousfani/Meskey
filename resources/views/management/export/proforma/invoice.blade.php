@@ -174,17 +174,17 @@
                 </td>
             </tr>
             <tr>
-                <th>Buyer / Importer</th>
-                <th>Consignee</th>
+                <th>Customer / Importer</th>
+                <!-- <th>Consignee</th> -->
             </tr>
             <tr>
                 <td>
                     <strong>{{ $exportOrder->buyer->name ?? 'N/A' }}</strong><br>
                     {!! nl2br(e($exportOrder->buyer->address ?? 'N/A')) !!}
                 </td>
-                <td>
+                <!-- <td>
                     {!! nl2br(e($proforma->consigned_details ?? 'SAME AS BUYER')) !!}
-                </td>
+                </td> -->
             </tr>
         </table>
 

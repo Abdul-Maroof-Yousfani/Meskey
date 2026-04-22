@@ -25,14 +25,14 @@ class ExportLoadingProgramController extends Controller
     public function getList(Request $request)
     {
         $loadingPrograms = LoadingProgram::with([
-                'exportOrder',
-                'deliveryOrder',
-                'deliveryOrders',
-                'createdBy',
-                'loadingProgramItems.arrivalLocation',
-                'loadingProgramItems.subArrivalLocation',
-                'loadingProgramItems.brand',
-            ])
+            'exportOrder',
+            'deliveryOrder',
+            'deliveryOrders',
+            'createdBy',
+            'loadingProgramItems.arrivalLocation',
+            'loadingProgramItems.subArrivalLocation',
+            'loadingProgramItems.brand',
+        ])
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
                 return $q->where(function ($sq) use ($searchTerm) {
@@ -45,7 +45,7 @@ class ExportLoadingProgramController extends Controller
                         $query->where('reference_no', 'like', $searchTerm);
                     })->orWhereHas('loadingProgramItems', function ($query) use ($searchTerm) {
                         $query->where('transaction_number', 'like', $searchTerm)
-                              ->orWhere('truck_number', 'like', $searchTerm);
+                            ->orWhere('truck_number', 'like', $searchTerm);
                     })->orWhere('id', 'like', $searchTerm);
                 });
             })
@@ -120,8 +120,8 @@ class ExportLoadingProgramController extends Controller
             // 1. Aggregated Validation per DO across all items
             $totalRequestedPerDo = [];
             foreach ($request->loading_program_items as $itemData) {
-                $dos = (array)($itemData['delivery_order_id'] ?? []);
-                $qty = (float)($itemData['qty'] ?? 0);
+                $dos = (array) ($itemData['delivery_order_id'] ?? []);
+                $qty = (float) ($itemData['qty'] ?? 0);
                 foreach ($dos as $do_id) {
                     $totalRequestedPerDo[$do_id] = ($totalRequestedPerDo[$do_id] ?? 0) + $qty;
                 }
@@ -160,7 +160,7 @@ class ExportLoadingProgramController extends Controller
                     // Default to main export order if row-level not selected
                     $loadingProgramItem->exportOrders()->sync($request->export_order_id);
                 }
-                
+
                 if (!empty($selectedDoIds)) {
                     $loadingProgramItem->deliveryOrders()->sync($selectedDoIds);
                 }
@@ -211,9 +211,11 @@ class ExportLoadingProgramController extends Controller
             : array_filter(explode(',', (string) $loadingProgram->company_locations));
 
         $ExportOrders = ExportOrder::query()
-            ->with(['deliveryOrders' => function ($q) {
-                $q->where('am_approval_status', 'approved');
-            }])
+            ->with([
+                'deliveryOrders' => function ($q) {
+                    $q->where('am_approval_status', 'approved');
+                }
+            ])
             ->where('am_approval_status', 'approved')
             ->where(function ($query) use ($selectedExportOrderIds, $companyLocationIds) {
                 if (!empty($selectedExportOrderIds)) {
@@ -269,48 +271,61 @@ class ExportLoadingProgramController extends Controller
             'locations',
             'loadingProgramDos'
         ))->with([
-            'Brands' => \App\Models\Master\Brands::where('status', 1)->get(),
-            'Transporters' => \App\Models\Master\Transporter::where('status', 'active')->get(),
-        ]);
+                    'Brands' => Brands::where('status', 1)->get(),
+                    'Transporters' => \App\Models\Master\Transporter::where('status', 'active')->get(),
+                ]);
     }
 
     public function update(Request $request, $id)
     {
-        $validationRules = [
-            'main_company_location_id' => 'required|exists:model_location,id',
-            'export_order_id' => 'required|array|min:1',
-            'export_order_id.*' => 'exists:export_orders,id',
-            'delivery_order_id' => 'required|array|min:1',
-            'delivery_order_id.*' => 'exists:delivery_order,id',
-            'loading_program_items' => 'required|array|min:1',
-            'loading_program_items.*.truck_number' => 'required|string|distinct',
-            'loading_program_items.*.brand_id' => 'nullable|exists:brands,id',
-            'loading_program_items.*.arrival_location_id' => 'required|exists:arrival_locations,id',
-            'loading_program_items.*.sub_arrival_location_id' => 'required|exists:arrival_sub_locations,id',
-            'remark' => 'nullable|string'
-        ];
-
-        foreach ($request->loading_program_items ?? [] as $index => $itemData) {
-            $validationRules["loading_program_items.$index.delivery_order_id"] = 'required|array|min:1';
-            $validationRules["loading_program_items.$index.delivery_order_id.*"] = 'exists:delivery_order,id';
-        }
-
-        $validator = Validator::make($request->all(), $validationRules);
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
-        $loadingProgram = LoadingProgram::findOrFail($id);
-        $exportOrders = ExportOrder::where('am_approval_status', 'approved')->whereIn('id', $request->export_order_id)->get();
-        $exportOrder = $exportOrders->first();
-        $deliveryOrders = DeliveryOrder::whereIn('id', $request->delivery_order_id)->get();
-
-        $companyLocationIds = $deliveryOrders->flatMap(fn($do) => explode(',', $do->location_id))->filter()->unique()->toArray();
-        $arrivalLocationIds = $deliveryOrders->flatMap(fn($do) => explode(',', $do->arrival_location_id))->filter()->unique()->toArray();
-        $subArrivalLocationIds = $deliveryOrders->flatMap(fn($do) => explode(',', $do->sub_arrival_location_id))->filter()->unique()->toArray();
-
         DB::beginTransaction();
+
         try {
+            $loadingProgram = LoadingProgram::with([
+                'loadingProgramItems.firstWeighbridge'
+            ])->lockForUpdate()->find($id);
+
+            if (!$loadingProgram) {
+                DB::rollBack();
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Loading Program already deleted or not found.',
+                ], 404);
+            }
+
+            $validationRules = [
+                'main_company_location_id' => 'required|exists:model_location,id',
+                'export_order_id' => 'required|array|min:1',
+                'export_order_id.*' => 'exists:export_orders,id',
+                'delivery_order_id' => 'required|array|min:1',
+                'delivery_order_id.*' => 'exists:delivery_order,id',
+                'loading_program_items' => 'required|array|min:1',
+                'loading_program_items.*.truck_number' => 'required|string|distinct',
+                'loading_program_items.*.brand_id' => 'nullable|exists:brands,id',
+                'loading_program_items.*.arrival_location_id' => 'required|exists:arrival_locations,id',
+                'loading_program_items.*.sub_arrival_location_id' => 'required|exists:arrival_sub_locations,id',
+                'remark' => 'nullable|string'
+            ];
+
+            foreach ($request->loading_program_items ?? [] as $index => $itemData) {
+                $validationRules["loading_program_items.$index.delivery_order_id"] = 'required|array|min:1';
+                $validationRules["loading_program_items.$index.delivery_order_id.*"] = 'exists:delivery_order,id';
+            }
+
+            $validator = Validator::make($request->all(), $validationRules);
+            if ($validator->fails()) {
+                return response()->json(['errors' => $validator->errors()], 422);
+            }
+
+            $exportOrders = ExportOrder::where('am_approval_status', 'approved')->whereIn('id', $request->export_order_id)->get();
+            $exportOrder = $exportOrders->first();
+            $deliveryOrders = DeliveryOrder::whereIn('id', $request->delivery_order_id)->get();
+
+            $companyLocationIds = $deliveryOrders->flatMap(fn($do) => explode(',', $do->location_id))->filter()->unique()->toArray();
+            $arrivalLocationIds = $deliveryOrders->flatMap(fn($do) => explode(',', $do->arrival_location_id))->filter()->unique()->toArray();
+            $subArrivalLocationIds = $deliveryOrders->flatMap(fn($do) => explode(',', $do->sub_arrival_location_id))->filter()->unique()->toArray();
+
             $loadingProgram->update([
                 'export_order_id' => $exportOrder->id,
                 'delivery_order_id' => $request->delivery_order_id[0] ?? null,
@@ -329,8 +344,8 @@ class ExportLoadingProgramController extends Controller
             // 1. Aggregated Validation per DO across all items
             $totalRequestedPerDo = [];
             foreach ($request->loading_program_items as $itemData) {
-                $dos = (array)($itemData['delivery_order_id'] ?? []);
-                $qty = (float)($itemData['qty'] ?? 0);
+                $dos = (array) ($itemData['delivery_order_id'] ?? []);
+                $qty = (float) ($itemData['qty'] ?? 0);
                 foreach ($dos as $do_id) {
                     $totalRequestedPerDo[$do_id] = ($totalRequestedPerDo[$do_id] ?? 0) + $qty;
                 }
@@ -368,26 +383,57 @@ class ExportLoadingProgramController extends Controller
                 } else {
                     $loadingProgramItem->exportOrders()->sync($request->export_order_id);
                 }
-                
+
                 if (!empty($selectedDoIds)) {
                     $loadingProgramItem->deliveryOrders()->sync($selectedDoIds);
                 }
             }
 
             DB::commit();
+
+            return response()->json([
+                'success' => 'Export Loading Program updated successfully.',
+                'data' => $loadingProgram
+            ], 200);
+
         } catch (Exception $e) {
             DB::rollBack();
             return response()->json(['message' => $e->getMessage()], 500);
         }
-
-        return response()->json(['success' => 'Export Loading Program updated successfully.', 'data' => $loadingProgram], 200);
     }
 
     public function destroy($id)
     {
-        $loadingProgram = LoadingProgram::findOrFail($id);
-        $loadingProgram->delete();
-        return response()->json(['success' => 'Export Loading Program deleted successfully.'], 200);
+        DB::beginTransaction();
+
+        try {
+
+            $loadingProgram = LoadingProgram::lockForUpdate()->find($id);
+
+            if (!$loadingProgram) {
+                DB::rollBack();
+
+                return response()->json([
+                    'success' => 'Loading Program already deleted or not found.',
+                ], 404);
+            }
+
+            $loadingProgram->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => 'Export Loading Program deleted successfully.'
+            ], 200);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => 'Failed to delete Loading Program',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function fetchExportOrdersByLocation(Request $request)
@@ -407,7 +453,7 @@ class ExportLoadingProgramController extends Controller
         $exportOrders = ExportOrder::where('am_approval_status', 'approved')
             ->whereIn('id', $exportOrderIds)
             ->get()
-            ->map(function($eo) {
+            ->map(function ($eo) {
                 return [
                     'id' => $eo->id,
                     'reference_no' => $eo->voucher_no ?? $eo->contract_no ?? 'EO-' . $eo->id
@@ -591,6 +637,6 @@ class ExportLoadingProgramController extends Controller
             $newNumber = 1;
         }
 
-        return $date.'-'.str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+        return $date . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
     }
 }

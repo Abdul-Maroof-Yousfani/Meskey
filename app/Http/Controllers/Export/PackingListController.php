@@ -117,12 +117,20 @@ class PackingListController extends CommercialInvoiceController
 
     public function update(Request $request, $id): JsonResponse
     {
-        $packingList = PackingList::findOrFail($id);
-        $validated = $this->validatePackingList($request, $packingList->id);
-
         DB::beginTransaction();
 
         try {
+            $packingList = PackingList::lockForUpdate()->find($id);
+
+            if (!$packingList) {
+                DB::rollBack();
+                return response()->json([
+                    'error' => 'Packing List already deleted or not found.'
+                ], 404);
+            }
+
+            $validated = $this->validatePackingList($request, $packingList->id);
+
             [$commercialInvoice, $preview, $goodsSummary] = $this->buildPayloadFromCommercialInvoiceId((int) $validated['commercial_invoice_id']);
 
             $packingList->update([
@@ -145,10 +153,31 @@ class PackingListController extends CommercialInvoiceController
 
     public function destroy($id): JsonResponse
     {
-        $packingList = PackingList::findOrFail($id);
-        $packingList->delete();
+        DB::beginTransaction();
 
-        return response()->json(['message' => 'Packing List has been deleted']);
+        try {
+            $packingList = PackingList::lockForUpdate()->find($id);
+
+            if (!$packingList) {
+                DB::rollBack();
+                return response()->json([
+                    'error' => 'Packing List already deleted or not found.'
+                ], 404);
+            }
+
+            $packingList->delete();
+
+            DB::commit();
+
+            return response()->json(['message' => 'Packing List has been deleted']);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function getRelatedData(Request $request): JsonResponse

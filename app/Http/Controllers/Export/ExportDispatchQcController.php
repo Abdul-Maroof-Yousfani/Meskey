@@ -117,7 +117,7 @@ class ExportDispatchQcController extends Controller
             'attachments',
         ])->findOrFail($id);
 
-        $DispatchQc->loadMissing(['loadingProgramItem' => fn ($query) => $query->with($this->ticketRelations())]);
+        $DispatchQc->loadMissing(['loadingProgramItem' => fn($query) => $query->with($this->ticketRelations())]);
         $Orders = $this->buildOrdersFromTicket($DispatchQc->loadingProgramItem);
 
         return view('management.export.dispatch-qc.show', compact('DispatchQc', 'Orders'));
@@ -130,7 +130,7 @@ class ExportDispatchQcController extends Controller
             'attachments',
         ])->findOrFail($id);
 
-        $DispatchQc->loadMissing(['loadingProgramItem' => fn ($query) => $query->with($this->ticketRelations())]);
+        $DispatchQc->loadMissing(['loadingProgramItem' => fn($query) => $query->with($this->ticketRelations())]);
 
         $Tickets = $this->ticketQuery()
             ->whereHas('exportLoadingSlip')
@@ -148,62 +148,98 @@ class ExportDispatchQcController extends Controller
 
     public function update(Request $request, string $id)
     {
-        $validator = Validator::make($request->all(), [
-            'loading_program_item_id' => 'required|exists:loading_program_items,id',
-            'customer' => 'nullable|string',
-            'commodity' => 'nullable|string',
-            'so_qty' => 'nullable|numeric',
-            'do_qty' => 'nullable|numeric',
-            'factory' => 'nullable|string',
-            'gala' => 'nullable|string',
-            'qc_remarks' => 'nullable|string',
-            'status' => 'required|in:accept,reject',
-            'attachments' => 'nullable|array',
-            'attachments.*' => 'file|mimes:jpeg,jpg,png,pdf,doc,docx|max:10240',
-        ]);
+        DB::beginTransaction();
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
+        try {
+            $validator = Validator::make($request->all(), [
+                'loading_program_item_id' => 'required|exists:loading_program_items,id',
+                'customer' => 'nullable|string',
+                'commodity' => 'nullable|string',
+                'so_qty' => 'nullable|numeric',
+                'do_qty' => 'nullable|numeric',
+                'factory' => 'nullable|string',
+                'gala' => 'nullable|string',
+                'qc_remarks' => 'nullable|string',
+                'status' => 'required|in:accept,reject',
+                'attachments' => 'nullable|array',
+                'attachments.*' => 'file|mimes:jpeg,jpg,png,pdf,doc,docx|max:10240',
+            ]);
 
-        $dispatchQc = ExportDispatchQc::with('attachments')->findOrFail($id);
-
-        $LoadingProgramItem = $this->ticketQuery()
-            ->with(array_merge($this->ticketRelations(), ['exportDispatchQcs', 'exportLoadingSlip']))
-            ->findOrFail($request->loading_program_item_id);
-
-        $hasAnotherAcceptedQc = ExportDispatchQc::where('loading_program_item_id', $request->loading_program_item_id)
-            ->where('id', '!=', $dispatchQc->id)
-            ->where('status', 'accept')
-            ->exists();
-
-        if ($hasAnotherAcceptedQc) {
-            return response()->json([
-                'errors' => ['loading_program_item_id' => 'This ticket already has an accepted Export Dispatch QC.']
-            ], 422);
-        }
-
-        $dispatchQc->update($this->makeDispatchQcPayload($request, $LoadingProgramItem));
-
-        if ($request->hasFile('attachments')) {
-            foreach ($dispatchQc->attachments as $attachment) {
-                if (Storage::exists(str_replace('storage/', 'public/', $attachment->file_path))) {
-                    Storage::delete(str_replace('storage/', 'public/', $attachment->file_path));
-                }
-
-                $attachment->delete();
+            if ($validator->fails()) {
+                DB::rollBack();
+                return response()->json(['errors' => $validator->errors()], 422);
             }
 
-            $this->storeAttachments($dispatchQc, $request);
-        }
+            $dispatchQc = ExportDispatchQc::with('attachments')
+                ->lockForUpdate()
+                ->findOrFail($id);
 
-        return response()->json(['success' => 'Export Dispatch QC updated successfully.', 'data' => $dispatchQc], 200);
+            if (!$dispatchQc) {
+                DB::rollBack();
+                return response()->json([
+                    'error' => 'Dispatch Qc already deleted or not found.'
+                ], 404);
+            }
+
+            $LoadingProgramItem = $this->ticketQuery()
+                ->with(array_merge($this->ticketRelations(), ['exportDispatchQcs', 'exportLoadingSlip']))
+                ->findOrFail($request->loading_program_item_id);
+
+            $hasAnotherAcceptedQc = ExportDispatchQc::where('loading_program_item_id', $request->loading_program_item_id)
+                ->where('id', '!=', $dispatchQc->id)
+                ->where('status', 'accept')
+                ->exists();
+
+            if ($hasAnotherAcceptedQc) {
+                DB::rollBack();
+                return response()->json([
+                    'errors' => ['loading_program_item_id' => 'This ticket already has an accepted Export Dispatch QC.']
+                ], 422);
+            }
+
+            $dispatchQc->update($this->makeDispatchQcPayload($request, $LoadingProgramItem));
+
+            if ($request->hasFile('attachments')) {
+                foreach ($dispatchQc->attachments as $attachment) {
+                    if (Storage::exists(str_replace('storage/', 'public/', $attachment->file_path))) {
+                        Storage::delete(str_replace('storage/', 'public/', $attachment->file_path));
+                    }
+
+                    $attachment->delete();
+                }
+
+                $this->storeAttachments($dispatchQc, $request);
+            }
+
+            DB::commit();
+
+            return response()->json(['success' => 'Export Dispatch QC updated successfully.', 'data' => $dispatchQc], 200);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Something went wrong',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function destroy(string $id)
     {
+        DB::beginTransaction();
+
         try {
-            $dispatchQc = ExportDispatchQc::with('attachments')->findOrFail($id);
+            $dispatchQc = ExportDispatchQc::with('attachments')
+                ->lockForUpdate()
+                ->findOrFail($id);
+
+            if (!$dispatchQc) {
+                DB::rollBack();
+                return response()->json([
+                    'error' => 'Dispatch Qc already deleted or not found.'
+                ], 404);
+            }
 
             foreach ($dispatchQc->attachments as $attachment) {
                 try {
@@ -220,11 +256,21 @@ class ExportDispatchQcController extends Controller
 
             $dispatchQc->delete();
 
-            return response()->json(['success' => 'Export Dispatch QC deleted successfully.'], 200);
-        } catch (\Exception $exception) {
-            \Log::error('Export Dispatch QC deletion failed: ' . $exception->getMessage());
+            DB::commit();
 
-            return response()->json(['error' => 'Failed to delete Export Dispatch QC.', 'details' => $exception->getMessage()], 422);
+            return response()->json([
+                'success' => 'Export Dispatch QC deleted successfully.'
+            ], 200);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            \Log::error('Export Dispatch QC deletion failed: ' . $e->getMessage());
+
+            return response()->json([
+                'error' => 'Failed to delete Export Dispatch QC.',
+                'details' => $e->getMessage()
+            ], 422);
         }
     }
 

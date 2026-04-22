@@ -46,7 +46,7 @@ class ExportOrderController extends Controller
     {
         $export_orders = ExportOrder::with(['product'])
             ->when($request->filled('search'), function ($q) use ($request) {
-                $searchTerm = '%'.$request->search.'%';
+                $searchTerm = '%' . $request->search . '%';
 
                 return $q->where(function ($sq) use ($searchTerm) {
                     $sq->where('voucher_no', 'like', $searchTerm)
@@ -61,28 +61,28 @@ class ExportOrderController extends Controller
 
     public function create(): View
     {
-        $products            = Product::where('status', 1)->get();
-        $bagTypes            = BagType::where('status', 1)->get();
-        $bagPackings         = BagPacking::where('status', 1)->get();
-        $brands              = Brands::where('status', 1)->get();
-        $bagColors           = Color::where('status', 1)->get();
-        $users               = Customer::get();
-        $banks               = Bank::where('status', 1)->get();
-        $brokers             = Broker::where('status', 1)->get();
-        $incoterms           = IncoTerm::where('status', 1)->get();
-        $modeofterms         = ModeOfTerm::where('status', 1)->get();
-        $modeoftransport     = ModeOfTransport::where('status', 1)->get();
-        $countries           = Country::get();
-        $ports               = Port::where('status', 1)->get();
-        $hscodes             = HsCode::where('status', 1)->get();
-        $currencies          = Currency::where('status', 1)->get();
-        $exportSodas         = ExportSodaField::latest()->get();
-        $quotations          = Quotation::latest()->get();
-        $companyLocations    = CompanyLocation::where('status', 'active')->get();
-        $bagConditions       = BagCondition::where('status', 1)->get();
-        $bagSizes            = BagPacking::where('status', 1)->get();
-        $stitchings          = \App\Models\Master\Stitching::where('status', 'active')->get();
-        $threadColors        = Color::where('status', 1)->get();
+        $products = Product::where('status', 1)->get();
+        $bagTypes = BagType::where('status', 1)->get();
+        $bagPackings = BagPacking::where('status', 1)->get();
+        $brands = Brands::where('status', 1)->get();
+        $bagColors = Color::where('status', 1)->get();
+        $users = Customer::get();
+        $banks = Bank::where('status', 1)->get();
+        $brokers = Broker::where('status', 1)->get();
+        $incoterms = IncoTerm::where('status', 1)->get();
+        $modeofterms = ModeOfTerm::where('status', 1)->get();
+        $modeoftransport = ModeOfTransport::where('status', 1)->get();
+        $countries = Country::get();
+        $ports = Port::where('status', 1)->get();
+        $hscodes = HsCode::where('status', 1)->get();
+        $currencies = Currency::where('status', 1)->get();
+        $exportSodas = ExportSodaField::latest()->get();
+        $quotations = Quotation::latest()->get();
+        $companyLocations = CompanyLocation::where('status', 'active')->get();
+        $bagConditions = BagCondition::where('status', 1)->get();
+        $bagSizes = BagPacking::where('status', 1)->get();
+        $stitchings = \App\Models\Master\Stitching::where('status', 'active')->get();
+        $threadColors = Color::where('status', 1)->get();
         $inspectionCompanies = \App\Models\Master\FumigationCompany::where('status', 'active')->get();
 
         return view('management.export.export-order.create', compact(
@@ -121,11 +121,11 @@ class ExportOrderController extends Controller
 
             // Re-generate voucher_no to ensure uniqueness and prevent race conditions
             $exportOrderData['voucher_no'] = generateUniversalUniqueNo('export_orders', [
-                'prefix'        => 'EXPORT',
-                'column'        => 'voucher_no',
-                'with_date'     => true,
-                'custom_date'   => $request->voucher_date,
-                'date_format'   => 'm-Y',
+                'prefix' => 'EXPORT',
+                'column' => 'voucher_no',
+                'with_date' => true,
+                'custom_date' => $request->voucher_date,
+                'date_format' => 'm-Y',
                 'serial_at_end' => true,
             ]);
 
@@ -147,11 +147,11 @@ class ExportOrderController extends Controller
                 try {
                     // Re-generate voucher_no to ensure uniqueness and prevent race conditions
                     $exportOrderData['voucher_no'] = generateUniversalUniqueNo('export_orders', [
-                        'prefix'        => 'EXPORT',
-                        'column'        => 'voucher_no',
-                        'with_date'     => true,
-                        'custom_date'   => $request->voucher_date,
-                        'date_format'   => 'm-Y',
+                        'prefix' => 'EXPORT',
+                        'column' => 'voucher_no',
+                        'with_date' => true,
+                        'custom_date' => $request->voucher_date,
+                        'date_format' => 'm-Y',
                         'serial_at_end' => true,
                     ]);
 
@@ -168,7 +168,8 @@ class ExportOrderController extends Controller
                     // Check for duplicate entry error (MySQL code 1062)
                     if ($e->errorInfo[1] == 1062 && str_contains($e->getMessage(), 'voucher_no')) {
                         $tries++;
-                        if ($tries >= $maxTries) throw $e;
+                        if ($tries >= $maxTries)
+                            throw $e;
                         // Continue loop to try again with a fresh number
                     } else {
                         throw $e;
@@ -202,13 +203,13 @@ class ExportOrderController extends Controller
                     unset($item['sub_items']);
 
                     // Calculate totals from sub-items if they exist and have actual data
-                    $hasValidSubItems = collect($subItems)->contains(function($sub) {
+                    $hasValidSubItems = collect($subItems)->contains(function ($sub) {
                         return ($sub['no_of_bags'] ?? 0) > 0;
                     });
 
                     if ($hasValidSubItems) {
-                    // NO summation from sub-items in controller to match top-down flow of JobOrder
-                    // Values from main row (passed in $item) are the source of truth
+                        // NO summation from sub-items in controller to match top-down flow of JobOrder
+                        // Values from main row (passed in $item) are the source of truth
                     }
 
                     $packingItem = $exportOrder->packingItems()->create($item);
@@ -248,28 +249,28 @@ class ExportOrderController extends Controller
     {
         $exportOrder = ExportOrder::with(['specifications', 'packingItems.subItems', 'product'])->findOrFail($id);
 
-        $products            = Product::where('status', 1)->get();
-        $bagTypes            = BagType::where('status', 1)->get();
-        $bagPackings         = BagPacking::where('status', 1)->get();
-        $brands              = Brands::where('status', 1)->get();
-        $bagColors           = Color::where('status', 1)->get();
-        $users               = Customer::get();
-        $banks               = Bank::where('status', 1)->get();
-        $brokers             = Broker::where('status', 1)->get();
-        $incoterms           = IncoTerm::where('status', 1)->get();
-        $modeofterms         = ModeOfTerm::where('status', 1)->get();
-        $modeoftransport     = ModeOfTransport::where('status', 1)->get();
-        $countries           = Country::get();
-        $ports               = Port::where('status', 1)->get();
-        $hscodes             = HsCode::where('status', 1)->get();
-        $currencies          = Currency::where('status', 1)->get();
-        $exportSodas         = ExportSodaField::latest()->get();
-        $quotations          = Quotation::latest()->get();
-        $companyLocations    = CompanyLocation::where('status', 'active')->get();
-        $bagConditions       = BagCondition::where('status', 1)->get();
-        $bagSizes            = BagPacking::where('status', 1)->get();
-        $stitchings          = \App\Models\Master\Stitching::where('status', 'active')->get();
-        $threadColors        = Color::where('status', 1)->get();
+        $products = Product::where('status', 1)->get();
+        $bagTypes = BagType::where('status', 1)->get();
+        $bagPackings = BagPacking::where('status', 1)->get();
+        $brands = Brands::where('status', 1)->get();
+        $bagColors = Color::where('status', 1)->get();
+        $users = Customer::get();
+        $banks = Bank::where('status', 1)->get();
+        $brokers = Broker::where('status', 1)->get();
+        $incoterms = IncoTerm::where('status', 1)->get();
+        $modeofterms = ModeOfTerm::where('status', 1)->get();
+        $modeoftransport = ModeOfTransport::where('status', 1)->get();
+        $countries = Country::get();
+        $ports = Port::where('status', 1)->get();
+        $hscodes = HsCode::where('status', 1)->get();
+        $currencies = Currency::where('status', 1)->get();
+        $exportSodas = ExportSodaField::latest()->get();
+        $quotations = Quotation::latest()->get();
+        $companyLocations = CompanyLocation::where('status', 'active')->get();
+        $bagConditions = BagCondition::where('status', 1)->get();
+        $bagSizes = BagPacking::where('status', 1)->get();
+        $stitchings = \App\Models\Master\Stitching::where('status', 'active')->get();
+        $threadColors = Color::where('status', 1)->get();
         $inspectionCompanies = \App\Models\Master\FumigationCompany::where('status', 'active')->get();
 
         return view('management.export.export-order.show', compact(
@@ -304,28 +305,28 @@ class ExportOrderController extends Controller
     {
         $exportOrder = ExportOrder::with(['specifications', 'packingItems.subItems', 'product'])->findOrFail($id);
 
-        $products            = Product::where('status', 1)->get();
-        $bagTypes            = BagType::where('status', 1)->get();
-        $bagPackings         = BagPacking::where('status', 1)->get();
-        $brands              = Brands::where('status', 1)->get();
-        $bagColors           = Color::where('status', 1)->get();
-        $users               = Customer::get();
-        $banks               = Bank::where('status', 1)->get();
-        $brokers             = Broker::where('status', 1)->get();
-        $incoterms           = IncoTerm::where('status', 1)->get();
-        $modeofterms         = ModeOfTerm::where('status', 1)->get();
-        $modeoftransport     = ModeOfTransport::where('status', 1)->get();
-        $countries           = Country::get();
-        $ports               = Port::where('status', 1)->get();
-        $hscodes             = HsCode::where('status', 1)->get();
-        $currencies          = Currency::where('status', 1)->get();
-        $exportSodas         = ExportSodaField::latest()->get();
-        $quotations          = Quotation::latest()->get();
-        $companyLocations    = CompanyLocation::where('status', 'active')->get();
-        $bagConditions       = BagCondition::where('status', 1)->get();
-        $bagSizes            = BagPacking::where('status', 1)->get();
-        $stitchings          = \App\Models\Master\Stitching::where('status', 'active')->get();
-        $threadColors        = Color::where('status', 1)->get();
+        $products = Product::where('status', 1)->get();
+        $bagTypes = BagType::where('status', 1)->get();
+        $bagPackings = BagPacking::where('status', 1)->get();
+        $brands = Brands::where('status', 1)->get();
+        $bagColors = Color::where('status', 1)->get();
+        $users = Customer::get();
+        $banks = Bank::where('status', 1)->get();
+        $brokers = Broker::where('status', 1)->get();
+        $incoterms = IncoTerm::where('status', 1)->get();
+        $modeofterms = ModeOfTerm::where('status', 1)->get();
+        $modeoftransport = ModeOfTransport::where('status', 1)->get();
+        $countries = Country::get();
+        $ports = Port::where('status', 1)->get();
+        $hscodes = HsCode::where('status', 1)->get();
+        $currencies = Currency::where('status', 1)->get();
+        $exportSodas = ExportSodaField::latest()->get();
+        $quotations = Quotation::latest()->get();
+        $companyLocations = CompanyLocation::where('status', 'active')->get();
+        $bagConditions = BagCondition::where('status', 1)->get();
+        $bagSizes = BagPacking::where('status', 1)->get();
+        $stitchings = \App\Models\Master\Stitching::where('status', 'active')->get();
+        $threadColors = Color::where('status', 1)->get();
         $inspectionCompanies = \App\Models\Master\FumigationCompany::where('status', 'active')->get();
 
         return view('management.export.export-order.edit', compact(
@@ -361,6 +362,32 @@ class ExportOrderController extends Controller
         DB::beginTransaction();
 
         try {
+            $exportOrder = ExportOrder::with([
+                'packingItems.subItems',
+                'specifications'
+            ])
+                ->lockForUpdate()
+                ->find($exportOrder->id);
+
+            if (!$exportOrder) {
+                DB::rollBack();
+
+                return response()->json([
+                    'success' => 'Export Order already deleted or not found.',
+                ], 404);
+            }
+
+            if (
+                $exportOrder->am_approval_status === "approved" ||
+                $exportOrder->am_approval_status === "rejected"
+            ) {
+                DB::rollBack();
+
+                return response()->json([
+                    'success' => 'Export Order has been approved/rejected and cannot be updated.',
+                ], 400);
+            }
+
             $exportOrderData = $request->except(['bank_id', 'specifications', 'packing_items']);
 
             // Parse bank_id (e.g., owner_1, company_2)
@@ -403,7 +430,7 @@ class ExportOrderController extends Controller
 
             // Update packing items
             if ($request->filled('packing_items')) {
-                // Delete existing sub-items first to avoid orphaned records
+                
                 foreach ($exportOrder->packingItems as $oldPackingItem) {
                     $oldPackingItem->subItems()->delete();
                 }
@@ -412,21 +439,19 @@ class ExportOrderController extends Controller
                     $subItems = $item['sub_items'] ?? [];
                     unset($item['sub_items']);
 
-                    // Calculate totals from sub-items if they exist and have actual data
-                    $hasValidSubItems = collect($subItems)->contains(function($sub) {
+                    $hasValidSubItems = collect($subItems)->contains(function ($sub) {
                         return ($sub['no_of_bags'] ?? 0) > 0;
                     });
 
                     if ($hasValidSubItems) {
-                    // NO summation from sub-items in controller to match top-down flow of JobOrder
-                    // Values from main row (passed in $item) are the source of truth
+                        // NO summation from sub-items in controller to match top-down flow of JobOrder
+                        // Values from main row (passed in $item) are the source of truth
                     }
 
                     $packingItem = $exportOrder->packingItems()->create($item);
 
                     if (!empty($subItems)) {
                         foreach ($subItems as $sIdx => $subItem) {
-                            // Handle file upload
                             if ($request->hasFile("packing_items.$pIdx.sub_items.$sIdx.attachment")) {
                                 $file = $request->file("packing_items.$pIdx.sub_items.$sIdx.attachment");
                                 $path = $file->store('export-orders/attachments', 'public');
@@ -435,7 +460,7 @@ class ExportOrderController extends Controller
                                 $subItem['attachment'] = $subItem['old_attachment'];
                             }
                             unset($subItem['old_attachment']);
-                            
+
                             $packingItem->subItems()->create($subItem);
                         }
                     }
@@ -464,30 +489,51 @@ class ExportOrderController extends Controller
         DB::beginTransaction();
 
         try {
-            $exportOrder = ExportOrder::with(['specifications', 'packingItems'])->findOrFail($id);
+
+            $exportOrder = ExportOrder::with(['specifications', 'packingItems.subItems'])
+                ->lockForUpdate()
+                ->find($id);
+
+            if (!$exportOrder) {
+                DB::rollBack();
+
+                return response()->json([
+                    'success' => 'Export Order already deleted or not found.',
+                ], 404);
+            }
+
+            if (
+                $exportOrder->am_approval_status === "approved" ||
+                $exportOrder->am_approval_status === "rejected"
+            ) {
+                DB::rollBack();
+
+                return response()->json([
+                    'success' => 'Export Order has been approved/rejected and cannot be deleted.',
+                ], 400);
+            }
 
             $exportOrder->specifications()->delete();
 
             foreach ($exportOrder->packingItems as $packingItem) {
                 $packingItem->subItems()->delete();
             }
-            $exportOrder->packingItems()->delete();
 
+            $exportOrder->packingItems()->delete();
             $exportOrder->delete();
 
             DB::commit();
 
             return response()->json([
-                'success' => true,
-                'message' => 'Export Order deleted successfully.',
+                'success' => 'Export Order deleted successfully.',
             ], 200);
 
         } catch (\Throwable $e) {
+
             DB::rollBack();
 
             return response()->json([
-                'success' => false,
-                'message' => 'Failed to delete Export Order',
+                'success' => 'Failed to delete Export Order',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -542,29 +588,29 @@ class ExportOrderController extends Controller
         $q = Quotation::with(['packingItems', 'buyer', 'product', 'specifications'])->findOrFail($id);
 
         return response()->json([
-            'buyer_id'                   => $q->buyer_id,
-            'product_id'                 => $q->product_id,
-            'visual_name'                => $q->product->name ?? null,
-            'currency_id'                => $q->currency_id,
-            'currency_rate'              => $q->currency_rate,
-            'payment_days'               => $q->payment_days,
-            'advance_payment'            => $q->advance_payment,
-            'incoterm_id'                => $q->incoterm_id,
-            'packing_type'               => $q->packing_type,
-            'mode_of_term_id'            => $q->mode_of_term_id,
-            'mode_of_transport_id'       => $q->mode_of_transport_id,
-            'origin_country_id'          => $q->origin_country_id,
-            'port_of_discharge_id'       => $q->port_of_discharge_id,
-            'port_of_loading_id'         => $q->port_of_loading_id,
-            'hs_code_id'                 => $q->hs_code_id,
-            'partial_payment'            => $q->partial_payment,
-            'transhipment'               => $q->transhipment,
-            'part_shipment'              => $q->part_shipment,
-            'insurance_covered_by'       => $q->insurance_covered_by,
-            'shipment_delivery_date_from'=> $q->shipment_delivery_date_from,
-            'shipment_delivery_date_to'  => $q->shipment_delivery_date_to,
-            'packing_items'              => $q->packingItems,
-            'specifications'             => $q->specifications,
+            'buyer_id' => $q->buyer_id,
+            'product_id' => $q->product_id,
+            'visual_name' => $q->product->name ?? null,
+            'currency_id' => $q->currency_id,
+            'currency_rate' => $q->currency_rate,
+            'payment_days' => $q->payment_days,
+            'advance_payment' => $q->advance_payment,
+            'incoterm_id' => $q->incoterm_id,
+            'packing_type' => $q->packing_type,
+            'mode_of_term_id' => $q->mode_of_term_id,
+            'mode_of_transport_id' => $q->mode_of_transport_id,
+            'origin_country_id' => $q->origin_country_id,
+            'port_of_discharge_id' => $q->port_of_discharge_id,
+            'port_of_loading_id' => $q->port_of_loading_id,
+            'hs_code_id' => $q->hs_code_id,
+            'partial_payment' => $q->partial_payment,
+            'transhipment' => $q->transhipment,
+            'part_shipment' => $q->part_shipment,
+            'insurance_covered_by' => $q->insurance_covered_by,
+            'shipment_delivery_date_from' => $q->shipment_delivery_date_from,
+            'shipment_delivery_date_to' => $q->shipment_delivery_date_to,
+            'packing_items' => $q->packingItems,
+            'specifications' => $q->specifications,
         ]);
     }
 
