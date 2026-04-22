@@ -26,6 +26,7 @@ class PurchaseSamplingRequestController extends Controller
     public function getList(Request $request)
     {
         $purchaseOrders = ArrivalPurchaseOrder::where('sauda_type_id', 2)
+            ->where("am_approval_status", "approved")
             ->when($request->filled('supplier_id_filter'), function ($query) use ($request) {
                 $query->where('supplier_id', $request->supplier_id_filter);
             })
@@ -58,7 +59,7 @@ class PurchaseSamplingRequestController extends Controller
             ->when(auth()->user()->user_type != 'super-admin' && auth()->user()->parent_user_id == null, function ($q) {
                 return $q->where('decision_of_id', auth()->user()->id);
             })
-            ->with(['supplier', 'product', 'location'])
+            ->with(['supplier', 'product', 'location', 'decisionOfUser'])
             ->latest()
             ->paginate(request('per_page', 25));
 
