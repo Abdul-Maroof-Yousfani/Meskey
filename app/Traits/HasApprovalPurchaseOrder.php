@@ -484,16 +484,24 @@ trait HasApprovalPurchaseOrder
             return;
         }
 
-        $newCycle = $this->getCurrentApprovalCycle() + 1;
+        $currentCycle = $this->getCurrentApprovalCycle();
+        $newCycle = $currentCycle + 1;
 
+        // Get the role from the current cycle to ensure consistency after revert
+        $role_id = $this->approvalRows()
+            ->where('module_id', $module->id)
+            ->where('approval_cycle', $currentCycle)
+            ->value('role_id');
 
-
-        if(!auth()->user()->parent_user_id) {
-            $role_id = auth()->user()->roles()->latest()->first()->id;
-        } else {
-            $user = \App\Models\User::find(auth()->user()->parent_user_id);
-            $child = $user->children()->where("purchase_order_approval", true)->first();
-            $role_id = $child->roles()->latest()->first()->id;
+        // Fallback to original logic if no previous row exists
+        if (!$role_id) {
+            if(!auth()->user()->parent_user_id) {
+                $role_id = auth()->user()->roles()->latest()->first()->id;
+            } else {
+                $user = \App\Models\User::find(auth()->user()->parent_user_id);
+                $child = $user->children()->where("purchase_order_approval", true)->first();
+                $role_id = $child->roles()->latest()->first()->id;
+            }
         }
 
         ApprovalRow::create([
@@ -506,6 +514,7 @@ trait HasApprovalPurchaseOrder
             'status' => 'pending'
         ]);
     }
+
 
     protected function onApprovalComplete()
     {
