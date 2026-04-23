@@ -1,3 +1,6 @@
+<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.js"></script>
+
 <style>
     /* Chrome, Safari, Edge, Opera */
     input[type=number]::-webkit-outer-spin-button,
@@ -795,11 +798,16 @@
     </div>
 </form>
 
-<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.js"></script>
 
 <script>
-    $(document).ready(function() {
+    function initializeExportOrderForm() {
+        // Double check libraries
+        if (typeof $.fn.select2 === 'undefined' || typeof $.fn.summernote === 'undefined') {
+            setTimeout(initializeExportOrderForm, 200);
+            return;
+        }
+
+        $(document).ready(function() {
         // Initialize Summernote
         const summernoteOptions = {
             placeholder: 'Enter details here...',
@@ -880,13 +888,53 @@
 
             if (quotationId) {
                 $.get("{{ route('export-order.get-quotation-details', '') }}/" + quotationId, function(data) {
+                    clearFormFields();
                     fillFormFromData(data);
+                    // Re-set selectors as clearFormFields resets them (if they were part of the reset logic)
+                    // Actually clearFormFields doesn't clear Sauda/Quotation selects, but good to be safe.
                 });
             } else if (saudaId) {
                 $.get("{{ route('quotation.get-sauda-details', '') }}/" + saudaId, function(data) {
+                    clearFormFields();
                     fillFormFromData(data);
                 });
+            } else {
+                clearFormFields();
             }
+        }
+
+        function clearFormFields() {
+            // Basic fields
+            $('select[name="buyer_id"]').val('').trigger('change');
+            $('#productSelect').val('').trigger('change');
+            $('#visualName').val('');
+
+            // Dates
+            $('input[name="shipment_delivery_date_from"]').val('');
+            $('input[name="shipment_delivery_date_to"]').val('');
+
+            // Export sidebar dropdowns
+            $('select[name="incoterm_id"], select[name="packing_type"], select[name="mode_of_term_id"], select[name="mode_of_transport_id"], select[name="origin_country_id"], select[name="port_of_discharge_id"], select[name="port_of_loading_id"], select[name="hs_code_id"], select[name="partial_payment"], select[name="transhipment"], select[name="part_shipment"], select[name="insurance_covered_by"], select[name="currency_id"]').val('').trigger('change.select2');
+
+            // Export sidebar numeric fields
+            $('input[name="advance_payment"], input[name="payment_days"], input[name="currency_rate"], #currencyRate').val('');
+
+            // Packing rows
+            let container = $('#packingItemsContainer');
+            let firstRow = container.find('.packing-item').first();
+            container.find('.packing-item').not(':first').remove();
+            
+            // Reset first row
+            firstRow.find('input').val(0);
+            firstRow.find('select').val('').trigger('change.select2');
+            firstRow.find('.sub-packing-items-container').empty();
+            
+            reindexAll();
+            calculateGrandTotals();
+
+            // Specifications
+            $('#productSpecs').html('<div class="alert bg-light-warning mb-2 alert-light-warning" role="alert"><i class="ft-info mr-1"></i><strong>No specifications found!</strong> Please select a commodity/product first!</div>');
+            $('#specificationsSection').hide();
         }
 
         window.allQuotations = @json($quotations->map(function($q) {
@@ -1002,11 +1050,10 @@
             
             quotationSelect.val(currentVal).trigger('change.select2');
             
-            if (!quotationSelect.find('option:selected').length) {
-                quotationSelect.val('').trigger('change.select2');
+            // Only trigger if no quotation is selected (to avoid double calls)
+            if (!quotationSelect.val()) {
+                triggerAutofill();
             }
-
-            triggerAutofill();
         });
 
         $('select[name="quotation_id"]').on('change', function() {
@@ -1404,7 +1451,11 @@
                 $('#cor_description').val(bank.description);
             });
         });
-    });
+        });
+    }
+
+    // Direct call and ready call to ensure initialization in all scenarios (AJAX/Normal)
+    initializeExportOrderForm();
 </script>
 
 
