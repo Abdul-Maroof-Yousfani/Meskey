@@ -190,7 +190,6 @@
         </div>
         @endforeach --}}
 
-        @dd($model->canApprove(), $userAlreadyActed, $changesRequired)
         @if ($model->canApprove() && !$userAlreadyActed && !$changesRequired)
             <div class="row g-3 mx-auto">
                 <div class="col-md-8 mx-auto">
