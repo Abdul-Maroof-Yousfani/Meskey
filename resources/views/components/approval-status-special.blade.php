@@ -10,7 +10,7 @@
         $userAlreadyActed = $userAlreadyApproved;
         $changesRequired = $model->am_change_made == 0;
         $currentApprovals = $model->getCurrentApprovals();
-        $approvalCycles = $model->approvalRows()->where('module_id', $module->id)->orderBy('approval_cycle', 'desc')->get()->groupBy('approval_cycle');
+        $approvalCycles = $model->approvalRows()->orderBy('approval_cycle', 'desc')->get()->groupBy('approval_cycle');
 
     @endphp
 
