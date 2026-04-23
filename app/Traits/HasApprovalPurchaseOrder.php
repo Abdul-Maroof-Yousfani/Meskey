@@ -220,6 +220,8 @@ trait HasApprovalPurchaseOrder
                                     ->where("record_id", $this->id)
                                     ->where("status", "pending")
                                     ->get();
+
+        dd($approvalRows);
         // dd($module->id, $role_id, $this->id);
 
         if($approvalRows->isEmpty()) {
