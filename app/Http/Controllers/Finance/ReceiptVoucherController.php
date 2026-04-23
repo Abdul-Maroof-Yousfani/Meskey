@@ -468,6 +468,14 @@ class ReceiptVoucherController extends Controller
                 return !empty($item['reference_id']) && !empty($item['reference_type']);
             });
 
+        $hasRealReference = $items->contains(function ($item) {
+            return in_array($item['reference_type'], ['sale_order', 'sales_invoice']);
+        });
+
+        if (!$hasRealReference) {
+            return response()->json('Please select at least one Sale Order or Sales Invoice.', 422);
+        }
+
         DB::beginTransaction();
         try {
             $totalAmount = $items->sum(function ($item) {
@@ -511,6 +519,7 @@ class ReceiptVoucherController extends Controller
                 "company_id" => $request->company_id,
             ]);
 
+            $totalExcessAmount = 0;
             foreach ($items as $item) {
                 if ($item['reference_type'] === 'advance') {
                     $receiptVoucher->advances()->create([
@@ -523,16 +532,66 @@ class ReceiptVoucherController extends Controller
                         'line_desc' => $item['line_desc'] ?? null,
                     ]);
                 } else {
+                    $balance = receipt_voucher_balance($item['reference_id'], $item['reference_type']);
+                    $excessAmount = $item['amount'] - $balance;
+                    if($excessAmount > 0) {
+                        if(!$request->allow_excess) {
+                            throw new \Exception("Paid amount (" . $item['amount'] . ") for " . ucwords(str_replace('_', ' ', $item['reference_type'])) . " ID: " . $item['reference_id'] . " exceeds its remaining balance (" . $balance . "). Please enable 'Allow Excess Amount' or reduce the amount.");
+                        }
+                        
+                        $tax_amount = $item["tax_id"] ? Tax::find($item['tax_id'])->percentage * $excessAmount / 100 : 0;
+                        $totalExcessAmount += ($excessAmount + $tax_amount);
+                        $notAllocatedItem = ReceiptVoucherItem::create([
+                            'receipt_voucher_id' => $receiptVoucher->id,
+                            'reference_type' => 'not-allocated',
+                            'reference_id' => null,
+                            'amount' => $excessAmount,
+                            'tax_id' => $item['tax_id'] ?? null,
+                            'account_id' => null,
+                            // Apply Tax on exceed amount
+                            'tax_amount' => $tax_amount,
+                            'net_amount' => $excessAmount + $tax_amount,
+                            'line_desc' => $item['line_desc'] ?? null,
+                            'customer_id' => $payload["customer_id"]
+                        ]);
+
+                        createTransaction(
+                            $excessAmount + $tax_amount,
+                            $customerAccountId,
+                            $request->company_id,
+                            "-",
+                            'credit',
+                            'no',
+                            [
+                                'purpose' => "Extra Amount Received (Item #{$notAllocatedItem->id}) for the customer " . $customer->name,
+                                'payment_against' => $receiptVoucher->unique_no,
+                                'counter_account_id' => $payload['account_id'],
+                                'remarks' => "",
+                                'receipt_voucher_item_id' => $notAllocatedItem->id
+                            ]
+                        );
+                    }
+
+                    $excess = $excessAmount ?? 0;
+
+                    $amount = $item['amount'] ?? 0;
+                    $taxAmount = $item['tax_amount'] ?? 0;
+                    $netAmount = $item['net_amount'] ?? $amount;
+
                     ReceiptVoucherItem::create([
                         'receipt_voucher_id' => $receiptVoucher->id,
-                        'reference_type' => $item['reference_type'],
-                        'reference_id' => $item['reference_id'],
-                        'amount' => $item['amount'] ?? 0,
-                        'tax_id' => $item['tax_id'] ?? null,
-                        'account_id' => null,
-                        'tax_amount' => $item['tax_amount'] ?? 0,
-                        'net_amount' => $item['net_amount'] ?? ($item['amount'] ?? 0),
-                        'line_desc' => $item['line_desc'] ?? null,
+                        'reference_type'     => $item['reference_type'],
+                        'reference_id'       => $item['reference_id'],
+
+                        // safe subtraction
+                        'amount'             => max(0, $amount - $excess),
+                        'tax_amount'         => max(0, $taxAmount - $excess),
+                        'net_amount'         => max(0, $netAmount - $excess),
+
+                        'tax_id'             => $item['tax_id'] ?? null,
+                        'account_id'         => null,
+                        'line_desc'          => $item['line_desc'] ?? null,
+                        'customer_id'        => $payload['customer_id'],
                     ]);
                 }
             }
@@ -585,8 +644,9 @@ class ReceiptVoucherController extends Controller
             }
 
             // Always credit the customer for the total net amount
+
             createTransaction(
-                $totalNetAmount,
+                $totalNetAmount - $totalExcessAmount,
                 $customerAccountId,
                 $request->company_id,
                 $receiptVoucher->unique_no,
@@ -737,7 +797,7 @@ class ReceiptVoucherController extends Controller
                 'customer' => $customer,
                 'amount' => $item->amount,
                 'tax_amount' => $item->tax_amount,
-                'net_amount' => $item->net_amount ?: ($item->amount + $item->tax_amount),
+                'net_amount' => $item->amount + $item->tax_amount,
                 'line_desc' => $item->line_desc,
             ];
         });

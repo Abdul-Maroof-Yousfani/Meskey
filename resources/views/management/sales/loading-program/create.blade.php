@@ -612,9 +612,13 @@
                             if (response.success) {
                                 window.isUpdatingUI = true;
                                 const currentDOVals = $doSelect.val() || [];
+                                const selectedGlobalDoIds = $('#delivery_order_id').val() || [];
                                 $doSelect.empty();
+                                $doSelect.append('<option value="">Select Delivery Order</option>');
                                 response.delivery_orders.forEach(do_item => {
-                                    $doSelect.append(new Option(do_item.reference_no, do_item.id, false, currentDOVals.includes(do_item.id.toString())));
+                                    if (selectedGlobalDoIds.includes(do_item.id.toString())) {
+                                        $doSelect.append(new Option(do_item.reference_no, do_item.id, false, currentDOVals.includes(do_item.id.toString())));
+                                    }
                                 });
                                 $doSelect.trigger('change.select2');
                                 $row.data('delivery_orders', response.delivery_orders);

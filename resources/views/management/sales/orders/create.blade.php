@@ -167,6 +167,14 @@
                     </div>
                 </div>
 
+                <div class="col-md-6 d-none" id="unallocated_rv_container">
+                    <div class="form-group">
+                        <label class="form-label d-block">Unallocated Receipt Vouchers:</label>
+                        <select name="receipt_voucher_item_ids[]" id="receipt_voucher_item_ids" class="form-control select2" multiple style="width: 100%">
+                        </select>
+                    </div>
+                </div>
+
                 <div class="col-12 mt-3">
                     <h6 class="header-heading-sepration">Location Details</h6>
                 </div>
@@ -366,6 +374,40 @@
         } else {
             $(".credit").prop("disabled", true);
         }
+
+        if(type == 10) { // Advanced
+            $("#unallocated_rv_container").removeClass("d-none");
+            get_unallocated_rvs();
+        } else {
+            $("#unallocated_rv_container").addClass("d-none");
+            $("#receipt_voucher_item_ids").val([]).trigger('change');
+        }
+    }
+
+    function get_unallocated_rvs() {
+        const customer_id = $("#customer_id").val();
+        const pay_type_id = $("#pay_type_id").val();
+        
+        
+        if (!customer_id || pay_type_id != 10) {
+            return;
+        }
+
+        $.ajax({
+            url: "{{ route('sales.get-unallocated-receipt-vouchers') }}",
+            method: "GET",
+            data: { customer_id: customer_id },
+            success: function(res) {
+                let options = '<option value="">Select Unallocated Receipt Voucher</option>';
+                res.forEach(item => {
+                    options += `<option value="${item.id}">RV Item #${item.id} - Amount: ${item.net_amount} (Ref: ${item.line_desc || 'No Description'})</option>`;
+                });
+                $("#receipt_voucher_item_ids").html(options).trigger('change');
+            },
+            error: function(err) {
+                console.error("Error fetching unallocated RVs:", err);
+            }
+        });
     }
 
     // apply validate expiry date for order date and delivery date
@@ -586,6 +628,7 @@
     function get_customer_related_data() {
         get_inquiries();
         getCustomerLocations();
+        get_unallocated_rvs();
     }
 
     function get_inquiries() {

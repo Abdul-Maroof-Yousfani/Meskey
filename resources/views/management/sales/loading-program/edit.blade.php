@@ -182,10 +182,17 @@
                                                     $itemSoIds = $item->saleOrders->pluck('id')->toArray();
                                                     $rowDos = \App\Models\Sales\DeliveryOrder::whereIn('so_id', $itemSoIds)->where('am_approval_status', 'approved')->get();
                                                 @endphp
+                                                @php
+                                                    $mainSelectedDoIds = $LoadingProgram->deliveryOrders->pluck('id')->toArray();
+                                                    if ($LoadingProgram->deliveryOrder) $mainSelectedDoIds[] = $LoadingProgram->deliveryOrder->id;
+                                                    $mainSelectedDoIds = array_unique($mainSelectedDoIds);
+                                                @endphp
                                                 @foreach ($rowDos as $do)
-                                                    <option value="{{ $do->id }}" @selected($item->deliveryOrders->contains($do->id))>
-                                                        {{ $do->reference_no }}
-                                                    </option>
+                                                    @if (in_array($do->id, $mainSelectedDoIds))
+                                                        <option value="{{ $do->id }}" @selected($item->deliveryOrders->contains($do->id))>
+                                                            {{ $do->reference_no }}
+                                                        </option>
+                                                    @endif
                                                 @endforeach
                                             </select>
                                             <span class="text-danger row-do-required-mark" style="display: none;">*</span>
@@ -904,9 +911,13 @@
                         if (response.success) {
                             window.isUpdatingUI = true;
                             const currentDOVals = $doSelect.val() || [];
+                            const selectedGlobalDoIds = $('#delivery_order_id').val() || [];
                             $doSelect.empty();
+                            $doSelect.append('<option value="">Select Delivery Order</option>');
                             response.delivery_orders.forEach(do_item => {
-                                $doSelect.append(new Option(do_item.reference_no, do_item.id, false, currentDOVals.includes(do_item.id.toString())));
+                                if (selectedGlobalDoIds.includes(do_item.id.toString())) {
+                                    $doSelect.append(new Option(do_item.reference_no, do_item.id, false, currentDOVals.includes(do_item.id.toString())));
+                                }
                             });
                             $doSelect.trigger('change.select2');
                             $newRow.data('delivery_orders', response.delivery_orders);

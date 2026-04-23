@@ -38,7 +38,12 @@ class SalesOrder extends Model
         "transporter_used",
         "broker_id",
         "parent_user_id",
-        "commission_per_kg"
+        "commission_per_kg",
+        "receipt_voucher_item_ids"
+    ];
+
+    protected $casts = [
+        'receipt_voucher_item_ids' => 'array',
     ];
 
     public function parent_user() {
