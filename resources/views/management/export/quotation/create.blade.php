@@ -620,6 +620,26 @@ $(document).ready(function() {
                     });
                 }
             });
+        } else {
+            // Clear everything on deselection
+            $('#buyerSelect').val('').trigger('change.select2');
+            $('#productSelect').val('').trigger('change');
+            $('#buyer_phone, #buyer_email, #buyer_address').val('');
+            $('select[name="incoterm_id"]').val('').trigger('change');
+            $('select[name="mode_of_term_id"]').val('').trigger('change');
+            $('#commission_percentage, #commission_amount_per_ton, #commission').val('');
+            $('textarea[name="additional_info"]').val('');
+            
+            // Reset packing items to one empty row
+            var $rows = $('#packingItems tr.packing-item');
+            if ($rows.length > 0) {
+                var $firstRow = $rows.first();
+                $firstRow.find('input').val('0');
+                $firstRow.find('select').val('').trigger('change');
+                $rows.not(':first').remove();
+                reindexPackingItems();
+            }
+            calculateOverallTotals();
         }
     });
 
