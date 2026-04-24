@@ -103,7 +103,9 @@ class PaymentRequestController extends Controller
                 });
             })
             ->when(auth()->user()->user_type != 'super-admin', function ($q) {
-                return $q->whereIn('company_location_id', getUserCurrentCompanyLocations());
+                return $q->whereHas('purchaseOrder', function ($query) {
+                    $query->whereIn('company_location_id', getUserCurrentCompanyLocations());
+                });
             })
             ->when(auth()->user()->parent_user_id == null, function ($q) {
                 return $q->whereHas('purchaseOrder', function ($query) {
