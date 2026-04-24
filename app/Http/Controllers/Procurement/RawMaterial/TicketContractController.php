@@ -589,7 +589,7 @@ class TicketContractController extends Controller
             'rejectedHalfArrivalTickets',
             'stockInTransitTickets'
         ])
-            ->where('status', 'draft')
+            ->where('am_approval_status', 'approved')
             ->where('supplier_id', $arrivalTicket->accounts_of_id)
             ->where('company_location_id', $arrivalTicket->location_id)
             ->where('product_id', $arrivalTicket->qc_product);
