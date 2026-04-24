@@ -102,6 +102,9 @@ class PaymentRequestController extends Controller
                     $query->where('bilty_no', 'like', "%{$request->bilty_no}%");
                 });
             })
+            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                return $q->whereIn('company_location_id', getUserCurrentCompanyLocations());
+            })
             ->when(auth()->user()->parent_user_id == null, function ($q) {
                 return $q->whereHas('purchaseOrder', function ($query) {
                     $query->where('decision_of_id', auth()->user()->id);
