@@ -107,12 +107,12 @@ class PaymentRequestController extends Controller
                     $query->whereIn('company_location_id', getUserCurrentCompanyLocations());
                 });
             })
-            ->when(auth()->user()->parent_user_id == null, function ($q) {
+            ->when(auth()->user()->parent_user_id == null && auth()->user()->user_type != 'super-admin', function ($q) {
                 return $q->whereHas('purchaseOrder', function ($query) {
                     $query->where('decision_of_id', auth()->user()->id);
                 });
             })
-            ->when(auth()->user()->parent_user_id != null, function ($q) {
+            ->when(auth()->user()->can("procurement-raw-purchase-approval") && auth()->user()->user_type != 'super-admin', function ($q) {
                 return $q->whereHas('purchaseOrder', function ($query) {
                     $query->where('decision_of_id', auth()->user()->parent_user_id);
                 });
