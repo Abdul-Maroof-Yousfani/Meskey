@@ -90,22 +90,6 @@
                 </div>
             </div>
 
-            <!-- Specifications Section -->
-            @if(!empty($exportOrderData['specifications']))
-            <div class="mt-2" id="snap_specificationsSection_show">
-                <h6 class="header-heading-sepration">Specifications</h6>
-                <div id="snap_productSpecs_show">
-                    <table class="table table-bordered table-sm">
-                        @foreach($exportOrderData['specifications'] as $spec)
-                            <tr>
-                                <td width="50%"><strong>{{ $spec['spec_name'] }}</strong></td>
-                                <td>{{ $spec['spec_value'] }} {{ $spec['uom'] ?? '' }}</td>
-                            </tr>
-                        @endforeach
-                    </table>
-                </div>
-            </div>
-            @endif
         </div>
     </div>
 </div>

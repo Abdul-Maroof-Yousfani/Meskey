@@ -54,7 +54,7 @@ class ExportFormEController extends Controller
 
         try {
             $buyers = Customer::get();
-            $job_orders = JobOrder::latest()->get();
+            $job_orders = collect(); // Initially empty, will be filled via AJAX when Export Order is selected
         } catch (QueryException $e) {
         }
 
@@ -87,7 +87,6 @@ class ExportFormEController extends Controller
         try {
             $exportOrder = ExportOrder::where('am_approval_status', 'approved')->with([
                 'product',
-                'specifications',
                 'packingItems.bagType',
                 'packingItems.bagPacking',
                 'packingItems.brand',
@@ -155,7 +154,6 @@ class ExportFormEController extends Controller
         try {
             $exportOrder = ExportOrder::where('am_approval_status', 'approved')->with([
                 'product',
-                'specifications',
                 'packingItems.bagType',
                 'packingItems.bagPacking',
                 'packingItems.brand',
@@ -248,7 +246,7 @@ class ExportFormEController extends Controller
         try {
             $formE = ExportFormE::findOrFail($id);
             $buyers = Customer::get();
-            $job_orders = JobOrder::latest()->get();
+            $job_orders = JobOrder::where('export_order_id', $formE->export_order_id)->latest()->get();
             $export_orders = ExportOrder::where('am_approval_status', 'approved')->latest()->get();
         } catch (QueryException $e) {
             $formE = new ExportFormE();
@@ -439,6 +437,22 @@ class ExportFormEController extends Controller
             return response()->json([
                 'success' => true,
                 'data' => $formEs
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getJobOrdersByOrder($order_id)
+    {
+        try {
+            $jobOrders = JobOrder::where('export_order_id', $order_id)->latest()->get();
+            return response()->json([
+                'success' => true,
+                'data' => $jobOrders
             ]);
         } catch (\Exception $e) {
             return response()->json([

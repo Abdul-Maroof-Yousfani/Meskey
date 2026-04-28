@@ -108,11 +108,6 @@
                     </div>
                 </div>
 
-                <!-- Specifications Section -->
-                <div class="mt-2" id="snap_specificationsSection_edit" style="display: none;">
-                    <h6 class="header-heading-sepration">Specifications</h6>
-                    <div id="snap_productSpecs_edit"></div>
-                </div>
             </div>
         </div>
     </div>
@@ -179,18 +174,6 @@
         function populateSnapshotEdit(data) {
             $('#snap_product_name_edit').val(data.product ? data.product.name : '');
             $('#snap_visual_name_edit').val(data.visual_name || '');
-
-            if (data.specifications && data.specifications.length > 0) {
-                let specHtml = '<table class="table table-bordered table-sm">';
-                data.specifications.forEach(spec => {
-                    specHtml += `<tr><td width="50%"><strong>${spec.spec_name}</strong></td><td>${spec.spec_value} ${spec.uom || ''}</td></tr>`;
-                });
-                specHtml += '</table>';
-                $('#snap_productSpecs_edit').html(specHtml);
-                $('#snap_specificationsSection_edit').show();
-            } else {
-                $('#snap_specificationsSection_edit').hide();
-            }
         }
     });
 </script>

@@ -76,56 +76,44 @@
     <div class="col-12 mt-3">
         <h6 class="header-heading-sepration">Location Details</h6>
     </div>
-    <div class="row form-mar">
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Locations:</label>
-                <select name="location_id" id="locations" class="form-control select2" disabled>
-                    <option value="">Select Locations</option>
-                    @if($deliveryOrder->location_id)
-                        <option value="{{ $deliveryOrder->location_id }}" selected>
-                            {{ get_location_name_by_id($deliveryOrder->location_id) }}</option>
-                    @endif
-                </select>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Factory:</label>
-                <select name="arrival_id[]" id="arrivals" class="form-control select2" disabled multiple>
-                    <option value="">Select Factory </option>
-                    @php
-                        $selectedArrivalIds = $deliveryOrder->arrival_location_id ? explode(',', $deliveryOrder->arrival_location_id) : [];
-                    @endphp
-                    @if($deliveryOrder->location_id)
-                        @foreach (get_arrivals_by($deliveryOrder->location_id) as $location)
-                            <option value="{{ $location->id }}" @selected(in_array($location->id, $selectedArrivalIds))>
-                                {{ $location->name }}
-                            </option>
+    <div class="col-12 mt-3">
+        <table class="table table-bordered" id="locationTable">
+            <thead>
+                <tr>
+                    <th style="width: 33%;">Location</th>
+                    <th style="width: 33%;">Factory</th>
+                    <th style="width: 34%;">Section</th>
+                </tr>
+            </thead>
+            <tbody id="locationRows">
+                @foreach($deliveryOrder->locations as $loc)
+                <tr>
+                    <td>{{ $loc->companyLocation->name ?? '---' }}</td>
+                    <td>
+                        @php
+                            $arrivalIds = $loc->arrival_location_ids ? explode(',', $loc->arrival_location_ids) : [];
+                        @endphp
+                        @foreach($arrivalIds as $aid)
+                            <span class="badge badge-info">{{ get_arrival_name_by_id($aid) }}</span>
                         @endforeach
-                    @endif
-                </select>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Section:</label>
-                <select name="storage_id[]" id="storages" class="form-control select2" disabled multiple>
-                    <option value="">Select Section</option>
-                    @php
-                        $selectedSubArrivalIds = $deliveryOrder->sub_arrival_location_id ? explode(',', $deliveryOrder->sub_arrival_location_id) : [];
-                        $arrivalIds = $deliveryOrder->arrival_location_id ? explode(',', $deliveryOrder->arrival_location_id) : [];
-                    @endphp
-                    @if(!empty($arrivalIds))
-                        @foreach (get_sub_arrivals_by_multiple($arrivalIds) as $location)
-                            <option value="{{ $location->id }}" @selected(in_array($location->id, $selectedSubArrivalIds))>
-                                {{ $location->name }} ({{ $location->arrivalLocation->name }})
-                            </option>
+                    </td>
+                    <td>
+                        @php
+                            $subArrivalIds = $loc->sub_arrival_location_ids ? explode(',', $loc->sub_arrival_location_ids) : [];
+                        @endphp
+                        @foreach($subArrivalIds as $sid)
+                            <span class="badge badge-secondary">{{ get_storage_name_by_id($sid) }}</span>
                         @endforeach
-                    @endif
-                </select>
-            </div>
-        </div>
+                    </td>
+                </tr>
+                @endforeach
+                @if($deliveryOrder->locations->isEmpty())
+                <tr>
+                    <td colspan="3" class="text-center">No locations specified.</td>
+                </tr>
+                @endif
+            </tbody>
+        </table>
     </div>
 
     <!-- Export Order Snapshot Area (Read-Only) -->
@@ -294,10 +282,10 @@
                             <td style="width: 30%; font-weight: bold; vertical-align: middle;">CURRENCY</td>
                             <td style="width: 70%;"><input type="text" id="snap_currency_edit" class="form-control" disabled></td>
                         </tr>
-                        <tr>
+                        <!-- <tr>
                             <td style="width: 30%; font-weight: bold; vertical-align: middle;">RATE</td>
                             <td style="width: 70%;"><input type="text" id="snap_currency_rate_edit" class="form-control" disabled></td>
-                        </tr>
+                        </tr> -->
                     </table>
                 </div>
             </div>{{-- end col-4 --}}
@@ -693,7 +681,7 @@
             $('#snap_advance_payment_edit').val(data.advance_payment || '');
             $('#snap_payment_days_edit').val(data.payment_days || '');
             $('#snap_currency_edit').val(data.currency ? data.currency.currency_name : '');
-            $('#snap_currency_rate_edit').val(data.currency_rate || '');
+            // $('#snap_currency_rate_edit').val(data.currency_rate || '');
 
             // Populate relational packing items instead of data.packing_items from JSON
             $('#packingItemsWrapper').show();

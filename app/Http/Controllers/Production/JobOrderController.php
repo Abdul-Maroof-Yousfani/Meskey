@@ -282,8 +282,10 @@ class JobOrderController extends Controller
                 // Calculate totals from sub-items
                 if (!empty($subItems)) {
                     $totalBagsFromSubItems = collect($subItems)->sum('no_of_bags');
-                    $totalKgsFromSubItems = collect($subItems)->sum(function ($subItem) {
-                        return ($subItem['no_of_bags'] ?? 0) * ($subItem['bag_size'] ?? 0);
+                    $sizeMap = Size::whereIn('id', collect($subItems)->pluck('bag_size_id')->filter()->unique()->values())->pluck('size', 'id');
+                    $totalKgsFromSubItems = collect($subItems)->sum(function ($subItem) use ($sizeMap) {
+                        $packingSize = $subItem['packing_size'] ?? ($sizeMap[$subItem['bag_size_id'] ?? null] ?? 0);
+                        return ($subItem['no_of_bags'] ?? 0) * (float) $packingSize;
                     });
 
                     $item['total_bags'] = $totalBagsFromSubItems + ($item['extra_bags'] ?? 0) + ($item['empty_bags'] ?? 0);
@@ -510,8 +512,10 @@ class JobOrderController extends Controller
                 // Calculate totals from sub-items
                 if (!empty($subItems)) {
                     $totalBagsFromSubItems = collect($subItems)->sum('no_of_bags');
-                    $totalKgsFromSubItems = collect($subItems)->sum(function ($subItem) {
-                        return ($subItem['no_of_bags'] ?? 0) * ($subItem['bag_size'] ?? 0);
+                    $sizeMap = Size::whereIn('id', collect($subItems)->pluck('bag_size_id')->filter()->unique()->values())->pluck('size', 'id');
+                    $totalKgsFromSubItems = collect($subItems)->sum(function ($subItem) use ($sizeMap) {
+                        $packingSize = $subItem['packing_size'] ?? ($sizeMap[$subItem['bag_size_id'] ?? null] ?? 0);
+                        return ($subItem['no_of_bags'] ?? 0) * (float) $packingSize;
                     });
 
                     $item['total_bags'] = $totalBagsFromSubItems + ($item['extra_bags'] ?? 0) + ($item['empty_bags'] ?? 0);

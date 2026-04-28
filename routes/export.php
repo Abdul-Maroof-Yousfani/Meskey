@@ -119,6 +119,8 @@ Route::post('/get-export-form-e', [App\Http\Controllers\Export\ExportFormEContro
 Route::get('/get-export-order-details-form-e/{id}', [App\Http\Controllers\Export\ExportFormEController::class, 'getExportOrderDetails'])->name('export.get-export-order-details-form-e');
 Route::get('/get-orders-by-buyer-form-e/{buyerId}', [App\Http\Controllers\Export\ExportFormEController::class, 'getOrdersByBuyer'])->name('export.get-orders-by-buyer-form-e');
 Route::get('/get-form-es-by-order/{orderId}', [App\Http\Controllers\Export\ExportFormEController::class, 'getFormEsByOrder'])->name('export.get-form-es-by-order');
+Route::get('/get-job-orders-by-order-form-e/{orderId}', [App\Http\Controllers\Export\ExportFormEController::class, 'getJobOrdersByOrder'])->name('export.get-job-orders-by-order-form-e');
+
 
 // quotation
 Route::resource('quotation', QuotationController::class);

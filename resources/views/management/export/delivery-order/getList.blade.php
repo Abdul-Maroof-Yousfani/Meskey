@@ -26,7 +26,7 @@
                     <td>{{ number_format($totalMt, 3) }} MT</td>
                     <td>
                         @if($eo && $eo->currency)
-                            {{ $eo->currency->currency_name }} {{ number_format($eo->packingItems->pluck('rate')->first() ?? 0, 2) }}
+                            {{ $eo->currency->currency_code }}
                         @else
                             -
                         @endif
