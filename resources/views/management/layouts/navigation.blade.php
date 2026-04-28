@@ -721,7 +721,7 @@
                 </ul>
             </li>
 
-            @canAccess("logistics")
+            <!-- @canAccess("logistics") -->
             <li class="dropdown nav-item {{ request()->is('logistics*') ? 'active' : '' }}" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-package"></i><span data-i18n="Apps">Logistics</span></a>
@@ -736,7 +736,7 @@
 
                 </ul>
             </li>
-            @endcanAccess
+            <!-- @endcanAccess -->
             @endcanAccess
             @canAccess('export-sales')
             <li class="dropdown nav-item {{ request()->is('export*') ? 'active' : '' }}" data-menu="dropdown"><a {{--
