@@ -228,7 +228,24 @@ class ProformaController extends Controller
 
     public function print($id)
     {
-        $proforma = Proforma::with(['exportOrder.product', 'exportOrder.specifications', 'exportOrder.packingItems', 'exportOrder.company', 'exportOrder.buyer', 'exportOrder.modeOfTerm', 'exportOrder.currency', 'exportOrder.portOfLoading', 'exportOrder.portOfDischarge', 'exportOrder.modeOfTransport', 'exportOrder.hsCode', 'exportOrder.incoterm'])->findOrFail($id);
+        $proforma = Proforma::with([
+            'exportOrder.product',
+            'exportOrder.specifications',
+            'exportOrder.packingItems.brand',
+            'exportOrder.packingItems.bagType',
+            'exportOrder.packingItems.bagPacking',
+            'exportOrder.packingItems.bagCondition',
+            'exportOrder.company',
+            'exportOrder.buyer',
+            'exportOrder.consignee',
+            'exportOrder.modeOfTerm',
+            'exportOrder.currency',
+            'exportOrder.portOfLoading',
+            'exportOrder.portOfDischarge',
+            'exportOrder.modeOfTransport',
+            'exportOrder.hsCode',
+            'exportOrder.incoterm',
+        ])->findOrFail($id);
         $exportOrder = $proforma->exportOrder;
 
         $totalAmount = $exportOrder->packingItems->sum('amount');

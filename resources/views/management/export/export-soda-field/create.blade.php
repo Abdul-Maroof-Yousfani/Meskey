@@ -9,7 +9,13 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label>Reference #:</label>
-                        <input type="text" name="reference" class="form-control" required>
+                        <input type="text" name="reference_display" class="form-control" placeholder="Select date to generate..." readonly>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Voucher Date:</label>
+                        <input type="date" name="voucher_date" class="form-control" value="{{ date('Y-m-d') }}" required>
                     </div>
                 </div>
 
@@ -25,7 +31,7 @@
                     </div>
                 </div>
 
-                <div class="col-md-12">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label>Commodity:</label>
                         <select name="product_id" class="form-control select2" required>
@@ -39,8 +45,14 @@
 
                 <div class="col-md-6 mt-2">
                     <div class="form-group">
-                        <label>Shipment Period:</label>
-                        <input type="date" name="shipment_period" class="form-control">
+                        <label>Shipment Date From:</label>
+                        <input type="date" name="shipment_date_from" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-6 mt-2">
+                    <div class="form-group">
+                        <label>Shipment Date To:</label>
+                        <input type="date" name="shipment_date_to" class="form-control">
                     </div>
                 </div>
             </div>
@@ -376,6 +388,31 @@ $(document).ready(function() {
                 if (name) { $(this).attr('name', name.replace(/\[\d+\]/, '[' + i + ']')); }
             });
         });
+    }
+
+    // ---- AUTO-GENERATE REFERENCE ----
+    $('input[name="voucher_date"]').on('change', function() {
+        let selectedDate = $(this).val();
+        if (!selectedDate) {
+            $('input[name="reference_display"]').val('');
+            return;
+        }
+        getUniversalNumber({
+            table: 'export_soda_fields',
+            prefix: 'SAUDA',
+            column: 'reference',
+            with_date: 1,
+            custom_date: selectedDate,
+            date_format: 'm-Y',
+            serial_at_end: 1,
+        }, function(no) {
+            $('input[name="reference_display"]').val(no);
+        });
+    });
+
+    // Trigger on load if date exists
+    if ($('input[name="voucher_date"]').val()) {
+        $('input[name="voucher_date"]').trigger('change');
     }
 });
 </script>

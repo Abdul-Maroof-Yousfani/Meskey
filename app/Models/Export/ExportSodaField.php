@@ -14,8 +14,16 @@ class ExportSodaField extends Model
         'commission_percentage' => 'float',
         'commission_amount_per_ton' => 'float',
         'commission' => 'float',
-        'shipment_period' => 'date',
+        'shipment_date_from' => 'date',
+        'shipment_date_to' => 'date',
     ];
+    
+    protected $appends = ['total_qty_mt'];
+
+    public function getTotalQtyMtAttribute()
+    {
+        return $this->packingItems()->sum('metric_tons') ?? 0;
+    }
 
     public function buyer()
     {

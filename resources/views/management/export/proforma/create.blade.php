@@ -222,15 +222,125 @@
                 </div>
             </div>
 
-            <div class="col-md-12">
+            <div class="col-md-12" id="proforma-other-spec-section">
                 <div class="form-group">
                     <label>Other Specification:</label>
                     <textarea name="other_specifications" class="form-control" rows="4" disabled>{{ old('other_specifications', $exportOrder->other_specifications) }}</textarea>
                 </div>
             </div>
 
+            <div class="col-md-12 mt-4" id="proforma-packing-section">
+                <h6 class="header-heading-sepration">Packing Details</h6>
+                @forelse ($exportOrder->packingItems as $itemIndex => $item)
+                    <div class="packing-item card border-secondary mb-4 shadow-sm">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center py-2">
+                            <h6 class="mb-0 font-weight-bold grey">Packing Row #{{ $itemIndex + 1 }}</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-2"><div class="form-group"><label>Brand:</label><input type="text" class="form-control" value="{{ $item->brand->name ?? '-' }}" readonly></div></div>
+                                <div class="col-md-2"><div class="form-group"><label>Bag Type:</label><input type="text" class="form-control" value="{{ $item->bagType->name ?? '-' }}" readonly></div></div>
+                                <div class="col-md-2"><div class="form-group"><label>Packing Type:</label><input type="text" class="form-control" value="{{ $item->bagPacking->name ?? '-' }}" readonly></div></div>
+                                <div class="col-md-2"><div class="form-group"><label>Bag Condition:</label><input type="text" class="form-control" value="{{ $item->bagCondition->name ?? '-' }}" readonly></div></div>
+                                <div class="col-md-2"><div class="form-group"><label>Bag Color:</label><input type="text" class="form-control" value="{{ $item->bagColor->color ?? '-' }}" readonly></div></div>
+                                <div class="col-md-2"><div class="form-group"><label>Thread Color:</label><input type="text" class="form-control" value="{{ $item->threadColor->color ?? '-' }}" readonly></div></div>
+                                <div class="col-md-2"><div class="form-group"><label>Stitching:</label><input type="text" class="form-control" value="{{ $item->stitching->name ?? '-' }}" readonly></div></div>
+                                <div class="col-md-2"><div class="form-group"><label>Bag Size (kg):</label><input type="text" class="form-control" value="{{ number_format($item->bag_size, 2) }}" readonly></div></div>
+                                <div class="col-md-2"><div class="form-group"><label>No. of Bags:</label><input type="text" class="form-control font-weight-bold" value="{{ number_format($item->no_of_bags, 0) }}" readonly></div></div>
+                                <div class="col-md-2"><div class="form-group"><label>Extra Bags:</label><input type="text" class="form-control" value="{{ $item->extra_bags }}" readonly></div></div>
+                                <div class="col-md-2"><div class="form-group"><label>Extra Bags %:</label><input type="text" class="form-control" value="{{ number_format((float) ($item->extra_bags_percentage ?? 0), 2) }}" readonly></div></div>
+                                <div class="col-md-2"><div class="form-group"><label>Empty Bags:</label><input type="text" class="form-control" value="{{ $item->empty_bags }}" readonly></div></div>
+                                <div class="col-md-2"><div class="form-group"><label>Empty Bags %:</label><input type="text" class="form-control" value="{{ number_format((float) ($item->empty_bags_percentage ?? 0), 2) }}" readonly></div></div>
+                                <div class="col-md-2"><div class="form-group"><label>Qty (MT):</label><input type="text" class="form-control font-weight-bold text-primary" value="{{ number_format($item->metric_tons, 3) }}" readonly></div></div>
+                                <div class="col-md-2"><div class="form-group"><label>Total Bags:</label><input type="text" class="form-control" value="{{ number_format($item->total_bags, 0) }}" readonly></div></div>
+                                <div class="col-md-2"><div class="form-group"><label>Stuffing/Cont (MT):</label><input type="text" class="form-control" value="{{ number_format($item->stuffing_in_container, 3) }}" readonly></div></div>
+                                <div class="col-md-2"><div class="form-group"><label>Containers:</label><input type="text" class="form-control" value="{{ $item->no_of_containers }}" readonly></div></div>
+                                <div class="col-md-2"><div class="form-group"><label>Rate/Ton:</label><input type="text" class="form-control" value="{{ number_format($item->rate, 2) }}" readonly></div></div>
+                                <div class="col-md-2"><div class="form-group"><label>Amount:</label><input type="text" class="form-control font-weight-bold" value="{{ number_format($item->amount, 2) }}" readonly></div></div>
+                                <div class="col-md-2"><div class="form-group"><label>Min Weight Empty Bags:</label><input type="text" class="form-control" value="{{ number_format($item->min_weight_empty_bags, 2) }}" readonly></div></div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Fumigation By:</label>
+                                        @php
+                                            $fNames = [];
+                                            if (is_array($item->fumigation_company_id)) {
+                                                $fNames = $inspectionCompanies->whereIn('id', $item->fumigation_company_id)->pluck('name')->toArray();
+                                            }
+                                        @endphp
+                                        <input type="text" class="form-control" value="{{ count($fNames) ? implode(', ', $fNames) : '-' }}" readonly>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Inspection By:</label>
+                                        @php
+                                            $inspectionNames = [];
+                                            if (is_array($item->inspection_by)) {
+                                                $inspectionNames = $inspectionCompanies->whereIn('id', $item->inspection_by)->pluck('name')->toArray();
+                                            }
+                                        @endphp
+                                        <input type="text" class="form-control" value="{{ count($inspectionNames) ? implode(', ', $inspectionNames) : '-' }}" readonly>
+                                    </div>
+                                </div>
+                            </div>
+                            @if($item->subItems->count() > 0)
+                                <div class="mt-4">
+                                    <div class="card border-info shadow-none">
+                                        <div class="card-header bg-light-info d-flex justify-content-between align-items-center py-1">
+                                            <h6 class="mb-0 font-weight-bold">Master Packing #{{ sprintf('%02d', $itemIndex + 1) }}</h6>
+                                        </div>
+                                        <div class="card-body p-0">
+                                            <div class="table-responsive">
+                                                <table class="table table-bordered table-sm mb-0 text-nowrap">
+                                                    <thead class="thead-light">
+                                                        <tr>
+                                                            <th style="min-width: 150px;">Bag Type</th>
+                                                            <th style="min-width: 120px;">Bag Size</th>
+                                                            <th style="min-width: 150px;">Primary Bags fit in master bag</th>
+                                                            <th style="min-width: 90px;">No. of Bags</th>
+                                                            <th style="min-width: 90px;">Empty Bags</th>
+                                                            <th style="min-width: 90px;">Extra Bags</th>
+                                                            <th style="min-width: 100px;">Empty Bag Weight (g)</th>
+                                                            <th style="min-width: 90px;">Total Bags</th>
+                                                            <th style="min-width: 120px;">Stitching</th>
+                                                            <th style="min-width: 120px;">Bag Color</th>
+                                                            <th style="min-width: 120px;">Brand</th>
+                                                            <th style="min-width: 120px;">Thread Color</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach($item->subItems as $sub)
+                                                            <tr>
+                                                                <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->bagType->name ?? '-' }}" readonly></td>
+                                                                <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->bagSize->size ?? '-' }}" readonly></td>
+                                                                <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->no_of_primary_bags }}" readonly></td>
+                                                                <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->no_of_bags }}" readonly></td>
+                                                                <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->empty_bags }}" readonly></td>
+                                                                <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->extra_bags }}" readonly></td>
+                                                                <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->empty_bag_weight }}" readonly></td>
+                                                                <td class="p-1"><input type="text" class="form-control form-control-sm font-weight-bold" value="{{ $sub->total_bags }}" readonly></td>
+                                                                <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->stitching->name ?? '-' }}" readonly></td>
+                                                                <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->bagColor->color ?? '-' }}" readonly></td>
+                                                                <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->brand->name ?? '-' }}" readonly></td>
+                                                                <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->threadColor->color ?? '-' }}" readonly></td>
+                                                            </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                @empty
+                    <div class="alert alert-light">No packing items found.</div>
+                @endforelse
+            </div>
+
             {{-- bank details  --}}
-            <div class="row">
+            <div class="row" id="proforma-bank-section">
                 {{-- beneficiary --}}
                 <div class="col-md-12">
                     <div class="p-3">
@@ -239,12 +349,11 @@
                             {{-- Bank Display --}}
                             <div class="col-md-12 mb-2">
                                 <label>Beneficiary Bank:</label>
-                                <input type="text" class="form-control" value="{{ $exportOrder->customerBank ? $exportOrder->customerBank->bank_name . ' (' . ($exportOrder->customer_bank_type == 'owner' ? 'Owner' : 'Company') . ')' : 'N/A' }}" disabled>
-                                <input type="hidden" name="customer_bank_id" value="{{ $exportOrder->customer_bank_id }}">
+                                <input type="text" class="form-control" value="{{ $exportOrder->customerBank ? $exportOrder->customerBank->bank_name . ' (' . ($exportOrder->customer_bank_type == 'owner' ? 'Owner' : ($exportOrder->customer_bank_type == 'company' ? 'Company' : 'Shipper')) . ')' : 'N/A' }}" disabled>
+                                <input type="hidden" id="bankSelect" name="customer_bank_id" value="{{ $exportOrder->customer_bank_id }}">
                                 <input type="hidden" name="customer_bank_type" value="{{ $exportOrder->customer_bank_type }}">
                             </div>
 
-                            {{-- Auto Filled Fields --}}
                             <div class="col-md-6 mt-2">
                                 <label>Account Title:</label>
                                 <input type="text" id="acc_title" class="form-control" value="{{ $exportOrder->customerBank->account_title ?? '' }}" disabled>
@@ -256,18 +365,28 @@
                             </div>
 
                             <div class="col-md-6 mt-2">
-                                <label>Branch Name:</label>
-                                <input type="text" id="branch_name" class="form-control" value="{{ $exportOrder->customerBank->branch_name ?? '' }}" disabled>
-                            </div>
-
-                            <div class="col-md-6 mt-2">
                                 <label>Account No:</label>
-                                <input type="text" id="account_no" class="form-control" value="{{ $exportOrder->customerBank->account_number ?? '' }}" disabled>
+                                <input type="text" id="account_no" class="form-control" value="{{ $exportOrder->customerBank->account_no ?? $exportOrder->customerBank->account_number ?? '' }}" disabled>
                             </div>
 
                             <div class="col-md-6 mt-2">
-                                <label>Branch Code:</label>
-                                <input type="text" id="branch_code" class="form-control" value="{{ $exportOrder->customerBank->branch_code ?? '' }}" disabled>
+                                <label>IBAN:</label>
+                                <input type="text" id="iban" class="form-control" value="{{ $exportOrder->customerBank->iban ?? '' }}" disabled>
+                            </div>
+
+                            <div class="col-md-6 mt-2">
+                                <label>SWIFT Code:</label>
+                                <input type="text" id="swift_code" class="form-control" value="{{ $exportOrder->customerBank->swift_code ?? '' }}" disabled>
+                            </div>
+
+                            <div class="col-md-6 mt-2">
+                                <label>Bank Address:</label>
+                                <input type="text" id="bank_address" class="form-control" value="{{ $exportOrder->customerBank->bank_address ?? '' }}" disabled>
+                            </div>
+
+                            <div class="col-md-12 mt-2">
+                                <label>Description:</label>
+                                <textarea id="description" class="form-control" rows="2" disabled>{{ $exportOrder->customerBank->description ?? '' }}</textarea>
                             </div>
                         </div>
 
@@ -623,113 +742,9 @@
                             </select>
                         </td>
                     </tr>
-                    <tr>
-                        <td style="width: 30%; font-weight: bold; vertical-align: middle;">RATE</td>
-                        <td style="width: 70%;">
-                            <input type="text" name="currency_rate" id="currencyRate" class="form-control"
-                                disabled value="{{ old('currency_rate', $exportOrder->currency_rate) }}" disabled>
-                        </td>
-                    </tr>
                 </table>
             </div>
 
-        </div>
-
-        <div class="col-md-12 mt-4">
-            <h6 class="header-heading-sepration">Packing Details</h6>
-            @forelse ($exportOrder->packingItems as $itemIndex => $item)
-                <div class="packing-item card border-secondary mb-4 shadow-sm">
-                    <div class="card-header bg-light d-flex justify-content-between align-items-center py-2">
-                        <h6 class="mb-0 font-weight-bold grey">Packing Row #{{ $itemIndex + 1 }}</h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-2"><div class="form-group"><label>Brand:</label><input type="text" class="form-control" value="{{ $item->brand->name ?? '-' }}" readonly></div></div>
-                            <div class="col-md-2"><div class="form-group"><label>Bag Type:</label><input type="text" class="form-control" value="{{ $item->bagType->name ?? '-' }}" readonly></div></div>
-                            <div class="col-md-2"><div class="form-group"><label>Packing Type:</label><input type="text" class="form-control" value="{{ $item->bagPacking->name ?? '-' }}" readonly></div></div>
-                            <div class="col-md-2"><div class="form-group"><label>Bag Condition:</label><input type="text" class="form-control" value="{{ $item->bagCondition->name ?? '-' }}" readonly></div></div>
-                            <div class="col-md-2"><div class="form-group"><label>Bag Color:</label><input type="text" class="form-control" value="{{ $item->bagColor->color ?? '-' }}" readonly></div></div>
-                            <div class="col-md-2"><div class="form-group"><label>Thread Color:</label><input type="text" class="form-control" value="{{ $item->threadColor->color ?? '-' }}" readonly></div></div>
-                            <div class="col-md-2"><div class="form-group"><label>Stitching:</label><input type="text" class="form-control" value="{{ $item->stitching->name ?? '-' }}" readonly></div></div>
-                            <div class="col-md-2"><div class="form-group"><label>Bag Size (kg):</label><input type="text" class="form-control" value="{{ number_format($item->bag_size, 2) }}" readonly></div></div>
-                            <div class="col-md-2"><div class="form-group"><label>No. of Bags:</label><input type="text" class="form-control font-weight-bold" value="{{ number_format($item->no_of_bags, 0) }}" readonly></div></div>
-                            <div class="col-md-2"><div class="form-group"><label>Extra Bags:</label><input type="text" class="form-control" value="{{ $item->extra_bags }}" readonly></div></div>
-                            <div class="col-md-2"><div class="form-group"><label>Empty Bags:</label><input type="text" class="form-control" value="{{ $item->empty_bags }}" readonly></div></div>
-                            <div class="col-md-2"><div class="form-group"><label>Qty (MT):</label><input type="text" class="form-control font-weight-bold text-primary" value="{{ number_format($item->metric_tons, 3) }}" readonly></div></div>
-                            <div class="col-md-2"><div class="form-group"><label>Total Bags:</label><input type="text" class="form-control" value="{{ number_format($item->total_bags, 0) }}" readonly></div></div>
-                            <div class="col-md-2"><div class="form-group"><label>Stuffing/Cont (MT):</label><input type="text" class="form-control" value="{{ number_format($item->stuffing_in_container, 3) }}" readonly></div></div>
-                            <div class="col-md-2"><div class="form-group"><label>Containers:</label><input type="text" class="form-control" value="{{ $item->no_of_containers }}" readonly></div></div>
-                            <div class="col-md-2"><div class="form-group"><label>Rate/Ton:</label><input type="text" class="form-control" value="{{ number_format($item->rate, 2) }}" readonly></div></div>
-                            <div class="col-md-2"><div class="form-group"><label>Amount:</label><input type="text" class="form-control font-weight-bold" value="{{ number_format($item->amount, 2) }}" readonly></div></div>
-                            <div class="col-md-2"><div class="form-group"><label>Amount (PKR):</label><input type="text" class="form-control font-weight-bold text-success" value="{{ number_format($item->amount_pkr, 2) }}" readonly></div></div>
-                            <div class="col-md-2"><div class="form-group"><label>Min Weight Empty Bags:</label><input type="text" class="form-control" value="{{ number_format($item->min_weight_empty_bags, 2) }}" readonly></div></div>
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label>Fumigation By:</label>
-                                    @php
-                                        $fNames = [];
-                                        if (is_array($item->fumigation_company_id)) {
-                                            $fNames = $inspectionCompanies->whereIn('id', $item->fumigation_company_id)->pluck('name')->toArray();
-                                        }
-                                    @endphp
-                                    <input type="text" class="form-control" value="{{ count($fNames) ? implode(', ', $fNames) : '-' }}" readonly>
-                                </div>
-                            </div>
-                        </div>
-                        @if($item->subItems->count() > 0)
-                            <div class="mt-4">
-                                <div class="card border-info shadow-none">
-                                    <div class="card-header bg-light-info d-flex justify-content-between align-items-center py-1">
-                                        <h6 class="mb-0 font-weight-bold">Master Packing #{{ sprintf('%02d', $itemIndex + 1) }}</h6>
-                                    </div>
-                                    <div class="card-body p-0">
-                                        <div class="table-responsive">
-                                            <table class="table table-bordered table-sm mb-0 text-nowrap">
-                                                <thead class="thead-light">
-                                                    <tr>
-                                                        <th style="min-width: 150px;">Bag Type</th>
-                                                        <th style="min-width: 120px;">Bag Size</th>
-                                                        <th style="min-width: 150px;">Primary Bags fit in master bag</th>
-                                                        <th style="min-width: 90px;">No. of Bags</th>
-                                                        <th style="min-width: 90px;">Empty Bags</th>
-                                                        <th style="min-width: 90px;">Extra Bags</th>
-                                                        <th style="min-width: 100px;">Empty Bag Weight (g)</th>
-                                                        <th style="min-width: 90px;">Total Bags</th>
-                                                        <th style="min-width: 120px;">Stitching</th>
-                                                        <th style="min-width: 120px;">Bag Color</th>
-                                                        <th style="min-width: 120px;">Brand</th>
-                                                        <th style="min-width: 120px;">Thread Color</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    @foreach($item->subItems as $sub)
-                                                        <tr>
-                                                            <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->bagType->name ?? '-' }}" readonly></td>
-                                                            <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->bagSize->size ?? '-' }}" readonly></td>
-                                                            <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->no_of_primary_bags }}" readonly></td>
-                                                            <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->no_of_bags }}" readonly></td>
-                                                            <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->empty_bags }}" readonly></td>
-                                                            <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->extra_bags }}" readonly></td>
-                                                            <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->empty_bag_weight }}" readonly></td>
-                                                            <td class="p-1"><input type="text" class="form-control form-control-sm font-weight-bold" value="{{ $sub->total_bags }}" readonly></td>
-                                                            <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->stitching->name ?? '-' }}" readonly></td>
-                                                            <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->bagColor->color ?? '-' }}" readonly></td>
-                                                            <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->brand->name ?? '-' }}" readonly></td>
-                                                            <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->threadColor->color ?? '-' }}" readonly></td>
-                                                        </tr>
-                                                    @endforeach
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        @endif
-                    </div>
-                </div>
-            @empty
-                <div class="alert alert-light">No packing items found.</div>
-            @endforelse
         </div>
         </div>
     </div>
@@ -743,7 +758,13 @@
 </form>
 
 <script>
-    $(document).ready(function() {
+    function initializeProformaCreateForm() {
+        const $form = $('#ajaxSubmit');
+        if ($form.data('proforma-create-initialized')) {
+            return;
+        }
+        $form.data('proforma-create-initialized', true);
+
         // Initialize Select2 (safe re-open in modal)
         $('.select2').each(function() {
             if ($(this).hasClass('select2-hidden-accessible')) {
@@ -762,7 +783,13 @@
             height: 200,
             toolbar: [],
             airMode: false
-        }).summernote('disable');
+        });
+
+        $('#other_condition').summernote('code', `{!! addslashes(old('other_condition', $exportOrder->other_condition ?? '')) !!}`);
+        $('#force_majure').summernote('code', `{!! addslashes(old('force_majure', $exportOrder->force_majure ?? '')) !!}`);
+        $('#application_law').summernote('code', `{!! addslashes(old('application_law', $exportOrder->application_law ?? '')) !!}`);
+        $('#additional_info').summernote('code', `{!! addslashes(old('additional_info', $exportOrder->additional_info ?? '')) !!}`);
+        $('#shipping_instructions, #documents_to_be_provided, #other_condition, #force_majure, #application_law, #other_specifications, #additional_info').summernote('disable');
 
         // Product selection change
         $('#productSelect').change(function() {
@@ -783,8 +810,6 @@
             let bagSize = parseFloat($(item).find('.bag-size').val()) || 0;
             let stuffingMT = parseFloat($(item).find('.stuffing').val()) || 0;
             let rateTon = parseFloat($(item).find('.rates').val()) || 0;
-            let currencyRate = parseFloat($('#currencyRate').val()) || 0;
-
             // MT to Maunds (1 MT = 25 Maunds)
             let maunds = metricTons * 25;
             $(item).find('.maunds').val(maunds.toFixed(3));
@@ -809,11 +834,6 @@
             // Amount
             let amount = metricTons * rateTon;
             $(item).find('.amount').val(amount.toFixed(2));
-
-            // Amount PKR
-            if (currencyRate > 0) {
-                $(item).find('.amount_pkr').val((amount * currencyRate).toFixed(2));
-            }
 
             // Containers
             if (stuffingMT > 0) {
@@ -899,34 +919,10 @@
             loadBankDetails($('#correspondentBankSelect').val(), 'cor_');
         }
 
-        // Currency Rate
-        $('#currencySelect').on('change', function() {
-            $('#currencyRate').val($(this).find(':selected').data('rate') || '');
-            $('.packing-item').each(function() { calculateFields(this); });
-        });
+    }
 
-    });
+    $(document).ready(initializeProformaCreateForm);
 </script>
 
 <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.js"></script>
-
-<script>
-    $(document).ready(function() {
-
-        $('#shipping_instructions, #documents_to_be_provided, #other_condition, #force_majure, #application_law, #other_specifications, #additional_info').summernote({
-            tabsize: 2,
-            height: 200,
-            toolbar: [],
-            airMode: false
-        });
-
-        $('#other_condition').summernote('code', `{!! addslashes(old('other_condition', $exportOrder->other_condition ?? '')) !!}`);
-        $('#force_majure').summernote('code', `{!! addslashes(old('force_majure', $exportOrder->force_majure ?? '')) !!}`);
-        $('#application_law').summernote('code', `{!! addslashes(old('application_law', $exportOrder->application_law ?? '')) !!}`);
-        $('#additional_info').summernote('code', `{!! addslashes(old('additional_info', $exportOrder->additional_info ?? '')) !!}`);
-
-        $('#shipping_instructions, #documents_to_be_provided, #other_condition, #force_majure, #application_law, #other_specifications, #additional_info').summernote('disable');
-
-    });
-</script>

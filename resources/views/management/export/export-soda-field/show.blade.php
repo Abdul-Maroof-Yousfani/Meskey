@@ -54,7 +54,7 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label>Shipment Period:</label>
-                        <input type="text" class="form-control" value="{{ $exportSodaField->shipment_period ? $exportSodaField->shipment_period->format('d-M-Y') : 'N/A' }}" readonly>
+                        <input type="text" class="form-control" value="{{ ($exportSodaField->shipment_date_from ? $exportSodaField->shipment_date_from->format('d-M-Y') : 'N/A') . ' to ' . ($exportSodaField->shipment_date_to ? $exportSodaField->shipment_date_to->format('d-M-Y') : 'N/A') }}" readonly>
                     </div>
                 </div>
             </div>

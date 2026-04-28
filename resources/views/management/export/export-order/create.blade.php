@@ -23,6 +23,7 @@
 <form action="{{ route('export-order.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('get.export-order') }}" />
+    <input type="hidden" name="company_id" id="companyId" value="{{ auth()->user()->current_company_id }}">
 
     <div class="row form-mar">
         <div class="col-8">
@@ -30,24 +31,13 @@
             <div class="col-md-12">
                 <h6 class="header-heading-sepration">Basic Information</h6>
                 <div class="row">
-                    <div class="col-md-6">
-                        <fieldset>
-                            <label>Sauda#:</label>
-                            <select name="export_soda_id" class="form-control select2">
-                                <option value="">Select Sauda</option>
-                                @foreach ($exportSodas as $soda)
-                                    <option value="{{ $soda->id }}">{{ $soda->reference ?? ('#' . $soda->id) }} - {{ $soda->product->name ?? '' }}</option>
-                                @endforeach
-                            </select>
-                        </fieldset>
-                    </div>
-                    <div class="col-md-6">
+                    <div class="col-md-12">
                         <div class="form-group">
                             <label>Quotation#:</label>
                             <select name="quotation_id" class="form-control select2">
                                 <option value="">Select Quotation</option>
                                 @foreach ($quotations as $quotation)
-                                    <option value="{{ $quotation->id }}" data-sauda-id="{{ $quotation->export_soda_id }}">{{ $quotation->reference ?? ('#' . $quotation->id) }} - {{ $quotation->product->name ?? '' }}</option>
+                                    <option value="{{ $quotation->id }}">{{ $quotation->reference ?? ('#' . $quotation->id) }} - {{ $quotation->product->name ?? '' }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -89,7 +79,7 @@
 
 
                 <div class="row">
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <div class="form-group">
                             <label>Buyer's Name:</label>
                             <select name="buyer_id" class="form-control select2">
@@ -101,32 +91,25 @@
                         </div>
                     </div>
 
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label>Shipment Delivery Date From:</label>
-                            <input type="date" name="shipment_delivery_date_from" class="form-control">
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label> Shipment DeliveryDate To:</label>
-                            <input type="date" name="shipment_delivery_date_to" class="form-control">
-                        </div>
-                    </div>
-
                     <div class="col-md-6">
                         <div class="form-group">
                             <label>Marking/labeling:</label>
                             <input type="text" name="marking_labeling" class="form-control">
                         </div>
                     </div>
+
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label>Vessel Name:</label>
-                            <input type="text" name="vessel_name" class="form-control">
+                            <label>Shipment Delivery Date From:</label>
+                            <input type="date" name="shipment_delivery_date_from" class="form-control">
                         </div>
                     </div>
-                    
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label> Shipment DeliveryDate To:</label>
+                            <input type="date" name="shipment_delivery_date_to" class="form-control">
+                        </div>
+                    </div>
                 </div>
                 
                 {{-- Consignee Details --}}
@@ -136,8 +119,8 @@
                     </div>
                     <div class="col-md-12">
                         <div class="form-group">
-                            <label><span class="text-danger">*</span> Select Consignee:</label>
-                            <select name="consignee_id" id="consigneeSelect" class="form-control select2" required>
+                            <label>Select Consignee:</label>
+                            <select name="consignee_id" id="consigneeSelect" class="form-control select2">
                                 <option value="">-- Select Consignee --</option>
                             </select>
                         </div>
@@ -205,10 +188,13 @@
                 </div>
             </div>
 
+            <div id="packingDetailsAnchor"></div>
+
             {{-- bank details  --}}
             <div class="row">
                 {{-- beneficiary --}}
                 <div class="col-md-12">
+                    <h6 class="header-heading-sepration">Other Details</h6>
                     <div class="p-3">
                         <h5 class="mb-3"><strong>Beneficiary Bank Details</strong></h5>
                         <div class="row">
@@ -218,7 +204,7 @@
                                 <select name="bank_id" id="bankSelect" class="form-control select2">
                                     <option value="">-- Select Bank --</option>
                                 </select>
-                                <small class="text-muted">Select a Buyer first to see their bank accounts.</small>
+                                <small class="text-muted">Shipper/company bank details will be auto-selected here.</small>
                             </div>
 
                             <div class="col-md-6 mt-2">
@@ -232,18 +218,28 @@
                             </div>
 
                             <div class="col-md-6 mt-2">
-                                <label>Branch Name:</label>
-                                <input type="text" id="branch_name" class="form-control" disabled>
-                            </div>
-
-                            <div class="col-md-6 mt-2">
-                                <label>Branch Code:</label>
-                                <input type="text" id="branch_code" class="form-control" disabled>
+                                <label>IBAN:</label>
+                                <input type="text" id="ben_iban" class="form-control" disabled>
                             </div>
 
                             <div class="col-md-6 mt-2">
                                 <label>Account No:</label>
                                 <input type="text" id="account_no" class="form-control" disabled>
+                            </div>
+
+                            <div class="col-md-6 mt-2">
+                                <label>SWIFT Code:</label>
+                                <input type="text" id="ben_swift_code" class="form-control" disabled>
+                            </div>
+
+                            <div class="col-md-6 mt-2">
+                                <label>Bank Address:</label>
+                                <input type="text" id="ben_bank_address" class="form-control" disabled>
+                            </div>
+
+                            <div class="col-md-12 mt-2">
+                                <label>Description:</label>
+                                <textarea id="ben_description" class="form-control" rows="2" disabled></textarea>
                             </div>
                         </div>
 
@@ -261,11 +257,8 @@
                                 <select name="correspondent_bank_id" id="correspondentBankSelect"
                                     class="form-control select2">
                                     <option value="">-- Select Bank --</option>
-                                    @foreach ($banks as $bank)
-                                        <option value="{{ $bank->id }}">{{ $bank->account_title }} -
-                                            {{ $bank->bank_name }}</option>
-                                    @endforeach
                                 </select>
+                                <small class="text-muted">Shipper/company bank details will be auto-selected here as well.</small>
                             </div>
 
                             {{-- Auto Filled Fields --}}
@@ -544,13 +537,7 @@
                                     </option>
                                 @endforeach
                             </select>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td style="width: 30%; font-weight: bold; vertical-align: middle;">RATE</td>
-                        <td style="width: 70%;">
-                            <input type="text" name="currency_rate" id="currencyRate" class="form-control"
-                                readonly>
+                            <input type="hidden" name="currency_rate" id="currencyRate">
                         </td>
                     </tr>
                 </table>
@@ -558,7 +545,7 @@
         </div>
 
         <!-- Packing Details -->
-        <div class="col-md-12 mt-4">
+        <div class="col-md-12 mt-4" id="packingDetailsSection">
             <h6 class="header-heading-sepration d-flex justify-content-between align-items-center">
                 Packing Details
                 <button type="button" class="btn btn-sm btn-success" id="addPackingItem">
@@ -567,16 +554,15 @@
             </h6>
 
             <div id="packingItemsContainer">
-                <div class="packing-item card border-secondary mb-4 shadow-sm" data-index="0">
-                    <div class="card-header bg-light d-flex justify-content-between align-items-center py-2">
+                <div class="packing-item border rounded bg-white mb-3 p-3" data-index="0">
+                    <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
                         <h6 class="mb-0 font-weight-bold grey">Packing Row #1</h6>
                         <button type="button" class="btn btn-sm btn-danger remove-packing-item">
                             <i class="ft-trash-2"></i> Remove Row
                         </button>
                     </div>
-                    <div class="card-body">
+                    <!-- <div class=""> -->
                         <div class="row">
-                            
                             <div class="col-md-2">
                                 <div class="form-group">
                                     <label>Brand:</label>
@@ -674,8 +660,20 @@
                             </div>
                             <div class="col-md-2">
                                 <div class="form-group">
+                                    <label>Extra Bags %:</label>
+                                    <input type="number" name="packing_items[0][extra_bags_percentage]" class="form-control extra-bags-percentage" value="0" step="0.01" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
                                     <label>Empty Bags:</label>
                                     <input type="number" name="packing_items[0][empty_bags]" class="form-control empty-bags" value="0">
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>Empty Bags %:</label>
+                                    <input type="number" name="packing_items[0][empty_bags_percentage]" class="form-control empty-bags-percentage" value="0" step="0.01" readonly>
                                 </div>
                             </div>
                             <div class="col-md-2">
@@ -698,13 +696,13 @@
                             <div class="col-md-2">
                                 <div class="form-group">
                                     <label>Stuffing/Cont (MT):</label>
-                                    <input type="number" name="packing_items[0][stuffing_in_container]" class="form-control stuffing" step="0.001" value="0">
+                                    <input type="number" name="packing_items[0][stuffing_in_container]" class="form-control stuffing" step="0.001" value="0" required>
                                 </div>
                             </div>
                             <div class="col-md-2">
                                 <div class="form-group">
                                     <label>Containers:</label>
-                                    <input type="number" name="packing_items[0][no_of_containers]" class="form-control containers" value="0">
+                                    <input type="number" name="packing_items[0][no_of_containers]" class="form-control containers" value="0" required>
                                 </div>
                             </div>
                             <div class="col-md-2">
@@ -721,21 +719,24 @@
                             </div>
                             <div class="col-md-2">
                                 <div class="form-group">
-                                    <label>Amount (PKR):</label>
-                                    <input type="number" name="packing_items[0][amount_pkr]" class="form-control item-amount-pkr" value="0" readonly>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="form-group">
                                     <label>Min Weight Empty Bags:</label>
-                                    <input type="number" name="packing_items[0][min_weight_empty_bags]" class="form-control" step="0.01" value="0">
+                                    <input type="number" name="packing_items[0][min_weight_empty_bags]" class="form-control" step="0.01" value="0" required>
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label>Fumigation By:</label>
-                                    <select name="packing_items[0][fumigation_company_id][]" class="form-control select2" multiple>
-                                        <option value="">Select Fumigation Company (Optional)</option>
+                                    <select name="packing_items[0][fumigation_company_id][]" class="form-control select2" multiple required>
+                                        @foreach ($fumigationCompanies as $company)
+                                            <option value="{{ $company->id }}">{{ $company->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Inspection By:</label>
+                                    <select name="packing_items[0][inspection_by][]" class="form-control select2" multiple required>
                                         @foreach ($inspectionCompanies as $company)
                                             <option value="{{ $company->id }}">{{ $company->name }}</option>
                                         @endforeach
@@ -763,7 +764,9 @@
                                                     <th style="min-width: 150px;">Primary Bags fit in master bag</th>
                                                     <th style="min-width: 90px;">No. of Bags</th>
                                                     <th style="min-width: 90px;">Empty Bags</th>
+                                                    <th style="min-width: 100px;">Empty Bags %</th>
                                                     <th style="min-width: 90px;">Extra Bags</th>
+                                                    <th style="min-width: 100px;">Extra Bags %</th>
                                                     <th style="min-width: 100px;">Empty Bag Weight (g)</th>
                                                     <th style="min-width: 90px;">Total Bags</th>
                                                     <th style="min-width: 120px;">Stitching</th>
@@ -782,7 +785,7 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    <!-- </div> -->
                 </div>
             </div>
         </div>
@@ -808,6 +811,10 @@
         }
 
         $(document).ready(function() {
+        const defaultCompanyId = $('#companyId').val();
+
+        $('#packingDetailsSection').insertAfter('#packingDetailsAnchor');
+
         // Initialize Summernote
         const summernoteOptions = {
             placeholder: 'Enter details here...',
@@ -881,20 +888,11 @@
             }
         });
 
-        // Sauda / Quotation Autofill Logic
         function triggerAutofill() {
             let quotationId = $('select[name="quotation_id"]').val();
-            let saudaId = $('select[name="export_soda_id"]').val();
 
             if (quotationId) {
                 $.get("{{ route('export-order.get-quotation-details', '') }}/" + quotationId, function(data) {
-                    clearFormFields();
-                    fillFormFromData(data);
-                    // Re-set selectors as clearFormFields resets them (if they were part of the reset logic)
-                    // Actually clearFormFields doesn't clear Sauda/Quotation selects, but good to be safe.
-                });
-            } else if (saudaId) {
-                $.get("{{ route('quotation.get-sauda-details', '') }}/" + saudaId, function(data) {
                     clearFormFields();
                     fillFormFromData(data);
                 });
@@ -908,6 +906,8 @@
             $('select[name="buyer_id"]').val('').trigger('change');
             $('#productSelect').val('').trigger('change');
             $('#visualName').val('');
+            $('#companyId').val(defaultCompanyId);
+            loadCompanyBanks(defaultCompanyId);
 
             // Dates
             $('input[name="shipment_delivery_date_from"]').val('');
@@ -918,6 +918,7 @@
 
             // Export sidebar numeric fields
             $('input[name="advance_payment"], input[name="payment_days"], input[name="currency_rate"], #currencyRate').val('');
+            $('#commission_percentage, #commission_amount_per_ton, #commission').val('');
 
             // Packing rows
             let container = $('#packingItemsContainer');
@@ -936,14 +937,6 @@
             $('#productSpecs').html('<div class="alert bg-light-warning mb-2 alert-light-warning" role="alert"><i class="ft-info mr-1"></i><strong>No specifications found!</strong> Please select a commodity/product first!</div>');
             $('#specificationsSection').hide();
         }
-
-        window.allQuotations = @json($quotations->map(function($q) {
-            return [
-                'id' => $q->id,
-                'export_soda_id' => $q->export_soda_id,
-                'text' => ($q->reference ?? ('#' . $q->id)) . ' - ' . ($q->product->name ?? '')
-            ];
-        }));
 
         function addPackingRowsFromData(items) {
             let container = $('#packingItemsContainer');
@@ -971,11 +964,25 @@
                     row.find('.select2').select2({ width: '100%' });
                 }
 
+                row.find('input[type="number"]').val(0);
+                row.find('select').val('').trigger('change.select2');
+                row.find('.sub-packing-items-container').empty();
+
                 // Set select dropdowns
+                if (item.brand_id)
+                    row.find('select[name*="][brand_id]"]').first().val(item.brand_id).trigger('change.select2');
                 if (item.bag_type_id)
                     row.find('select[name*="bag_type_id"]').val(item.bag_type_id).trigger('change.select2');
                 if (item.bag_packing_id)
                     row.find('select[name*="bag_packing_id"]').val(item.bag_packing_id).trigger('change.select2');
+                if (item.bag_condition_id)
+                    row.find('select[name*="bag_condition_id"]').val(item.bag_condition_id).trigger('change.select2');
+                if (item.bag_color_id)
+                    row.find('select[name*="bag_color_id"]').first().val(item.bag_color_id).trigger('change.select2');
+                if (item.thread_color_id)
+                    row.find('select[name*="thread_color_id"]').first().val(item.thread_color_id).trigger('change.select2');
+                if (item.stitching_id)
+                    row.find('select[name*="stitching_id"]').first().val(item.stitching_id).trigger('change.select2');
 
                 // Set numeric inputs
                 if (item.bag_size)    row.find('input.bag-size').val(item.bag_size);
@@ -983,7 +990,18 @@
                 if (item.no_of_bags)  row.find('input.no_of_bags').val(item.no_of_bags);
                 if (item.extra_bags)  row.find('input.extra-bags').val(item.extra_bags);
                 if (item.empty_bags)  row.find('input.empty-bags').val(item.empty_bags);
+                if (item.extra_bags_percentage) row.find('input.extra-bags-percentage').val(item.extra_bags_percentage);
+                if (item.empty_bags_percentage) row.find('input.empty-bags-percentage').val(item.empty_bags_percentage);
+                if (item.stuffing_in_container) row.find('input.stuffing').val(item.stuffing_in_container);
+                if (item.no_of_containers) row.find('input.containers').val(item.no_of_containers);
                 if (item.rate)        row.find('input.rate-per-ton').val(item.rate);
+                if (item.min_weight_empty_bags) row.find('input[name*="[min_weight_empty_bags]"]').val(item.min_weight_empty_bags);
+                if (item.inspection_by && Array.isArray(item.inspection_by)) {
+                    row.find('select[name*="[inspection_by]"]').val(item.inspection_by).trigger('change.select2');
+                }
+                if (item.fumigation_company_id && Array.isArray(item.fumigation_company_id)) {
+                    row.find('select[name*="[fumigation_company_id]"]').val(item.fumigation_company_id).trigger('change.select2');
+                }
 
                 row.find('input.metric-tons, input.bag-size, input.no_of_bags').trigger('input');
             });
@@ -993,6 +1011,8 @@
 
         function fillFormFromData(data) {
             // Basic fields
+            $('#companyId').val(data.company_id || defaultCompanyId);
+            loadCompanyBanks($('#companyId').val());
             if (data.buyer_id)    $('select[name="buyer_id"]').val(data.buyer_id).trigger('change');
             if (data.product_id)  $('select[name="product_id"]').val(data.product_id).trigger('change');
             if (data.visual_name) $('input[name="visual_name"], #visualName').val(data.visual_name);
@@ -1026,35 +1046,16 @@
                 addPackingRowsFromData(data.packing_items);
             }
 
+            $('#commission_percentage').val(data.commission_percentage || 0);
+            $('#commission_amount_per_ton').val(data.commission_amount_per_ton || 0);
+            $('#commission').val(data.commission || 0);
+            calculateGrandTotals();
+
             // Specifications
             if (data.specifications && data.specifications.length > 0) {
                 window.pendingSpecs = data.specifications;
             }
         }
-
-        $('select[name="export_soda_id"]').on('change', function() {
-            let selectedSauda = $(this).val();
-            let quotationSelect = $('select[name="quotation_id"]');
-            
-            let currentVal = quotationSelect.val();
-            quotationSelect.empty();
-            quotationSelect.append(new Option('Select Quotation', '', false, false));
-            
-            window.allQuotations.forEach(function(q) {
-                if (!selectedSauda || q.export_soda_id == selectedSauda) {
-                    let opt = new Option(q.text, q.id, false, false);
-                    opt.setAttribute('data-sauda-id', q.export_soda_id);
-                    quotationSelect.append(opt);
-                }
-            });
-            
-            quotationSelect.val(currentVal).trigger('change.select2');
-            
-            // Only trigger if no quotation is selected (to avoid double calls)
-            if (!quotationSelect.val()) {
-                triggerAutofill();
-            }
-        });
 
         $('select[name="quotation_id"]').on('change', function() {
             triggerAutofill();
@@ -1155,7 +1156,9 @@
                     <td><input type="number" name="packing_items[${parentIndex}][sub_items][${subIndex}][no_of_primary_bags]" class="form-control form-control-sm sub-no-of-primary-bags" value="0"></td>
                     <td><input type="number" name="packing_items[${parentIndex}][sub_items][${subIndex}][no_of_bags]" class="form-control form-control-sm sub-no-of-bags" value="0" readonly></td>
                     <td><input type="number" name="packing_items[${parentIndex}][sub_items][${subIndex}][empty_bags]" class="form-control form-control-sm sub-empty-bags" value="0"></td>
+                    <td><input type="number" name="packing_items[${parentIndex}][sub_items][${subIndex}][empty_bags_percentage]" class="form-control form-control-sm sub-empty-bags-percentage" value="0" readonly step="0.01"></td>
                     <td><input type="number" name="packing_items[${parentIndex}][sub_items][${subIndex}][extra_bags]" class="form-control form-control-sm sub-extra-bags" value="0"></td>
+                    <td><input type="number" name="packing_items[${parentIndex}][sub_items][${subIndex}][extra_bags_percentage]" class="form-control form-control-sm sub-extra-bags-percentage" value="0" readonly step="0.01"></td>
                     <td><input type="number" name="packing_items[${parentIndex}][sub_items][${subIndex}][empty_bag_weight]" class="form-control form-control-sm sub-empty-bag-weight" value="0" min="0" step="0.01"></td>
                     <td><input type="number" name="packing_items[${parentIndex}][sub_items][${subIndex}][total_bags]" class="form-control form-control-sm sub-total-bags" value="0" readonly></td>
                     <td>
@@ -1227,6 +1230,8 @@
                 const noOfBags = parseInt(subRow.find('.sub-no-of-bags').val()) || 0;
                 const emptyBags = parseInt(subRow.find('.sub-empty-bags').val()) || 0;
                 const extraBags = parseInt(subRow.find('.sub-extra-bags').val()) || 0;
+                subRow.find('.sub-empty-bags-percentage').val(noOfBags > 0 ? ((emptyBags / noOfBags) * 100).toFixed(2) : 0);
+                subRow.find('.sub-extra-bags-percentage').val(noOfBags > 0 ? ((extraBags / noOfBags) * 100).toFixed(2) : 0);
                 subRow.find('.sub-total-bags').val(noOfBags + emptyBags + extraBags);
             }
             
@@ -1276,6 +1281,8 @@
             const extraBags = parseInt(row.find('.extra-bags').val()) || 0;
             const emptyBags = parseInt(row.find('.empty-bags').val()) || 0;
             const totalBags = noOfBags + extraBags + emptyBags;
+            row.find('.extra-bags-percentage').val(noOfBags > 0 ? ((extraBags / noOfBags) * 100).toFixed(2) : 0);
+            row.find('.empty-bags-percentage').val(noOfBags > 0 ? ((emptyBags / noOfBags) * 100).toFixed(2) : 0);
 
             row.find('.total-bags').val(totalBags);
             row.find('.total-kgs').val((metricTons * 1000).toFixed(2));
@@ -1365,32 +1372,65 @@
         });
 
         // Bank Details
+        function buildBankOption(bank, selectedValue = '', isBeneficiary = false) {
+            const value = isBeneficiary ? `shipper_${bank.id}` : `${bank.id}`;
+            const selected = value === selectedValue ? 'selected' : '';
+
+            return `<option value="${value}" ${selected}
+                data-title="${bank.account_title || ''}"
+                data-bank="${bank.bank_name || ''}"
+                data-branch="${bank.branch_name || ''}"
+                data-branch-code="${bank.branch_code || ''}"
+                data-account="${bank.account_number || ''}"
+                data-iban="${bank.iban || ''}"
+                data-swift-code="${bank.swift_code || ''}"
+                data-bank-address="${bank.bank_address || ''}"
+                data-description="${bank.description || ''}">
+                ${bank.account_title || ''} - ${bank.bank_name || ''}
+            </option>`;
+        }
+
+        function loadCompanyBanks(companyId, beneficiarySelected = '', correspondentSelected = '') {
+            $('#bankSelect').html('<option value="">-- Select Bank --</option>').trigger('change');
+            $('#correspondentBankSelect').html('<option value="">-- Select Bank --</option>').trigger('change');
+
+            if (!companyId) {
+                $('#acc_title, #bank_name, #account_no, #ben_iban, #ben_swift_code, #ben_bank_address, #ben_description').val('');
+                $('#cor_acc_title, #cor_bank_name, #cor_iban, #cor_account_no, #cor_swift_code, #cor_bank_address, #cor_description').val('');
+                return;
+            }
+
+            $.get('{{ route('export-order.company-banks', '') }}/' + companyId, function(response) {
+                let beneficiaryOptions = '<option value="">-- Select Bank --</option>';
+                let correspondentOptions = '<option value="">-- Select Bank --</option>';
+
+                response.forEach(function(bank) {
+                    beneficiaryOptions += buildBankOption(bank, beneficiarySelected, true);
+                    correspondentOptions += buildBankOption(bank, correspondentSelected, false);
+                });
+
+                $('#bankSelect').html(beneficiaryOptions);
+                $('#correspondentBankSelect').html(correspondentOptions);
+
+                if (!beneficiarySelected && response.length) {
+                    $('#bankSelect').val(`shipper_${response[0].id}`);
+                }
+                if (!correspondentSelected && response.length) {
+                    $('#correspondentBankSelect').val(`${response[0].id}`);
+                }
+
+                $('#bankSelect').trigger('change');
+                $('#correspondentBankSelect').trigger('change');
+            });
+        }
+
         $('select[name="buyer_id"]').on('change', function() {
             let customerId = $(this).val();
 
-            // Handle Banks
-            $('#bankSelect').html('<option value="">-- Select Bank --</option>').trigger('change');
-            
-            // Handle Consignees
             $('#consigneeSelect').html('<option value="">-- Select Consignee --</option>').trigger('change');
             $('#consigneeInfoSection').hide();
 
             if (!customerId) return;
-
-            $.get('{{ route('export-order.customer-banks', '') }}/' + customerId, function(response) {
-                let options = '<option value="">-- Select Bank --</option>';
-                response.forEach(function(bank) {
-                    options += `<option value="${bank.id}" 
-                        data-title="${bank.account_title}"
-                        data-bank="${bank.bank_name}"
-                        data-branch="${bank.branch_name}"
-                        data-branch-code="${bank.branch_code}"
-                        data-account="${bank.account_number}">
-                        [${bank.type}] ${bank.account_title} - ${bank.bank_name}
-                    </option>`;
-                });
-                $('#bankSelect').html(options).trigger('change');
-            });
 
             $.get('{{ route('export-order.customer-consignees', '') }}/' + customerId, function(response) {
                 let options = '<option value="">-- Select Consignee --</option>';
@@ -1425,32 +1465,33 @@
         $('#bankSelect').on('change', function() {
             let selected = $(this).find(':selected');
             if (!selected.val()) {
-                $('#acc_title, #bank_name, #branch_name, #branch_code, #account_no').val('');
+                $('#acc_title, #bank_name, #account_no, #ben_iban, #ben_swift_code, #ben_bank_address, #ben_description').val('');
                 return;
             }
             $('#acc_title').val(selected.data('title') || '');
             $('#bank_name').val(selected.data('bank') || '');
-            $('#branch_name').val(selected.data('branch') || '');
-            $('#branch_code').val(selected.data('branch-code') || '');
             $('#account_no').val(selected.data('account') || '');
+            $('#ben_iban').val(selected.data('iban') || '');
+            $('#ben_swift_code').val(selected.data('swift-code') || '');
+            $('#ben_bank_address').val(selected.data('bank-address') || '');
+            $('#ben_description').val(selected.data('description') || '');
         });
 
         $('#correspondentBankSelect').on('change', function() {
-            let bankId = $(this).val();
-            if (!bankId) {
+            let selected = $(this).find(':selected');
+            if (!selected.val()) {
                 $('#cor_acc_title, #cor_bank_name, #cor_iban, #cor_account_no, #cor_swift_code, #cor_bank_address, #cor_description').val('');
                 return;
             }
-            $.get('/export/get-bank-details/' + bankId, function(bank) {
-                $('#cor_acc_title').val(bank.account_title);
-                $('#cor_bank_name').val(bank.bank_name);
-                $('#cor_iban').val(bank.iban);
-                $('#cor_account_no').val(bank.account_no);
-                $('#cor_swift_code').val(bank.swift_code);
-                $('#cor_bank_address').val(bank.bank_address);
-                $('#cor_description').val(bank.description);
-            });
+            $('#cor_acc_title').val(selected.data('title') || '');
+            $('#cor_bank_name').val(selected.data('bank') || '');
+            $('#cor_iban').val(selected.data('iban') || '');
+            $('#cor_account_no').val(selected.data('account') || '');
+            $('#cor_swift_code').val(selected.data('swift-code') || '');
+            $('#cor_bank_address').val(selected.data('bank-address') || '');
+            $('#cor_description').val(selected.data('description') || '');
         });
+        loadCompanyBanks(defaultCompanyId);
         });
     }
 

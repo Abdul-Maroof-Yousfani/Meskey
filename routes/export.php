@@ -45,6 +45,7 @@ Route::post('/get-bank', [BankController::class, 'getBankTable'])->name('get.ban
 // export order
 Route::resource('export-order', ExportOrderController::class);
 Route::post('/get-export-order', [ExportOrderController::class, 'getExportOrderTable'])->name('get.export-order');
+Route::get('/export-order/{id}/print', [ExportOrderController::class, 'print'])->name('export-order.print');
 
 // export delivery order
 Route::resource('export-delivery-order', ExportDeliveryOrderController::class);
@@ -135,6 +136,7 @@ Route::post('/get-arrival-locations', [ExportOrderController::class, 'getArrival
 Route::post('/get-arrival-sub-locations', [ExportOrderController::class, 'getArrivalSubLocationsByArrivalLocations']);
 Route::get('/export-order/customer-banks/{customerId}', [ExportOrderController::class, 'getCustomerBanks'])->name('export-order.customer-banks');
 Route::get('/export-order/customer-consignees/{customerId}', [ExportOrderController::class, 'getCustomerConsignees'])->name('export-order.customer-consignees');
+Route::get('/export-order/company-banks/{companyId}', [ExportOrderController::class, 'getCompanyBanks'])->name('export-order.company-banks');
 
 // proforma
 Route::resource('proforma', ProformaController::class)->except(['create', 'store']);
