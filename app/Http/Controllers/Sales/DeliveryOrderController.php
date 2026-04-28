@@ -90,6 +90,8 @@ class DeliveryOrderController extends Controller
             $withhold_rv_id = str_replace('rv_', '', $request->withhold_for_rv);
         }
 
+
+
         try {
             $delivery_order = DeliveryOrder::create([
                 'customer_id' => $request->customer_id,
@@ -205,6 +207,9 @@ class DeliveryOrderController extends Controller
                 // if($request->no_of_bags[$key] > $balance) {
                 //     return response()->json("Total balance is $balance. you can not exceed this balance", 422);
                 // }
+
+                dd($request->qty[$key]);
+
                 if($remaining_qty <= $request->qty[$key]) {
                     return response()->json("Total remaining qty(kg): $remaining_qty. you can not exceed this balance", 422);
                 }
