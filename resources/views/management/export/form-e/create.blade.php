@@ -100,11 +100,6 @@
                     </div>
                 </div>
 
-                <!-- Specifications Section -->
-                <div class="mt-2" id="snap_specificationsSection" style="display: none;">
-                    <h6 class="header-heading-sepration">Specifications</h6>
-                    <div id="snap_productSpecs"></div>
-                </div>
             </div>
         </div>
     </div>
@@ -196,6 +191,18 @@
                     alert("Failed to fetch export order details.");
                 }
             });
+
+            // Fetch Job Orders for this Export Order
+            $('#job_order_id').html('<option value="">Select Job Order</option>').trigger('change');
+            $.get("{{ route('export.get-job-orders-by-order-form-e', '') }}/" + orderId, function(res) {
+                if(res.success && res.data) {
+                    var opts = '<option value="">Select Job Order</option>';
+                    res.data.forEach(function(jo) {
+                        opts += '<option value="'+jo.id+'">'+jo.job_order_no+'</option>';
+                    });
+                    $('#job_order_id').html(opts).trigger('change');
+                }
+            });
         });
 
         $('#input_quantity').on('input', function() {
@@ -216,19 +223,6 @@
             
             // Reconstruct single options for dropdowns with dynamic labels
             $('[data-name="product_id"]').html('<option value="'+data.product_id+'" selected>'+(data.product ? data.product.name : '')+'</option>').trigger('change.select2');
-
-            // Specs
-            if(data.specifications && data.specifications.length > 0) {
-                let specHtml = '<table class="table table-bordered table-sm">';
-                data.specifications.forEach(spec => {
-                    specHtml += `<tr><td width="50%"><strong>${spec.spec_name}</strong></td><td>${spec.spec_value}</td></tr>`;
-                });
-                specHtml += '</table>';
-                $('#snap_productSpecs').html(specHtml);
-                $('#snap_specificationsSection').show();
-            } else {
-                $('#snap_specificationsSection').hide();
-            }
         }
     });
 </script>

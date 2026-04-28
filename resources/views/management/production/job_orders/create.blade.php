@@ -860,9 +860,6 @@
                     row.find(`input[name="packing_items[${index}][extra_bags_percentage]"]`).val(perc.toFixed(2));
                 }
                 
-                // Trigger total bags calculation
-                row.find('.no-of-bags').trigger('input');
-
                 // Inside sub items
                 if(item.sub_items && item.sub_items.length > 0) {
                     item.sub_items.forEach(function(sub, sIdx) {
@@ -905,6 +902,9 @@
                         subRow.find('.sub-no-of-bags').trigger('input');
                     });
                 }
+
+                // Trigger total bags calculation AFTER sub-items are added
+                row.find('.no-of-bags').trigger('input');
             });
             reindexPackingItems();
         }

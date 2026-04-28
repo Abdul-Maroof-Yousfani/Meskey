@@ -71,37 +71,77 @@
 
     <!-- Location Details Section -->
     <div class="row form-mar">
+        <div class="col-12 mt-3 d-flex justify-content-between align-items-center">
+            <h6 class="header-heading-sepration mb-0" style="width:100%; margin: 0 10px 0 0;">Location Details</h6>
+            <button type="button" class="btn btn-sm btn-success" id="addLocationRow">Add More Location</button>
+        </div>
         <div class="col-12 mt-3">
-            <h6 class="header-heading-sepration">Location Details</h6>
-        </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Locations:</label>
-                <select name="location_id" id="locations" onchange="selectLocation(this)" class="form-control select2">
-                    <option value="">Select Locations</option>
-                    @foreach (get_locations() as $location)
-                        <option value="{{ $location->id }}">{{ $location->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Factory:</label>
-                <select name="arrival_id[]" id="arrivals" class="form-control select2" disabled multiple>
-                    <option value="">Select Factory </option>
-                </select>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Section:</label>
-                <select name="storage_id[]" id="storages" class="form-control select2" disabled multiple>
-                    <option value="">Select Section</option>
-                </select>
-            </div>
+            <table class="table table-bordered" id="locationTable">
+                <thead>
+                    <tr>
+                        <th style="width: 30%;">Location</th>
+                        <th style="width: 30%;">Factory</th>
+                        <th style="width: 30%;">Section</th>
+                        <th style="width: 10%;">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="locationRows">
+                    <tr class="location-row">
+                        <td>
+                            <select name="locations[0][location_id]" class="form-control select2 location-select" onchange="selectLocationRow(this)">
+                                <option value="">Select Location</option>
+                                @foreach (get_locations() as $location)
+                                    <option value="{{ $location->id }}">{{ $location->name }}</option>
+                                @endforeach
+                            </select>
+                        </td>
+                        <td>
+                            <select name="locations[0][arrival_ids][]" class="form-control select2 arrival-select" multiple disabled onchange="selectStorageRow(this)">
+                                <option value="">Select Factory</option>
+                            </select>
+                        </td>
+                        <td>
+                            <select name="locations[0][storage_ids][]" class="form-control select2 storage-select" multiple disabled>
+                                <option value="">Select Section</option>
+                            </select>
+                        </td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-sm btn-danger remove-location-row" style="display: none;"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
+
+    <!-- Hidden Template for Location Row -->
+    <table class="d-none">
+        <tbody id="locationRowTemplate">
+            <tr class="location-row">
+                <td>
+                    <select name="locations[INDEX][location_id]" class="form-control location-select">
+                        <option value="">Select Location</option>
+                        @foreach (get_locations() as $location)
+                            <option value="{{ $location->id }}">{{ $location->name }}</option>
+                        @endforeach
+                    </select>
+                </td>
+                <td>
+                    <select name="locations[INDEX][arrival_ids][]" class="form-control arrival-select" multiple disabled>
+                        <option value="">Select Factory</option>
+                    </select>
+                </td>
+                <td>
+                    <select name="locations[INDEX][storage_ids][]" class="form-control storage-select" multiple disabled>
+                        <option value="">Select Section</option>
+                    </select>
+                </td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-sm btn-danger remove-location-row"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
 
     <div id="exportOrderSnapshot" style="pointer-events: none; opacity: 0.9;">
 
@@ -354,12 +394,12 @@
                                 <select data-name="currency_id" class="form-control select2"></select>
                             </td>
                         </tr>
-                        <tr>
+                        <!-- <tr>
                             <td style="width: 30%; font-weight: bold; vertical-align: middle;">RATE</td>
                             <td style="width: 70%;">
                                 <input type="text" data-name="currency_rate" class="form-control" readonly>
                             </td>
-                        </tr>
+                        </tr> -->
                     </table>
                 </div>
             </div>
@@ -645,34 +685,37 @@
 
 <script>
     // Location Selection Functions (Global - accessible from HTML onchange)
-    function selectLocation(el) {
+    function selectLocationRow(el) {
+        const row = $(el).closest('.location-row');
         const locationId = $(el).val();
+        const arrivalSelect = row.find('.arrival-select');
+        const storageSelect = row.find('.storage-select');
         
         if (!locationId) {
-            $("#arrivals").prop("disabled", true).empty();
-            $("#storages").prop("disabled", true).empty();
+            arrivalSelect.prop("disabled", true).empty();
+            storageSelect.prop("disabled", true).empty();
             return;
         }
 
-        $("#arrivals").prop("disabled", false);
+        arrivalSelect.prop("disabled", false);
         $.ajax({
             url: "{{ route('export.get-arrival-locations') }}",
             method: "GET",
             data: { location_id: locationId },
             dataType: "json",
             success: function(res) {
-                $("#arrivals").empty();
+                arrivalSelect.empty();
                 // Auto-select ALL factories
                 res.forEach(loc => {
                     const option = new Option(loc.text, loc.id, true, true);
-                    $("#arrivals").append(option);
+                    arrivalSelect.append(option);
                 });
-                $("#arrivals").select2();
+                arrivalSelect.select2();
                 
                 // Auto-populate and select all sections
                 if (res.length > 0) {
                     const arrivalIds = res.map(loc => loc.id);
-                    selectStorage(arrivalIds);
+                    fetchStorageRow(row, arrivalIds);
                 }
             },
             error: function(error) {
@@ -681,37 +724,78 @@
         });
     }
 
-    function selectStorage(arrivalIds) {
-        if (!arrivalIds || (Array.isArray(arrivalIds) && arrivalIds.length === 0)) {
-            $("#storages").prop("disabled", true).empty();
-            return;
-        }
+    function selectStorageRow(el) {
+        const row = $(el).closest('.location-row');
+        const arrivalIds = $(el).val();
+        fetchStorageRow(row, arrivalIds);
+    }
 
-        // Handle both direct call with IDs and call from onchange
-        const ids = Array.isArray(arrivalIds) ? arrivalIds : $(arrivalIds).val();
+    function fetchStorageRow(row, arrivalIds) {
+        const storageSelect = row.find('.storage-select');
         
-        if (!ids || ids.length === 0) {
-            $("#storages").prop("disabled", true).empty();
+        if (!arrivalIds || (Array.isArray(arrivalIds) && arrivalIds.length === 0)) {
+            storageSelect.prop("disabled", true).empty();
             return;
         }
 
         $.ajax({
             url: "{{ route('export.get-sub-arrival-locations') }}",
             method: "GET",
-            data: { arrival_id: ids },
+            data: { arrival_id: arrivalIds },
             dataType: "json",
             success: function(res) {
-                $("#storages").empty();
+                storageSelect.empty();
                 // Auto-select ALL sections
                 res.forEach(storage => {
                     const option = new Option(storage.text, storage.id, true, true);
-                    $("#storages").append(option);
+                    storageSelect.append(option);
                 });
-                $("#storages").prop("disabled", false).select2();
+                storageSelect.prop("disabled", false).select2();
             },
             error: function(error) {
                 console.error("Error fetching sub-arrival locations:", error);
             }
+        });
+    }
+
+    // Row manipulation
+    $(document).on('click', '#addLocationRow', function() {
+        let index = $('#locationRows tr.location-row').length;
+        let template = $('#locationRowTemplate').html();
+        template = template.replace(/\[INDEX\]/g, '[' + index + ']');
+        
+        let $newRow = $(template);
+        $('#locationRows').append($newRow);
+        
+        // Initialize Select2 for new row
+        $newRow.find('.select2, .location-select, .arrival-select, .storage-select').select2({ width: '100%' });
+        
+        // Attach onchange events manually for cloned rows to ensure they work
+        $newRow.find('.location-select').on('change', function() { selectLocationRow(this); });
+        $newRow.find('.arrival-select').on('change', function() { selectStorageRow(this); });
+        
+        // Show remove buttons if more than one row
+        $('.remove-location-row').show();
+    });
+
+    $(document).on('click', '.remove-location-row', function() {
+        if ($('#locationRows tr.location-row').length > 1) {
+            $(this).closest('tr').remove();
+            reindexLocationRows();
+        }
+        if ($('#locationRows tr.location-row').length === 1) {
+            $('.remove-location-row').hide();
+        }
+    });
+
+    function reindexLocationRows() {
+        $('#locationRows tr.location-row').each(function(index) {
+            $(this).find('select').each(function() {
+                let name = $(this).attr('name');
+                if (name) {
+                    $(this).attr('name', name.replace(/locations\[\d+\]/, 'locations[' + index + ']'));
+                }
+            });
         });
     }
 
@@ -922,7 +1006,7 @@
             
             $('[data-name="advance_payment"]').val(data.advance_payment);
             $('[data-name="payment_days"]').val(data.payment_days);
-            $('[data-name="currency_rate"]').val(data.currency_rate);
+            // $('[data-name="currency_rate"]').val(data.currency_rate);
 
             // Packing items
             $('#packingItemsWrapper').show();

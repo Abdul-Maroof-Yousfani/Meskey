@@ -121,4 +121,9 @@ class ExportDeliveryOrder extends DeliveryOrder
     {
         return $this->belongsToMany(ExportDeliveryChallan::class, 'delivery_challan_delivery_order', 'delivery_order_id', 'delivery_challan_id')->withPivot('qty');
     }
+
+    public function locations()
+    {
+        return $this->hasMany(ExportDeliveryOrderLocation::class, 'delivery_order_id');
+    }
 }

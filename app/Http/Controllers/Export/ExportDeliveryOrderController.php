@@ -271,7 +271,7 @@ class ExportDeliveryOrderController extends Controller
 
             $reference_no = $prefix . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
 
-            return DeliveryOrder::create([
+            $deliveryOrder = DeliveryOrder::create([
                 'type' => 'export_order',
                 'export_order_id' => $request->export_order_id,
                 'customer_id' => $request->buyer_id,
@@ -280,11 +280,25 @@ class ExportDeliveryOrderController extends Controller
                 'created_by' => auth()->user() ? auth()->user()->id : null,
                 'reference_no' => $reference_no,
                 'ref_no' => $request->ref_no,
-                'location_id' => $request->location_id ?? null,
-                'arrival_location_id' => $request->arrival_id ? implode(',', (array) $request->arrival_id) : null,
-                'sub_arrival_location_id' => $request->storage_id ? implode(',', (array) $request->storage_id) : null,
+                'location_id' => null,
+                'arrival_location_id' => null,
+                'sub_arrival_location_id' => null,
                 'am_approval_status' => 'pending',
             ]);
+
+            // Save multiple locations
+            if ($request->has('locations') && is_array($request->locations)) {
+                foreach ($request->locations as $locData) {
+                    if (empty($locData['location_id'])) continue;
+                    $deliveryOrder->locations()->create([
+                        'company_location_id' => $locData['location_id'],
+                        'arrival_location_ids' => isset($locData['arrival_ids']) ? implode(',', (array) $locData['arrival_ids']) : null,
+                        'sub_arrival_location_ids' => isset($locData['storage_ids']) ? implode(',', (array) $locData['storage_ids']) : null,
+                    ]);
+                }
+            }
+
+            return $deliveryOrder;
         });
 
         foreach ($request->packing_items as $index => $itemData) {
@@ -369,6 +383,7 @@ class ExportDeliveryOrderController extends Controller
             'exportPackingItems.bagColor',
             'exportPackingItems.threadColor',
             'exportPackingItems.stitching',
+            'locations.companyLocation',
         ])->findOrFail($id);
 
         $exportOrderData = $deliveryOrder->exportOrder;
@@ -426,7 +441,8 @@ class ExportDeliveryOrderController extends Controller
             'exportOrder.portOfLoading',
             'exportOrder.hsCode',
             'exportOrder.currency',
-            'exportOrder.packingItems'
+            'exportOrder.packingItems',
+            'locations.companyLocation'
         ])->findOrFail($id);
         $buyers = Customer::get();
         $export_orders = ExportOrder::where('am_approval_status', 'approved')->latest()->get();
@@ -563,12 +579,25 @@ class ExportDeliveryOrderController extends Controller
                 'export_form_e_id' => $request->export_form_e_id,
                 'reference_no' => $request->reference_no ?? $deliveryOrder->reference_no,
                 'ref_no' => $request->ref_no,
-                'location_id' => $request->location_id ?? null,
-                'arrival_location_id' => $request->arrival_id ? implode(',', (array) $request->arrival_id) : null,
-                'sub_arrival_location_id' => $request->storage_id ? implode(',', (array) $request->storage_id) : null,
+                'location_id' => null,
+                'arrival_location_id' => null,
+                'sub_arrival_location_id' => null,
                 'am_approval_status' => 'pending',
                 'am_change_made' => 1
             ]);
+
+            // Update multiple locations
+            $deliveryOrder->locations()->delete();
+            if ($request->has('locations') && is_array($request->locations)) {
+                foreach ($request->locations as $locData) {
+                    if (empty($locData['location_id'])) continue;
+                    $deliveryOrder->locations()->create([
+                        'company_location_id' => $locData['location_id'],
+                        'arrival_location_ids' => isset($locData['arrival_ids']) ? implode(',', (array) $locData['arrival_ids']) : null,
+                        'sub_arrival_location_ids' => isset($locData['storage_ids']) ? implode(',', (array) $locData['storage_ids']) : null,
+                    ]);
+                }
+            }
 
             if ($request->filled('packing_items')) {
                 foreach ($deliveryOrder->exportPackingItems as $existingItem) {
