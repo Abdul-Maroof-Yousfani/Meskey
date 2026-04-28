@@ -42,7 +42,7 @@ class CurrencyController extends Controller
             'company' => 'required|exists:companies,id',
             'currency_name' => 'required|regex:/^[A-Za-z ]+$/|max:255', // Only Letters Allowed
             'currency_code' => 'required|string|max:10',
-            'rate' => 'required|numeric|min:0',
+            'rate' => 'nullable|numeric',
             'description' => 'nullable|string|max:1000',
             'status' => 'required|in:active,inactive',
         ];
@@ -60,7 +60,7 @@ class CurrencyController extends Controller
             'company_id' => $request->input('company'),
             'currency_name' => $request->input('currency_name'),
             'currency_code' => strtoupper($request->input('currency_code')),
-            'rate' => $request->input('rate'),
+            'rate' => $request->input('rate') ?? 0,
             'description' => $request->input('description'),
             'status' => $request->input('status'),
         ]);
@@ -94,7 +94,7 @@ class CurrencyController extends Controller
             'company' => 'required|exists:companies,id',
             'currency_name' => 'required|regex:/^[A-Za-z ]+$/|max:255',
             'currency_code' => 'required|string|max:10',
-            'rate' => 'required|numeric|min:0',
+            'rate' => 'nullable|numeric',
             'description' => 'nullable|string|max:1000',
             'status' => 'required|in:active,inactive',
         ];
@@ -114,7 +114,7 @@ class CurrencyController extends Controller
             'company_id' => $request->input('company'),
             'currency_name' => $request->input('currency_name'),
             'currency_code' => strtoupper($request->input('currency_code')),
-            'rate' => $request->input('rate'),
+            'rate' => $request->input('rate') ?? 0,
             'description' => $request->input('description'),
             'status' => $request->input('status'),
         ]);

@@ -27,7 +27,10 @@
                         @endif
                     </td>
                     <td>{{ Str::limit($exportSoda->product->name ?? 'N/A', 30) }}</td>
-                    <td>{{ $exportSoda->shipment_period ? $exportSoda->shipment_period->format('d-M-Y') : 'N/A' }}</td>
+                    <td>
+                        {{ $exportSoda->shipment_date_from ? $exportSoda->shipment_date_from->format('d-M') : 'N/A' }} - 
+                        {{ $exportSoda->shipment_date_to ? $exportSoda->shipment_date_to->format('d-M-Y') : 'N/A' }}
+                    </td>
                     <td>
                         {{ number_format($exportSoda->packingItems->first()->rate ?? 0, 2) }} 
                         <small>({{ $exportSoda->incoterm->name ?? '' }})</small>

@@ -167,6 +167,8 @@ class ExportOrder extends Model
             return CustomerOwnerBankDetail::find($this->customer_bank_id);
         } elseif ($this->customer_bank_type === 'company') {
             return CustomerCompanyBankDetail::find($this->customer_bank_id);
+        } elseif ($this->customer_bank_type === 'shipper') {
+            return Bank::find($this->customer_bank_id);
         }
 
         return null;

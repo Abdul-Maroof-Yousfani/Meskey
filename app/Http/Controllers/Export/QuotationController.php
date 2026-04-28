@@ -115,23 +115,35 @@ class QuotationController extends Controller
 
             // Packing Items
             $totalAmount = 0;
+            $totalMt = 0;
             if ($request->filled('packing_items')) {
                 foreach ($request->packing_items as $item) {
                     $totalAmount += $item['amount'] ?? 0;
+                    $totalMt += $item['metric_tons'] ?? 0;
                     $quotation->packingItems()->create([
                         'bag_type_id' => $item['bag_type_id'] ?? null,
                         'bag_packing_id' => $item['bag_packing_id'] ?? null,
-                        // 'bag_color_id'    => $item['bag_color_id'] ?? null,
                         'bag_size' => $item['bag_size'] ?? 0,
                         'metric_tons' => $item['metric_tons'] ?? 0,
                         'maunds' => $item['maunds'] ?? 0,
                         'no_of_bags' => $item['no_of_bags'] ?? 0,
                         'total_kgs' => $item['total_kgs'] ?? 0,
+                        'stuffing_in_container' => $item['stuffing_in_container'] ?? 0,
+                        'no_of_containers' => $item['no_of_containers'] ?? 0,
                         'rate' => $item['rate'] ?? 0,
                         'rate_per_maund' => $item['rate_per_maund'] ?? 0,
                         'amount' => $item['amount'] ?? 0,
                         'amount_pkr' => $item['amount_pkr'] ?? 0,
                     ]);
+                }
+            }
+
+            // Sauda Quantity Validation
+            if ($request->export_soda_id) {
+                $sauda = ExportSodaField::find($request->export_soda_id);
+                if ($sauda && $totalMt > $sauda->total_qty_mt) {
+                    DB::rollBack();
+                    return response()->json(['error' => 'Quotation quantity ('.$totalMt.') MT cannot exceed Sauda quantity ('.$sauda->total_qty_mt.') MT.'], 422);
                 }
             }
 
@@ -156,7 +168,7 @@ class QuotationController extends Controller
 
     public function show($id): View
     {
-        $quotation = Quotation::with(['packingItems', 'specifications.slabType', 'product', 'buyer', 'company', 'incoterm', 'modeOfTerm', 'modeOfTransport', 'currency', 'originCountry', 'portOfLoading', 'portOfDischarge'])->findOrFail($id);
+        $quotation = Quotation::with(['packingItems.bagType', 'packingItems.bagPacking', 'specifications.slabType', 'product', 'buyer', 'company', 'incoterm', 'modeOfTerm', 'modeOfTransport', 'currency', 'originCountry', 'portOfLoading', 'portOfDischarge'])->findOrFail($id);
 
         $products = Product::where('status', 1)->get();
         $bagTypes = BagType::where('status', 1)->get();
@@ -267,23 +279,34 @@ class QuotationController extends Controller
             // Update packing items
             $quotation->packingItems()->delete();
             $totalAmount = 0;
+            $totalMt = 0;
             if ($request->filled('packing_items')) {
                 foreach ($request->packing_items as $item) {
                     $totalAmount += $item['amount'] ?? 0;
+                    $totalMt += $item['metric_tons'] ?? 0;
                     $quotation->packingItems()->create([
                         'bag_type_id' => $item['bag_type_id'] ?? null,
                         'bag_packing_id' => $item['bag_packing_id'] ?? null,
-                        // 'bag_color_id'    => $item['bag_color_id'] ?? null,
                         'bag_size' => $item['bag_size'] ?? 0,
                         'metric_tons' => $item['metric_tons'] ?? 0,
                         'maunds' => $item['maunds'] ?? 0,
                         'no_of_bags' => $item['no_of_bags'] ?? 0,
                         'total_kgs' => $item['total_kgs'] ?? 0,
+                        'stuffing_in_container' => $item['stuffing_in_container'] ?? 0,
+                        'no_of_containers' => $item['no_of_containers'] ?? 0,
                         'rate' => $item['rate'] ?? 0,
                         'rate_per_maund' => $item['rate_per_maund'] ?? 0,
                         'amount' => $item['amount'] ?? 0,
                         'amount_pkr' => $item['amount_pkr'] ?? 0,
                     ]);
+                }
+            }
+
+            // Sauda Quantity Validation
+            if ($quotation->export_soda_id) {
+                if ($quotation->exportSoda && $totalMt > $quotation->exportSoda->total_qty_mt) {
+                    DB::rollBack();
+                    return response()->json(['error' => 'Quotation quantity ('.$totalMt.') MT cannot exceed Sauda quantity ('.$quotation->exportSoda->total_qty_mt.') MT.'], 422);
                 }
             }
 

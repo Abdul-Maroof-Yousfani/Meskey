@@ -10,7 +10,13 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label>Reference #:</label>
-                        <input type="text" name="reference" class="form-control" value="{{ $exportSodaField->reference }}" required>
+                        <input type="text" class="form-control" value="{{ $exportSodaField->reference }}" readonly>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Created Date:</label>
+                        <input type="text" class="form-control" value="{{ $exportSodaField->created_at->format('Y-m-d') }}" readonly>
                     </div>
                 </div>
 
@@ -26,7 +32,7 @@
                     </div>
                 </div>
 
-                <div class="col-md-12">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label>Commodity:</label>
                         <select name="product_id" class="form-control select2" required>
@@ -40,8 +46,14 @@
 
                 <div class="col-md-6 mt-2">
                     <div class="form-group">
-                        <label>Shipment Period:</label>
-                        <input type="date" name="shipment_period" class="form-control" value="{{ $exportSodaField->shipment_period ? $exportSodaField->shipment_period->format('Y-m-d') : '' }}">
+                        <label>Shipment Date From:</label>
+                        <input type="date" name="shipment_date_from" class="form-control" value="{{ $exportSodaField->shipment_date_from ? $exportSodaField->shipment_date_from->format('Y-m-d') : '' }}">
+                    </div>
+                </div>
+                <div class="col-md-6 mt-2">
+                    <div class="form-group">
+                        <label>Shipment Date To:</label>
+                        <input type="date" name="shipment_date_to" class="form-control" value="{{ $exportSodaField->shipment_date_to ? $exportSodaField->shipment_date_to->format('Y-m-d') : '' }}">
                     </div>
                 </div>
             </div>

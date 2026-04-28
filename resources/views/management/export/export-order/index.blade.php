@@ -48,9 +48,8 @@
                                             <th width="5%">S no.</th>
                                             <th width="15%">Export Order</th>
                                             <th width="15%">Voucher Date</th>
-                                            <th width="15%">Marking/Labeling</th>
-                                            <th width="15%">Product</th>
-                                            <th width="10%">Broker</th>
+                                            <th width="15%">Commodity/Product</th>
+                                            <!-- <th width="10%">Broker</th> -->
                                             <th width="10%">Currency</th>
                                             <th class="col-1">Status</th>
                                             <th width="15%">Action</th>

@@ -4,9 +4,8 @@
             <th width="5%">S no.</th>
             <th width="15%">Export Order</th>
             <th width="15%">Voucher Date</th>
-            <th width="15%">Marking/Labeling</th>
-            <th width="15%">Product</th>
-            <th width="10%">Broker</th>
+            <th width="15%">Commodity/Product</th>
+            <!-- <th width="10%">Broker</th> -->
             <th width="10%">Currency</th>
             <th class="col-1">Status</th>
             <th width="15%">Action</th>
@@ -27,15 +26,11 @@
                     </td>
 
                     <td>{{ \Carbon\Carbon::parse($export->voucher_date)->format('d/m/Y') }}</td>
-                    <td>{{ $export->marking_labeling ?? '' }}</td>
                     <td>{{ Str::limit($export->product->name ?? 'N/A', 30) }}</td>
-                    <td>{{ Str::limit($export->broker->name ?? 'N/A', 30) }}</td>
+                    <!-- <td>{{ Str::limit($export->broker->name ?? 'N/A', 30) }}</td> -->
                     <td>
                         <div>
-                            <strong class="d-block">{{ $export->currency->currency_code ?? '' }}</strong>
-                            @if ($export->currency->rate)
-                                <small class="text-muted">Rate: {{ $export->currency->rate }}</small>
-                            @endif
+                            {{ $export->currency->currency_code ?? '' }}
                         </div>
                     </td>
                     <td>
@@ -59,6 +54,11 @@
                             onclick="openModal(this,'{{ route('export-order.show', $export->id) }}','Show Export Order',false,'90%')">
                             <i class="ft-eye font-medium-3"></i></a>
                         {{-- @endcanAccess --}}
+
+                        @if (strtolower($export->am_approval_status ?? '') === 'approved')
+                            <a class="info p-1 text-center position-relative" href="{{ route('export-order.print', $export->id) }}" target="_blank">
+                                <i class="ft-printer font-medium-3"></i></a>
+                        @endif
 
                         @php
                             $approvalColumn = $export->getApprovalModule()->approval_column ?? 'am_approval_status';

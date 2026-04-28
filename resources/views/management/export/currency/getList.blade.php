@@ -15,7 +15,7 @@
                 <tr>
                     <td>{{ $key + 1 }}</td>
                     <td>{{ $currency->currency_name }} ({{ $currency->currency_code }})</td>
-                    <td>{{ $currency->currency_code }} {{ number_format($currency->rate, 2) }}</td>
+                    <td>{{ ($currency->rate ?? 0) > 0 ? number_format($currency->rate, 2) : '-' }}</td>
                     <td>{{ $currency->description ? Str::limit($currency->description, 50) : '-' }}</td>
                     <td>
                         <label class="badge bg-light-{{ $currency->status == 'inactive' ? 'primary' : 'danger' }}">

@@ -28,7 +28,7 @@
         </div>
 
         <div class="col-md-12 mt-3">
-            <label>Rate:</label>
+            <label>Rate: <small class="text-danger">(Optional)</small></label>
             <input type="number" step="0.01" min="0" name="rate" class="form-control"
                 value="{{ $currency->rate }}" />
         </div>

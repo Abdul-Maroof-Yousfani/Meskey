@@ -30,12 +30,15 @@ class ExportOrderPackingItem extends Model
         'no_of_bags',
         'extra_bags',
         'empty_bags',
+        'empty_bags_percentage',
         'total_bags',
         'total_kgs',
         'stuffing_in_container',
         'no_of_containers',
         'min_weight_empty_bags',
+        'extra_bags_percentage',
         'fumigation_company_id',
+        'inspection_by',
         'rate',
         'rate_per_maund',
         'maunds',
@@ -56,7 +59,10 @@ class ExportOrderPackingItem extends Model
         'amount' => 'decimal:2',
         'amount_pkr' => 'decimal:2',
         'min_weight_empty_bags' => 'decimal:2',
+        'extra_bags_percentage' => 'decimal:2',
+        'empty_bags_percentage' => 'decimal:2',
         'fumigation_company_id' => 'array',
+        'inspection_by' => 'array',
     ];
 
     /**

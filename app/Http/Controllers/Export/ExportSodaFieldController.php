@@ -67,7 +67,6 @@ class ExportSodaFieldController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'reference' => 'required',
             'buyer_id' => 'required',
             'product_id' => 'required',
         ]);
@@ -76,16 +75,25 @@ class ExportSodaFieldController extends Controller
 
         try {
             $data = $request->only([
-                'reference',
                 'buyer_id',
                 'product_id',
                 'incoterm_id',
                 'mode_of_term_id',
-                'shipment_period',
+                'shipment_date_from',
+                'shipment_date_to',
                 'commission_percentage',
                 'commission_amount_per_ton',
                 'commission',
                 'additional_info'
+            ]);
+
+            $data['reference'] = generateUniversalUniqueNo('export_soda_fields', [
+                'prefix' => 'SAUDA',
+                'column' => 'reference',
+                'with_date' => true,
+                'custom_date' => $request->voucher_date ?? date('Y-m-d'),
+                'date_format' => 'm-Y',
+                'serial_at_end' => true,
             ]);
 
             $company_id = session('company_id') ?? auth()->user()->company_id ?? 1;
@@ -156,7 +164,6 @@ class ExportSodaFieldController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'reference' => 'required',
             'buyer_id' => 'required',
             'product_id' => 'required',
         ]);
@@ -176,12 +183,12 @@ class ExportSodaFieldController extends Controller
             }
 
             $data = $request->only([
-                'reference',
                 'buyer_id',
                 'product_id',
                 'incoterm_id',
                 'mode_of_term_id',
-                'shipment_period',
+                'shipment_date_from',
+                'shipment_date_to',
                 'commission_percentage',
                 'commission_amount_per_ton',
                 'commission',

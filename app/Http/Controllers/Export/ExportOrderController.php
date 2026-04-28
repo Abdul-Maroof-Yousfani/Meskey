@@ -21,6 +21,7 @@ use App\Models\Master\Color;
 use App\Models\Master\CompanyLocation;
 use App\Models\Master\Country;
 use App\Models\Master\HsCode;
+use App\Models\Master\InspectionCompany;
 use App\Models\Master\Port;
 use App\Models\Master\ProductSlab;
 use App\Models\Product;
@@ -30,6 +31,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Illuminate\Database\QueryException;
 use App\Models\Master\Customer;
+use App\Models\Master\FumigationCompany;
 use App\Models\Export\ExportSodaField;
 use App\Models\Export\Quotation;
 
@@ -44,7 +46,7 @@ class ExportOrderController extends Controller
 
     public function getExportOrderTable(Request $request)
     {
-        $export_orders = ExportOrder::with(['product'])
+        $export_orders = ExportOrder::with(['product', 'broker', 'currency'])
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
 
@@ -83,7 +85,8 @@ class ExportOrderController extends Controller
         $bagSizes = BagPacking::where('status', 1)->get();
         $stitchings = \App\Models\Master\Stitching::where('status', 'active')->get();
         $threadColors = Color::where('status', 1)->get();
-        $inspectionCompanies = \App\Models\Master\FumigationCompany::where('status', 'active')->get();
+        $fumigationCompanies = FumigationCompany::where('status', 'active')->get();
+        $inspectionCompanies = InspectionCompany::where('status', 'active')->get();
 
         return view('management.export.export-order.create', compact(
             'products',
@@ -108,6 +111,7 @@ class ExportOrderController extends Controller
             'bagSizes',
             'stitchings',
             'threadColors',
+            'fumigationCompanies',
             'inspectionCompanies'
         ));
     }
@@ -138,6 +142,10 @@ class ExportOrderController extends Controller
                 }
             }
 
+            if ($request->filled('quotation_id') && empty($exportOrderData['export_soda_id'])) {
+                $exportOrderData['export_soda_id'] = Quotation::whereKey($request->quotation_id)->value('export_soda_id');
+            }
+
             $exportOrder = null;
             $saved = false;
             $tries = 0;
@@ -164,7 +172,7 @@ class ExportOrderController extends Controller
                         ]
                     ));
                     $saved = true;
-                } catch (\Illuminate\Database\QueryException $e) {
+                } catch (QueryException $e) {
                     // Check for duplicate entry error (MySQL code 1062)
                     if ($e->errorInfo[1] == 1062 && str_contains($e->getMessage(), 'voucher_no')) {
                         $tries++;
@@ -201,6 +209,9 @@ class ExportOrderController extends Controller
                 foreach ($request->packing_items as $pIdx => $item) {
                     $subItems = $item['sub_items'] ?? [];
                     unset($item['sub_items']);
+                    $item['extra_bags_percentage'] = $item['extra_bags_percentage'] ?? 0;
+                    $item['empty_bags_percentage'] = $item['empty_bags_percentage'] ?? 0;
+                    $item['inspection_by'] = isset($item['inspection_by']) ? array_values((array) $item['inspection_by']) : null;
 
                     // Calculate totals from sub-items if they exist and have actual data
                     $hasValidSubItems = collect($subItems)->contains(function ($sub) {
@@ -216,6 +227,8 @@ class ExportOrderController extends Controller
 
                     if (!empty($subItems)) {
                         foreach ($subItems as $sIdx => $subItem) {
+                            $subItem['extra_bags_percentage'] = $subItem['extra_bags_percentage'] ?? 0;
+                            $subItem['empty_bags_percentage'] = $subItem['empty_bags_percentage'] ?? 0;
                             // Handle file upload
                             if ($request->hasFile("packing_items.$pIdx.sub_items.$sIdx.attachment")) {
                                 $file = $request->file("packing_items.$pIdx.sub_items.$sIdx.attachment");
@@ -271,7 +284,8 @@ class ExportOrderController extends Controller
         $bagSizes = BagPacking::where('status', 1)->get();
         $stitchings = \App\Models\Master\Stitching::where('status', 'active')->get();
         $threadColors = Color::where('status', 1)->get();
-        $inspectionCompanies = \App\Models\Master\FumigationCompany::where('status', 'active')->get();
+        $fumigationCompanies = FumigationCompany::where('status', 'active')->get();
+        $inspectionCompanies = InspectionCompany::where('status', 'active')->get();
 
         return view('management.export.export-order.show', compact(
             'exportOrder',
@@ -297,6 +311,7 @@ class ExportOrderController extends Controller
             'bagSizes',
             'stitchings',
             'threadColors',
+            'fumigationCompanies',
             'inspectionCompanies'
         ));
     }
@@ -327,7 +342,8 @@ class ExportOrderController extends Controller
         $bagSizes = BagPacking::where('status', 1)->get();
         $stitchings = \App\Models\Master\Stitching::where('status', 'active')->get();
         $threadColors = Color::where('status', 1)->get();
-        $inspectionCompanies = \App\Models\Master\FumigationCompany::where('status', 'active')->get();
+        $fumigationCompanies = FumigationCompany::where('status', 'active')->get();
+        $inspectionCompanies = InspectionCompany::where('status', 'active')->get();
 
         return view('management.export.export-order.edit', compact(
             'exportOrder',
@@ -353,6 +369,7 @@ class ExportOrderController extends Controller
             'bagSizes',
             'stitchings',
             'threadColors',
+            'fumigationCompanies',
             'inspectionCompanies'
         ));
     }
@@ -402,6 +419,10 @@ class ExportOrderController extends Controller
                 $exportOrderData['customer_bank_id'] = null;
             }
 
+            if ($request->filled('quotation_id') && empty($exportOrderData['export_soda_id'])) {
+                $exportOrderData['export_soda_id'] = Quotation::whereKey($request->quotation_id)->value('export_soda_id');
+            }
+
             $updateData = array_merge($exportOrderData, [
                 'am_change_made' => 1,
                 'additional_info' => $request->additional_info,
@@ -438,6 +459,9 @@ class ExportOrderController extends Controller
                 foreach ($request->packing_items as $pIdx => $item) {
                     $subItems = $item['sub_items'] ?? [];
                     unset($item['sub_items']);
+                    $item['extra_bags_percentage'] = $item['extra_bags_percentage'] ?? 0;
+                    $item['empty_bags_percentage'] = $item['empty_bags_percentage'] ?? 0;
+                    $item['inspection_by'] = isset($item['inspection_by']) ? array_values((array) $item['inspection_by']) : null;
 
                     $hasValidSubItems = collect($subItems)->contains(function ($sub) {
                         return ($sub['no_of_bags'] ?? 0) > 0;
@@ -452,6 +476,8 @@ class ExportOrderController extends Controller
 
                     if (!empty($subItems)) {
                         foreach ($subItems as $sIdx => $subItem) {
+                            $subItem['extra_bags_percentage'] = $subItem['extra_bags_percentage'] ?? 0;
+                            $subItem['empty_bags_percentage'] = $subItem['empty_bags_percentage'] ?? 0;
                             if ($request->hasFile("packing_items.$pIdx.sub_items.$sIdx.attachment")) {
                                 $file = $request->file("packing_items.$pIdx.sub_items.$sIdx.attachment");
                                 $path = $file->store('export-orders/attachments', 'public');
@@ -539,6 +565,56 @@ class ExportOrderController extends Controller
         }
     }
 
+    public function print($id)
+    {
+        $exportOrder = ExportOrder::with([
+            'company',
+            'buyer',
+            'consignee',
+            'product',
+            'broker',
+            'currency',
+            'quotation.product',
+            'originCountry',
+            'portOfLoading',
+            'portOfDischarge',
+            'modeOfTransport',
+            'modeOfTerm',
+            'incoterm',
+            'hsCode',
+            'correspondentBank',
+            'packingItems.brand',
+            'packingItems.bagType',
+            'packingItems.bagPacking',
+            'packingItems.bagCondition',
+            'packingItems.bagColor',
+            'packingItems.threadColor',
+            'packingItems.stitching',
+            'packingItems.subItems.bagType',
+            'packingItems.subItems.bagSize',
+            'packingItems.subItems.stitching',
+            'packingItems.subItems.bagColor',
+            'packingItems.subItems.brand',
+            'packingItems.subItems.threadColor',
+            'specifications.productSlabType',
+        ])->findOrFail($id);
+
+        $totalAmount = $exportOrder->packingItems->sum('amount');
+        $totalMetricTons = $exportOrder->packingItems->sum('metric_tons');
+        $amountInWords = $this->numberToWords($totalAmount);
+        $fumigationCompanies = FumigationCompany::where('status', 'active')->get()->keyBy('id');
+        $inspectionCompanies = InspectionCompany::where('status', 'active')->get()->keyBy('id');
+
+        return view('management.export.export-order.print', compact(
+            'exportOrder',
+            'totalAmount',
+            'totalMetricTons',
+            'amountInWords',
+            'fumigationCompanies',
+            'inspectionCompanies'
+        ));
+    }
+
     public function getProductSpecs($productId)
     {
         $specs = ProductSlab::with('slabType')
@@ -585,9 +661,13 @@ class ExportOrderController extends Controller
 
     public function getQuotationDetails($id)
     {
-        $q = Quotation::with(['packingItems', 'buyer', 'product', 'specifications'])->findOrFail($id);
+        $q = Quotation::with(['packingItems', 'buyer', 'product', 'specifications', 'exportSoda'])->findOrFail($id);
+
+        $shipmentDateFrom = $q->exportSoda?->shipment_date_from ?? $q->shipment_delivery_date_from;
+        $shipmentDateTo = $q->exportSoda?->shipment_date_to ?? $q->shipment_delivery_date_to;
 
         return response()->json([
+            'company_id' => $q->company_id,
             'buyer_id' => $q->buyer_id,
             'product_id' => $q->product_id,
             'visual_name' => $q->product->name ?? null,
@@ -607,11 +687,37 @@ class ExportOrderController extends Controller
             'transhipment' => $q->transhipment,
             'part_shipment' => $q->part_shipment,
             'insurance_covered_by' => $q->insurance_covered_by,
-            'shipment_delivery_date_from' => $q->shipment_delivery_date_from,
-            'shipment_delivery_date_to' => $q->shipment_delivery_date_to,
+            'shipment_delivery_date_from' => optional($shipmentDateFrom)->format('Y-m-d') ?? $shipmentDateFrom,
+            'shipment_delivery_date_to' => optional($shipmentDateTo)->format('Y-m-d') ?? $shipmentDateTo,
+            'commission_percentage' => $q->commission_percentage,
+            'commission_amount_per_ton' => $q->commission_amount_per_ton,
+            'commission' => $q->commission,
             'packing_items' => $q->packingItems,
             'specifications' => $q->specifications,
         ]);
+    }
+
+    public function getCompanyBanks($companyId)
+    {
+        $banks = Bank::where('company_id', $companyId)
+            ->where('status', 1)
+            ->get()
+            ->map(function ($bank) {
+                return [
+                    'id' => $bank->id,
+                    'account_title' => $bank->account_title,
+                    'bank_name' => $bank->bank_name,
+                    'branch_name' => $bank->branch_name,
+                    'branch_code' => $bank->branch_code,
+                    'account_number' => $bank->account_no,
+                    'iban' => $bank->iban,
+                    'swift_code' => $bank->swift_code,
+                    'bank_address' => $bank->bank_address,
+                    'description' => $bank->description,
+                ];
+            });
+
+        return response()->json($banks);
     }
 
     public function getCustomerBanks($customerId)
@@ -651,5 +757,111 @@ class ExportOrderController extends Controller
     {
         $customer = Customer::with(['consignees'])->findOrFail($customerId);
         return response()->json($customer->consignees);
+    }
+
+    private function numberToWords($number, $appendCurrency = true)
+    {
+        $hyphen = '-';
+        $conjunction = ' and ';
+        $separator = ', ';
+        $negative = 'negative ';
+        $dictionary = [
+            0 => 'zero',
+            1 => 'one',
+            2 => 'two',
+            3 => 'three',
+            4 => 'four',
+            5 => 'five',
+            6 => 'six',
+            7 => 'seven',
+            8 => 'eight',
+            9 => 'nine',
+            10 => 'ten',
+            11 => 'eleven',
+            12 => 'twelve',
+            13 => 'thirteen',
+            14 => 'fourteen',
+            15 => 'fifteen',
+            16 => 'sixteen',
+            17 => 'seventeen',
+            18 => 'eighteen',
+            19 => 'nineteen',
+            20 => 'twenty',
+            30 => 'thirty',
+            40 => 'fourty',
+            50 => 'fifty',
+            60 => 'sixty',
+            70 => 'seventy',
+            80 => 'eighty',
+            90 => 'ninety',
+            100 => 'hundred',
+            1000 => 'thousand',
+            1000000 => 'million',
+            1000000000 => 'billion',
+            1000000000000 => 'trillion',
+            1000000000000000 => 'quadrillion',
+            1000000000000000000 => 'quintillion',
+        ];
+
+        if (!is_numeric($number)) {
+            return false;
+        }
+
+        if ($number < 0) {
+            return $negative . $this->numberToWords(abs($number), false);
+        }
+
+        $string = $fraction = null;
+        if (strpos((string) $number, '.') !== false) {
+            [$number, $fraction] = explode('.', (string) $number);
+        }
+
+        switch (true) {
+            case $number < 21:
+                $string = $dictionary[$number];
+                break;
+            case $number < 100:
+                $tens = ((int) ($number / 10)) * 10;
+                $units = $number % 10;
+                $string = $dictionary[$tens];
+                if ($units) {
+                    $string .= $hyphen . $dictionary[$units];
+                }
+                break;
+            case $number < 1000:
+                $hundreds = $number / 100;
+                $remainder = $number % 100;
+                $string = $dictionary[(int) $hundreds] . ' ' . $dictionary[100];
+                if ($remainder) {
+                    $string .= $conjunction . $this->numberToWords($remainder, false);
+                }
+                break;
+            default:
+                $baseUnit = pow(1000, floor(log($number, 1000)));
+                $numBaseUnits = (int) ($number / $baseUnit);
+                $remainder = $number % $baseUnit;
+                $string = $this->numberToWords($numBaseUnits, false) . ' ' . $dictionary[$baseUnit];
+                if ($remainder) {
+                    $string .= $remainder < 100 ? $conjunction : $separator;
+                    $string .= $this->numberToWords($remainder, false);
+                }
+                break;
+        }
+
+        if ($appendCurrency) {
+            if (null !== $fraction && is_numeric($fraction)) {
+                $string .= ' Rupees';
+                $fraction = (int) substr($fraction, 0, 2);
+                if ($fraction > 0) {
+                    $string .= $conjunction . $this->numberToWords($fraction, false) . ' Paise';
+                }
+            } else {
+                $string .= ' Rupees';
+            }
+
+            return ucfirst($string) . ' Only';
+        }
+
+        return $string;
     }
 }
