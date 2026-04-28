@@ -208,6 +208,7 @@ class DeliveryOrderController extends Controller
                 //     return response()->json("Total balance is $balance. you can not exceed this balance", 422);
                 // }
 
+                dd($remaining_qty < $request->qty[$key]);
                 if($remaining_qty < $request->qty[$key]) {
                     return response()->json("Total remaining qty(kg): $remaining_qty. you can not exceed this balance", 422);
                 }
