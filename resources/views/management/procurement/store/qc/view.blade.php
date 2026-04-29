@@ -253,12 +253,20 @@
                     font-weight: bold;
                     display: inline-block;
                 }
+                .qc-ok {
+                    background-color: #e6ffed !important;
+                    color: #22863a !important;
+                    padding: 2px 8px;
+                    border-radius: 4px;
+                    font-weight: bold;
+                    display: inline-block;
+                }
             </style>
             <div class="col-md-4">
 
                 <label class="form-label">Printing:</label>
                 <br>
-                <label>
+                <label class="{{ $purchaseOrderReceivingData->qc->printing == 1 ? 'qc-ok' : '' }}">
                     <input type="radio" name="printing" disabled @checked($purchaseOrderReceivingData->qc->printing == 1) value="1"> Ok
                 </label>
                 <br>
@@ -271,7 +279,7 @@
 
                 <label class="form-label">Bottom Stitching:</label>
                 <br>
-                <label>
+                <label class="{{ $purchaseOrderReceivingData->qc->bottom_stitching == 1 ? 'qc-ok' : '' }}">
                     <input type="radio" name="bottom_stitching" disabled @checked($purchaseOrderReceivingData->qc->bottom_stitching == 1)
                         value="1"> Ok
                 </label>
@@ -285,7 +293,7 @@
 
                 <label class="form-label">Ready to Pack:</label>
                 <br>
-                <label>
+                <label class="{{ $purchaseOrderReceivingData->qc->ready_to_pack == 1 ? 'qc-ok' : '' }}">
                     <input type="radio" name="ready_to_pack" disabled @checked($purchaseOrderReceivingData->qc->ready_to_pack == 1) value="1">
                     Yes
                 </label>

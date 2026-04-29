@@ -255,6 +255,14 @@
                 font-weight: bold;
                 display: inline-block;
             }
+            .qc-ok {
+                background-color: #e6ffed !important;
+                color: #22863a !important;
+                padding: 2px 8px;
+                border-radius: 4px;
+                font-weight: bold;
+                display: inline-block;
+            }
         </style>
         <div class="col-md-4">
 
@@ -425,10 +433,13 @@
         let name = $(this).attr('name');
         $('input[name="' + name + '"]').each(function() {
             let label = $(this).closest('label');
-            if ($(this).is(':checked') && $(this).val() == 0) {
-                label.addClass('qc-not-ok');
-            } else {
-                label.removeClass('qc-not-ok');
+            label.removeClass('qc-not-ok qc-ok');
+            if ($(this).is(':checked')) {
+                if ($(this).val() == 0) {
+                    label.addClass('qc-not-ok');
+                } else if ($(this).val() == 1) {
+                    label.addClass('qc-ok');
+                }
             }
         });
     });

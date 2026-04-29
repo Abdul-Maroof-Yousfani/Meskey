@@ -251,12 +251,20 @@
                 font-weight: bold;
                 display: inline-block;
             }
+            .qc-ok {
+                background-color: #e6ffed !important;
+                color: #22863a !important;
+                padding: 2px 8px;
+                border-radius: 4px;
+                font-weight: bold;
+                display: inline-block;
+            }
         </style>
         <div class="col-md-4">
 
             <label class="form-label">Printing:</label>
             <br>
-            <label>
+            <label class="{{ $purchaseOrderReceivingData->qc->printing == 1 ? 'qc-ok' : '' }}">
                 <input type="radio" class="qc-param" name="printing" @checked($purchaseOrderReceivingData->qc->printing == 1) value="1"> Ok
             </label>
             <br>
@@ -268,7 +276,7 @@
 
             <label class="form-label">Bottom Stitching:</label>
             <br>
-            <label>
+            <label class="{{ $purchaseOrderReceivingData->qc->bottom_stitching == 1 ? 'qc-ok' : '' }}">
                 <input type="radio" class="qc-param" name="bottom_stitching" @checked($purchaseOrderReceivingData->qc->bottom_stitching == 1) value="1"> Ok
             </label>
             <br>
@@ -280,7 +288,7 @@
 
             <label class="form-label">Ready to Pack:</label>
             <br>
-            <label>
+            <label class="{{ $purchaseOrderReceivingData->qc->ready_to_pack == 1 ? 'qc-ok' : '' }}">
                 <input type="radio" class="qc-param" name="ready_to_pack" @checked($purchaseOrderReceivingData->qc->ready_to_pack == 1) value="1"> Yes
             </label>
             <br>
@@ -459,10 +467,13 @@
         let name = $(this).attr('name');
         $('input[name="' + name + '"]').each(function() {
             let label = $(this).closest('label');
-            if ($(this).is(':checked') && $(this).val() == 0) {
-                label.addClass('qc-not-ok');
-            } else {
-                label.removeClass('qc-not-ok');
+            label.removeClass('qc-not-ok qc-ok');
+            if ($(this).is(':checked')) {
+                if ($(this).val() == 0) {
+                    label.addClass('qc-not-ok');
+                } else if ($(this).val() == 1) {
+                    label.addClass('qc-ok');
+                }
             }
         });
     });
