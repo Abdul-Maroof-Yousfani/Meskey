@@ -756,9 +756,9 @@
             <div class="col-md-6">
                 <div class="form-group">
                     <label>Amount</label>
-                    <input type="text" class="form-control" name="total_amount_display" id="total_amount_display"
+                    <input type="text" class="form-control" name="total_amount_display" id="modal_total_amount_display"
                         value="{{ number_format($totalwithCommision, 2) }}" readonly>
-                    <input type="hidden" class="form-control" name="total_amount" id="total_amount"
+                    <input type="hidden" class="form-control" name="total_amount" id="modal_total_amount"
                         value="{{ $totalwithCommision }}" readonly>
                 </div>
             </div>
@@ -766,7 +766,7 @@
                 <div class="form-group">
                     <label>Requested Amount</label>
                     <input type="number" step="0.01" readonly class="form-control" name="requested_amount"
-                        id="requested_amount" value="{{ $requestedAmount }}" placeholder="Enter requested amount">
+                        id="modal_requested_amount" data-val="{{ $requestedAmount }}" value="{{ $requestedAmount }}" placeholder="Enter requested amount">
                 </div>
             </div>
             <div class="col-md-3">
@@ -779,8 +779,8 @@
             <div class="col-md-6">
                 <div class="form-group">
                     <label>Remaining</label>
-                    <input type="text" class="form-control" name="remaining_amount" id="remaining_amount"
-                        value="{{ number_format($totalAmount - $requestedAmount, 2) }}" readonly>
+                    <input type="text" class="form-control" name="remaining_amount" id="modal_remaining_amount"
+                        value="{{ number_format($totalwithCommision - $requestedAmount, 2) }}" readonly>
                 </div>
             </div>
             @if (!$isApprovalPage)
@@ -998,6 +998,11 @@
                 return totalSamplingAmount;
             }
 
+            function getNumericValue(selector) {
+                const val = $(selector).val() || $(selector).text();
+                return parseFloat(val.toString().replace(/,/g, '')) || 0;
+            }
+
             function updateBagWeightCalculations() {
                 const currentBagWeight = parseFloat($('#bag_weight_input').val()) || 0;
                 const bagWeightAmount = parseFloat($('#bag_weight_amount').val()) || 0;
@@ -1031,15 +1036,15 @@
             }
 
             function updatePaymentRequestCalculations() {
-                const totalAmount = parseFloat($('#total_amount').val()) || 0;
-                const paidAmount = parseFloat($('#paid_amount').val()) || 0;
+                const totalAmount = getNumericValue('#modal_total_amount');
+                const requested_amount = getNumericValue('#modal_requested_amount');
                 const paymentRequestInput = $('.payment-request-input');
                 const percentageInput = $('.percentage-input');
 
-                const currentPaymentRequest = parseFloat(paymentRequestInput.val()) || 0;
-                const remainingAmount = totalAmount - paidAmount;
+                const currentPaymentRequest = parseFloat(paymentRequestInput.val().toString().replace(/,/g, '')) || 0;
+                const remainingAmount = totalAmount - requested_amount;
 
-                $('#remaining_amount').val(remainingAmount.toFixed(2));
+                $('#modal_remaining_amount').val(remainingAmount.toFixed(2));
 
                 if (currentPaymentRequest > 0) {
                     const percentage = remainingAmount > 0 ? (currentPaymentRequest / remainingAmount) * 100 : 0;
@@ -1058,9 +1063,9 @@
                 updateBagWeightCalculations();
                 updateBagRateCalculations();
 
-                const currentBagWeight = parseFloat($('#bag_weight_input').val()) || 0;
-                const bagWeightAmount = parseFloat($('#bag_weight_amount').val()) || 0;
-                const bagRateAmount = parseFloat($('#bag_rate_amount').val()) || 0;
+                const currentBagWeight = getNumericValue('#bag_weight_input');
+                const bagWeightAmount = getNumericValue('#bag_weight_amount');
+                const bagRateAmount = getNumericValue('#bag_rate_amount');
                 const loadingWeighbridgeAmount = kantaCharges / 2;
 
                 $('#loading_weighbridge_amount').val(loadingWeighbridgeAmount);
@@ -1073,8 +1078,8 @@
                 const totalAmount = grossAmount - totalDeductionsForFormula + bagRateAmount +
                                     {{ $totalSupplierCommission }};
 
-                $('#total_amount').val(totalAmount);
-                $('#total_amount_display').val(totalAmount.toFixed(2));
+                $('#modal_total_amount').val(totalAmount);
+                $('#modal_total_amount_display').val(totalAmount.toFixed(2));
 
                 updatePaymentRequestCalculations();
 
@@ -1128,47 +1133,48 @@
             });
 
             $('.payment-request-input').on('input', function () {
-                const totalAmount = parseFloat($('#total_amount').val()) || 0;
-                const paidAmount = parseFloat($('#paid_amount').val()) || 0;
-                const newRequested = parseFloat($(this).val()) || 0;
-                const remainingAmount = totalAmount - paidAmount;
+                const totalAmount = getNumericValue('#modal_total_amount');
+                const requested_amount = getNumericValue('#modal_requested_amount');
+                const newRequested = parseFloat($(this).val().toString().replace(/,/g, '')) || 0;
+                const remainingAmount = totalAmount - requested_amount;
 
                 if (newRequested > remainingAmount) {
                     $(this).val(remainingAmount.toFixed(2));
                 }
 
                 const percentageInput = $('.percentage-input');
-                const finalRequested = parseFloat($(this).val()) || 0;
+                const finalRequested = parseFloat($(this).val().toString().replace(/,/g, '')) || 0;
                 const percentage = remainingAmount > 0 ? (finalRequested / remainingAmount) * 100 : 0;
                 percentageInput.val(percentage.toFixed(2));
 
-                const finalRemaining = totalAmount - (paidAmount + finalRequested);
-                $('#remaining_amount').val(finalRemaining.toFixed(2));
+                const finalRemaining = totalAmount - (requested_amount + finalRequested);
+                $('#modal_remaining_amount').val(finalRemaining.toFixed(2));
             });
 
             $('.percentage-input').on('input', function () {
-                let percentage = parseFloat($(this).val()) || 0;
+                let percentage = parseFloat($(this).val().toString().replace(/,/g, '')) || 0;
                 if (percentage > 100) {
                     percentage = 100;
                     $(this).val(100);
                 }
 
-                const totalAmount = parseFloat($('#total_amount').val()) || 0;
-                const paidAmount = parseFloat($('#paid_amount').val()) || 0;
-                const remainingAmount = totalAmount - paidAmount;
+                const totalAmount = getNumericValue('#modal_total_amount');
+                const requested_amount = getNumericValue('#modal_requested_amount');
+                const remainingAmount = totalAmount - requested_amount;
                 const amount = (remainingAmount * percentage) / 100;
 
                 $('.payment-request-input').val(amount.toFixed(2));
 
                 // Update remaining amount
-                const finalRemaining = totalAmount - (paidAmount + amount);
-                $('#remaining_amount').val(finalRemaining.toFixed(2));
+                const finalRemaining = totalAmount - (requested_amount + amount);
+                console.log(requested_amount);
+                $('#modal_remaining_amount').val(finalRemaining.toFixed(2));
             });
 
             $('input[name="freight_pay_request_amount"]').on('input', function () {
                 const amount = parseFloat({{ $advanceFreight }});
                 const paidAmount = parseFloat({{ $pRsSumForFreight ?? 0 }});
-                const paymentRequest = parseFloat($(this).val()) || 0;
+                const paymentRequest = parseFloat($(this).val().toString().replace(/,/g, '')) || 0;
                 const remaining = (amount - paymentRequest - paidAmount);
                 $('input[name="remaining_freight"]').val(remaining.toFixed(2));
             });
