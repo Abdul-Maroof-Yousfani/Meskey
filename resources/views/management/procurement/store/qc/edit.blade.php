@@ -242,16 +242,26 @@
     </div>
 
     <div class="row" style="margin-top: 10px;">
+        <style>
+            .qc-not-ok {
+                background-color: #ffcccc !important;
+                color: #b30000 !important;
+                padding: 2px 8px;
+                border-radius: 4px;
+                font-weight: bold;
+                display: inline-block;
+            }
+        </style>
         <div class="col-md-4">
 
             <label class="form-label">Printing:</label>
             <br>
             <label>
-                <input type="radio" name="printing" @checked($purchaseOrderReceivingData->qc->printing == 1) value="1"> Ok
+                <input type="radio" class="qc-param" name="printing" @checked($purchaseOrderReceivingData->qc->printing == 1) value="1"> Ok
             </label>
             <br>
-            <label>
-                <input type="radio" name="printing" @checked($purchaseOrderReceivingData->qc->printing == 0) value="0"> Not Ok
+            <label class="{{ $purchaseOrderReceivingData->qc->printing == 0 ? 'qc-not-ok' : '' }}">
+                <input type="radio" class="qc-param" name="printing" @checked($purchaseOrderReceivingData->qc->printing == 0) value="0"> Not Ok
             </label>
         </div>
         <div class="col-md-4">
@@ -259,11 +269,11 @@
             <label class="form-label">Bottom Stitching:</label>
             <br>
             <label>
-                <input type="radio" name="bottom_stitching" @checked($purchaseOrderReceivingData->qc->bottom_stitching == 1) value="1"> Ok
+                <input type="radio" class="qc-param" name="bottom_stitching" @checked($purchaseOrderReceivingData->qc->bottom_stitching == 1) value="1"> Ok
             </label>
             <br>
-            <label>
-                <input type="radio" name="bottom_stitching" @checked($purchaseOrderReceivingData->qc->bottom_stitching == 0) value="0"> Not Ok
+            <label class="{{ $purchaseOrderReceivingData->qc->bottom_stitching == 0 ? 'qc-not-ok' : '' }}">
+                <input type="radio" class="qc-param" name="bottom_stitching" @checked($purchaseOrderReceivingData->qc->bottom_stitching == 0) value="0"> Not Ok
             </label>
         </div>
         <div class="col-md-4">
@@ -271,11 +281,11 @@
             <label class="form-label">Ready to Pack:</label>
             <br>
             <label>
-                <input type="radio" name="ready_to_pack" @checked($purchaseOrderReceivingData->qc->ready_to_pack == 1) value="1"> Yes
+                <input type="radio" class="qc-param" name="ready_to_pack" @checked($purchaseOrderReceivingData->qc->ready_to_pack == 1) value="1"> Yes
             </label>
             <br>
-            <label>
-                <input type="radio" name="ready_to_pack" @checked($purchaseOrderReceivingData->qc->ready_to_pack == 0) value="0"> No
+            <label class="{{ $purchaseOrderReceivingData->qc->ready_to_pack == 0 ? 'qc-not-ok' : '' }}">
+                <input type="radio" class="qc-param" name="ready_to_pack" @checked($purchaseOrderReceivingData->qc->ready_to_pack == 0) value="0"> No
             </label>
         </div>
     </div>
@@ -444,4 +454,16 @@
         }
     }
     $(".select2").select2();
+
+    $(document).on('change', '.qc-param', function() {
+        let name = $(this).attr('name');
+        $('input[name="' + name + '"]').each(function() {
+            let label = $(this).closest('label');
+            if ($(this).is(':checked') && $(this).val() == 0) {
+                label.addClass('qc-not-ok');
+            } else {
+                label.removeClass('qc-not-ok');
+            }
+        });
+    });
 </script>

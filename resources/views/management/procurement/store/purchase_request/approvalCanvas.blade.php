@@ -113,6 +113,11 @@
     <table class="table table-bordered" id="purchaseRequestTable" style="width:100%;">
         <thead>
             <tr>
+                <th style="width: 50px; min-width: 50px; vertical-align: middle !important;">
+                    <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
+                        <input type="checkbox" id="check-all" class="form-check-input" style="cursor: pointer; transform: scale(1.2); margin: 0;">
+                    </div>
+                </th>
                 <th style="min-width: 450px;">Item</th>
                 <th style="min-width: 200px;">Item UOM</th>
                 <th class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">Pack Size (KG)</th>
@@ -138,6 +143,13 @@
             @endphp
             <tr id="row_{{ $rowIdApproval }}" class="{{ $item->is_single_job_order ? 'jo-' . $item->JobOrder->pluck("job_order_id")->toArray()[0] : '' }}">
                 <input type="hidden" name="item_row_id[]" value="{{ $item->id }}">
+                <input type="hidden" name="data_id[]" value="{{ $item->id }}">
+
+                <td style="vertical-align: middle !important;">
+                    <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
+                        <input type="checkbox" class="form-check-input item-checkbox" style="cursor: pointer; transform: scale(1.2); margin: 0;" @disabled(in_array(strtolower($item->am_approval_status), ['approved', 'rejected']))>
+                    </div>
+                </td>
 
                 <td style="min-width: 450px;">
                     <select name="item_id[]" id="item_id_{{ $rowIdApproval }}" onchange="get_uom('{{ $rowIdApproval }}')"
@@ -281,7 +293,12 @@
 </form>
 <div class="row">
     <div class="col-12">
-        <x-approval-status :model="$data" :listRefresh="route('store.get.purchase-request')" />
+        @php
+            $model = $data;
+            $module = $data->getApprovalModule();
+            $listRefresh = route('store.get.purchase-request');
+        @endphp
+        @include('components.approval-status-pr', ['model' => $model, 'module' => $module, 'listRefresh' => $listRefresh])
     </div>
 </div>
 
@@ -313,6 +330,10 @@
             @endif
         @endforeach
         toggleVisibility($('#category_id_header').val());
+
+        $('#check-all').on('change', function() {
+            $('.item-checkbox').not(':disabled').prop('checked', $(this).prop('checked'));
+        });
     });
 
     $('#category_id_header').on('change', function() {
