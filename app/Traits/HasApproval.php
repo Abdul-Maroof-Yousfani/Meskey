@@ -183,7 +183,7 @@ trait HasApproval
             return false;
         }
         
-        if ($this->getApprovalStatus() !== 'pending') {
+        if ($this->getApprovalStatus() === 'approved' || $this->getApprovalStatus() === 'rejected') {
             return false;
         }
 
