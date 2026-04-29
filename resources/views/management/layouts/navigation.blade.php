@@ -870,6 +870,12 @@
                                 href="{{ route('export-loading-program.index') }}"
                                 onclick="loadPageContent('{{ route('export-loading-program.index') }}')"
                                 data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                    data-i18n="Extended">Loading Program Request</span></a>
+                        </li>
+                        <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                href="{{ route('export-loading-program-complete.index') }}"
+                                onclick="loadPageContent('{{ route('export-loading-program-complete.index') }}')"
+                                data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
                                     data-i18n="Extended">Loading Program</span></a>
                         </li>
                         @endcanAccess
@@ -877,6 +883,7 @@
                         <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                 href="{{ route('export-first-weighbridge.index') }}"
                                 onclick="loadPageContent('{{ route('export-first-weighbridge.index') }}')"
+
                                 data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
                                     data-i18n="Extended">First Weighbridge</span></a>
                         </li>

@@ -75,7 +75,7 @@
                                     <div class="col-xs-12 col-sm-6 col-md-3">
                                         <div class="form-group">
                                             <label>Total Qty:</label>
-                                            <input type="text" value="{{ $eo->packingItems->sum('metric_tons') }}" disabled class="form-control" />
+                                            <input type="text" value="{{ $eo->packingItems ? $eo->packingItems->sum('metric_tons') : 0 }}" disabled class="form-control" />
                                         </div>
                                     </div>
                                 </div>
@@ -152,7 +152,7 @@
                 <label>Company Location</label>
                 <select class="form-control select2" multiple disabled style="width: 100% !important;">
                     @php
-                        $selectedCompanyIds = is_array($loadingProgram->company_locations) ? $loadingProgram->company_locations : explode(',', $loadingProgram->company_locations);
+                        $selectedCompanyIds = is_array($loadingProgram->company_locations) ? $loadingProgram->company_locations : explode(',', (string)$loadingProgram->company_locations);
                         $companyLocations = \App\Models\Master\CompanyLocation::whereIn('id', array_filter($selectedCompanyIds))->get();
                     @endphp
                     @foreach($companyLocations as $loc)
@@ -166,7 +166,7 @@
                 <label>Arrival Location</label>
                 <select class="form-control select2" multiple disabled style="width: 100% !important;">
                     @php
-                        $selectedArrivalIds = is_array($loadingProgram->arrival_locations) ? $loadingProgram->arrival_locations : explode(',', $loadingProgram->arrival_locations);
+                        $selectedArrivalIds = is_array($loadingProgram->arrival_locations) ? $loadingProgram->arrival_locations : explode(',', (string)$loadingProgram->arrival_locations);
                         $arrivalLocations = \App\Models\Master\ArrivalLocation::whereIn('id', array_filter($selectedArrivalIds))->get();
                     @endphp
                     @foreach($arrivalLocations as $loc)
@@ -180,7 +180,7 @@
                 <label>Sub Arrival Location</label>
                 <select class="form-control select2" multiple disabled style="width: 100% !important;">
                     @php
-                        $selectedSubArrivalIds = is_array($loadingProgram->sub_arrival_locations) ? $loadingProgram->sub_arrival_locations : explode(',', $loadingProgram->sub_arrival_locations);
+                        $selectedSubArrivalIds = is_array($loadingProgram->sub_arrival_locations) ? $loadingProgram->sub_arrival_locations : explode(',', (string)$loadingProgram->sub_arrival_locations);
                         $subArrivalLocations = \App\Models\Master\ArrivalSubLocation::whereIn('id', array_filter($selectedSubArrivalIds))->get();
                     @endphp
                     @foreach($subArrivalLocations as $loc)
@@ -191,11 +191,36 @@
         </div>
     </div>
 
-    {{-- Items table hidden for Request Stage --}}
-    <div class="row mt-3">
+    <div class="row mt-3" id="lineItemsContainer">
         <div class="col-12">
-            <div class="alert alert-info text-center">
-                <i class="ft-info"></i> This is a Loading Program Request. Item details (trucks, drivers, etc.) will be added in the Completion stage.
+            <h6 class="header-heading-sepration">Loading Program Logistics Details</h6>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Truck Number</th>
+                            <th>Container Number</th>
+                            <th>Driver Name</th>
+                            <th>Contact Details</th>
+                            <th>Transporter</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($loadingProgram->loadingProgramItems as $item)
+                        <tr>
+                            <td>{{ $item->truck_number }}</td>
+                            <td>{{ $item->container_number ?? '-' }}</td>
+                            <td>{{ $item->driver_name ?? '-' }}</td>
+                            <td>{{ $item->contact_details ?? '-' }}</td>
+                            <td>{{ $item->transporter->name ?? '-' }}</td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="5" class="text-center">No items added yet.</td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
