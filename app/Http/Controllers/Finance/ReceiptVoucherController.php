@@ -481,6 +481,7 @@ class ReceiptVoucherController extends Controller
             $totalAmount = $items->sum(function ($item) {
                 return (float) ($item['amount'] ?? 0);
             });
+            
             $totalNetAmount = $items->sum(function ($item) {
                 $amount = (float) ($item['amount'] ?? 0);
                 $taxAmount = (float) ($item['tax_amount'] ?? 0);
@@ -572,9 +573,12 @@ class ReceiptVoucherController extends Controller
                         );
                     }
 
-                    $excess = $excessAmount ?? 0;
+                    $excess = $excessAmount < 0 ? 0 : $excessAmount;
+
+
 
                     $amount = $item['amount'] ?? 0;
+                    
                     $taxAmount = $item['tax_amount'] ?? 0;
                     $netAmount = $item['net_amount'] ?? $amount;
 
