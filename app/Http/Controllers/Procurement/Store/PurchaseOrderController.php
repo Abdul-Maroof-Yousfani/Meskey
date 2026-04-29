@@ -251,7 +251,9 @@ class PurchaseOrderController extends Controller
         $quotationNo = $request->quotation_no;
         $supplierId = $request->supplier_id;
 
-        $master = PurchaseRequest::with("locations")->find($requestId);
+        $master = PurchaseRequest::with(["locations", "PurchaseData" => function($q) {
+            $q->where('am_approval_status', 'approved');
+        }])->find($requestId);
         $locations_id = $master->locations->pluck("location_id")->toArray();
        
         $quotation = null;
