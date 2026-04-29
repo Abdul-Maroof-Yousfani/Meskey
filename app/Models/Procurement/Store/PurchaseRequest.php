@@ -28,6 +28,7 @@ class PurchaseRequest extends Model
         'status',
         'po_status',
         'created_by',
+        
         'job_orders',
         'department_id',
         'request_by_id'
