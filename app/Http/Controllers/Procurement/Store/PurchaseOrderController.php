@@ -277,6 +277,7 @@ class PurchaseOrderController extends Controller
 
         if (!$quotation || $dataItems->isEmpty()) {
             $dataItems = PurchaseRequestData::with(['purchase_request', 'item', 'category', 'purchase_order_data.purchase_order', 'JobOrder.job_order_data'])
+                ->where("am_approval_status", "approved")
                 ->where('purchase_request_id', $requestId)
                 ->get();
         }
