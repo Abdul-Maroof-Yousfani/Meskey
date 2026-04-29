@@ -1,7 +1,7 @@
-<form action="{{ route('export-loading-program.update', $loadingProgram->id) }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form action="{{ route('export-loading-program-complete.update', $loadingProgram->id) }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
     @method('PUT')
-    <input type="hidden" id="listRefresh" value="{{ route('get.export-loading-program') }}" />
+    <input type="hidden" id="listRefresh" value="{{ route('get.export-loading-program-complete') }}" />
     
     @php
         $mainCompanyLocationId = $loadingProgram->company_location_id ?: (is_array($loadingProgram->company_locations) ? $loadingProgram->company_locations[0] ?? null : null);
@@ -102,6 +102,76 @@
         </div>
     </div>
 
+    <div class="row" id="lineItemsContainer" style="display: none;">
+        <style>
+            #itemsTable {
+                width: 100% !important;
+            }
+            #itemsTable th, #itemsTable td {
+                padding: 8px 4px !important;
+                vertical-align: middle !important;
+            }
+        </style>
+        <div class="col-12">
+            <h6 class="header-heading-sepration">
+                Loading Program Items
+                <button type="button" class="btn btn-sm btn-primary float-right" id="addItemBtn">Add Item</button>
+            </h6>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped" id="itemsTable">
+                    <thead class="thead-light">
+                        <tr>
+                            <th style="width: 20%">Truck Number *</th>
+                            <th style="width: 20%">Container Number</th>
+                            <th style="width: 20%">Driver Name</th>
+                            <th style="width: 20%">Contact Details</th>
+                            <th style="width: 20%">Transporter</th>
+                            <th style="width: 10%">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="itemsList">
+                        @foreach($loadingProgram->loadingProgramItems as $index => $item)
+                            <tr class="item-row" data-index="{{ $index }}">
+                                <td>
+                                    <input type="text" name="loading_program_items[{{ $index }}][truck_number]"
+                                        class="form-control form-control-sm" required
+                                        value="{{ $item->truck_number }}" @disabled($item->firstWeighbridge)>
+                                    <input type="hidden" name="loading_program_items[{{ $index }}][id]" value="{{ $item->id }}">
+                                    <input type="hidden" name="loading_program_items[{{ $index }}][transaction_number]"
+                                        value="{{ $item->transaction_number }}">
+                                </td>
+                                <td>
+                                    <input type="text" name="loading_program_items[{{ $index }}][container_number]" 
+                                        class="form-control form-control-sm" value="{{ $item->container_number }}" @disabled($item->firstWeighbridge)>
+                                </td>
+                                <td>
+                                    <input type="text" name="loading_program_items[{{ $index }}][driver_name]" 
+                                        class="form-control form-control-sm" value="{{ $item->driver_name }}" @disabled($item->firstWeighbridge)>
+                                </td>
+                                <td>
+                                    <input type="text" name="loading_program_items[{{ $index }}][contact_details]" 
+                                        class="form-control form-control-sm" value="{{ $item->contact_details }}" @disabled($item->firstWeighbridge)>
+                                </td>
+                                <td>
+                                    <select name="loading_program_items[{{ $index }}][transporter_id]" class="form-control form-control-sm select2 transporter-select" @disabled($item->firstWeighbridge)>
+                                        <option value="">Select Transporter</option>
+                                        @foreach($Transporters as $transporter)
+                                            <option value="{{ $transporter->id }}" @selected($item->transporter_id == $transporter->id)>{{ $transporter->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn btn-sm btn-danger remove-item-btn" @disabled($item->firstWeighbridge)>
+                                        <i class="ft-trash-2"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
     <div class="row">
         <div class="col-xs-12 col-sm-12 col-md-12">
@@ -114,7 +184,7 @@
     <div class="row bottom-button-bar">
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
-            <button type="submit" class="btn btn-primary submitbutton">Save</button>
+            <button type="submit" class="btn btn-primary submitbutton">Save & Complete</button>
         </div>
     </div>
 </form>
@@ -122,12 +192,7 @@
 <script>
     window.isUpdatingUI = false;
     window.isSelectingEO = false;
-    var allSubArrivalLocations = @json(\App\Models\Master\ArrivalSubLocation::all());
     
-    // Inject existing data into JS context for immediate row initialization
-    window.allFetchedDOs = @json($loadingProgram->deliveryOrders->load(['exportPackingItems', 'saleSecondWeighbridge']));
-    window.allFetchedEOs = @json($loadingProgram->exportOrders->load(['packingItems']));
-
     $(document).ready(function() {
         $('.select2').select2({ width: '100%' });
 
@@ -142,7 +207,8 @@
         if (initialDOIds && initialDOIds.length > 0) {
             $('#exportOrderDataContainer').show();
             $('#locationContainer').show();
-            syncDOSelectionState(initialDOIds, window.allFetchedDOs);
+            $('#lineItemsContainer').show();
+            syncDOSelectionState(initialDOIds);
         }
 
         $('#main_company_location_id').change(function() {
@@ -155,6 +221,7 @@
             $eoSelect.empty().prop('disabled', true).trigger('change.select2');
             $doSelect.empty().prop('disabled', true).trigger('change.select2');
             $('#exportOrderDataContainer').html('').hide();
+            $('#lineItemsContainer').hide();
             $('#locationContainer').hide();
             window.isUpdatingUI = false;
 
@@ -192,6 +259,7 @@
                 window.isUpdatingUI = true;
                 $('#exportOrderDataContainer').html('').hide();
                 $('#delivery_order_id').empty().prop('disabled', true).trigger('change.select2');
+                $('#lineItemsContainer').hide();
                 $('#locationContainer').hide();
                 window.isUpdatingUI = false;
             }
@@ -218,17 +286,24 @@
                     }
                 });
                 $('#locationContainer').show();
+                $('#lineItemsContainer').show();
             } else {
                 hideDODetailsAndLocations();
             }
         });
 
-        function syncDOSelectionState(selectedIds, allDOs) {
-            const selectedDOs = (allDOs || []).filter(d => selectedIds.includes(d.id.toString()));
-            if (selectedDOs.length > 0) {
-                window.isUpdatingUI = true;
-                
-                // Show/Hide sections
+        function syncDOSelectionState(selectedIds) {
+            if (window.isUpdatingUI) return;
+            window.isUpdatingUI = true;
+            
+            var selectedDOs = [];
+            if (window.allFetchedDOs) {
+                selectedDOs = window.allFetchedDOs.filter(function(d) {
+                    return selectedIds.includes(d.id.toString());
+                });
+            }
+
+            if (selectedIds.length > 0) {
                 $('#exportOrderDataContainer').show();
                 var $wrapper = $('#delivery_order_details_wrapper');
                 if ($wrapper.length) {
@@ -247,7 +322,8 @@
                         }
                     });
                 }
-
+                $('#locationContainer').show();
+                $('#lineItemsContainer').show();
                 populateLocationFields(selectedDOs);
                 window.isUpdatingUI = false;
             } else {
@@ -255,12 +331,54 @@
             }
         }
 
-        function hideDODetailsAndLocations() {
+        function populateLocationFields(deliveryOrders) {
             window.isUpdatingUI = true;
-            $('#delivery_order_details_wrapper').hide();
-            $('#locationContainer').hide();
+            let selA = []; let selS = []; let selC = [];
+            deliveryOrders.forEach(d => {
+                if (d.locations) d.locations.forEach(l => {
+                    if (l.company_location_id && !selC.includes(l.company_location_id.toString())) selC.push(l.company_location_id.toString());
+                    if (l.arrival_location_ids) l.arrival_location_ids.split(',').forEach(id => { if (id.trim() && !selA.includes(id.trim())) selA.push(id.trim()); });
+                    if (l.sub_arrival_location_ids) l.sub_arrival_location_ids.split(',').forEach(id => { if (id.trim() && !selS.includes(id.trim())) selS.push(id.trim()); });
+                });
+            });
+
+            $('#company_locations, #arrival_locations, #sub_arrival_locations').prop('disabled', false);
+            $('#company_locations').empty(); 
+            @json(get_locations()).forEach(l => { if (selC.includes(l.id.toString())) $('#company_locations').append(new Option(l.name, l.id, true, true)); });
+            
+            $('#arrival_locations').empty();
+            deliveryOrders.forEach(d => {
+                if (d.locations) d.locations.forEach(l => {
+                    if (l.arrival_locations) l.arrival_locations.forEach(al => $('#arrival_locations').append(new Option(al.name, al.id, true, true)));
+                });
+            });
+
+            $('#sub_arrival_locations').empty();
+            deliveryOrders.forEach(d => {
+                if (d.locations) d.locations.forEach(l => {
+                    if (l.sub_arrival_locations) l.sub_arrival_locations.forEach(sal => $('#sub_arrival_locations').append(new Option(sal.name, sal.id, true, true)));
+                });
+            });
+
+            $('#company_locations').val(selC).trigger('change.select2');
+            $('#company_locations, #arrival_locations, #sub_arrival_locations').prop('disabled', true);
             window.isUpdatingUI = false;
         }
+
+        function hideDODetailsAndLocations() {
+            window.isUpdatingUI = true;
+            $('#exportOrderDataContainer').hide();
+            $('#delivery_order_details_wrapper').hide();
+            $('#locationContainer').hide();
+            $('#lineItemsContainer').hide();
+            window.isUpdatingUI = false;
+        }
+
+        let itemIndex = {{ $loadingProgram->loadingProgramItems->count() }};
+        $('#addItemBtn').click(function() {
+            addItemRow(itemIndex);
+            itemIndex++;
+        });
 
         function get_export_order(export_order_ids, company_location_id, isInitial = false) {
             $.ajax({
@@ -277,7 +395,7 @@
                         window.isUpdatingUI = true;
                         $('#exportOrderDataContainer').html(response.html).show();
                         $('.select2').select2({ width: '100%' });
-                        
+
                         if (response.delivery_orders) {
                             window.allFetchedDOs = response.delivery_orders;
                         }
@@ -292,84 +410,30 @@
                             $('#delivery_order_id').append(new Option(doItem.reference_no, doItem.id, false, currentDOs.includes(doItem.id.toString())));
                         });
                         $('#delivery_order_id').val(currentDOs).trigger('change.select2');
-                        
                         window.isUpdatingUI = false;
-
-                        if (currentDOs.length > 0) {
-                            syncDOSelectionState(currentDOs, response.delivery_orders);
-                        }
+                        if (currentDOs.length > 0) syncDOSelectionState(currentDOs);
                     }
                 },
-                complete: function() {
-                    window.isSelectingEO = false;
-                }
+                complete: function() { window.isSelectingEO = false; }
             });
         }
 
-        function populateLocationFields(deliveryOrders) {
-            window.isUpdatingUI = true;
-            
-            var arrivalLocations = @json(\App\Models\Master\ArrivalLocation::all());
-            var subArrivalLocations = @json(\App\Models\Master\ArrivalSubLocation::all());
-
-            var selectedArrivalIds = [];
-            var selectedSubArrivalIds = [];
-            var selectedCompanyIds = [];
-
-            deliveryOrders.forEach(function(doItem) {
-                if (doItem.locations) {
-                    doItem.locations.forEach(loc => {
-                        if (loc.company_location_id && !selectedCompanyIds.includes(loc.company_location_id.toString())) {
-                            selectedCompanyIds.push(loc.company_location_id.toString());
-                        }
-                        if (loc.arrival_location_ids) {
-                            loc.arrival_location_ids.split(',').forEach(id => {
-                                if (id.trim() && !selectedArrivalIds.includes(id.trim())) selectedArrivalIds.push(id.trim());
-                            });
-                        }
-                        if (loc.sub_arrival_location_ids) {
-                            loc.sub_arrival_location_ids.split(',').forEach(id => {
-                                if (id.trim() && !selectedSubArrivalIds.includes(id.trim())) selectedSubArrivalIds.push(id.trim());
-                            });
-                        }
-                    });
-                }
-            });
-
-            const uniqueArrivalIds = [...new Set(selectedArrivalIds)];
-            const uniqueSubArrivalIds = [...new Set(selectedSubArrivalIds)];
-            const uniqueCompanyIds = [...new Set(selectedCompanyIds)];
-
-            $('#company_locations, #arrival_locations, #sub_arrival_locations').prop('disabled', false);
-
-            $('#company_locations').empty();
-            @json(get_locations()).forEach(loc => {
-                if (uniqueCompanyIds.includes(loc.id.toString())) {
-                    $('#company_locations').append(new Option(loc.name, loc.id, true, true));
-                }
-            });
-
-            $('#arrival_locations').empty();
-            arrivalLocations.forEach(loc => {
-                if (uniqueArrivalIds.includes(loc.id.toString())) {
-                    $('#arrival_locations').append(new Option(loc.name, loc.id, true, true));
-                }
-            });
-
-            $('#sub_arrival_locations').empty();
-            subArrivalLocations.forEach(loc => {
-                if (uniqueSubArrivalIds.includes(loc.id.toString())) {
-                    $('#sub_arrival_locations').append(new Option(loc.name, loc.id, true, true));
-                }
-            });
-
-            $('#company_locations').val(uniqueCompanyIds).trigger('change.select2');
-            $('#arrival_locations').val(uniqueArrivalIds).trigger('change.select2');
-            $('#sub_arrival_locations').val(uniqueSubArrivalIds).trigger('change.select2');
-            
-            $('#company_locations, #arrival_locations, #sub_arrival_locations').prop('disabled', true);
-            
-            window.isUpdatingUI = false;
+        function addItemRow(index) {
+            const itemHtml = `
+                <tr class="item-row" data-index="${index}">
+                    <td><input type="text" name="loading_program_items[${index}][truck_number]" class="form-control form-control-sm" required></td>
+                    <td><input type="text" name="loading_program_items[${index}][container_number]" class="form-control form-control-sm"></td>
+                    <td><input type="text" name="loading_program_items[${index}][driver_name]" class="form-control form-control-sm"></td>
+                    <td><input type="text" name="loading_program_items[${index}][contact_details]" class="form-control form-control-sm"></td>
+                    <td><select name="loading_program_items[${index}][transporter_id]" class="form-control form-control-sm select2 transporter-select"><option value="">Select Transporter</option>@foreach($Transporters as $transporter)<option value="{{ $transporter->id }}">{{ $transporter->name }}</option>@endforeach</select></td>
+                    <td class="text-center"><button type="button" class="btn btn-sm btn-danger remove-item-btn"><i class="ft-trash-2"></i></button></td>
+                </tr>
+            `;
+            $('#itemsList').append(itemHtml);
+            const $newRow = $('#itemsList tr.item-row').last();
+            $newRow.find('.select2').select2({ width: '100%' });
         }
+
+        $(document).on('click', '.remove-item-btn', function() { $(this).closest('tr').remove(); });
     });
 </script>

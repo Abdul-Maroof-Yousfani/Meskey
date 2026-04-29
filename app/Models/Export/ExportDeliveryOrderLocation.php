@@ -22,6 +22,15 @@ class ExportDeliveryOrderLocation extends Model
         return $this->belongsTo(CompanyLocation::class, 'company_location_id');
     }
 
-    // Since arrival and sub-arrival locations are stored as comma-separated strings
-    // we can add accessors if needed, but for now we'll handle them in the controller/view.
+    public function arrivalLocations()
+    {
+        // This is a placeholder to prevent eager loading errors if someone tries to use it.
+        // In this project's architecture, we handle comma-separated IDs manually.
+        return $this->belongsTo(\App\Models\Master\ArrivalLocation::class, 'arrival_location_ids');
+    }
+
+    public function subArrivalLocations()
+    {
+        return $this->belongsTo(\App\Models\Master\ArrivalSubLocation::class, 'sub_arrival_location_ids');
+    }
 }

@@ -56,13 +56,20 @@ Route::get('/get-arrival-locations', [ExportDeliveryOrderController::class, 'get
 Route::get('/get-sub-arrival-locations', [ExportDeliveryOrderController::class, 'getSubArrivalLocations'])->name('export.get-sub-arrival-locations');
 Route::get('/export-order/get-quotation-details/{id}', [ExportOrderController::class, 'getQuotationDetails'])->name('export-order.get-quotation-details');
 
-// export loading program
+// export loading program (Request Stage 1)
 Route::resource('export-loading-program', ExportLoadingProgramController::class);
 Route::post('/get-export-loading-program', [ExportLoadingProgramController::class, 'getList'])->name('get.export-loading-program');
 Route::get('/fetch-export-orders-by-location', [ExportLoadingProgramController::class, 'fetchExportOrdersByLocation'])->name('fetch.export.orders.by.location');
 Route::get('/get-export-order-related-data', [ExportLoadingProgramController::class, 'getExportOrderRelatedData'])->name('get.export-order.related.data');
 Route::get('/get-delivery-orders-by-export-order-loading', [ExportLoadingProgramController::class, 'getDeliveryOrdersByExportOrder'])->name('get.delivery-orders.by.export-order.loading');
 Route::get('/get-delivery-orders-by-export-order-loading-edit', [ExportLoadingProgramController::class, 'getDeliveryOrdersByExportOrderEdit'])->name('get.delivery-orders.by.export-order.loading.edit');
+
+// export loading program (Completion Stage 2)
+Route::get('/export-loading-program-complete-show/{id}', [ExportLoadingProgramController::class, 'completeShow'])->name('export-loading-program-complete.show');
+Route::get('/export-loading-program-complete', [ExportLoadingProgramController::class, 'completeIndex'])->name('export-loading-program-complete.index');
+Route::post('/get-export-loading-program-complete', [ExportLoadingProgramController::class, 'getCompleteList'])->name('get.export-loading-program-complete');
+Route::get('/export-loading-program-complete/{id}/edit', [ExportLoadingProgramController::class, 'completeEdit'])->name('export-loading-program-complete.edit');
+Route::put('/export-loading-program-complete/{id}', [ExportLoadingProgramController::class, 'completeUpdate'])->name('export-loading-program-complete.update');
 
 // export first weighbridge
 Route::resource('export-first-weighbridge', ExportFirstWeighBridgeController::class);
