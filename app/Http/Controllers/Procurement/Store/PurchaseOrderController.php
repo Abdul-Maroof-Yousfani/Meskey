@@ -302,13 +302,14 @@ class PurchaseOrderController extends Controller
      */
     public function create()
     {
-        $approvedRequests = PurchaseRequest::with("purchase_order")->where('am_approval_status', 'approved')->with([
+        $approvedRequests = PurchaseRequest::with("purchase_order")->with([
             'PurchaseData' => function ($query) {
-                // $query->where('am_approval_status', 'approved');
+                $query->where('am_approval_status', 'approved');
             }
         ])
             ->whereHas('PurchaseData', function ($q) {
-            $q->whereRaw('qty > (SELECT COALESCE(SUM(pod.qty), 0) FROM purchase_order_data pod JOIN purchase_orders po ON po.id = pod.purchase_order_id WHERE pod.purchase_request_data_id = purchase_request_data.id AND pod.am_approval_status != "rejected" AND po.am_approval_status != "rejected")');
+            $q->whereRaw('qty > (SELECT COALESCE(SUM(pod.qty), 0) FROM purchase_order_data pod JOIN purchase_orders po ON po.id = pod.purchase_order_id WHERE pod.purchase_request_data_id = purchase_request_data.id AND pod.am_approval_status != "rejected" AND po.am_approval_status != "rejected")')
+                ->where("am_approval_status", "approved");
         })
             ->get();
 
