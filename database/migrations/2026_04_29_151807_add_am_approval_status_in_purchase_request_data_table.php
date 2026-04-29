@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('purchase_request_data', function (Blueprint $table) {
-            $table->string("am_approval_status")->default("pending");
+            // $table->string("am_approval_status")->default("pending");
             $table->integer("am_change_made")->default(0);
         });
     }
