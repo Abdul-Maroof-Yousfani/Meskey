@@ -217,7 +217,11 @@ Route::get("add-permission", function() {
 
 Route::get("testing-data", function() {
     $suppliers = \App\Models\Master\Supplier::where("phone", "LIKE", "%-%")->get();
-    dd($suppliers);
+    foreach($suppliers as $supplier) {
+        $supplier->update([
+            "phone" => str_replace("-", "", $supplier->phone)
+        ]);
+    }
 });
 
 Route::get('/delete-migration/{filename}', function ($filename) {
