@@ -216,7 +216,7 @@ Route::get("add-permission", function() {
 });
 
 Route::get("testing-data", function() {
-    $suppliers = \App\Models\Master\Supplier::where("name", "LIKE", "%-%%")->get();
+    $suppliers = \App\Models\Master\Supplier::where("name", "LIKE", "%-%")->get();
     dd($suppliers);
 });
 
