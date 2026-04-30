@@ -59,7 +59,7 @@
                 <input type="hidden" name="customer_id" id="customer_id">
             </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-6 d-none">
             <div class="form-group">
                 <label class="form-label">DO Number:</label>
                 <select id="do_no" class="form-control select2" disabled>
@@ -144,7 +144,7 @@
                 <input type="number" name="labour_amount" id="labour_amount" class="form-control" readonly>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-4 d-none">
             <div class="form-group">
                 <label class="form-label">Transporter Amount:</label>
                 <input type="number" name="transporter_amount" id="transporter_amount" class="form-control">

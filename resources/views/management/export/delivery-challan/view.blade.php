@@ -6,6 +6,23 @@
         $secondWeighbridgeQtyMt = round(((float) $firstTicket->exportLoadingSlip->secondWeighbridge->net_weight) / 1000, 3);
     }
     $totalQtyMt = round((float) $delivery_challan->delivery_challan_data->sum('qty'), 3);
+
+    $locationIds = $firstTicket?->exportLoadingProgram?->company_locations ?? [];
+    $locations = !empty($locationIds) ? \App\Models\Master\CompanyLocation::whereIn('id', $locationIds)->get() : collect();
+    
+    $arrivalLocations = collect();
+    $factoryNamesStr = $firstTicket?->exportLoadingSlip?->factory ?? '';
+    if ($factoryNamesStr) {
+        $factoryNames = array_map('trim', explode(',', $factoryNamesStr));
+        $arrivalLocations = \App\Models\Master\ArrivalLocation::whereIn('name', $factoryNames)->get();
+    }
+    
+    $sections = collect();
+    $galaNamesStr = $firstTicket?->exportLoadingSlip?->gala ?? '';
+    if ($galaNamesStr) {
+        $galaNames = array_map('trim', explode(',', $galaNamesStr));
+        $sections = \App\Models\Master\ArrivalSubLocation::whereIn('name', $galaNames)->get();
+    }
 @endphp
 
 <style>
@@ -56,7 +73,7 @@
             <input type="text" class="form-control" value="{{ $delivery_challan->customer?->name ?? 'N/A' }}" readonly>
         </div>
     </div>
-    <div class="col-md-6">
+    <div class="col-md-6 d-none">
         <div class="form-group">
             <label class="form-label">DO Number:</label>
             <input type="text" class="form-control" value="{{ $delivery_challan->delivery_order->pluck('reference_no')->implode(', ') }}" readonly>
@@ -131,7 +148,7 @@
             <input type="text" class="form-control" value="{{ $delivery_challan->labour_amount }}" readonly>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-4 d-none">
         <div class="form-group">
             <label class="form-label">Transporter Amount:</label>
             <input type="text" class="form-control" value="{{ $delivery_challan->transporter_amount }}" readonly>

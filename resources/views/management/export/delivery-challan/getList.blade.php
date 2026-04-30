@@ -3,11 +3,10 @@
             <table class="table table-hover m-0">
                 <thead class="bg-light">
                     <tr>
-                        <th width="12%">Do No</th>
+                        <th width="12%">DC No</th>
                         <th width="18%">Customer</th>
-                        <th width="25%">Item Description</th>
+                        <th width="25%">Commodity/Product</th>
                         <th width="10%" class="text-right">Qty(MT)</th>
-                        <th width="10%" class="text-right">Rate</th>
                         <th width="10%" class="text-right">Amount</th>
                         <th width="10%">Date</th>
                         <th width="8%">Status</th>
@@ -31,29 +30,22 @@
                                         </div>
                                     </td>
 
-                                    <td rowspan="{{ $group['rowspan'] }}" class="align-middle" style="background-color: #e3f2fd;">
+                                    <td rowspan="{{ $group['rowspan'] }}" class="align-middle">
                                         <strong>{{ get_customer_name($group["customer_id"]) }}</strong>
                                         
                                     </td>
                                 @endif
 
                                 <td class="align-middle" style="background-color: #f8fff8;">
-                                    <strong>{{ getItem($itemRow["item_data"]->item_id)?->name ?? 'N/A' }}</strong>
-                                    @if($itemRow['item_data']->description)
-                                        <br><small class="text-muted">{{ Str::limit($itemRow['item_data']->description, 60) }}</small>
-                                    @endif
+                                    <strong>{{ $itemRow['name'] }}</strong>
                                 </td>
 
                                 <td class="text-right align-middle">
-                                    {{ number_format((float) $itemRow['item_data']->qty, 3) }}
+                                    {{ number_format((float) $itemRow['qty'], 3) }}
                                 </td>
 
                                 <td class="text-right align-middle">
-                                    {{ number_format($itemRow['item_data']->rate, 2) }}
-                                </td>
-
-                                <td class="text-right align-middle">
-                                    {{ number_format($itemRow["item_data"]->rate * $itemRow["item_data"]->qty, 2) }}
+                                    {{ number_format((float) $itemRow['amount'], 2) }}
                                 </td>
 
                                 {{-- Date & Status - Show only on first row --}}
@@ -71,7 +63,7 @@
                                                 'approved' => 'badge-success',
                                                 'rejected' => 'badge-danger',
                                                 'pending'  => 'badge-warning',
-                                                default    => 'badge-secondary',
+                                                'reverted' => 'badge-secondary',
                                             };
                                         @endphp
                                         <span class="badge {{ $badge }} px-3 py-2">

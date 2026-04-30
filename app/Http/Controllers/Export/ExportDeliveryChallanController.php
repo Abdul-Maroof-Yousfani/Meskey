@@ -94,9 +94,26 @@ class ExportDeliveryChallanController extends Controller
                 ]);
             });
 
-            $delivery_challan->delivery_order()->sync([
-                $do_id => ['qty' => $preparedItems['total_qty']],
-            ]);
+            // Build delivery orders sync array from line items
+            $doSyncData = [];
+            foreach ($preparedItems['items'] as $itemData) {
+                // Find DO ID from do_data_id
+                $packingItem = \App\Models\Export\ExportDeliveryOrderPackingItem::find($itemData['do_data_id']);
+                if ($packingItem && $packingItem->delivery_order_id) {
+                    $dId = $packingItem->delivery_order_id;
+                    if (!isset($doSyncData[$dId])) {
+                        $doSyncData[$dId] = ['qty' => 0];
+                    }
+                    $doSyncData[$dId]['qty'] += $itemData['qty'];
+                }
+            }
+
+            // Fallback if no DOs matched
+            if (empty($doSyncData)) {
+                $doSyncData[$do_id] = ['qty' => $preparedItems['total_qty']];
+            }
+
+            $delivery_challan->delivery_order()->sync($doSyncData);
 
             $createdItems = [];
             foreach ($preparedItems['items'] as $itemData) {
@@ -116,37 +133,6 @@ class ExportDeliveryChallanController extends Controller
                 ]);
                 $createdItems[] = $dcData;
             }
-
-            // $receivingRequest = ReceivingRequest::create([
-            //     'delivery_challan_id' => $delivery_challan->id,
-            //     'dc_no' => $delivery_challan->dc_no,
-            //     'dc_date' => $delivery_challan->dispatch_date,
-            //     'truck_number' => $request->truck_no[0] ?? null,
-            //     'bilty' => $request->bilty_no[0] ?? null,
-            //     'labour' => $delivery_challan->labour,
-            //     'transporter' => $delivery_challan->transporter,
-            //     'inhouse_weighbridge' => $delivery_challan->{'inhouse-weighbridge'} ?? null,
-            //     'labour_amount' => $delivery_challan->labour_amount ?? 0,
-            //     'transporter_amount' => $delivery_challan->transporter_amount ?? 0,
-            //     'inhouse_weighbridge_amount' => $delivery_challan->{'weighbridge-amount'} ?? 0,
-            //     'company_id' => $delivery_challan->company_id,
-            //     'created_by_id' => $delivery_challan->created_by_id,
-            // ]);
-
-            // foreach ($createdItems as $dcData) {
-            //     $product = Product::find($dcData->item_id);
-            //     ReceivingRequestItem::create([
-            //         'receiving_request_id' => $receivingRequest->id,
-            //         'delivery_challan_data_id' => $dcData->id,
-            //         'item_id' => $dcData->item_id,
-            //         'item_name' => $product?->name ?? 'N/A',
-            //         'dispatch_weight' => $dcData->qty ?? 0,
-            //         'receiving_weight' => 0,
-            //         'difference_weight' => $dcData->qty ?? 0,
-            //         'seller_portion' => 0,
-            //         'remaining_amount' => $dcData->qty ?? 0,
-            //     ]);
-            // }
 
             DB::commit();
         } catch (\Exception $e) {
@@ -276,9 +262,26 @@ class ExportDeliveryChallanController extends Controller
                 'am_change_made' => 1,
             ]);
 
-            $delivery_challan->delivery_order()->sync([
-                $do_id => ['qty' => $preparedItems['total_qty']],
-            ]);
+            // Build delivery orders sync array from line items
+            $doSyncData = [];
+            foreach ($preparedItems['items'] as $itemData) {
+                // Find DO ID from do_data_id
+                $packingItem = \App\Models\Export\ExportDeliveryOrderPackingItem::find($itemData['do_data_id']);
+                if ($packingItem && $packingItem->delivery_order_id) {
+                    $dId = $packingItem->delivery_order_id;
+                    if (!isset($doSyncData[$dId])) {
+                        $doSyncData[$dId] = ['qty' => 0];
+                    }
+                    $doSyncData[$dId]['qty'] += $itemData['qty'];
+                }
+            }
+
+            // Fallback if no DOs matched
+            if (empty($doSyncData)) {
+                $doSyncData[$do_id] = ['qty' => $preparedItems['total_qty']];
+            }
+
+            $delivery_challan->delivery_order()->sync($doSyncData);
             $delivery_challan->delivery_challan_data()->delete();
 
             $createdItems = [];
@@ -301,55 +304,6 @@ class ExportDeliveryChallanController extends Controller
             }
 
             DB::commit();
-
-            // $receivingRequest = $delivery_challan->receivingRequest;
-            // if ($receivingRequest) {
-            //     $receivingRequest->update([
-            //         'dc_no' => $delivery_challan->dc_no,
-            //         'dc_date' => $delivery_challan->dispatch_date,
-            //         'truck_number' => $request->truck_no[0] ?? null,
-            //         'bilty' => $request->bilty_no[0] ?? null,
-            //         'labour' => $delivery_challan->labour,
-            //         'transporter' => $delivery_challan->transporter,
-            //         'inhouse_weighbridge' => $delivery_challan->{'inhouse-weighbridge'} ?? null,
-            //         'labour_amount' => $delivery_challan->labour_amount ?? 0,
-            //         'transporter_amount' => $delivery_challan->transporter_amount ?? 0,
-            //         'inhouse_weighbridge_amount' => $delivery_challan->{'weighbridge-amount'} ?? 0,
-            //     ]);
-            // } else {
-            //     $receivingRequest = ReceivingRequest::create([
-            //         'delivery_challan_id' => $delivery_challan->id,
-            //         'dc_no' => $delivery_challan->dc_no,
-            //         'dc_date' => $delivery_challan->dispatch_date,
-            //         'truck_number' => $request->truck_no[0] ?? null,
-            //         'bilty' => $request->bilty_no[0] ?? null,
-            //         'labour' => $delivery_challan->labour,
-            //         'transporter' => $delivery_challan->transporter,
-            //         'inhouse_weighbridge' => $delivery_challan->{'inhouse-weighbridge'} ?? null,
-            //         'labour_amount' => $delivery_challan->labour_amount ?? 0,
-            //         'transporter_amount' => $delivery_challan->transporter_amount ?? 0,
-            //         'inhouse_weighbridge_amount' => $delivery_challan->{'weighbridge-amount'} ?? 0,
-            //         'company_id' => $delivery_challan->company_id,
-            //         'created_by_id' => $delivery_challan->created_by_id,
-            //     ]);
-            // }
-
-            // $receivingRequest->items()->delete();
-            // foreach ($createdItems as $dcData) {
-            //     $product = Product::find($dcData->item_id);
-            //     ReceivingRequestItem::create([
-            //         'receiving_request_id' => $receivingRequest->id,
-            //         'delivery_challan_data_id' => $dcData->id,
-            //         'item_id' => $dcData->item_id,
-            //         'item_name' => $product?->name ?? 'N/A',
-            //         'dispatch_weight' => $dcData->qty ?? 0,
-            //         'receiving_weight' => 0,
-            //         'difference_weight' => $dcData->qty ?? 0,
-            //         'seller_portion' => 0,
-            //         'remaining_amount' => $dcData->qty ?? 0,
-            //     ]);
-            // }
-
 
             return response()->json([
                 'success' => 'Export Delivery Challan has been updated successfully.',
@@ -436,12 +390,25 @@ class ExportDeliveryChallanController extends Controller
             }
 
             $itemRows = [];
+            $groupedItems = [];
             foreach ($items as $itemData) {
-                $itemRows[] = [
-                    'item_data' => $itemData,
-                    'accepted_qc_id' => $itemData->loadingProgramItem->acceptedExportDispatchQc->id ?? null,
-                ];
+                $itemId = $itemData->item_id;
+                
+                if (!isset($groupedItems[$itemId])) {
+                    $groupedItems[$itemId] = [
+                        'item_id' => $itemId,
+                        'name' => getItem($itemId)?->name ?? 'N/A',
+                        'qty' => 0,
+                        'amount' => 0,
+                        'accepted_qc_id' => $itemData->loadingProgramItem->acceptedExportDispatchQc->id ?? null,
+                    ];
+                }
+                
+                $groupedItems[$itemId]['qty'] += (float) $itemData->qty;
+                $groupedItems[$itemId]['amount'] += ((float) $itemData->qty * (float) $itemData->rate);
             }
+            
+            $itemRows = array_values($groupedItems);
 
             $groupedData[] = [
                 'sale_order' => $delivery_challan,
@@ -646,11 +613,14 @@ class ExportDeliveryChallanController extends Controller
 
         $arrivalLocations = [];
         $arrivalLocationIds = [];
-        if ($ticket->arrival_location_id) {
-            $arrivalLocationIds = [$ticket->arrival_location_id];
-            $arrivalLoc = $ticket->arrivalLocation;
-            if ($arrivalLoc) {
-                $arrivalLocations = [['id' => $arrivalLoc->id, 'text' => $arrivalLoc->name]];
+        
+        $factoryNamesStr = $loadingSlip->factory ?? '';
+        if ($factoryNamesStr) {
+            $factoryNames = array_map('trim', explode(',', $factoryNamesStr));
+            $arrivalLocs = ArrivalLocation::whereIn('name', $factoryNames)->get();
+            if ($arrivalLocs->isNotEmpty()) {
+                $arrivalLocationIds = $arrivalLocs->pluck('id')->toArray();
+                $arrivalLocations = $arrivalLocs->map(fn($loc) => ['id' => $loc->id, 'text' => $loc->name])->toArray();
             }
         }
 
@@ -679,11 +649,14 @@ class ExportDeliveryChallanController extends Controller
 
         $subArrivalLocations = [];
         $subArrivalLocationIds = [];
-        if ($ticket->sub_arrival_location_id) {
-            $subArrivalLocationIds = [$ticket->sub_arrival_location_id];
-            $subArrivalLoc = $ticket->subArrivalLocation;
-            if ($subArrivalLoc) {
-                $subArrivalLocations = [['id' => $subArrivalLoc->id, 'text' => $subArrivalLoc->name]];
+
+        $galaNamesStr = $loadingSlip->gala ?? '';
+        if ($galaNamesStr) {
+            $galaNames = array_map('trim', explode(',', $galaNamesStr));
+            $subArrivalLocs = ArrivalSubLocation::whereIn('name', $galaNames)->get();
+            if ($subArrivalLocs->isNotEmpty()) {
+                $subArrivalLocationIds = $subArrivalLocs->pluck('id')->toArray();
+                $subArrivalLocations = $subArrivalLocs->map(fn($loc) => ['id' => $loc->id, 'text' => $loc->name])->toArray();
             }
         }
 
@@ -830,5 +803,37 @@ class ExportDeliveryChallanController extends Controller
         }
 
         return round(((float) $slip->secondWeighbridge->net_weight) / 1000, 3);
+    }
+
+    public function resolveDeliveryOrders($item): \Illuminate\Support\Collection
+    {
+        if (!$item) {
+            return collect();
+        }
+
+        $deliveryOrders = collect();
+
+        // Get DOs from ticket
+        $ticketDOs = $item->deliveryOrders()->withoutGlobalScopes()->get();
+        if ($ticketDOs->isNotEmpty()) {
+            $deliveryOrders = $deliveryOrders->merge($ticketDOs);
+        }
+
+        // Get DOs from LP
+        if ($item->exportLoadingProgram) {
+            $lpDOs = $item->exportLoadingProgram->deliveryOrders()->withoutGlobalScopes()->get();
+            if ($lpDOs->isNotEmpty()) {
+                $deliveryOrders = $deliveryOrders->merge($lpDOs);
+            }
+            if ($item->exportLoadingProgram->deliveryOrder) {
+                $deliveryOrders->push($item->exportLoadingProgram->deliveryOrder);
+            }
+        }
+
+        return $deliveryOrders->filter()
+            ->where('type', 'export_order')
+            ->unique('id')
+            ->sortBy('id')
+            ->values();
     }
 }

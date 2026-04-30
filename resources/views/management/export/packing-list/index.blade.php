@@ -48,6 +48,7 @@
                                             <!-- <th width="16%">BOL No</th> -->
                                             <th width="14%">Customer</th>
                                             <th width="10%">Qty (MT)</th>
+                                            <th width="10%">Status</th>
                                             <th width="10%">Action</th>
                                         </tr>
                                     </thead>
