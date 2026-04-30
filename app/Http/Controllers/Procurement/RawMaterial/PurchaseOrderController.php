@@ -332,6 +332,7 @@ class PurchaseOrderController extends Controller
                 "message" => "Purchase Order Already Approved or Rejected."
             ], 400);
         }
+        
         $data = $request->validated();
         $data = $request->all();
         // dd($data);
