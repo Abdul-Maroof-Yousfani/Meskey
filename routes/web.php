@@ -219,7 +219,7 @@ Route::get("testing-data", function() {
     $suppliers = \App\Models\Master\Supplier::where("owner_mobile_no", "LIKE", "%-%")->get();
     foreach($suppliers as $supplier) {
         $cleaned = str_replace("-", "", $supplier->owner_mobile_no);
-
+        dd($cleaned);
         // $supplier->update([
         //     "owner_mobile_no" => str_replace("-", "", $supplier->owner_mobile_no)
         // ]);
