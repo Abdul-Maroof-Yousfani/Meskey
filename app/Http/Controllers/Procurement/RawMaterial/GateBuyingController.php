@@ -268,6 +268,13 @@ class GateBuyingController extends Controller
         $locationId = (string) $request->location_id;
         $suppliers = Supplier::whereJsonContains('company_location_ids', $locationId)->where('is_gate_buying_supplier', 'Yes')->get();
 
+        $suppliers = $suppliers->map(function ($supplier) {
+            return [
+                'id' => $supplier->id,
+                'name' => $supplier->company_name
+            ];
+        });
+
         return response()->json([
             'success' => true,
             'suppliers' => $suppliers
