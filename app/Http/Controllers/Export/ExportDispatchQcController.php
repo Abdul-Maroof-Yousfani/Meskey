@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Export;
 use App\Http\Controllers\Controller;
 use App\Models\Export\ExportDispatchQc;
 use App\Models\Export\ExportDispatchQcAttachment;
+use App\Models\Master\ArrivalLocation;
+use App\Models\Master\ArrivalSubLocation;
 use App\Models\Sales\LoadingProgramItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -281,17 +283,18 @@ class ExportDispatchQcController extends Controller
             ->findOrFail($request->loading_program_item_id);
 
         $orders = $this->buildOrdersFromTicket($LoadingProgramItem);
+        $summary = $this->summarizeOrders($orders);
 
         return response()->json([
             'success' => true,
             'data' => [
                 'orders' => $orders,
-                'customer' => $orders[0]['customer'] ?? '',
-                'commodity' => $orders[0]['commodity'] ?? '',
-                'so_qty' => $orders[0]['so_qty'] ?? 0,
-                'do_qty' => $orders[0]['do_qty'] ?? 0,
-                'factory_names' => $orders[0]['factory_names'] ?? [],
-                'gala_names' => $orders[0]['gala_names'] ?? [],
+                'customer' => $summary['customer'],
+                'commodity' => $summary['commodity'],
+                'so_qty' => $summary['so_qty'],
+                'do_qty' => $summary['do_qty'],
+                'factory_names' => $summary['factory_names'],
+                'gala_names' => $summary['gala_names'],
             ],
         ]);
     }
@@ -348,11 +351,13 @@ class ExportDispatchQcController extends Controller
             'exportLoadingProgram.deliveryOrder.exportPackingItems.bagType',
             'exportLoadingProgram.deliveryOrder.arrivalLocation',
             'exportLoadingProgram.deliveryOrder.subArrivalLocation',
+            'exportLoadingProgram.deliveryOrder.locations',
             'exportLoadingProgram.deliveryOrders.customer',
             'exportLoadingProgram.deliveryOrders.exportOrder.product',
             'exportLoadingProgram.deliveryOrders.exportPackingItems.bagType',
             'exportLoadingProgram.deliveryOrders.arrivalLocation',
             'exportLoadingProgram.deliveryOrders.subArrivalLocation',
+            'exportLoadingProgram.deliveryOrders.locations',
             'exportLoadingProgram.exportOrder.product',
             'exportLoadingProgram.exportOrder.buyer',
             'exportLoadingProgram.exportOrders.product',
@@ -363,6 +368,7 @@ class ExportDispatchQcController extends Controller
             'deliveryOrders.exportPackingItems.bagType',
             'deliveryOrders.arrivalLocation',
             'deliveryOrders.subArrivalLocation',
+            'deliveryOrders.locations',
             'exportOrders.product',
             'exportOrders.buyer',
             'arrivalLocation',
@@ -408,8 +414,8 @@ class ExportDispatchQcController extends Controller
                     ?? '',
                 'so_qty' => $this->getExportOrderQty($deliveryOrder->exportOrder),
                 'do_qty' => $this->getExportDeliveryOrderQty($deliveryOrder),
-                'factory_names' => $this->getLocationNames($deliveryOrder->arrival_location_id, \App\Models\Master\ArrivalLocation::class),
-                'gala_names' => $this->getLocationNames($deliveryOrder->sub_arrival_location_id, \App\Models\Master\ArrivalSubLocation::class),
+                'factory_names' => $LoadingProgramItem->exportLoadingSlip ? explode(', ', $LoadingProgramItem->exportLoadingSlip->factory) : $this->getDeliveryOrderLocationNames($deliveryOrder, 'arrival_location_ids', ArrivalLocation::class),
+                'gala_names' => $LoadingProgramItem->exportLoadingSlip ? explode(', ', $LoadingProgramItem->exportLoadingSlip->gala) : $this->getDeliveryOrderLocationNames($deliveryOrder, 'sub_arrival_location_ids', ArrivalSubLocation::class),
             ];
         }
 
@@ -440,8 +446,8 @@ class ExportDispatchQcController extends Controller
                     'commodity' => $exportOrder->product->name ?? '',
                     'so_qty' => $this->getExportOrderQty($exportOrder),
                     'do_qty' => 0,
-                    'factory_names' => $LoadingProgramItem->arrivalLocation ? [$LoadingProgramItem->arrivalLocation->name] : [],
-                    'gala_names' => $LoadingProgramItem->subArrivalLocation ? [$LoadingProgramItem->subArrivalLocation->name] : [],
+                    'factory_names' => $LoadingProgramItem->exportLoadingSlip ? explode(', ', $LoadingProgramItem->exportLoadingSlip->factory) : ($LoadingProgramItem->arrivalLocation ? [$LoadingProgramItem->arrivalLocation->name] : []),
+                    'gala_names' => $LoadingProgramItem->exportLoadingSlip ? explode(', ', $LoadingProgramItem->exportLoadingSlip->gala) : ($LoadingProgramItem->subArrivalLocation ? [$LoadingProgramItem->subArrivalLocation->name] : []),
                 ];
             }
         }
@@ -454,8 +460,8 @@ class ExportDispatchQcController extends Controller
                 'commodity' => 'N/A',
                 'so_qty' => 0,
                 'do_qty' => 0,
-                'factory_names' => $LoadingProgramItem->arrivalLocation ? [$LoadingProgramItem->arrivalLocation->name] : [],
-                'gala_names' => $LoadingProgramItem->subArrivalLocation ? [$LoadingProgramItem->subArrivalLocation->name] : [],
+                'factory_names' => $LoadingProgramItem->exportLoadingSlip ? explode(', ', $LoadingProgramItem->exportLoadingSlip->factory) : ($LoadingProgramItem->arrivalLocation ? [$LoadingProgramItem->arrivalLocation->name] : []),
+                'gala_names' => $LoadingProgramItem->exportLoadingSlip ? explode(', ', $LoadingProgramItem->exportLoadingSlip->gala) : ($LoadingProgramItem->subArrivalLocation ? [$LoadingProgramItem->subArrivalLocation->name] : []),
             ];
         }
 
@@ -547,6 +553,28 @@ class ExportDispatchQcController extends Controller
         return $modelClass::whereIn('id', array_filter($ids))->pluck('name')->toArray();
     }
 
+    private function getDeliveryOrderLocationNames($deliveryOrder, string $column, string $modelClass): array
+    {
+        $ids = collect($deliveryOrder->locations ?? [])
+            ->flatMap(function ($location) use ($column) {
+                return explode(',', (string) ($location->{$column} ?? ''));
+            })
+            ->map(fn($id) => trim($id))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        if (!empty($ids)) {
+            return $modelClass::whereIn('id', $ids)->pluck('name')->toArray();
+        }
+
+        return $this->getLocationNames(
+            $column === 'arrival_location_ids' ? $deliveryOrder->arrival_location_id : $deliveryOrder->sub_arrival_location_id,
+            $modelClass
+        );
+    }
+
     private function getExportOrderQty($exportOrder): float
     {
         if (!$exportOrder) {
@@ -567,5 +595,29 @@ class ExportDispatchQcController extends Controller
         return (float) $deliveryOrder->exportPackingItems->sum(function ($item) {
             return $item->metric_tons ?? 0;
         });
+    }
+
+    private function summarizeOrders(array $orders): array
+    {
+        $totalSoQty = 0;
+        $totalDoQty = 0;
+        $allFactories = [];
+        $allGalas = [];
+
+        foreach ($orders as $order) {
+            $totalSoQty += (float) ($order['so_qty'] ?? 0);
+            $totalDoQty += (float) ($order['do_qty'] ?? 0);
+            $allFactories = array_merge($allFactories, $order['factory_names'] ?? []);
+            $allGalas = array_merge($allGalas, $order['gala_names'] ?? []);
+        }
+
+        return [
+            'customer' => $orders[0]['customer'] ?? '',
+            'commodity' => $orders[0]['commodity'] ?? '',
+            'so_qty' => $totalSoQty,
+            'do_qty' => $totalDoQty,
+            'factory_names' => array_values(array_unique($allFactories)),
+            'gala_names' => array_values(array_unique($allGalas)),
+        ];
     }
 }

@@ -85,6 +85,7 @@ class CommercialInvoiceController extends Controller
                     'commercial_invoice_no' => $invoice_no,
                     'invoice_no' => $invoice_no,
                     'invoice_date' => $validated['invoice_date'] ?? null,
+                    'remarks' => $validated['remarks'] ?? null,
                     'created_by' => auth()->user()?->id,
                 ]);
             });
@@ -149,6 +150,9 @@ class CommercialInvoiceController extends Controller
                 'commercial_invoice_no' => $validated['commercial_invoice_no'],
                 'invoice_no' => $validated['commercial_invoice_no'],
                 'invoice_date' => $validated['invoice_date'] ?? null,
+                'remarks' => $validated['remarks'] ?? null,
+                'am_approval_status' => 'pending',
+                'am_change_made' => 1,
             ]);
 
             DB::commit();
@@ -251,6 +255,7 @@ class CommercialInvoiceController extends Controller
             'bill_of_lading_ids.*' => ['integer', 'exists:bill_of_ladings,id'],
             'commercial_invoice_no' => ['nullable', 'string', 'max:255'],
             'invoice_date' => ['nullable', 'date'],
+            'remarks' => ['nullable', 'string'],
             'current_invoice_id' => ['nullable', 'integer', 'exists:commercial_invoices,id'],
         ]);
 
@@ -287,6 +292,7 @@ class CommercialInvoiceController extends Controller
                 'max:255',
             ],
             'invoice_date' => ['nullable', 'date'],
+            'remarks' => ['nullable', 'string'],
         ]);
     }
 
@@ -381,6 +387,7 @@ class CommercialInvoiceController extends Controller
             'bill_of_lading_ids' => $commercialInvoice->resolved_bill_of_lading_ids,
             'commercial_invoice_no' => $commercialInvoice->invoice_no ?: $commercialInvoice->commercial_invoice_no,
             'invoice_date' => optional($commercialInvoice->invoice_date)->format('Y-m-d'),
+            'remarks' => $commercialInvoice->remarks,
         ];
 
         return $this->buildPayloadFromRequest($input, $commercialInvoice->id);
@@ -489,6 +496,7 @@ class CommercialInvoiceController extends Controller
             'net_weight_mt' => round(($goodsSummary['totals']['net_weight_kg'] ?? 0) / 1000, 3),
             'total_amount' => $totalAmount,
             'amount_in_words' => $amountInWords,
+            'remarks' => $input['remarks'] ?? null,
             'selected_bol_summary' => trim(($billOfLadings->pluck('bill_no')->filter()->unique()->implode(', ') ?: 'N/A') . ' / ' . ($deliveryChallans->pluck('dc_no')->filter()->unique()->implode(', ') ?: 'N/A')),
         ];
     }

@@ -1,4 +1,8 @@
 <div class="modal-body">
+    @php
+        $selectedGalas = array_map('trim', explode(',', $loadingSlip->gala ?? ''));
+        $selectedFactories = array_map('trim', explode(',', $loadingSlip->factory ?? ''));
+    @endphp
     <div class="row form-mar">
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
@@ -29,9 +33,21 @@
                         <div class="col-xs-12 col-sm-6 col-md-3"><div class="form-group"><label>DO Qty (MT):</label><input type="number" value="{{ $order['do_qty'] }}" class="form-control" readonly disabled /></div></div>
                     </div>
                     <div class="row">
-                        <div class="col-xs-12 col-sm-6 col-md-4"><div class="form-group"><label>Factory:</label><select class="form-control select2 w-100" multiple disabled style="width: 100% !important;">@foreach($order['factory_names'] as $name)<option selected>{{ $name }}</option>@endforeach</select></div></div>
-                        <div class="col-xs-12 col-sm-6 col-md-4"><div class="form-group"><label>Gala:</label><select class="form-control select2 w-100" multiple disabled style="width: 100% !important;">@foreach($order['gala_names'] as $name)<option selected>{{ $name }}</option>@endforeach</select></div></div>
-                        <div class="col-xs-12 col-sm-6 col-md-4"><div class="form-group"><label>Bag Size:</label><input type="number" value="{{ $order['bag_size'] }}" class="form-control" readonly disabled /></div></div>
+                        <div class="col-xs-12 col-sm-6 col-md-6"><div class="form-group"><label>Factory:</label><select class="form-control select2 w-100" multiple disabled style="width: 100% !important;">@foreach($order['factory_names'] as $name)<option selected>{{ $name }}</option>@endforeach</select></div></div>
+                        <div class="col-xs-12 col-sm-6 col-md-6">
+                            <div class="form-group">
+                                <label>Gala:</label>
+                                <select class="form-control select2 w-100" multiple disabled style="width: 100% !important;">
+                                    @foreach($order['gala_names'] as $name)
+                                        @if(in_array(trim($name), $selectedGalas))
+                                            <option selected>{{ $name }}</option>
+                                        @endif
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-sm-6 col-md-6"><div class="form-group"><label>Bag Size:</label><input type="number" value="{{ $order['bag_size'] }}" class="form-control" readonly disabled /></div></div>
+                        <div class="col-xs-12 col-sm-6 col-md-6"><div class="form-group"><label>No. of Bags:</label><input type="text" value="{{ $loadingSlip->no_of_bags ?? 'N/A' }}" disabled class="form-control" autocomplete="off" readonly /></div></div>
                     </div>
                 </div>
             @endforeach
@@ -41,10 +57,42 @@
     @endif
 
     <div class="row">
-        <div class="col-xs-12 col-sm-6 col-md-3"><div class="form-group"><label>No. of Bags:</label><input type="text" value="{{ $loadingSlip->no_of_bags ?? 'N/A' }}" disabled class="form-control" autocomplete="off" readonly /></div></div>
-        <div class="col-xs-12 col-sm-6 col-md-3"><div class="form-group"><label>Kilogram:</label><input type="text" value="{{ $loadingSlip->kilogram ?? 'N/A' }}" disabled class="form-control" autocomplete="off" readonly /></div></div>
-        <div class="col-xs-12 col-sm-6 col-md-3"><div class="form-group"><label>Metric Tons:</label><input type="text" value="{{ number_format(($loadingSlip->kilogram ?? 0) / 1000, 2) }}" disabled class="form-control" autocomplete="off" readonly /></div></div>
-        <div class="col-xs-12 col-sm-6 col-md-3"><div class="form-group"><label>Labour</label><select class='form-control select2' disabled><option value='paid' @selected($loadingSlip->labour == 'paid')>Paid</option><option value='not_paid' @selected($loadingSlip->labour == 'not_paid')>Not Paid</option></select></div></div>
+        <div class="col-xs-12 col-sm-6 col-md-6"><div class="form-group"><label>Kilogram:</label><input type="text" value="{{ $loadingSlip->kilogram ?? 'N/A' }}" disabled class="form-control" autocomplete="off" readonly /></div></div>
+        <div class="col-xs-12 col-sm-6 col-md-6"><div class="form-group"><label>Metric Tons:</label><input type="text" value="{{ number_format(($loadingSlip->kilogram ?? 0) / 1000, 2) }}" disabled class="form-control" autocomplete="off" readonly /></div></div>
+        <div class="col-xs-12 col-sm-6 col-md-6"><div class="form-group"><label>Labour</label><select class='form-control select2' disabled><option value='paid' @selected($loadingSlip->labour == 'paid')>Paid</option><option value='not_paid' @selected($loadingSlip->labour == 'not_paid')>Not Paid</option></select></div></div>
+        <div class="col-xs-12 col-sm-6 col-md-6"><div class="form-group"><label>Seal No:</label><input type="text" value="{{ $loadingSlip->seal_no ?? 'N/A' }}" disabled class="form-control" autocomplete="off" readonly /></div></div> 
+    </div>
+
+    <div class="row pt-3">
+        <div class="col-12">
+            <h6 class="header-heading-sepration">Stack</h6>
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Bag Type</th>
+                        <th>Packing Size</th>
+                        <th>Input Size</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($loadingSlip->stacks as $stack)
+                        <tr>
+                            <td>{{ $stack->bag_type }}</td>
+                            <td>{{ $stack->packing_size }}</td>
+                            <td>{{ $stack->input_size }}</td>
+                        </tr>
+                    @empty
+                        @foreach ($fallbackStacks as $item)
+                            <tr>
+                                <td>{{ $item['bag_type'] }}</td>
+                                <td>{{ $item['packing_size'] }}</td>
+                                <td>N/A</td>
+                            </tr>
+                        @endforeach
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <div class="row">

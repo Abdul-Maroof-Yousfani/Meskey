@@ -59,7 +59,7 @@
                                 <div class="col-xs-12 col-sm-6 col-md-6">
                                     <div class="form-group">
                                         <label>Arrival Location:</label>
-                                        <input type="text" value="{{ get_location_name_by_id($do->location_id) }}" disabled class="form-control" readonly />
+                                        <input type="text" value="{{ $do->locations->pluck('companyLocation.name')->filter()->unique()->implode(', ') ?: 'N/A' }}" disabled class="form-control" readonly />
                                     </div>
                                 </div>
                             </div>
@@ -91,28 +91,14 @@
                 <div class="col-xs-12 col-sm-6 col-md-6">
                     <div class="form-group">
                         <label>Factory:</label>
-                        <select class="form-control select2 w-100" name="arrival_locations[]" id="arrival_locations" multiple disabled style="width: 100% !important;">
-                            @php
-                                $arrivalLocations = \App\Models\Master\ArrivalLocation::where('id', $LoadingProgramItem->arrival_location_id)->get();
-                            @endphp
-                            @foreach($arrivalLocations as $location)
-                                <option value="{{ $location->id }}" selected>{{ $location->name }}</option>
-                            @endforeach
-                        </select>
+                        <input type="text" value="{{ !empty($factoryNames) ? implode(', ', $factoryNames) : 'N/A' }}" disabled class="form-control" readonly />
                     </div>
                 </div>
 
                 <div class="col-xs-12 col-sm-6 col-md-6">
                     <div class="form-group">
                         <label>Sub Arrival Location:</label>
-                        <select class="form-control select2 w-100" name="sub_arrival_locations[]" id="sub_arrival_locations" multiple disabled style="width: 100% !important;">
-                            @php
-                                $subArrivalLocations = \App\Models\Master\ArrivalSubLocation::where('id', $LoadingProgramItem->sub_arrival_location_id)->get();
-                            @endphp
-                            @foreach($subArrivalLocations as $location)
-                                <option value="{{ $location->id }}" selected>{{ $location->name }}</option>
-                            @endforeach
-                        </select>
+                        <input type="text" value="{{ !empty($galaNames) ? implode(', ', $galaNames) : 'N/A' }}" disabled class="form-control" readonly />
                     </div>
                 </div>
             </div>

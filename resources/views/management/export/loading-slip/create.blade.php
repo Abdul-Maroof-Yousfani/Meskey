@@ -106,8 +106,7 @@
                 </li>
             `;
 
-            var factoryOptions = order.factory_names && order.factory_names.length > 0 ? order.factory_names.map(name => `<option value="" selected>${name}</option>`).join('') : '';
-            var galaOptions = order.gala_names && order.gala_names.length > 0 ? order.gala_names.map(name => `<option value="" selected>${name}</option>`).join('') : '';
+            var factoryNames = order.factory_names && order.factory_names.length > 0 ? order.factory_names.join(', ') : 'N/A';
 
             contentHtml += `
                 <div class="tab-pane fade show ${activeClass}" id="${contentId}" role="tabpanel" aria-labelledby="${tabId}">
@@ -136,28 +135,12 @@
                                 <input type="number" value="${order.do_qty}" class="form-control" readonly step="0.01" />
                             </div>
                         </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-xs-12 col-sm-6 col-md-4">
+                        </div>
+                        <div class="row">
+                        <div class="col-xs-12 col-sm-6 col-md-12">
                             <div class="form-group">
                                 <label>Factory:</label>
-                                <select class="form-control select2 w-100" multiple disabled style="width: 100% !important;">
-                                    ${factoryOptions}
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-xs-12 col-sm-6 col-md-4">
-                            <div class="form-group">
-                                <label>Gala:</label>
-                                <select class="form-control select2 w-100" multiple disabled style="width: 100% !important;">
-                                    ${galaOptions}
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-xs-12 col-sm-6 col-md-4">
-                            <div class="form-group">
-                                <label>Bag Size:</label>
-                                <input type="number" value="${order.bag_size}" class="form-control" readonly step="0.01" />
+                                <input type="text" value="${factoryNames}" class="form-control" readonly />
                             </div>
                         </div>
                     </div>
@@ -168,12 +151,34 @@
         tabsHtml += '</ul>';
         contentHtml += '</div>';
 
+        var galaOptions = data.gala_names && data.gala_names.length > 0
+            ? data.gala_names.map(name => `<option value="${name}">${name}</option>`).join('')
+            : '';
+        var factoryNames = data.factory_names && data.factory_names.length > 0
+            ? data.factory_names.join(', ')
+            : '';
+
         var commonInputsHtml = `
             <div class="row pt-2">
                 <div class="col-xs-12 col-sm-6 col-md-6">
                     <div class="form-group">
+                        <label>Bag Size:</label>
+                        <input type="number" value="${data.bag_size}" class="form-control" readonly step="0.01" />
+                    </div>
+                </div>
+                <div class="col-xs-12 col-sm-6 col-md-6">
+                    <div class="form-group">
+                        <label>Gala: <span class="text-danger">*</span></label>
+                        <select class="form-control select2 w-100" name="gala[]" id="gala_select" multiple required style="width: 100% !important;">
+                            ${galaOptions}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-xs-12 col-sm-6 col-md-6">
+                    <div class="form-group">
                         <label>No. of Bags: <span class="text-danger">*</span></label>
-                        <input type="number" name="no_of_bags" id="no_of_bags" class="form-control" min="1" required>
+                        <input type="number" name="no_of_bags" id="no_of_bags" class="form-control" min="1" max="${data.remaining_bags || ''}" required>
+                        <small class="text-muted">Available bags: ${typeof data.remaining_bags !== 'undefined' ? data.remaining_bags : 0}</small>
                     </div>
                 </div>
                 <div class="col-xs-12 col-sm-6 col-md-6">
@@ -197,16 +202,53 @@
                         <input type="number" id="metric_tons_display" value="0.00" class="form-control" readonly step="0.01" />
                     </div>
                 </div>
+                <div class="col-xs-12 col-sm-6 col-md-3">
+                    <div class="form-group">
+                        <label>Seal No:</label>
+                        <input type="text" name="seal_no" id="seal_no" class="form-control" placeholder="Enter Seal No" />
+                    </div>
+                </div>
                 <input type="hidden" name="bag_size" value="${data.bag_size}" />
                 <input type="hidden" name="company_id" value="{{ auth()->user()->current_company_id }}" />
+            </div>
+
+            <div class="row pt-3">
+                <div class="col-12">
+                    <h6 class="header-heading-sepration">Stack</h6>
+                    <table class="table table-bordered table-striped">
+                        <thead>
+                            <tr>
+                                <th>Bag Type</th>
+                                <th>Packing Size</th>
+                                <th>Input Size <span class="text-danger">*</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${(data.stack_items || []).map((item, idx) => `
+                                <tr>
+                                    <td>
+                                        ${item.bag_type}
+                                        <input type="hidden" name="stacks[${idx}][bag_type]" value="${item.bag_type}">
+                                    </td>
+                                    <td>
+                                        ${item.packing_size}
+                                        <input type="hidden" name="stacks[${idx}][packing_size]" value="${item.packing_size}">
+                                    </td>
+                                    <td>
+                                        <input type="text" name="stacks[${idx}][input_size]" class="form-control" placeholder="Enter Input Size" required>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <input type="hidden" name="customer" value="${data.customer}" />
             <input type="hidden" name="commodity" value="${data.commodity}" />
             <input type="hidden" name="so_qty" value="${data.so_qty}" />
             <input type="hidden" name="do_qty" value="${data.do_qty}" />
-            <input type="hidden" name="factory" value="${data.factory_names ? data.factory_names.join(', ') : ''}" />
-            <input type="hidden" name="gala" value="${data.gala_names ? data.gala_names.join(', ') : ''}" />
+            <input type="hidden" name="factory" value="${factoryNames}" />
         `;
 
         $('#ticketDataContainer').html(tabsHtml + contentHtml + commonInputsHtml);

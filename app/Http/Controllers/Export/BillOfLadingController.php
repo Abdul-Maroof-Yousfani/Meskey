@@ -87,6 +87,8 @@ class BillOfLadingController extends Controller
                     'place_of_issue' => $preview['place_of_issue'] ?? null,
                     'snapshot_data' => $preview,
                     'goods_summary' => $goodsSummary,
+                    'am_approval_status' => 'pending',
+                    'am_change_made' => 0,
                     'created_by' => auth()->user()?->id,
                 ]);
             });
@@ -163,6 +165,8 @@ class BillOfLadingController extends Controller
                 'place_of_issue' => $preview['place_of_issue'] ?? null,
                 'snapshot_data' => $preview,
                 'goods_summary' => $goodsSummary,
+                'am_approval_status' => 'pending',
+                'am_change_made' => 1,
             ]);
 
             DB::commit();

@@ -256,4 +256,11 @@
             </tr>
         </tbody>
     </table>
+    
+    @if (!empty($preview['remarks']))
+        <div style="margin-top: 20px; border-top: 1px solid #666; padding-top: 10px;">
+            <div class="ci-label" style="margin-bottom: 5px;">Remarks:</div>
+            <div class="ci-wrap">{!! $preview['remarks'] !!}</div>
+        </div>
+    @endif
 </div>

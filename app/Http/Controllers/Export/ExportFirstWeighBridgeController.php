@@ -3,12 +3,16 @@
 namespace App\Http\Controllers\Export;
 
 use App\Http\Controllers\Controller;
+use App\Models\Export\ExportDeliveryOrder;
 use App\Models\Export\ExportFirstWeighbridge;
+use App\Models\Master\ArrivalLocation;
+use App\Models\Master\ArrivalSubLocation;
 use App\Models\Master\ArrivalTruckType;
 use App\Models\Master\WeighbridgeAmount;
 use App\Models\Sales\LoadingProgramItem;
 use DB;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Validator;
 
 class ExportFirstWeighBridgeController extends Controller
@@ -56,8 +60,12 @@ class ExportFirstWeighBridgeController extends Controller
             'Tickets' => LoadingProgramItem::whereHas('loadingProgram', function ($query) {
                 $query->where('type', 'export_order');
             })
-                ->whereDoesntHave('firstWeighbridge')
-                ->with(['deliveryOrders.customer', 'deliveryOrders.exportOrder.product', 'exportOrders.product'])
+                ->whereHas('exportQc', function ($query) {
+                    $query->where('status', 'accept')
+                        ->orWhere('am_approval_status', 'approved');
+                })
+                ->whereDoesntHave('exportFirstWeighbridge')
+                ->with($this->ticketRelations())
                 ->get(),
         ];
 
@@ -83,32 +91,23 @@ class ExportFirstWeighBridgeController extends Controller
 
             $loadingProgramItem = LoadingProgramItem::whereHas('loadingProgram', function ($query) {
                 $query->where('type', 'export_order');
-            })->findOrFail($request->loading_program_item_id);
+            })->with($this->ticketRelations())->findOrFail($request->loading_program_item_id);
 
             $existingFirstWeighbridge = ExportFirstWeighbridge::where('loading_program_item_id', $request->loading_program_item_id)->first();
             if ($existingFirstWeighbridge) {
                 return response()->json(['errors' => ['loading_program_item_id' => 'This ticket already has a first weighbridge.']], 422);
             }
 
-            $loadingProgramItem->load(['deliveryOrders', 'loadingProgram']);
-            $deliveryOrders = $loadingProgramItem->deliveryOrders;
+            $deliveryOrders = $this->resolveDeliveryOrders($loadingProgramItem);
 
-            $request['created_by'] = auth()->user()->id;
-            $request['company_id'] = $request->company_id;
+            $payload = $request->except('delivery_order_id');
+            $payload['created_by'] = auth()->user()->id;
+            $payload['company_id'] = $request->company_id;
 
-            $companyLocationId = null;
-
-            if ($deliveryOrders->isNotEmpty()) {
-                $companyLocationId = $deliveryOrders->first()->location_id;
-                $request['delivery_order_id'] = $deliveryOrders->first()->id;
-            } else {
-                $companyLocationIds = $loadingProgramItem->loadingProgram->company_locations ?? [];
-                $companyLocationId = is_array($companyLocationIds) ? ($companyLocationIds[0] ?? null) : $companyLocationIds;
-                $request['delivery_order_id'] = null;
-            }
+            $companyLocationId = $this->resolveCompanyLocationId($loadingProgramItem, $deliveryOrders);
 
             if ($companyLocationId) {
-                $weighbridgeAmount = WeighbridgeAmount::where('truck_type_id', $request->truck_type_id)
+                $weighbridgeAmount = WeighbridgeAmount::where('truck_type_id', $payload['truck_type_id'])
                     ->where('company_location_id', $companyLocationId)
                     ->first();
 
@@ -116,12 +115,12 @@ class ExportFirstWeighBridgeController extends Controller
                     return response()->json(['errors' => ['truck_type_id' => 'Weighbridge amount not found for selected truck type and arrival location.']], 422);
                 }
 
-                $request['weighbridge_amount'] = $weighbridgeAmount->weighbridge_amount;
+                $payload['weighbridge_amount'] = $weighbridgeAmount->weighbridge_amount;
             } else {
                 return response()->json(['errors' => ['truck_type_id' => 'Company location not found to fetch weighbridge amount.']], 422);
             }
 
-            $firstWeighbridge = ExportFirstWeighbridge::create($request->all());
+            $firstWeighbridge = ExportFirstWeighbridge::create($payload);
 
             DB::commit();
 
@@ -140,16 +139,15 @@ class ExportFirstWeighBridgeController extends Controller
     public function edit($id)
     {
         $data['FirstWeighbridge'] = ExportFirstWeighbridge::with([
-            'loadingProgramItem.deliveryOrders.customer',
-            'loadingProgramItem.deliveryOrders.exportOrder.product',
-            'loadingProgramItem.deliveryOrders.arrivalLocation',
-            'loadingProgramItem.deliveryOrders.subArrivalLocation',
-            'loadingProgramItem.exportOrders.product',
+            'loadingProgramItem' => fn($query) => $query->with($this->ticketRelations()),
         ])->findOrFail($id);
 
         $data['ArrivalTruckTypes'] = ArrivalTruckType::where('status', 'active')->get();
-        $data['DeliveryOrders'] = $data['FirstWeighbridge']->loadingProgramItem->deliveryOrders;
-        $data['ExportOrders'] = $data['FirstWeighbridge']->loadingProgramItem->exportOrders;
+        $ticketData = $this->buildTicketData($data['FirstWeighbridge']->loadingProgramItem);
+        $data['DeliveryOrders'] = $ticketData['delivery_orders'];
+        $data['ExportOrders'] = $ticketData['export_orders'];
+        $data['factoryNames'] = $ticketData['factory_names'];
+        $data['galaNames'] = $ticketData['gala_names'];
 
         return view('management.export.first-weighbridge.edit', $data);
     }
@@ -182,7 +180,7 @@ class ExportFirstWeighBridgeController extends Controller
 
             $loadingProgramItem = LoadingProgramItem::whereHas('loadingProgram', function ($query) {
                 $query->where('type', 'export_order');
-            })->findOrFail($request->loading_program_item_id);
+            })->with($this->ticketRelations())->findOrFail($request->loading_program_item_id);
 
             $existingFirstWeighbridge = ExportFirstWeighbridge::where('loading_program_item_id', $request->loading_program_item_id)
                 ->where('id', '!=', $id)
@@ -192,23 +190,13 @@ class ExportFirstWeighBridgeController extends Controller
             }
 
             $firstWeighbridge = ExportFirstWeighbridge::findOrFail($id);
-            $loadingProgramItem->load(['deliveryOrders', 'loadingProgram']);
-            $deliveryOrders = $loadingProgramItem->deliveryOrders;
-            $request['company_id'] = $request->company_id;
-
-            $companyLocationId = null;
-
-            if ($deliveryOrders->isNotEmpty()) {
-                $companyLocationId = $deliveryOrders->first()->location_id;
-                $request['delivery_order_id'] = $deliveryOrders->first()->id;
-            } else {
-                $companyLocationIds = $loadingProgramItem->loadingProgram->company_locations ?? [];
-                $companyLocationId = is_array($companyLocationIds) ? ($companyLocationIds[0] ?? null) : $companyLocationIds;
-                $request['delivery_order_id'] = null;
-            }
+            $deliveryOrders = $this->resolveDeliveryOrders($loadingProgramItem);
+            $payload = $request->except('delivery_order_id');
+            $payload['company_id'] = $request->company_id;
+            $companyLocationId = $this->resolveCompanyLocationId($loadingProgramItem, $deliveryOrders);
 
             if ($companyLocationId) {
-                $weighbridgeAmount = WeighbridgeAmount::where('truck_type_id', $request->truck_type_id)
+                $weighbridgeAmount = WeighbridgeAmount::where('truck_type_id', $payload['truck_type_id'])
                     ->where('company_location_id', $companyLocationId)
                     ->first();
 
@@ -216,12 +204,12 @@ class ExportFirstWeighBridgeController extends Controller
                     return response()->json(['errors' => ['truck_type_id' => 'Weighbridge amount not found for selected truck type and arrival location.']], 422);
                 }
 
-                $request['weighbridge_amount'] = $weighbridgeAmount->weighbridge_amount;
+                $payload['weighbridge_amount'] = $weighbridgeAmount->weighbridge_amount;
             } else {
                 return response()->json(['errors' => ['truck_type_id' => 'Company location not found to fetch weighbridge amount.']], 422);
             }
 
-            $firstWeighbridge->update($request->all());
+            $firstWeighbridge->update($payload);
 
             DB::commit();
 
@@ -271,24 +259,20 @@ class ExportFirstWeighBridgeController extends Controller
 
     public function getFirstWeighbridgeRelatedData(Request $request)
     {
-        $LoadingProgramItem = LoadingProgramItem::with([
-            'deliveryOrders.customer',
-            'deliveryOrders.exportOrder.product',
-            'deliveryOrders.exportPackingItems',
-            'deliveryOrders.arrivalLocation',
-            'deliveryOrders.subArrivalLocation',
-            'exportOrders.product',
-        ])
+        $LoadingProgramItem = LoadingProgramItem::with($this->ticketRelations())
             ->whereHas('loadingProgram', function ($query) {
                 $query->where('type', 'export_order');
             })
             ->findOrFail($request->loading_program_item_id);
 
-        $DeliveryOrders = $LoadingProgramItem->deliveryOrders;
-        $ExportOrders = $LoadingProgramItem->exportOrders;
+        $ticketData = $this->buildTicketData($LoadingProgramItem);
+        $DeliveryOrders = $ticketData['delivery_orders'];
+        $ExportOrders = $ticketData['export_orders'];
+        $factoryNames = $ticketData['factory_names'];
+        $galaNames = $ticketData['gala_names'];
         $ArrivalTruckTypes = ArrivalTruckType::where('status', 'active')->get();
 
-        $html = view('management.export.first-weighbridge.getFirstWeighbridgeRelatedData', compact('DeliveryOrders', 'ExportOrders', 'ArrivalTruckTypes', 'LoadingProgramItem'))
+        $html = view('management.export.first-weighbridge.getFirstWeighbridgeRelatedData', compact('DeliveryOrders', 'ExportOrders', 'ArrivalTruckTypes', 'LoadingProgramItem', 'factoryNames', 'galaNames'))
             ->with('FirstWeighbridge', null)
             ->render();
 
@@ -309,18 +293,11 @@ class ExportFirstWeighBridgeController extends Controller
         $loadingProgramItem = LoadingProgramItem::whereHas('loadingProgram', function ($query) {
             $query->where('type', 'export_order');
         })
-            ->with(['deliveryOrders', 'loadingProgram'])
+            ->with($this->ticketRelations())
             ->findOrFail($request->loading_program_item_id);
 
-        $deliveryOrders = $loadingProgramItem->deliveryOrders;
-        $companyLocationId = null;
-
-        if ($deliveryOrders->isNotEmpty()) {
-            $companyLocationId = $deliveryOrders->first()->location_id;
-        } else {
-            $companyLocationIds = $loadingProgramItem->loadingProgram->company_locations ?? [];
-            $companyLocationId = is_array($companyLocationIds) ? ($companyLocationIds[0] ?? null) : $companyLocationIds;
-        }
+        $deliveryOrders = $this->resolveDeliveryOrders($loadingProgramItem);
+        $companyLocationId = $this->resolveCompanyLocationId($loadingProgramItem, $deliveryOrders);
 
         if (!$companyLocationId) {
             return response()->json([
@@ -344,5 +321,127 @@ class ExportFirstWeighBridgeController extends Controller
             'success' => false,
             'message' => 'Weighbridge amount not found for selected truck type and arrival location.',
         ]);
+    }
+
+    private function ticketRelations(): array
+    {
+        return [
+            'exportLoadingProgram.deliveryOrder.customer',
+            'exportLoadingProgram.deliveryOrder.exportOrder.product',
+            'exportLoadingProgram.deliveryOrder.exportPackingItems',
+            'exportLoadingProgram.deliveryOrder.locations',
+            'exportLoadingProgram.deliveryOrder.locations.companyLocation',
+            'exportLoadingProgram.deliveryOrders.customer',
+            'exportLoadingProgram.deliveryOrders.exportOrder.product',
+            'exportLoadingProgram.deliveryOrders.exportPackingItems',
+            'exportLoadingProgram.deliveryOrders.locations',
+            'exportLoadingProgram.deliveryOrders.locations.companyLocation',
+            'exportLoadingProgram.exportOrder.product',
+            'exportLoadingProgram.exportOrders.product',
+            'deliveryOrders.customer',
+            'deliveryOrders.exportOrder.product',
+            'deliveryOrders.exportPackingItems',
+            'deliveryOrders.locations',
+            'deliveryOrders.locations.companyLocation',
+            'exportOrders.product',
+        ];
+    }
+
+    private function resolveDeliveryOrders(LoadingProgramItem $item): Collection
+    {
+        $deliveryOrderIds = collect();
+
+        $linkedDOs = $item->exportLoadingProgram?->deliveryOrders?->where('am_approval_status', 'approved') ?? collect();
+        if ($linkedDOs->isNotEmpty()) {
+            $deliveryOrderIds = $deliveryOrderIds->merge($linkedDOs->pluck('id'));
+        }
+
+        if ($item->exportLoadingProgram?->deliveryOrder && $item->exportLoadingProgram->deliveryOrder->am_approval_status === 'approved') {
+            $deliveryOrderIds->push($item->exportLoadingProgram->deliveryOrder->id);
+        }
+
+        $ticketDOs = $item->deliveryOrders->where('type', 'export_order')->where('am_approval_status', 'approved');
+        if ($ticketDOs->isNotEmpty()) {
+            $deliveryOrderIds = $deliveryOrderIds->merge($ticketDOs->pluck('id'));
+        }
+
+        $deliveryOrderIds = $deliveryOrderIds->filter()->unique()->values();
+
+        if ($deliveryOrderIds->isEmpty()) {
+            return collect();
+        }
+
+        return ExportDeliveryOrder::with([
+            'customer',
+            'exportOrder.product',
+            'exportPackingItems',
+            'locations',
+            'locations.companyLocation',
+        ])->whereIn('id', $deliveryOrderIds)->get();
+    }
+
+    private function buildTicketData(LoadingProgramItem $item): array
+    {
+        $deliveryOrders = $this->resolveDeliveryOrders($item);
+        $exportOrders = $item->exportOrders
+            ->where('am_approval_status', 'approved')
+            ->values();
+
+        if ($exportOrders->isEmpty() && $item->exportLoadingProgram?->exportOrders?->isNotEmpty()) {
+            $exportOrders = $item->exportLoadingProgram->exportOrders
+                ->where('am_approval_status', 'approved')
+                ->values();
+        }
+
+        if (
+            $exportOrders->isEmpty()
+            && $item->exportLoadingProgram?->exportOrder
+            && $item->exportLoadingProgram->exportOrder->am_approval_status === 'approved'
+        ) {
+            $exportOrders = collect([$item->exportLoadingProgram->exportOrder]);
+        }
+
+        return [
+            'delivery_orders' => $deliveryOrders,
+            'export_orders' => $exportOrders,
+            'factory_names' => $this->getCombinedLocationNames($deliveryOrders, 'arrival_location_ids', ArrivalLocation::class),
+            'gala_names' => $this->getCombinedLocationNames($deliveryOrders, 'sub_arrival_location_ids', ArrivalSubLocation::class),
+        ];
+    }
+
+    private function resolveCompanyLocationId(LoadingProgramItem $item, Collection $deliveryOrders): ?int
+    {
+        $companyLocationId = $deliveryOrders->flatMap(function ($deliveryOrder) {
+            return collect($deliveryOrder->locations ?? [])->pluck('company_location_id');
+        })->filter()->first();
+
+        if ($companyLocationId) {
+            return (int) $companyLocationId;
+        }
+
+        $companyLocationIds = $item->exportLoadingProgram?->company_locations
+            ?? $item->loadingProgram?->company_locations
+            ?? [];
+
+        return is_array($companyLocationIds) ? ($companyLocationIds[0] ?? null) : $companyLocationIds;
+    }
+
+    private function getCombinedLocationNames(Collection $deliveryOrders, string $column, string $modelClass): array
+    {
+        $ids = $deliveryOrders->flatMap(function ($deliveryOrder) use ($column) {
+            return collect($deliveryOrder->locations ?? [])->flatMap(function ($location) use ($column) {
+                return explode(',', (string) ($location->{$column} ?? ''));
+            });
+        })->map(fn($id) => trim($id))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        if (empty($ids)) {
+            return [];
+        }
+
+        return $modelClass::whereIn('id', $ids)->pluck('name')->toArray();
     }
 }

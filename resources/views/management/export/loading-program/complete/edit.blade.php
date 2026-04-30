@@ -121,12 +121,14 @@
                 <table class="table table-bordered table-striped" id="itemsTable">
                     <thead class="thead-light">
                         <tr>
-                            <th style="width: 20%">Truck Number *</th>
-                            <th style="width: 20%">Container Number</th>
-                            <th style="width: 20%">Driver Name</th>
-                            <th style="width: 20%">Contact Details</th>
-                            <th style="width: 20%">Transporter</th>
-                            <th style="width: 10%">Actions</th>
+                            <th style="width: 15%">Truck Number *</th>
+                            <th style="width: 15%">Container Number</th>
+                            <th style="width: 10%">Berth No</th>
+                            <th style="width: 10%">S.Bill No</th>
+                            <th style="width: 15%">Driver Name</th>
+                            <th style="width: 15%">Contact Details</th>
+                            <th style="width: 15%">Transporter</th>
+                            <th style="width: 5%">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="itemsList">
@@ -143,6 +145,14 @@
                                 <td>
                                     <input type="text" name="loading_program_items[{{ $index }}][container_number]" 
                                         class="form-control form-control-sm" value="{{ $item->container_number }}" @disabled($item->firstWeighbridge)>
+                                </td>
+                                <td>
+                                    <input type="text" name="loading_program_items[{{ $index }}][berth_no]" 
+                                        class="form-control form-control-sm" value="{{ $item->berth_no }}" @disabled($item->firstWeighbridge)>
+                                </td>
+                                <td>
+                                    <input type="text" name="loading_program_items[{{ $index }}][s_bill_no]" 
+                                        class="form-control form-control-sm" value="{{ $item->s_bill_no }}" @disabled($item->firstWeighbridge)>
                                 </td>
                                 <td>
                                     <input type="text" name="loading_program_items[{{ $index }}][driver_name]" 
@@ -423,6 +433,8 @@
                 <tr class="item-row" data-index="${index}">
                     <td><input type="text" name="loading_program_items[${index}][truck_number]" class="form-control form-control-sm" required></td>
                     <td><input type="text" name="loading_program_items[${index}][container_number]" class="form-control form-control-sm"></td>
+                    <td><input type="text" name="loading_program_items[${index}][berth_no]" class="form-control form-control-sm"></td>
+                    <td><input type="text" name="loading_program_items[${index}][s_bill_no]" class="form-control form-control-sm"></td>
                     <td><input type="text" name="loading_program_items[${index}][driver_name]" class="form-control form-control-sm"></td>
                     <td><input type="text" name="loading_program_items[${index}][contact_details]" class="form-control form-control-sm"></td>
                     <td><select name="loading_program_items[${index}][transporter_id]" class="form-control form-control-sm select2 transporter-select"><option value="">Select Transporter</option>@foreach($Transporters as $transporter)<option value="{{ $transporter->id }}">{{ $transporter->name }}</option>@endforeach</select></td>
