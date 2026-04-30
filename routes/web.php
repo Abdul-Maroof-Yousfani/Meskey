@@ -72,7 +72,6 @@ Route::get("get-all-vouchers", function() {
 
 Route::get("/teste", function() {
     $sales_order = SalesOrder::query()->where("reference_no", "SO-2026-04-16-002")->get();
-    dd($sales_order);
 });
 
 Route::get("voucher-types", function() {
@@ -214,6 +213,11 @@ Route::get("add-permission", function() {
         'name' => 'procurement-purchase-sampling',
         'guard_name' => 'web'
     ]);
+});
+
+Route::get("testing-data", function() {
+    $suppliers = Supplier::where("name", "LIKE", "%-%%")->get();
+    dd($suppliers);
 });
 
 Route::get('/delete-migration/{filename}', function ($filename) {
