@@ -33,6 +33,11 @@ class ExportLoadingSlip extends LoadingSlip
         return $this->hasOne(ExportSecondWeighbridge::class, 'loading_slip_id');
     }
 
+    public function stacks()
+    {
+        return $this->hasMany(ExportLoadingSlipStack::class, 'loading_slip_id');
+    }
+
     public function hasRejectedDispatchQc(): bool
     {
         $latestDispatchQc = $this->loadingProgramItem?->exportDispatchQc;

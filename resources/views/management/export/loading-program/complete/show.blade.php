@@ -200,6 +200,8 @@
                         <tr>
                             <th>Truck Number</th>
                             <th>Container Number</th>
+                            <th>Berth No</th>
+                            <th>S.Bill No</th>
                             <th>Driver Name</th>
                             <th>Contact Details</th>
                             <th>Transporter</th>
@@ -210,6 +212,8 @@
                         <tr>
                             <td>{{ $item->truck_number }}</td>
                             <td>{{ $item->container_number ?? '-' }}</td>
+                            <td>{{ $item->berth_no ?? '-' }}</td>
+                            <td>{{ $item->s_bill_no ?? '-' }}</td>
                             <td>{{ $item->driver_name ?? '-' }}</td>
                             <td>{{ $item->contact_details ?? '-' }}</td>
                             <td>{{ $item->transporter->name ?? '-' }}</td>

@@ -2,12 +2,13 @@
 
 namespace App\Models\Export;
 
+use App\Traits\HasApproval;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class CommercialInvoice extends Model
 {
-    use HasFactory;
+    use HasFactory, HasApproval;
 
     protected $guarded = ['id', 'created_at', 'updated_at'];
 

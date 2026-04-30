@@ -126,6 +126,18 @@ class ApprovalModuleController extends Controller
                 'value' => 'App\Models\Export\ExportDeliveryChallan',
                 'label' => 'Export Delivery Challan'
             ],
+            [
+                'value' => 'App\Models\Export\BillOfLading',
+                'label' => 'Bill Of Lading'
+            ],
+            [
+                'value' => 'App\Models\Export\CommercialInvoice',
+                'label' => 'Commerical Invoice'
+            ],
+            [
+                'value' => 'App\Models\Export\PackingList',
+                'label' => 'Packing List'
+            ],
 
         ];
 

@@ -63,21 +63,13 @@
                             <div class="col-xs-12 col-sm-6 col-md-6">
                                 <div class="form-group">
                                     <label>Factory:</label>
-                                    <select class="form-control select2 w-100" multiple disabled style="width: 100% !important;">
-                                        @foreach($order['factory_names'] as $name)
-                                            <option selected>{{ $name }}</option>
-                                        @endforeach
-                                    </select>
+                                    <input type="text" value="{{ implode(', ', $order['factory_names']) ?: 'N/A' }}" class="form-control" readonly />
                                 </div>
                             </div>
                             <div class="col-xs-12 col-sm-6 col-md-6">
                                 <div class="form-group">
                                     <label>Gala:</label>
-                                    <select class="form-control select2 w-100" multiple disabled style="width: 100% !important;">
-                                        @foreach($order['gala_names'] as $name)
-                                            <option selected>{{ $name }}</option>
-                                        @endforeach
-                                    </select>
+                                    <input type="text" value="{{ implode(', ', $order['gala_names']) ?: 'N/A' }}" class="form-control" readonly />
                                 </div>
                             </div>
                         </div>
@@ -225,10 +217,10 @@
                 </li>
             `;
 
-            var factoryOptions = order.factory_names && order.factory_names.length > 0 ?
-                order.factory_names.map(name => `<option value="" selected>${name}</option>`).join('') : '';
-            var galaOptions = order.gala_names && order.gala_names.length > 0 ?
-                order.gala_names.map(name => `<option value="" selected>${name}</option>`).join('') : '';
+            var factoryNames = order.factory_names && order.factory_names.length > 0 ?
+                order.factory_names.join(', ') : 'N/A';
+            var galaNames = order.gala_names && order.gala_names.length > 0 ?
+                order.gala_names.join(', ') : 'N/A';
 
             contentHtml += `
                 <div class="tab-pane fade show ${activeClass}" id="${contentId}" role="tabpanel" aria-labelledby="${tabId}">
@@ -262,17 +254,13 @@
                         <div class="col-xs-12 col-sm-6 col-md-6">
                             <div class="form-group">
                                 <label>Factory:</label>
-                                <select class="form-control select2 w-100" multiple disabled style="width: 100% !important;">
-                                    ${factoryOptions}
-                                </select>
+                                <input type="text" value="${factoryNames}" class="form-control" readonly />
                             </div>
                         </div>
                         <div class="col-xs-12 col-sm-6 col-md-6">
                             <div class="form-group">
                                 <label>Gala:</label>
-                                <select class="form-control select2 w-100" multiple disabled style="width: 100% !important;">
-                                    ${galaOptions}
-                                </select>
+                                <input type="text" value="${galaNames}" class="form-control" readonly />
                             </div>
                         </div>
                     </div>

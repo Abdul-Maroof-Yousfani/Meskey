@@ -14,8 +14,16 @@
         <tbody>
             @foreach($FirstWeighbridges as $firstWeighbridge)
                 @php
-                    $deliveryOrder = $firstWeighbridge->loadingProgramItem->deliveryOrders->first();
-                    $exportOrder = $firstWeighbridge->loadingProgramItem->exportOrders->first();
+                    $ticket = $firstWeighbridge->loadingProgramItem;
+                    $deliveryOrder = $ticket->exportLoadingProgram?->deliveryOrders?->where('am_approval_status', 'approved')->first()
+                        ?? (($ticket->exportLoadingProgram?->deliveryOrder && $ticket->exportLoadingProgram->deliveryOrder->am_approval_status === 'approved')
+                            ? $ticket->exportLoadingProgram->deliveryOrder
+                            : null)
+                        ?? $ticket->deliveryOrders->where('type', 'export_order')->where('am_approval_status', 'approved')->first();
+                    $exportOrder = $deliveryOrder?->exportOrder
+                        ?? $ticket->exportOrders->where('am_approval_status', 'approved')->first()
+                        ?? $ticket->exportLoadingProgram?->exportOrders?->where('am_approval_status', 'approved')->first()
+                        ?? $ticket->exportLoadingProgram?->exportOrder;
                 @endphp
                 <tr>
                     <td>{{ $firstWeighbridge->loadingProgramItem->transaction_number ?? 'N/A' }}</td>

@@ -46,6 +46,11 @@
                     <option value="">Select Commercial Invoice</option>
                 </select>
             </div>
+            <div class="form-group">
+                <label>Remarks</label>
+                <textarea name="remarks" id="remarks" rows="5" class="form-control text-editor"
+                    placeholder="Enter remarks...">{!! old('remarks', $packingList->remarks ?? '') !!}</textarea>
+            </div>
         </div>
 
         <div class="col-md-8">
@@ -76,6 +81,36 @@
         $('.select2').select2({
             width: '100%'
         });
+
+        // Summernote initialization
+        if (!document.querySelector('link[data-pl-summernote]')) {
+            var link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = 'https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.css';
+            link.setAttribute('data-pl-summernote', '1');
+            document.head.appendChild(link);
+        }
+        if (!document.querySelector('script[data-pl-summernote]')) {
+            var script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.js';
+            script.defer = true;
+            script.setAttribute('data-pl-summernote', '1');
+            document.head.appendChild(script);
+        }
+        
+        var initSummernote = function() {
+            if ($.fn.summernote) {
+                $('#remarks').summernote({
+                    height: 140,
+                    callbacks: {
+                        onChange: function() { fetchPackingListPreview(); }
+                    }
+                });
+            } else {
+                setTimeout(initSummernote, 300);
+            }
+        };
+        initSummernote();
 
         $('#export_order_id').on('change', function() {
             loadCommercialInvoicesByExportOrder(false);
@@ -138,6 +173,7 @@
 
     function fetchPackingListPreview() {
         var commercialInvoiceId = $('#commercial_invoice_id').val();
+        var remarks = $.fn.summernote ? $('#remarks').summernote('code') : $('#remarks').val();
 
         if (!commercialInvoiceId) {
             showPackingListHint('Please select a Commercial Invoice to generate the preview.');
@@ -149,6 +185,7 @@
             method: 'GET',
             data: {
                 commercial_invoice_id: commercialInvoiceId,
+                remarks: remarks,
             },
             dataType: 'json',
             success: function(res) {

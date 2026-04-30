@@ -69,12 +69,13 @@ class PackingListController extends CommercialInvoiceController
         DB::beginTransaction();
 
         try {
-            [$commercialInvoice, $preview, $goodsSummary] = $this->buildPayloadFromCommercialInvoiceId((int) $validated['commercial_invoice_id']);
+            [$commercialInvoice, $preview, $goodsSummary] = $this->buildPayloadFromCommercialInvoiceId((int) $validated['commercial_invoice_id'], $validated['remarks'] ?? null);
 
             PackingList::create([
                 'export_order_id' => $commercialInvoice->export_order_id,
                 'commercial_invoice_id' => $commercialInvoice->id,
                 'bill_of_lading_id' => $commercialInvoice->bill_of_lading_id,
+                'remarks' => $validated['remarks'] ?? null,
                 'snapshot_data' => $preview,
                 'goods_summary' => $goodsSummary,
                 'created_by' => auth()->user()?->id,
@@ -131,12 +132,15 @@ class PackingListController extends CommercialInvoiceController
 
             $validated = $this->validatePackingList($request, $packingList->id);
 
-            [$commercialInvoice, $preview, $goodsSummary] = $this->buildPayloadFromCommercialInvoiceId((int) $validated['commercial_invoice_id']);
+            [$commercialInvoice, $preview, $goodsSummary] = $this->buildPayloadFromCommercialInvoiceId((int) $validated['commercial_invoice_id'], $validated['remarks'] ?? null);
 
             $packingList->update([
                 'export_order_id' => $commercialInvoice->export_order_id,
                 'commercial_invoice_id' => $commercialInvoice->id,
                 'bill_of_lading_id' => $commercialInvoice->bill_of_lading_id,
+                'remarks' => $validated['remarks'] ?? null,
+                'am_approval_status' => 'pending',
+                'am_change_made' => 1,
                 'snapshot_data' => $preview,
                 'goods_summary' => $goodsSummary,
             ]);
@@ -188,9 +192,10 @@ class PackingListController extends CommercialInvoiceController
                 'integer',
                 'exists:commercial_invoices,id',
             ],
+            'remarks' => ['nullable', 'string'],
         ]);
 
-        [, $preview, $goodsSummary] = $this->buildPayloadFromCommercialInvoiceId((int) $validated['commercial_invoice_id']);
+        [, $preview, $goodsSummary] = $this->buildPayloadFromCommercialInvoiceId((int) $validated['commercial_invoice_id'], $validated['remarks'] ?? null);
 
         return response()->json([
             'success' => true,
@@ -239,6 +244,7 @@ class PackingListController extends CommercialInvoiceController
                 'exists:commercial_invoices,id',
                 Rule::unique('packing_lists', 'commercial_invoice_id')->ignore($packingListId),
             ],
+            'remarks' => ['nullable', 'string'],
         ]);
     }
 
@@ -283,10 +289,10 @@ class PackingListController extends CommercialInvoiceController
             return [$packingList->commercialInvoice, $packingList->snapshot_data, $packingList->goods_summary];
         }
 
-        return $this->buildPayloadFromCommercialInvoiceId((int) $packingList->commercial_invoice_id);
+        return $this->buildPayloadFromCommercialInvoiceId((int) $packingList->commercial_invoice_id, $packingList->remarks);
     }
 
-    protected function buildPayloadFromCommercialInvoiceId(int $commercialInvoiceId): array
+    protected function buildPayloadFromCommercialInvoiceId(int $commercialInvoiceId, ?string $remarks = null): array
     {
         $commercialInvoice = CommercialInvoice::with(['exportOrder', 'billOfLading'])->findOrFail($commercialInvoiceId);
         [$billOfLadings, $ciPreview, $ciGoodsSummary] = $this->buildPayloadFromInvoice($commercialInvoice);
@@ -402,6 +408,7 @@ class PackingListController extends CommercialInvoiceController
             'total_net_weight_mt' => $totalNetWeightMt,
             'total_gross_weight_mt' => $totalGrossWeightMt,
             'total_bags' => $totalBags,
+            'remarks' => $remarks,
         ];
 
         $goodsSummary = [

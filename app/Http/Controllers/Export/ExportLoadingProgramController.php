@@ -381,6 +381,8 @@ class ExportLoadingProgramController extends Controller
                     'driver_name' => $itemData['driver_name'] ?? null,
                     'contact_details' => $itemData['contact_details'] ?? null,
                     'transporter_id' => $itemData['transporter_id'] ?? null,
+                    'berth_no' => $itemData['berth_no'] ?? null,
+                    's_bill_no' => $itemData['s_bill_no'] ?? null,
                     'qty' => 0,
                     'delivery_order_id' => $loadingProgram->delivery_order_id,
                 ];

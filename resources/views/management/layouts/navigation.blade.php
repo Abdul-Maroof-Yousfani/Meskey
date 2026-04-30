@@ -881,17 +881,16 @@
                         @endcanAccess
 
                         <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                                href="{{ route('export-first-weighbridge.index') }}"
-                                onclick="loadPageContent('{{ route('export-first-weighbridge.index') }}')"
-
-                                data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
-                                    data-i18n="Extended">First Weighbridge</span></a>
-                        </li>
-
-                        <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                 href="{{ route('export-qc.index') }}"
                                 onclick="loadPageContent('{{ route('export-qc.index') }}')" data-toggle="dropdown"><i
                                     class="ft-arrow-right submenu-icon"></i><span data-i18n="Extended">QC</span></a>
+                        </li>
+
+                        <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                href="{{ route('export-first-weighbridge.index') }}"
+                                onclick="loadPageContent('{{ route('export-first-weighbridge.index') }}')"
+                                data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                    data-i18n="Extended">First Weighbridge</span></a>
                         </li>
 
                         <li data-menu=""><a class="dropdown-item d-flex align-items-center"

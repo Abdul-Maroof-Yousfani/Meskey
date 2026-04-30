@@ -103,6 +103,12 @@
     ])
 </div>
 
+<div class="row mt-5">
+    <div class="col-12">
+        <x-approval-status :model="$billOfLading" />
+    </div>
+</div>
+
 <script>
     $(document).ready(function() {
         @if(request()->get('print'))
