@@ -406,20 +406,20 @@ function filterationCommon(
   $('input[name="daterange"]').daterangepicker(
     {
       opens: "left",
-      // autoUpdateInput: false,
+      autoUpdateInput: false,
       locale: {
         cancelLabel: "Clear",
       },
     },
     function (start, end, label) {
-      console.log(
-        "A new date selection was made: " +
-        start.format("YYYY-MM-DD") +
-        "  -  " +
-        start +
-        " to " +
-        end.format("YYYY-MM-DD")
-      );
+      // console.log(
+      //   "A new date selection was made: " +
+      //   start.format("YYYY-MM-DD") +
+      //   "  -  " +
+      //   start +
+      //   " to " +
+      //   end.format("YYYY-MM-DD")
+      // );
       $("[name='daterange']").val(
         `${start.format("MM/DD/YYYY")} - ${end.format("MM/DD/YYYY")}`
       );
@@ -431,6 +431,17 @@ function filterationCommon(
       fetch_data(formData);
     }
   );
+
+  $('input[name="daterange"]').on('cancel.daterangepicker', function (ev, picker) {
+    ev.preventDefault(); 
+
+    $(this).val(''); 
+
+    picker.setStartDate(moment());
+    picker.setEndDate(moment());
+
+    picker.show(); 
+  });
 
   // Handle form input changes
   $("#" + formId + " input, #" + formId + " select")
