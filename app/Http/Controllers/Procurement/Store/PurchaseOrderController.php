@@ -673,12 +673,12 @@ class PurchaseOrderController extends Controller
         $purchase_quotation = PurchaseQuotation::select("id", "supplier_id")->find($pq_id);
       
 
-        $supplier = Supplier::select('id', 'name')->find($purchase_quotation->supplier_id);
+        $supplier = Supplier::select('id', 'name', 'company_name')->find($purchase_quotation->supplier_id);
 
         return [
             [
             "id" => $supplier->id,
-            "text" => $supplier->name
+            "text" => $supplier->company_name
             ]
         ];
     }
