@@ -92,7 +92,9 @@
 </style>
 
 <div class="bol-show-actions">
-    <button type="button" class="btn btn-secondary me-2" onclick="window.print()">Print</button>
+    @if($billOfLading->am_approval_status === 'approved')
+        <button type="button" class="btn btn-secondary me-2" onclick="window.print()">Print</button>
+    @endif
     <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
 </div>
 

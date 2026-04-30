@@ -41,9 +41,11 @@
         &nbsp;&mdash;&nbsp;
         {{ $commercialInvoice->invoice_date ? \Carbon\Carbon::parse($commercialInvoice->invoice_date)->format('d M Y') : 'N/A' }}
     </div>
-    <button type="button" class="btn btn-secondary btn-sm" onclick="window.print()">
-        <i class="ft-printer"></i> Print
-    </button>
+    @if($commercialInvoice->am_approval_status === 'approved')
+        <button type="button" class="btn btn-secondary btn-sm" onclick="window.print()">
+            <i class="ft-printer"></i> Print
+        </button>
+    @endif
     <a type="button" class="btn btn-danger btn-sm modal-sidebar-close position-relative top-1 closebutton">
         <i class="ft-x"></i> Close
     </a>

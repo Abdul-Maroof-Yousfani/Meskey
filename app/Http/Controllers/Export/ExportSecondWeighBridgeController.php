@@ -124,13 +124,7 @@ class ExportSecondWeighBridgeController extends Controller
         $secondWeighbridge = ExportSecondWeighbridge::create($requestData);
 
         $remainingWeight = $net_weight;
-        $item = $loadingSlip->loadingProgramItem;
-        $deliveryOrders = collect();
-        if ($item && $item->deliveryOrders->isNotEmpty()) {
-            $deliveryOrders = $item->deliveryOrders->where('type', 'export_order')->sortBy('id');
-        } elseif ($loadingSlip->deliveryOrder) {
-            $deliveryOrders->push($loadingSlip->deliveryOrder);
-        }
+        $deliveryOrders = $this->resolveDeliveryOrders($loadingSlip->loadingProgramItem);
 
         foreach ($deliveryOrders as $do) {
             if ($remainingWeight <= 0) {
@@ -160,6 +154,10 @@ class ExportSecondWeighBridgeController extends Controller
             'loadingSlip.loadingProgramItem.deliveryOrders.exportOrder',
             'loadingSlip.loadingProgramItem.deliveryOrders.arrivalLocation',
             'loadingSlip.loadingProgramItem.deliveryOrders.subArrivalLocation',
+            'loadingSlip.loadingProgramItem.exportLoadingProgram.deliveryOrders.customer',
+            'loadingSlip.loadingProgramItem.exportLoadingProgram.deliveryOrders.exportPackingItems',
+            'loadingSlip.loadingProgramItem.exportLoadingProgram.deliveryOrder.customer',
+            'loadingSlip.loadingProgramItem.exportLoadingProgram.deliveryOrder.exportPackingItems',
             'loadingSlip.loadingProgramItem.exportOrders.product',
             'loadingSlip.loadingProgramItem.exportOrders.buyer',
         ])->findOrFail($id);
@@ -212,6 +210,8 @@ class ExportSecondWeighBridgeController extends Controller
                     ->get();
             }
         }
+        
+        $data['all_delivery_orders'] = $this->resolveDeliveryOrders($loadingSlip->loadingProgramItem);
 
         return view('management.export.second-weighbridge.edit', $data);
     }
@@ -288,13 +288,7 @@ class ExportSecondWeighBridgeController extends Controller
 
             $secondWeighbridge->items()->delete();
             $remainingWeight = $net_weight;
-            $item = $loadingSlip->loadingProgramItem;
-            $deliveryOrders = collect();
-            if ($item && $item->deliveryOrders->isNotEmpty()) {
-                $deliveryOrders = $item->deliveryOrders->where('type', 'export_order')->sortBy('id');
-            } elseif ($loadingSlip->deliveryOrder) {
-                $deliveryOrders->push($loadingSlip->deliveryOrder);
-            }
+            $deliveryOrders = $this->resolveDeliveryOrders($loadingSlip->loadingProgramItem);
 
             foreach ($deliveryOrders as $do) {
                 if ($remainingWeight <= 0) {
@@ -365,10 +359,9 @@ class ExportSecondWeighBridgeController extends Controller
             'loadingProgramItem.exportLoadingProgram.deliveryOrder.customer',
             'loadingProgramItem.exportLoadingProgram.deliveryOrder.exportOrder',
             'loadingProgramItem.exportLoadingProgram.deliveryOrder.exportPackingItems',
-            'loadingProgramItem.exportLoadingProgram.deliveryOrder.arrivalLocation',
-            'loadingProgramItem.exportLoadingProgram.deliveryOrder.subArrivalLocation',
+            'loadingProgramItem.exportLoadingProgram.deliveryOrders.customer',
+            'loadingProgramItem.exportLoadingProgram.deliveryOrders.exportPackingItems',
             'loadingProgramItem.deliveryOrders.customer',
-            'loadingProgramItem.deliveryOrders.exportOrder',
             'loadingProgramItem.deliveryOrders.exportPackingItems',
             'loadingProgramItem.deliveryOrders.arrivalLocation',
             'loadingProgramItem.deliveryOrders.subArrivalLocation',
@@ -441,5 +434,37 @@ class ExportSecondWeighBridgeController extends Controller
     public function getBalanceAgainstSecondWeighbridge(Request $request)
     {
         return get_second_weighbridge_balance_by_delivery_order_kg($request->delivery_order_id);
+    }
+
+    private function resolveDeliveryOrders($item): \Illuminate\Support\Collection
+    {
+        if (!$item) {
+            return collect();
+        }
+
+        $deliveryOrders = collect();
+
+        // Get DOs from ticket
+        $ticketDOs = $item->deliveryOrders()->withoutGlobalScopes()->get();
+        if ($ticketDOs->isNotEmpty()) {
+            $deliveryOrders = $deliveryOrders->merge($ticketDOs);
+        }
+
+        // Get DOs from LP
+        if ($item->exportLoadingProgram) {
+            $lpDOs = $item->exportLoadingProgram->deliveryOrders()->withoutGlobalScopes()->get();
+            if ($lpDOs->isNotEmpty()) {
+                $deliveryOrders = $deliveryOrders->merge($lpDOs);
+            }
+            if ($item->exportLoadingProgram->deliveryOrder) {
+                $deliveryOrders->push($item->exportLoadingProgram->deliveryOrder);
+            }
+        }
+
+        return $deliveryOrders->filter()
+            ->where('type', 'export_order')
+            ->unique('id')
+            ->sortBy('id')
+            ->values();
     }
 }

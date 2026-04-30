@@ -90,4 +90,9 @@ class ExportDeliveryChallan extends Model
     {
         return $this->morphMany(SectionLocation::class, 'sectionable');
     }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(\App\Models\User::class, 'created_by_id');
+    }
 }

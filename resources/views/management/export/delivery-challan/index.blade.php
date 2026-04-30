@@ -44,14 +44,15 @@
                                 <table class="table m-0">
                                     <thead>
                                         <tr>
-                                            <th class="col-3">SO NO</th>
-                                            {{-- <th class="col-2">Location</th> --}}
-                                            <th class="col-4">Customer</th>
-                                            <th class="col-2 text-right">Qty(KG)</th>
-                                            {{-- <th class="col-1 text-right">Approved Qty</th> --}}
-                                            <th class="col-1">Contract Type</th>
-                                            <th class="col-1">Status</th>
-                                            <th class="col-1">Action</th>
+                                            <th width="12%">DC No</th>
+                                            <th width="18%">Customer</th>
+                                            <th width="25%">Commodity/Product</th>
+                                            <th width="10%" class="text-right">Qty(MT)</th>
+                                            <th width="10%" class="text-right">Rate</th>
+                                            <th width="10%" class="text-right">Amount</th>
+                                            <th width="10%">Date</th>
+                                            <th width="8%">Status</th>
+                                            <th width="7%">Action</th>
                                         </tr>
                                     </thead>
                                 </table>

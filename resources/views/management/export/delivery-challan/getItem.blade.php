@@ -5,26 +5,51 @@
 @foreach ($loading_programs as $loading_program_item)
     @php
         $loading_slip = $loading_program_item->exportLoadingSlip;
-        $delivery_order = $loading_slip?->deliveryOrder;
         $second_wb = $loading_slip?->secondWeighbridge;
+        
+        $deliveryOrders = collect();
+        $ticketDOs = $loading_program_item->deliveryOrders()->withoutGlobalScopes()->get();
+        if ($ticketDOs->isNotEmpty()) {
+            $deliveryOrders = $deliveryOrders->merge($ticketDOs);
+        }
+        if ($loading_program_item->exportLoadingProgram) {
+            $lpDOs = $loading_program_item->exportLoadingProgram->deliveryOrders()->withoutGlobalScopes()->get();
+            if ($lpDOs->isNotEmpty()) {
+                $deliveryOrders = $deliveryOrders->merge($lpDOs);
+            }
+            if ($loading_program_item->exportLoadingProgram->deliveryOrder) {
+                $deliveryOrders->push($loading_program_item->exportLoadingProgram->deliveryOrder);
+            }
+        }
+        $deliveryOrders = $deliveryOrders->filter()->where('type', 'export_order')->unique('id')->values();
 
-        if (!$delivery_order || !$second_wb) {
+        if ($deliveryOrders->isEmpty() || !$second_wb) {
             continue;
         }
 
-        $packing_items = $delivery_order->exportPackingItems;
-        if ($packing_items->isEmpty()) {
-            continue;
+        $grand_total_mt = 0;
+        $grand_total_items_count = 0;
+        foreach ($deliveryOrders as $do) {
+            $grand_total_mt += (float) $do->exportPackingItems->sum('metric_tons');
+            $grand_total_items_count += $do->exportPackingItems->count();
         }
 
         $ticket_id = $loading_program_item->id;
         $sw_mt = round(((float) ($second_wb->net_weight ?? 0)) / 1000, 3);
-        $item_id = $delivery_order->exportOrder?->product_id;
         $truck_no = $loading_program_item->truck_number ?? 'N/A';
         $container_no = $loading_program_item->container_number ?? 'N/A';
-        $eo_packings = $delivery_order->exportOrder?->packingItems ?? collect();
-        $total_mt_do = (float) $packing_items->sum('metric_tons');
     @endphp
+
+    @foreach ($deliveryOrders as $delivery_order)
+        @php
+            $packing_items = $delivery_order->exportPackingItems;
+            if ($packing_items->isEmpty()) {
+                continue;
+            }
+
+            $item_id = $delivery_order->exportOrder?->product_id;
+            $eo_packings = $delivery_order->exportOrder?->packingItems ?? collect();
+        @endphp
 
     @foreach ($packing_items as $packingItem)
         @php
@@ -37,9 +62,9 @@
                 ?? $eo_packings->first();
             $rate = round((float) ($eo_packing->rate ?? 0), 2);
             $row_key = 'T' . $ticket_id . 'P' . $packingItem->id;
-            $proportion = ($total_mt_do > 0 && (float) $packingItem->metric_tons > 0)
-                ? ((float) $packingItem->metric_tons / $total_mt_do)
-                : (1 / max($packing_items->count(), 1));
+            $proportion = ($grand_total_mt > 0 && (float) $packingItem->metric_tons > 0)
+                ? ((float) $packingItem->metric_tons / $grand_total_mt)
+                : (1 / max($grand_total_items_count, 1));
             $initial_qty = $existingRow
                 ? round((float) $existingRow->qty, 3)
                 : round($sw_mt * $proportion, 3);
@@ -91,5 +116,6 @@
                 <input type="text" name="desc[]" value="{{ $existingRow->description ?? '' }}" class="form-control">
             </td>
         </tr>
+    @endforeach
     @endforeach
 @endforeach

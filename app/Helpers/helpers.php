@@ -893,8 +893,16 @@ function get_second_weighbridge_balance(LoadingSlip $loadingSlip, $delivery_orde
         );
     }
     // Otherwise, if the ticket (item) has multiple DOs, use all of them (Aggregate Balance)
-    elseif ($item && $item->deliveryOrders->isNotEmpty()) {
-        $deliveryOrders = $item->deliveryOrders->loadMissing(['delivery_order_data', 'exportPackingItems', 'saleSecondWeighbridge']);
+    elseif ($item) {
+        $deliveryOrders = $item->deliveryOrders()->withoutGlobalScopes()->get();
+        if ($item->exportLoadingProgram) {
+            $deliveryOrders = $deliveryOrders->merge($item->exportLoadingProgram->deliveryOrders()->withoutGlobalScopes()->get());
+            if ($item->exportLoadingProgram->deliveryOrder) {
+                $deliveryOrders->push($item->exportLoadingProgram->deliveryOrder);
+            }
+        }
+        $deliveryOrders = $deliveryOrders->filter()->unique('id')->values();
+        $deliveryOrders->loadMissing(['delivery_order_data', 'exportPackingItems', 'saleSecondWeighbridge']);
     }
     // Fallback to the single DO on the loading slip if it exists
     elseif ($loadingSlip->deliveryOrder) {
@@ -951,8 +959,16 @@ function get_second_weighbridge_balance_kg(LoadingSlip $loadingSlip, $delivery_o
                 ->with(['delivery_order_data', 'exportPackingItems', 'saleSecondWeighbridge'])
                 ->find($delivery_order_id)
         );
-    } elseif ($item && $item->deliveryOrders->isNotEmpty()) {
-        $deliveryOrders = $item->deliveryOrders->loadMissing(['delivery_order_data', 'exportPackingItems', 'saleSecondWeighbridge']);
+    } elseif ($item) {
+        $deliveryOrders = $item->deliveryOrders()->withoutGlobalScopes()->get();
+        if ($item->exportLoadingProgram) {
+            $deliveryOrders = $deliveryOrders->merge($item->exportLoadingProgram->deliveryOrders()->withoutGlobalScopes()->get());
+            if ($item->exportLoadingProgram->deliveryOrder) {
+                $deliveryOrders->push($item->exportLoadingProgram->deliveryOrder);
+            }
+        }
+        $deliveryOrders = $deliveryOrders->filter()->unique('id')->values();
+        $deliveryOrders->loadMissing(['delivery_order_data', 'exportPackingItems', 'saleSecondWeighbridge']);
     } elseif ($loadingSlip->deliveryOrder) {
         $deliveryOrders->push($loadingSlip->deliveryOrder->loadMissing(['delivery_order_data', 'exportPackingItems', 'saleSecondWeighbridge']));
     }

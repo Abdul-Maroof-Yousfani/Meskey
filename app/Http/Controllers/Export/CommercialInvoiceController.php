@@ -364,6 +364,8 @@ class CommercialInvoiceController extends Controller
             'delivery_order.exportFormE',
             'delivery_challan_data.deliveryOrderData.brand',
             'delivery_challan_data.deliveryOrderData.bagType',
+            'delivery_challan_data.deliveryOrderData.deliveryOrder.exportOrder.packingItems',
+            'delivery_challan_data.loadingProgramItem.exportLoadingProgram',
             'delivery_challan_data.deliveryOrderData.subItems.bagType',
             'delivery_challan_data.deliveryOrderData.subItems.bagSize',
             'delivery_challan_data.product',
@@ -450,6 +452,16 @@ class CommercialInvoiceController extends Controller
             ->filter()
             ->implode(' + ');
 
+        $vesselName = $bolSnapshots->pluck('vessel_name')->filter()->unique()->implode(' / ');
+        if (!$vesselName) {
+            $vesselName = $deliveryChallans->flatMap(function ($challan) {
+                return $challan->delivery_challan_data->map(function ($data) {
+                    return $data->loadingProgramItem?->exportLoadingProgram?->vessel_name;
+                });
+            })->filter()->unique()->implode(' / ');
+        }
+        $vesselName = $vesselName ?: 'N/A';
+
         return [
             'commercial_invoice_no' => $input['commercial_invoice_no'] ?? null,
             'invoice_date' => $input['invoice_date'] ?? null,
@@ -477,7 +489,7 @@ class CommercialInvoiceController extends Controller
             'form_e_date' => $bolSnapshots->pluck('form_e_date')->filter()->unique()->implode(', '),
             'delivery_challan_no' => $deliveryChallans->pluck('dc_no')->filter()->unique()->implode(', '),
             'delivery_order_no' => $deliveryOrders->pluck('reference_no')->filter()->unique()->implode(', '),
-            'vessel_name' => $bolSnapshots->pluck('vessel_name')->filter()->unique()->implode(' / ') ?: $exportOrder->vessel_name,
+            'vessel_name' => $vesselName,
             'payment_terms' => $paymentTerm?->title ?: ($exportOrder->partial_payment ?: 'As per contract'),
             'incoterm' => $exportOrder->incoterm?->name ?: ($exportOrder->modeOfTerm?->name ?? 'N/A'),
             'mode_of_term' => $exportOrder->modeOfTerm?->name,
@@ -603,24 +615,32 @@ class CommercialInvoiceController extends Controller
 
     protected function getProRatedBagCount($deliveryChallanData, string $field): float
     {
-        $deliveryOrderData = $deliveryChallanData->deliveryOrderData;
-        if (!$deliveryOrderData) {
+        $packingItem = $deliveryChallanData->deliveryOrderData;
+        if (!$packingItem) {
             return 0;
         }
 
-        $sourceCount = (float) ($deliveryOrderData->{$field} ?? 0);
-        if ($sourceCount <= 0) {
-            return 0;
+        // Get Export Order associated with this packing item through Delivery Order
+        $exportOrder = $packingItem->deliveryOrder?->exportOrder;
+        
+        if ($exportOrder) {
+            // Use EO-based ratio for accurate distribution across multiple DOs
+            $eoPackingItems = $exportOrder->packingItems;
+            $sourceMetricTons = (float) $eoPackingItems->sum('metric_tons');
+            $sourceCount = (float) $eoPackingItems->sum($field);
+        } else {
+            // Fallback to individual packing item ratio
+            $sourceMetricTons = (float) ($packingItem->metric_tons ?? 0);
+            $sourceCount = (float) ($packingItem->{$field} ?? 0);
         }
 
-        $sourceMetricTons = (float) ($deliveryOrderData->metric_tons ?? 0);
         $dispatchMetricTons = (float) ($deliveryChallanData->qty ?? 0);
 
         if ($sourceMetricTons <= 0 || $dispatchMetricTons <= 0) {
             return 0;
         }
 
-        $ratio = min(max($dispatchMetricTons / $sourceMetricTons, 0), 1);
+        $ratio = $dispatchMetricTons / $sourceMetricTons;
 
         return round($sourceCount * $ratio, 2);
     }
