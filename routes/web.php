@@ -216,10 +216,10 @@ Route::get("add-permission", function() {
 });
 
 Route::get("testing-data", function() {
-    $suppliers = \App\Models\Master\Supplier::where("phone", "LIKE", "%-%")->get();
+    $suppliers = \App\Models\Master\Supplier::where("owner_mobile_no", "LIKE", "%-%")->get();
     foreach($suppliers as $supplier) {
         $supplier->update([
-            "phone" => str_replace("-", "", $supplier->phone)
+            "owner_mobile_no" => str_replace("-", "", $supplier->phone)
         ]);
     }
 });
