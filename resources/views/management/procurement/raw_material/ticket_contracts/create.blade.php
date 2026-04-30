@@ -199,8 +199,9 @@
                                                 <div class="col-md-3">
                                                     <div class="form-group">
                                                         <label>Truck No</label>
+                                                        @dd($arrivalTicket->purchaseOrder)
                                                         <input type="text" class="form-control"
-                                                            value="{{ $arrivalTicket->truck_no ?? 'N/A' }}" readonly>
+                                                            value="{{ $arrivalTicket->purchaseOrder->truck_no ?? $arrivalTicket->truck_no ?? 'N/A' }}" readonly>
                                                     </div>
                                                 </div>
                                                 <div class="col-md-3">
