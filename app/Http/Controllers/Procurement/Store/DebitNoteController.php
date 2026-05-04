@@ -66,6 +66,13 @@ class DebitNoteController extends Controller
     public function update(DebitNoteRequest $request, $id) {
         $debitNote = DebitNote::findOrFail($id);
 
+        if($debitNote->am_approval_status == "approved" || $debitNote->am_approval_status == "rejected") {
+            return response()->json([
+                'success' => false,
+                'message' => 'Debit note is already approved or rejected.',
+            ], 422);
+        }
+
         // Update debit note main data
         $debitNote->update([
             'grn_id' => $request->grn_id,
@@ -265,6 +272,14 @@ class DebitNoteController extends Controller
     }
 
     public function destroy(DebitNote $debit_note) {
+
+        if($debit_note->am_approval_status == "approved" || $debit_note->am_approval_status == "rejected") {
+            return response()->json([
+                'success' => false,
+                'message' => 'Debit note is already approved or rejected.',
+            ], 422);
+        }
+
         $debit_note->debit_note_data()->delete();
         $debit_note->delete();
         return response()->json("Debit Note has been deleted!");

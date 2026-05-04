@@ -421,6 +421,13 @@ class PurchaseRequestController extends Controller
         try {
             $purchaseRequest = PurchaseRequest::findOrFail($id);
 
+            if($purchaseRequest->am_approval_status == "approved" || $purchaseRequest->am_approval_status == "rejected") {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Purchase request is already approved or rejected.',
+                ], 422);
+            }
+
             $updateData = [
                 'purchase_date' => $request->purchase_date,
                 'company_id' => $request->company_id,
@@ -656,6 +663,13 @@ class PurchaseRequestController extends Controller
     public function destroy($id)
     {
         $purchaseRequest = PurchaseRequest::findOrFail($id);
+        
+        if($purchaseRequest->am_approval_status == "approved" || $purchaseRequest->am_approval_status == "rejected") {
+            return response()->json([
+                'success' => false,
+                'message' => 'Purchase request is already approved or rejected.',
+            ], 422);
+        }
         
         // Find items that are NOT approved and NOT rejected
         $itemsToDelete = $purchaseRequest->PurchaseData()

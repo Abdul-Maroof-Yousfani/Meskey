@@ -502,6 +502,14 @@ class PurchaseOrderController extends Controller
         DB::beginTransaction();
         try {
             $PurchaseOrder = PurchaseOrder::findOrFail($id);
+
+            if($PurchaseOrder->am_approval_status == "approved" || $PurchaseOrder->am_approval_status == "rejected") {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Purchase request is already approved or rejected.',
+                ], 422);
+            }
+
             $PurchaseOrder->update([
                 'purchase_quotation_id' => $request->quotation_no ?? null,
                 'description' => $request->description,
@@ -563,6 +571,13 @@ class PurchaseOrderController extends Controller
     public function destroy($id)
     {
         $purchaseOrder = PurchaseOrder::where("id", $id)->first();
+
+        if($purchaseOrder->am_approval_status == "approved" || $purchaseOrder->am_approval_status == "rejected") {
+            return response()->json([
+                'success' => false,
+                'message' => 'Purchase Order is already approved or rejected.',
+            ], 422);
+        }
 
         if($purchaseOrder != null) {
             $purchaseOrder->purchaseOrderData()->delete();
