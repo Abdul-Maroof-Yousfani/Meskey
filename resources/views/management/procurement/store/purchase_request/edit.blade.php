@@ -170,16 +170,6 @@
 
                 <td class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">
                     @php
-                        $jo_size = $jo_data->bag_size ?? ($jo_data?->bagSize?->size ?? '');
-                        $current_size = $item->size;
-                        $display_size = (is_numeric($jo_size) && $jo_size > 0) ? $jo_size : (getSizeById($current_size)->size ?? $current_size);
-                    @endphp
-                    <input type="text" id="size_{{ $rowId }}" name="size[]" class="form-control size-input-check" placeholder="Size"
-                        value="{{ $display_size }}" {{ (is_numeric($jo_size) && $jo_size > 0) || $isApproved ? 'readonly' : '' }}>
-                </td>
-
-                <td style="min-width: 150px;">
-                    @php
                         $jo_data = null;
                         if($item->is_single_job_order == 1) {
                             if($item->module_type == 'packing') {
@@ -188,6 +178,16 @@
                                 $jo_data = \App\Models\Production\JobOrder\JobOrderPackingSubItem::find($item->packing_id);
                             }
                         }
+                        $jo_size = $jo_data->bag_size ?? ($jo_data?->bagSize?->size ?? '');
+                        $current_size = $item->size;
+                        $display_size = (is_numeric($jo_size) && $jo_size > 0) ? $jo_size : (getSizeById($current_size)->size ?? $current_size);
+                    @endphp
+                    <input type="text" id="size_{{ $rowId }}" name="size[]" class="form-control size-input-check" placeholder="Size"
+                        value="{{ $display_size }}" {{ $item->is_single_job_order == 1 || (is_numeric($jo_size) && $jo_size > 0) || $isApproved ? 'readonly' : '' }}>
+                </td>
+
+                <td style="min-width: 150px;">
+                    @php
                         $jo_balance = 0;
                         if($jo_data) {
                             if($item->module_type == 'packing') {
