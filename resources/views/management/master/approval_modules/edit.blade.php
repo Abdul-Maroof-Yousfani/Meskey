@@ -140,22 +140,26 @@
                                                         </label>
                                                     </div>
                                                 </div>
-                                                <div class="col-md-3">
+                                                <div class="col-md-2">
                                                     <input type="number" class="form-control approval-count"
                                                         name="roles[{{ $role->id }}][count]" min="1"
                                                         value="{{ $isChecked ? $moduleRole->approval_count : 1 }}"
                                                         {{ $isChecked ? '' : 'disabled' }}>
                                                 </div>
-                                                <div class="col-md-4">
+                                                <div class="col-md-3 condition-column" style="display: none;">
+                                                    <select class="form-control role-condition" 
+                                                        name="roles[{{ $role->id }}][condition]"
+                                                        {{ $isChecked ? '' : 'disabled' }}>
+                                                        <option value="">Always</option>
+                                                        <option value="with_sauda" {{ $isChecked && $moduleRole->condition == 'with_sauda' ? 'selected' : '' }}>With Sauda</option>
+                                                        <option value="without_sauda" {{ $isChecked && $moduleRole->condition == 'without_sauda' ? 'selected' : '' }}>Without Sauda</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-2">
                                                     @if ($isChecked)
                                                         <div class="approval-progress">
-                                                            <small class="text-muted">Current order:
+                                                            <small class="text-muted">Order:
                                                                 {{ $moduleRole->approval_order + 1 }}</small>
-                                                        </div>
-                                                    @else
-                                                        <div class="approval-progress">
-                                                            <small class="text-muted">Will be assigned order when
-                                                                checked</small>
                                                         </div>
                                                     @endif
                                                 </div>
@@ -185,15 +189,22 @@
                                                         </label>
                                                     </div>
                                                 </div>
-                                                <div class="col-md-3">
+                                                <div class="col-md-2">
                                                     <input type="number" class="form-control approval-count"
                                                         name="roles[{{ $role->id }}][count]" min="1"
                                                         value="1" disabled>
                                                 </div>
-                                                <div class="col-md-4">
+                                                <div class="col-md-3 condition-column" style="display: none;">
+                                                    <select class="form-control role-condition" 
+                                                        name="roles[{{ $role->id }}][condition]"
+                                                        disabled>
+                                                        <option value="">Always</option>
+                                                        <option value="with_sauda">With Sauda</option>
+                                                        <option value="without_sauda">Without Sauda</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-2">
                                                     <div class="approval-progress">
-                                                        <small class="text-muted">Will be assigned order when
-                                                            checked</small>
                                                     </div>
                                                 </div>
                                             </div>
@@ -219,8 +230,12 @@
     <script>
         $(document).ready(function() {
             $('.role-checkbox').change(function() {
-                const approvalCountInput = $(this).closest('.role-row').find('.approval-count');
+                const row = $(this).closest('.role-row');
+                const approvalCountInput = row.find('.approval-count');
+                const conditionSelect = row.find('.role-condition');
+                
                 approvalCountInput.prop('disabled', !this.checked);
+                conditionSelect.prop('disabled', !this.checked);
                 if (!this.checked) {
                     approvalCountInput.val('1');
 
@@ -257,11 +272,23 @@
 
                     if (checkbox.prop('checked')) {
                         $(this).find('.approval-progress').html(
-                            `<small class="text-muted">Current order: ${index + 1}</small>`
+                            `<small class="text-muted">Order: ${index + 1}</small>`
                         );
                     }
                 });
             }
+
+            function toggleConditionColumn() {
+                const modelClass = $('#model_class').val();
+                if (modelClass === 'App\\Models\\Export\\Quotation') {
+                    $('.condition-column').show();
+                } else {
+                    $('.condition-column').hide();
+                }
+            }
+
+            $('#model_class').change(toggleConditionColumn);
+            toggleConditionColumn();
         });
     </script>
 @endsection

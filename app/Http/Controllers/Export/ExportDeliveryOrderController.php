@@ -15,6 +15,7 @@ use App\Models\Master\Color;
 use App\Models\Master\Stitching;
 use App\Models\Master\CompanyLocation;
 use App\Models\Master\InspectionCompany;
+use App\Models\Master\FumigationCompany;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
@@ -84,6 +85,8 @@ class ExportDeliveryOrderController extends Controller
         $bagConditions = BagCondition::all();
         $stitchings = Stitching::all();
         $inspectionCompanies = InspectionCompany::all();
+        $transporters = \App\Models\Master\Transporter::all();
+        $fumigationCompanies = FumigationCompany::where('status', 'active')->get();
 
         return view('management.export.delivery-order.create', compact(
             'buyers',
@@ -108,7 +111,9 @@ class ExportDeliveryOrderController extends Controller
             'companyLocations',
             'bagConditions',
             'stitchings',
-            'inspectionCompanies'
+            'inspectionCompanies',
+            'transporters',
+            'fumigationCompanies'
         ));
     }
 
@@ -132,9 +137,18 @@ class ExportDeliveryOrderController extends Controller
             'hsCode',
             'modeOfTerm',
             'modeOfTransport',
-            'exportSoda.product', // Added for Sauda details
-            'quotation.product'   // Added for Quotation details
+            'exportSoda.product',
+            'quotation.product'
         ])->findOrFail($id);
+
+        // Get the first Form-E for default values if exists
+        $firstFormE = ExportFormE::with('jobOrder')->where('export_order_id', $id)->first();
+        $jobOrderNo = $firstFormE?->jobOrder?->job_order_no ?? '';
+
+        // Get inspection company and fumigation from EO packing items
+        $firstPackingItem = $exportOrder->packingItems->first();
+        $inspectionCompany = $firstPackingItem?->inspection_by ?? '';
+        $fumigation = $firstPackingItem?->fumigation_company_id ? 'Yes' : 'No';
 
         $deliveryOrders = DeliveryOrder::with('exportPackingItems')->where('export_order_id', $id)->get();
         $totalEoMt = $exportOrder->packingItems->sum('metric_tons');
@@ -198,6 +212,12 @@ class ExportDeliveryOrderController extends Controller
                 'no_of_containers' => $item->no_of_containers,
                 'min_weight_empty_bags' => $item->min_weight_empty_bags,
                 'fumigation_company_id' => $item->fumigation_company_id,
+                'fumigation' => $item->fumigation_company_id ? 'Yes' : 'No',
+                'phyto_certificate' => $item->fumigation_company_id ?? [], // Same as fumigation, editable
+                'inspection_company' => collect($item->inspection_by ?? [])->map(function($id) {
+                    $company = \App\Models\Master\InspectionCompany::find($id);
+                    return $company ? $company->name : null;
+                })->filter()->implode(', '),
                 'sub_items' => $subItems,
             ];
         })->values();
@@ -209,7 +229,12 @@ class ExportDeliveryOrderController extends Controller
                 'packing_items_autofill' => $packingItems,
                 'total_eo_mt' => round($totalEoMt, 3),
                 'consumed_mt' => round($consumedMt, 3),
-                'remaining_mt' => round($remainingMt, 3)
+                'remaining_mt' => round($remainingMt, 3),
+                'autofill' => [
+                    'job_order_no' => $jobOrderNo,
+                    'inspection_company' => $inspectionCompany,
+                    'fumigation' => $fumigation,
+                ]
             ]
         ]);
     }
@@ -284,6 +309,20 @@ class ExportDeliveryOrderController extends Controller
                 'arrival_location_id' => null,
                 'sub_arrival_location_id' => null,
                 'am_approval_status' => 'pending',
+
+                // New fields
+                'financial_instrument_no' => $request->financial_instrument_no,
+                'job_order_no' => $request->job_order_no,
+                'vessel_name' => $request->vessel_name,
+                'vessel_etd' => $request->vessel_etd,
+                'vessel_eta' => $request->vessel_eta,
+                'loading_date' => $request->loading_date,
+                'estimated_payment_date' => $request->estimated_payment_date,
+                'freight_amount' => $request->freight_amount ?? 0,
+                'transporter_id' => $request->transporter_id,
+                'c_agent' => $request->c_agent,
+                'shipping_line' => $request->shipping_line,
+                'empty_container_pickup' => $request->empty_container_pickup,
             ]);
 
             // Save multiple locations
@@ -325,7 +364,12 @@ class ExportDeliveryOrderController extends Controller
                 'thread_color_id' => $itemData['thread_color_id'] ?? null,
                 'stitching_id' => $itemData['stitching_id'] ?? null,
                 'min_weight_empty_bags' => $itemData['min_weight_empty_bags'] ?? 0,
-                'fumigation_company_id' => isset($itemData['fumigation_company_id']) ? json_encode((array) $itemData['fumigation_company_id']) : null,
+                'fumigation_company_id' => isset($itemData['fumigation_company_id']) ? (array) $itemData['fumigation_company_id'] : (isset($itemData['fumigation_company_id_hidden']) ? json_decode($itemData['fumigation_company_id_hidden'], true) : null),
+                'phyto_certificate' => isset($itemData['phyto_certificate']) ? (array) $itemData['phyto_certificate'] : null,
+                'carton_supplier' => $itemData['carton_supplier'] ?? null,
+                'fumigation_tablets' => $itemData['fumigation_tablets'] ?? null,
+                'fumigation_ref_no' => $itemData['fumigation_ref_no'] ?? null,
+                'inspection_company' => $itemData['inspection_company'] ?? null,
             ]);
 
             if (isset($itemData['sub_items']) && is_array($itemData['sub_items'])) {
@@ -404,7 +448,8 @@ class ExportDeliveryOrderController extends Controller
         $bagColors = Color::all();
         $threadColors = Color::all();
         $stitchings = Stitching::all();
-        $fumigationCompanies = InspectionCompany::all();
+        $inspectionCompanies = InspectionCompany::all();
+        $fumigationCompanies = \App\Models\Master\FumigationCompany::where('status', 'active')->get();
         $bagTypes = BagType::where('status', 1)->get();
         $bagConditions = BagCondition::where('status', 1)->get();
 
@@ -416,6 +461,7 @@ class ExportDeliveryOrderController extends Controller
             'threadColors',
             'stitchings',
             'fumigationCompanies',
+            'inspectionCompanies',
             'bagTypes',
             'bagConditions',
             'totalAllowedMt',
@@ -480,6 +526,8 @@ class ExportDeliveryOrderController extends Controller
         $bagConditions = BagCondition::all();
         $stitchings = Stitching::all();
         $inspectionCompanies = InspectionCompany::all();
+        $transporters = \App\Models\Master\Transporter::all();
+        $fumigationCompanies = \App\Models\Master\FumigationCompany::where('status', 'active')->get();
 
         return view('management.export.delivery-order.edit', compact(
             'deliveryOrder',
@@ -506,6 +554,8 @@ class ExportDeliveryOrderController extends Controller
             'bagConditions',
             'stitchings',
             'inspectionCompanies',
+            'transporters',
+            'fumigationCompanies',
             'totalAllowedMt',
             'alreadyConsumedMt',
             'remainingMt',
@@ -583,7 +633,21 @@ class ExportDeliveryOrderController extends Controller
                 'arrival_location_id' => null,
                 'sub_arrival_location_id' => null,
                 'am_approval_status' => 'pending',
-                'am_change_made' => 1
+                'am_change_made' => 1,
+
+                // New fields
+                'financial_instrument_no' => $request->financial_instrument_no,
+                'job_order_no' => $request->job_order_no,
+                'vessel_name' => $request->vessel_name,
+                'vessel_etd' => $request->vessel_etd,
+                'vessel_eta' => $request->vessel_eta,
+                'loading_date' => $request->loading_date,
+                'estimated_payment_date' => $request->estimated_payment_date,
+                'freight_amount' => $request->freight_amount ?? 0,
+                'transporter_id' => $request->transporter_id,
+                'c_agent' => $request->c_agent,
+                'shipping_line' => $request->shipping_line,
+                'empty_container_pickup' => $request->empty_container_pickup,
             ]);
 
             // Update multiple locations
@@ -630,7 +694,12 @@ class ExportDeliveryOrderController extends Controller
                         'thread_color_id' => $itemData['thread_color_id'] ?? null,
                         'stitching_id' => $itemData['stitching_id'] ?? null,
                         'min_weight_empty_bags' => $itemData['min_weight_empty_bags'] ?? 0,
-                        'fumigation_company_id' => isset($itemData['fumigation_company_id']) ? json_encode((array) $itemData['fumigation_company_id']) : null,
+                        'fumigation_company_id' => isset($itemData['fumigation_company_id']) ? (array) $itemData['fumigation_company_id'] : (isset($itemData['fumigation_company_id_hidden']) ? json_decode($itemData['fumigation_company_id_hidden'], true) : null),
+                        'phyto_certificate' => isset($itemData['phyto_certificate']) ? (array) $itemData['phyto_certificate'] : null,
+                        'carton_supplier' => $itemData['carton_supplier'] ?? null,
+                        'fumigation_tablets' => $itemData['fumigation_tablets'] ?? null,
+                        'fumigation_ref_no' => $itemData['fumigation_ref_no'] ?? null,
+                        'inspection_company' => $itemData['inspection_company'] ?? null,
                     ]);
 
                     if (isset($itemData['sub_items']) && is_array($itemData['sub_items'])) {
@@ -794,7 +863,8 @@ class ExportDeliveryOrderController extends Controller
             'success' => true,
             'total' => round($totalAllowed, 2),
             'consumed' => round($consumed, 2),
-            'remaining' => round(max(0, $totalAllowed - $consumed), 2)
+            'remaining' => round(max(0, $totalAllowed - $consumed), 2),
+            'job_order_no' => $formE->job_order_no ?? ''
         ]);
     }
 }

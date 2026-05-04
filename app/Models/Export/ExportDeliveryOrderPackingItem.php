@@ -38,6 +38,11 @@ class ExportDeliveryOrderPackingItem extends Model
         'min_weight_empty_bags',
         'extra_bags_percentage',
         'fumigation_company_id',
+        'phyto_certificate',
+        'carton_supplier',
+        'fumigation_tablets',
+        'fumigation_ref_no',
+        'inspection_company',
     ];
 
     protected $casts = [
@@ -48,6 +53,7 @@ class ExportDeliveryOrderPackingItem extends Model
         'min_weight_empty_bags' => 'decimal:2',
         'extra_bags_percentage' => 'decimal:2',
         'fumigation_company_id' => 'array',
+        'phyto_certificate' => 'array',
     ];
 
     /**

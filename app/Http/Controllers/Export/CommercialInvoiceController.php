@@ -460,6 +460,9 @@ class CommercialInvoiceController extends Controller
                 });
             })->filter()->unique()->implode(' / ');
         }
+        if (!$vesselName) {
+            $vesselName = $deliveryOrders->pluck('vessel_name')->filter()->unique()->implode(' / ');
+        }
         $vesselName = $vesselName ?: 'N/A';
 
         return [

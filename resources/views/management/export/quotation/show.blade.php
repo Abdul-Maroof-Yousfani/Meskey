@@ -306,6 +306,12 @@
     </div>
 </div>
 
+<div class="row">
+    <div class="col-12">
+        <x-approval-status :model="$quotation" />
+    </div>
+</div>
+
 <script>
     $(document).ready(function() {
         $('.select2').select2({ width: '100%' });

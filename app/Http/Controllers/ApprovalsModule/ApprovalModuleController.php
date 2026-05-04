@@ -138,6 +138,10 @@ class ApprovalModuleController extends Controller
                 'value' => 'App\Models\Export\PackingList',
                 'label' => 'Packing List'
             ],
+            [
+                'value' => 'App\Models\Export\Quotation',
+                'label' => 'Quotation'
+            ],
 
         ];
 
@@ -220,6 +224,7 @@ class ApprovalModuleController extends Controller
                         'role_id' => $role['id'],
                         'approval_count' => $role['count'],
                         'approval_order' => $role['order'],
+                        'condition' => $role['condition'] ?? null,
                     ]);
                 }
             }
@@ -311,6 +316,7 @@ class ApprovalModuleController extends Controller
                     [
                         'approval_count' => $role['count'],
                         'approval_order' => $role['order'],
+                        'condition' => $role['condition'] ?? null,
                     ]
                 );
             }

@@ -65,6 +65,18 @@
                         <input type="text" name="ref_no" id="ref_no" class="form-control">
                     </div>
                 </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Job Order No:</label>
+                        <input type="text" name="job_order_no" id="job_order_no" class="form-control" readonly>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Financial Instrument No:</label>
+                        <input type="text" name="financial_instrument_no" id="financial_instrument_no" class="form-control">
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -88,7 +100,7 @@
                 <tbody id="locationRows">
                     <tr class="location-row">
                         <td>
-                            <select name="locations[0][location_id]" class="form-control select2 location-select" onchange="selectLocationRow(this)">
+                            <select name="locations[0][location_id]" class="form-control select2 location-select">
                                 <option value="">Select Location</option>
                                 @foreach (get_locations() as $location)
                                     <option value="{{ $location->id }}">{{ $location->name }}</option>
@@ -96,7 +108,7 @@
                             </select>
                         </td>
                         <td>
-                            <select name="locations[0][arrival_ids][]" class="form-control select2 arrival-select" multiple disabled onchange="selectStorageRow(this)">
+                            <select name="locations[0][arrival_ids][]" class="form-control select2 arrival-select" multiple disabled>
                                 <option value="">Select Factory</option>
                             </select>
                         </td>
@@ -106,7 +118,7 @@
                             </select>
                         </td>
                         <td class="text-center">
-                            <button type="button" class="btn btn-sm btn-danger remove-location-row" style="display: none;"><i class="fas fa-trash"></i></button>
+                            <button type="button" class="btn btn-sm btn-danger remove-location-row" style="display: none;"><i class="ft-trash font-medium-1"></i></button>
                         </td>
                     </tr>
                 </tbody>
@@ -137,7 +149,7 @@
                     </select>
                 </td>
                 <td class="text-center">
-                    <button type="button" class="btn btn-sm btn-danger remove-location-row"><i class="fas fa-trash"></i></button>
+                    <button type="button" class="btn btn-sm btn-danger remove-location-row"><i class="ft-trash font-medium-1"></i></button>
                 </td>
             </tr>
         </tbody>
@@ -406,6 +418,7 @@
         </div>
     </div> <!-- END of exportOrderSnapshot -->
 
+
     <!-- Packing Details (full-width, below snapshot) -->
     <div class="row form-mar mt-2" id="packingItemsWrapper">
         <div class="col-md-12">
@@ -555,6 +568,58 @@
                         </div>
                     </div>
 
+                    <!-- New Logistics Row per Packing Item -->
+                    <div class="col-md-12">
+                        <div class="row">
+
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>Fumigation:</label>
+                                    <select name="packing_items[0][fumigation_company_id][]" class="form-control select2 fumigation-select" multiple disabled>
+                                        @foreach($fumigationCompanies as $fCompany)
+                                            <option value="{{ $fCompany->id }}">{{ $fCompany->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <input type="hidden" name="packing_items[0][fumigation_company_id_hidden]" class="fumigation-hidden-mirror">
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>Phyto Certificate:</label>
+                                    <select name="packing_items[0][phyto_certificate][]" class="form-control select2 phyto-select" multiple>
+                                        @foreach($fumigationCompanies as $fCompany)
+                                            <option value="{{ $fCompany->id }}">{{ $fCompany->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>Inspection Company:</label>
+                                    <input type="text" name="packing_items[0][inspection_company]" class="form-control inspection-company" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>Carton Supplier:</label>
+                                    <input type="text" name="packing_items[0][carton_supplier]" class="form-control carton-supplier">
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>Fumigation Tablets:</label>
+                                    <input type="text" name="packing_items[0][fumigation_tablets]" class="form-control fumigation-tablets">
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>Fumigation Ref No:</label>
+                                    <input type="text" name="packing_items[0][fumigation_ref_no]" class="form-control fumigation-ref-no">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Master Packing Section -->
                     <div class="col-md-12 mt-4">
                         <div class="card border-primary shadow-sm">
@@ -590,6 +655,90 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logistics & Shipment Details (Moved here after Packing Details and before Remarks) -->
+    <div class="row form-mar mt-3">
+        <div class="col-md-12">
+            <h6 class="header-heading-sepration">Logistics & Shipment Details</h6>
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Vessel Name:</label>
+                        <input type="text" name="vessel_name" id="vessel_name" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Vessel ETD:</label>
+                        <input type="date" name="vessel_etd" id="vessel_etd" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Vessel ETA:</label>
+                        <input type="date" name="vessel_eta" id="vessel_eta" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Loading Date:</label>
+                        <input type="date" name="loading_date" id="loading_date" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Estimated Payment Date:</label>
+                        <input type="date" name="estimated_payment_date" id="estimated_payment_date" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Freight Amount:</label>
+                        <input type="number" name="freight_amount" id="freight_amount" class="form-control" value="0" step="0.01">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Transporter:</label>
+                        <select name="transporter_id" id="transporter_id" class="form-control select2">
+                            <option value="">Select Transporter</option>
+                            @foreach ($transporters as $transporter)
+                                <option value="{{ $transporter->id }}">{{ $transporter->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Clearing Agent:</label>
+                        <input type="text" name="c_agent" id="c_agent" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Shipping Line:</label>
+                        <input type="text" name="shipping_line" id="shipping_line" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Empty Container Pickup:</label>
+                        <input type="text" name="empty_container_pickup" id="empty_container_pickup" class="form-control">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Editable Remarks -->
+    <div class="row form-mar mt-3">
+        <div class="col-md-12">
+            <div class="form-group">
+                <label>Remarks:</label>
+                <textarea name="remarks" class="form-control" rows="3"></textarea>
             </div>
         </div>
     </div>
@@ -664,16 +813,6 @@
             </tr>
         </tbody>
     </table>
-
-    <!-- Editable Remarks -->
-    <div class="row form-mar mt-3">
-        <div class="col-md-12">
-            <div class="form-group">
-                <label>Remarks:</label>
-                <textarea name="remarks" class="form-control" rows="3"></textarea>
-            </div>
-        </div>
-    </div>
 
     <div class="row bottom-button-bar mt-3">
         <div class="col-12 mb-3">
@@ -758,8 +897,17 @@
         });
     }
 
+    // Global delegated listeners for location selection
+    $(document).off('change', '.location-select').on('change', '.location-select', function() {
+        selectLocationRow(this);
+    });
+
+    $(document).off('change', '.arrival-select').on('change', '.arrival-select', function() {
+        selectStorageRow(this);
+    });
+
     // Row manipulation
-    $(document).on('click', '#addLocationRow', function() {
+    $(document).off('click', '#addLocationRow').on('click', '#addLocationRow', function() {
         let index = $('#locationRows tr.location-row').length;
         let template = $('#locationRowTemplate').html();
         template = template.replace(/\[INDEX\]/g, '[' + index + ']');
@@ -770,15 +918,11 @@
         // Initialize Select2 for new row
         $newRow.find('.select2, .location-select, .arrival-select, .storage-select').select2({ width: '100%' });
         
-        // Attach onchange events manually for cloned rows to ensure they work
-        $newRow.find('.location-select').on('change', function() { selectLocationRow(this); });
-        $newRow.find('.arrival-select').on('change', function() { selectStorageRow(this); });
-        
         // Show remove buttons if more than one row
         $('.remove-location-row').show();
     });
 
-    $(document).on('click', '.remove-location-row', function() {
+    $(document).off('click', '.remove-location-row').on('click', '.remove-location-row', function() {
         if ($('#locationRows tr.location-row').length > 1) {
             $(this).closest('tr').remove();
             reindexLocationRows();
@@ -886,6 +1030,14 @@
                         $('#lbl_remaining_mt').text(remainingMt.toFixed(3));
 
                         populateSnapshot(data, response.data.packing_items_autofill);
+
+                        // Autofill new fields
+                        if (response.data.autofill) {
+                            $('#job_order_no').val(response.data.autofill.job_order_no);
+                            $('#inspection_company').val(response.data.autofill.inspection_company);
+                            $('#fumigation').val(response.data.autofill.fumigation);
+                            $('#phyto_certificate').val(response.data.autofill.fumigation); // same as fumigation as requested
+                        }
                         checkCapacity();
                     }
                 },
@@ -912,6 +1064,11 @@
                         $('#lbl_total_eo_mt').text(parseFloat(response.total).toFixed(3));
                         $('#lbl_consumed_mt').text(parseFloat(response.consumed).toFixed(3));
                         $('#lbl_remaining_mt').text(parseFloat(response.remaining).toFixed(3));
+
+                        // Update Job Order No
+                        if (response.job_order_no) {
+                            $('#job_order_no').val(response.job_order_no);
+                        }
                         
                         // Trigger checkCapacity to account for any already entered packing items
                         if (typeof checkCapacity === "function") {
@@ -1091,7 +1248,20 @@
                 row.find(`input[name="packing_items[0][metric_tons]"]`).val(item.metric_tons);
                 row.find(`input[name="packing_items[0][stuffing_in_container]"]`).val(item.stuffing_in_container);
                 row.find(`input[name="packing_items[0][no_of_containers]"]`).val(item.no_of_containers);
-                row.find(`input[name="packing_items[0][min_weight_empty_bags]"]`).val(item.min_weight_empty_bags);
+                row.find('.min-weight').val(item.min_weight_empty_bags || 0);
+
+                // Populate new logistics fields
+                // Fumigation is readonly (auto-filled from EO)
+                row.find('.fumigation-select').val(item.fumigation_company_id || []).trigger('change');
+                // Since fumigation-select is disabled, we need to pass values via hidden field for submission
+                row.find('.fumigation-hidden-mirror').val(JSON.stringify(item.fumigation_company_id || []));
+
+                // Phyto Certificate defaults to same as fumigation but is editable
+                row.find('.phyto-select').val(item.phyto_certificate || item.fumigation_company_id || []).trigger('change');
+                row.find('.inspection-company').val(item.inspection_company || '');
+                row.find('.carton-supplier').val('');
+                row.find('.fumigation-tablets').val('');
+                row.find('.fumigation-ref-no').val('');
                 
                 // Clear sub items container
                 let subContainer = row.find('.sub-packing-items-container');
@@ -1287,7 +1457,7 @@
         if (balance < -0.001) {
             $('#lbl_remaining_mt').removeClass('text-success').addClass('text-danger');
             let errMsg = `Total Metric Tons (${currentRequest.toFixed(3)}) exceeds the remaining capacity of Export Order (${remaining.toFixed(3)} MT).`;
-            $('#qty_error_msg').html(`<i class="fas fa-exclamation-triangle mr-2"></i> ERROR: ${errMsg}`).slideDown();
+            $('#qty_error_msg').html(`<i class="fa fa-exclamation-triangle mr-2"></i> ERROR: ${errMsg}`).slideDown();
             $('.submitbutton').attr('disabled', true);
         } else {
             $('#lbl_remaining_mt').removeClass('text-danger').addClass('text-success');

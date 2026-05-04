@@ -176,9 +176,16 @@
                         company_location_id: $('#main_company_location_id').val()
                     },
                     success: function(response) {
-                        if (response.success && response.delivery_orders) {
                             window.allFetchedDOs = response.delivery_orders;
                             syncDOSelectionState(delivery_order_ids, response.delivery_orders);
+
+                            // Auto-fill vessel name from the first selected DO
+                            if (delivery_order_ids.length > 0) {
+                                const firstDO = response.delivery_orders.find(d => d.id == delivery_order_ids[0]);
+                                if (firstDO && firstDO.vessel_name) {
+                                    $('input[name="vessel_name"]').val(firstDO.vessel_name);
+                                }
+                            }
                         }
                     }
                 });

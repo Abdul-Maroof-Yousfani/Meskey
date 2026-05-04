@@ -11,13 +11,14 @@ use App\Models\Master\HsCode;
 use App\Models\Master\Port;
 use App\Models\Product;
 use App\Models\Master\Customer;
+use App\Traits\HasApproval;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Quotation extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, HasApproval;
 
     protected $guarded = [];
 
@@ -94,5 +95,47 @@ class Quotation extends Model
     public function portOfDischarge()
     {
         return $this->belongsTo(Port::class, 'port_of_discharge_id');
+    }
+
+    /**
+     * Override createApprovalRows for conditional approval
+     */
+    public function createApprovalRows()
+    {
+        $module = $this->getApprovalModule();
+        if (!$module) {
+            return;
+        }
+
+        $currentCycle = $this->getCurrentApprovalCycle();
+        $hasSauda = !empty($this->export_soda_id);
+
+        foreach ($module->roles as $moduleRole) {
+            $includeRole = false;
+
+            if (empty($moduleRole->condition)) {
+                $includeRole = true; // Always include if no condition
+            } elseif ($moduleRole->condition === 'with_sauda' && $hasSauda) {
+                $includeRole = true;
+            } elseif ($moduleRole->condition === 'without_sauda' && !$hasSauda) {
+                $includeRole = true;
+            }
+
+            if ($includeRole) {
+                \App\Models\ApprovalsModule\ApprovalRow::updateOrCreate(
+                    [
+                        'module_id' => $module->id,
+                        'record_id' => $this->id,
+                        'role_id' => $moduleRole->role_id,
+                        'approval_cycle' => $currentCycle,
+                    ],
+                    [
+                        'required_count' => $moduleRole->approval_count,
+                        'current_count' => 0,
+                        'status' => 'pending'
+                    ]
+                );
+            }
+        }
     }
 }

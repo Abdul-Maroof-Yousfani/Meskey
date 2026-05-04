@@ -84,15 +84,22 @@
                                                         </label>
                                                     </div>
                                                 </div>
-                                                <div class="col-md-3">
+                                                <div class="col-md-2">
                                                     <input type="number" class="form-control approval-count"
                                                         name="roles[{{ $role->id }}][count]" min="1"
                                                         value="1" disabled>
                                                 </div>
-                                                <div class="col-md-4">
+                                                <div class="col-md-3 condition-column" style="display: none;">
+                                                    <select class="form-control role-condition" 
+                                                        name="roles[{{ $role->id }}][condition]"
+                                                        disabled>
+                                                        <option value="">Always</option>
+                                                        <option value="with_sauda">With Sauda</option>
+                                                        <option value="without_sauda">Without Sauda</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-2">
                                                     <div class="approval-progress d-none">
-                                                        <small class="text-muted">Approval progress will appear here when
-                                                            editing</small>
                                                     </div>
                                                 </div>
                                             </div>
@@ -118,8 +125,12 @@
     <script>
         $(document).ready(function() {
             $('.role-checkbox').change(function() {
-                const approvalCountInput = $(this).closest('.role-row').find('.approval-count');
+                const row = $(this).closest('.role-row');
+                const approvalCountInput = row.find('.approval-count');
+                const conditionSelect = row.find('.role-condition');
+                
                 approvalCountInput.prop('disabled', !this.checked);
+                conditionSelect.prop('disabled', !this.checked);
                 if (!this.checked) {
                     approvalCountInput.val('1');
                 }
@@ -134,6 +145,18 @@
                     });
                 }
             });
+
+            function toggleConditionColumn() {
+                const modelClass = $('#model_class').val();
+                if (modelClass === 'App\\Models\\Export\\Quotation') {
+                    $('.condition-column').show();
+                } else {
+                    $('.condition-column').hide();
+                }
+            }
+
+            $('#model_class').change(toggleConditionColumn);
+            toggleConditionColumn();
         });
     </script>
 @endsection

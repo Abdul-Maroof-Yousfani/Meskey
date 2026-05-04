@@ -100,6 +100,15 @@ class QuotationController extends Controller
                 'created_by' => auth()->user()->id,
             ]));
 
+            // Cleanup orphaned approval rows and manually trigger to be safe
+            $module = $quotation->getApprovalModule();
+            if ($module) {
+                \App\Models\ApprovalsModule\ApprovalRow::where('module_id', $module->id)
+                    ->where('record_id', $quotation->id)
+                    ->delete();
+                $quotation->createApprovalRows();
+            }
+
             // Product specifications
             if ($request->has('specifications')) {
                 foreach ($request->specifications as $spec) {
@@ -255,10 +264,38 @@ class QuotationController extends Controller
                 ], 404);
             }
 
+            if (
+                $quotation->am_approval_status === "approved" ||
+                $quotation->am_approval_status === "rejected"
+            ) {
+                DB::rollBack();
+
+                return response()->json([
+                    'success' => 'Quotation has been approved/rejected and cannot be updated.',
+                ], 400);
+            }
+
             $quotationData = $request->except(['specifications', 'packing_items']);
 
-            $quotation->update(array_merge($quotationData, [
-            ]));
+            $updateData = array_merge($quotationData, [
+                'am_change_made' => 1,
+            ]);
+
+            if ($quotation->am_approval_status === 'reverted') {
+                $updateData['am_approval_status'] = 'pending';
+            }
+
+            $quotation->update($updateData);
+
+            // Recreate approval rows to handle conditional role changes (with/without sauda)
+            $module = $quotation->getApprovalModule();
+            if ($module) {
+                \App\Models\ApprovalsModule\ApprovalRow::where('module_id', $module->id)
+                    ->where('record_id', $quotation->id)
+                    ->where('approval_cycle', $quotation->getCurrentApprovalCycle())
+                    ->delete();
+                $quotation->createApprovalRows();
+            }
 
             // Update specifications
             if ($quotation->specifications()->exists()) {
