@@ -197,7 +197,6 @@
                     <strong>{{ $company->name ?? 'Export Company' }}</strong>
                     <div>{{ $company->address ?? '' }}</div>
                     <div>{{ $company->phone ?? '' }}{{ !empty($company->phone) && !empty($company->email) ? ' | ' : '' }}{{ $company->email ?? '' }}</div>
-                    <div>NTN: {{ $company->ntn ?? 'N/A' }} | STRN: {{ $company->stn ?? 'N/A' }}</div>
                 </td>
             </tr>
         </table>

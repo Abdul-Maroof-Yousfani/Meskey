@@ -66,6 +66,10 @@
                             onclick="openModal(this,'{{ route('packing-list.show', $packingList->id) }}?print=1','Print Packing List',true,'95%')">
                             <i class="ft-printer font-medium-3"></i>
                         </a>
+                        <a class="info p-1 text-center position-relative" title="Container List"
+                            onclick="openModal(this,'{{ route('packing-list.container-list', $packingList->id) }}','Container List',true,'95%')">
+                            <i class="ft-file-text font-medium-3"></i>
+                        </a>
                         @endif
                          @if($packingList->am_approval_status === 'pending' || $packingList->am_approval_status === 'reverted')
                         <a class="info p-1 text-center position-relative" title="Edit"

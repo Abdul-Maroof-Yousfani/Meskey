@@ -24,7 +24,7 @@ class SecondWeighbridge extends Model
         });
 
         static::addGlobalScope('sale_type', function ($builder) {
-            $builder->where('type', 'sale_order');
+            $builder->where('sales_second_weighbridges.type', 'sale_order');
         });
     }
 

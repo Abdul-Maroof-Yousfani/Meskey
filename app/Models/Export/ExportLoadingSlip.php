@@ -19,7 +19,7 @@ class ExportLoadingSlip extends LoadingSlip
         });
 
         static::addGlobalScope('export_type', function ($builder) {
-            $builder->withoutGlobalScope('sale_type')->where('type', 'export_loading_slip');
+            $builder->withoutGlobalScope('sale_type')->where('loading_slips.type', 'export_loading_slip');
         });
     }
 
