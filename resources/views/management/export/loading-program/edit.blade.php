@@ -214,6 +214,14 @@
                         if (response.success && response.delivery_orders) {
                             window.allFetchedDOs = response.delivery_orders;
                             syncDOSelectionState(delivery_order_ids, response.delivery_orders);
+
+                            // Auto-fill vessel name from the first selected DO
+                            if (delivery_order_ids.length > 0) {
+                                const selectedDO = response.delivery_orders.find(d => d.id == delivery_order_ids[0]);
+                                if (selectedDO && selectedDO.vessel_name) {
+                                    $('input[name="vessel_name"]').val(selectedDO.vessel_name);
+                                }
+                            }
                         }
                     }
                 });

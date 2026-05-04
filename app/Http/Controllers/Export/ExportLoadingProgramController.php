@@ -102,7 +102,7 @@ class ExportLoadingProgramController extends Controller
                 'company_location_id' => $request->main_company_location_id,
                 'arrival_locations' => $arrivalLocationIds,
                 'sub_arrival_locations' => $subArrivalLocationIds,
-                'vessel_name' => $request->vessel_name,
+                'vessel_name' => $request->vessel_name ?: ($deliveryOrders->first()?->vessel_name ?? 'N/A'),
                 'remark' => $request->remark,
                 'status' => 'pending',
                 'created_by' => auth()->user()->id,
@@ -251,7 +251,7 @@ class ExportLoadingProgramController extends Controller
                 'company_location_id' => $request->main_company_location_id,
                 'arrival_locations' => $arrivalLocationIds,
                 'sub_arrival_locations' => $subArrivalLocationIds,
-                'vessel_name' => $request->vessel_name,
+                'vessel_name' => $request->vessel_name ?: ($deliveryOrders->first()?->vessel_name ?? $loadingProgram->vessel_name),
                 'remark' => $request->remark,
             ]);
 
@@ -520,6 +520,7 @@ class ExportLoadingProgramController extends Controller
             'arrival_location_id' => $firstDO?->arrival_location_id,
             'sub_arrival_location_id' => $firstDO?->sub_arrival_location_id,
             'company_location_id' => $firstDO?->location_id,
+            'vessel_name' => $firstDO?->vessel_name ?? null,
         ];
 
         return response()->json([
@@ -546,7 +547,7 @@ class ExportLoadingProgramController extends Controller
                 });
             })
             ->with(['exportPackingItems', 'locations'])
-            ->select('id', 'reference_no', 'export_order_id', 'am_approval_status')
+            ->select('id', 'reference_no', 'export_order_id', 'am_approval_status', 'vessel_name')
             ->get();
 
         $lpId = $request->loading_program_id;

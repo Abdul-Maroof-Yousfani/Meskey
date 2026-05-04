@@ -68,6 +68,18 @@
                         <input type="text" name="ref_no" id="ref_no" value="{{ $deliveryOrder->ref_no }}" class="form-control" disabled>
                     </div>
                 </div>
+                <div class="col-md-3 mt-2">
+                    <div class="form-group">
+                        <label>Job Order No:</label>
+                        <input type="text" value="{{ $deliveryOrder->job_order_no }}" class="form-control" disabled>
+                    </div>
+                </div>
+                <div class="col-md-3 mt-2">
+                    <div class="form-group">
+                        <label>Financial Instrument No:</label>
+                        <input type="text" value="{{ $deliveryOrder->financial_instrument_no }}" class="form-control" disabled>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -292,6 +304,7 @@
         </div>{{-- end row --}}
     </div> <!-- End of exportOrderSnapshotEdit -->
 
+
     <!-- Packing Details inside col-8 layout -->
     <div class="row form-mar">
         <div class="col-md-12" id="packingItemsWrapper">
@@ -443,6 +456,49 @@
                                 <input type="number" name="packing_items[0][min_weight_empty_bags]" class="form-control min-weight" value="0" min="0" step="0.01" readonly>
                             </div>
                         </div>
+
+                        <!-- New Logistics Row per Packing Item (Read-only in Show) -->
+                        <div class="col-md-12">
+                            <div class="row">
+
+                                <div class="col-md-2">
+                                    <div class="form-group">
+                                        <label>Fumigation:</label>
+                                        <input type="text" class="form-control fumigation-display" readonly>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="form-group">
+                                        <label>Phyto Certificate:</label>
+                                        <input type="text" class="form-control phyto-display" readonly>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="form-group">
+                                        <label>Inspection Company:</label>
+                                        <input type="text" name="packing_items[0][inspection_company]" class="form-control inspection-company" readonly>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="form-group">
+                                        <label>Carton Supplier:</label>
+                                        <input type="text" name="packing_items[0][carton_supplier]" class="form-control carton-supplier" readonly>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="form-group">
+                                        <label>Fumigation Tablets:</label>
+                                        <input type="text" name="packing_items[0][fumigation_tablets]" class="form-control fumigation-tablets" readonly>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="form-group">
+                                        <label>Fumigation Ref No:</label>
+                                        <input type="text" name="packing_items[0][fumigation_ref_no]" class="form-control fumigation-ref-no" readonly>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         
                         <!-- Master Packing Section -->
                         <div class="col-md-12 mt-4">
@@ -553,6 +609,75 @@
                     </tr>
         </tbody>
             </table>
+        </div>
+    </div>
+
+    <!-- Logistics & Shipment Details (Moved here after Packing Details and before Remarks) -->
+    <div class="row form-mar mt-3">
+        <div class="col-md-12">
+            <h6 class="header-heading-sepration">Logistics & Shipment Details</h6>
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Vessel Name:</label>
+                        <input type="text" class="form-control" value="{{ $deliveryOrder->vessel_name }}" disabled>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Vessel ETD:</label>
+                        <input type="text" class="form-control" value="{{ $deliveryOrder->vessel_etd }}" disabled>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Vessel ETA:</label>
+                        <input type="text" class="form-control" value="{{ $deliveryOrder->vessel_eta }}" disabled>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Loading Date:</label>
+                        <input type="text" class="form-control" value="{{ $deliveryOrder->loading_date }}" disabled>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Estimated Payment Date:</label>
+                        <input type="text" class="form-control" value="{{ $deliveryOrder->estimated_payment_date }}" disabled>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Freight Amount:</label>
+                        <input type="text" class="form-control" value="{{ $deliveryOrder->freight_amount }}" disabled>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Transporter:</label>
+                        <input type="text" class="form-control" value="{{ $deliveryOrder->transporter->name ?? '---' }}" disabled>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Clearing Agent:</label>
+                        <input type="text" class="form-control" value="{{ $deliveryOrder->c_agent }}" disabled>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Shipping Line:</label>
+                        <input type="text" class="form-control" value="{{ $deliveryOrder->shipping_line }}" disabled>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Empty Container Pickup:</label>
+                        <input type="text" class="form-control" value="{{ $deliveryOrder->empty_container_pickup }}" disabled>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -744,6 +869,40 @@
                 row.find(`input[name="packing_items[0][stuffing_in_container]"]`).val(item.stuffing_in_container);
                 row.find(`input[name="packing_items[0][no_of_containers]"]`).val(item.no_of_containers);
                 row.find(`input[name="packing_items[0][min_weight_empty_bags]"]`).val(item.min_weight_empty_bags);
+
+                // Populate logistics fields
+                let fumigationNames = [];
+                let allFumigationOpts = {};
+                $('.fumigation-display option, .fumigation-select option').each(function() {
+                    allFumigationOpts[$(this).val()] = $(this).text();
+                });
+                // Use the fumigationCompanies map from inline JSON
+                let fumigationMap = @json($fumigationCompanies->pluck('name','id'));
+                if (Array.isArray(item.fumigation_company_id)) {
+                    item.fumigation_company_id.forEach(id => { if(fumigationMap[id]) fumigationNames.push(fumigationMap[id]); });
+                }
+                row.find('.fumigation-display').val(fumigationNames.join(', '));
+
+                let phytoNames = [];
+                if (Array.isArray(item.phyto_certificate)) {
+                    item.phyto_certificate.forEach(id => { if(fumigationMap[id]) phytoNames.push(fumigationMap[id]); });
+                }
+                row.find('.phyto-display').val(phytoNames.join(', '));
+
+                // Resolve inspection company IDs to names if they are IDs
+                let inspectionMap = @json($inspectionCompanies->pluck('name', 'id'));
+                let inspectionVal = item.inspection_company || '';
+                if (inspectionVal) {
+                    let ids = inspectionVal.split(',').map(id => id.trim());
+                    let names = ids.map(id => inspectionMap[id] || id); // Fallback to original value if not found in map
+                    row.find('.inspection-company').val(names.join(', '));
+                } else {
+                    row.find('.inspection-company').val('');
+                }
+
+                row.find('.carton-supplier').val(item.carton_supplier || '');
+                row.find('.fumigation-tablets').val(item.fumigation_tablets || '');
+                row.find('.fumigation-ref-no').val(item.fumigation_ref_no || '');
                 
                 let subContainer = row.find('.sub-packing-items-container');
                 subContainer.attr('data-index', index);

@@ -88,6 +88,11 @@ class ExportDeliveryOrder extends DeliveryOrder
         return $this->hasMany(ExportLoadingSlip::class, "delivery_order_id");
     }
 
+    public function transporter()
+    {
+        return $this->belongsTo(\App\Models\Master\Transporter::class, 'transporter_id');
+    }
+
     /**
      * Override createApprovalRows from HasApproval trait to handle duplicates safely
      */

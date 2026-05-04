@@ -115,6 +115,18 @@ class BillOfLadingController extends Controller
             })->filter()->unique()->implode(' / ');
 
             if (!$vesselName) {
+                // Check linked Delivery Orders
+                $vesselName = $billOfLading->deliveryOrder?->vessel_name;
+                if (!$vesselName && !empty($billOfLading->selected_delivery_order_ids)) {
+                    $vesselName = \App\Models\Export\ExportDeliveryOrder::whereIn('id', (array)$billOfLading->selected_delivery_order_ids)
+                        ->pluck('vessel_name')
+                        ->filter()
+                        ->unique()
+                        ->implode(' / ');
+                }
+            }
+
+            if (!$vesselName) {
                 $vesselName = $billOfLading->exportOrder->vessel_name ?? $billOfLading->exportOrder->carrier_name ?? 'N/A';
             }
             $preview['vessel_name'] = $vesselName;
@@ -523,6 +535,13 @@ class BillOfLadingController extends Controller
                 return $data->loadingProgramItem?->exportLoadingProgram?->vessel_name;
             });
         })->filter()->unique()->implode(' / ');
+
+        if (!$vesselName) {
+            // Check linked Delivery Orders
+            $vesselName = $deliveryChallans->flatMap(function ($challan) {
+                return $challan->delivery_order->pluck('vessel_name');
+            })->filter()->unique()->implode(' / ');
+        }
 
         if (!$vesselName) {
             $vesselName = $exportOrder->vessel_name ?? $exportOrder->carrier_name ?? 'N/A';
