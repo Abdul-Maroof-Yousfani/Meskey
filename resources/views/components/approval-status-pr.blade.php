@@ -253,7 +253,7 @@
                     </div>
                 </div>
             </div>
-        @elseif($model->getApprovalStatus() === 'pending')
+        @elseif(in_array($model->getApprovalStatus(), ['pending', 'partial_approved', 'approved']))
             <div class="alert alert-info border-start border-info border-3">
                 <div class="d-flex align-items-center">
                     <i class="fa  fa-info-circle me-3 text-info"></i>

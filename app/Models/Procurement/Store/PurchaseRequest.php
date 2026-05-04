@@ -123,7 +123,9 @@ class PurchaseRequest extends Model
     public function canApprove()
     {
         $status = $this->getApprovalStatus();
-        if ($status === 'approved' || $status === 'rejected') {
+        $hasPendingItems = $this->PurchaseData()->whereNotIn('am_approval_status', ['approved', 'rejected', 'neglected'])->exists();
+
+        if (($status === 'approved' || $status === 'rejected') && !$hasPendingItems) {
             return false;
         }
 
@@ -134,8 +136,6 @@ class PurchaseRequest extends Model
 
         $module = $this->getApprovalModule();
         if (!$module) return false;
-
-        $hasPendingItems = $this->PurchaseData()->whereNotIn('am_approval_status', ['approved', 'rejected', 'neglected'])->exists();
 
         if (isset($this->am_change_made) && $this->am_change_made == 0 && !$hasPendingItems) return false;
 
@@ -178,7 +178,7 @@ class PurchaseRequest extends Model
             ->where('module_id', $module->id)
             ->where('approval_cycle', $currentCycle)
             ->whereIn('role_id', $userRoleIds)
-            ->whereIn('status', ['pending', 'partial_approved'])
+            ->whereIn('status', ['pending', 'partial_approved', 'approved'])
             ->get();
 
         foreach ($userApprovalRows as $row) {
