@@ -147,7 +147,7 @@
 
                 <td style="vertical-align: middle !important;">
                     <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
-                        <input type="checkbox" class="form-check-input item-checkbox" style="cursor: pointer; transform: scale(1.2); margin: 0;" @disabled(in_array(strtolower($item->am_approval_status), ['approved', 'rejected']))>
+                        <input type="checkbox" class="form-check-input item-checkbox" style="cursor: pointer; transform: scale(1.2); margin: 0;" @disabled(in_array(strtolower($item->am_approval_status), ['approved', 'rejected', 'reverted']))>
                     </div>
                 </td>
 
@@ -298,6 +298,7 @@
             $module = $data->getApprovalModule();
             $listRefresh = route('store.get.purchase-request');
         @endphp
+        
         @include('components.approval-status-pr', ['model' => $model, 'module' => $module, 'listRefresh' => $listRefresh])
     </div>
 </div>
