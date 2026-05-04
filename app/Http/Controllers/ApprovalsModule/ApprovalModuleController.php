@@ -223,6 +223,7 @@ class ApprovalModuleController extends Controller
                         'role_id' => $role['id'],
                         'approval_count' => $role['count'],
                         'approval_order' => $role['order'],
+                        'condition' => $role['condition'] ?? null,
                     ]);
                 }
             }
@@ -314,6 +315,7 @@ class ApprovalModuleController extends Controller
                     [
                         'approval_count' => $role['count'],
                         'approval_order' => $role['order'],
+                        'condition' => $role['condition'] ?? null,
                     ]
                 );
             }

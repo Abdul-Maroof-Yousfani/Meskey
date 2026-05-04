@@ -47,6 +47,7 @@
                                         <th width="10%">Currency</th>
                                         {{-- <th width="10%">Rate/MT</th> --}}
                                         <th width="10%">Total Amount</th>
+                                        <th width="10%">Status</th>
                                         <th width="10%">Action</th>
                                     </tr>
                                 </thead>

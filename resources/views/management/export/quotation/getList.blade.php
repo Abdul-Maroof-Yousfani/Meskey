@@ -9,6 +9,7 @@
             <th width="10%">Currency</th>
             {{-- <th width="10%">Rate/MT</th> --}}
             <th width="10%">Total Amount</th>
+            <th width="10%">Status</th>
             <th width="10%">Action</th>
         </tr>
     </thead>
@@ -21,22 +22,42 @@
                     <td>{{ $quotation->buyer->name ?? 'N/A' }}</td>
                     <td>{{ $quotation->company->name ?? 'N/A' }}</td>
                     <td>{{ Str::limit($quotation->product->name ?? 'N/A', 30) }}</td>
-                    <td>{{ $quotation->currency->currency_code ?? '' }} ({{ number_format($quotation->currency_rate, 2) ?? '' }})</td>
+                    <td>{{ $quotation->currency->currency_code ?? '' }}
+                        ({{ number_format($quotation->currency_rate, 2) ?? '' }})</td>
                     {{-- <td>{{ number_format($quotation->rate, 2) }}</td> --}}
                     <td>{{ number_format($quotation->total_amount, 2) }}</td>
+                    <td>
+                        @php
+                            $status = $quotation->am_approval_status ?? 'pending';
+                            $badge = match (strtolower($status)) {
+                                'approved' => 'badge-success',
+                                'rejected' => 'badge-danger',
+                                'pending' => 'badge-warning',
+                                'reverted' => 'badge-secondary',
+                                default => 'badge-secondary',
+                            };
+                        @endphp
+                        <span class="badge {{ $badge }} px-2 py-1">
+                            {{ ucfirst($status) }}
+                        </span>
+                    </td>
                     <td>
                         <a class="info p-1 text-center position-relative"
                             onclick="openModal(this,'{{ route('quotation.show', $quotation->id) }}','Show Quotation',false,'90%')">
                             <i class="ft-eye font-medium-3"></i>
                         </a>
-                        <a class="info p-1 text-center position-relative"
-                            onclick="openModal(this,'{{ route('quotation.edit', $quotation->id) }}','Edit Quotation',false,'90%')">
-                            <i class="ft-edit font-medium-3"></i>
-                        </a>
-                        <a onclick="deletemodal('{{ route('quotation.destroy', $quotation->id) }}','{{ route('get.quotation') }}')"
-                            class="danger p-1 text-center mr-2 position-relative">
-                            <i class="ft-x font-medium-3"></i>
-                        </a>
+                        @if (auth()->user()->id == $quotation->created_by)
+                            @if ($quotation->am_approval_status === 'pending' || $quotation->am_approval_status === 'reverted')
+                                <a class="info p-1 text-center position-relative"
+                                    onclick="openModal(this,'{{ route('quotation.edit', $quotation->id) }}','Edit Quotation',false,'90%')">
+                                    <i class="ft-edit font-medium-3"></i>
+                                </a>
+                                <a onclick="deletemodal('{{ route('quotation.destroy', $quotation->id) }}','{{ route('get.quotation') }}')"
+                                    class="danger p-1 text-center mr-2 position-relative">
+                                    <i class="ft-x font-medium-3"></i>
+                                </a>
+                            @endif
+                        @endif
                     </td>
                 </tr>
             @endforeach
@@ -48,8 +69,12 @@
                             <g transform="translate(0 1)" fill="none" fill-rule="evenodd">
                                 <ellipse fill="#f5f5f5" cx="32" cy="33" rx="32" ry="7"></ellipse>
                                 <g fill-rule="nonzero" stroke="#d9d9d9">
-                                    <path d="M55 12.76L44.854 1.258C44.367.474 43.656 0 42.907 0H21.093c-.749 0-1.46.474-1.947 1.257L9 12.761V22h46v-9.24z"></path>
-                                    <path d="M41.613 15.931c0-1.605.994-2.93 2.227-2.931H55v18.137C55 33.26 53.68 35 52.05 35h-40.1C10.32 35 9 33.259 9 31.137V13h11.16c1.233 0 2.227 1.323 2.227 2.928v.022c0 1.605 1.005 2.901 2.237 2.901h14.752c1.232 0 2.237-1.308 2.237-2.913v-.007z" fill="#fafafa"></path>
+                                    <path
+                                        d="M55 12.76L44.854 1.258C44.367.474 43.656 0 42.907 0H21.093c-.749 0-1.46.474-1.947 1.257L9 12.761V22h46v-9.24z">
+                                    </path>
+                                    <path
+                                        d="M41.613 15.931c0-1.605.994-2.93 2.227-2.931H55v18.137C55 33.26 53.68 35 52.05 35h-40.1C10.32 35 9 33.259 9 31.137V13h11.16c1.233 0 2.227 1.323 2.227 2.928v.022c0 1.605 1.005 2.901 2.237 2.901h14.752c1.232 0 2.237-1.308 2.237-2.913v-.007z"
+                                        fill="#fafafa"></path>
                                 </g>
                             </g>
                         </svg>
