@@ -52,16 +52,6 @@ return new class extends Migration {
             if (!Schema::hasColumn('delivery_order', 'remarks')) {
                 $table->text('remarks')->nullable()->after('empty_container_pickup');
             }
-
-            // Drop fields that are being moved to packing items
-            $table->dropColumn([
-                'inspection_company',
-                'carton_supplier',
-                'fumigation_tablets',
-                'fumigation_ref_no',
-                'fumigation',
-                'phyto_certificate'
-            ]);
         });
 
         // 2. Update export_delivery_order_packing_items table
@@ -100,13 +90,6 @@ return new class extends Migration {
         });
 
         Schema::table('delivery_order', function (Blueprint $table) {
-            $table->string('inspection_company')->nullable();
-            $table->string('carton_supplier')->nullable();
-            $table->string('fumigation_tablets')->nullable();
-            $table->string('fumigation_ref_no')->nullable();
-            $table->string('fumigation')->nullable();
-            $table->string('phyto_certificate')->nullable();
-
             $table->dropColumn([
                 'financial_instrument_no',
                 'job_order_no',
