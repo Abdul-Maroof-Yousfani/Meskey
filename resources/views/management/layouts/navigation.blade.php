@@ -736,7 +736,7 @@
                 </ul>
             </li>
             @endcanAccess
-            @endcanAccess
+            {{-- @endcanAccess --}}
             {{-- @canAccess('export-sales') --}} 
             <li class="dropdown nav-item {{ request()->is('export*') ? 'active' : '' }}" data-menu="dropdown"><a {{--
                     @canAccess('export-module') --}} <li class="dropdown nav-item" data-menu="dropdown"><a
