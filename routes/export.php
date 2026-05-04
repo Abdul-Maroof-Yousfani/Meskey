@@ -167,6 +167,7 @@ Route::resource('packing-list', PackingListController::class);
 Route::post('/get-packing-list', [PackingListController::class, 'getPackingListTable'])->name('get.packing-list');
 Route::get('/get-packing-list-related-data', [PackingListController::class, 'getRelatedData'])->name('get.packing-list.related.data');
 Route::get('/get-packing-list-commercial-invoices', [PackingListController::class, 'getCommercialInvoicesByExportOrder'])->name('get.packing-list.commercial-invoices');
+Route::get('/packing-list/{id}/container-list', [PackingListController::class, 'containerList'])->name('packing-list.container-list');
 
 // export soda field 
 Route::resource('export-soda-field', ExportSodaFieldController::class);

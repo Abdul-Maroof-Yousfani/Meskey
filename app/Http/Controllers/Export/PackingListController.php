@@ -11,6 +11,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use App\Models\Export\ExportDeliveryOrder;
+use App\Models\Sales\LoadingProgramItem;
+use App\Models\Export\ExportDeliveryChallanData;
 use Illuminate\View\View;
 
 class PackingListController extends CommercialInvoiceController
@@ -18,6 +21,73 @@ class PackingListController extends CommercialInvoiceController
     public function index(): View
     {
         return view('management.export.packing-list.index');
+    }
+
+    public function containerList($id): View
+    {
+        $packingList = PackingList::with([
+            'commercialInvoice.exportOrder.portOfDischarge.country',
+            'commercialInvoice.exportOrder.company',
+            'billOfLading'
+        ])->findOrFail($id);
+
+        $bol = $packingList->billOfLading;
+        
+        // Resolve Delivery Challan IDs from BOL
+        $dcIds = $bol->selected_delivery_challan_ids ?? [];
+        if (empty($dcIds) && $bol->export_delivery_challan_id) {
+            $dcIds = [$bol->export_delivery_challan_id];
+        }
+
+        // Fetch DC Data records which link to tickets and weights
+        $dcDataRecords = ExportDeliveryChallanData::whereIn('delivery_challan_id', $dcIds)
+            ->with([
+                'loadingProgramItem.exportLoadingSlip',
+                'loadingProgramItem.exportSecondWeighbridge',
+                'exportPackingItem'
+            ])
+            ->get();
+
+        $containerItems = $dcDataRecords->map(function ($dcData) {
+            $ticket = $dcData->loadingProgramItem;
+            
+            // Net weight from DC (which is in MT, so convert to KG)
+            $netWeight = (float) ($dcData->qty ?? 0) * 1000;
+            $bags = (float) ($dcData->no_of_bags ?? 0);
+            
+            // Gross weight calculation matching the system standard
+            $emptyBagWeightGram = (float) ($dcData->exportPackingItem->min_weight_empty_bags ?? 0);
+            $grossWeight = $netWeight + ($bags * ($emptyBagWeightGram / 1000));
+
+            return (object) [
+                'container_number' => $dcData->container_number ?: ($ticket->container_number ?: 'N/A'),
+                'bags' => $bags,
+                'net_weight' => $netWeight,
+                'gross_weight' => $grossWeight,
+            ];
+        })->filter()->values();
+
+        // Grouping by container number to aggregate weights and bags if multiple entries exist for one container
+        $finalItems = $containerItems->groupBy(function ($item) {
+            return strtoupper(trim((string) $item->container_number));
+        })->map(function ($group) {
+            return (object) [
+                'container_number' => $group->first()->container_number,
+                'bags' => $group->sum('bags'),
+                'net_weight' => $group->sum('net_weight'),
+                'gross_weight' => $group->sum('gross_weight'),
+            ];
+        })->values();
+
+        return view('management.export.packing-list.container-list', [
+            'packingList' => $packingList,
+            'containerItems' => $finalItems,
+            'totals' => [
+                'bags' => $finalItems->sum('bags'),
+                'net_weight' => $finalItems->sum('net_weight'),
+                'gross_weight' => $finalItems->sum('gross_weight'),
+            ]
+        ]);
     }
 
     public function getPackingListTable(Request $request): View
