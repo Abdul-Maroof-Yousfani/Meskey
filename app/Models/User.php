@@ -41,6 +41,7 @@ class User extends Authenticatable
         // json
         'company_location_ids',
         'arrival_location_ids',
+        'purchase_order_approval',
     ];
 
     /**
@@ -152,6 +153,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'company_location_ids' => 'array',
         'arrival_location_ids' => 'array',
+        'purchase_order_approval' => 'boolean',
     ];
 
     public function createdAccounts()

@@ -45,13 +45,28 @@
                             <p class="m-0 font-weight-bold">
                                 {{ optional($itemGroup['item_data']->item)->name ?? 'N/A' }}
                             </p>
-                            @if ($itemGroup['item_data']->is_single_job_order)
-                                <span class="badge badge-yellow mt-1" style="font-size: 10px; padding: 3px 10px; border-radius: 20px;">With job order</span>
-                            @else
-                                <span class="badge badge-secondary mt-1" style="font-size: 10px; padding: 3px 10px; border-radius: 20px;">Without job order</span>
-                            @endif
+                            <div class="d-flex align-items-center mt-1" style="gap: 5px;">
+                                @php
+                                    $itemStatus = $itemGroup['item_data']->am_approval_status ?? 'pending';
+                                    $badgeClass = match (strtolower($itemStatus)) {
+                                        'approved' => 'badge-success',
+                                        'rejected' => 'badge-danger',
+                                        'pending' => 'badge-warning',
+                                        'partial approved' => 'badge-info',
+                                        'reverted', 'returned' => 'badge-info',
+                                        default => 'badge-secondary',
+                                    };
+                                @endphp
+                                <span class="badge {{ $badgeClass }}" style="font-size: 10px; padding: 3px 10px; border-radius: 20px;">
+                                    {{ ucwords($itemStatus) }}
+                                </span>
 
-
+                                @if ($itemGroup['item_data']->is_single_job_order)
+                                    <span class="badge badge-yellow" style="font-size: 10px; padding: 3px 10px; border-radius: 20px;">With job order</span>
+                                @else
+                                    <span class="badge badge-secondary" style="font-size: 10px; padding: 3px 10px; border-radius: 20px;">Without job order</span>
+                                @endif
+                            </div>
                         </td>
 
                         <td>
@@ -91,7 +106,8 @@
                                         'approved' => 'badge-success',
                                         'rejected' => 'badge-danger',
                                         'pending' => 'badge-warning',
-                                        'returned' => 'badge-info',
+                                        'partial approved' => 'badge-info',
+                                        'returned', 'reverted' => 'badge-info',
                                         default => 'badge-secondary',
                                     };
                                 @endphp
@@ -102,32 +118,24 @@
 
                             <td rowspan="{{ $requestGroup['request_rowspan'] }}">
                                 <div class="d-flex flex-column align-items-start" style="gap: 5px;">
-                                    @php
-                                        $currentApprovalStatus = $itemGroup['item_data']
-                                            ?->{$itemGroup['item_data']->getApprovalModule()->approval_column ?? 'am_approval_status'} ?? 'pending';
-                                        $isCurrentApproved = strtolower($currentApprovalStatus) === 'approved';
-                                        $shouldDisableApproval = $requestGroup['has_approved_item'] && !$isCurrentApproved;
-                                    @endphp
-
-                                    @if ($shouldDisableApproval)
-                                        <span class="bg-info text-white p-1 text-center position-relative" style="opacity: 0.5; cursor: not-allowed; border-radius: 4px; width: 90px;"
-                                            title="Approval disabled - Another item in this request is already approved">
-                                            Approval
-                                        </span>
-                                    @else
+                                    @if ($requestGroup['request_status'] !== 'approved')
                                         <a onclick="openModal(this, '{{ route('store.purchase-request.approvals', $itemGroup['item_data']->id) }}', 'Approval Voucher', false, '100%')"
                                             class="bg-info text-white p-1 text-center position-relative" title="Approval" style="border-radius: 4px; width: 90px;">
                                             Approval
                                         </a>
+                                    @else
+                                        <span class="bg-success text-white p-1 text-center position-relative" style="border-radius: 4px; width: 90px;">
+                                            Approved
+                                        </span>
                                     @endif
                                     @if($requestGroup['created_by_id'] == auth()->user()->id)
-                                        @if($requestGroup['request_status'] == 'pending' || $requestGroup['request_status'] == 'reverted')
+                                        @if($requestGroup['has_pending'])
                                             <a onclick="openModal(this,'{{ route('store.purchase-request.edit', $itemGroup['item_data']->id) }}','Edit Purchase Request',false,'100%')"
-                                                class="bg-warning text-white p-1 text-center position-relative" style="border-radius: 4px; width: 90px;">
+                                                class="bg-warning text-white p-1 text-center position-relative" title="Edit" style="border-radius: 4px; width: 90px;">
                                                 Edit
                                             </a>
                                             <a onclick="deletemodal('{{ route('store.purchase-request.destroy', $requestGroup['request_data']->id) }}','{{ route('store.get.purchase-request') }}')"
-                                                class="bg-danger text-white p-1 text-center position-relative" style="border-radius: 4px; width: 90px;">
+                                                class="bg-danger text-white p-1 text-center position-relative" title="Delete" style="border-radius: 4px; width: 90px;">
                                                 Delete
                                             </a>
                                         @endif
@@ -204,6 +212,90 @@
                     },
                     error: function () {
                         Swal.fire('Error', 'Error occurred while approving item.', 'error');
+                    }
+                });
+            }
+        });
+    }
+
+    function itemApprovalAction(url, type, moduleId) {
+        Swal.fire({
+            title: type.charAt(0).toUpperCase() + type.slice(1) + ' Item',
+            text: 'Are you sure you want to ' + type + ' this item?',
+            input: 'textarea',
+            inputPlaceholder: 'Enter your comments here...',
+            icon: type === 'approve' ? 'success' : 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Confirm',
+            cancelButtonText: 'Cancel',
+            preConfirm: (comments) => {
+                if (!comments && type !== 'approve') {
+                    Swal.showValidationMessage('Comments are required for rejection');
+                }
+                return comments;
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        type: type,
+                        comments: result.value,
+                        mc: moduleId
+                    },
+                    success: function (res) {
+                        Swal.fire('Success', res.success, 'success').then(() => {
+                            filterationCommon("{{ route('store.get.purchase-request') }}");
+                        });
+                    },
+                    error: function (xhr) {
+                        Swal.fire('Error', xhr.responseJSON?.message || 'Action failed', 'error');
+                    }
+                });
+            }
+        });
+    }
+
+    function deleteItem(url) {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You want to delete this line item? This action cannot be undone.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, delete it!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: url,
+                    type: 'DELETE',
+                    data: {
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function(res) {
+                        if (res.success) {
+                            Swal.fire({
+                                title: 'Deleted!',
+                                text: res.success,
+                                icon: 'success',
+                                timer: 1500,
+                                showConfirmButton: false
+                            }).then(() => {
+                                filterationCommon("{{ route('store.get.purchase-request') }}");
+                            });
+                        } else if (res.error) {
+                            Swal.fire('Error!', res.error, 'error');
+                        }
+                    },
+                    error: function(xhr) {
+                        let errorMsg = 'Something went wrong while deleting.';
+                        if (xhr.responseJSON && xhr.responseJSON.error) {
+                            errorMsg = xhr.responseJSON.error;
+                        }
+                        Swal.fire('Error!', errorMsg, 'error');
                     }
                 });
             }

@@ -416,4 +416,121 @@ class ApprovalController extends Controller
     //         'success' => 'Rejection failed'
     //     ]);
     // }
+    public function bulk_purchase_request_approval(Request $request, $modelType, $id)
+    {
+        $approvalModule = ApprovalModule::findOrFail($request->mc);
+        $reqType = $request->type ?? '';
+        $modelClass = $approvalModule->model_class ?? '';
+
+        if (!class_exists($modelClass)) {
+            abort(404, 'Model not found');
+        }
+
+        $modelDataIds = json_decode($request->model_data_ids, true);
+        if (!is_array($modelDataIds)) {
+            abort(400, 'Invalid model_data_ids format');
+        }
+
+        $results = [];
+        $uniqueParents = [];
+
+        foreach ($modelDataIds as $dataId) {
+            $record = $modelClass::find($dataId);
+            $returnedChild = false;
+
+            if (!$record) {
+                $dataModelClass = $modelClass . 'Data';
+                if (class_exists($dataModelClass)) {
+                    $record = $dataModelClass::find($dataId);
+                }
+            }
+
+            if (!$record) {
+                $results[] = ['child_id' => $dataId, 'child_status' => 'failed', 'message' => 'Record not found'];
+                continue;
+            }
+
+            $parentRecord = $record->purchase_request ?? null;
+            if ($parentRecord) {
+                $uniqueParents[$parentRecord->id] = $parentRecord;
+            }
+
+            if ($reqType == 'revert') {
+                $record->am_change_made = 0;
+                $record->save();
+                $returnedChild = $record->revert($request->comments);
+            } elseif ($reqType == 'reject') {
+                $record->am_change_made = 0;
+                $record->save();
+                $returnedChild = $record->reject($request->comments);
+            } else { // approve
+                if ($record->canApprove()) {
+                    $returnedChild = $record->approve($request->comments);
+                }
+            }
+
+            $results[] = [
+                'child_id' => $record->id,
+                'child_status' => $returnedChild ? 'success' : 'failed',
+                'parent_id' => $parentRecord ? $parentRecord->id : null,
+                'parent_status' => 'pending'
+            ];
+        }
+
+        foreach ($uniqueParents as $parentId => $parentRecord) {
+            if ($reqType == 'revert' || $reqType == 'reject') {
+                $parentRecord->am_change_made = 0;
+                $parentRecord->save();
+
+                $allChildren = $parentRecord->PurchaseData()->get();
+                $pendingCount = $allChildren->whereNotIn('am_approval_status', ['approved', 'rejected', 'neglected', 'returned', 'reverted'])->count();
+                $approvedCount = $allChildren->where('am_approval_status', 'approved')->count();
+
+                if ($reqType == 'reject' && $pendingCount == 0 && $approvedCount == 0) {
+                    $returnedParent = $parentRecord->reject($request->comments);
+                } else {
+                    if ($parentRecord->canApprove()) {
+                        if ($pendingCount == 0 && $approvedCount > 0) {
+                            $returnedParent = $parentRecord->approve($request->comments);
+                        } elseif ($approvedCount > 0) {
+                            $returnedParent = $parentRecord->partial_approve($request->comments);
+                        } else {
+                            $returnedParent = true;
+                        }
+                    } else {
+                        $returnedParent = true;
+                    }
+                }
+            } else { // approve
+                if ($parentRecord->canApprove()) {
+                    $NoRemainingPendingChild = $parentRecord->PurchaseData()
+                        ->whereNotIn('am_approval_status', ['approved', 'rejected', 'neglected'])
+                        ->count() === 0;
+                    
+                    if (!$NoRemainingPendingChild) {
+                        $returnedParent = $parentRecord->partial_approve($request->comments);
+                    } else {
+                        $returnedParent = $parentRecord->approve($request->comments);
+                    }
+                } else {
+                    $returnedParent = false;
+                }
+            }
+
+            foreach ($results as &$result) {
+                if ($result['parent_id'] == $parentId) {
+                    $result['parent_status'] = $returnedParent ? 'success' : 'failed';
+                }
+            }
+        }
+
+        return response()->json([
+            'summary' => [
+                'total' => count($modelDataIds),
+                'success' => collect($results)->filter(fn($r) => $r['child_status'] === 'success' || $r['parent_status'] === 'success')->count(),
+                'failed' => collect($results)->filter(fn($r) => $r['child_status'] === 'failed' && $r['parent_status'] === 'failed')->count(),
+            ],
+            'details' => $results
+        ]);
+    }
 }

@@ -87,13 +87,13 @@ class PurchaseOrderController extends Controller
             ->when(auth()->user()->user_type != 'super-admin', function ($q) {
                 return $q->whereIn('company_location_id', getUserCurrentCompanyLocations());
             })
-            ->when(!auth()->user()->can("procurement-raw-purchase-approval") && auth()->user()->parent_user_id != null, function ($q) {
+            ->when(!auth()->user()->can("procurement-raw-purchase-approval") && auth()->user()->parent_user_id != null && auth()->user()->user_type != 'super-admin', function ($q) {
                 return $q->where('created_by', auth()->user()->id);
             })
-            ->when(auth()->user()->can("procurement-raw-purchase-approval"), function ($q) {
+            ->when(auth()->user()->can("procurement-raw-purchase-approval") && auth()->user()->user_type != 'super-admin', function ($q) {
                 return $q->where("decision_of_id", auth()->user()->parent_user_id);
             })
-            ->when(auth()->user()->parent_user_id == null, function ($q) {
+            ->when(auth()->user()->parent_user_id == null && auth()->user()->user_type != 'super-admin', function ($q) {
                 return $q->where('decision_of_id', auth()->user()->id);
             })
             ->where('purchase_type', 'regular')
@@ -278,7 +278,10 @@ class PurchaseOrderController extends Controller
      */
     public function edit($id)
     {
-        $data['arrivalPurchaseOrder'] = ArrivalPurchaseOrder::findOrFail($id);
+        $arrivalPurchaseOrder = ArrivalPurchaseOrder::findOrFail($id);
+
+
+        $data['arrivalPurchaseOrder'] = $arrivalPurchaseOrder;
         $data['bagPackings'] = [];
         $data['truckSizeRanges'] = TruckSizeRange::where('status', 'active')->get();
         $data['products'] = Product::where('product_type', 'raw_material')->get();
@@ -323,6 +326,13 @@ class PurchaseOrderController extends Controller
     public function update(ArrivalPurchaseOrderRequest $request, $id)
     {
         $arrivalPurchaseOrder = ArrivalPurchaseOrder::findOrFail($id);
+        if($arrivalPurchaseOrder->am_approval_status == "approved" || $arrivalPurchaseOrder->am_approval_status == 'rejected') {
+            return response()->json([
+                "success" => false,
+                "message" => "Purchase Order Already Approved or Rejected."
+            ], 400);
+        }
+        
         $data = $request->validated();
         $data = $request->all();
         // dd($data);
@@ -412,6 +422,13 @@ class PurchaseOrderController extends Controller
     public function destroy($id)
     {
         $arrival_location = ArrivalPurchaseOrder::findOrFail($id);
+        if($arrival_location->am_approval_status == "approved" || $arrival_location->am_approval_status == 'rejected') {
+            return response()->json([
+                "success" => false,
+                "message" => "Purchase Order Already Approved or Rejected."
+            ], 400);
+        }
+
         $arrival_location->delete();
         return response()->json(['success' => 'Purchase Order deleted successfully.'], 200);
     }
@@ -484,6 +501,13 @@ class PurchaseOrderController extends Controller
 
         $locationId = (string) $request->location_id;
         $suppliers = Supplier::whereJsonContains('company_location_ids', $locationId)->get();
+
+        $suppliers = $suppliers->map(function ($supplier) {
+            return [
+                'id' => $supplier->id,
+                'name' => $supplier->company_name
+            ];
+        });
 
         return response()->json([
             'success' => true,

@@ -26,6 +26,7 @@ class PurchaseSamplingRequestController extends Controller
     public function getList(Request $request)
     {
         $purchaseOrders = ArrivalPurchaseOrder::where('sauda_type_id', 2)
+            ->where("am_approval_status", "approved")
             ->when($request->filled('supplier_id_filter'), function ($query) use ($request) {
                 $query->where('supplier_id', $request->supplier_id_filter);
             })
@@ -52,7 +53,13 @@ class PurchaseSamplingRequestController extends Controller
                     ->whereDate('created_at', '<=', $endDate);
             })
             ->whereIn('company_location_id', getUserCurrentCompanyLocations())
-            ->with(['supplier', 'product', 'location'])
+            ->when(auth()->user()->user_type != 'super-admin' && auth()->user()->parent_user_id != null, function ($q) {
+                return $q->where('decision_of_id', auth()->user()->parent_user_id);
+            })
+            ->when(auth()->user()->user_type != 'super-admin' && auth()->user()->parent_user_id == null, function ($q) {
+                return $q->where('decision_of_id', auth()->user()->id);
+            })
+            ->with(['supplier', 'product', 'location', 'decisionOfUser'])
             ->latest()
             ->paginate(request('per_page', 25));
 
@@ -128,17 +135,17 @@ class PurchaseSamplingRequestController extends Controller
 
         // if ($isIndividual) {
         $arrivalSampleReq = PurchaseSamplingRequest::create([
-            'company_id'       => $request->company_id,
-            'purchase_ticket_id'       => $purchaseTicket->id,
+            'company_id' => $request->company_id,
+            'purchase_ticket_id' => $purchaseTicket->id,
             'arrival_product_id' => $request->product_id ?? $purchaseOrder->product_id ?? null,
             'arrival_purchase_order_id' => $request->purchase_contract_id ?? null,
             'supplier_name' => $request->supplier_name ?? null,
             'address' => $request->address ?? null,
             'is_custom_qc' => $isCustomQc ? 'yes' : 'no',
-            'sampling_type'    => 'initial',
-            'is_re_sampling'   => 'no',
-            'is_done'          => 'no',
-            'remark'           => $request->remark ?? null,
+            'sampling_type' => 'initial',
+            'is_re_sampling' => 'no',
+            'is_done' => 'no',
+            'remark' => $request->remark ?? null,
         ]);
         // }
 

@@ -137,6 +137,14 @@ class PurchaseRequestController extends Controller
                 }
             }
 
+            $hasPendingItems = false;
+            foreach ($requestGroup['items'] as $itemGroup) {
+                if (in_array(strtolower($itemGroup['item_data']->am_approval_status), ['pending', 'reverted', 'returned'])) {
+                    $hasPendingItems = true;
+                    break;
+                }
+            }
+
             foreach ($requestGroup['items'] as $itemId => $itemGroup) {
                 $requestItems[] = [
                     'item_data' => $itemGroup['item_data'],
@@ -148,6 +156,7 @@ class PurchaseRequestController extends Controller
 
             $processedData[] = [
                 'request_data' => $requestGroup['request_data'],
+                'has_pending' => $hasPendingItems,
                 'request_no' => $requestNo,
                 'created_by_id' => $requestGroup['request_data']?->created_by,
                 'request_status' => $requestGroup['request_data']?->am_approval_status,
@@ -412,6 +421,13 @@ class PurchaseRequestController extends Controller
         try {
             $purchaseRequest = PurchaseRequest::findOrFail($id);
 
+            if($purchaseRequest->am_approval_status == "approved" || $purchaseRequest->am_approval_status == "rejected") {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Purchase request is already approved or rejected.',
+                ], 422);
+            }
+
             $updateData = [
                 'purchase_date' => $request->purchase_date,
                 'company_id' => $request->company_id,
@@ -487,7 +503,7 @@ class PurchaseRequestController extends Controller
                             $sizeId = $newSize->id;
                         }
 
-                        $requestData->update([
+                        $dataToUpdate = [
                             'category_id' => $request->category_id_header,
                             'item_id' => $itemId,
                             'qty' => $request->qty[$index],
@@ -506,7 +522,13 @@ class PurchaseRequestController extends Controller
                             'packing_id' => $request->packing_id[$index] ?? null,
                             "module_type" => $request->module_type[$index] ?? null,
                             "is_single_job_order" => $request->is_single_job_order[$index] ?? false
-                        ]);
+                        ];
+
+                        if (in_array(strtolower($requestData->am_approval_status), ['reverted', 'returned'])) {
+                            $dataToUpdate['am_approval_status'] = 'pending';
+                        }
+
+                        $requestData->update($dataToUpdate);
                         $submittedItems[] = $requestData->id;
 
                         PurchaseAgainstJobOrder::where('purchase_request_data_id', $requestData->id)->delete();
@@ -602,10 +624,25 @@ class PurchaseRequestController extends Controller
 
             $itemsToDelete = array_diff($existingItems, $submittedItems);
             if (! empty($itemsToDelete)) {
-                PurchaseRequestData::whereIn('id', $itemsToDelete)->delete();
-                PurchaseAgainstJobOrder::whereIn('purchase_request_data_id', $itemsToDelete)->delete();
+                // IMPORTANT: Do NOT delete items that are already approved or rejected
+                PurchaseRequestData::whereIn('id', $itemsToDelete)
+                    ->whereNotIn('am_approval_status', ['approved', 'rejected'])
+                    ->delete();
+                
+                // Also clean up job order associations only for the deleted items
+                $actuallyDeletedIds = PurchaseRequestData::whereIn('id', $itemsToDelete)
+                    ->whereNotIn('am_approval_status', ['approved', 'rejected'])
+                    ->withTrashed() // If using SoftDeletes, or just use the same logic
+                    ->pluck('id');
+                
+                PurchaseAgainstJobOrder::whereIn('purchase_request_data_id', $itemsToDelete)
+                    ->whereHas('purchase_request_data', function($q) {
+                        $q->whereNotIn('am_approval_status', ['approved', 'rejected']);
+                    })
+                    ->delete();
             }
 
+            $purchaseRequest->syncStatusFromItems('System: PR updated');
             DB::commit();
 
             return response()->json([
@@ -625,12 +662,55 @@ class PurchaseRequestController extends Controller
 
     public function destroy($id)
     {
-        $purchaseRequest = PurchaseRequest::find($id)->delete();
-        // $PurchaseQuotationData = PurchaseQuotationData::where('purchase_request_data_id', $id)->delete();
-        // $PurchaseOrderData = PurchaseOrderData::where('purchase_request_data_id', $id)->delete();
-        // $PurchaseRequestData = PurchaseRequestData::where('id', $id)->delete();
+        $purchaseRequest = PurchaseRequest::findOrFail($id);
+        
+        if($purchaseRequest->am_approval_status == "approved" || $purchaseRequest->am_approval_status == "rejected") {
+            return response()->json([
+                'success' => false,
+                'message' => 'Purchase request is already approved or rejected.',
+            ], 422);
+        }
+        
+        // Find items that are NOT approved and NOT rejected
+        $itemsToDelete = $purchaseRequest->PurchaseData()
+            ->whereNotIn('am_approval_status', ['approved', 'rejected'])
+            ->get();
+        
+        $deletedCount = 0;
+        foreach ($itemsToDelete as $item) {
+            $item->delete();
+            $deletedCount++;
+        }
 
-        return response()->json(['success' => 'Purchase Request deleted successfully.'], 200);
+        // Check if any items remain (approved or rejected items)
+        $remainingCount = $purchaseRequest->PurchaseData()->count();
+
+        if ($remainingCount == 0) {
+            $purchaseRequest->delete();
+            return response()->json(['success' => 'Purchase Request deleted successfully.'], 200);
+        } else {
+            $purchaseRequest->syncStatusFromItems('System: Non-approved/rejected items deleted');
+            return response()->json(['success' => "Deleted $deletedCount pending items. Approved/Rejected items were preserved."], 200);
+        }
+    }
+
+    public function destroyItem($id)
+    {
+        $item = PurchaseRequestData::findOrFail($id);
+
+        if (!in_array(strtolower($item->am_approval_status), ['pending', 'reverted', 'returned'])) {
+            return response()->json(['error' => 'Only pending or reverted items can be deleted.'], 422);
+        }
+
+        $parentId = $item->purchase_request_id;
+        $item->delete();
+
+        $parent = PurchaseRequest::find($parentId);
+        if ($parent) {
+            $parent->syncStatusFromItems('System: Item deleted');
+        }
+
+        return response()->json(['success' => 'Item deleted successfully.'], 200);
     }
 
     public function getPoHistory($id)

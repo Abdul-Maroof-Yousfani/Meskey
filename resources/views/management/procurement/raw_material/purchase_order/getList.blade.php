@@ -111,6 +111,7 @@
                 @endif
             </td>
             <td>
+                {{$row->am_approval_status}}
                 @php
                     $amStatus = $row->am_approval_status ?? 'pending';
                     $amBadge = match (strtolower($amStatus)) {
@@ -134,18 +135,29 @@
                     class="success p-1 text-center mr-2 position-relative">
                     <i class="ft-eye font-medium-3"></i>
                 </a>
-                @canAccess('procurement-raw-purchase-order-edit')
-                <a onclick="openModal(this,'{{ route($row->purchase_type == 'gate_buying' ? 'raw-material.gate-buying.edit' : 'raw-material.purchase-order.edit', $row->id) }}','{{ $row->purchase_type == 'gate_buying' ? 'Edit Gate Buying' : 'Edit Purchase Order' }}')"
-                    class="info p-1 text-center mr-2 position-relative">
-                    <i class="ft-edit font-medium-3"></i>
-                </a>
-                @endcanAccess
+                
+                
+                @if($row->created_by == auth()->user()->id && ($row->am_approval_status != 'approved' && $row->am_approval_status != "rejected"))
+                    <a onclick="openModal(this,'{{ route($row->purchase_type == 'gate_buying' ? 'raw-material.gate-buying.edit' : 'raw-material.purchase-order.edit', $row->id) }}','{{ $row->purchase_type == 'gate_buying' ? 'Edit Gate Buying' : 'Edit Purchase Order' }}')"
+                        class="info p-1 text-center mr-2 position-relative">
+                        <i class="ft-edit font-medium-3"></i>
+                    </a>
+                @else
+                    @canAccess('procurement-raw-purchase-order-edit')
+                    <a onclick="openModal(this,'{{ route($row->purchase_type == 'gate_buying' ? 'raw-material.gate-buying.edit' : 'raw-material.purchase-order.edit', $row->id) }}','{{ $row->purchase_type == 'gate_buying' ? 'Edit Gate Buying' : 'Edit Purchase Order' }}')"
+                        class="info p-1 text-center mr-2 position-relative">
+                        <i class="ft-edit font-medium-3"></i>
+                    </a>
+                    @endcanAccess
+                @endif
+
                 @canAccess('procurement-raw-purchase-order-delete')
                 <a onclick="deletemodal('{{ route('raw-material.purchase-order.destroy', $row->id) }}', '{{ route('raw-material.get.purchase-order') }}')"
                     class="danger p-1 text-center mr-2 position-relative">
                     <i class="ft-x font-medium-3"></i>
                 </a>
                 @endcanAccess
+
             </td>
         </tr>
     @endforeach

@@ -72,7 +72,6 @@ Route::get("get-all-vouchers", function() {
 
 Route::get("/teste", function() {
     $sales_order = SalesOrder::query()->where("reference_no", "SO-2026-04-16-002")->get();
-    dd($sales_order);
 });
 
 Route::get("voucher-types", function() {
@@ -216,6 +215,16 @@ Route::get("add-permission", function() {
     ]);
 });
 
+Route::get("testing-data", function() {
+    $suppliers = \App\Models\Master\Supplier::where("owner_mobile_no", "LIKE", "%-%")->get();
+    foreach($suppliers as $supplier) {
+        $cleaned = str_replace("-", "", $supplier->owner_mobile_no);
+        $supplier->update([
+            "owner_mobile_no" => str_replace("-", "", $supplier->owner_mobile_no)
+        ]);
+    }
+});
+
 Route::get('/delete-migration/{filename}', function ($filename) {
 
     $record = DB::table('migrations')
@@ -309,6 +318,10 @@ Route::group(['middleware' => ['auth', 'check.company']], function () {
         Route::post('/bulk_quotation_approval/{modelType}/{id}', [ApprovalController::class, 'bulk_quotation_approval'])
             ->middleware(['auth', 'approval.permission'])
             ->name('approval.bulk_quotation_approval');
+
+        Route::post('/bulk_purchase_request_approval/{modelType}/{id}', [ApprovalController::class, 'bulk_purchase_request_approval'])
+            ->middleware(['auth', 'approval.permission'])
+            ->name('approval.bulk_purchase_request_approval');
     });
 
     Route::get('/dashboard', [App\Http\Controllers\HomeController::class, 'index'])->name('home');

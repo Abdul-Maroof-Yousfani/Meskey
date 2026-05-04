@@ -173,7 +173,7 @@
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
                                 data-i18n="Bootstrap Tables">Purchase Sampling</span></a>
                         <ul class="dropdown-menu">
-                            @canAccess("procurement-purchase-sampling")
+                            @canAccess("procurement-purchase-sampling-request")
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                     href="{{ route('raw-material.purchase-sampling-request.index') }}"
                                     onclick="loadPageContent('{{ route('raw-material.purchase-sampling-request.index') }}')"
@@ -181,6 +181,8 @@
                                     <span data-i18n="Task Board">Qc Request</span>
                                 </a>
                             </li>
+                            @endcanAccess
+                            @canAccess("procurement-purchase-sampling")
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                     href="{{ route('raw-material.purchase-sampling.index') }}"
                                     onclick="loadPageContent('{{ route('raw-material.purchase-sampling.index') }}')"
@@ -719,7 +721,6 @@
                 </ul>
             </li>
 
-            @canAccess("logistics")
             <li class="dropdown nav-item {{ request()->is('logistics*') ? 'active' : '' }}" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-package"></i><span data-i18n="Apps">Logistics</span></a>

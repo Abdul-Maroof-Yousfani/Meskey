@@ -4,6 +4,7 @@
             {{-- <th class="col-sm-1">Image</th> --}}
             <th class="col-sm-2">Name</th>
             <th class="col-sm-2">Parent</th>
+            <th class="col-sm-2 text-center">PO Approval</th>
 
             {{-- <th class="col-sm-2">Username</th> --}}
             <th class="col-sm-3">Role</th>
@@ -33,6 +34,13 @@
                         <p class="m-0">
                             {{ $user->parent?->name ?? '--' }}
                         </p>
+                    </td>
+                    <td class="text-center">
+                        @if ($user->purchase_order_approval)
+                            <span class="badge badge-info">Enabled</span>
+                        @else
+                            <span class="badge badge-secondary">Disabled</span>
+                        @endif
                     </td>
 
                     <td>

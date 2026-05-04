@@ -27,7 +27,7 @@ class DeliveryOrderRequest extends FormRequest
             'customer_id' => 'required|numeric',
             'sale_order_id' => 'required|numeric',
             'dispatch_date' => ["required", "date", new DeliveryAfterDispatch(request()->delivery_date, request()->dispatch_date)],
-            'delivery_date' => ["required", "date", new DeliveryAfterDispatch(request()->delivery_date, request()->dispatch_date)],
+            'delivery_date' => ["required", "date", new DeliveryAfterDispatch(request()->delivery_date, request()->dispatch_date), new \App\Rules\DeliveryDateAfterReceiptVouchers(request()->receipt_vouchers)],
             'reference_no' => 'required',
             'payment_term_id' => 'nullable',
             'sauda_type' => 'required|in:pohanch,x-mill',
@@ -59,7 +59,8 @@ class DeliveryOrderRequest extends FormRequest
 
             'no_of_bags' => "required",
             'no_of_bags.*' => 'required|numeric',
-
+            'so_withhold_percentage' => 'nullable|numeric',
+            'so_held_amount' => 'nullable|numeric',
         ];
 
         $saleOrder = SalesOrder::find(request()->sale_order_id);

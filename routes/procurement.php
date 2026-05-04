@@ -150,6 +150,7 @@ Route::prefix('store')->name('store.')->group(function () {
     Route::get('get-unique-number/{locationId}/{contractDate}', [StorePurchaseRequestController::class, 'getNumber'])->name('get-unique-umber');
     Route::get('purchase-request-approve/{id}', [StorePurchaseRequestController::class, 'approve'])->name('purchase-request.approve');
     Route::get('purchase-request/po-history/{id}', [StorePurchaseRequestController::class, 'getPoHistory'])->name('purchase-request.po-history');
+    Route::delete('purchase-request/item/{id}', [StorePurchaseRequestController::class, 'destroyItem'])->name('purchase-request.destroy-item');
 
     Route::resource('purchase-quotation', PurchaseQuotationController::class)->except(['show']);
     Route::post('get-purchase-quotation', [PurchaseQuotationController::class, 'getList'])->name('get.purchase-quotation');

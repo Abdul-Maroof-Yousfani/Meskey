@@ -31,7 +31,8 @@ class Transaction extends Model
         'remarks',
         'status',
         'created_by',
-        'updated_by'
+        'updated_by',
+        'receipt_voucher_item_id'
     ];
 
     protected $casts = [

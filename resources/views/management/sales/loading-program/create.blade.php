@@ -612,9 +612,13 @@
                             if (response.success) {
                                 window.isUpdatingUI = true;
                                 const currentDOVals = $doSelect.val() || [];
+                                const selectedGlobalDoIds = $('#delivery_order_id').val() || [];
                                 $doSelect.empty();
+                                $doSelect.append('<option value="">Select Delivery Order</option>');
                                 response.delivery_orders.forEach(do_item => {
-                                    $doSelect.append(new Option(do_item.reference_no, do_item.id, false, currentDOVals.includes(do_item.id.toString())));
+                                    if (selectedGlobalDoIds.includes(do_item.id.toString())) {
+                                        $doSelect.append(new Option(do_item.reference_no, do_item.id, false, currentDOVals.includes(do_item.id.toString())));
+                                    }
                                 });
                                 $doSelect.trigger('change.select2');
                                 $row.data('delivery_orders', response.delivery_orders);
@@ -975,4 +979,11 @@
         $doSelect.removeAttr('required');
         $mark.hide();
     }
+
+    $('.select2').on('select2:open', function (e) {
+        // Remove all Select2 scroll blockers from window & parents
+        $(document).off('scroll.select2');
+        $(window).off('scroll.select2');
+        $('*').off('scroll.select2');           // aggressive but often works
+    });
 </script>

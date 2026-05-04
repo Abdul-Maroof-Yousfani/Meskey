@@ -209,6 +209,7 @@ class LoadingProgramController extends Controller
                     $selected_do_ids = $itemData['delivery_order_id'] ?? [];
                     
                     // Logic for balance check if needed (re-implemented for multi-DO)
+/*
                     foreach ($selected_do_ids as $do_id) {
                         $lpBalance = getLoadingProgramBalance($do_id);
                         $swbBalance = get_second_weighbridge_balance_by_delivery_order($do_id);
@@ -222,6 +223,7 @@ class LoadingProgramController extends Controller
                             ], 422);
                         }
                     }
+*/
 
                     $loadingProgramItem = LoadingProgramItem::create([
                         'loading_program_id' => $loadingProgram->id,
@@ -328,14 +330,15 @@ class LoadingProgramController extends Controller
                 return true;
             }
             
-            foreach ($sale_order->delivery_orders as $delivery_order) {
+            /* foreach ($sale_order->delivery_orders as $delivery_order) {
                 $lpBalance = getLoadingProgramBalance($delivery_order->id); 
                 $swbBalance = get_second_weighbridge_balance_by_delivery_order($delivery_order->id);
                 if ($lpBalance > 0 && $swbBalance > 0) { 
                     return true;
                 }
             }
-            return false;
+            return false; */
+            return true;
         });
 
         $currentSaleOrders = $data['LoadingProgram']->saleOrders->isEmpty()
@@ -433,14 +436,15 @@ class LoadingProgramController extends Controller
         $deliveryOrders = DeliveryOrder::whereIn('so_id', $currentSaleOrders->pluck('id'))
             ->where('am_approval_status', 'approved')
             ->get()
-            ->reject(function($delivery_order) use ($data, $loading_program_dos) {
+            /* ->reject(function($delivery_order) use ($data, $loading_program_dos) {
                 if(in_array($delivery_order->id, $loading_program_dos)) {
                     return false;
                 }
                 $lpBalance = getLoadingProgramBalance($delivery_order->id);
                 $swbBalance = get_second_weighbridge_balance_by_delivery_order($delivery_order->id);
                 return $lpBalance <= 0 || $swbBalance <= 0;
-            });
+            }); */
+            ;
 
 
         $deliveryOrders = $deliveryOrders->map(function($deliveryOrder) {
@@ -575,6 +579,7 @@ class LoadingProgramController extends Controller
                 foreach ($request->loading_program_items as $index => $itemData) {
                     $selected_do_ids = $itemData['delivery_order_id'] ?? [];
 
+/*
                     foreach ($selected_do_ids as $do_id) {
                         $lpBalance = getLoadingProgramBalance($do_id);
                         $swbBalance = get_second_weighbridge_balance_by_delivery_order($do_id);
@@ -587,6 +592,7 @@ class LoadingProgramController extends Controller
                             ], 422);
                         }
                     }
+*/
 
                     $loadingProgramItem = LoadingProgramItem::create([
                         'loading_program_id' => $loadingProgram->id,
@@ -677,9 +683,9 @@ class LoadingProgramController extends Controller
             ->withSum('delivery_order_data', 'qty')
             ->withSum('loadingProgramItems', 'qty')
             ->get()
-            ->reject(function($delivery_order) {
+            /* ->reject(function($delivery_order) {
                 return getLoadingProgramBalance($delivery_order->id) <= 0 || get_second_weighbridge_balance_by_delivery_order($delivery_order->id) <= 0;
-            })
+            }) */
             ->map(function($delivery_order) {
                 $location_name = getLocation($delivery_order->location_id)?->name ?? 'N/A';
                 $delivery_order->reference_no = $delivery_order->reference_no . " - " . $location_name;
@@ -733,11 +739,11 @@ class LoadingProgramController extends Controller
             ->select('id', 'reference_no', 'customer_id', 'so_id', 'location_id', 'arrival_location_id', 'sub_arrival_location_id', 'am_approval_status')
             ->get();
 
-        $deliveryOrders = $deliveryOrders->reject(function($deliveryOrder){
+        /* $deliveryOrders = $deliveryOrders->reject(function($deliveryOrder){
             $lpBalance = getLoadingProgramBalance($deliveryOrder->id);
             $swbBalance = get_second_weighbridge_balance_by_delivery_order($deliveryOrder->id);
             return $lpBalance <= 0 || $swbBalance <= 0;
-        });
+        }); */
 
         $deliveryOrders = $deliveryOrders->map(function($deliveryOrder) {
             $locationIds = explode(',', $deliveryOrder->location_id);
@@ -814,7 +820,7 @@ class LoadingProgramController extends Controller
                 ->toArray();
         }
 
-        $deliveryOrders = $deliveryOrders->reject(function($deliveryOrder) use ($linkedDoIds) {
+        /* $deliveryOrders = $deliveryOrders->reject(function($deliveryOrder) use ($linkedDoIds) {
             if (in_array($deliveryOrder->id, $linkedDoIds)) {
                 return false;
             }
@@ -822,7 +828,7 @@ class LoadingProgramController extends Controller
             $lpBalance = getLoadingProgramBalance($deliveryOrder->id);
             $swbBalance = get_second_weighbridge_balance_by_delivery_order($deliveryOrder->id);
             return $lpBalance <= 0 || $swbBalance <= 0;
-        });
+        }); */
 
         $deliveryOrders = $deliveryOrders->map(function($deliveryOrder) {
             $locationIds = explode(',', $deliveryOrder->location_id);

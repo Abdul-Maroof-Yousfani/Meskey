@@ -307,6 +307,7 @@ class UserTestController extends Controller
                 }
             }
 
+            // Restored role_id and sync logic
             $user->companies()->syncWithoutDetaching([
                 $companyId => [
                     'role_id' => $role->id,
@@ -314,6 +315,32 @@ class UserTestController extends Controller
                     'arrival_locations' => json_encode($arrivalData),
                 ],
             ]);
+
+            Log::info('SaveAssignDetails PO Approval loop', [
+                'index' => $i,
+                'isset' => isset($request->purchase_order_approval[$i]),
+                'raw' => $request->purchase_order_approval
+            ]);
+
+            // Check if checked for this specific index (array case) OR if it's a single value (string case)
+            $isChecked = false;
+            if (is_array($request->purchase_order_approval)) {
+                $isChecked = isset($request->purchase_order_approval[$i]);
+            } elseif ($request->has('purchase_order_approval')) {
+                $isChecked = true;
+            }
+
+            if ($isChecked) {
+                $user->update(['purchase_order_approval' => true]);
+            } else {
+                // If we are in the last loop and nothing was checked, or if it's a single field unchecked
+                // Actually, if it's a global flag, we should only set it to false if NONE are checked.
+            }
+        }
+
+        // Global update for purchase_order_approval if missing from request entirely
+        if (!$request->has('purchase_order_approval')) {
+            $user->update(['purchase_order_approval' => false]);
         }
 
         $finalCompanyLocationIds = array_values(array_unique(array_merge(
@@ -364,6 +391,8 @@ class UserTestController extends Controller
 
         $assignedPermissions = Role::find($roleId)?->permissions->pluck('name')->toArray() ?? [];
 
+        $purchaseOrderApproval = $user->purchase_order_approval;
+
         return view('management.acl.users-test.edit-assign', compact(
             'user',
             'permission',
@@ -373,7 +402,8 @@ class UserTestController extends Controller
             'selectedArrivals',
             'assignedPermissions',
             'companyId',
-            'roleId'
+            'roleId',
+            'purchaseOrderApproval'
         ));
     }
 
@@ -461,6 +491,14 @@ class UserTestController extends Controller
                 'arrival_locations' => json_encode($flatArrivalData),
                 'updated_at' => now(),
             ]);
+
+        Log::info('Updating PO Approval status', [
+            'userId' => $user->id,
+            'has_field' => $request->has('purchase_order_approval'),
+            'value' => $request->purchase_order_approval
+        ]);
+
+        $user->update(['purchase_order_approval' => $request->has('purchase_order_approval')]);
 
         $finalCompanyLocationIds = [];
         $finalArrivalMap = [];
