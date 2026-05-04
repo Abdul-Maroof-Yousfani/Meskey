@@ -90,13 +90,6 @@ return new class extends Migration {
         });
 
         Schema::table('delivery_order', function (Blueprint $table) {
-            $table->string('inspection_company')->nullable();
-            $table->string('carton_supplier')->nullable();
-            $table->string('fumigation_tablets')->nullable();
-            $table->string('fumigation_ref_no')->nullable();
-            $table->string('fumigation')->nullable();
-            $table->string('phyto_certificate')->nullable();
-
             $table->dropColumn([
                 'financial_instrument_no',
                 'job_order_no',
