@@ -703,8 +703,13 @@
     }
     $(document).on('input', '.qty-input-check', function () {
         let input = $(this);
+        let balanceAttr = input.attr('data-balance');
+        if (typeof balanceAttr === 'undefined' || balanceAttr === false) {
+            return;
+        }
+
         let val = parseFloat(input.val()) || 0;
-        let balance = parseFloat(input.data('balance')) || 0;
+        let balance = parseFloat(balanceAttr) || 0;
         let category_id = $("#category_id_value").val();
 
         if (val > balance && category_id == 38) {
