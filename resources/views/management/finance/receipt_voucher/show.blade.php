@@ -70,13 +70,41 @@
                     @endforelse
                     <tr>
                         <td colspan="6" class="text-right"><strong>Total Amount:</strong></td>
-                        <td class="text-right"><strong>{{ $net_amount }}</strong></td>
+                        <td class="text-right"><strong>{{ number_format($net_amount, 2) }}</strong></td>
                         <td></td>
                     </tr>
                 </tbody>
             </table>
         </div>
     </div>
+
+    @if($receiptVoucher->bankDetails->isNotEmpty())
+    <div class="voucher-requests mb-4">
+        <h5 class="mb-3">Payment Details (Bank/Account)</h5>
+        <div class="table-responsive">
+            <table class="table table-bordered sf-table-list table-hover" style="border-collapse: collapse;">
+                <thead class="thead-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Account Name</th>
+                        <th class="text-right">Amount</th>
+                        <th>Cheque No</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($receiptVoucher->bankDetails as $index => $detail)
+                        <tr>
+                            <td>{{ $index + 1 }}</td>
+                            <td>{{ $detail->account->name ?? 'N/A' }}</td>
+                            <td class="text-right">{{ number_format($detail->amount, 2) }}</td>
+                            <td>{{ $detail->cheque_no ?? '-' }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @endif
 
     <div class="voucher-remarkss p-3 border">
         <h5 class="">Remarks</h5>

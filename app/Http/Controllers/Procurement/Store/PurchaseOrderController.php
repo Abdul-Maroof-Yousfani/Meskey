@@ -251,7 +251,9 @@ class PurchaseOrderController extends Controller
         $quotationNo = $request->quotation_no;
         $supplierId = $request->supplier_id;
 
-        $master = PurchaseRequest::with("locations")->find($requestId);
+        $master = PurchaseRequest::with(["locations", "PurchaseData" => function($q) {
+            $q->where('am_approval_status', 'approved');
+        }])->find($requestId);
         $locations_id = $master->locations->pluck("location_id")->toArray();
        
         $quotation = null;
@@ -275,6 +277,7 @@ class PurchaseOrderController extends Controller
 
         if (!$quotation || $dataItems->isEmpty()) {
             $dataItems = PurchaseRequestData::with(['purchase_request', 'item', 'category', 'purchase_order_data.purchase_order', 'JobOrder.job_order_data'])
+                ->where("am_approval_status", "approved")
                 ->where('purchase_request_id', $requestId)
                 ->get();
         }
@@ -302,13 +305,14 @@ class PurchaseOrderController extends Controller
      */
     public function create()
     {
-        $approvedRequests = PurchaseRequest::with("purchase_order")->where('am_approval_status', 'approved')->with([
+        $approvedRequests = PurchaseRequest::with("purchase_order")->with([
             'PurchaseData' => function ($query) {
-                // $query->where('am_approval_status', 'approved');
+                $query->where('am_approval_status', 'approved');
             }
         ])
             ->whereHas('PurchaseData', function ($q) {
-            $q->whereRaw('qty > (SELECT COALESCE(SUM(pod.qty), 0) FROM purchase_order_data pod JOIN purchase_orders po ON po.id = pod.purchase_order_id WHERE pod.purchase_request_data_id = purchase_request_data.id AND pod.am_approval_status != "rejected" AND po.am_approval_status != "rejected")');
+            $q->whereRaw('qty > (SELECT COALESCE(SUM(pod.qty), 0) FROM purchase_order_data pod JOIN purchase_orders po ON po.id = pod.purchase_order_id WHERE pod.purchase_request_data_id = purchase_request_data.id AND pod.am_approval_status != "rejected" AND po.am_approval_status != "rejected")')
+                ->where("am_approval_status", "approved");
         })
             ->get();
 
@@ -498,6 +502,14 @@ class PurchaseOrderController extends Controller
         DB::beginTransaction();
         try {
             $PurchaseOrder = PurchaseOrder::findOrFail($id);
+
+            if($PurchaseOrder->am_approval_status == "approved" || $PurchaseOrder->am_approval_status == "rejected") {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Purchase request is already approved or rejected.',
+                ], 422);
+            }
+
             $PurchaseOrder->update([
                 'purchase_quotation_id' => $request->quotation_no ?? null,
                 'description' => $request->description,
@@ -559,6 +571,13 @@ class PurchaseOrderController extends Controller
     public function destroy($id)
     {
         $purchaseOrder = PurchaseOrder::where("id", $id)->first();
+
+        if($purchaseOrder->am_approval_status == "approved" || $purchaseOrder->am_approval_status == "rejected") {
+            return response()->json([
+                'success' => false,
+                'message' => 'Purchase Order is already approved or rejected.',
+            ], 422);
+        }
 
         if($purchaseOrder != null) {
             $purchaseOrder->purchaseOrderData()->delete();
@@ -669,12 +688,12 @@ class PurchaseOrderController extends Controller
         $purchase_quotation = PurchaseQuotation::select("id", "supplier_id")->find($pq_id);
       
 
-        $supplier = Supplier::select('id', 'name')->find($purchase_quotation->supplier_id);
+        $supplier = Supplier::select('id', 'name', 'company_name')->find($purchase_quotation->supplier_id);
 
         return [
             [
             "id" => $supplier->id,
-            "text" => $supplier->name
+            "text" => $supplier->company_name
             ]
         ];
     }

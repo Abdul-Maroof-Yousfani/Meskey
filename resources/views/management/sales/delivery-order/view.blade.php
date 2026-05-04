@@ -82,6 +82,20 @@
                             value="{{ $delivery_order->ref_no }}" readonly>
                     </div>
                 </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Withhold %:</label>
+                        <input type="text" name="so_withhold_percentage" id="so_withhold_percentage" class="form-control"
+                            value="{{ $delivery_order->so_withhold_percentage }}" readonly>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Amount to be Held:</label>
+                        <input type="text" name="so_held_amount" id="so_held_amount" class="form-control"
+                            value="{{ $delivery_order->so_held_amount }}" readonly>
+                    </div>
+                </div>
 
                 <div class="col-12 mt-3">
                     <h6 class="header-heading-sepration">Customer & Order Details</h6>
@@ -254,14 +268,14 @@
                                 <td>
                                     <input type="text" class="form-control" value="{{ $data->no_of_bags }}"
                                         readonly>
-                                    <span style="font-size: 14px;;">Used Quantity:
-                                        {{ delivery_order_bags_used($data->so_data_id) }}</span>
-                                    <br />
-                                    <span style="font-size: 14px;">Balance:
-                                        {{ delivery_order_balance($data->so_data_id) }}</span>
                                 </td>
                                 <td>
                                     <input type="number" class="form-control" value="{{ $data->qty }}" readonly>
+                                    <span style="font-size: 14px;;">Used Quantity:
+                                        {{ delivery_order_qty_used($data->so_data_id) }}</span>
+                                    <br />
+                                    <span style="font-size: 14px;">Balance:
+                                        {{ delivery_order_qty_balance($data->so_data_id) }}</span>
                                 </td>
                                 <td>
                                     <input type="number" class="form-control" value="{{ $data->rate }}" readonly>

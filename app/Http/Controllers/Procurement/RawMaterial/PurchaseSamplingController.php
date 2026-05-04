@@ -71,6 +71,20 @@ class PurchaseSamplingController extends Controller
                 return $q->whereDate('created_at', '>=', $startDate)
                     ->whereDate('created_at', '<=', $endDate);
             })
+            ->whereHas('purchaseOrder', function ($query) {
+                $query->whereIn('company_location_id', getUserCurrentCompanyLocations());
+            })
+
+            ->when(auth()->user()->user_type != 'super-admin' && auth()->user()->parent_user_id != null, function ($q) {
+                $q->whereHas('purchaseOrder', function ($query) {
+                    $query->where('decision_of_id', auth()->user()->parent_user_id);
+                });
+            })
+            ->when(auth()->user()->user_type != 'super-admin' && auth()->user()->parent_user_id == null, function ($q) {
+                $q->whereHas('purchaseOrder', function ($query) {
+                    $query->where('decision_of_id', auth()->user()->id);
+                });
+            })
             // ->where("is_done", "")
             ->orderByRaw("CASE WHEN is_done = 'no' THEN 0 ELSE 1 END")
             ->orderBy('created_at', 'desc')
@@ -181,14 +195,14 @@ class PurchaseSamplingController extends Controller
 
             $samplingRequest = $query->latest()->first();
             $arrivalCustomSampling = ArrivalCustomSampling::all();
-           // $sampleTakenByUsers = User::all();
+            // $sampleTakenByUsers = User::all();
 
 
-                    $sampleTakenByUsers = User::role('QC')
-            ->whereHas('companies', function ($q) use ($authUserCompany) {
-                $q->where('companies.id', $authUserCompany);
-            })
-            ->get();
+            $sampleTakenByUsers = User::role('QC')
+                ->whereHas('companies', function ($q) use ($authUserCompany) {
+                    $q->where('companies.id', $authUserCompany);
+                })
+                ->get();
             $products = Product::all();
             $slabs = null;
             $results = [];
@@ -237,7 +251,7 @@ class PurchaseSamplingController extends Controller
         $compulsuryResults = PurchaseSamplingResultForCompulsury::where('purchase_sampling_request_id', $id)->get();
 
         $arrivalCustomSampling = ArrivalCustomSampling::all();
-      //  $sampleTakenByUsers = User::all();
+        //  $sampleTakenByUsers = User::all();
         $sampleTakenByUsers = User::role('QC')
             ->whereHas('companies', function ($q) use ($authUserCompany) {
                 $q->where('companies.id', $authUserCompany);

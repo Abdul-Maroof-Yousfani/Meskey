@@ -3,6 +3,7 @@
         <tr>
             <th class="col-sm-2">Contract No. </th>
             <th class="col-sm-2">Supplier</th>
+            <th class="col-sm-2">Decision Of</th>
             <th class="col-sm-3">Product</th>
             <th class="col-sm-2">Remark</th>
             <th class="col-sm-2">Created</th>
@@ -23,6 +24,11 @@
                     <td>
                         <p class="m-0">
                             {{ $row->purchaseOrder->supplier->name ?? ($row->supplier_name ?? 'N/A') }} <br>
+                        </p>
+                    </td>
+                    <td>
+                        <p class="m-0">
+                            {{ $row->purchaseOrder->decisionOfUser->name ?? 'N/A' }} <br>
                         </p>
                     </td>
                     <td>

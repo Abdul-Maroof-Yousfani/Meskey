@@ -12,14 +12,15 @@ use App\Models\Procurement\PurchaseFreight;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
-use App\Traits\HasApproval;
+// use App\Traits\HasApproval;
+use App\Traits\HasApprovalPurchaseOrder;
 use App\Models\ApprovalsModule\ApprovalModule;
 use App\Models\ApprovalsModule\ApprovalRow;
 
 
 class ArrivalPurchaseOrder extends Model
 {
-    use HasFactory, HasApproval;
+    use HasFactory, HasApprovalPurchaseOrder;
 
     protected $fillable = [
         'company_id',

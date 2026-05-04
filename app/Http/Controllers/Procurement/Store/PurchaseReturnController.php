@@ -213,6 +213,14 @@ class PurchaseReturnController extends Controller
     {
         DB::beginTransaction();
         $purchaseReturn = PurchaseReturn::find($id);
+
+        if($purchaseReturn->am_approval_status == "approved" || $purchaseReturn->am_approval_status == "rejected") {
+            return response()->json([
+                'success' => false,
+                'message' => 'Purchase Return is already approved or rejected.',
+            ], 422);
+        }
+
         try {
             // Validate date is not before any of the selected purchase bills' dates
             $purchaseBills = PurchaseBill::whereIn('id', $request->purchase_bill_ids)->get();
@@ -272,6 +280,13 @@ class PurchaseReturnController extends Controller
 
     public function destroy(PurchaseReturn $purchaseReturn)
     {
+        if($purchaseReturn->am_approval_status == "approved" || $purchaseReturn->am_approval_status == "rejected") {
+            return response()->json([
+                'success' => false,
+                'message' => 'Purchase Return is already approved or rejected.',
+            ], 422);
+        }
+        
         $purchaseReturn->purchase_return_data()->delete();
         $purchaseReturn->delete();
 

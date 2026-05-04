@@ -70,6 +70,7 @@ class PurchaseOrderRequest extends FormRequest
             // 'quotation_ids.*' => 'sometimes|exists:purchase_quotation_data,id',
             'purchase_quotation_data_id' => 'nullable|array',
             'purchase_quotation_data_id.*' => 'nullable|exists:purchase_quotation_data,id',
+            'quotation_no' => 'required|exists:purchase_quotations,id',
         ];
     }
 
@@ -139,6 +140,8 @@ class PurchaseOrderRequest extends FormRequest
             // 'purchase_request_data_id.*.exists' => 'One or more purchase request data items are invalid.',
             // 'purchase_quotation_data_id.*.exists' => 'One or more purchase quotation data items are invalid.',
             // 'quotation_ids.*.exists' => 'One or more quotation IDs are invalid.',
+            'quotation_no.required' => 'The quotation field is required.',
+            'quotation_no.exists' => 'The selected quotation is invalid.',
         ];
     }
     

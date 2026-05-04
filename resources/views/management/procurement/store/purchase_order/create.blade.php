@@ -17,7 +17,7 @@
         </div>
         <div class="col-md-3">
             <div class="form-group">
-                <label class="form-label">Quotation</label>
+                <label class="form-label">Quotation <span class="text-danger">*</span></label>
                 <select id="quotation_no" name="quotation_no" class="form-control select2">
                     <option value="">Select Quotation</option>
 

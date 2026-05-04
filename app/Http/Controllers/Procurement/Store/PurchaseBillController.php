@@ -357,6 +357,13 @@ class PurchaseBillController extends Controller
 
     public function update(PurchaseBillRequest $request, PurchaseBill $purchaseBill)
     {
+        if($purchaseBill->am_approval_status == "approved" || $purchaseBill->am_approval_status == "rejected") {
+            return response()->json([
+                'success' => false,
+                'message' => 'Purchase bill is already approved or rejected.',
+            ], 422);
+        }
+        
         $purchaseOrderReceiving = PurchaseOrderReceiving::where('purchase_order_receiving_no', $request->grn_no)->first();
         $location = $request->company_location;
         $reference_no = $request->reference_no;
@@ -533,6 +540,14 @@ class PurchaseBillController extends Controller
 
     public function destroy(PurchaseBill $purchase_bill)
     {
+
+        if($purchase_bill->am_approval_status == "approved" || $purchase_bill->am_approval_status == "rejected") {
+            return response()->json([
+                'success' => false,
+                'message' => 'Purchase bill is already approved or rejected.',
+            ], 422);
+        }
+
         $purchase_bill->bill_data()->delete();
         $purchase_bill->delete();
 

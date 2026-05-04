@@ -100,9 +100,18 @@
 
                             <div class="row">
                                 <div class="col-md-12">
-                                    <div class="form-check mb-3">
+                                    <div class="form-check mb-2">
                                         <input class="form-check-input" type="checkbox" id="is_advance" onchange="select_customer()" checked>
                                         <label class="form-check-label" for="is_advance">Advance</label>
+                                    </div>
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" name="allow_excess" id="allow_excess" value="1">
+                                        <label class="form-check-label font-weight-bold text-primary" for="allow_excess">
+                                            Allow Excess Amount (Advances)
+                                        </label>
+                                        <div class="mt-2 p-3 bg-soft-primary border-left border-primary small text-dark">
+                                            <b>Note:</b> This checkbox is used to allow flexibility in payment handling when receiving amounts against a Sales Order. Normally, the system restricts the received amount to the exact outstanding balance of the document, preventing any overpayment. However, when this checkbox is enabled, the user is allowed to receive an excess amount beyond the payable limit. Instead of directly assigning this extra amount to any specific Sales Order, the system creates a virtual Receipt Voucher Item for the excess value, which remains unlinked to any document at the time of creation. This unallocated amount is stored as a customer credit and can later be explicitly allocated to any Sales Order or invoice when required. In this way, it provides a controlled mechanism to manage advance payments, overpayments, or customer credit balances within the system.
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -137,6 +146,33 @@
                                                     <tr>
                                                         <td colspan="11" class="text-center text-muted">Select references to load details.</td>
                                                     </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="bank-details-section" class="row" style="display: none;">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <label class="mb-0">Line Items (Bank/Account Details)</label>
+                                            <button type="button" class="btn btn-sm btn-success" onclick="addBankDetailRow()">
+                                                <i class="fa fa-plus"></i> Add More
+                                            </button>
+                                        </div>
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered" id="bankDetailsTable">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Account</th>
+                                                        <th width="20%">Amount</th>
+                                                        <th width="25%">Cheque No</th>
+                                                        <th width="5%">Action</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="bank-details-data">
                                                 </tbody>
                                             </table>
                                         </div>
@@ -300,11 +336,13 @@
             emptyMessage.show();
             listContainer.hide();
             $('#selected-total-amount').hide();
+            $('#bank-details-section').hide();
             return;
         }
 
         emptyMessage.hide();
         listContainer.show();
+        $('#bank-details-section').show();
 
         selected.forEach(function (item) {
             listContainer.append(`
@@ -324,7 +362,7 @@
                 <div class="text-dark">
                     <strong>Total Amount</strong>
                 </div>
-                <span class="badge badge-dark badge-pill" style="font-size: 1.1em;">
+                <span class="badge badge-dark badge-pill" id="total_amount" style="font-size: 1.1em;">
                     ${total.toFixed(2)}
                 </span>
             </li>
@@ -365,7 +403,75 @@
         });
     }
 
+    let bankDetailCount = 0;
+    const allAccounts = @json($accounts);
+    
+    function getFilteredAccounts() {
+        const voucherType = $('#voucher_type').val();
+        if (voucherType === 'bank_payment_voucher') {
+            return allAccounts.filter(acc => acc.hierarchy_path && acc.hierarchy_path.startsWith('1-1'));
+        } else if (voucherType === 'cash_payment_voucher') {
+            return allAccounts.filter(acc => acc.hierarchy_path && acc.hierarchy_path.startsWith('1-4'));
+        }
+        return [];
+    }
+
+    function addBankDetailRow() {
+        const filteredAccounts = getFilteredAccounts();
+        if ($('#voucher_type').val() === '') {
+            Swal.fire('Warning', 'Please select a Voucher Type first.', 'warning');
+            return;
+        }
+
+        bankDetailCount++;
+        const idx = bankDetailCount;
+        
+        let accountOptions = '<option value="">Select Account</option>';
+        filteredAccounts.forEach(function(acc) {
+            accountOptions += `<option value="${acc.id}">${acc.name} (${acc.hierarchy_path ?? ''})</option>`;
+        });
+
+        const rowHtml = `
+            <tr>
+                <td>
+                    <select name="bank_details[${idx}][account_id]" class="form-control select2-bank" required>
+                        ${accountOptions}
+                    </select>
+                </td>
+                <td>
+                    <input type="number" step="0.01" name="bank_details[${idx}][amount]" class="form-control bank-amount" required>
+                </td>
+                <td>
+                    <input type="text" name="bank_details[${idx}][cheque_no]" class="form-control">
+                </td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-sm btn-danger remove-bank-row">
+                        <i class="fa fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+        
+        $("#bank-details-data").append(rowHtml);
+        $('.select2-bank').last().select2({
+            dropdownParent: $('#bankDetailsTable')
+        });
+    }
+
     $(document).ready(function () {
+        // ... existing code ...
+        
+        $(document).on('click', '.remove-bank-row', function() {
+            $(this).closest('tr').remove();
+        });
+
+        // Clear and add initial row when voucher type changes
+        $('#voucher_type').on('change', function() {
+            $("#bank-details-data").empty();
+            if ($(this).val() !== '') {
+                addBankDetailRow();
+            }
+        });
         const referenceSelect = $('#reference_ids');
         const referenceLabel = $('#reference_label');
         const referencesTableBody = $('#referencesTable tbody');
@@ -582,6 +688,38 @@
             updateSelectedDocsList();
         });
 
+        function getBankDetailsTotal() {
+            let total = 0;
+            $('.bank-amount').each(function() {
+                total += parseFloat($(this).val()) || 0;
+            });
+            return total;
+        }
+
+        function validateBankTotal() {
+            const referencesTotal = parseFloat($('#total_amount').text()) || 0;
+            const bankDetailsTotal = getBankDetailsTotal();
+            const allowExcess = $('#allow_excess').is(':checked');
+            
+            if (!allowExcess && bankDetailsTotal > referencesTotal) {
+                $('.bank-amount').css('border-color', '#dc3545');
+                $('#bank-details-total-error').remove();
+                $('#bank-details-data').after(`<div id="bank-details-total-error" class="text-danger small mt-1 pl-2">Total amount (${bankDetailsTotal.toFixed(2)}) exceeds the references total (${referencesTotal.toFixed(2)}) and "Allow Excess Amount" is off.</div>`);
+            } else {
+                $('.bank-amount').css('border-color', '');
+                $('#bank-details-total-error').remove();
+            }
+        }
+
+        // Listen for bank amount changes
+        $(document).on('input', '.bank-amount', validateBankTotal);
+
+        // Also re-validate when references change (which updates #total_receipt_amount)
+        $(document).ajaxStop(function() {
+            // After any AJAX (like loading references), validate
+            validateBankTotal();
+        });
+
         // ==================== Form Submission ====================
         $('form').off('submit').on('submit', function (e) {
             e.preventDefault();
@@ -590,6 +728,22 @@
                 Swal.fire('Validation', 'Please select at least one reference.', 'warning');
                 return false;
             }
+
+            // --- Added Validation ---
+            const referencesTotal = parseFloat($('#total_amount').text()) || 0;
+            const bankDetailsTotal = getBankDetailsTotal();
+            const allowExcess = $('#allow_excess').is(':checked');
+
+            if (!allowExcess && bankDetailsTotal > referencesTotal) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Validation Error',
+                    text: `Total Bank/Account Detail amount (${bankDetailsTotal.toFixed(2)}) exceeds the total Selected References amount (${referencesTotal.toFixed(2)}). Enable "Allow Excess Amount" to permit advances.`
+                });
+                return false;
+            }
+            // ------------------------
+
             // Remove unselected rows from DOM before submit
             referencesTableBody.find('tr').each(function () {
                 const checkbox = $(this).find('.row-select');

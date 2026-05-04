@@ -2215,3 +2215,26 @@ if (!function_exists('getStockByItem')) {
         return $stockIn - $stockOut;
     }
 }
+
+
+function delivery_order_qty_balance($sale_order_data_id)
+{
+    $data = DeliveryOrderData::whereHas("delivery_order", function($query) {
+        $query->where("am_approval_status", "!=", "rejected");
+    })->where("so_data_id", $sale_order_data_id)->get();
+    
+    $spent = $data->sum("qty");
+    $soData = SalesOrderData::find($sale_order_data_id);
+    $able_to_spend = $soData ? $soData->qty : 0;
+    
+    return $able_to_spend - $spent;
+}   
+
+function delivery_order_qty_used($sale_order_data_id)
+{
+    $data = DeliveryOrderData::whereHas("delivery_order", function ($query) {
+        $query->where("am_approval_status", "!=", "rejected");
+    })->where("so_data_id", $sale_order_data_id)->get();
+
+    return $data->sum("qty");
+}

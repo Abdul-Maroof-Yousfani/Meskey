@@ -7,12 +7,13 @@ use App\Models\ApprovalsModule\ApprovalModule;
 use App\Models\ApprovalsModule\ApprovalRow;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Auth;
+use App\Models\ApprovalsModule\ApprovalModuleRole;
 
-trait HasApproval
+trait HasApprovalPurchaseOrder
 {
     protected $approvalModuleCache = null;
 
-    protected static function bootHasApproval()
+    protected static function bootHasApprovalPurchaseOrder()
     {
         static::created(function ($model) {
             $model->createApprovalRows();
@@ -91,19 +92,43 @@ trait HasApproval
             return;
         }
 
-        $currentCycle = $this->getCurrentApprovalCycle();
+        $role_id = null;
 
-        foreach ($module->roles as $moduleRole) {
+        if(!auth()->user()->parent_user_id) {
+            $role_id = auth()->user()->roles()->latest()->first()->id;
+        } else {
+            $user = \App\Models\User::find(auth()->user()->parent_user_id);
+            $child = $user->children()->where("purchase_order_approval", true)->first();
+            $role_id = $child->roles()->latest()->first()->id;
+        }
+
+        $currentCycle = $this->getCurrentApprovalCycle();
             ApprovalRow::create([
                 'module_id' => $module->id,
                 'record_id' => $this->id,
-                'role_id' => $moduleRole->role_id,
-                'required_count' => $moduleRole->approval_count,
+                'role_id' => $role_id,
+                'required_count' => 1,
                 'current_count' => 0,
                 'approval_cycle' => $currentCycle,
                 'status' => 'pending'
             ]);
-        }
+
+            
+
+        
+            // if(ApprovalModuleRole::where("module_id", $module->id)->where("role_id", $role_id)->exists()) {
+            //     return;
+            // }
+
+
+           
+
+            // ApprovalModuleRole::create([
+            //     'module_id' => $module->id,
+            //     'role_id' => $role_id,
+            //     'approval_count' => 1,
+            //     'approval_order' => 1,
+            // ]);
     }
 
     public function getRequiredApprovals()
@@ -174,34 +199,66 @@ trait HasApproval
         if (isset($this->am_change_made) && $this->am_change_made == 0) {
             return false;
         }
-        $userRoleIds = $user->roles->pluck('id')->toArray();
-        $requiredRoles = $module->roles->pluck('role_id')->toArray();
+
+        $role_id = auth()->user()->roles()->latest()->first()->id;
+
+        // if(auth()->user()->parent_user_id == null) {
+
+        //     $role_id = auth()->user()->roles()->latest()->first()->id;
+        // } else {
+        //     $user = \App\Models\User::find(auth()->user()->parent_user_id);
+        //     $child = $user->children()->where("purchase_order_approval", true)->first();
+        //     $role_id = $child->roles()->latest()->first()->id;
+        // }
 
 
-        if (empty(array_intersect($userRoleIds, $requiredRoles
-        ))) {
+        // $userRoleIds = $user->roles->pluck('id')->toArray();
+        // $requiredRoles = $module->roles->pluck('role_id')->toArray();
+        $approvalRows = ApprovalRow::where('module_id', $module->id)
+                                    ->where('role_id', $role_id)
+                                    ->where("record_id", $this->id)
+                                    ->where("status", "pending")
+                                    ->get();
+        // dd($module->id, $role_id, $this->id);
+
+        if($approvalRows->isEmpty()) {
             return false;
         }
+
+        // if (empty(array_intersect($userRoleIds, $requiredRoles
+        // ))) {
+        //     return false;
+        // }
         
-        if ($this->getApprovalStatus() === 'approved' || $this->getApprovalStatus() === 'rejected') {
+        if ($this->getApprovalStatus() !== 'pending') {
             return false;
         }
 
-        
 
-        $currentCycle = $this->getCurrentApprovalCycle();
-
-        $userAlreadyApproved = $this->approvalLogs()
-            ->where('module_id', $module->id)
-            ->where('approval_cycle', $currentCycle)
-            ->where('user_id', $user->id)
-            ->where('action', 'approved')
-            ->where('status', 'active')
-            ->exists();
-
-        if ($userAlreadyApproved) {
+        $userAlreadyApproved = ApprovalRow::where('module_id', $module->id)
+                                    ->where('role_id', $role_id)
+                                    ->where("record_id", $this->id)
+                                    ->where("status", "approved")
+                                    ->exists();
+        if($userAlreadyApproved) {
             return false;
         }
+
+        return true;
+
+        // $currentCycle = $this->getCurrentApprovalCycle();
+
+        // $userAlreadyApproved = $this->approvalLogs()
+        //     ->where('module_id', $module->id)
+        //     ->where('approval_cycle', $currentCycle)
+        //     ->where('user_id', $user->id)
+        //     ->where('action', 'approved')
+        //     ->where('status', 'active')
+        //     ->exists();
+
+        // if ($userAlreadyApproved) {
+        //     return false;
+        // }
 
         if ($module->requires_sequential_approval) {
             $approvalRows = $this->approvalRows()
@@ -292,9 +349,10 @@ trait HasApproval
             return false;
         }
 
+
         $module = $this->getApprovalModule();
         $currentCycle = $this->getCurrentApprovalCycle();
-        $userRoleId = $user->roles->first()->id;
+        $userRoleId = $user->roles()->latest()->first()->id;
 
         $approvalRow = $this->approvalRows()
             ->where('module_id', $module->id)
@@ -302,6 +360,7 @@ trait HasApproval
             ->where('role_id', $userRoleId)
             ->first();
 
+      
         if ($approvalRow && $approvalRow->current_count < $approvalRow->required_count) {
             $approvalRow->increment('current_count');
 
@@ -425,20 +484,37 @@ trait HasApproval
             return;
         }
 
-        $newCycle = $this->getCurrentApprovalCycle() + 1;
+        $currentCycle = $this->getCurrentApprovalCycle();
+        $newCycle = $currentCycle + 1;
 
-        foreach ($module->roles as $moduleRole) {
-            ApprovalRow::create([
-                'module_id' => $module->id,
-                'record_id' => $this->id,
-                'role_id' => $moduleRole->role_id,
-                'required_count' => $moduleRole->approval_count,
-                'current_count' => 0,
-                'approval_cycle' => $newCycle,
-                'status' => 'pending'
-            ]);
+        // Get the role from the current cycle to ensure consistency after revert
+        $role_id = $this->approvalRows()
+            ->where('module_id', $module->id)
+            ->where('approval_cycle', $currentCycle)
+            ->value('role_id');
+
+        // Fallback to original logic if no previous row exists
+        if (!$role_id) {
+            if(!auth()->user()->parent_user_id) {
+                $role_id = auth()->user()->roles()->latest()->first()->id;
+            } else {
+                $user = \App\Models\User::find(auth()->user()->parent_user_id);
+                $child = $user->children()->where("purchase_order_approval", true)->first();
+                $role_id = $child->roles()->latest()->first()->id;
+            }
         }
+
+        ApprovalRow::create([
+            'module_id' => $module->id,
+            'record_id' => $this->id,
+            'role_id' => $role_id,
+            'required_count' => 1,
+            'current_count' => 0,
+            'approval_cycle' => $newCycle,
+            'status' => 'pending'
+        ]);
     }
+
 
     protected function onApprovalComplete()
     {
