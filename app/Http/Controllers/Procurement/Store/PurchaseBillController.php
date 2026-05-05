@@ -38,34 +38,7 @@ class PurchaseBillController extends Controller
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $purchaseRequests = PurchaseRequest::select('id', 'purchase_request_no')->where('am_approval_status', 'approved')->get();
 
-        // Filter suppliers who have unbilled, approved GRNs or QC records
-        $suppliers = \App\Models\Master\Supplier::whereHas('purchase_order_receivings', function ($q) {
-            $q->where(function ($innerQ) {
-                // Items with approved QC
-                $innerQ->whereHas('purchaseOrderReceivingData.qc', function ($query) {
-                    $query->where('am_approval_status', 'approved');
-                })
-                // OR non-bag items in an approved GRN
-                ->orWhere(function ($subQ) {
-                    $subQ->where('am_approval_status', 'approved')
-                        ->whereHas('purchaseOrderReceivingData', function ($dataQ) {
-                            $dataQ->where('category_id', '!=', 38);
-                        });
-                });
-            })
-            // AND at least one of those billable items is not yet billed
-            ->whereHas('purchaseOrderReceivingData', function ($dataQ) {
-                $dataQ->whereDoesntHave('bill')
-                    ->where(function ($qcQ) {
-                        $qcQ->where('category_id', '!=', 38)
-                            ->orWhereHas('qc', function ($q) {
-                                $q->where('am_approval_status', 'approved');
-                            });
-                    });
-            });
-        })->get();
-
-        return view('management.procurement.store.purchase-bill.create', compact('categories', 'approvedPurchaseOrders', 'purchaseRequests', 'suppliers'));
+        return view('management.procurement.store.purchase-bill.create', compact('categories', 'approvedPurchaseOrders', 'purchaseRequests'));
     }
 
     public function edit(Request $request, int $id)
@@ -85,33 +58,6 @@ class PurchaseBillController extends Controller
 
         $taxes = Tax::all();
 
-        // Filter suppliers who have unbilled, approved GRNs or QC records (plus the current supplier)
-        $suppliers = \App\Models\Master\Supplier::where(function($masterQ) use ($purchase_bill) {
-            $masterQ->whereHas('purchase_order_receivings', function ($q) {
-                $q->where(function ($innerQ) {
-                    $innerQ->whereHas('purchaseOrderReceivingData.qc', function ($query) {
-                        $query->where('am_approval_status', 'approved');
-                    })
-                    ->orWhere(function ($subQ) {
-                        $subQ->where('am_approval_status', 'approved')
-                            ->whereHas('purchaseOrderReceivingData', function ($dataQ) {
-                                $dataQ->where('category_id', '!=', 38);
-                            });
-                    });
-                })
-                ->whereHas('purchaseOrderReceivingData', function ($dataQ) {
-                    $dataQ->whereDoesntHave('bill')
-                        ->where(function ($qcQ) {
-                            $qcQ->where('category_id', '!=', 38)
-                                ->orWhereHas('qc', function ($q) {
-                                    $q->where('am_approval_status', 'approved');
-                                });
-                        });
-                });
-            })
-            ->orWhere('id', $purchase_bill->supplier_id);
-        })->get();
-
         return view('management.procurement.store.purchase-bill.edit', [
             'purchase_bill' => $purchase_bill,
             'categories' => $categories,
@@ -120,7 +66,6 @@ class PurchaseBillController extends Controller
             // 'job_orders' => $job_orders,
             'purchaseBillData' => $purchaseBillData,
             'data1' => $purchase_bill,
-            'suppliers' => $suppliers,
         ]);
     }
 
