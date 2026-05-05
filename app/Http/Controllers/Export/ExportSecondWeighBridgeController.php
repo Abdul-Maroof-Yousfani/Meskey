@@ -93,7 +93,9 @@ class ExportSecondWeighBridgeController extends Controller
 
         $first_weight = $firstWeighbridge->first_weight;
         $second_weight = $request->second_weight;
-        $net_weight = $second_weight - $first_weight;
+        
+        $outerWeight = $loadingSlip->loadingProgramItem->outerItems->sum('total_weight');
+        $net_weight = $second_weight - $first_weight - $outerWeight;
 
         if ($second_weight < $first_weight) {
             return response()->json('Second Weight can not be less than First Weight', 422);
@@ -260,7 +262,9 @@ class ExportSecondWeighBridgeController extends Controller
 
             $first_weight = $firstWeighbridge->first_weight;
             $second_weight = $request->second_weight;
-            $net_weight = $second_weight - $first_weight;
+            
+            $outerWeight = $loadingSlip->loadingProgramItem->outerItems->sum('total_weight');
+            $net_weight = $second_weight - $first_weight - $outerWeight;
 
             if ($second_weight < $first_weight) {
                 DB::rollBack();

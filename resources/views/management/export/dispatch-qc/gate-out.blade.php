@@ -126,14 +126,14 @@
     
     $gpNo = ''; // blank
     $brokerName = $exportOrder?->broker?->name ?? '';
-    $formENo = $exportOrder ? \App\Models\Export\ExportFormE::where('export_order_id', $exportOrder->id)->pluck('form_e_no')->filter()->implode(' & ') : '';
+    $formENo = $allDos->map(function($do) { return $do->exportFormE?->form_e_no; })->filter()->unique()->implode(' & ');
     $doNo = $allDos->pluck('reference_no')->unique()->implode(' / ');
     $sealNo = $loadingSlip?->seal_no ?? '';
     $port = $exportOrder?->portOfLoading?->name ?? '';
     $vesselName = $item?->exportLoadingProgram?->vessel_name ?? '';
     $shedBerthNo = $item?->berth_no ?? '';
     $sBillNo = $item?->s_bill_no ?? '0';
-    $clearingAgent = ''; // blank
+    $clearingAgent = $deliveryOrder?->c_agent ?? '';
     $loaderName = ''; // blank
     $preparedBy = $deliveryChallan?->createdBy?->name ?? '';
 @endphp

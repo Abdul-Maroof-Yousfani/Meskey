@@ -113,4 +113,42 @@
         </div>
     </div>
     @endif
+
+    <div class="row pt-3">
+        <div class="col-12">
+            <h6 class="header-heading-sepration">Outer Items</h6>
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Item Name</th>
+                        <th>Weight (Per Item)</th>
+                        <th>Qty</th>
+                        <th>Total Weight (KG)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($DispatchQc->loadingProgramItem->outerItems as $item)
+                        <tr>
+                            <td>{{ $item->item_name }}</td>
+                            <td>{{ number_format($item->weight, 2) }}</td>
+                            <td>{{ number_format($item->qty, 2) }}</td>
+                            <td>{{ number_format($item->total_weight, 2) }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="4" class="text-center">No outer items found.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+                @if($DispatchQc->loadingProgramItem->outerItems->isNotEmpty())
+                <tfoot>
+                    <tr>
+                        <td colspan="3" class="text-right"><strong>Grand Total:</strong></td>
+                        <td><strong>{{ number_format($DispatchQc->loadingProgramItem->outerItems->sum('total_weight'), 3) }}</strong></td>
+                    </tr>
+                </tfoot>
+                @endif
+            </table>
+        </div>
+    </div>
 </div>

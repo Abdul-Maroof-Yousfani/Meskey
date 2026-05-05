@@ -169,6 +169,11 @@ class LoadingProgramItem extends Model
         return $this->hasOne(DeliveryChallanData::class, "ticket_id");
     }
 
+    public function outerItems()
+    {
+        return $this->hasMany(\App\Models\Export\ExportOuterItem::class, 'loading_program_item_id');
+    }
+
     public function transporter()
     {
         return $this->belongsTo(Transporter::class);

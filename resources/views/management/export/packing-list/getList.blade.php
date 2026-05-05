@@ -28,12 +28,14 @@
                     </span>
                 </td>
                 <!-- <td>
-                    <span class="badge bg-light-warning text-warning">
-                        {{ $computedPreview['bill_of_lading_no'] ?? (optional($packingList->billOfLading)->bill_no ?? 'N/A') }}
-                    </span>
-                </td> -->
+                                <span class="badge bg-light-warning text-warning">
+                                    {{ $computedPreview['bill_of_lading_no'] ?? (optional($packingList->billOfLading)->bill_no ?? 'N/A') }}
+                                </span>
+                            </td> -->
                 <td>
-                    <div style="font-weight: 600; color: #444;">{{ !empty($computedPreview['buyer_block']) ? strtok($computedPreview['buyer_block'], "\n") : 'N/A' }}</div>
+                    <div style="font-weight: 600; color: #444;">
+                        {{ !empty($computedPreview['buyer_block']) ? strtok($computedPreview['buyer_block'], "\n") : 'N/A' }}
+                    </div>
                 </td>
                 <td>
                     <div style="font-weight: 700; color: #2d4580;">
@@ -62,24 +64,26 @@
                             <i class="ft-eye font-medium-3"></i>
                         </a>
                         @if($packingList->am_approval_status === 'approved')
-                        <a class="success p-1 text-center position-relative" title="Print"
-                            onclick="openModal(this,'{{ route('packing-list.show', $packingList->id) }}?print=1','Print Packing List',true,'95%')">
-                            <i class="ft-printer font-medium-3"></i>
-                        </a>
-                        <a class="info p-1 text-center position-relative" title="Container List"
-                            onclick="openModal(this,'{{ route('packing-list.container-list', $packingList->id) }}','Container List',true,'95%')">
-                            <i class="ft-file-text font-medium-3"></i>
-                        </a>
+                            <a class="success p-1 text-center position-relative" title="Print"
+                                onclick="openModal(this,'{{ route('packing-list.show', $packingList->id) }}?print=1','Print Packing List',true,'95%')">
+                                <i class="ft-printer font-medium-3"></i>
+                            </a>
+                            <a class="info p-1 text-center position-relative" title="Container List"
+                                onclick="openModal(this,'{{ route('packing-list.container-list', $packingList->id) }}','Container List',true,'95%')">
+                                <i class="ft-file-text font-medium-3"></i>
+                            </a>
                         @endif
-                         @if($packingList->am_approval_status === 'pending' || $packingList->am_approval_status === 'reverted')
-                        <a class="info p-1 text-center position-relative" title="Edit"
-                            onclick="openModal(this,'{{ route('packing-list.edit', $packingList->id) }}','Edit Packing List',false,'95%')">
-                            <i class="ft-edit font-medium-3"></i>
-                        </a>
-                        <a onclick="deletemodal('{{ route('packing-list.destroy', $packingList->id) }}','{{ route('get.packing-list') }}')"
-                            class="danger p-1 text-center mr-2 position-relative" title="Delete">
-                            <i class="ft-x font-medium-3"></i>
-                        </a>
+                        @if (auth()->user()->id == $packingList->created_by)
+                            @if($packingList->am_approval_status === 'pending' || $packingList->am_approval_status === 'reverted')
+                                <a class="info p-1 text-center position-relative" title="Edit"
+                                    onclick="openModal(this,'{{ route('packing-list.edit', $packingList->id) }}','Edit Packing List',false,'95%')">
+                                    <i class="ft-edit font-medium-3"></i>
+                                </a>
+                                <a onclick="deletemodal('{{ route('packing-list.destroy', $packingList->id) }}','{{ route('get.packing-list') }}')"
+                                    class="danger p-1 text-center mr-2 position-relative" title="Delete">
+                                    <i class="ft-x font-medium-3"></i>
+                                </a>
+                            @endif
                         @endif
                     </div>
                 </td>

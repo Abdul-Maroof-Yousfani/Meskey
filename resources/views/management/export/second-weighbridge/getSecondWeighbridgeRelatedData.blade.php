@@ -220,7 +220,7 @@
     </h6>
 </div>
 
-<div class="col-xs-12 col-sm-4 col-md-4">
+<div class="col-xs-12 col-sm-3 col-md-3">
     <div class="form-group">
         <label>First Weight(KG):</label>
         <input type="text" name="first_weight_display" id="first_weight_display"
@@ -230,7 +230,7 @@
     </div>
 </div>
 
-<div class="col-xs-12 col-sm-4 col-md-4">
+<div class="col-xs-12 col-sm-3 col-md-3">
     <div class="form-group">
         <label>Second Weight(KG):</label>
         <input type="number" name="second_weight" id="second_weight" placeholder="Enter Second Weight"
@@ -239,7 +239,17 @@
     </div>
 </div>
 
-<div class="col-xs-12 col-sm-4 col-md-4">
+<div class="col-xs-12 col-sm-3 col-md-3">
+    @php
+        $outerWeight = $LoadingSlip->loadingProgramItem->outerItems->sum('total_weight');
+    @endphp
+    <div class="form-group">
+        <label>Outer Items Weight(KG):</label>
+        <input type="text" id="outer_items_weight" value="{{ number_format($outerWeight, 2, '.', '') }}" readonly class="form-control" />
+    </div>
+</div>
+
+<div class="col-xs-12 col-sm-3 col-md-3">
     <div class="form-group">
         <label>Net Weight(KG):</label>
         <input type="text" name="net_weight" id="net_weight" placeholder="Net Weight"
@@ -311,9 +321,10 @@
         $('#second_weight').on('input', function() {
             const firstWeight = parseFloat($('#first_weight_display').val()) || 0;
             const secondWeight = parseFloat($(this).val()) || 0;
+            const outerWeight = parseFloat($('#outer_items_weight').val()) || 0;
             const baseBalance = parseFloat($('#weight_difference').data('base-balance')) || 0;
 
-            const netWeight = secondWeight - firstWeight;
+            const netWeight = secondWeight - firstWeight - outerWeight;
             $('#net_weight').val(netWeight.toFixed(2));
             $('#weight_difference').val((baseBalance - netWeight).toFixed(2));
             $('#weight_difference_mt').val(((baseBalance - netWeight) / 1000).toFixed(3));
