@@ -23,7 +23,7 @@
                 <label class="form-label">Supplier:</label>
                 <select id="supplier_id" name="supplier_id" class="form-control item-select select2">
                     <option value="">Select Vendor</option>
-                    @foreach (get_supplier() as $supplier)
+                    @foreach ($suppliers as $supplier)
                         <option @selected($supplier->id == $purchase_bill->supplier_id) value="{{ $supplier->id }}">
                             {{ $supplier->name }}
                         </option>
