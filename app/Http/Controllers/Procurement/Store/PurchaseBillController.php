@@ -34,7 +34,6 @@ class PurchaseBillController extends Controller
             ->whereHas('bill_data', function ($q): void {
                 $q->whereRaw('qty > (SELECT COALESCE(SUM(qty), 0) FROM purchase_bills_data WHERE purchase_bills_data.purchase_bill_id = purchase_bills.id)');
             })
-      
             ->get();
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $purchaseRequests = PurchaseRequest::select('id', 'purchase_request_no')->where('am_approval_status', 'approved')->get();
@@ -520,7 +519,10 @@ class PurchaseBillController extends Controller
 
         $purchase_bill = PurchaseBill::with(['bill_data', 'grn'])->findOrFail($id);
 
-        $purchaseBillData = PurchaseBillData::with("PurchaseOrderReceivingData.purchase_order_data")->where('purchase_bill_id', $id)
+        // Get all bill IDs with the same bill_no to show grouped items in view
+        $allBillIds = PurchaseBill::where('bill_no', $purchase_bill->bill_no)->pluck('id');
+
+        $purchaseBillData = PurchaseBillData::with("PurchaseOrderReceivingData.purchase_order_data")->whereIn('purchase_bill_id', $allBillIds)
             ->when($purchase_bill->am_approval_status === 'approved', function ($query) {
                 // $query->where('am_approval_status', 'approved');
             })
