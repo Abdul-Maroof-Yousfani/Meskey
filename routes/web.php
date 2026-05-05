@@ -216,7 +216,7 @@ Route::get("add-permission", function() {
 });
 
 Route::get("testing-purchase-bill", function() {
-    $purchase_bills = PurchaseBill::where("bill_no", "LIKE", "%" . 'BILL-2026-05-05-001' . "%" )->get();
+    $purchase_bills = PurchaseBill::where("bill_no", "LIKE", "%" . 'BILL-2026-04-13-001' . "%" )->get();
     $i = 1;
 
     foreach($purchase_bills as $purchase_bill) {
