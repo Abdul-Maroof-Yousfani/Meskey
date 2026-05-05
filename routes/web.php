@@ -216,8 +216,16 @@ Route::get("add-permission", function() {
 });
 
 Route::get("testing-purchase-bill", function() {
-    $purchase_bill = PurchaseBill::where("bill_no", "LIKE", "%" . 'BILL-2026-05-05-001' . "%" )->get();
-    dd($purchase_bill);
+    $purchase_bills = PurchaseBill::where("bill_no", "LIKE", "%" . 'BILL-2026-05-05-001' . "%" )->get();
+    $i = 1;
+
+    foreach($purchase_bills as $purchase_bill) {
+        $purchase_bill->update([
+            "bill_no" => str_replace("001", "00" . $i, $purchase_bill->bill_no)
+        ]);
+        $i++;
+    }
+
 });
 
 Route::get("testing-data", function() {
