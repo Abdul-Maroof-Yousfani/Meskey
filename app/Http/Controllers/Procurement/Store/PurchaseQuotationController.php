@@ -1057,13 +1057,17 @@ class PurchaseQuotationController extends Controller
 
         $purchaseQuotationDataCount = $purchaseQuotation->quotation_data->count();
 
-        // Calculate total quoted quantities for each PR item to determine max limits
+        // Calculate total quoted quantities for each PR item to determine max limits (Supplier-wise)
         $pr_data_ids = $purchaseRequest->PurchaseData->pluck('id');
         $all_quoted = \App\Models\Procurement\Store\PurchaseQuotationData::whereIn('purchase_request_data_id', $pr_data_ids)
             ->where('am_approval_status', '!=', 'rejected')
-            ->select('purchase_request_data_id', DB::raw('SUM(qty) as total_qty'))
+            ->select('purchase_request_data_id', 'supplier_id', DB::raw('SUM(qty) as total_qty'))
+            ->groupBy('purchase_request_data_id', 'supplier_id')
+            ->get()
             ->groupBy('purchase_request_data_id')
-            ->pluck('total_qty', 'purchase_request_data_id')
+            ->map(function ($items) {
+                return $items->pluck('total_qty', 'supplier_id');
+            })
             ->toArray();
 
         return view('management.procurement.store.purchase_quotation.edit', compact(
