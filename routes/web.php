@@ -215,6 +215,11 @@ Route::get("add-permission", function() {
     ]);
 });
 
+Route::get("testing-purchase-bill", function() {
+    $purchase_bill = PurchaseBill::where("bill_no", "LIKE", "%" . 'BILL-2026-05-05-001' . "%" )->get();
+    dd($purchase_bill);
+});
+
 Route::get("testing-data", function() {
     $suppliers = \App\Models\Master\Supplier::where("owner_mobile_no", "LIKE", "%-%")->get();
     foreach($suppliers as $supplier) {
