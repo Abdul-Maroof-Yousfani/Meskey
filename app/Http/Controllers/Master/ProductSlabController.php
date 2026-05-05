@@ -79,6 +79,7 @@ class ProductSlabController extends Controller
                     $deductionType = $slabData['deduction_type'] ?? 'kg';
                     $isTiered = ($slabData['is_tiered'] ?? 'off') == 'on' ? 1 : 0;
                     $isPurchaseField = ($slabData['is_purchase_field'] ?? 'off') == 'on' ? 1 : 0;
+                    $prefillSpecValue = $slabData['prefill_spec_value'] ?? null;
 
                     if (isset($slabData['ranges'])) {
                         $validRanges = collect($slabData['ranges'])
@@ -106,6 +107,7 @@ class ProductSlabController extends Controller
                                 'is_tiered' => $isTiered,
                                 'is_purchase_field' => $isPurchaseField,
                                 'deduction_value' => $range['deduction_value'],
+                                'prefill_spec_value' => $prefillSpecValue,
                                 'is_enabled' => true,
                                 'status' => 'active'
                             ]);
@@ -145,6 +147,7 @@ class ProductSlabController extends Controller
                     $deductionType = $slabData['deduction_type'] ?? 'kg';
                     $isTiered = ($slabData['is_tiered'] ?? 'off') == 'on' ? 1 : 0;
                     $isPurchaseField = ($slabData['is_purchase_field'] ?? 'off') == 'on' ? 1 : 0;
+                    $prefillSpecValue = $slabData['prefill_spec_value'] ?? null;
 
                     if (isset($slabData['ranges'])) {
                         $validRanges = collect($slabData['ranges'])
@@ -172,6 +175,7 @@ class ProductSlabController extends Controller
                                 'is_purchase_field' => $isPurchaseField,
                                 'deduction_type' => $deductionType,
                                 'deduction_value' => $range['deduction_value'],
+                                'prefill_spec_value' => $prefillSpecValue,
                                 'is_enabled' => true,
                                 'status' => 'active'
                             ]);

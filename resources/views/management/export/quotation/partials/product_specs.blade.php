@@ -21,7 +21,7 @@
                             <td>
                                 <fieldset>
                                     <div class="input-group">
-                                        <input type="text" name="specifications[{{ $index }}][spec_value]" value="0"
+                                        <input type="text" name="specifications[{{ $index }}][spec_value]" value="{{ $spec['spec_value'] ?? 0 }}"
                                             class="form-control form-control-sm spec-value-input" placeholder="Enter value">
                                         <div class="input-group-prepend">
                                             <button class="btn btn-secondary" type="button">{{ $spec['uom'] }}</button>

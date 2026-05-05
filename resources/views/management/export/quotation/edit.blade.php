@@ -459,6 +459,19 @@ $(document).ready(function() {
         });
     });
 
+    $('#productSelect').on('change', function() {
+        var productId = $(this).val();
+        if (productId) {
+            $.get('{{ route('get.product_specs.quotation', '') }}/' + productId + '?prefill=1', function(data) {
+                $('#productSpecs').html(data);
+                $('#specificationsSection').show();
+            });
+        } else {
+            $('#productSpecs').html('');
+            $('#specificationsSection').hide();
+        }
+    });
+
     // ---- ROW LEVEL CALCULATIONS ----
     $(document).on('input', '.metric-tons, .bag-size', function() {
         let row = $(this).closest('tr');

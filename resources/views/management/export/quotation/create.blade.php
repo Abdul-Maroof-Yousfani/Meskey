@@ -367,7 +367,7 @@ $(document).ready(function() {
     $('#productSelect').on('change', function() {
         var productId = $(this).val();
         if (productId) {
-            $.get('{{ route('get.product_specs.quotation', '') }}/' + productId, function(data) {
+            $.get('{{ route('get.product_specs.quotation', '') }}/' + productId + '?prefill=1', function(data) {
                 $('#productSpecs').html(data);
                 $('#specificationsSection').show();
             });
