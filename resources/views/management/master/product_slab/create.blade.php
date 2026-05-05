@@ -50,7 +50,7 @@
                     </div>
                     <div class="col-md-8">
                         <div class="row w-100 mx-auto">
-                            <div class="col-6">
+                            <div class="col-4">
                                 <div class="form-group">
                                     <label>Deduction Type:</label>
                                     <select class="form-control deduction-type"
@@ -60,7 +60,16 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="col-3">
+                            <div class="col-4">
+                                <div class="form-group">
+                                    <label>Spec Prefill Value:</label>
+                                    <input type="number" step="0.01" class="form-control"
+                                        name="slabs[{{ $slab_type->id }}][prefill_spec_value]"
+                                        placeholder="Optional prefill value">
+                                    <small class="text-muted">Default will remain off; it will only be used in allowed modules.</small>
+                                </div>
+                            </div>
+                            <div class="col-2">
                                 <div class="form-group">
                                     <label>Is Tiered:</label>
                                     <div class="custom-control custom-switch">
@@ -72,7 +81,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-3">
+                            <div class="col-2">
                                 <div class="form-group">
                                     <label>Is PO Field:</label>
                                     <div class="custom-control custom-switch">

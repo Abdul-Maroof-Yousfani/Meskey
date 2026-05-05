@@ -16,6 +16,7 @@ class ProductSlab extends Model
         'product_slab_type_id',
         'is_purchase_field',
         'deduction_value',
+        'prefill_spec_value',
         'deduction_type',
         'company_id',
         'product_id',

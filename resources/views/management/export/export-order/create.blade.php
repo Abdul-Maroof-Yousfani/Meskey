@@ -862,7 +862,7 @@
             var productName = $(this).find(':selected').text();
             if (productId) {
                 $('#visualName').val(productName);
-                $.get("{{ route('get.product_specs.export', '') }}/" + productId, function(data) {
+                $.get("{{ route('get.product_specs.export', '') }}/" + productId + "?prefill=1", function(data) {
                     $('#productSpecs').html(data);
                     $('#specificationsSection').show();
 
