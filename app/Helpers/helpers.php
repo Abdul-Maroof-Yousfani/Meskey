@@ -2169,11 +2169,12 @@ function areQcParametersOk(QCRequest $request): bool
 function isQcAutoApprovable(QCRequest $bagQc): bool
 {
     $tolerance = $bagQc->grn->purchase_order_data->tolerance;
+    $deduction_qty = $bagQc->rejected_quantity;
     $qcParametersOk = areQcParametersOk($bagQc);
     $min_weight = $bagQc->grn->min_weight;
     $allowed_value = $min_weight - $tolerance;
 
-    return $bagQc->sample_average_weight >= $allowed_value && $qcParametersOk;
+    return $bagQc->sample_average_weight >= $allowed_value && $qcParametersOk && $deduction_qty == 0;
 }
 
 function approve_qc(PurchaseBagQC $bag_qc)
