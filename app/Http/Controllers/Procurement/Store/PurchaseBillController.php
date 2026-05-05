@@ -519,10 +519,7 @@ class PurchaseBillController extends Controller
 
         $purchase_bill = PurchaseBill::with(['bill_data', 'grn'])->findOrFail($id);
 
-        // Get all bill IDs with the same bill_no to show grouped items in view
-        $allBillIds = PurchaseBill::where('bill_no', $purchase_bill->bill_no)->pluck('id');
-
-        $purchaseBillData = PurchaseBillData::with("PurchaseOrderReceivingData.purchase_order_data")->whereIn('purchase_bill_id', $allBillIds)
+        $purchaseBillData = PurchaseBillData::with("PurchaseOrderReceivingData.purchase_order_data")->where('purchase_bill_id', $id)
             ->when($purchase_bill->am_approval_status === 'approved', function ($query) {
                 // $query->where('am_approval_status', 'approved');
             })
