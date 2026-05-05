@@ -233,27 +233,23 @@ class PurchaseBillController extends Controller
         $locationCode = $location->code ?? 'LOC';
         $prefix = 'BILL-' . $date;
 
-        // Find latest PO for the same prefix
+        // Find latest Bill for the same prefix
         $latestBill = PurchaseBill::where('bill_no', 'like', "$prefix-%")
             ->orderByDesc('id')
             ->first();
 
         if ($latestBill) {
-            // Correct field name
-            $parts = explode('-', $latestBill->purchase_order_no);
+            $parts = explode('-', $latestBill->bill_no);
             $lastNumber = (int) end($parts);
             $newNumber = $lastNumber + 1;
         } else {
             $newNumber = 1;
         }
 
-        $bill_no = 'BILL-'.$date.'-'.str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+        $bill_no = $prefix . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
 
-        if (! $locationId && ! $contractDate) {
-            return response()->json([
-                'success' => true,
-                'purchase_order_no' => $bill_no,
-            ]);
+        if ($request->ajax()) {
+            return $bill_no;
         }
 
         return $bill_no;
