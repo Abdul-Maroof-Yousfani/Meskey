@@ -51,15 +51,17 @@
                             <i class="ft-printer font-medium-3"></i>
                         </a>
                     @endif
-                    @if($billOfLading->am_approval_status === 'pending' || $billOfLading->am_approval_status === 'reverted')
-                        <a class="info p-1 text-center position-relative"
-                            onclick="openModal(this,'{{ route('bill-of-lading.edit', $billOfLading->id) }}','Edit Bill Of Lading',false,'95%')">
-                            <i class="ft-edit font-medium-3"></i>
-                        </a>
-                        <a onclick="deletemodal('{{ route('bill-of-lading.destroy', $billOfLading->id) }}','{{ route('get.bill-of-lading') }}')"
-                            class="danger p-1 text-center mr-2 position-relative">
-                            <i class="ft-x font-medium-3"></i>
-                        </a>
+                    @if (auth()->user()->id == $billOfLading->created_by)
+                        @if($billOfLading->am_approval_status === 'pending' || $billOfLading->am_approval_status === 'reverted')
+                            <a class="info p-1 text-center position-relative"
+                                onclick="openModal(this,'{{ route('bill-of-lading.edit', $billOfLading->id) }}','Edit Bill Of Lading',false,'95%')">
+                                <i class="ft-edit font-medium-3"></i>
+                            </a>
+                            <a onclick="deletemodal('{{ route('bill-of-lading.destroy', $billOfLading->id) }}','{{ route('get.bill-of-lading') }}')"
+                                class="danger p-1 text-center mr-2 position-relative">
+                                <i class="ft-x font-medium-3"></i>
+                            </a>
+                        @endif
                     @endif
                 </td>
             </tr>

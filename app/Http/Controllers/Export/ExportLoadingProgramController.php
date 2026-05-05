@@ -507,6 +507,20 @@ class ExportLoadingProgramController extends Controller
             }
             return get_second_weighbridge_balance_by_delivery_order($deliveryOrder->id) <= 0;
         });
+
+        // Fetch location names for UI display
+        $DeliveryOrders = $DeliveryOrders->map(function ($deliveryOrder) {
+            if ($deliveryOrder->locations) {
+                foreach ($deliveryOrder->locations as $loc) {
+                    $aIds = explode(',', $loc->arrival_location_ids);
+                    $loc->arrival_locations = ArrivalLocation::whereIn('id', array_filter($aIds))->get(['id', 'name']);
+                    
+                    $sIds = explode(',', $loc->sub_arrival_location_ids);
+                    $loc->sub_arrival_locations = ArrivalSubLocation::whereIn('id', array_filter($sIds))->get(['id', 'name']);
+                }
+            }
+            return $deliveryOrder;
+        });
         $html = view('management.export.loading-program.getExportOrderRelatedData', compact('ExportOrders', 'DeliveryOrders'))->render();
 
         $firstEO = $ExportOrders->first();

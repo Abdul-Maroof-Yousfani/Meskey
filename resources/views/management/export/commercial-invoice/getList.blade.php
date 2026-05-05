@@ -68,15 +68,17 @@
                                 <i class="ft-printer font-medium-3"></i>
                             </a>
                         @endif
-                        @if($invoice->am_approval_status === 'pending' || $invoice->am_approval_status === 'reverted')
-                            <a class="info p-1 text-center position-relative" title="Edit"
-                                onclick="openModal(this,'{{ route('commercial-invoice.edit', $invoice->id) }}','Edit Commercial Invoice',false,'95%')">
-                                <i class="ft-edit font-medium-3"></i>
-                            </a>
-                            <a onclick="deletemodal('{{ route('commercial-invoice.destroy', $invoice->id) }}','{{ route('get.commercial-invoice') }}')"
-                                class="danger p-1 text-center mr-2 position-relative" title="Delete">
-                                <i class="ft-x font-medium-3"></i>
-                            </a>
+                        @if (auth()->user()->id == $invoice->created_by)
+                            @if($invoice->am_approval_status === 'pending' || $invoice->am_approval_status === 'reverted')
+                                <a class="info p-1 text-center position-relative" title="Edit"
+                                    onclick="openModal(this,'{{ route('commercial-invoice.edit', $invoice->id) }}','Edit Commercial Invoice',false,'95%')">
+                                    <i class="ft-edit font-medium-3"></i>
+                                </a>
+                                <a onclick="deletemodal('{{ route('commercial-invoice.destroy', $invoice->id) }}','{{ route('get.commercial-invoice') }}')"
+                                    class="danger p-1 text-center mr-2 position-relative" title="Delete">
+                                    <i class="ft-x font-medium-3"></i>
+                                </a>
+                            @endif
                         @endif
                     </div>
                 </td>

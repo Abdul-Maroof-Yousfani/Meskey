@@ -902,6 +902,13 @@
                         </li>
 
                         <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                href="{{ route('export-outer-item.index') }}"
+                                onclick="loadPageContent('{{ route('export-outer-item.index') }}')"
+                                data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                    data-i18n="Extended">Outer Items</span></a>
+                        </li>
+
+                        <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                 href="{{ route('export-dispatch-qc.index') }}"
                                 onclick="loadPageContent('{{ route('export-dispatch-qc.index') }}')"
                                 data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span

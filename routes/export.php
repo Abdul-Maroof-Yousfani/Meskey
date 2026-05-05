@@ -21,6 +21,7 @@ use App\Http\Controllers\Export\ExportQcController;
 use App\Http\Controllers\Export\ExportDispatchQcController;
 use App\Http\Controllers\Export\ExportDeliveryChallanController;
 use App\Http\Controllers\Export\ExportSecondWeighBridgeController;
+use App\Http\Controllers\Export\ExportOuterItemController;
 
 // mode of terms
 Route::resource('modeofterms', ModeOfTermController::class);
@@ -86,6 +87,11 @@ Route::get('/get-ticket-related-data-for-qc', [ExportQcController::class, 'getTi
 Route::resource('export-loading-slip', ExportLoadingSlipController::class);
 Route::post('/get-export-loading-slip', [ExportLoadingSlipController::class, 'getList'])->name('get.export-loading-slip');
 Route::get('/get-export-loading-slip-ticket-data', [ExportLoadingSlipController::class, 'getTicketRelatedData'])->name('export.getLoadingSlipTicketData');
+
+// export outer items
+Route::resource('export-outer-item', ExportOuterItemController::class);
+Route::post('/get-export-outer-item', [ExportOuterItemController::class, 'getList'])->name('get.export-outer-item');
+Route::get('/get-export-outer-item-ticket-data/{id}', [ExportOuterItemController::class, 'getTicketData'])->name('export.getOuterItemTicketData');
 
 // export dispatch qc
 Route::resource('export-dispatch-qc', ExportDispatchQcController::class);

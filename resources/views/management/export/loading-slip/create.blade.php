@@ -204,8 +204,8 @@
                 </div>
                 <div class="col-xs-12 col-sm-6 col-md-3">
                     <div class="form-group">
-                        <label>Seal No:</label>
-                        <input type="text" name="seal_no" id="seal_no" class="form-control" placeholder="Enter Seal No" />
+                        <label>Seal No: <span class="text-danger">*</span></label>
+                        <input type="text" name="seal_no" id="seal_no" class="form-control" placeholder="Enter Seal No" required />
                     </div>
                 </div>
                 <input type="hidden" name="bag_size" value="${data.bag_size}" />
@@ -219,8 +219,8 @@
                         <thead>
                             <tr>
                                 <th>Bag Type</th>
-                                <th>Packing Size</th>
-                                <th>Input Size <span class="text-danger">*</span></th>
+                                <th>Packing Size (KG)</th>
+                                <th>Input Size (KG) <span class="text-danger">*</span></th>
                             </tr>
                         </thead>
                         <tbody>

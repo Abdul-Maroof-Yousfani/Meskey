@@ -234,10 +234,6 @@
     window.syncBagsFromQty = function (el) {
         const row = $(el).closest('tr');
         const form = $(el).closest('form');
-        const bagSize = parseFloat(row.find('.bag_size').val()) || 0;
-        const qty = parseFloat($(el).val()) || 0;
-        const bags = bagSize > 0 ? Math.round((qty * 1000) / bagSize) : 0;
-        row.find('.no_of_bags').val(bags);
         window.updateExportDcLineAmount(row);
         window.recalculateExportDcTotals(form);
     };

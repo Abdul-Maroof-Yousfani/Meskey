@@ -26,19 +26,20 @@
             <div class="form-group">
                 <label id="delivery_order_label">Delivery Order: <span id="delivery_order_required_mark"
                         class="text-danger">*</span></label>
-                <select class="form-control select2" name="delivery_order_id[]" id="delivery_order_id" multiple disabled>
+                <select class="form-control select2" name="delivery_order_id[]" id="delivery_order_id" multiple
+                    disabled>
                 </select>
             </div>
         </div>
         <div class="col-xs-12 col-sm-4 col-md-4">
             <div class="form-group">
                 <label>Vessel Name:</label>
-                <input type="text" name="vessel_name" class="form-control" placeholder="Enter Vessel Name">
+                <input type="text" name="vessel_name" class="form-control" placeholder="Enter Vessel Name" readonly>
             </div>
         </div>
         <input type="hidden" id="is_delivery_order_optional" value="0">
     </div>
-    
+
     <div class="row" id="exportOrderDataContainer">
     </div>
 
@@ -105,12 +106,12 @@
     window.isUpdatingUI = false;
     window.isSelectingEO = false;
 
-    $('#main_company_location_id').change(function() {
+    $('#main_company_location_id').change(function () {
         if (window.isUpdatingUI) return;
         const locationId = $(this).val();
         const $eoSelect = $('#export_order_id');
         const $doSelect = $('#delivery_order_id');
-        
+
         window.isUpdatingUI = true;
         $eoSelect.empty().prop('disabled', true).trigger('change.select2');
         $doSelect.empty().prop('disabled', true).trigger('change.select2');
@@ -123,7 +124,7 @@
                 url: '{{ route('fetch.export.orders.by.location') }}',
                 type: 'GET',
                 data: { location_id: locationId },
-                success: function(response) {
+                success: function (response) {
                     if (response.success) {
                         window.isUpdatingUI = true;
                         $eoSelect.append('<option value="">Select Export Order</option>');
@@ -138,13 +139,13 @@
         }
     });
 
-    $(document).ready(function() {
+    $(document).ready(function () {
         // Initial setup
         $('.select2').select2({ width: '100%' });
 
-        $('#export_order_id').change(function() {
+        $('#export_order_id').change(function () {
             if (window.isUpdatingUI) return;
-            
+
             var export_order_ids = $(this).val();
             const $doSelect = $('#delivery_order_id');
             const company_location_id = $('#main_company_location_id').val();
@@ -162,29 +163,28 @@
             }
         });
 
-        $('#delivery_order_id').change(function() {
+        $('#delivery_order_id').change(function () {
             if (window.isUpdatingUI) return;
             var delivery_order_ids = $(this).val() || [];
-            
+
             if (delivery_order_ids.length > 0) {
                 var exportOrderId = $('#export_order_id').val();
                 $.ajax({
                     url: '{{ route('get.delivery-orders.by.export-order.loading') }}',
                     type: 'GET',
-                    data: { 
+                    data: {
                         export_order_id: exportOrderId,
                         company_location_id: $('#main_company_location_id').val()
                     },
-                    success: function(response) {
-                            window.allFetchedDOs = response.delivery_orders;
-                            syncDOSelectionState(delivery_order_ids, response.delivery_orders);
+                    success: function (response) {
+                        window.allFetchedDOs = response.delivery_orders;
+                        syncDOSelectionState(delivery_order_ids, response.delivery_orders);
 
-                            // Auto-fill vessel name from the first selected DO
-                            if (delivery_order_ids.length > 0) {
-                                const firstDO = response.delivery_orders.find(d => d.id == delivery_order_ids[0]);
-                                if (firstDO && firstDO.vessel_name) {
-                                    $('input[name="vessel_name"]').val(firstDO.vessel_name);
-                                }
+                        // Auto-fill vessel name from the first selected DO
+                        if (delivery_order_ids.length > 0) {
+                            const firstDO = response.delivery_orders.find(d => d.id == delivery_order_ids[0]);
+                            if (firstDO && firstDO.vessel_name) {
+                                $('input[name="vessel_name"]').val(firstDO.vessel_name);
                             }
                         }
                     }
@@ -197,17 +197,17 @@
 
         function syncDOSelectionState(selectedIds, allDOs) {
             const selectedDOs = (allDOs || []).filter(d => selectedIds.includes(d.id.toString()));
-            
+
             if (selectedDOs.length > 0) {
                 window.isUpdatingUI = true;
-                
+
                 // Show/Hide sections
                 $('#exportOrderDataContainer').show();
                 var $wrapper = $('#delivery_order_details_wrapper');
                 if ($wrapper.length) {
                     $wrapper.show();
                     $('.do-tab-item, .do-pane').hide().removeClass('show active');
-                    selectedIds.forEach(function(id, idx) {
+                    selectedIds.forEach(function (id, idx) {
                         var $tab = $('.do-tab-item[data-do-id="' + id + '"]');
                         var $pane = $('.do-pane[data-do-id="' + id + '"]');
                         $tab.show();
@@ -240,12 +240,12 @@
             $.ajax({
                 url: '{{ route('get.export-order.related.data') }}',
                 type: 'GET',
-                data: { 
+                data: {
                     export_order_id: export_order_ids,
                     company_location_id: company_location_id
                 },
                 dataType: 'json',
-                beforeSend: function() {
+                beforeSend: function () {
                     Swal.fire({
                         title: "Processing...",
                         text: "Please wait while fetching export order details.",
@@ -253,7 +253,7 @@
                         didOpen: () => { Swal.showLoading(); }
                     });
                 },
-                success: function(response) {
+                success: function (response) {
                     Swal.close();
                     if (response.success) {
                         window.isUpdatingUI = true;
@@ -270,7 +270,7 @@
                             $('#delivery_order_id').append('<option value="' + doItem.id + '">' + doItem.reference_no + '</option>');
                         });
                         $('#delivery_order_id').val(currentDOVals).trigger('change.select2');
-                        
+
                         window.isUpdatingUI = false;
 
                         if (currentDOVals.length > 0) {
@@ -278,10 +278,10 @@
                         }
                     }
                 },
-                complete: function() {
+                complete: function () {
                     window.isSelectingEO = false;
                 },
-                error: function() {
+                error: function () {
                     Swal.close();
                     Swal.fire("Error", "Something went wrong.", "error");
                 }
@@ -290,7 +290,7 @@
 
         function populateLocationFields(deliveryOrders) {
             window.isUpdatingUI = true;
-            
+
             var arrivalLocations = @json(\App\Models\Master\ArrivalLocation::all());
             var subArrivalLocations = @json(\App\Models\Master\ArrivalSubLocation::all());
 
@@ -298,7 +298,7 @@
             var selectedSubArrivalIds = [];
             var selectedCompanyIds = [];
 
-            deliveryOrders.forEach(function(doItem) {
+            deliveryOrders.forEach(function (doItem) {
                 if (doItem.locations) {
                     doItem.locations.forEach(loc => {
                         if (loc.company_location_id && !selectedCompanyIds.includes(loc.company_location_id.toString())) {
@@ -348,9 +348,9 @@
             $('#company_locations').val(uniqueCompanyIds).trigger('change.select2');
             $('#arrival_locations').val(uniqueArrivalIds).trigger('change.select2');
             $('#sub_arrival_locations').val(uniqueSubArrivalIds).trigger('change.select2');
-            
+
             $('#company_locations, #arrival_locations, #sub_arrival_locations').prop('disabled', true);
-            
+
             window.isUpdatingUI = false;
         }
     });

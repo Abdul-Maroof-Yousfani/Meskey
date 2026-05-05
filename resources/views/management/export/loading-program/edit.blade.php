@@ -46,7 +46,7 @@
         <div class="col-xs-12 col-sm-4 col-md-4">
             <div class="form-group">
                 <label>Vessel Name:</label>
-                <input type="text" name="vessel_name" class="form-control" value="{{ $loadingProgram->vessel_name }}" placeholder="Enter Vessel Name">
+                <input type="text" name="vessel_name" class="form-control" value="{{ $loadingProgram->vessel_name }}" placeholder="Enter Vessel Name" readonly>
             </div>
         </div>
         <input type="hidden" id="is_delivery_order_optional" value="0">
