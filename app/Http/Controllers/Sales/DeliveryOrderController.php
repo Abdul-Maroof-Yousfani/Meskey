@@ -778,6 +778,7 @@ class DeliveryOrderController extends Controller
             $remaining_qty = $total_qty - $spent_qty;
 
             // Rebuild line items
+            
             $delivery_order->delivery_order_data()->delete();
             foreach ($request->item_id as $key => $item) {
                 // $balance =  delivery_order_balance($request->so_data_id[$key]);
