@@ -47,8 +47,9 @@
                 <label class="font-weight-bold">Transporter</label>
                 <select name="transporter" id="transporter" class="form-control select2">
                     <option value="">Select Transporter</option>
-                    <option value="1" @selected($receivingRequest->transporter == '1')>Transporter 1</option>
-                    <option value="2" @selected($receivingRequest->transporter == '2')>Transporter 2</option>
+                    @foreach ($transporters ?? [] as $transporter)
+                        <option value="{{ $transporter->id }}" @selected($receivingRequest->transporter == $transporter->id)>{{ $transporter->name }}</option>
+                    @endforeach
                 </select>
             </div>
         </div>

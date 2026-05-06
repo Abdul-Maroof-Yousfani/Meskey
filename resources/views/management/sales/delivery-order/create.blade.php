@@ -698,6 +698,7 @@
     function get_sale_orders() {
         const customer_id = $("#customer_id").val();
         
+        
         if (!customer_id) {
             $("#sale_order").empty().append('<option value="" selected>Select Sale Order</option>').trigger('change');
             return;
@@ -859,6 +860,11 @@
 
                 $("#delivery_date").val(res.delivery_date);
                 $("#delivery_date").prop("readonly", false);
+
+                if (res.remarks !== null && res.remarks !== undefined) {
+                    $("#remarks").val(res.remarks);
+                }
+
                 validate_expiry();
                 
                 calculate_so_withhold();

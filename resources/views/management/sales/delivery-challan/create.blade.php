@@ -166,11 +166,13 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Transporter:</label>
-                        <select name="transporter" id="transporter" onchange="" class="form-control select2">
+                        <select id="transporter_display" class="form-control select2" onchange="$('#transporter').val(this.value)">
                             <option value="">Select Transporter</option>
-                            <option value="1">Transporter 1</option>
-                            <option value="2">Transporter 2</option>
+                            @foreach ($transporters ?? [] as $transporter)
+                                <option value="{{ $transporter->id }}">{{ $transporter->name }}</option>
+                            @endforeach
                         </select>
+                        <input type="hidden" name="transporter" id="transporter">
                     </div>
                 </div>
                 <div class="col-md-4" style="display: none;">
@@ -408,6 +410,21 @@
                     setHidden("storage_id", response.locations.sub_arrival_location_ids);
                     $("#storage_location_csv").val(response.locations.sub_arrival_location_ids.join(','));
 
+                    // Set Transporter
+                    const transSelect = $("#transporter_display");
+                    if (response.transporter && response.transporter.id) {
+                        transSelect.val(response.transporter.id).trigger('change');
+                        transSelect.prop('disabled', true);
+                        $("#transporter").val(response.transporter.id);
+                    } else {
+                        transSelect.val('').trigger('change');
+                        transSelect.prop('disabled', false);
+                        $("#transporter").val('');
+                    }
+
+                    // Set Remarks
+                    $("#remarks").val(response.delivery_order.remarks || '');
+
                     // Store doMeta for the selected DO
                     doMeta[response.delivery_order.id] = {
                         location_id: response.locations.company_location_ids[0] || null,
@@ -463,6 +480,8 @@
         $("#add_ticket_id").empty().append('<option value="">Select Ticket to Add</option>');
         $("#labour_status").val('paid').trigger('change').prop('disabled', true);
         $("#standard_labour_rate").val('');
+        $("#transporter_display").empty().append('<option value="">Select Transporter</option>').trigger('change');
+        $("#transporter").val('');
         addedTicketIds = [];
         doMeta = {};
     }

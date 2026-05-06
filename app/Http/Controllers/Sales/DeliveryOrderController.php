@@ -765,10 +765,16 @@ class DeliveryOrderController extends Controller
                 }
             }
 
-            $salesOrder = SalesOrder::find($delivery_order->so_id);
-
-            $spent_qty = $salesOrder->delivery_orders->where("am_approval_status", "!=", "rejected")->flatMap->delivery_order_data->sum("qty");
-            $total_qty = $salesOrder?->sales_order_data?->first()->qty;
+            $salesOrder = SalesOrder::with('sales_order_data')->find($request->sale_order_id);
+            $spent_qty = $salesOrder->delivery_orders()
+                ->where("am_approval_status", "!=", "rejected")
+                ->with('delivery_order_data')
+                ->get()
+                ->flatMap->delivery_order_data
+                ->whereIn('so_data_id', $salesOrder->sales_order_data->pluck('id'))
+                ->sum("qty");
+            
+            $total_qty = $salesOrder->sales_order_data->sum('qty');
             $remaining_qty = $total_qty - $spent_qty;
 
             // Rebuild line items
@@ -779,7 +785,8 @@ class DeliveryOrderController extends Controller
                 //     return response()->json("Total balance is $balance. you can not exceed this balance", 422);
                 // }
 
-                if((int)$request->qty[$key] > (int)($remaining_qty + $request->current_qty[$key])) {
+                $current_qty = $request->current_qty[$key] ?? 0;
+                if((int)$request->qty[$key] > (int)($remaining_qty + $current_qty)) {
                     return response()->json("Total KG is: $remaining_qty, you can not exceed this balance", 422);
                 }
 
@@ -800,7 +807,7 @@ class DeliveryOrderController extends Controller
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json($e->getMessage(), $e->getCode());
+            return response()->json($e->getMessage(), 500);
         }
 
         return response()->json(['success' => 'Delivery Order has been updated']);

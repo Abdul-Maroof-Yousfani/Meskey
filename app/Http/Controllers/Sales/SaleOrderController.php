@@ -506,6 +506,7 @@ class SaleOrderController extends Controller
                 'arrival_sub_location_id' => $inquiry->sections->pluck("arrival_sub_location_id")->toArray(),
                 'arrival_locations' => $factory_locations,
                 'arrival_sub_locations' => $section_locations,
+                'remarks' => $inquiry->remarks
             ]);
         }
 

@@ -140,7 +140,7 @@
                 @if($sale_order->payment_term_id)
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label class="form-label">Payment Terms {{ $sale_order->payment_term_id }}:</label>
+                            <label class="form-label">Payment Terms:</label>
                             <input type="text" value="{{ get_payment_term($sale_order->payment_term_id)?->desc ?? '' }}" class="form-control" readonly>
                         </div>
                     </div>

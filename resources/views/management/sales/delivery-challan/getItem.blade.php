@@ -74,7 +74,7 @@
             </td>
             <td>
                 <input type="text" name="no_of_bags[]" id="no_of_bags_{{ $index }}"
-                    value="{{ round($net_weight / $packing) }}"
+                    value="{{ $loading_slip->no_of_bags ?? 0 }}"
                     class="form-control no_of_bags" step="0.01" min="0" readonly>
                 
                     {{-- <span style="font-size: 14px;;">Used Quantity:

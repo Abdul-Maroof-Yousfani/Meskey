@@ -112,7 +112,7 @@
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label class="form-label">Token Money: <span class="text-danger">*</span></label>
+                        <label class="form-label">Token Money:</label>
                         <input type="number" name="token_money" id="token_money" value="{{ $sales_inquiry->token_money }}" class="form-control" step="0.01" min="0">
                     </div>
                 </div>

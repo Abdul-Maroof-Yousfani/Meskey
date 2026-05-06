@@ -690,6 +690,10 @@
                     $("#token_money").val(res.token_money);
                 }
 
+                if (res.remarks !== null && res.remarks !== undefined) {
+                    $("#remarks").val(res.remarks);
+                }
+
                 // Make fields readonly
                 disableInquiryFields();
             },

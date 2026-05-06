@@ -195,7 +195,7 @@
                 success: function(response) {
                     if (response.success) {
                         window.isUpdatingUI = true;
-                        $soSelect.append('<option value="">Select Sale Order</option>');
+                        // $soSelect.append('<option value="">Select Sale Order</option>');
                         response.sale_orders.forEach(so => {
                             $soSelect.append(`<option value="${so.id}" data-type="${so.pay_type_id}">${so.reference_no}</option>`);
                         });
@@ -321,7 +321,7 @@
             } else {
                 window.isUpdatingUI = true;
                 $('.delivery-order-select').each(function() {
-                    $(this).empty().append('<option value="">Select Delivery Order</option>').select2();
+                    // $(this).empty().append('<option value="">Select Delivery Order</option>').select2();
                 });
 
                 var isOptional = $('#is_delivery_order_optional').val() === '1';
@@ -545,7 +545,6 @@
                     <td>
                         <div class="row-do-container">
                             <select name="loading_program_items[${index}][delivery_order_id][]" class="form-control form-control-sm select2 delivery-order-select" multiple>
-                                <option value="">Select Delivery Order</option>
                             </select>
                             <span class="text-danger row-do-required-mark" style="display: none;">*</span>
                         </div>
@@ -614,7 +613,6 @@
                                 const currentDOVals = $doSelect.val() || [];
                                 const selectedGlobalDoIds = $('#delivery_order_id').val() || [];
                                 $doSelect.empty();
-                                $doSelect.append('<option value="">Select Delivery Order</option>');
                                 response.delivery_orders.forEach(do_item => {
                                     if (selectedGlobalDoIds.includes(do_item.id.toString())) {
                                         $doSelect.append(new Option(do_item.reference_no, do_item.id, false, currentDOVals.includes(do_item.id.toString())));
