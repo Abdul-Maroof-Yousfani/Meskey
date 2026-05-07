@@ -29,7 +29,7 @@
     $loading_kanta = $paymentRequestData->loading_kanta ?? $freightPaymentRequest?->loading_kanta ?? ($ticket->freight->kanta_golarchi_charges ?? '0');
     $arrived_kanta = $paymentRequestData->arrived_kanta ?? $freightPaymentRequest?->arrived_kanta ?? ($ticket->freight->karachi_kanta_charges ?? '0');
     $other_plus_labour = $paymentRequestData->other_plus_labour ?? $freightPaymentRequest?->other_plus_labour ?? ($ticket->freight->other_labour_charges ?? '0');
-    $dehari_plus_extra = $paymentRequestData->dehari_plus_extra ?? $freightPaymentRequest?->dehari_plus_extra ?? ($ticket->freight->other_labour_charges ?? '0');
+    $dehari_plus_extra = $paymentRequestData->dehari_plus_extra ?? $freightPaymentRequest?->dehari_plus_extra ?? '0';
     $market_comm = $paymentRequestData->market_comm ?? $freightPaymentRequest?->market_comm ?? 0;
     $over_weight_ded = $paymentRequestData->over_weight_ded ?? $freightPaymentRequest?->over_weight_ded ?? 0;
     $godown_penalty = $paymentRequestData->godown_penalty ?? $ticket->freight?->other_deduction ?? 0;
