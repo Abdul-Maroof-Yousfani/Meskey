@@ -91,15 +91,15 @@ class FreightRequestController extends Controller
             ->when($request->filled('loading_date'), function ($q) use ($request) {
                 return $q->whereDate('loading_date', $request->loading_date);
             })
-            ->when($request->filled('amount'), function ($q) use ($request) {
+            ->when($request->filled('amount_for_filter'), function ($q) use ($request) {
                 return $q->whereHas('paymentRequestData', function ($query) use ($request) {
-                    $query->where('total_amount', 'like', "%{$request->amount}%");
+                    $query->where('total_amount', 'like', "%{$request->amount_for_filter}%");
                 });
             })
-            ->when($request->filled('requested_amount'), function ($q) use ($request) {
+            ->when($request->filled('requested_amount_for_filter'), function ($q) use ($request) {
                 return $q->whereHas('paymentRequestData', function ($query) use ($request) {
                     $query->whereHas('paymentRequests', function ($pq) use ($request) {
-                        $pq->where('amount', 'like', "%{$request->requested_amount}%");
+                        $pq->where('amount', 'like', "%{$request->requested_amount_for_filter}%");
                     });
                 });
             })
@@ -317,7 +317,7 @@ class FreightRequestController extends Controller
                 $data['suggested_vendor_id'] = $suggestedVendor->id;
             }
         }
-        
+
         $html = view('management.procurement.raw_material.freight_request.create', $data)->render();
 
         return response()->json([
@@ -839,7 +839,7 @@ class FreightRequestController extends Controller
             'paymentRequests' => $paymentRequests,
         ];
         $data['vendors'] = Vendor::get();
-        
+
         return view('management.procurement.raw_material.freight_request.create', $data);
     }
 
