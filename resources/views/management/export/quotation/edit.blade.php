@@ -5,6 +5,12 @@
 
     <input type="hidden" name="company_id" value="{{ auth()->user()->current_company_id }}">
 
+    <style>
+        .is-invalid {
+            border: 1px solid #ff0000 !important;
+        }
+    </style>
+
     <div class="row form-mar">
         <div class="col-8">
             {{-- ====== BUYER & INFO ====== --}}
@@ -120,19 +126,19 @@
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label>Commission (%):</label>
-                                <input type="number" id="commission_percentage" name="commission_percentage" class="form-control" step="0.01" min="0">
+                                <input type="number" id="commission_percentage" name="commission_percentage" class="form-control" step="0.01" min="0" value="{{ $quotation->commission_percentage }}">
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label>Amt/Ton:</label>
-                                <input type="number" id="commission_amount_per_ton" name="commission_amount_per_ton" class="form-control" step="0.01" min="0">
+                                <input type="number" id="commission_amount_per_ton" name="commission_amount_per_ton" class="form-control" step="0.01" min="0" value="{{ $quotation->commission_amount_per_ton }}">
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label>Total Commission:</label>
-                                <input type="number" id="commission" name="commission" class="form-control" step="0.01" value="{{ old('commission', $quotation->commission) }}" readonly>
+                                <input type="number" id="commission" name="commission" class="form-control" step="0.01" readonly value="{{ $quotation->commission }}">
                             </div>
                         </div>
                     </div>
@@ -268,22 +274,24 @@
                         <tr>
                             <th style="min-width:150px;">Bag Type</th>
                             <th style="min-width:130px;">Packing</th>
-                            {{-- <th style="min-width:110px;">Color</th> --}}
                             <th style="min-width:100px;">Size (kg)</th>
                             <th style="min-width:100px;">Qty (MT)</th>
                             <th style="min-width:100px; display: none;">Maunds</th>
                             <th style="min-width:100px;">Bags</th>
-                            <th style="min-width:110px; display: none;">Total KGs</th>
+                            <th style="min-width:100px; display: none;">Total KGs</th>
+                            <th style="min-width:100px;">Stuffing/Cont</th>
+                            <th style="min-width:100px;">Containers</th>
                             <th style="min-width:110px;">Rate/Ton</th>
                             <th style="min-width:110px; display: none;">Rate/Mnd</th>
                             <th style="min-width:130px;">Amount</th>
-                            <th style="min-width:130px;">Amount (PKR)</th>
+                            <th style="min-width:130px; display: none;">Amount (PKR)</th>
                             <th>Action</th>
                         </tr>
                     </thead>
                     <tbody id="packingItems">
                         @forelse ($quotation->packingItems as $i => $item)
                         <tr class="packing-item">
+                            <input type="hidden" name="packing_items[{{ $i }}][id]" value="{{ $item->id }}">
                             <td class="p-2">
                                 <select name="packing_items[{{ $i }}][bag_type_id]" class="form-control select2">
                                     <option value="">Bag Type</option>
@@ -300,14 +308,6 @@
                                     @endforeach
                                 </select>
                             </td>
-                            {{-- <td class="p-2">
-                                <select name="packing_items[{{ $i }}][bag_color_id]" class="form-control select2">
-                                    <option value="">Color</option>
-                                    @foreach ($bagColors as $color)
-                                        <option value="{{ $color->id }}" {{ $item->bag_color_id == $color->id ? 'selected' : '' }}>{{ $color->color }}</option>
-                                    @endforeach
-                                </select>
-                            </td> --}}
                             <td class="p-2">
                                 <input type="number" name="packing_items[{{ $i }}][bag_size]" class="form-control bag-size" step="0.01" value="{{ $item->bag_size }}" min="0">
                             </td>
@@ -324,6 +324,12 @@
                                 <input type="number" name="packing_items[{{ $i }}][total_kgs]" class="form-control total-kgs" value="{{ $item->total_kgs }}" readonly>
                             </td>
                             <td class="p-2">
+                                <input type="number" name="packing_items[{{ $i }}][stuffing_in_container]" class="form-control stuffing-in-container" value="{{ $item->stuffing_in_container }}" step="0.001" min="0">
+                            </td>
+                            <td class="p-2">
+                                <input type="number" name="packing_items[{{ $i }}][no_of_containers]" class="form-control no-of-containers" value="{{ $item->no_of_containers }}" min="0">
+                            </td>
+                            <td class="p-2">
                                 <input type="number" name="packing_items[{{ $i }}][rate]" class="form-control rates" value="{{ $item->rate }}" step="0.01" min="0">
                             </td>
                             <td class="p-2" style="display: none;">
@@ -332,7 +338,7 @@
                             <td class="p-2">
                                 <input type="number" name="packing_items[{{ $i }}][amount]" class="form-control amount" value="{{ $item->amount }}" min="0" readonly>
                             </td>
-                            <td class="p-2">
+                            <td class="p-2" style="display: none;">
                                 <input type="number" name="packing_items[{{ $i }}][amount_pkr]" class="form-control amount_pkr" value="{{ $item->amount_pkr }}" min="0" readonly>
                             </td>
                             <td class="text-center p-2">
@@ -359,14 +365,6 @@
                                     @endforeach
                                 </select>
                             </td>
-                            {{-- <td class="p-2">
-                                <select name="packing_items[0][bag_color_id]" class="form-control select2">
-                                    <option value="">Color</option>
-                                    @foreach ($bagColors as $color)
-                                        <option value="{{ $color->id }}">{{ $color->color }}</option>
-                                    @endforeach
-                                </select>
-                            </td> --}}
                             <td class="p-2">
                                 <input type="number" name="packing_items[0][bag_size]" class="form-control bag-size" step="0.01" value="0" min="0">
                             </td>
@@ -379,8 +377,14 @@
                             <td class="p-2">
                                 <input type="number" name="packing_items[0][no_of_bags]" class="form-control no_of_bags" value="0" readonly>
                             </td>
-                            <td class="p-2">
+                            <td class="p-2" style="display: none;">
                                 <input type="number" name="packing_items[0][total_kgs]" class="form-control total-kgs" value="0" readonly>
+                            </td>
+                            <td class="p-2">
+                                <input type="number" name="packing_items[0][stuffing_in_container]" class="form-control stuffing-in-container" value="0" step="0.001" min="0">
+                            </td>
+                            <td class="p-2">
+                                <input type="number" name="packing_items[0][no_of_containers]" class="form-control no-of-containers" value="0" min="0">
                             </td>
                             <td class="p-2">
                                 <input type="number" name="packing_items[0][rate]" class="form-control rates" value="0" step="0.01" min="0">
@@ -391,7 +395,7 @@
                             <td class="p-2">
                                 <input type="number" name="packing_items[0][amount]" class="form-control amount" value="0" min="0" readonly>
                             </td>
-                            <td class="p-2">
+                            <td class="p-2" style="display: none;">
                                 <input type="number" name="packing_items[0][amount_pkr]" class="form-control amount_pkr" value="0" min="0" readonly>
                             </td>
                             <td class="text-center p-2">
@@ -408,35 +412,11 @@
             <div class="row mt-2 pr-2">
                 <div class="col-md-12 text-right">
                     <strong>Total Packing MT: <span id="display_total_mt">0.000</span></strong>
-                </div>
-            </div>
-
-            {{-- ====== GLOBAL CONTAINERS & STUFFING ====== --}}
-            <div class="mt-4">
-                <h6 class="header-heading-sepration">Containers & Stuffing</h6>
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label>Stuffing (MT)</label>
-                            <input type="number" name="stuffing_in_container" id="qty_stuffing" class="form-control" step="0.001" value="{{ old('stuffing_in_container', $quotation->stuffing_in_container) }}" min="0">
-                            <small class="text-danger" id="stuffing_error" style="display:none;">Stuffing cannot exceed Total Packing MT.</small>
-                        </div>
-                    </div>
-                    <div class="col-md-4" style="display: none;">
-                        <div class="form-group">
-                            <label>Stuffing (Maunds)</label>
-                            <input type="number" name="stuffing_maunds" id="qty_stuffing_mnd" class="form-control" step="0.01" value="{{ old('stuffing_maunds', $quotation->stuffing_maunds) }}" min="0">
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label>Containers</label>
-                            <input type="number" name="no_of_containers" id="qty_containers" class="form-control" step="1" value="{{ old('no_of_containers', $quotation->no_of_containers) }}" min="0">
-                        </div>
+                    <div id="sauda_qty_warning" class="text-danger" style="display:none; font-weight:bold;">
+                        Warning: Quotation Qty (<span id="warn_quot_qty">0</span> MT) exceeds Sauda Qty (<span id="warn_sauda_qty">0</span> MT).
                     </div>
                 </div>
             </div>
-        </div>
 
         <div class="col-md-12 mt-3">
             <h6 class="header-heading-sepration">Additional Information</h6>
@@ -447,7 +427,7 @@
     </div>
 
     <div class="row bottom-button-bar">
-        <div class="col-12 mb-3">
+        <div class="col-12 mb-3 text-right">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
             <button type="submit" class="btn btn-primary submitbutton">Update Quotation</button>
         </div>
@@ -479,17 +459,28 @@ $(document).ready(function() {
         });
     });
 
+    $('#productSelect').on('change', function() {
+        var productId = $(this).val();
+        if (productId) {
+            $.get('{{ route('get.product_specs.quotation', '') }}/' + productId + '?prefill=1', function(data) {
+                $('#productSpecs').html(data);
+                $('#specificationsSection').show();
+            });
+        } else {
+            $('#productSpecs').html('');
+            $('#specificationsSection').hide();
+        }
+    });
+
     // ---- ROW LEVEL CALCULATIONS ----
     $(document).on('input', '.metric-tons, .bag-size', function() {
         let row = $(this).closest('tr');
         calculateRowFromMT(row);
-        calculateOverallTotals();
     });
 
     $(document).on('input', '.maunds', function() {
         let row = $(this).closest('tr');
         calculateRowFromMaunds(row);
-        calculateOverallTotals();
     });
 
     $(document).on('input', '.rates', function() {
@@ -502,6 +493,24 @@ $(document).ready(function() {
         calculateRowFromRateMnd(row);
     });
 
+    $(document).on('input', '.stuffing-in-container', function() {
+        let row = $(this).closest('tr');
+        let mt = parseFloat(row.find('.metric-tons').val()) || 0;
+        let stuffing = parseFloat($(this).val()) || 0;
+        if (stuffing > 0) {
+            row.find('.no-of-containers').val(Math.ceil(mt / stuffing));
+        }
+    });
+
+    $(document).on('input', '.no-of-containers', function() {
+        let row = $(this).closest('tr');
+        let mt = parseFloat(row.find('.metric-tons').val()) || 0;
+        let containers = parseInt($(this).val()) || 0;
+        if (containers > 0) {
+            row.find('.stuffing-in-container').val((mt / containers).toFixed(3));
+        }
+    });
+
     function calculateRowFromMT(row) {
         let mt = parseFloat(row.find('.metric-tons').val()) || 0;
         let totalKgs = mt * 1000;
@@ -510,6 +519,13 @@ $(document).ready(function() {
         row.find('.maunds').val((mt * 25).toFixed(2));
         row.find('.total-kgs').val(totalKgs.toFixed(2));
         row.find('.no_of_bags').val(Math.ceil(bags));
+        
+        // Auto-calculate containers if stuffing is set
+        let stuffing = parseFloat(row.find('.stuffing-in-container').val()) || 0;
+        if (stuffing > 0) {
+            row.find('.no-of-containers').val(Math.ceil(mt / stuffing));
+        }
+        
         calculateRowAmount(row);
     }
 
@@ -522,6 +538,13 @@ $(document).ready(function() {
         row.find('.metric-tons').val(mt.toFixed(3));
         row.find('.total-kgs').val(totalKgs.toFixed(2));
         row.find('.no_of_bags').val(Math.ceil(bags));
+        
+        // Auto-calculate containers if stuffing is set
+        let stuffing = parseFloat(row.find('.stuffing-in-container').val()) || 0;
+        if (stuffing > 0) {
+            row.find('.no-of-containers').val(Math.ceil(mt / stuffing));
+        }
+
         calculateRowAmount(row);
     }
 
@@ -544,13 +567,11 @@ $(document).ready(function() {
         let amount = mt * rateMt;
         row.find('.amount').val(amount.toFixed(2));
         row.find('.amount_pkr').val((amount * currencyRate).toFixed(2));
-        
-        // Trigger commission recalculation
         calculateOverallTotals();
     }
 
+    let selectedSaudaQty = {{ $quotation->exportSoda->total_qty_mt ?? 0 }};
 
-    // ---- GLOBAL TOTALS & STUFFING VALIDATION ----
     function calculateOverallTotals() {
         let totalMt = 0;
         let totalAmount = 0;
@@ -559,9 +580,18 @@ $(document).ready(function() {
             totalAmount += parseFloat($(this).find('.amount').val()) || 0;
         });
         $('#display_total_mt').text(totalMt.toFixed(3));
-        validateStuffing(totalMt);
         
-        // Recalculate commission if percentage or amt/ton is present
+        // Sauda Quantity Validation
+        if (selectedSaudaQty > 0 && totalMt > selectedSaudaQty) {
+            $('#sauda_qty_warning').show();
+            $('#warn_quot_qty').text(totalMt.toFixed(3));
+            $('#warn_sauda_qty').text(selectedSaudaQty.toFixed(3));
+            $('.submitbutton').attr('disabled', true);
+        } else {
+            $('#sauda_qty_warning').hide();
+            $('.submitbutton').attr('disabled', false);
+        }
+        
         calculateCommissionFields(totalAmount, totalMt);
     }
 
@@ -616,53 +646,6 @@ $(document).ready(function() {
     }
 
 
-    function validateStuffing(totalMt) {
-        let s = parseFloat($('#qty_stuffing').val()) || 0;
-        if (s > totalMt) {
-            $('#stuffing_error').show();
-            $('#qty_stuffing, #qty_stuffing_mnd').addClass('is-invalid');
-            $('.submitbutton').attr('disabled', true);
-        } else {
-            $('#stuffing_error').hide();
-            $('#qty_stuffing, #qty_stuffing_mnd').removeClass('is-invalid');
-            $('.submitbutton').attr('disabled', false);
-        }
-    }
-
-    $('#qty_stuffing').on('input', function() {
-        let s = parseFloat($(this).val()) || 0;
-        $('#qty_stuffing_mnd').val((s * 25).toFixed(2));
-        let totalMt = parseFloat($('#display_total_mt').text()) || 0;
-        validateStuffing(totalMt);
-        recalcContainersFromStuffing(totalMt);
-    });
-
-    $('#qty_stuffing_mnd').on('input', function() {
-        let sm = parseFloat($(this).val()) || 0;
-        let s = sm / 25;
-        $('#qty_stuffing').val(s.toFixed(3));
-        let totalMt = parseFloat($('#display_total_mt').text()) || 0;
-        validateStuffing(totalMt);
-        recalcContainersFromStuffing(totalMt);
-    });
-
-    $('#qty_containers').on('input', function() {
-        let c = parseInt($(this).val()) || 0;
-        let totalMt = parseFloat($('#display_total_mt').text()) || 0;
-        if (c > 0 && totalMt > 0) {
-            let s = totalMt / c;
-            $('#qty_stuffing').val(s.toFixed(3));
-            $('#qty_stuffing_mnd').val((s * 25).toFixed(2));
-            validateStuffing(totalMt);
-        }
-    });
-
-    function recalcContainersFromStuffing(totalMt) {
-        let s = parseFloat($('#qty_stuffing').val()) || 0;
-        if (s > 0 && totalMt > 0) {
-            $('#qty_containers').val(Math.ceil(totalMt / s));
-        }
-    }
 
     // Initialization on load
     calculateOverallTotals();
@@ -691,6 +674,7 @@ $(document).ready(function() {
         var saudaId = $(this).val();
         if (saudaId) {
             $.get('{{ route('quotation.get-sauda-details', '') }}/' + saudaId, function(data) {
+                selectedSaudaQty = parseFloat(data.total_qty_mt) || 0;
                 // Basic Info
                 $('#buyerSelect').val(data.buyer_id).trigger('change');
                 $('#productSelect').val(data.product_id).trigger('change');
@@ -750,26 +734,20 @@ $(document).ready(function() {
                 <td class="p-2">
                     <input type="number" name="packing_items[${index}][metric_tons]" class="form-control metric-tons" value="${item.metric_tons || 0}" step="0.001" min="0">
                 </td>
-                <td class="p-2" style="display: none;">
-                    <input type="number" name="packing_items[${index}][maunds]" class="form-control maunds" value="${item.maunds || 0}" step="0.01" min="0">
-                </td>
-                <td class="p-2" style="display: none;">
-                    <input type="number" name="packing_items[${index}][total_kgs]" class="form-control total-kgs" value="${item.total_kgs || 0}" readonly>
-                </td>
                 <td class="p-2">
                     <input type="number" name="packing_items[${index}][no_of_bags]" class="form-control no_of_bags" value="${item.no_of_bags || 0}" readonly>
                 </td>
                 <td class="p-2">
-                    <input type="number" name="packing_items[${index}][rate]" class="form-control rates" value="${item.rate || 0}" step="0.01" min="0">
+                    <input type="number" name="packing_items[${index}][stuffing_in_container]" class="form-control stuffing-in-container" value="${item.stuffing_in_container || 0}" step="0.001" min="0">
                 </td>
-                <td class="p-2" style="display: none;">
-                    <input type="number" name="packing_items[${index}][rate_per_maund]" class="form-control rates_mnd" value="${item.rate_per_maund || 0}" step="0.01" min="0">
+                <td class="p-2">
+                    <input type="number" name="packing_items[${index}][no_of_containers]" class="form-control no-of-containers" value="${item.no_of_containers || 0}" min="0">
+                </td>
+                <td class="p-2">
+                    <input type="number" name="packing_items[${index}][rate]" class="form-control rates" value="${item.rate || 0}" step="0.01" min="0">
                 </td>
                 <td class="p-2">
                     <input type="number" name="packing_items[${index}][amount]" class="form-control amount" value="${item.amount || 0}" min="0" readonly>
-                </td>
-                <td class="p-2">
-                    <input type="number" name="packing_items[${index}][amount_pkr]" class="form-control amount_pkr" value="${item.amount_pkr || 0}" min="0" readonly>
                 </td>
                 <td class="text-center p-2">
                     <button type="button" class="btn btn-sm btn-danger remove-packing-item">
@@ -819,5 +797,39 @@ $(document).ready(function() {
             });
         });
     }
+
+    // Global AJAX Error Handler to Highlight Red Fields for Array Validation
+    $(document).ajaxComplete(function(event, jqXHR, settings) {
+        if (jqXHR.status === 422) {
+            let response = jqXHR.responseJSON;
+            if (response && response.errors) {
+                $.each(response.errors, function(key, value) {
+                    let fieldName = key;
+                    if (key.indexOf('.') !== -1) {
+                        let parts = key.split('.');
+                        fieldName = parts[0];
+                        for (let i = 1; i < parts.length; i++) {
+                            fieldName += '[' + parts[i] + ']';
+                        }
+                    }
+                    
+                    let $input = $('[name="' + fieldName + '"]');
+                    if ($input.length) {
+                        $input.addClass('is-invalid');
+                        if ($input.hasClass('select2-hidden-accessible')) {
+                            $input.next('.select2-container').find('.select2-selection').css('border-color', '#ff0000');
+                        }
+                    }
+                });
+            }
+        }
+    });
+
+    $(document).on('input change', 'input, select', function() {
+        $(this).removeClass('is-invalid');
+        if ($(this).hasClass('select2-hidden-accessible')) {
+            $(this).next('.select2-container').find('.select2-selection').css('border-color', '');
+        }
+    });
 });
 </script>

@@ -1,18 +1,18 @@
 @extends('management.layouts.master')
 @section('title')
-    Export Loading Program
+    Export Loading Program Request
 @endsection
 @section('content')
     <div class="content-wrapper">
         <section id="extended">
             <div class="row w-100 mx-auto">
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-                    <h2 class="page-title">Export Loading Program</h2>
+                    <h2 class="page-title">Export Loading Program Request</h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
-                    <button onclick="openModal(this,'{{ route('export-loading-program.create') }}','Add Export Loading Program',false,'90%')"
+                    <button onclick="openModal(this,'{{ route('export-loading-program.create') }}','Add Export Loading Program Request',false,'90%')"
                         type="button" class="btn btn-primary position-relative ">
-                        Create Export Loading Program
+                        Create Loading Program Request
                     </button>
                 </div>
             </div>
@@ -41,17 +41,12 @@
                                 <table class="table table-striped m-0">
                                     <thead>
                                         <tr>
+                                            <th>ID</th>
                                             <th>EO No.</th>
                                             <th>DO No.</th>
-                                            <th>Buyer</th>
-                                            <th>Commodity</th>
-                                            <th>Ticket No.</th>
-                                            <th>Truck No.</th>
-                                            <th>Container No.</th>
-                                            <th>Factory</th>
-                                            <th>Gala</th>
-                                            <th class="text-right">Suggested Qty</th>
-                                            <th>Created</th>
+                                            <th>Vessel Name</th>
+                                            <th>Status</th>
+                                            <th>Created By</th>
                                             <th>Action</th>
                                         </tr>
                                     </thead>

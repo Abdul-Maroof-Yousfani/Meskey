@@ -396,6 +396,30 @@
                                 <td>{{ number_format($samplingRequest->lumpsum_deduction_kgs, 2) }} KG's </td>
                                 <td>{{ number_format($Deductionfromhelperfunction['lumpsum']['kgs_deduction'] ?? 0, 2) }} Rs.</td>
                             </tr>
+                            <tr class="other-deduction-row" data-other-deduction="true">
+                                <td>Other Deduction (if any)
+                                    <input type="hidden" name="other_deduction[slab_name]" value="Other Deduction">
+                                </td>
+                                <td>
+                                    <div class="input-group mb-0">
+                                        <input type="number" step="any" class="form-control editable-field"
+                                            name="other_deduction[kg_value]" id="other_deduction_kg"
+                                            value="{{ $existingOtherDeductionKg }}" placeholder="Enter Rs./KG">
+                                        <div class="input-group-append">
+                                            <span class="input-group-text text-sm">Rs./KG</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-group mb-0">
+                                        <input type="text" class="form-control" name="other_deduction[kg_amount]"
+                                            id="other_deduction_amount_display"
+                                            value="{{ number_format($existingOtherDeductionAmount, 2) }}" readonly>
+                                        <input type="hidden" class="form-control" name="other_deduction[deduction_amount]"
+                                            id="other_deduction_amount" value="{{ $existingOtherDeductionAmount }}">
+                                    </div>
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -607,7 +631,7 @@
 
                                 <!-- Other Deduction Row -->
                                 <tr class="other-deduction-row" data-other-deduction="true">
-                                    <td><strong>Other Deduction</strong>
+                                    <td><strong>Other Deduction (if any)</strong>
                                         <input type="hidden" name="other_deduction[slab_name]"
                                             value="Other Deduction">
                                     </td>

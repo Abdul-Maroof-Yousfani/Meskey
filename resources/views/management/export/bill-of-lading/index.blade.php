@@ -47,6 +47,7 @@
                                             <th width="15%">Delivery Order</th>
                                             <th width="15%">Customer</th>
                                             <th width="10%">Carrier</th>
+                                            <th width="10%">Status</th>
                                             <th width="10%">Action</th>
                                         </tr>
                                     </thead>

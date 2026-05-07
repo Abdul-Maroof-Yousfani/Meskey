@@ -109,6 +109,22 @@
                             value="{{ $delivery_order->ref_no }}">
                     </div>
                 </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="form-label">Withhold %:</label>
+                        <input type="number" step="any" name="so_withhold_percentage" id="so_withhold_percentage" 
+                            value="{{ $delivery_order->so_withhold_percentage }}"
+                            class="form-control" onkeyup="calculate_so_withhold()" onchange="calculate_so_withhold()">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="form-label">Amount to be Held:</label>
+                        <input type="number" step="any" name="so_held_amount" id="so_held_amount" 
+                            value="{{ $delivery_order->so_held_amount }}"
+                            class="form-control" readonly>
+                    </div>
+                </div>
                 
                 <div class="col-12 mt-3 advanced" style="display: {{ $sale_order_of_delivery_order->pay_type_id == 10 ? 'block' : 'none' }}">
                     <h6 class="header-heading-sepration">Payment Details</h6>
@@ -142,7 +158,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-3 advanced" style="display: {{ $sale_order_of_delivery_order->pay_type_id == 10 ? 'block' : 'none' }}">
+                <div class="col-md-2 advanced" style="display: {{ $sale_order_of_delivery_order->pay_type_id == 10 ? 'block' : 'none' }}">
                     <div class="form-group">
                         <label class="form-label">Advance Amount:</label>
                         <input type="number" step="any" name="advance_amount" onchange=""
@@ -150,12 +166,19 @@
                             readonly>
                     </div>
                 </div>
-                <div class="col-md-3 advanced" style="display: {{ $sale_order_of_delivery_order->pay_type_id == 10 ? 'block' : 'none' }}">
+                <div class="col-md-2 advanced" style="display: {{ $sale_order_of_delivery_order->pay_type_id == 10 ? 'block' : 'none' }}">
                     <div class="form-group">
-                        <label class="form-label">Withhold Amount (10% of Advance):</label>
+                        <label class="form-label">Withhold %:</label>
+                        <input type="number" step="any" id="withhold_percentage" value="10"
+                            class="form-control" onkeyup="calculate_withhold_by_percentage(this)" onchange="calculate_withhold_by_percentage(this)">
+                    </div>
+                </div>
+                <div class="col-md-2 advanced" style="display: {{ $sale_order_of_delivery_order->pay_type_id == 10 ? 'block' : 'none' }}">
+                    <div class="form-group">
+                        <label class="form-label">Withhold Amount:</label>
                         <input type="number" step="any" name="withhold_amount" value="{{ $delivery_order->withhold_amount }}"
                             id="withhold_amount"
-                            class="form-control" readonly>
+                            class="form-control" onkeyup="calculate_percentage_by_withhold(this)" onchange="calculate_percentage_by_withhold(this)">
                     </div>
                 </div>
                 <div class="col-md-3 advanced" style="display: {{ $sale_order_of_delivery_order->pay_type_id == 10 ? 'block' : 'none' }}">
@@ -329,23 +352,20 @@
                                         id="no_of_bags_{{ $index }}"
                                         value="{{ round(($data->qty ?? 0) / $data->bag_size) }}" readonly
                                         class="form-control no_of_bags" step="0.01" min="0">
-
-                                    <span style="font-size: 14px;;">Used Quantity:
-                                        {{ delivery_order_bags_used($data->so_data_id) }}</span>
-                                    <br />
-                                    <span style="font-size: 14px;">Balance:
-                                        {{ delivery_order_balance($data->so_data_id) }}</span>
-
                                 </td>
                                 <td>
                                     <input type="text" name="qty[]" id="qty_{{ $index }}"
                                         value="{{ $data->qty }}" class="form-control qty" step="0.01" data-balance="{{ delivery_order_balance($data->so_data_id) + $data->no_of_bags }}"
                                         min="0" onchange="check_balance(this, 'no_of_bags_{{ $index }}')" onkeyup="check_balance(this, 'no_of_bags_{{ $index }}')" oninput="calc(this)" @readonly($delivery_order->salesOrder->pay_type_id == 10)>
-                                    
-                                    <input type="hidden" name="current_qty[]" id="qty_{{ $index }}"
-                                        value="{{ $data->qty }}" class="form-control qty" step="0.01" data-balance="{{ delivery_order_balance($data->so_data_id) + $data->no_of_bags }}"
-                                        min="0" onchange="check_balance(this, 'no_of_bags_{{ $index }}')" onkeyup="check_balance(this, 'no_of_bags_{{ $index }}')" oninput="calc(this)">
-                             
+                                     
+                                    <input type="hidden" name="current_qty[]" id="current_qty_{{ $index }}" value="{{ $data->qty }}">
+
+                                    <span style="font-size: 14px;;">Used Quantity:
+                                        {{ delivery_order_qty_used($data->so_data_id) }}</span>
+                                    <br />
+                                    <span style="font-size: 14px;">Balance:
+                                        {{ delivery_order_qty_balance($data->so_data_id) }}</span>
+                                     
                                     </td>
                                 <td>
                                     <input type="text" name="rate[]" id="rate_{{ $index }}"
@@ -433,7 +453,8 @@
         get_so_detail();
         update_delivery_date_min();
 
-
+        // Calculate initial percentage
+        calculate_percentage_by_withhold(document.getElementById('withhold_amount'));
     });
 
 
@@ -465,21 +486,21 @@
     }
 
     function check_balance(el, target) {
-      const balance = $(el).data("balance");
-      const value = $("#" + target).val();
-      
-      if(value > balance) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Limit Exceeded',
-            text: 'Cannot proceed more than ' + balance,
-        });
-            
-        $("#" + target).addClass("is-invalid");
-      } else {
-        $("#" + target).removeClass("is-invalid");
-      }
-  }
+        // const balance = $(el).data("balance");
+        // const value = $("#" + target).val();
+
+        // if (value > balance) {
+        //     Swal.fire({
+        //         icon: 'warning',
+        //         title: 'Limit Exceeded',
+        //         text: 'Cannot proceed more than ' + balance,
+        //     });
+
+        //     $("#" + target).addClass("is-invalid");
+        // } else {
+        //     $("#" + target).removeClass("is-invalid");
+        // }
+    }
 
     function applySaudaType(saudaType) {
         const normalized = (saudaType || '').toLowerCase();
@@ -684,13 +705,50 @@
 
         if (sum > 0) {
             $("#advance_amount").val(sum.toFixed(0));
-            $("#withhold_amount").val((sum * 0.1).toFixed(0));
+            calculate_withhold_by_percentage(document.getElementById('withhold_percentage'));
         } else {
             $("#advance_amount").val("");
             $("#withhold_amount").val("0");
+            $("#withhold_percentage").val("10");
         }
 
         update_delivery_date_min();
+    }
+
+    function calculate_withhold_by_percentage(el) {
+        let percentage = parseFloat($(el).val()) || 0;
+        if (percentage > 100) {
+            percentage = 100;
+            $(el).val(100);
+        }
+        if (percentage < 0) {
+            percentage = 0;
+            $(el).val(0);
+        }
+
+        const advance = parseFloat($("#advance_amount").val()) || 0;
+        const withhold = (advance * (percentage / 100)).toFixed(0);
+        $("#withhold_amount").val(withhold);
+        change_withhold_amount();
+    }
+
+    function calculate_percentage_by_withhold(el) {
+        let withhold = parseFloat($(el).val()) || 0;
+        const advance = parseFloat($("#advance_amount").val()) || 0;
+
+        if (advance > 0) {
+            if (withhold > advance) {
+                withhold = advance;
+                $(el).val(advance);
+            }
+            if (withhold < 0) {
+                withhold = 0;
+                $(el).val(0);
+            }
+            const percentage = (withhold / advance) * 100;
+            $("#withhold_percentage").val(percentage.toFixed(2));
+        }
+        change_withhold_amount();
     }
 
     function update_delivery_date_min() {
@@ -805,6 +863,7 @@
             </td>
             <td>
                 <input type="text" name="qty[]" id="qty_${index}" class="form-control qty" step="0.01" min="0" oninput="calc(this)">
+                <input type="hidden" name="current_qty[]" value="0">
             </td>
             <td>
                 <input type="text" name="rate[]" id="rate_${index}" onkeyup="calc(this)" class="form-control rate" step="0.01" min="0">
@@ -1076,6 +1135,8 @@
                 // $("#payment_term_id").trigger("change");
 
                 so_amount = res.so_amount;
+                
+                calculate_so_withhold();
 
                 // Re-apply saved location/arrival/section after refreshing maps
                 $("#locations").val(String(initialLocationId || ''));
@@ -1083,6 +1144,11 @@
 
                 if (!isInitialLoad) {
                     $("#delivery_date").val(res.delivery_date);
+                }
+
+
+                if (res.remarks !== null && res.remarks !== undefined) {
+                    $("#remarks").val(res.remarks);
                 }
                 isInitialLoad = false;
                 $("#delivery_date").prop("readonly", false);
@@ -1194,6 +1260,13 @@
                 console.error("Error:", error);
             }
         });
+    }
+
+     function calculate_so_withhold() {
+        const percentage = parseFloat($("#so_withhold_percentage").val()) || 0;
+        const totalAmount = parseFloat(so_amount) || 0;
+        const heldAmount = (totalAmount * (percentage / 100)).toFixed(2);
+        $("#so_held_amount").val(heldAmount);
     }
 
      $('.select2').on('select2:open', function (e) {

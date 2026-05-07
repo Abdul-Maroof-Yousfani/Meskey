@@ -95,7 +95,6 @@ trait HasApprovalPurchaseOrder
         $role_id = null;
 
         if(!auth()->user()->parent_user_id) {
-
             $role_id = auth()->user()->roles()->latest()->first()->id;
         } else {
             $user = \App\Models\User::find(auth()->user()->parent_user_id);
@@ -485,20 +484,37 @@ trait HasApprovalPurchaseOrder
             return;
         }
 
-        $newCycle = $this->getCurrentApprovalCycle() + 1;
+        $currentCycle = $this->getCurrentApprovalCycle();
+        $newCycle = $currentCycle + 1;
 
-        foreach ($module->roles as $moduleRole) {
-            ApprovalRow::create([
-                'module_id' => $module->id,
-                'record_id' => $this->id,
-                'role_id' => $moduleRole->role_id,
-                'required_count' => $moduleRole->approval_count,
-                'current_count' => 0,
-                'approval_cycle' => $newCycle,
-                'status' => 'pending'
-            ]);
+        // Get the role from the current cycle to ensure consistency after revert
+        $role_id = $this->approvalRows()
+            ->where('module_id', $module->id)
+            ->where('approval_cycle', $currentCycle)
+            ->value('role_id');
+
+        // Fallback to original logic if no previous row exists
+        if (!$role_id) {
+            if(!auth()->user()->parent_user_id) {
+                $role_id = auth()->user()->roles()->latest()->first()->id;
+            } else {
+                $user = \App\Models\User::find(auth()->user()->parent_user_id);
+                $child = $user->children()->where("purchase_order_approval", true)->first();
+                $role_id = $child->roles()->latest()->first()->id;
+            }
         }
+
+        ApprovalRow::create([
+            'module_id' => $module->id,
+            'record_id' => $this->id,
+            'role_id' => $role_id,
+            'required_count' => 1,
+            'current_count' => 0,
+            'approval_cycle' => $newCycle,
+            'status' => 'pending'
+        ]);
     }
+
 
     protected function onApprovalComplete()
     {

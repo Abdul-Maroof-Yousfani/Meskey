@@ -139,6 +139,7 @@
             @foreach ($purchaseRequest->PurchaseData as $loopIndex => $item)
             @php
                 $rowId = $item->is_single_job_order == 1 ? "pre_" . $item->JobOrder->pluck("job_order_id")->toArray()[0] . "-" . $loopIndex : $loopIndex;
+                $isApproved = in_array(strtolower($item->am_approval_status), ['approved', 'rejected']);
             @endphp
             <tr id="row_{{ $rowId }}" class="{{ $item->is_single_job_order ? 'jo-' . $item->JobOrder->pluck("job_order_id")->toArray()[0] : '' }}">
                 <input type="hidden" name="item_row_id[]" value="{{ $item->id }}">
@@ -146,12 +147,15 @@
                 <td style="min-width: 450px;">
 
                         <select name="item_id[]" id="item_id_{{ $rowId }}" onchange="get_uom('{{ $rowId }}')"
-                            class="form-control item-select select2Dropdown" data-index="{{ $rowId }}" style="width: 100%;">
+                            class="form-control item-select select2Dropdown" data-index="{{ $rowId }}" style="width: 100%;" @disabled($isApproved)>
                             <option value="">Select Item</option>
                             @foreach($items as $product)
                                 <option value="{{ $product->id }}" data-uom="{{ $product->unitOfMeasure->name }}" @selected($product->id == $item->item->id)>{{ $product->name }}</option>
                             @endforeach
                         </select>
+                        @if($isApproved)
+                            <input type="hidden" name="item_id[]" value="{{ $item->item->id }}">
+                        @endif
 
 
                 <input type="hidden" name="current_qty[]" value="{{ $item->qty }}" />
@@ -166,16 +170,6 @@
 
                 <td class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">
                     @php
-                        $jo_size = $jo_data->bag_size ?? ($jo_data?->bagSize?->size ?? '');
-                        $current_size = $item->size;
-                        $display_size = (is_numeric($jo_size) && $jo_size > 0) ? $jo_size : (getSizeById($current_size)->size ?? $current_size);
-                    @endphp
-                    <input type="text" id="size_{{ $rowId }}" name="size[]" class="form-control size-input-check" placeholder="Size"
-                        value="{{ $display_size }}" {{ (is_numeric($jo_size) && $jo_size > 0) ? 'readonly' : '' }}>
-                </td>
-
-                <td style="min-width: 150px;">
-                    @php
                         $jo_data = null;
                         if($item->is_single_job_order == 1) {
                             if($item->module_type == 'packing') {
@@ -184,6 +178,16 @@
                                 $jo_data = \App\Models\Production\JobOrder\JobOrderPackingSubItem::find($item->packing_id);
                             }
                         }
+                        $jo_size = $jo_data->bag_size ?? ($jo_data?->bagSize?->size ?? '');
+                        $current_size = $item->size;
+                        $display_size = (is_numeric($jo_size) && $jo_size > 0) ? $jo_size : (getSizeById($current_size)->size ?? $current_size);
+                    @endphp
+                    <input type="text" id="size_{{ $rowId }}" name="size[]" class="form-control size-input-check" placeholder="Size"
+                        value="{{ $display_size }}" {{ $item->is_single_job_order == 1 || (is_numeric($jo_size) && $jo_size > 0) || $isApproved ? 'readonly' : '' }}>
+                </td>
+
+                <td style="min-width: 150px;">
+                    @php
                         $jo_balance = 0;
                         if($jo_data) {
                             if($item->module_type == 'packing') {
@@ -197,7 +201,7 @@
                                         step="0.01" min="0" placeholder="Qty" value="{{ $item->qty }}" 
                                         @if($item->is_single_job_order == 1)
                                             data-balance="{{ $item->qty + (float)$jo_balance }}"
-                                        @endif>
+                                        @endif @readonly($isApproved)>
                     @if($item->is_single_job_order == 1)
                         <div class="mt-1" style="font-size: 11px;">
                             <strong>Limit:</strong> {{ $item->qty + (float)$jo_balance }} <br>
@@ -226,13 +230,16 @@
 
                  <td class="bag-only" style="min-width: 300px;">
 
-                    <select id="brands_{{ $rowId }}" name="brands[]" class="form-control item-select color-select" {{ $jo_data?->brand_id ? 'disabled' : '' }}>
+                    <select id="brands_{{ $rowId }}" name="brands[]" class="form-control item-select color-select" {{ $jo_data?->brand_id || $isApproved ? 'disabled' : '' }}>
                         <option value="">Select Brand</option>
                         @foreach(getAllBrands() ?? [] as $brand)
                         <option @selected($brand->id == $item->brand_id) value="{{ $brand->id }}">
                             {{ $brand->name }}</option>
                         @endforeach
                     </select>
+                    @if($isApproved && !$jo_data?->brand_id)
+                        <input type="hidden" name="brands[]" value="{{ $item->brand_id }}">
+                    @endif
                     @if($jo_data?->brand_id)
                         <input type="hidden" name="brands[]" value="{{ $item->brand_id }}">
                     @endif
@@ -243,25 +250,28 @@
                         $jo_min_weight = $jo_data?->min_weight_empty_bags ?? $jo_data?->empty_bag_weight ?? 0;
                     @endphp
                     <input type="number" name="min_weight[]" id="min_weight_{{ $rowId }}" class="form-control min-weight-input"
-                        step="0.01" min="0" value="{{ $item->min_weight }}" placeholder="Min Weight" {{ $jo_min_weight > 0 ? 'readonly' : '' }}>
+                        step="0.01" min="0" value="{{ $item->min_weight }}" placeholder="Min Weight" {{ $jo_min_weight > 0 || $isApproved ? 'readonly' : '' }}>
                 </td>
 
                 <td class="bag-only" style="min-width: 150px;"><input type="number" name="tolerance[]" id="tolerance_{{ $rowId }}" class="form-control tolerance-input"
                         step="0.01" value="{{ $item->tolerance ?? 0 }}" placeholder="Tolerance" readonly></td>
 
                 <td class="bag-only" style="min-width: 150px;"><input type="number" name="tolerance_percentage[]" id="tolerance_percentage_{{ $rowId }}" class="form-control tolerance-percentage-input"
-                        step="0.01" min="0" max="100" value="{{ $item->tolerance_percentage }}" placeholder="Tol. %"></td>
+                        step="0.01" min="0" max="100" value="{{ $item->tolerance_percentage }}" placeholder="Tol. %" @readonly($isApproved)></td>
 
            
                 <td class="bag-only" style="min-width: 300px;">
 
-                    <select id="color_{{ $rowId }}" name="color[]" class="form-control item-select color-select" {{ $jo_data?->bag_color_id ? 'disabled' : '' }}>
+                    <select id="color_{{ $rowId }}" name="color[]" class="form-control item-select color-select" {{ $jo_data?->bag_color_id || $isApproved ? 'disabled' : '' }}>
                         <option value="">Select Color</option>
                         @foreach(getAllColors() ?? [] as $color)
                         <option @selected($color->id == $item->color) value="{{ $color->id }}">
                             {{ $color->color }}</option>
                         @endforeach
                     </select>
+                    @if($isApproved && !$jo_data?->bag_color_id)
+                        <input type="hidden" name="color[]" value="{{ $item->color }}">
+                    @endif
                     @if($jo_data?->bag_color_id)
                         <input type="hidden" name="color[]" value="{{ $item->color }}">
                     @endif
@@ -269,15 +279,18 @@
 
                 <td class="bag-only" style="min-width: 300px;"><input type="text" name="construction_per_square_inch[]" id="construction_per_square_inch_{{ $rowId }}"
                         class="form-control" step="0.01" min="0" value="{{ $item->construction_per_square_inch }}"
-                        placeholder="Cons./sq. in."></td>
+                        placeholder="Cons./sq. in." @readonly($isApproved)></td>
 
                 <td class="bag-only" style="min-width: 250px;">
-                    <select name="size_id[]" id="size_id_{{ $rowId }}" class="form-control select2Dropdown">
+                    <select name="size_id[]" id="size_id_{{ $rowId }}" class="form-control select2Dropdown" @disabled($isApproved)>
                         <option value="">Select Size</option>
                         @foreach($sizes as $sz)
                             <option value="{{ $sz->id }}" @selected($sz->id == $item->size_id)>{{ $sz->size }}</option>
                         @endforeach
                     </select>
+                    @if($isApproved)
+                        <input type="hidden" name="size_id[]" value="{{ $item->size_id }}">
+                    @endif
                 </td>
 
                 <td class="bag-only" style="min-width: 350px;">
@@ -285,7 +298,7 @@
                         $selectedStitchings = $item->stitching ? array_filter(array_map('trim', explode(',', $item->stitching))) : [];
                     @endphp
 
-                    <select id="stitching_{{ $rowId }}" name="stitching[{{ $rowId }}][]" class="form-control item-select stitching-select select2" multiple {{ $jo_data?->stitching_id ? 'disabled' : '' }}>
+                    <select id="stitching_{{ $rowId }}" name="stitching[{{ $rowId }}][]" class="form-control item-select stitching-select select2" multiple {{ $jo_data?->stitching_id || $isApproved ? 'disabled' : '' }}>
                         <option value="">Select Stitching</option>
                         @foreach(getAllStitchings() ?? [] as $stitching)
                             <option value="{{ $stitching->id }}" @selected(in_array($stitching->id, $selectedStitchings))>
@@ -293,6 +306,11 @@
                             </option>
                         @endforeach
                     </select>
+                    @if($isApproved && !$jo_data?->stitching_id)
+                        @foreach($selectedStitchings as $sId)
+                            <input type="hidden" name="stitching[{{ $rowId }}][]" value="{{ $sId }}">
+                        @endforeach
+                    @endif
                     @if($jo_data?->stitching_id)
                         <input type="hidden" name="stitching[{{ $rowId }}][]" value="{{ $item->stitching }}">
                     @endif
@@ -300,11 +318,11 @@
 
 
                 <td class="bag-only" style="min-width: 200px;"><input type="text" name="micron[]" id="micron_{{ $rowId }}" class="form-control" 
-                        min="0" value="{{ $item->micron }}" placeholder="Micron"></td>
+                        min="0" value="{{ $item->micron }}" placeholder="Micron" @readonly($isApproved)></td>
 
                 <td class="bag-only" style="min-width: 450px;">
                 <input type="file" name="printing_sample[{{ $rowId }}][]" id="printing_sample_{{ $rowId }}"
-                    class="form-control" accept="image/*,application/pdf" multiple>
+                    class="form-control" accept="image/*,application/pdf" multiple @disabled($isApproved)>
             @if (!empty($item->printing_sample))
                         @foreach((array)$item->printing_sample as $sample)
                             <small class="d-block">
@@ -315,10 +333,14 @@
                 </td>
 
                 <td style="min-width: 400px;"><input type="text" name="remarks[]" id="remark_{{ $rowId }}" class="form-control bg-white"
-                        placeholder="line desc" value="{{ $item->remarks }}"></td>
+                        placeholder="line desc" value="{{ $item->remarks }}" @readonly($isApproved)></td>
 
-                <td style="min-width: 150px;"><button type="button" class="btn btn-danger btn-sm removeRowBtn"
-                        onclick="removeRow('{{ $rowId }}')" style="width:120px;"><i class="fa fa-trash"></i></button></td>
+                <td style="min-width: 150px;">
+                    @if(!$isApproved)
+                        <button type="button" class="btn btn-danger btn-sm removeRowBtn"
+                            onclick="removeRow('{{ $rowId }}')" style="width:120px;"><i class="fa fa-trash"></i></button>
+                    @endif
+                </td>
             </tr>
             @endforeach
         </tbody>
@@ -681,8 +703,13 @@
     }
     $(document).on('input', '.qty-input-check', function () {
         let input = $(this);
+        let balanceAttr = input.attr('data-balance');
+        if (typeof balanceAttr === 'undefined' || balanceAttr === false) {
+            return;
+        }
+
         let val = parseFloat(input.val()) || 0;
-        let balance = parseFloat(input.data('balance')) || 0;
+        let balance = parseFloat(balanceAttr) || 0;
         let category_id = $("#category_id_value").val();
 
         if (val > balance && category_id == 38) {

@@ -11,7 +11,8 @@ class ApprovalModuleRole extends Model
         'module_id',
         'role_id',
         'approval_count',
-        'approval_order'
+        'approval_order',
+        'condition'
     ];
 
     public function module()

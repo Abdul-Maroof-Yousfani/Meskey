@@ -189,7 +189,7 @@
 
                                     <td style="min-width: 150px;">
                                         @php
-                                            $totalQuotedForThisItem = $all_quoted[$data->purchase_request_data_id] ?? 0;
+                                            $totalQuotedForThisItem = $all_quoted[$data->purchase_request_data_id][$data->supplier_id] ?? 0;
                                             $quotedByOthers = $totalQuotedForThisItem - $data->qty;
                                             $remainingFromPR = ($data->purchase_request->qty ?? 0) - $quotedByOthers;
                                             $maxQty = max($remainingFromPR, $data->qty);

@@ -19,7 +19,7 @@ class ExportLoadingSlip extends LoadingSlip
         });
 
         static::addGlobalScope('export_type', function ($builder) {
-            $builder->withoutGlobalScope('sale_type')->where('type', 'export_loading_slip');
+            $builder->withoutGlobalScope('sale_type')->where('loading_slips.type', 'export_loading_slip');
         });
     }
 
@@ -31,6 +31,11 @@ class ExportLoadingSlip extends LoadingSlip
     public function secondWeighbridge()
     {
         return $this->hasOne(ExportSecondWeighbridge::class, 'loading_slip_id');
+    }
+
+    public function stacks()
+    {
+        return $this->hasMany(ExportLoadingSlipStack::class, 'loading_slip_id');
     }
 
     public function hasRejectedDispatchQc(): bool

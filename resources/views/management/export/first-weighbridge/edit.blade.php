@@ -11,10 +11,20 @@
                     @php
                         $availableTickets = \App\Models\Sales\LoadingProgramItem::whereHas('loadingProgram', function ($query) {
                             $query->where('type', 'export_order');
+                        })->whereHas('exportQc', function ($query) {
+                            $query->where('status', 'accept')
+                                ->orWhere('am_approval_status', 'approved');
                         })->where(function ($query) use ($FirstWeighbridge) {
-                            $query->whereDoesntHave('firstWeighbridge')
+                            $query->whereDoesntHave('exportFirstWeighbridge')
                                 ->orWhere('id', $FirstWeighbridge->loading_program_item_id);
-                        })->with(['deliveryOrders.customer', 'deliveryOrders.exportOrder.product', 'exportOrders.product'])->get();
+                        })->with([
+                            'exportLoadingProgram.deliveryOrders.customer',
+                            'exportLoadingProgram.deliveryOrders.exportOrder.product',
+                            'exportLoadingProgram.exportOrders.product',
+                            'deliveryOrders.customer',
+                            'deliveryOrders.exportOrder.product',
+                            'exportOrders.product'
+                        ])->get();
                     @endphp
                     @foreach ($availableTickets as $ticket)
                         <option value="{{ $ticket->id }}" {{ $ticket->id == $FirstWeighbridge->loading_program_item_id ? 'selected' : '' }}>
@@ -32,6 +42,8 @@
             'FirstWeighbridge' => $FirstWeighbridge,
             'ArrivalTruckTypes' => $ArrivalTruckTypes,
             'LoadingProgramItem' => $FirstWeighbridge->loadingProgramItem,
+            'factoryNames' => $factoryNames ?? [],
+            'galaNames' => $galaNames ?? [],
         ])
     </div>
 

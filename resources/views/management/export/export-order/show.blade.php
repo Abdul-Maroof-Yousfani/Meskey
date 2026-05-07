@@ -1,8 +1,19 @@
 <style>
     input[type=number]::-webkit-outer-spin-button,
-    input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-    input[type=number] { -moz-appearance: textfield; }
-    .spacing-table td { padding-top: 12px !important; padding-bottom: 12px !important; }
+    input[type=number]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    input[type=number] {
+        -moz-appearance: textfield;
+    }
+
+    .spacing-table td {
+        padding-top: 12px !important;
+        padding-bottom: 12px !important;
+    }
+
     .show-content-box {
         max-height: 180px;
         overflow-y: auto;
@@ -20,16 +31,12 @@
         <div class="col-md-12">
             <h6 class="header-heading-sepration">Basic Information</h6>
             <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label>Sauda#:</label>
-                        <input type="text" class="form-control" value="{{ $exportOrder->exportSoda ? ($exportOrder->exportSoda->reference ?? '#' . $exportOrder->export_soda_id) . ' - ' . ($exportOrder->exportSoda->product->name ?? '') : '-' }}" readonly>
-                    </div>
-                </div>
-                <div class="col-md-6">
+                <div class="col-md-12">
                     <div class="form-group">
                         <label>Quotation#:</label>
-                        <input type="text" class="form-control" value="{{ $exportOrder->quotation ? ($exportOrder->quotation->reference ?? '#' . $exportOrder->quotation_id) . ' - ' . ($exportOrder->quotation->product->name ?? '') : '-' }}" readonly>
+                        <input type="text" class="form-control"
+                            value="{{ $exportOrder->quotation ? ($exportOrder->quotation->reference ?? '#' . $exportOrder->quotation_id) . ' - ' . ($exportOrder->quotation->product->name ?? '') : '-' }}"
+                            readonly>
                     </div>
                 </div>
             </div>
@@ -48,7 +55,9 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label>Contract Date:</label>
-                        <input type="text" class="form-control" value="{{ $exportOrder->voucher_date ? $exportOrder->voucher_date->format('d-M-Y') : '-' }}" readonly>
+                        <input type="text" class="form-control"
+                            value="{{ $exportOrder->voucher_date ? $exportOrder->voucher_date->format('d-M-Y') : '-' }}"
+                            readonly>
                     </div>
                 </div>
             </div>
@@ -62,69 +71,82 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label>Reference Date:</label>
-                        <input type="text" class="form-control" value="{{ $exportOrder->voucher_heading ? (is_object($exportOrder->voucher_heading) ? $exportOrder->voucher_heading->format('d-M-Y') : $exportOrder->voucher_heading) : '-' }}" readonly>
+                        <input type="text" class="form-control"
+                            value="{{ $exportOrder->voucher_heading ? (is_object($exportOrder->voucher_heading) ? $exportOrder->voucher_heading->format('d-M-Y') : $exportOrder->voucher_heading) : '-' }}"
+                            readonly>
                     </div>
                 </div>
             </div>
             <div class="row">
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label>Buyer's Name:</label>
                         <input type="text" class="form-control" value="{{ $exportOrder->buyer->name ?? '-' }}" readonly>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label>Shipment Delivery Date From:</label>
-                        <input type="text" class="form-control" value="{{ $exportOrder->shipment_delivery_date_from ? $exportOrder->shipment_delivery_date_from->format('d-M-Y') : '-' }}" readonly>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label>Shipment Delivery Date To:</label>
-                        <input type="text" class="form-control" value="{{ $exportOrder->shipment_delivery_date_to ? $exportOrder->shipment_delivery_date_to->format('d-M-Y') : '-' }}" readonly>
-                    </div>
-                </div>
                 <div class="col-md-6">
                     <div class="form-group">
                         <label>Marking/Labeling:</label>
-                        <input type="text" class="form-control" value="{{ $exportOrder->marking_labeling ?? '-' }}" readonly>
+                        <input type="text" class="form-control" value="{{ $exportOrder->marking_labeling ?? '-' }}"
+                            readonly>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label>Vessel Name:</label>
-                        <input type="text" class="form-control" value="{{ $exportOrder->vessel_name ?? '-' }}" readonly>
+                        <label>Shipment Delivery Date From:</label>
+                        <input type="text" class="form-control"
+                            value="{{ $exportOrder->shipment_delivery_date_from ? $exportOrder->shipment_delivery_date_from->format('d-M-Y') : '-' }}"
+                            readonly>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Shipment Delivery Date To:</label>
+                        <input type="text" class="form-control"
+                            value="{{ $exportOrder->shipment_delivery_date_to ? $exportOrder->shipment_delivery_date_to->format('d-M-Y') : '-' }}"
+                            readonly>
                     </div>
                 </div>
             </div>
         </div>
-        
+
         {{-- Consignee Details --}}
-        <div class="col-md-12 mt-2">
-            <h6 class="header-heading-sepration">Consignee Details</h6>
-            <div class="card bg-light border-0 shadow-sm" style="border-radius: 8px; background-color: #e0e0e0;">
-                <div class="card-body p-3">
-                    <div class="row">
-                        <div class="col-md-4">
-                            <p class="mb-1"><small class="text-black-50 d-block">Name</small><strong>{{ $exportOrder->consignee?->name ?? 'N/A' }}</strong></p>
-                        </div>
-                        <div class="col-md-4">
-                            <p class="mb-1"><small class="text-black-50 d-block">Contact Person</small><strong>{{ $exportOrder->consignee?->contact_person ?? 'N/A' }}</strong></p>
-                        </div>
-                        <div class="col-md-4">
-                            <p class="mb-1"><small class="text-black-50 d-block">Contact</small><strong>{{ $exportOrder->consignee?->contact ?? 'N/A' }}</strong></p>
-                        </div>
-                        <div class="col-md-6 mt-2">
-                            <p class="mb-1"><small class="text-black-50 d-block">Email</small><strong>{{ $exportOrder->consignee?->email ?? 'N/A' }}</strong></p>
-                        </div>
-                        <div class="col-md-12 mt-2">
-                            <p class="mb-0"><small class="text-black-50 d-block">Address</small><span>{{ $exportOrder->consignee?->address ?? 'N/A' }}</span></p>
+        @if ($exportOrder->consignee)
+            <div class="col-md-12 mt-2">
+                <h6 class="header-heading-sepration">Consignee Details</h6>
+                <div class="card bg-light border-0 shadow-sm" style="border-radius: 8px; background-color: #e0e0e0;">
+                    <div class="card-body p-3">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <p class="mb-1"><small
+                                        class="text-black-50 d-block">Name</small><strong>{{ $exportOrder->consignee->name ?: '-' }}</strong>
+                                </p>
+                            </div>
+                            <div class="col-md-4">
+                                <p class="mb-1"><small class="text-black-50 d-block">Contact
+                                        Person</small><strong>{{ $exportOrder->consignee->contact_person ?: '-' }}</strong>
+                                </p>
+                            </div>
+                            <div class="col-md-4">
+                                <p class="mb-1"><small
+                                        class="text-black-50 d-block">Contact</small><strong>{{ $exportOrder->consignee->contact ?: '-' }}</strong>
+                                </p>
+                            </div>
+                            <div class="col-md-6 mt-2">
+                                <p class="mb-1"><small
+                                        class="text-black-50 d-block">Email</small><strong>{{ $exportOrder->consignee->email ?: '-' }}</strong>
+                                </p>
+                            </div>
+                            <div class="col-md-12 mt-2">
+                                <p class="mb-0"><small
+                                        class="text-black-50 d-block">Address</small><span>{{ $exportOrder->consignee->address ?: '-' }}</span>
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        @endif
 
         {{-- ====== PRODUCT & SPECS ====== --}}
         <div class="col-md-12 mt-2">
@@ -133,7 +155,8 @@
                 <select class="form-control select2" disabled>
                     <option value="">Select Product</option>
                     @foreach ($products as $product)
-                        <option value="{{ $product->id }}" {{ $exportOrder->product_id == $product->id ? 'selected' : '' }}>{{ $product->name }}</option>
+                        <option value="{{ $product->id }}" {{ $exportOrder->product_id == $product->id ? 'selected' : '' }}>
+                            {{ $product->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -145,36 +168,39 @@
 
         {{-- Specifications --}}
         @if($exportOrder->specifications->count())
-        <div class="col-md-12 mt-2">
-            <h6 class="header-heading-sepration">Specifications</h6>
-            <div class="table-responsive">
-                <table class="table table-bordered table-striped">
-                    <thead class="thead-dark">
-                        <tr>
-                            <th width="40%">Specification Name</th>
-                            <th width="30%">Value</th>
-                            <th width="30%">Type</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($exportOrder->specifications as $spec)
-                        <tr>
-                            <td><strong>{{ $spec->spec_name }}</strong></td>
-                            <td>
-                                <div class="input-group">
-                                    <input type="text" value="{{ $spec->spec_value ?? 0 }}" class="form-control" readonly>
-                                    <div class="input-group-prepend">
-                                        <button class="btn btn-secondary" type="button">{{ $spec->productSlabType->qc_symbol ?? 'N/A' }}</button>
-                                    </div>
-                                </div>
-                            </td>
-                            <td><input type="text" class="form-control" value="{{ ucfirst($spec->value_type ?? 'min') }}" readonly></td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+            <div class="col-md-12 mt-2">
+                <h6 class="header-heading-sepration">Specifications</h6>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped">
+                        <thead class="thead-dark">
+                            <tr>
+                                <th width="40%">Specification Name</th>
+                                <th width="30%">Value</th>
+                                <th width="30%">Type</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($exportOrder->specifications as $spec)
+                                <tr>
+                                    <td><strong>{{ $spec->spec_name }}</strong></td>
+                                    <td>
+                                        <div class="input-group">
+                                            <input type="text" value="{{ $spec->spec_value ?? 0 }}" class="form-control"
+                                                readonly>
+                                            <div class="input-group-prepend">
+                                                <button class="btn btn-secondary"
+                                                    type="button">{{ $spec->productSlabType->qc_symbol ?? 'N/A' }}</button>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><input type="text" class="form-control"
+                                            value="{{ ucfirst($spec->value_type ?? 'min') }}" readonly></td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
             </div>
-        </div>
         @endif
 
         <div class="col-md-12 mt-2">
@@ -183,6 +209,8 @@
                 <textarea class="form-control" rows="4" readonly>{{ $exportOrder->other_specifications }}</textarea>
             </div>
         </div>
+
+        <div id="packingDetailsAnchor"></div>
 
         {{-- ====== BANK DETAILS ====== --}}
         <div class="row px-2 mt-2">
@@ -194,7 +222,9 @@
                         @php $cBank = $exportOrder->customerBank; @endphp
                         <div class="col-md-12 mb-2">
                             <label>Bank Selected:</label>
-                            <input type="text" class="form-control" value="{{ $cBank ? ($cBank->account_title . ' - ' . $cBank->bank_name) : '-' }}" readonly>
+                            <input type="text" class="form-control"
+                                value="{{ $cBank ? ($cBank->account_title . ' - ' . $cBank->bank_name) : '-' }}"
+                                readonly>
                             <small class="text-muted">Beneficiary Bank Details</small>
                         </div>
                         <div class="col-md-6 mt-2">
@@ -206,16 +236,24 @@
                             <input type="text" class="form-control" value="{{ $cBank->bank_name ?? '-' }}" readonly>
                         </div>
                         <div class="col-md-6 mt-2">
-                            <label>Branch Name:</label>
-                            <input type="text" class="form-control" value="{{ $cBank->branch_name ?? '-' }}" readonly>
-                        </div>
-                        <div class="col-md-6 mt-2">
-                            <label>Branch Code:</label>
-                            <input type="text" class="form-control" value="{{ $cBank->branch_code ?? '-' }}" readonly>
+                            <label>IBAN:</label>
+                            <input type="text" class="form-control" value="{{ $cBank->iban ?? '-' }}" readonly>
                         </div>
                         <div class="col-md-6 mt-2">
                             <label>Account No:</label>
                             <input type="text" class="form-control" value="{{ $cBank->account_no ?? '-' }}" readonly>
+                        </div>
+                        <div class="col-md-6 mt-2">
+                            <label>SWIFT Code:</label>
+                            <input type="text" class="form-control" value="{{ $cBank->swift_code ?? '-' }}" readonly>
+                        </div>
+                        <div class="col-md-6 mt-2">
+                            <label>Bank Address:</label>
+                            <input type="text" class="form-control" value="{{ $cBank->bank_address ?? '-' }}" readonly>
+                        </div>
+                        <div class="col-md-12 mt-2">
+                            <label>Description:</label>
+                            <textarea class="form-control" rows="2" readonly>{{ $cBank->description ?? '' }}</textarea>
                         </div>
                     </div>
                 </div>
@@ -238,7 +276,8 @@
                         </div>
                         <div class="col-md-6 mt-2">
                             <label>Account Title:</label>
-                            <input type="text" class="form-control" value="{{ $corrBank->account_title ?? '-' }}" readonly>
+                            <input type="text" class="form-control" value="{{ $corrBank->account_title ?? '-' }}"
+                                readonly>
                         </div>
                         <div class="col-md-6 mt-2">
                             <label>Bank Name:</label>
@@ -258,11 +297,13 @@
                         </div>
                         <div class="col-md-6 mt-2">
                             <label>Bank Address:</label>
-                            <input type="text" class="form-control" value="{{ $corrBank->bank_address ?? '-' }}" readonly>
+                            <input type="text" class="form-control" value="{{ $corrBank->bank_address ?? '-' }}"
+                                readonly>
                         </div>
                         <div class="col-md-12 mt-2">
                             <label>Description:</label>
-                            <textarea class="form-control" rows="2" readonly>{{ $corrBank->description ?? '' }}</textarea>
+                            <textarea class="form-control" rows="2"
+                                readonly>{{ $corrBank->description ?? '' }}</textarea>
                         </div>
                     </div>
                 </div>
@@ -282,7 +323,8 @@
                 <select class="form-control select2" disabled>
                     <option value="">Select Broker</option>
                     @foreach ($brokers as $broker)
-                        <option value="{{ $broker->id }}" {{ $exportOrder->broker_id == $broker->id ? 'selected' : '' }}>{{ $broker->name }}</option>
+                        <option value="{{ $broker->id }}" {{ $exportOrder->broker_id == $broker->id ? 'selected' : '' }}>
+                            {{ $broker->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -326,11 +368,11 @@
         <div class="mt-2 px-2">
             <h6 class="header-heading-sepration">Commission</h6>
             @php
-                $totalMt    = $exportOrder->packingItems->sum('metric_tons');
-                $totalAmt   = $exportOrder->packingItems->sum('amount');
+                $totalMt = $exportOrder->packingItems->sum('metric_tons');
+                $totalAmt = $exportOrder->packingItems->sum('amount');
                 $commission = $exportOrder->commission ?? 0;
-                $commPct    = $totalAmt  > 0 ? ($commission / $totalAmt)  * 100 : ($exportOrder->commission_percentage ?? 0);
-                $amtPerTon  = $totalMt   > 0 ? ($commission / $totalMt)        : ($exportOrder->commission_amount_per_ton ?? 0);
+                $commPct = $totalAmt > 0 ? ($commission / $totalAmt) * 100 : ($exportOrder->commission_percentage ?? 0);
+                $amtPerTon = $totalMt > 0 ? ($commission / $totalMt) : ($exportOrder->commission_amount_per_ton ?? 0);
             @endphp
             <div class="row">
                 <div class="col-md-4">
@@ -348,7 +390,8 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label>Total Commission:</label>
-                        <input type="text" class="form-control font-weight-bold" value="{{ number_format($commission, 2) }}" readonly>
+                        <input type="text" class="form-control font-weight-bold"
+                            value="{{ number_format($commission, 2) }}" readonly>
                     </div>
                 </div>
             </div>
@@ -378,7 +421,8 @@
                         <select class="form-control select2" disabled>
                             <option value="">Select</option>
                             <option value="In Conatiner" {{ $exportOrder->packing_type == 'In Conatiner' ? 'selected' : '' }}>IN CONTAINER</option>
-                            <option value="In Bulk" {{ $exportOrder->packing_type == 'In Bulk' ? 'selected' : '' }}>IN BULK</option>
+                            <option value="In Bulk" {{ $exportOrder->packing_type == 'In Bulk' ? 'selected' : '' }}>IN
+                                BULK</option>
                         </select>
                     </td>
                 </tr>
@@ -443,7 +487,8 @@
                         <select class="form-control select2" disabled>
                             <option value="">Select</option>
                             @foreach ($hscodes as $hs)
-                                <option value="{{ $hs->id }}" {{ $exportOrder->hs_code_id == $hs->id ? 'selected' : '' }}>{{ $hs->code }}</option>
+                                <option value="{{ $hs->id }}" {{ $exportOrder->hs_code_id == $hs->id ? 'selected' : '' }}>
+                                    {{ $hs->code }}</option>
                             @endforeach
                         </select>
                     </td>
@@ -453,7 +498,8 @@
                     <td>
                         <select class="form-control select2" disabled>
                             <option value="">Select</option>
-                            <option value="Yes" {{ $exportOrder->partial_payment == 'Yes' ? 'selected' : '' }}>YES</option>
+                            <option value="Yes" {{ $exportOrder->partial_payment == 'Yes' ? 'selected' : '' }}>YES
+                            </option>
                             <option value="No" {{ $exportOrder->partial_payment == 'No' ? 'selected' : '' }}>NO</option>
                         </select>
                     </td>
@@ -483,7 +529,8 @@
                     <td>
                         <select class="form-control select2" disabled>
                             <option value="">Select</option>
-                            <option value="Buyer" {{ $exportOrder->insurance_covered_by == 'Buyer' ? 'selected' : '' }}>BUYER</option>
+                            <option value="Buyer" {{ $exportOrder->insurance_covered_by == 'Buyer' ? 'selected' : '' }}>
+                                BUYER</option>
                             <option value="Supplier" {{ $exportOrder->insurance_covered_by == 'Supplier' ? 'selected' : '' }}>SUPPLIER</option>
                         </select>
                     </td>
@@ -511,26 +558,20 @@
                         </select>
                     </td>
                 </tr>
-                <tr>
-                    <td style="font-weight:bold;vertical-align:middle;">RATE</td>
-                    <td>
-                        <input type="text" class="form-control font-weight-bold" value="{{ number_format($exportOrder->currency_rate, 2) }}" readonly>
-                    </td>
-                </tr>
             </table>
         </div>
     </div>{{-- end col-4 --}}
 
     {{-- ====== PACKING DETAILS (Full Width) ====== --}}
-    <div class="col-md-12 mt-4">
+    <div class="col-md-12 mt-4" id="packingDetailsSection">
         <h6 class="header-heading-sepration">Packing Details</h6>
 
         @forelse ($exportOrder->packingItems as $itemIndex => $item)
-        <div class="packing-item card border-secondary mb-4 shadow-sm">
-            <div class="card-header bg-light d-flex justify-content-between align-items-center py-2">
-                <h6 class="mb-0 font-weight-bold grey">Packing Row #{{ $itemIndex + 1 }}</h6>
-            </div>
-            <div class="card-body">
+            <div class="packing-item border rounded bg-white mb-3 p-3">
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                    <h6 class="mb-0 font-weight-bold grey">Packing Row #{{ $itemIndex + 1 }}</h6>
+                </div>
+                <!-- <div class="card-body"> -->
                 <div class="row">
                     <div class="col-md-2">
                         <div class="form-group">
@@ -577,13 +618,15 @@
                     <div class="col-md-2">
                         <div class="form-group">
                             <label>Bag Size (kg):</label>
-                            <input type="text" class="form-control" value="{{ number_format($item->bag_size, 2) }}" readonly>
+                            <input type="text" class="form-control" value="{{ number_format($item->bag_size, 2) }}"
+                                readonly>
                         </div>
                     </div>
                     <div class="col-md-2">
                         <div class="form-group">
                             <label>No. of Bags:</label>
-                            <input type="text" class="form-control font-weight-bold" value="{{ number_format($item->no_of_bags, 0) }}" readonly>
+                            <input type="text" class="form-control font-weight-bold"
+                                value="{{ number_format($item->no_of_bags, 0) }}" readonly>
                         </div>
                     </div>
                     <div class="col-md-2">
@@ -594,26 +637,43 @@
                     </div>
                     <div class="col-md-2">
                         <div class="form-group">
+                            <label>Extra Bags %:</label>
+                            <input type="text" class="form-control"
+                                value="{{ number_format((float) ($item->extra_bags_percentage ?? 0), 2) }}" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
                             <label>Empty Bags:</label>
                             <input type="text" class="form-control" value="{{ $item->empty_bags }}" readonly>
                         </div>
                     </div>
                     <div class="col-md-2">
                         <div class="form-group">
+                            <label>Empty Bags %:</label>
+                            <input type="text" class="form-control"
+                                value="{{ number_format((float) ($item->empty_bags_percentage ?? 0), 2) }}" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
                             <label>Qty (MT):</label>
-                            <input type="text" class="form-control font-weight-bold text-primary" value="{{ number_format($item->metric_tons, 3) }}" readonly>
+                            <input type="text" class="form-control font-weight-bold text-primary"
+                                value="{{ number_format($item->metric_tons, 3) }}" readonly>
                         </div>
                     </div>
                     <div class="col-md-2">
                         <div class="form-group">
                             <label>Total Bags:</label>
-                            <input type="text" class="form-control" value="{{ number_format($item->total_bags, 0) }}" readonly>
+                            <input type="text" class="form-control" value="{{ number_format($item->total_bags, 0) }}"
+                                readonly>
                         </div>
                     </div>
                     <div class="col-md-2">
                         <div class="form-group">
                             <label>Stuffing/Cont (MT):</label>
-                            <input type="text" class="form-control" value="{{ number_format($item->stuffing_in_container, 3) }}" readonly>
+                            <input type="text" class="form-control"
+                                value="{{ number_format($item->stuffing_in_container, 3) }}" readonly>
                         </div>
                     </div>
                     <div class="col-md-2">
@@ -631,19 +691,15 @@
                     <div class="col-md-2">
                         <div class="form-group">
                             <label>Amount:</label>
-                            <input type="text" class="form-control font-weight-bold" value="{{ number_format($item->amount, 2) }}" readonly>
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <div class="form-group">
-                            <label>Amount (PKR):</label>
-                            <input type="text" class="form-control font-weight-bold text-success" value="{{ number_format($item->amount_pkr, 2) }}" readonly>
+                            <input type="text" class="form-control font-weight-bold"
+                                value="{{ number_format($item->amount, 2) }}" readonly>
                         </div>
                     </div>
                     <div class="col-md-2">
                         <div class="form-group">
                             <label>Min Weight Empty Bags:</label>
-                            <input type="text" class="form-control" value="{{ number_format($item->min_weight_empty_bags, 2) }}" readonly>
+                            <input type="text" class="form-control"
+                                value="{{ number_format($item->min_weight_empty_bags, 2) }}" readonly>
                         </div>
                     </div>
                     <div class="col-md-4">
@@ -652,69 +708,103 @@
                             @php
                                 $fNames = [];
                                 if (is_array($item->fumigation_company_id)) {
-                                    $fNames = $inspectionCompanies->whereIn('id', $item->fumigation_company_id)->pluck('name')->toArray();
+                                    $fNames = $fumigationCompanies->whereIn('id', $item->fumigation_company_id)->pluck('name')->toArray();
                                 }
                             @endphp
-                            <input type="text" class="form-control" value="{{ count($fNames) ? implode(', ', $fNames) : '-' }}" readonly>
+                            <input type="text" class="form-control"
+                                value="{{ count($fNames) ? implode(', ', $fNames) : '-' }}" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label>Inspection By:</label>
+                            @php
+                                $inspectionNames = [];
+                                if (is_array($item->inspection_by)) {
+                                    $inspectionNames = $inspectionCompanies->whereIn('id', $item->inspection_by)->pluck('name')->toArray();
+                                }
+                            @endphp
+                            <input type="text" class="form-control"
+                                value="{{ count($inspectionNames) ? implode(', ', $inspectionNames) : '-' }}" readonly>
                         </div>
                     </div>
                 </div>
 
                 {{-- Master Packing Sub-items --}}
                 @if($item->subItems->count() > 0)
-                <div class="mt-4">
-                    <div class="card border-info shadow-none">
-                        <div class="card-header bg-light-info d-flex justify-content-between align-items-center py-1">
-                            <h6 class="mb-0 font-weight-bold">Master Packing #{{ sprintf('%02d', $itemIndex + 1) }}</h6>
-                        </div>
-                        <div class="card-body p-0">
-                            <div class="table-responsive">
-                                <table class="table table-bordered table-sm mb-0 text-nowrap">
-                                    <thead class="thead-light">
-                                        <tr>
-                                            <th style="min-width: 150px;">Bag Type</th>
-                                            <th style="min-width: 120px;">Bag Size</th>
-                                            <th style="min-width: 150px;">Primary Bags fit in master bag</th>
-                                            <th style="min-width: 90px;">No. of Bags</th>
-                                            <th style="min-width: 90px;">Empty Bags</th>
-                                            <th style="min-width: 90px;">Extra Bags</th>
-                                            <th style="min-width: 100px;">Empty Bag Weight (g)</th>
-                                            <th style="min-width: 90px;">Total Bags</th>
-                                            <th style="min-width: 120px;">Stitching</th>
-                                            <th style="min-width: 120px;">Bag Color</th>
-                                            <th style="min-width: 120px;">Brand</th>
-                                            <th style="min-width: 120px;">Thread Color</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach($item->subItems as $sub)
-                                        <tr>
-                                            <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->bagType->name ?? '-' }}" readonly></td>
-                                            <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->bagSize->size ?? '-' }}" readonly></td>
-                                            <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->no_of_primary_bags }}" readonly></td>
-                                            <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->no_of_bags }}" readonly></td>
-                                            <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->empty_bags }}" readonly></td>
-                                            <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->extra_bags }}" readonly></td>
-                                            <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->empty_bag_weight }}" readonly></td>
-                                            <td class="p-1"><input type="text" class="form-control form-control-sm font-weight-bold" value="{{ $sub->total_bags }}" readonly></td>
-                                            <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->stitching->name ?? '-' }}" readonly></td>
-                                            <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->bagColor->color ?? '-' }}" readonly></td>
-                                            <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->brand->name ?? '-' }}" readonly></td>
-                                            <td class="p-1"><input type="text" class="form-control form-control-sm" value="{{ $sub->threadColor->color ?? '-' }}" readonly></td>
-                                        </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
+                    <div class="mt-4">
+                        <div class="card border-info shadow-none">
+                            <div class="card-header bg-light-info d-flex justify-content-between align-items-center py-1">
+                                <h6 class="mb-0 font-weight-bold">Master Packing #{{ sprintf('%02d', $itemIndex + 1) }}</h6>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-sm mb-0 text-nowrap">
+                                        <thead class="thead-light">
+                                            <tr>
+                                                <th style="min-width: 150px;">Bag Type</th>
+                                                <th style="min-width: 120px;">Bag Size</th>
+                                                <th style="min-width: 150px;">Primary Bags fit in master bag</th>
+                                                <th style="min-width: 90px;">No. of Bags</th>
+                                                <th style="min-width: 90px;">Empty Bags</th>
+                                                <th style="min-width: 100px;">Empty Bags %</th>
+                                                <th style="min-width: 90px;">Extra Bags</th>
+                                                <th style="min-width: 100px;">Extra Bags %</th>
+                                                <th style="min-width: 100px;">Empty Bag Weight (g)</th>
+                                                <th style="min-width: 90px;">Total Bags</th>
+                                                <th style="min-width: 120px;">Stitching</th>
+                                                <th style="min-width: 120px;">Bag Color</th>
+                                                <th style="min-width: 120px;">Brand</th>
+                                                <th style="min-width: 120px;">Thread Color</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($item->subItems as $sub)
+                                                <tr>
+                                                    <td class="p-1"><input type="text" class="form-control form-control-sm"
+                                                            value="{{ $sub->bagType->name ?? '-' }}" readonly></td>
+                                                    <td class="p-1"><input type="text" class="form-control form-control-sm"
+                                                            value="{{ $sub->bagSize->size ?? '-' }}" readonly></td>
+                                                    <td class="p-1"><input type="text" class="form-control form-control-sm"
+                                                            value="{{ $sub->no_of_primary_bags }}" readonly></td>
+                                                    <td class="p-1"><input type="text" class="form-control form-control-sm"
+                                                            value="{{ $sub->no_of_bags }}" readonly></td>
+                                                    <td class="p-1"><input type="text" class="form-control form-control-sm"
+                                                            value="{{ $sub->empty_bags }}" readonly></td>
+                                                    <td class="p-1"><input type="text" class="form-control form-control-sm"
+                                                            value="{{ number_format((float) ($sub->empty_bags_percentage ?? 0), 2) }}"
+                                                            readonly></td>
+                                                    <td class="p-1"><input type="text" class="form-control form-control-sm"
+                                                            value="{{ $sub->extra_bags }}" readonly></td>
+                                                    <td class="p-1"><input type="text" class="form-control form-control-sm"
+                                                            value="{{ number_format((float) ($sub->extra_bags_percentage ?? 0), 2) }}"
+                                                            readonly></td>
+                                                    <td class="p-1"><input type="text" class="form-control form-control-sm"
+                                                            value="{{ $sub->empty_bag_weight }}" readonly></td>
+                                                    <td class="p-1"><input type="text"
+                                                            class="form-control form-control-sm font-weight-bold"
+                                                            value="{{ $sub->total_bags }}" readonly></td>
+                                                    <td class="p-1"><input type="text" class="form-control form-control-sm"
+                                                            value="{{ $sub->stitching->name ?? '-' }}" readonly></td>
+                                                    <td class="p-1"><input type="text" class="form-control form-control-sm"
+                                                            value="{{ $sub->bagColor->color ?? '-' }}" readonly></td>
+                                                    <td class="p-1"><input type="text" class="form-control form-control-sm"
+                                                            value="{{ $sub->brand->name ?? '-' }}" readonly></td>
+                                                    <td class="p-1"><input type="text" class="form-control form-control-sm"
+                                                            value="{{ $sub->threadColor->color ?? '-' }}" readonly></td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
                 @endif
-
+                <!-- </div> -->
             </div>
-        </div>
         @empty
-        <div class="alert alert-light">No packing items found.</div>
+            <div class="alert alert-light">No packing items found.</div>
         @endforelse
     </div>{{-- end packing col-12 --}}
 
@@ -723,6 +813,9 @@
 <div class="row bottom-button-bar">
     <div class="col-12 mb-3">
         <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
+        @if (strtolower($exportOrder->am_approval_status ?? '') === 'approved')
+            <a href="{{ route('export-order.print', $exportOrder->id) }}" target="_blank" class="btn btn-primary">Print</a>
+        @endif
     </div>
 </div>
 
@@ -733,7 +826,8 @@
 </div>
 
 <script>
-    $(document).ready(function() {
+    $(document).ready(function () {
+        $('#packingDetailsSection').insertAfter('#packingDetailsAnchor');
         $('.select2').select2({ width: '100%' });
     });
 </script>

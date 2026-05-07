@@ -176,6 +176,22 @@
                     </div>
                 </div>
 
+                <div class="col-md-6 {{ $sale_order->pay_type_id == 10 ? '' : 'd-none' }}" id="unallocated_rv_container">
+                    <div class="form-group">
+                        <label class="form-label d-block">Unallocated Receipt Vouchers:</label>
+                        <select name="receipt_voucher_item_ids[]" id="receipt_voucher_item_ids" class="form-control select2" multiple style="width: 100%">
+                            @php
+                                $linkedRvs = App\Models\ReceiptVoucherItem::where('reference_type', 'sale_order')
+                                    ->where('reference_id', $sale_order->id)
+                                    ->get();
+                            @endphp
+                            @foreach($linkedRvs as $rv)
+                                <option value="{{ $rv->id }}" selected>RV Item #{{ $rv->id }} - Amount: {{ $rv->net_amount }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
                 <div class="col-12 mt-3">
                     <h6 class="header-heading-sepration">Location Details</h6>
                 </div>
@@ -404,6 +420,7 @@
         
         get_inquiries();
         getCustomerLocations();
+        get_unallocated_rvs();
     }
 
     function get_inquiries() {
@@ -519,6 +536,46 @@
         } else {
             $(".credit").prop("disabled", true);
         }
+
+        if(type == 10) { // Advanced
+            $("#unallocated_rv_container").removeClass("d-none");
+            get_unallocated_rvs();
+        } else {
+            $("#unallocated_rv_container").addClass("d-none");
+            $("#receipt_voucher_item_ids").val([]).trigger('change');
+        }
+    }
+
+    function get_unallocated_rvs() {
+        const customer_id = $("#customer_id").val() || "{{ $sale_order->customer_id }}";
+        const pay_type_id = $("#pay_type_id").val();
+        
+        if (!customer_id || pay_type_id != 10) {
+            return;
+        }
+
+        // Get currently selected IDs to preserve them
+        const currentlySelected = $("#receipt_voucher_item_ids").val() || [];
+
+        $.ajax({
+            url: "{{ route('sales.get-unallocated-receipt-vouchers') }}",
+            method: "GET",
+            data: { 
+                customer_id: customer_id,
+                sale_order_id: "{{ $sale_order->id }}" // Pass this to include already linked ones
+            },
+            success: function(res) {
+                let options = '';
+                res.forEach(item => {
+                    const isSelected = currentlySelected.includes(String(item.id)) ? 'selected' : '';
+                    options += `<option value="${item.id}" ${isSelected}>RV Item #${item.id} - Amount: ${item.net_amount} (Ref: ${item.line_desc || 'No Description'})</option>`;
+                });
+                $("#receipt_voucher_item_ids").html(options).trigger('change');
+            },
+            error: function(err) {
+                console.error("Error fetching unallocated RVs:", err);
+            }
+        });
     }
 
     function enableInquiryFields() {
@@ -633,6 +690,10 @@
                     $("#token_money").val(res.token_money);
                 }
 
+                if (res.remarks !== null && res.remarks !== undefined) {
+                    $("#remarks").val(res.remarks);
+                }
+
                 // Make fields readonly
                 disableInquiryFields();
             },
@@ -739,6 +800,9 @@
         if (inquirySelected === "1") {
             disableInquiryFields();
             disableTableFields();
+        }
+        if ("{{ $sale_order->pay_type_id }}" == "10") {
+            get_unallocated_rvs();
         }
         validateExpiry();
     });

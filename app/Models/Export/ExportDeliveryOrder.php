@@ -88,6 +88,11 @@ class ExportDeliveryOrder extends DeliveryOrder
         return $this->hasMany(ExportLoadingSlip::class, "delivery_order_id");
     }
 
+    public function transporter()
+    {
+        return $this->belongsTo(\App\Models\Master\Transporter::class, 'transporter_id');
+    }
+
     /**
      * Override createApprovalRows from HasApproval trait to handle duplicates safely
      */
@@ -120,5 +125,10 @@ class ExportDeliveryOrder extends DeliveryOrder
     public function delivery_challans()
     {
         return $this->belongsToMany(ExportDeliveryChallan::class, 'delivery_challan_delivery_order', 'delivery_order_id', 'delivery_challan_id')->withPivot('qty');
+    }
+
+    public function locations()
+    {
+        return $this->hasMany(ExportDeliveryOrderLocation::class, 'delivery_order_id');
     }
 }

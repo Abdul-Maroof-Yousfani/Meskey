@@ -100,9 +100,18 @@
 
                             <div class="row">
                                 <div class="col-md-12">
-                                    <div class="form-check mb-3">
+                                    <div class="form-check mb-2">
                                         <input class="form-check-input" type="checkbox" id="is_advance" onchange="select_customer()" checked>
                                         <label class="form-check-label" for="is_advance">Advance</label>
+                                    </div>
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" name="allow_excess" id="allow_excess" value="1">
+                                        <label class="form-check-label font-weight-bold text-primary" for="allow_excess">
+                                            Allow Excess Amount (Advances)
+                                        </label>
+                                        <div class="mt-2 p-3 bg-soft-primary border-left border-primary small text-dark">
+                                            <b>Note:</b> This checkbox is used to allow flexibility in payment handling when receiving amounts against a Sales Order. Normally, the system restricts the received amount to the exact outstanding balance of the document, preventing any overpayment. However, when this checkbox is enabled, the user is allowed to receive an excess amount beyond the payable limit. Instead of directly assigning this extra amount to any specific Sales Order, the system creates a virtual Receipt Voucher Item for the excess value, which remains unlinked to any document at the time of creation. This unallocated amount is stored as a customer credit and can later be explicitly allocated to any Sales Order or invoice when required. In this way, it provides a controlled mechanism to manage advance payments, overpayments, or customer credit balances within the system.
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -690,11 +699,12 @@
         function validateBankTotal() {
             const referencesTotal = parseFloat($('#total_amount').text()) || 0;
             const bankDetailsTotal = getBankDetailsTotal();
+            const allowExcess = $('#allow_excess').is(':checked');
             
-            if (bankDetailsTotal > referencesTotal) {
+            if (!allowExcess && bankDetailsTotal > referencesTotal) {
                 $('.bank-amount').css('border-color', '#dc3545');
                 $('#bank-details-total-error').remove();
-                $('#bank-details-data').after(`<div id="bank-details-total-error" class="text-danger small mt-1 pl-2">Total amount (${bankDetailsTotal.toFixed(2)}) exceeds the references total (${referencesTotal.toFixed(2)})</div>`);
+                $('#bank-details-data').after(`<div id="bank-details-total-error" class="text-danger small mt-1 pl-2">Total amount (${bankDetailsTotal.toFixed(2)}) exceeds the references total (${referencesTotal.toFixed(2)}) and "Allow Excess Amount" is off.</div>`);
             } else {
                 $('.bank-amount').css('border-color', '');
                 $('#bank-details-total-error').remove();
@@ -722,12 +732,13 @@
             // --- Added Validation ---
             const referencesTotal = parseFloat($('#total_amount').text()) || 0;
             const bankDetailsTotal = getBankDetailsTotal();
+            const allowExcess = $('#allow_excess').is(':checked');
 
-            if (bankDetailsTotal > referencesTotal) {
+            if (!allowExcess && bankDetailsTotal > referencesTotal) {
                 Swal.fire({
                     icon: 'error',
                     title: 'Validation Error',
-                    text: `Total Bank/Account Detail amount (${bankDetailsTotal.toFixed(2)}) cannot exceed the total Selected References amount (${referencesTotal.toFixed(2)}).`
+                    text: `Total Bank/Account Detail amount (${bankDetailsTotal.toFixed(2)}) exceeds the total Selected References amount (${referencesTotal.toFixed(2)}). Enable "Allow Excess Amount" to permit advances.`
                 });
                 return false;
             }

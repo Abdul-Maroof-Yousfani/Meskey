@@ -26,6 +26,7 @@ class LoadingSlip extends Model
         'remarks',
         'delivery_order_id',
         'labour',
+        'seal_no',
         'created_by',
         'company_id'
     ];
@@ -49,7 +50,7 @@ class LoadingSlip extends Model
         });
 
         static::addGlobalScope('sale_type', function ($builder) {
-            $builder->where('type', 'sale_loading_slip');
+            $builder->where('loading_slips.type', 'sale_loading_slip');
         });
     }
 

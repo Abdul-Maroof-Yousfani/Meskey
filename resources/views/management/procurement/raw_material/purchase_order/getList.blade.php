@@ -111,6 +111,7 @@
                 @endif
             </td>
             <td>
+                {{$row->am_approval_status}}
                 @php
                     $amStatus = $row->am_approval_status ?? 'pending';
                     $amBadge = match (strtolower($amStatus)) {

@@ -21,6 +21,7 @@ use App\Http\Controllers\Export\ExportQcController;
 use App\Http\Controllers\Export\ExportDispatchQcController;
 use App\Http\Controllers\Export\ExportDeliveryChallanController;
 use App\Http\Controllers\Export\ExportSecondWeighBridgeController;
+use App\Http\Controllers\Export\ExportOuterItemController;
 
 // mode of terms
 Route::resource('modeofterms', ModeOfTermController::class);
@@ -45,6 +46,7 @@ Route::post('/get-bank', [BankController::class, 'getBankTable'])->name('get.ban
 // export order
 Route::resource('export-order', ExportOrderController::class);
 Route::post('/get-export-order', [ExportOrderController::class, 'getExportOrderTable'])->name('get.export-order');
+Route::get('/export-order/{id}/print', [ExportOrderController::class, 'print'])->name('export-order.print');
 
 // export delivery order
 Route::resource('export-delivery-order', ExportDeliveryOrderController::class);
@@ -55,13 +57,20 @@ Route::get('/get-arrival-locations', [ExportDeliveryOrderController::class, 'get
 Route::get('/get-sub-arrival-locations', [ExportDeliveryOrderController::class, 'getSubArrivalLocations'])->name('export.get-sub-arrival-locations');
 Route::get('/export-order/get-quotation-details/{id}', [ExportOrderController::class, 'getQuotationDetails'])->name('export-order.get-quotation-details');
 
-// export loading program
+// export loading program (Request Stage 1)
 Route::resource('export-loading-program', ExportLoadingProgramController::class);
 Route::post('/get-export-loading-program', [ExportLoadingProgramController::class, 'getList'])->name('get.export-loading-program');
 Route::get('/fetch-export-orders-by-location', [ExportLoadingProgramController::class, 'fetchExportOrdersByLocation'])->name('fetch.export.orders.by.location');
 Route::get('/get-export-order-related-data', [ExportLoadingProgramController::class, 'getExportOrderRelatedData'])->name('get.export-order.related.data');
 Route::get('/get-delivery-orders-by-export-order-loading', [ExportLoadingProgramController::class, 'getDeliveryOrdersByExportOrder'])->name('get.delivery-orders.by.export-order.loading');
 Route::get('/get-delivery-orders-by-export-order-loading-edit', [ExportLoadingProgramController::class, 'getDeliveryOrdersByExportOrderEdit'])->name('get.delivery-orders.by.export-order.loading.edit');
+
+// export loading program (Completion Stage 2)
+Route::get('/export-loading-program-complete-show/{id}', [ExportLoadingProgramController::class, 'completeShow'])->name('export-loading-program-complete.show');
+Route::get('/export-loading-program-complete', [ExportLoadingProgramController::class, 'completeIndex'])->name('export-loading-program-complete.index');
+Route::post('/get-export-loading-program-complete', [ExportLoadingProgramController::class, 'getCompleteList'])->name('get.export-loading-program-complete');
+Route::get('/export-loading-program-complete/{id}/edit', [ExportLoadingProgramController::class, 'completeEdit'])->name('export-loading-program-complete.edit');
+Route::put('/export-loading-program-complete/{id}', [ExportLoadingProgramController::class, 'completeUpdate'])->name('export-loading-program-complete.update');
 
 // export first weighbridge
 Route::resource('export-first-weighbridge', ExportFirstWeighBridgeController::class);
@@ -78,6 +87,11 @@ Route::get('/get-ticket-related-data-for-qc', [ExportQcController::class, 'getTi
 Route::resource('export-loading-slip', ExportLoadingSlipController::class);
 Route::post('/get-export-loading-slip', [ExportLoadingSlipController::class, 'getList'])->name('get.export-loading-slip');
 Route::get('/get-export-loading-slip-ticket-data', [ExportLoadingSlipController::class, 'getTicketRelatedData'])->name('export.getLoadingSlipTicketData');
+
+// export outer items
+Route::resource('export-outer-item', ExportOuterItemController::class);
+Route::post('/get-export-outer-item', [ExportOuterItemController::class, 'getList'])->name('get.export-outer-item');
+Route::get('/get-export-outer-item-ticket-data/{id}', [ExportOuterItemController::class, 'getTicketData'])->name('export.getOuterItemTicketData');
 
 // export dispatch qc
 Route::resource('export-dispatch-qc', ExportDispatchQcController::class);
@@ -118,6 +132,8 @@ Route::post('/get-export-form-e', [App\Http\Controllers\Export\ExportFormEContro
 Route::get('/get-export-order-details-form-e/{id}', [App\Http\Controllers\Export\ExportFormEController::class, 'getExportOrderDetails'])->name('export.get-export-order-details-form-e');
 Route::get('/get-orders-by-buyer-form-e/{buyerId}', [App\Http\Controllers\Export\ExportFormEController::class, 'getOrdersByBuyer'])->name('export.get-orders-by-buyer-form-e');
 Route::get('/get-form-es-by-order/{orderId}', [App\Http\Controllers\Export\ExportFormEController::class, 'getFormEsByOrder'])->name('export.get-form-es-by-order');
+Route::get('/get-job-orders-by-order-form-e/{orderId}', [App\Http\Controllers\Export\ExportFormEController::class, 'getJobOrdersByOrder'])->name('export.get-job-orders-by-order-form-e');
+
 
 // quotation
 Route::resource('quotation', QuotationController::class);
@@ -135,6 +151,7 @@ Route::post('/get-arrival-locations', [ExportOrderController::class, 'getArrival
 Route::post('/get-arrival-sub-locations', [ExportOrderController::class, 'getArrivalSubLocationsByArrivalLocations']);
 Route::get('/export-order/customer-banks/{customerId}', [ExportOrderController::class, 'getCustomerBanks'])->name('export-order.customer-banks');
 Route::get('/export-order/customer-consignees/{customerId}', [ExportOrderController::class, 'getCustomerConsignees'])->name('export-order.customer-consignees');
+Route::get('/export-order/company-banks/{companyId}', [ExportOrderController::class, 'getCompanyBanks'])->name('export-order.company-banks');
 
 // proforma
 Route::resource('proforma', ProformaController::class)->except(['create', 'store']);
@@ -156,6 +173,7 @@ Route::resource('packing-list', PackingListController::class);
 Route::post('/get-packing-list', [PackingListController::class, 'getPackingListTable'])->name('get.packing-list');
 Route::get('/get-packing-list-related-data', [PackingListController::class, 'getRelatedData'])->name('get.packing-list.related.data');
 Route::get('/get-packing-list-commercial-invoices', [PackingListController::class, 'getCommercialInvoicesByExportOrder'])->name('get.packing-list.commercial-invoices');
+Route::get('/packing-list/{id}/container-list', [PackingListController::class, 'containerList'])->name('packing-list.container-list');
 
 // export soda field 
 Route::resource('export-soda-field', ExportSodaFieldController::class);

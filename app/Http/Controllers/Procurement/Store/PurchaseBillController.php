@@ -34,7 +34,6 @@ class PurchaseBillController extends Controller
             ->whereHas('bill_data', function ($q): void {
                 $q->whereRaw('qty > (SELECT COALESCE(SUM(qty), 0) FROM purchase_bills_data WHERE purchase_bills_data.purchase_bill_id = purchase_bills.id)');
             })
-      
             ->get();
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $purchaseRequests = PurchaseRequest::select('id', 'purchase_request_no')->where('am_approval_status', 'approved')->get();
@@ -234,27 +233,23 @@ class PurchaseBillController extends Controller
         $locationCode = $location->code ?? 'LOC';
         $prefix = 'BILL-' . $date;
 
-        // Find latest PO for the same prefix
+        // Find latest Bill for the same prefix
         $latestBill = PurchaseBill::where('bill_no', 'like', "$prefix-%")
             ->orderByDesc('id')
             ->first();
 
         if ($latestBill) {
-            // Correct field name
-            $parts = explode('-', $latestBill->purchase_order_no);
+            $parts = explode('-', $latestBill->bill_no);
             $lastNumber = (int) end($parts);
             $newNumber = $lastNumber + 1;
         } else {
             $newNumber = 1;
         }
 
-        $bill_no = 'BILL-'.$date.'-'.str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+        $bill_no = $prefix . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
 
-        if (! $locationId && ! $contractDate) {
-            return response()->json([
-                'success' => true,
-                'purchase_order_no' => $bill_no,
-            ]);
+        if ($request->ajax()) {
+            return $bill_no;
         }
 
         return $bill_no;
@@ -357,6 +352,13 @@ class PurchaseBillController extends Controller
 
     public function update(PurchaseBillRequest $request, PurchaseBill $purchaseBill)
     {
+        if($purchaseBill->am_approval_status == "approved" || $purchaseBill->am_approval_status == "rejected") {
+            return response()->json([
+                'success' => false,
+                'message' => 'Purchase bill is already approved or rejected.',
+            ], 422);
+        }
+        
         $purchaseOrderReceiving = PurchaseOrderReceiving::where('purchase_order_receiving_no', $request->grn_no)->first();
         $location = $request->company_location;
         $reference_no = $request->reference_no;
@@ -533,6 +535,14 @@ class PurchaseBillController extends Controller
 
     public function destroy(PurchaseBill $purchase_bill)
     {
+
+        if($purchase_bill->am_approval_status == "approved" || $purchase_bill->am_approval_status == "rejected") {
+            return response()->json([
+                'success' => false,
+                'message' => 'Purchase bill is already approved or rejected.',
+            ], 422);
+        }
+
         $purchase_bill->bill_data()->delete();
         $purchase_bill->delete();
 

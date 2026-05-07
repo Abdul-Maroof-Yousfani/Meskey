@@ -205,11 +205,24 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Transporter:</label>
-                        <select name="transporter" id="transporter" class="form-control select2">
+                        @php
+                            $transporterId = $delivery_challan->transporter;
+                            $firstTicketData = $delivery_challan->delivery_challan_data->first();
+                            $hasTicketTransporter = false;
+                            if ($firstTicketData && $firstTicketData->ticket_id) {
+                                $ticket = \App\Models\Sales\LoadingProgramItem::find($firstTicketData->ticket_id);
+                                if ($ticket && $ticket->transporter_id) {
+                                    $hasTicketTransporter = true;
+                                }
+                            }
+                        @endphp
+                        <select id="transporter_display" class="form-control select2" onchange="$('#transporter').val(this.value)" {{ $hasTicketTransporter ? 'disabled' : '' }}>
                             <option value="">Select Transporter</option>
-                            <option value="1" @selected($delivery_challan->transporter == 1)>Transporter 1</option>
-                            <option value="2" @selected($delivery_challan->transporter == 2)>Transporter 2</option>
+                            @foreach ($transporters ?? [] as $transporter)
+                                <option value="{{ $transporter->id }}" @selected($transporterId == $transporter->id)>{{ $transporter->name }}</option>
+                            @endforeach
                         </select>
+                        <input type="hidden" name="transporter" id="transporter" value="{{ $transporterId }}">
                     </div>
                 </div>
                 <div class="col-md-4" style="display: none;">
@@ -336,7 +349,7 @@
                                     </select>
                                 </td>
                                 <td>
-                                    <input type="text" name="no_of_bags[]" id="no_of_bags_{{ $index }}" value="{{ $data->no_of_bags }}" class="form-control no_of_bags" readonly>
+                                    <input type="text" name="no_of_bags[]" id="no_of_bags_{{ $index }}" value="{{ $data->loadingProgramItem->loadingSlip->no_of_bags ?? 0 }}" class="form-control no_of_bags" readonly>
                                 </td>
                                 <td>
                                     <input type="text" name="qty[]" id="qty_{{ $index }}" value="{{ $data->qty }}" class="form-control qty" oninput="calc(this)" readonly>
@@ -527,6 +540,21 @@
                     secSelect.trigger('change');
                     $("#storage_location_csv").val(response.locations.sub_arrival_location_ids.join(','));
 
+                    // Set Transporter
+                    const transSelect = $("#transporter_display");
+                    if (response.transporter && response.transporter.id) {
+                        transSelect.val(response.transporter.id).trigger('change');
+                        transSelect.prop('disabled', true);
+                        $("#transporter").val(response.transporter.id);
+                    } else {
+                        transSelect.val('').trigger('change');
+                        transSelect.prop('disabled', false);
+                        $("#transporter").val('');
+                    }
+
+                    // Set Remarks
+                    $("#remarks").val(response.delivery_order.remarks || '');
+
                     // Load Item Details for the initial ticket
                     loadInitialTicketItems(ticketId);
                     
@@ -559,6 +587,8 @@
         $("#labour_status").val('paid').trigger('change').prop('disabled', true);
         $("#standard_labour_rate, #customer_id, #delivery_order_id, #arrival_location_csv, #storage_location_csv").val('');
         $("#customer_id_display, #do_no, #sauda_type, #locations, #arrivals, #storages").val('').trigger('change');
+        $("#transporter_display").empty().append('<option value="">Select Transporter</option>').trigger('change');
+        $("#transporter").val('');
         $("#dcTableBody").empty();
         addedTicketIds = [];
     }

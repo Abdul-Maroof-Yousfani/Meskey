@@ -19,7 +19,7 @@ class ExportSecondWeighbridge extends SecondWeighbridge
         });
 
         static::addGlobalScope('export_type', function ($builder) {
-            $builder->withoutGlobalScope('sale_type')->where('type', 'export_order');
+            $builder->withoutGlobalScope('sale_type')->where('sales_second_weighbridges.type', 'export_order');
         });
     }
 

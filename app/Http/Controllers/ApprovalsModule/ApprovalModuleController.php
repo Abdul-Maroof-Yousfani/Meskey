@@ -36,6 +36,7 @@ class ApprovalModuleController extends Controller
                 'value' => 'App\Models\Procurement\Store\PurchaseRequestData',
                 'label' => 'Purchase Request Item',
             ],
+            
             [
                 'value' => 'App\Models\Procurement\Store\PurchaseQuotationData',
                 'label' => 'Purchase Quotation Item',
@@ -125,6 +126,22 @@ class ApprovalModuleController extends Controller
                 'value' => 'App\Models\Export\ExportDeliveryChallan',
                 'label' => 'Export Delivery Challan'
             ],
+            [
+                'value' => 'App\Models\Export\BillOfLading',
+                'label' => 'Bill Of Lading'
+            ],
+            [
+                'value' => 'App\Models\Export\CommercialInvoice',
+                'label' => 'Commerical Invoice'
+            ],
+            [
+                'value' => 'App\Models\Export\PackingList',
+                'label' => 'Packing List'
+            ],
+            [
+                'value' => 'App\Models\Export\Quotation',
+                'label' => 'Quotation'
+            ],
 
         ];
 
@@ -207,6 +224,7 @@ class ApprovalModuleController extends Controller
                         'role_id' => $role['id'],
                         'approval_count' => $role['count'],
                         'approval_order' => $role['order'],
+                        'condition' => $role['condition'] ?? null,
                     ]);
                 }
             }
@@ -298,6 +316,7 @@ class ApprovalModuleController extends Controller
                     [
                         'approval_count' => $role['count'],
                         'approval_order' => $role['order'],
+                        'condition' => $role['condition'] ?? null,
                     ]
                 );
             }

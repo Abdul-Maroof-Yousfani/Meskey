@@ -104,6 +104,18 @@
                         <input type="text" name="ref_no" id="ref_no" class="form-control">
                     </div>
                 </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="form-label">Withhold %:</label>
+                        <input type="number" step="any" name="so_withhold_percentage" id="so_withhold_percentage" value="10" class="form-control" onkeyup="calculate_so_withhold()" onchange="calculate_so_withhold()">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="form-label">Amount to be Held:</label>
+                        <input type="number" step="any" name="so_held_amount" id="so_held_amount" class="form-control" readonly>
+                    </div>
+                </div>
 
                 <div class="col-12 mt-3 advanced" style="display: none">
                     <h6 class="header-heading-sepration">Payment Details</h6>
@@ -118,18 +130,25 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-3 advanced" style="display: none">
+                <div class="col-md-2 advanced" style="display: none">
                     <div class="form-group">
                         <label class="form-label">Advance Amount:</label>
                         <input type="number" step="any" name="advance_amount" onchange="" id="advance_amount"
                             class="form-control" readonly>
                     </div>
                 </div>
-                <div class="col-md-3 advanced" style="display: none">
+                <div class="col-md-2 advanced" style="display: none">
                     <div class="form-group">
-                        <label class="form-label">Withhold Amount (10% of Advance):</label>
+                        <label class="form-label">Withhold %:</label>
+                        <input type="number" step="any" id="withhold_percentage" value="10"
+                            class="form-control" onkeyup="calculate_withhold_by_percentage(this)" onchange="calculate_withhold_by_percentage(this)">
+                    </div>
+                </div>
+                <div class="col-md-2 advanced" style="display: none">
+                    <div class="form-group">
+                        <label class="form-label">Withhold Amount:</label>
                         <input type="number" step="any" name="withhold_amount" value="0"
-                            id="withhold_amount" class="form-control" readonly>
+                            id="withhold_amount" class="form-control" onkeyup="calculate_percentage_by_withhold(this)" onchange="calculate_percentage_by_withhold(this)">
                     </div>
                 </div>
                 <div class="col-md-3 advanced" style="display: none">
@@ -241,6 +260,9 @@
 
 <script>
     salesInquiryRowIndex = 1;
+    so_amount = 0;
+    soFactoryMap = {};
+    soSectionMap = {};
 
     $(document).ready(function() {
         $('.select2').select2();
@@ -432,13 +454,50 @@
 
         if (sum > 0) {
             $("#advance_amount").val(sum.toFixed(0));
-            $("#withhold_amount").val((sum * 0.1).toFixed(0));
+            calculate_withhold_by_percentage(document.getElementById('withhold_percentage'));
         } else {
             $("#advance_amount").val("");
             $("#withhold_amount").val("0");
+            $("#withhold_percentage").val("10");
         }
 
         update_delivery_date_min();
+    }
+
+    function calculate_withhold_by_percentage(el) {
+        let percentage = parseFloat($(el).val()) || 0;
+        if (percentage > 100) {
+            percentage = 100;
+            $(el).val(100);
+        }
+        if (percentage < 0) {
+            percentage = 0;
+            $(el).val(0);
+        }
+
+        const advance = parseFloat($("#advance_amount").val()) || 0;
+        const withhold = (advance * (percentage / 100)).toFixed(0);
+        $("#withhold_amount").val(withhold);
+        change_withhold_amount();
+    }
+
+    function calculate_percentage_by_withhold(el) {
+        let withhold = parseFloat($(el).val()) || 0;
+        const advance = parseFloat($("#advance_amount").val()) || 0;
+
+        if (advance > 0) {
+            if (withhold > advance) {
+                withhold = advance;
+                $(el).val(advance);
+            }
+            if (withhold < 0) {
+                withhold = 0;
+                $(el).val(0);
+            }
+            const percentage = (withhold / advance) * 100;
+            $("#withhold_percentage").val(percentage.toFixed(2));
+        }
+        change_withhold_amount();
     }
 
     function update_delivery_date_min() {
@@ -639,6 +698,7 @@
     function get_sale_orders() {
         const customer_id = $("#customer_id").val();
         
+        
         if (!customer_id) {
             $("#sale_order").empty().append('<option value="" selected>Select Sale Order</option>').trigger('change');
             return;
@@ -800,7 +860,14 @@
 
                 $("#delivery_date").val(res.delivery_date);
                 $("#delivery_date").prop("readonly", false);
+
+                if (res.remarks !== null && res.remarks !== undefined) {
+                    $("#remarks").val(res.remarks);
+                }
+
                 validate_expiry();
+                
+                calculate_so_withhold();
 
                 // $("#locations").val(res.locations).trigger("change");
                
@@ -910,6 +977,13 @@
                 console.error("Error:", error);
             }
         });
+    }
+
+    function calculate_so_withhold() {
+        const percentage = parseFloat($("#so_withhold_percentage").val()) || 0;
+        const totalAmount = parseFloat(so_amount) || 0; // so_amount is set in get_so_detail
+        const heldAmount = (totalAmount * (percentage / 100)).toFixed(2);
+        $("#so_held_amount").val(heldAmount);
     }
 
     $('.select2').on('select2:open', function (e) {

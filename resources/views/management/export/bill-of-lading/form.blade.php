@@ -57,7 +57,10 @@
             </div>
 
             <div class="form-group">
-                <label>Delivery Challan</label>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label class="mb-0">Delivery Challan</label>
+                    <button type="button" class="btn btn-sm btn-outline-secondary py-0" id="select_all_dc" {{ $isEdit ? 'disabled' : '' }}>Select All</button>
+                </div>
                 @if($isEdit)
                     @foreach($selectedDcIds as $dcId)
                         <input type="hidden" name="export_delivery_challan_ids[]" value="{{ $dcId }}">
@@ -178,6 +181,15 @@
         $('#export_delivery_challan_ids, #carrier_name, #shipped_on_board_date, #charter_party_dated').on('change keyup', function() {
             fetchBillPreview();
         });
+
+        $('#select_all_dc').on('click', function() {
+            var $challans = $('#export_delivery_challan_ids');
+            var allValues = $challans.find('option').map(function() {
+                return $(this).val();
+            }).get();
+            $challans.val(allValues).trigger('change');
+        });
+
         $(document).off('summernote.change', '#cautions_text').on('summernote.change', '#cautions_text', function() {
             fetchBillPreview();
         });

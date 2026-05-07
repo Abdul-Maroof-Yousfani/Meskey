@@ -100,14 +100,23 @@ class QuotationController extends Controller
                 'created_by' => auth()->user()->id,
             ]));
 
+            // Cleanup orphaned approval rows and manually trigger to be safe
+            $module = $quotation->getApprovalModule();
+            if ($module) {
+                \App\Models\ApprovalsModule\ApprovalRow::where('module_id', $module->id)
+                    ->where('record_id', $quotation->id)
+                    ->delete();
+                $quotation->createApprovalRows();
+            }
+
             // Product specifications
             if ($request->has('specifications')) {
                 foreach ($request->specifications as $spec) {
                     $quotation->specifications()->create([
                         'product_slab_type_id' => $spec['product_slab_type_id'],
-                        'spec_name'  => $spec['spec_name'],
+                        'spec_name' => $spec['spec_name'],
                         'spec_value' => $spec['spec_value'],
-                        'uom'        => $spec['uom'] ?? null,
+                        'uom' => $spec['uom'] ?? null,
                         'value_type' => $spec['value_type'] ?? null,
                     ]);
                 }
@@ -115,23 +124,35 @@ class QuotationController extends Controller
 
             // Packing Items
             $totalAmount = 0;
+            $totalMt = 0;
             if ($request->filled('packing_items')) {
                 foreach ($request->packing_items as $item) {
                     $totalAmount += $item['amount'] ?? 0;
+                    $totalMt += $item['metric_tons'] ?? 0;
                     $quotation->packingItems()->create([
-                        'bag_type_id'     => $item['bag_type_id'] ?? null,
-                        'bag_packing_id'  => $item['bag_packing_id'] ?? null,
-                        // 'bag_color_id'    => $item['bag_color_id'] ?? null,
-                        'bag_size'        => $item['bag_size'] ?? 0,
-                        'metric_tons'     => $item['metric_tons'] ?? 0,
-                        'maunds'          => $item['maunds'] ?? 0,
-                        'no_of_bags'      => $item['no_of_bags'] ?? 0,
-                        'total_kgs'       => $item['total_kgs'] ?? 0,
-                        'rate'            => $item['rate'] ?? 0,
-                        'rate_per_maund'  => $item['rate_per_maund'] ?? 0,
-                        'amount'          => $item['amount'] ?? 0,
-                        'amount_pkr'      => $item['amount_pkr'] ?? 0,
+                        'bag_type_id' => $item['bag_type_id'] ?? null,
+                        'bag_packing_id' => $item['bag_packing_id'] ?? null,
+                        'bag_size' => $item['bag_size'] ?? 0,
+                        'metric_tons' => $item['metric_tons'] ?? 0,
+                        'maunds' => $item['maunds'] ?? 0,
+                        'no_of_bags' => $item['no_of_bags'] ?? 0,
+                        'total_kgs' => $item['total_kgs'] ?? 0,
+                        'stuffing_in_container' => $item['stuffing_in_container'] ?? 0,
+                        'no_of_containers' => $item['no_of_containers'] ?? 0,
+                        'rate' => $item['rate'] ?? 0,
+                        'rate_per_maund' => $item['rate_per_maund'] ?? 0,
+                        'amount' => $item['amount'] ?? 0,
+                        'amount_pkr' => $item['amount_pkr'] ?? 0,
                     ]);
+                }
+            }
+
+            // Sauda Quantity Validation
+            if ($request->export_soda_id) {
+                $sauda = ExportSodaField::find($request->export_soda_id);
+                if ($sauda && $totalMt > $sauda->total_qty_mt) {
+                    DB::rollBack();
+                    return response()->json(['error' => 'Quotation quantity ('.$totalMt.') MT cannot exceed Sauda quantity ('.$sauda->total_qty_mt.') MT.'], 422);
                 }
             }
 
@@ -142,21 +163,21 @@ class QuotationController extends Controller
 
             return response()->json([
                 'success' => 'Quotation created successfully',
-                'data'    => $quotation->load(['product']),
+                'data' => $quotation->load(['product']),
             ], 201);
 
         } catch (\Throwable $e) {
             DB::rollBack();
             return response()->json([
                 'success' => 'Something went wrong',
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
 
     public function show($id): View
     {
-        $quotation = Quotation::with(['packingItems', 'specifications.slabType', 'product', 'buyer', 'company', 'incoterm', 'modeOfTerm', 'modeOfTransport', 'currency', 'originCountry', 'portOfLoading', 'portOfDischarge'])->findOrFail($id);
+        $quotation = Quotation::with(['packingItems.bagType', 'packingItems.bagPacking', 'specifications.slabType', 'product', 'buyer', 'company', 'incoterm', 'modeOfTerm', 'modeOfTransport', 'currency', 'originCountry', 'portOfLoading', 'portOfDischarge'])->findOrFail($id);
 
         $products = Product::where('status', 1)->get();
         $bagTypes = BagType::where('status', 1)->get();
@@ -233,10 +254,48 @@ class QuotationController extends Controller
         DB::beginTransaction();
 
         try {
+            $quotation = Quotation::lockForUpdate()->find($quotation->id);
+
+            if (!$quotation) {
+                DB::rollBack();
+
+                return response()->json([
+                    'success' => 'Quotation already deleted or not found.',
+                ], 404);
+            }
+
+            if (
+                $quotation->am_approval_status === "approved" ||
+                $quotation->am_approval_status === "rejected"
+            ) {
+                DB::rollBack();
+
+                return response()->json([
+                    'success' => 'Quotation has been approved/rejected and cannot be updated.',
+                ], 400);
+            }
+
             $quotationData = $request->except(['specifications', 'packing_items']);
 
-            $quotation->update(array_merge($quotationData, [
-            ]));
+            $updateData = array_merge($quotationData, [
+                'am_change_made' => 1,
+            ]);
+
+            if ($quotation->am_approval_status === 'reverted') {
+                $updateData['am_approval_status'] = 'pending';
+            }
+
+            $quotation->update($updateData);
+
+            // Recreate approval rows to handle conditional role changes (with/without sauda)
+            $module = $quotation->getApprovalModule();
+            if ($module) {
+                \App\Models\ApprovalsModule\ApprovalRow::where('module_id', $module->id)
+                    ->where('record_id', $quotation->id)
+                    ->where('approval_cycle', $quotation->getCurrentApprovalCycle())
+                    ->delete();
+                $quotation->createApprovalRows();
+            }
 
             // Update specifications
             if ($quotation->specifications()->exists()) {
@@ -246,9 +305,9 @@ class QuotationController extends Controller
                 foreach ($request->specifications as $spec) {
                     $quotation->specifications()->create([
                         'product_slab_type_id' => $spec['product_slab_type_id'],
-                        'spec_name'  => $spec['spec_name'],
+                        'spec_name' => $spec['spec_name'],
                         'spec_value' => $spec['spec_value'],
-                        'uom'        => $spec['uom'] ?? null,
+                        'uom' => $spec['uom'] ?? null,
                         'value_type' => $spec['value_type'] ?? null,
                     ]);
                 }
@@ -257,23 +316,34 @@ class QuotationController extends Controller
             // Update packing items
             $quotation->packingItems()->delete();
             $totalAmount = 0;
+            $totalMt = 0;
             if ($request->filled('packing_items')) {
                 foreach ($request->packing_items as $item) {
                     $totalAmount += $item['amount'] ?? 0;
+                    $totalMt += $item['metric_tons'] ?? 0;
                     $quotation->packingItems()->create([
-                        'bag_type_id'     => $item['bag_type_id'] ?? null,
-                        'bag_packing_id'  => $item['bag_packing_id'] ?? null,
-                        // 'bag_color_id'    => $item['bag_color_id'] ?? null,
-                        'bag_size'        => $item['bag_size'] ?? 0,
-                        'metric_tons'     => $item['metric_tons'] ?? 0,
-                        'maunds'          => $item['maunds'] ?? 0,
-                        'no_of_bags'      => $item['no_of_bags'] ?? 0,
-                        'total_kgs'       => $item['total_kgs'] ?? 0,
-                        'rate'            => $item['rate'] ?? 0,
-                        'rate_per_maund'  => $item['rate_per_maund'] ?? 0,
-                        'amount'          => $item['amount'] ?? 0,
-                        'amount_pkr'      => $item['amount_pkr'] ?? 0,
+                        'bag_type_id' => $item['bag_type_id'] ?? null,
+                        'bag_packing_id' => $item['bag_packing_id'] ?? null,
+                        'bag_size' => $item['bag_size'] ?? 0,
+                        'metric_tons' => $item['metric_tons'] ?? 0,
+                        'maunds' => $item['maunds'] ?? 0,
+                        'no_of_bags' => $item['no_of_bags'] ?? 0,
+                        'total_kgs' => $item['total_kgs'] ?? 0,
+                        'stuffing_in_container' => $item['stuffing_in_container'] ?? 0,
+                        'no_of_containers' => $item['no_of_containers'] ?? 0,
+                        'rate' => $item['rate'] ?? 0,
+                        'rate_per_maund' => $item['rate_per_maund'] ?? 0,
+                        'amount' => $item['amount'] ?? 0,
+                        'amount_pkr' => $item['amount_pkr'] ?? 0,
                     ]);
+                }
+            }
+
+            // Sauda Quantity Validation
+            if ($quotation->export_soda_id) {
+                if ($quotation->exportSoda && $totalMt > $quotation->exportSoda->total_qty_mt) {
+                    DB::rollBack();
+                    return response()->json(['error' => 'Quotation quantity ('.$totalMt.') MT cannot exceed Sauda quantity ('.$quotation->exportSoda->total_qty_mt.') MT.'], 422);
                 }
             }
 
@@ -284,14 +354,14 @@ class QuotationController extends Controller
 
             return response()->json([
                 'success' => 'Quotation updated successfully',
-                'data'    => $quotation->load(['product', 'packingItems']),
+                'data' => $quotation->load(['product', 'packingItems']),
             ], 200);
 
         } catch (\Throwable $e) {
             DB::rollBack();
             return response()->json([
                 'success' => 'Something went wrong',
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -301,42 +371,56 @@ class QuotationController extends Controller
         DB::beginTransaction();
 
         try {
-            $quotation = Quotation::with(['packingItems'])->findOrFail($id);
+            $quotation = Quotation::with(['packingItems'])
+                ->lockForUpdate()
+                ->find($id);
 
+            if (!$quotation) {
+                DB::rollBack();
+
+                return response()->json([
+                    'success' => 'Quotation already deleted or not found.',
+                ], 404);
+            }
+
+            // delete children first
             $quotation->packingItems()->delete();
+
+            // delete parent
             $quotation->delete();
 
             DB::commit();
 
             return response()->json([
-                'success' => true,
-                'message' => 'Quotation deleted successfully.',
+                'success' => 'Quotation deleted successfully.',
             ], 200);
 
         } catch (\Throwable $e) {
             DB::rollBack();
+
             return response()->json([
-                'success' => false,
-                'message' => 'Failed to delete Quotation',
-                'error'   => $e->getMessage(),
+                'success' => 'Failed to delete Quotation',
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
 
-    public function getProductSpecs($productId)
+    public function getProductSpecs(Request $request, $productId)
     {
+        $shouldPrefill = $request->boolean('prefill');
+
         $specs = ProductSlab::with('slabType')
             ->where('product_id', $productId)
             ->where('status', 1)
             ->get()
             ->groupBy('product_slab_type_id')
-            ->map(function ($slabs) {
+            ->map(function ($slabs) use ($shouldPrefill) {
                 $firstSlab = $slabs->first();
                 return [
-                    'id'         => $firstSlab->slabType->id,
-                    'spec_name'  => $firstSlab->slabType->name ?? '',
-                    'spec_value' => $firstSlab->deduction_value ?? 0,
-                    'uom'        => $firstSlab->slabType->qc_symbol ?? '',
+                    'id' => $firstSlab->slabType->id,
+                    'spec_name' => $firstSlab->slabType->name ?? '',
+                    'spec_value' => $shouldPrefill ? ($firstSlab->prefill_spec_value ?? 0) : 0,
+                    'uom' => $firstSlab->slabType->qc_symbol ?? '',
                 ];
             })
             ->values();

@@ -5,7 +5,7 @@
 </style>
 <div class="modal-body">
     <div class="row form-mar">
-        <div class="col-xs-6 col-sm-6 col-md-6">
+        <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group">
                 <label>Export Order:</label>
                 <select class="form-control select2" multiple disabled style="width: 100% !important;">
@@ -15,7 +15,7 @@
                 </select>
             </div>
         </div>
-        <div class="col-xs-6 col-sm-6 col-md-6">
+        <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group">
                 <label>Delivery Order:</label>
                 <select class="form-control select2" multiple disabled style="width: 100% !important;">
@@ -23,6 +23,12 @@
                         <option value="{{ $do->id }}" selected>{{ $do->reference_no }}</option>
                     @endforeach
                 </select>
+            </div>
+        </div>
+        <div class="col-xs-4 col-sm-4 col-md-4">
+            <div class="form-group">
+                <label>Vessel Name:</label>
+                <input type="text" value="{{ $loadingProgram->vessel_name ?? 'N/A' }}" disabled class="form-control" />
             </div>
         </div>
     </div>
@@ -185,98 +191,11 @@
         </div>
     </div>
 
-    <div class="row mt-3" id="lineItemsContainer">
-        <style>
-            .items-table {
-                table-layout: fixed !important;
-                min-width: 2700px !important;
-                width: 2700px !important;
-            }
-        </style>
+    {{-- Items table hidden for Request Stage --}}
+    <div class="row mt-3">
         <div class="col-12">
-            <h6 class="header-heading-sepration">Loading Program Items</h6>
-            <div class="table-responsive">
-                <table class="table table-bordered table-striped items-table">
-                    <thead class="thead-light">
-                        <tr>
-                            <th style="width: 300px">Export Order</th>
-                            <th style="width: 300px">Delivery Order</th>
-                            <th style="width: 200px">Truck Number</th>
-                            <th style="width: 200px">Container Number</th>
-                            <th style="width: 180px">Packing</th>
-                            <th style="width: 250px">Brand</th>
-                            <th style="width: 280px">Factory/Arrival Location</th>
-                            <th style="width: 280px">Gala/Sub Arrival Location</th>
-                            <th style="width: 220px">Driver Name</th>
-                            <th style="width: 220px">Contact Details</th>
-                            <th style="width: 250px">Transporter</th>
-                            <th style="width: 120px">Sug. Qty</th>
-                        </tr>
-                    </thead>
-                    <tbody id="itemsList">
-                        @foreach($loadingProgram->loadingProgramItems as $item)
-                        <tr>
-                            <td>
-                                <select class="form-control form-control-sm select2" multiple disabled>
-                                    @foreach($item->exportOrders as $eo)
-                                        <option value="{{ $eo->id }}" selected>{{ $eo->voucher_no ?? $eo->contract_no ?? 'EO-' . $eo->id }}</option>
-                                    @endforeach
-                                    @if($item->exportOrders->isEmpty() && $loadingProgram->exportOrder)
-                                        <option value="{{ $loadingProgram->exportOrder->id }}" selected>{{ $loadingProgram->exportOrder->voucher_no ?? $loadingProgram->exportOrder->contract_no ?? 'EO-' . $loadingProgram->exportOrder->id }}</option>
-                                    @endif
-                                </select>
-                            </td>
-                            <td>
-                                <select class="form-control form-control-sm select2" multiple disabled>
-                                    @foreach($item->deliveryOrders as $do)
-                                        <option value="{{ $do->id }}" selected>{{ $do->reference_no }}</option>
-                                    @endforeach
-                                    @if($item->deliveryOrders->isEmpty() && $loadingProgram->deliveryOrder)
-                                        <option value="{{ $loadingProgram->deliveryOrder->id }}" selected>{{ $loadingProgram->deliveryOrder->reference_no }}</option>
-                                    @endif
-                                </select>
-                            </td>
-                            <td><input type="text" value="{{ $item->truck_number }}" class="form-control form-control-sm" disabled></td>
-                            <td><input type="text" value="{{ $item->container_number }}" class="form-control form-control-sm" disabled></td>
-                            <td>
-                                @php
-                                    $selectedPackings = array_filter(explode(', ', $item->packing));
-                                @endphp
-                                <select class="form-control form-control-sm select2" multiple disabled>
-                                    @foreach($selectedPackings as $p)
-                                        <option value="{{ $p }}" selected>{{ $p }}</option>
-                                    @endforeach
-                                </select>
-                            </td>
-                            <td>
-                                <select class="form-control form-control-sm select2" multiple disabled>
-                                    @if($item->brand)
-                                        <option value="{{ $item->brand_id }}" selected>{{ $item->brand->name }}</option>
-                                    @endif
-                                </select>
-                            </td>
-                            <td>
-                                <select class="form-control form-control-sm select2" disabled>
-                                    <option selected>{{ $item->arrivalLocation->name ?? 'N/A' }}</option>
-                                </select>
-                            </td>
-                            <td>
-                                <select class="form-control form-control-sm select2" disabled>
-                                    <option selected>{{ $item->subArrivalLocation->name ?? 'N/A' }}</option>
-                                </select>
-                            </td>
-                            <td><input type="text" value="{{ $item->driver_name }}" class="form-control form-control-sm" disabled></td>
-                             <td><input type="text" value="{{ $item->contact_details }}" class="form-control form-control-sm" disabled></td>
-                             <td>
-                                 <select class="form-control form-control-sm select2" disabled>
-                                     <option selected>{{ $item->transporter->name ?? '-' }}</option>
-                                 </select>
-                             </td>
-                             <td><input type="text" value="{{ number_format($item->qty, 2) }}" class="form-control form-control-sm" disabled></td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+            <div class="alert alert-info text-center">
+                <i class="ft-info"></i> This is a Loading Program Request. Item details (trucks, drivers, etc.) will be added in the Completion stage.
             </div>
         </div>
     </div>

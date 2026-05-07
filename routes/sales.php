@@ -25,6 +25,7 @@ Route::name("sales.")->group(function () {
     Route::get("/sales-order/{id}/view", [SaleOrderController::class, "view"])->name("sale-order.view");
     Route::post("get-sale-orders", [SaleOrderController::class, "getList"])->name("get.sales-order.list");
     Route::get("/get/so-no", [SaleOrderController::class, "getNumber"])->name("get.sales-order.getnumber");
+    Route::get("/get-unallocated-receipt-vouchers", [SaleOrderController::class, "getUnallocatedReceiptVouchers"])->name("get-unallocated-receipt-vouchers");
 
     Route::resource("delivery-order", DeliveryOrderController::class);
     Route::post("get-delivery-order", [DeliveryOrderController::class, "getList"])->name("get.delivery-order.list");

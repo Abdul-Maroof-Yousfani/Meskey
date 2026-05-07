@@ -15,6 +15,7 @@ use App\Models\Master\Color;
 use App\Models\Master\Stitching;
 use App\Models\Master\CompanyLocation;
 use App\Models\Master\InspectionCompany;
+use App\Models\Master\FumigationCompany;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
@@ -32,7 +33,7 @@ class ExportDeliveryOrderController extends Controller
     {
         $delivery_orders = DeliveryOrder::with(['exportOrder.packingItems', 'customer', 'exportFormE', 'exportPackingItems'])
             ->when($request->filled('search'), function ($q) use ($request) {
-                $searchTerm = '%'.$request->search.'%';
+                $searchTerm = '%' . $request->search . '%';
                 return $q->whereHas('exportOrder', function ($sq) use ($searchTerm) {
                     $sq->where('voucher_no', 'like', $searchTerm)
                         ->orWhere('contract_no', 'like', $searchTerm);
@@ -47,7 +48,7 @@ class ExportDeliveryOrderController extends Controller
     public function create(): View
     {
         $buyers = Customer::get();
-        
+
         // Filter only Export Orders that have remaining capacity (Total MT - Consumed MT > 0)
         $export_orders = ExportOrder::with(['packingItems', 'deliveryOrders.exportPackingItems'])
             ->where('am_approval_status', 'approved')
@@ -61,22 +62,22 @@ class ExportDeliveryOrderController extends Controller
                 return ($totalMt - $consumedMt) > 0.001;
             });
 
-        $products = collect(); 
+        $products = collect();
         $bagTypes = BagType::where('status', 1)->get();
-        $bagPackings = collect(); 
+        $bagPackings = collect();
         $brands = Brands::all();
         $bagColors = Color::all();
-        $users = collect(); 
-        $banks = collect(); 
-        $brokers = collect(); 
-        $incoterms = collect(); 
-        $modeofterms = collect(); 
-        $modeoftransport = collect(); 
-        $countries = collect(); 
-        $ports = collect(); 
-        $hscodes = collect(); 
-        $currencies = collect(); 
-        $exportSodas = collect(); 
+        $users = collect();
+        $banks = collect();
+        $brokers = collect();
+        $incoterms = collect();
+        $modeofterms = collect();
+        $modeoftransport = collect();
+        $countries = collect();
+        $ports = collect();
+        $hscodes = collect();
+        $currencies = collect();
+        $exportSodas = collect();
         $quotations = collect();
 
         // Needed for packing items autofill
@@ -84,24 +85,50 @@ class ExportDeliveryOrderController extends Controller
         $bagConditions = BagCondition::all();
         $stitchings = Stitching::all();
         $inspectionCompanies = InspectionCompany::all();
+        $transporters = \App\Models\Master\Transporter::all();
+        $fumigationCompanies = FumigationCompany::where('status', 'active')->get();
 
         return view('management.export.delivery-order.create', compact(
-            'buyers', 'export_orders', 'products', 'bagTypes', 'bagPackings', 'brands', 'bagColors', 'users', 'banks', 'brokers', 'incoterms', 'modeofterms', 'modeoftransport', 'countries', 'ports', 'hscodes', 'currencies', 'exportSodas', 'quotations', 'companyLocations', 'bagConditions', 'stitchings', 'inspectionCompanies'
+            'buyers',
+            'export_orders',
+            'products',
+            'bagTypes',
+            'bagPackings',
+            'brands',
+            'bagColors',
+            'users',
+            'banks',
+            'brokers',
+            'incoterms',
+            'modeofterms',
+            'modeoftransport',
+            'countries',
+            'ports',
+            'hscodes',
+            'currencies',
+            'exportSodas',
+            'quotations',
+            'companyLocations',
+            'bagConditions',
+            'stitchings',
+            'inspectionCompanies',
+            'transporters',
+            'fumigationCompanies'
         ));
     }
 
     public function getExportOrderDetails($id)
     {
         $exportOrder = ExportOrder::where('am_approval_status', 'approved')->with([
-            'product', 
-            'specifications.productSlabType', 
+            'product',
+            'specifications.productSlabType',
             'packingItems.subItems.bagType',
             'packingItems.subItems.bagSize',
-            'packingItems.bagType', 
-            'packingItems.bagPacking', 
-            'packingItems.brand', 
+            'packingItems.bagType',
+            'packingItems.bagPacking',
+            'packingItems.brand',
             'packingItems.bagColor',
-            'broker', 
+            'broker',
             'currency',
             'incoterm',
             'originCountry',
@@ -110,23 +137,32 @@ class ExportDeliveryOrderController extends Controller
             'hsCode',
             'modeOfTerm',
             'modeOfTransport',
-            'exportSoda.product', // Added for Sauda details
-            'quotation.product'   // Added for Quotation details
+            'exportSoda.product',
+            'quotation.product'
         ])->findOrFail($id);
+
+        // Get the first Form-E for default values if exists
+        $firstFormE = ExportFormE::with('jobOrder')->where('export_order_id', $id)->first();
+        $jobOrderNo = $firstFormE?->jobOrder?->job_order_no ?? '';
+
+        // Get inspection company and fumigation from EO packing items
+        $firstPackingItem = $exportOrder->packingItems->first();
+        $inspectionCompany = $firstPackingItem?->inspection_by ?? '';
+        $fumigation = $firstPackingItem?->fumigation_company_id ? 'Yes' : 'No';
 
         $deliveryOrders = DeliveryOrder::with('exportPackingItems')->where('export_order_id', $id)->get();
         $totalEoMt = $exportOrder->packingItems->sum('metric_tons');
-        $consumedMt = $deliveryOrders->sum(function($do) {
+        $consumedMt = $deliveryOrders->sum(function ($do) {
             return $do->exportPackingItems->sum('metric_tons');
         });
-        
+
         $remainingMt = max(0, $totalEoMt - $consumedMt);
         $tempConsumed = $consumedMt;
 
         $packingItems = $exportOrder->packingItems->sortBy('id')->map(function ($item) use (&$tempConsumed) {
             $originalMt = (float) $item->metric_tons;
             $originalBags = (int) $item->no_of_bags;
-            
+
             $consumedFromThis = min($originalMt, $tempConsumed);
             $tempConsumed -= $consumedFromThis;
 
@@ -139,44 +175,50 @@ class ExportDeliveryOrderController extends Controller
 
                 return [
                     'bag_product_id' => $sub->bag_type_id,
-                    'bag_type_name'  => $sub->bagType->name ?? '',
-                    'bag_size_id'    => $sub->bag_size_id,
-                    'bag_size_name'  => $sub->bagSize->name ?? ($sub->bag_size_id ?? ''),
-                    'stitching_id'   => $sub->stitching_id,
-                    'bag_color_id'   => $sub->bag_color_id,
-                    'brand_id'       => $sub->brand_id,
+                    'bag_type_name' => $sub->bagType->name ?? '',
+                    'bag_size_id' => $sub->bag_size_id,
+                    'bag_size_name' => $sub->bagSize->name ?? ($sub->bag_size_id ?? ''),
+                    'stitching_id' => $sub->stitching_id,
+                    'bag_color_id' => $sub->bag_color_id,
+                    'brand_id' => $sub->brand_id,
                     'thread_color_id' => $sub->thread_color_id,
                     'no_of_primary_bags' => $sub->no_of_primary_bags,
-                    'no_of_bags'     => $subRemainingBags,
-                    'empty_bags'     => $sub->empty_bags,
-                    'extra_bags'     => $sub->extra_bags,
+                    'no_of_bags' => $subRemainingBags,
+                    'empty_bags' => $sub->empty_bags,
+                    'extra_bags' => $sub->extra_bags,
                     'extra_bags_percentage' => ($sub->no_of_bags > 0 && $sub->extra_bags > 0) ? round(($sub->extra_bags / $sub->no_of_bags) * 100, 2) : 0,
                     'empty_bag_weight' => $sub->empty_bag_weight,
-                    'total_bags'     => $subRemainingBags + ($sub->extra_bags ?? 0) + ($sub->empty_bags ?? 0),
+                    'total_bags' => $subRemainingBags + ($sub->extra_bags ?? 0) + ($sub->empty_bags ?? 0),
                 ];
             })->values();
 
             return [
-                'brand_id'          => $item->brand_id,
-                'bag_product_id'    => $item->bag_type_id,
-                'bag_type_name'     => $item->bagType->name ?? '',
-                'bag_condition_id'  => $item->bag_condition_id,
-                'bag_color_id'      => $item->bag_color_id,
-                'thread_color_id'   => $item->thread_color_id,
-                'stitching_id'      => $item->stitching_id,
-                'bag_size'          => $item->bag_size,
-                'no_of_bags'        => $remainingBagsInItem,
-                'extra_bags'        => $item->extra_bags,
+                'brand_id' => $item->brand_id,
+                'bag_product_id' => $item->bag_type_id,
+                'bag_type_name' => $item->bagType->name ?? '',
+                'bag_condition_id' => $item->bag_condition_id,
+                'bag_color_id' => $item->bag_color_id,
+                'thread_color_id' => $item->thread_color_id,
+                'stitching_id' => $item->stitching_id,
+                'bag_size' => $item->bag_size,
+                'no_of_bags' => $remainingBagsInItem,
+                'extra_bags' => $item->extra_bags,
                 'extra_bags_percentage' => $item->extra_bags_percentage ?? (($item->no_of_bags > 0 && $item->extra_bags > 0) ? round(($item->extra_bags / $item->no_of_bags) * 100, 2) : 0),
-                'empty_bags'        => $item->empty_bags,
-                'total_bags'        => $remainingBagsInItem + ($item->extra_bags ?? 0) + ($item->empty_bags ?? 0),
-                'total_kgs'         => $remainingMtInItem * 1000,
-                'metric_tons'       => $remainingMtInItem,
+                'empty_bags' => $item->empty_bags,
+                'total_bags' => $remainingBagsInItem + ($item->extra_bags ?? 0) + ($item->empty_bags ?? 0),
+                'total_kgs' => $remainingMtInItem * 1000,
+                'metric_tons' => $remainingMtInItem,
                 'stuffing_in_container' => $item->stuffing_in_container,
-                'no_of_containers'  => $item->no_of_containers,
+                'no_of_containers' => $item->no_of_containers,
                 'min_weight_empty_bags' => $item->min_weight_empty_bags,
                 'fumigation_company_id' => $item->fumigation_company_id,
-                'sub_items'         => $subItems,
+                'fumigation' => $item->fumigation_company_id ? 'Yes' : 'No',
+                'phyto_certificate' => $item->fumigation_company_id ?? [], // Same as fumigation, editable
+                'inspection_company' => collect($item->inspection_by ?? [])->map(function($id) {
+                    $company = \App\Models\Master\InspectionCompany::find($id);
+                    return $company ? $company->name : null;
+                })->filter()->implode(', '),
+                'sub_items' => $subItems,
             ];
         })->values();
 
@@ -187,7 +229,12 @@ class ExportDeliveryOrderController extends Controller
                 'packing_items_autofill' => $packingItems,
                 'total_eo_mt' => round($totalEoMt, 3),
                 'consumed_mt' => round($consumedMt, 3),
-                'remaining_mt' => round($remainingMt, 3)
+                'remaining_mt' => round($remainingMt, 3),
+                'autofill' => [
+                    'job_order_no' => $jobOrderNo,
+                    'inspection_company' => $inspectionCompany,
+                    'fumigation' => $fumigation,
+                ]
             ]
         ]);
     }
@@ -233,7 +280,7 @@ class ExportDeliveryOrderController extends Controller
             // Re-generate reference_no server-side to ensure uniqueness
             $datePart = Carbon::parse($request->dispatch_date)->format('Y-m-d');
             $prefix = 'DO-' . $datePart;
-            
+
             $latestContract = DeliveryOrder::withoutGlobalScopes()
                 ->where('reference_no', 'like', "$prefix-%")
                 ->orderBy('reference_no', 'desc')
@@ -249,20 +296,48 @@ class ExportDeliveryOrderController extends Controller
 
             $reference_no = $prefix . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
 
-            return DeliveryOrder::create([
+            $deliveryOrder = DeliveryOrder::create([
                 'type' => 'export_order',
                 'export_order_id' => $request->export_order_id,
                 'customer_id' => $request->buyer_id,
                 'export_form_e_id' => $request->export_form_e_id,
                 'remarks' => $request->remarks,
                 'created_by' => auth()->user() ? auth()->user()->id : null,
-                'reference_no' => $reference_no, 
+                'reference_no' => $reference_no,
                 'ref_no' => $request->ref_no,
-                'location_id' => $request->location_id ?? null,
-                'arrival_location_id' => $request->arrival_id ? implode(',', (array)$request->arrival_id) : null,
-                'sub_arrival_location_id' => $request->storage_id ? implode(',', (array)$request->storage_id) : null,
+                'location_id' => null,
+                'arrival_location_id' => null,
+                'sub_arrival_location_id' => null,
                 'am_approval_status' => 'pending',
+
+                // New fields
+                'financial_instrument_no' => $request->financial_instrument_no,
+                'job_order_no' => $request->job_order_no,
+                'vessel_name' => $request->vessel_name,
+                'vessel_etd' => $request->vessel_etd,
+                'vessel_eta' => $request->vessel_eta,
+                'loading_date' => $request->loading_date,
+                'estimated_payment_date' => $request->estimated_payment_date,
+                'freight_amount' => $request->freight_amount ?? 0,
+                'transporter_id' => $request->transporter_id,
+                'c_agent' => $request->c_agent,
+                'shipping_line' => $request->shipping_line,
+                'empty_container_pickup' => $request->empty_container_pickup,
             ]);
+
+            // Save multiple locations
+            if ($request->has('locations') && is_array($request->locations)) {
+                foreach ($request->locations as $locData) {
+                    if (empty($locData['location_id'])) continue;
+                    $deliveryOrder->locations()->create([
+                        'company_location_id' => $locData['location_id'],
+                        'arrival_location_ids' => isset($locData['arrival_ids']) ? implode(',', (array) $locData['arrival_ids']) : null,
+                        'sub_arrival_location_ids' => isset($locData['storage_ids']) ? implode(',', (array) $locData['storage_ids']) : null,
+                    ]);
+                }
+            }
+
+            return $deliveryOrder;
         });
 
         foreach ($request->packing_items as $index => $itemData) {
@@ -272,7 +347,7 @@ class ExportDeliveryOrderController extends Controller
             }
             $packingItem = $deliveryOrder->exportPackingItems()->create([
                 'company_location_id' => $itemData['company_location_id'] ?? null,
-                'bag_type_id' => $itemData['bag_product_id'] ?? null, 
+                'bag_type_id' => $itemData['bag_product_id'] ?? null,
                 'bag_condition_id' => $itemData['bag_condition_id'] ?? null,
                 'bag_size' => $itemData['bag_size'] ?? 0,
                 'no_of_bags' => $itemData['no_of_bags'] ?? 0,
@@ -289,7 +364,12 @@ class ExportDeliveryOrderController extends Controller
                 'thread_color_id' => $itemData['thread_color_id'] ?? null,
                 'stitching_id' => $itemData['stitching_id'] ?? null,
                 'min_weight_empty_bags' => $itemData['min_weight_empty_bags'] ?? 0,
-                'fumigation_company_id' => isset($itemData['fumigation_company_id']) ? json_encode((array)$itemData['fumigation_company_id']) : null,
+                'fumigation_company_id' => isset($itemData['fumigation_company_id']) ? (array) $itemData['fumigation_company_id'] : (isset($itemData['fumigation_company_id_hidden']) ? json_decode($itemData['fumigation_company_id_hidden'], true) : null),
+                'phyto_certificate' => isset($itemData['phyto_certificate']) ? (array) $itemData['phyto_certificate'] : null,
+                'carton_supplier' => $itemData['carton_supplier'] ?? null,
+                'fumigation_tablets' => $itemData['fumigation_tablets'] ?? null,
+                'fumigation_ref_no' => $itemData['fumigation_ref_no'] ?? null,
+                'inspection_company' => $itemData['inspection_company'] ?? null,
             ]);
 
             if (isset($itemData['sub_items']) && is_array($itemData['sub_items'])) {
@@ -325,7 +405,7 @@ class ExportDeliveryOrderController extends Controller
     {
         $deliveryOrder = DeliveryOrder::with([
             'customer',
-            'exportFormE', 
+            'exportFormE',
             'exportOrder.quotation.product',
             'exportOrder.exportSoda.product',
             'exportOrder.product',
@@ -347,8 +427,9 @@ class ExportDeliveryOrderController extends Controller
             'exportPackingItems.bagColor',
             'exportPackingItems.threadColor',
             'exportPackingItems.stitching',
+            'locations.companyLocation',
         ])->findOrFail($id);
-        
+
         $exportOrderData = $deliveryOrder->exportOrder;
 
         // Calculate quantity variables for the view (Form-E centric)
@@ -367,14 +448,26 @@ class ExportDeliveryOrderController extends Controller
         $bagColors = Color::all();
         $threadColors = Color::all();
         $stitchings = Stitching::all();
-        $fumigationCompanies = InspectionCompany::all();
+        $inspectionCompanies = InspectionCompany::all();
+        $fumigationCompanies = \App\Models\Master\FumigationCompany::where('status', 'active')->get();
         $bagTypes = BagType::where('status', 1)->get();
         $bagConditions = BagCondition::where('status', 1)->get();
 
         return view('management.export.delivery-order.show', compact(
-            'deliveryOrder', 'exportOrderData', 'brands', 'bagColors', 
-            'threadColors', 'stitchings', 'fumigationCompanies', 'bagTypes', 'bagConditions',
-            'totalAllowedMt', 'alreadyConsumedMt', 'remainingMt', 'currentRequestMt'
+            'deliveryOrder',
+            'exportOrderData',
+            'brands',
+            'bagColors',
+            'threadColors',
+            'stitchings',
+            'fumigationCompanies',
+            'inspectionCompanies',
+            'bagTypes',
+            'bagConditions',
+            'totalAllowedMt',
+            'alreadyConsumedMt',
+            'remainingMt',
+            'currentRequestMt'
         ));
     }
 
@@ -394,7 +487,8 @@ class ExportDeliveryOrderController extends Controller
             'exportOrder.portOfLoading',
             'exportOrder.hsCode',
             'exportOrder.currency',
-            'exportOrder.packingItems'
+            'exportOrder.packingItems',
+            'locations.companyLocation'
         ])->findOrFail($id);
         $buyers = Customer::get();
         $export_orders = ExportOrder::where('am_approval_status', 'approved')->latest()->get();
@@ -411,173 +505,308 @@ class ExportDeliveryOrderController extends Controller
         $currentRequestMt = (float) $deliveryOrder->exportPackingItems->sum('metric_tons');
         $remainingMt = max(0, $totalAllowedMt - $alreadyConsumedMt - $currentRequestMt);
 
-        $products = collect(); 
+        $products = collect();
         $bagTypes = BagType::where('status', 1)->get();
-        $bagPackings = collect(); 
+        $bagPackings = collect();
         $brands = Brands::all();
         $bagColors = Color::all();
-        $users = collect(); 
-        $banks = collect(); 
-        $brokers = collect(); 
-        $incoterms = collect(); 
-        $modeofterms = collect(); 
-        $modeoftransport = collect(); 
-        $countries = collect(); 
-        $ports = collect(); 
-        $hscodes = collect(); 
-        $currencies = collect(); 
-        $exportSodas = collect(); 
+        $users = collect();
+        $banks = collect();
+        $brokers = collect();
+        $incoterms = collect();
+        $modeofterms = collect();
+        $modeoftransport = collect();
+        $countries = collect();
+        $ports = collect();
+        $hscodes = collect();
+        $currencies = collect();
+        $exportSodas = collect();
         $quotations = collect();
         $companyLocations = CompanyLocation::all();
         $bagConditions = BagCondition::all();
         $stitchings = Stitching::all();
         $inspectionCompanies = InspectionCompany::all();
+        $transporters = \App\Models\Master\Transporter::all();
+        $fumigationCompanies = \App\Models\Master\FumigationCompany::where('status', 'active')->get();
 
         return view('management.export.delivery-order.edit', compact(
-            'deliveryOrder', 'buyers', 'export_orders', 'products', 'bagTypes', 'bagPackings', 'brands', 'bagColors', 'users', 'banks', 'brokers', 'incoterms', 'modeofterms', 'modeoftransport', 'countries', 'ports', 'hscodes', 'currencies', 'exportSodas', 'quotations', 'companyLocations', 'bagConditions', 'stitchings', 'inspectionCompanies',
-            'totalAllowedMt', 'alreadyConsumedMt', 'remainingMt', 'currentRequestMt'
+            'deliveryOrder',
+            'buyers',
+            'export_orders',
+            'products',
+            'bagTypes',
+            'bagPackings',
+            'brands',
+            'bagColors',
+            'users',
+            'banks',
+            'brokers',
+            'incoterms',
+            'modeofterms',
+            'modeoftransport',
+            'countries',
+            'ports',
+            'hscodes',
+            'currencies',
+            'exportSodas',
+            'quotations',
+            'companyLocations',
+            'bagConditions',
+            'stitchings',
+            'inspectionCompanies',
+            'transporters',
+            'fumigationCompanies',
+            'totalAllowedMt',
+            'alreadyConsumedMt',
+            'remainingMt',
+            'currentRequestMt'
         ));
     }
 
     public function update(Request $request, $id)
     {
-        $deliveryOrder = DeliveryOrder::findOrFail($id);
-        $request->validate([
-            'export_form_e_id' => 'required|exists:export_form_es,id',
-            'packing_items' => 'required|array',
-        ]);
-
         DB::beginTransaction();
 
-        $exportOrderId = $deliveryOrder->export_order_id;
-        $formE = ExportFormE::findOrFail($request->export_form_e_id);
-        $totalAllowedMt = (float) $formE->input_quantity;
-        $alreadyConsumedMt = DeliveryOrder::with(['exportPackingItems'])
-            ->where('export_form_e_id', $request->export_form_e_id)
-            ->where('id', '!=', $id)
-            ->get()
-            ->sum(function ($do) {
-                return $do->exportPackingItems->sum('metric_tons');
-            });
+        try {
+            $request->validate([
+                'export_form_e_id' => 'required|exists:export_form_es,id',
+                'packing_items' => 'required|array',
+            ]);
 
-        $currentRequestMt = 0;
-        foreach ($request->packing_items as $index => $itemData) {
-            if (empty($itemData['bag_product_id'])) {
-                continue;
+            $deliveryOrder = DeliveryOrder::with(['exportPackingItems.subItems'])
+                ->lockForUpdate()
+                ->find($id);
+
+            if (!$deliveryOrder) {
+                DB::rollBack();
+
+                return response()->json([
+                    'success' => 'Delivery Order already deleted or not found.',
+                ], 404);
             }
-            $currentRequestMt += floatval($itemData['metric_tons'] ?? 0);
-        }
 
-        if (($alreadyConsumedMt + $currentRequestMt) > ($totalAllowedMt + 0.001)) {
-            DB::rollBack();
-            return response()->json([
-                'status' => 'error',
-                'message' => "Total Metric Tons ($currentRequestMt) exceeds the remaining capacity of Export Form-E (" . round($totalAllowedMt - $alreadyConsumedMt, 2) . " MT)."
-            ], 422);
-        }
+            if (
+                $deliveryOrder->am_approval_status === "approved" ||
+                $deliveryOrder->am_approval_status === "rejected"
+            ) {
+                DB::rollBack();
 
-        $deliveryOrder->update([
-            'remarks' => $request->remarks,
-            'export_form_e_id' => $request->export_form_e_id,
-            'reference_no' => $request->reference_no ?? $deliveryOrder->reference_no,
-            'ref_no' => $request->ref_no,
-            'location_id' => $request->location_id ?? null,
-            'arrival_location_id' => $request->arrival_id ? implode(',', (array)$request->arrival_id) : null,
-            'sub_arrival_location_id' => $request->storage_id ? implode(',', (array)$request->storage_id) : null,
-            'am_approval_status' => 'pending',
-            'am_change_made' => 1
-        ]);
-
-        if ($request->filled('packing_items')) {
-            foreach ($deliveryOrder->exportPackingItems as $existingItem) {
-                $existingItem->subItems()->delete();
-                $existingItem->delete();
+                return response()->json([
+                    'success' => 'Delivery Order has been approved/rejected and cannot be updated.',
+                ], 400);
             }
+
+            $exportOrderId = $deliveryOrder->export_order_id;
+            $formE = ExportFormE::findOrFail($request->export_form_e_id);
+            $totalAllowedMt = (float) $formE->input_quantity;
+            $alreadyConsumedMt = DeliveryOrder::with(['exportPackingItems'])
+                ->where('export_form_e_id', $request->export_form_e_id)
+                ->where('id', '!=', $id)
+                ->get()
+                ->sum(function ($do) {
+                    return $do->exportPackingItems->sum('metric_tons');
+                });
+
+            $currentRequestMt = 0;
 
             foreach ($request->packing_items as $index => $itemData) {
-                // Skip dummy row only
                 if (empty($itemData['bag_product_id'])) {
                     continue;
                 }
-                $packingItem = $deliveryOrder->exportPackingItems()->create([
-                    'company_location_id' => $itemData['company_location_id'] ?? null,
-                    'bag_type_id' => $itemData['bag_product_id'] ?? null,
-                    'bag_condition_id' => $itemData['bag_condition_id'] ?? null,
-                    'bag_size' => $itemData['bag_size'] ?? 0,
-                    'no_of_bags' => $itemData['no_of_bags'] ?? 0,
-                    'extra_bags' => $itemData['extra_bags'] ?? 0,
-                    'extra_bags_percentage' => $itemData['extra_bags_percentage'] ?? 0,
-                    'empty_bags' => $itemData['empty_bags'] ?? 0,
-                    'total_bags' => $itemData['total_bags'] ?? 0,
-                    'total_kgs' => $itemData['total_kgs'] ?? 0,
-                    'metric_tons' => $itemData['metric_tons'] ?? 0,
-                    'stuffing_in_container' => $itemData['stuffing_in_container'] ?? 0,
-                    'no_of_containers' => $itemData['no_of_containers'] ?? 0,
-                    'brand_id' => $itemData['brand_id'] ?? null,
-                    'bag_color_id' => $itemData['bag_color_id'] ?? null,
-                    'thread_color_id' => $itemData['thread_color_id'] ?? null,
-                    'stitching_id' => $itemData['stitching_id'] ?? null,
-                    'min_weight_empty_bags' => $itemData['min_weight_empty_bags'] ?? 0,
-                    'fumigation_company_id' => isset($itemData['fumigation_company_id']) ? json_encode((array)$itemData['fumigation_company_id']) : null,
-                ]);
-    
-                if (isset($itemData['sub_items']) && is_array($itemData['sub_items'])) {
-                    foreach ($itemData['sub_items'] as $subItemData) {
-                        $packingItem->subItems()->create([
-                            'bag_type_id' => $subItemData['bag_product_id'] ?? null,
-                            'bag_size_id' => $subItemData['bag_size_id'] ?? null,
-                            'no_of_primary_bags' => $subItemData['no_of_primary_bags'] ?? 0,
-                            'no_of_bags' => $subItemData['no_of_bags'] ?? 0,
-                            'empty_bags' => $subItemData['empty_bags'] ?? 0,
-                            'extra_bags' => $subItemData['extra_bags'] ?? 0,
-                            'empty_bag_weight' => $subItemData['empty_bag_weight'] ?? 0,
-                            'total_bags' => $subItemData['total_bags'] ?? 0,
-                            'total_kgs' => $subItemData['total_kgs'] ?? 0,
-                            'stitching_id' => $subItemData['stitching_id'] ?? null,
-                            'bag_color_id' => $subItemData['bag_color_id'] ?? null,
-                            'brand_id' => $subItemData['brand_id'] ?? null,
-                            'thread_color_id' => $subItemData['thread_color_id'] ?? null,
-                        ]);
+                $currentRequestMt += floatval($itemData['metric_tons'] ?? 0);
+            }
+
+            if (($alreadyConsumedMt + $currentRequestMt) > ($totalAllowedMt + 0.001)) {
+                DB::rollBack();
+                return response()->json([
+                    'status' => 'error',
+                    'message' => "Total Metric Tons ($currentRequestMt) exceeds the remaining capacity of Export Form-E (" . round($totalAllowedMt - $alreadyConsumedMt, 2) . " MT)."
+                ], 422);
+            }
+
+            $deliveryOrder->update([
+                'remarks' => $request->remarks,
+                'export_form_e_id' => $request->export_form_e_id,
+                'reference_no' => $request->reference_no ?? $deliveryOrder->reference_no,
+                'ref_no' => $request->ref_no,
+                'location_id' => null,
+                'arrival_location_id' => null,
+                'sub_arrival_location_id' => null,
+                'am_approval_status' => 'pending',
+                'am_change_made' => 1,
+
+                // New fields
+                'financial_instrument_no' => $request->financial_instrument_no,
+                'job_order_no' => $request->job_order_no,
+                'vessel_name' => $request->vessel_name,
+                'vessel_etd' => $request->vessel_etd,
+                'vessel_eta' => $request->vessel_eta,
+                'loading_date' => $request->loading_date,
+                'estimated_payment_date' => $request->estimated_payment_date,
+                'freight_amount' => $request->freight_amount ?? 0,
+                'transporter_id' => $request->transporter_id,
+                'c_agent' => $request->c_agent,
+                'shipping_line' => $request->shipping_line,
+                'empty_container_pickup' => $request->empty_container_pickup,
+            ]);
+
+            // Update multiple locations
+            $deliveryOrder->locations()->delete();
+            if ($request->has('locations') && is_array($request->locations)) {
+                foreach ($request->locations as $locData) {
+                    if (empty($locData['location_id'])) continue;
+                    $deliveryOrder->locations()->create([
+                        'company_location_id' => $locData['location_id'],
+                        'arrival_location_ids' => isset($locData['arrival_ids']) ? implode(',', (array) $locData['arrival_ids']) : null,
+                        'sub_arrival_location_ids' => isset($locData['storage_ids']) ? implode(',', (array) $locData['storage_ids']) : null,
+                    ]);
+                }
+            }
+
+            if ($request->filled('packing_items')) {
+                foreach ($deliveryOrder->exportPackingItems as $existingItem) {
+                    $existingItem->subItems()->delete();
+                    $existingItem->delete();
+                }
+
+                foreach ($request->packing_items as $index => $itemData) {
+
+                    if (empty($itemData['bag_product_id'])) {
+                        continue;
+                    }
+
+                    $packingItem = $deliveryOrder->exportPackingItems()->create([
+                        'company_location_id' => $itemData['company_location_id'] ?? null,
+                        'bag_type_id' => $itemData['bag_product_id'] ?? null,
+                        'bag_condition_id' => $itemData['bag_condition_id'] ?? null,
+                        'bag_size' => $itemData['bag_size'] ?? 0,
+                        'no_of_bags' => $itemData['no_of_bags'] ?? 0,
+                        'extra_bags' => $itemData['extra_bags'] ?? 0,
+                        'extra_bags_percentage' => $itemData['extra_bags_percentage'] ?? 0,
+                        'empty_bags' => $itemData['empty_bags'] ?? 0,
+                        'total_bags' => $itemData['total_bags'] ?? 0,
+                        'total_kgs' => $itemData['total_kgs'] ?? 0,
+                        'metric_tons' => $itemData['metric_tons'] ?? 0,
+                        'stuffing_in_container' => $itemData['stuffing_in_container'] ?? 0,
+                        'no_of_containers' => $itemData['no_of_containers'] ?? 0,
+                        'brand_id' => $itemData['brand_id'] ?? null,
+                        'bag_color_id' => $itemData['bag_color_id'] ?? null,
+                        'thread_color_id' => $itemData['thread_color_id'] ?? null,
+                        'stitching_id' => $itemData['stitching_id'] ?? null,
+                        'min_weight_empty_bags' => $itemData['min_weight_empty_bags'] ?? 0,
+                        'fumigation_company_id' => isset($itemData['fumigation_company_id']) ? (array) $itemData['fumigation_company_id'] : (isset($itemData['fumigation_company_id_hidden']) ? json_decode($itemData['fumigation_company_id_hidden'], true) : null),
+                        'phyto_certificate' => isset($itemData['phyto_certificate']) ? (array) $itemData['phyto_certificate'] : null,
+                        'carton_supplier' => $itemData['carton_supplier'] ?? null,
+                        'fumigation_tablets' => $itemData['fumigation_tablets'] ?? null,
+                        'fumigation_ref_no' => $itemData['fumigation_ref_no'] ?? null,
+                        'inspection_company' => $itemData['inspection_company'] ?? null,
+                    ]);
+
+                    if (isset($itemData['sub_items']) && is_array($itemData['sub_items'])) {
+                        foreach ($itemData['sub_items'] as $subItemData) {
+                            $packingItem->subItems()->create([
+                                'bag_type_id' => $subItemData['bag_product_id'] ?? null,
+                                'bag_size_id' => $subItemData['bag_size_id'] ?? null,
+                                'no_of_primary_bags' => $subItemData['no_of_primary_bags'] ?? 0,
+                                'no_of_bags' => $subItemData['no_of_bags'] ?? 0,
+                                'empty_bags' => $subItemData['empty_bags'] ?? 0,
+                                'extra_bags' => $subItemData['extra_bags'] ?? 0,
+                                'empty_bag_weight' => $subItemData['empty_bag_weight'] ?? 0,
+                                'total_bags' => $subItemData['total_bags'] ?? 0,
+                                'total_kgs' => $subItemData['total_kgs'] ?? 0,
+                                'stitching_id' => $subItemData['stitching_id'] ?? null,
+                                'bag_color_id' => $subItemData['bag_color_id'] ?? null,
+                                'brand_id' => $subItemData['brand_id'] ?? null,
+                                'thread_color_id' => $subItemData['thread_color_id'] ?? null,
+                            ]);
+                        }
                     }
                 }
             }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => 'Export Delivery Order updated successfully',
+                'data' => $deliveryOrder
+            ], 200);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => 'Something went wrong',
+                'error' => $e->getMessage(),
+            ], 500);
         }
-
-        DB::commit();
-
-        return response()->json([
-            'success' => 'Export Delivery Order updated successfully',
-            'data' => $deliveryOrder
-        ], 200);
     }
 
     public function destroy($id)
     {
-        $deliveryOrder = DeliveryOrder::findOrFail($id);
-        $deliveryOrder->delete();
+        DB::beginTransaction();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Export Delivery Order deleted successfully.'
-        ], 200);
+        try {
+            $deliveryOrder = DeliveryOrder::lockForUpdate()->find($id);
+
+            if (!$deliveryOrder) {
+                DB::rollBack();
+
+                return response()->json([
+                    'success' => 'Delivery Order already deleted or not found.',
+                ], 404);
+            }
+
+            if (
+                $deliveryOrder->am_approval_status === "approved" ||
+                $deliveryOrder->am_approval_status === "rejected"
+            ) {
+                DB::rollBack();
+
+                return response()->json([
+                    'success' => 'Delivery Order has been approved/rejected and cannot be deleted.',
+                ], 400);
+            }
+
+            // delete relations safely
+            foreach ($deliveryOrder->exportPackingItems as $item) {
+                $item->subItems()->delete();
+            }
+
+            $deliveryOrder->exportPackingItems()->delete();
+            $deliveryOrder->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => 'Export Delivery Order deleted successfully.'
+            ], 200);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => 'Failed to delete Delivery Order',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function getOrdersByBuyer($buyer_id)
     {
         $export_orders = ExportOrder::with(['packingItems', 'deliveryOrders.exportPackingItems'])
-                ->where('buyer_id', $buyer_id)
-                ->where('am_approval_status', 'approved')
-                ->latest()
-                ->get()
-                ->filter(function ($eo) {
-                    $totalMt = (float) $eo->packingItems->sum('metric_tons');
-                    $consumedMt = (float) $eo->deliveryOrders->sum(function ($do) {
-                        return $do->exportPackingItems->sum('metric_tons');
-                    });
-                    // Only return if more than 0.001 MT is remaining
-                    return ($totalMt - $consumedMt) > 0.001;
-                })
-                ->values(); // Reset keys for JSON response
+            ->where('buyer_id', $buyer_id)
+            ->where('am_approval_status', 'approved')
+            ->latest()
+            ->get()
+            ->filter(function ($eo) {
+                $totalMt = (float) $eo->packingItems->sum('metric_tons');
+                $consumedMt = (float) $eo->deliveryOrders->sum(function ($do) {
+                    return $do->exportPackingItems->sum('metric_tons');
+                });
+                // Only return if more than 0.001 MT is remaining
+                return ($totalMt - $consumedMt) > 0.001;
+            })
+            ->values(); // Reset keys for JSON response
 
         return response()->json([
             'success' => true,
@@ -588,7 +817,7 @@ class ExportDeliveryOrderController extends Controller
     public function getArrivalLocations(Request $request)
     {
         $location_id = $request->location_id;
-        
+
         $arrival_locations = \App\Models\Master\ArrivalLocation::where('company_location_id', $location_id)->get();
 
         $data = [];
@@ -605,7 +834,7 @@ class ExportDeliveryOrderController extends Controller
     public function getSubArrivalLocations(Request $request)
     {
         $arrival_ids = (array) $request->arrival_id;
-        
+
         $sub_arrival_locations = \App\Models\Master\ArrivalSubLocation::whereIn('arrival_location_id', $arrival_ids)->get();
 
         $data = [];
@@ -634,7 +863,8 @@ class ExportDeliveryOrderController extends Controller
             'success' => true,
             'total' => round($totalAllowed, 2),
             'consumed' => round($consumed, 2),
-            'remaining' => round(max(0, $totalAllowed - $consumed), 2)
+            'remaining' => round(max(0, $totalAllowed - $consumed), 2),
+            'job_order_no' => $formE->job_order_no ?? ''
         ]);
     }
 }

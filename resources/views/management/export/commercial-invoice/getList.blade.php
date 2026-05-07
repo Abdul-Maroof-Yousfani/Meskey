@@ -1,14 +1,14 @@
 <table class="table m-0">
     <thead>
-        <tr>
-            <th width="5%">S no.</th>
-            <th width="16%">CI No</th>
-            <th width="12%">Date</th>
-            <th width="16%">Export Order</th>
-            <th width="16%">Bill Of Lading</th>
-            <th width="15%">Customer</th>
-            <th width="10%">Amount</th>
-            <th width="10%">Action</th>
+        <th width="5%">S no.</th>
+        <th width="15%">CI No</th>
+        <th width="10%">Date</th>
+        <th width="15%">Export Order</th>
+        <th width="15%">Bill Of Lading</th>
+        <th width="15%">Customer</th>
+        <th width="8%">Amount</th>
+        <th width="7%">Status</th>
+        <th width="10%">Action</th>
         </tr>
     </thead>
     <tbody>
@@ -42,24 +42,44 @@
                         {{ number_format((float) ($computedPreview['total_amount'] ?? 0), 2) }}
                     </div>
                 </td>
+                <td class="text-center align-middle">
+                    @php
+                        $status = $invoice->am_approval_status;
+                        $badge = match (strtolower($status)) {
+                            'approved' => 'badge-success',
+                            'rejected' => 'badge-danger',
+                            'pending' => 'badge-warning',
+                            'reverted' => 'badge-secondary',
+                        };
+                    @endphp
+                    <span class="badge {{ $badge }} px-3 py-2">
+                        {{ ucfirst($status) }}
+                    </span>
+                </td>
                 <td>
                     <div class="d-flex justify-content-center">
                         <a class="info p-1 text-center position-relative" title="View"
                             onclick="openModal(this,'{{ route('commercial-invoice.show', $invoice->id) }}','Show Commercial Invoice',true,'95%')">
                             <i class="ft-eye font-medium-3"></i>
                         </a>
-                        <a class="success p-1 text-center position-relative" title="Print"
-                            onclick="openModal(this,'{{ route('commercial-invoice.show', $invoice->id) }}?print=1','Print Commercial Invoice',true,'95%')">
-                            <i class="ft-printer font-medium-3"></i>
-                        </a>
-                        <a class="info p-1 text-center position-relative" title="Edit"
-                            onclick="openModal(this,'{{ route('commercial-invoice.edit', $invoice->id) }}','Edit Commercial Invoice',false,'95%')">
-                            <i class="ft-edit font-medium-3"></i>
-                        </a>
-                        <a onclick="deletemodal('{{ route('commercial-invoice.destroy', $invoice->id) }}','{{ route('get.commercial-invoice') }}')"
-                            class="danger p-1 text-center mr-2 position-relative" title="Delete">
-                            <i class="ft-x font-medium-3"></i>
-                        </a>
+                        @if($invoice->am_approval_status === 'approved')
+                            <a class="success p-1 text-center position-relative" title="Print"
+                                onclick="openModal(this,'{{ route('commercial-invoice.show', $invoice->id) }}?print=1','Print Commercial Invoice',true,'95%')">
+                                <i class="ft-printer font-medium-3"></i>
+                            </a>
+                        @endif
+                        @if (auth()->user()->id == $invoice->created_by)
+                            @if($invoice->am_approval_status === 'pending' || $invoice->am_approval_status === 'reverted')
+                                <a class="info p-1 text-center position-relative" title="Edit"
+                                    onclick="openModal(this,'{{ route('commercial-invoice.edit', $invoice->id) }}','Edit Commercial Invoice',false,'95%')">
+                                    <i class="ft-edit font-medium-3"></i>
+                                </a>
+                                <a onclick="deletemodal('{{ route('commercial-invoice.destroy', $invoice->id) }}','{{ route('get.commercial-invoice') }}')"
+                                    class="danger p-1 text-center mr-2 position-relative" title="Delete">
+                                    <i class="ft-x font-medium-3"></i>
+                                </a>
+                            @endif
+                        @endif
                     </div>
                 </td>
             </tr>

@@ -15,4 +15,14 @@ class QuotationPackingItem extends Model
     {
         return $this->belongsTo(Quotation::class);
     }
+
+    public function bagType()
+    {
+        return $this->belongsTo(\App\Models\BagType::class, 'bag_type_id');
+    }
+
+    public function bagPacking()
+    {
+        return $this->belongsTo(\App\Models\BagPacking::class, 'bag_packing_id');
+    }
 }

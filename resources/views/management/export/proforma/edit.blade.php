@@ -221,15 +221,17 @@
                 </div>
             </div>
 
-            <div class="col-md-12">
+            <div class="col-md-12" id="proforma-other-spec-section">
                 <div class="form-group">
                     <label>Other Specification:</label>
                     <textarea name="other_specifications" class="form-control" rows="4" disabled>{{ old('other_specifications', $exportOrder->other_specifications) }}</textarea>
                 </div>
             </div>
 
+            <div class="col-md-12 mt-4" id="proforma-packing-section"></div>
+
             {{-- bank details  --}}
-            <div class="row">
+            <div class="row" id="proforma-bank-section">
                 {{-- beneficiary --}}
                 <div class="col-md-12">
                     <div class="p-3">
@@ -238,10 +240,10 @@
                             {{-- Bank Display --}}
                             <div class="col-md-12 mb-2">
                                 <label>Beneficiary Bank:</label>
-                                <input type="text" id="bankSelect" class="form-control"
-                                    value="{{ $exportOrder->customerBank ? $exportOrder->customerBank->bank_name . ' (' . ($exportOrder->customer_bank_type == 'owner' ? 'Owner' : 'Company') . ')' : 'N/A' }}"
+                                <input type="text" class="form-control"
+                                    value="{{ $exportOrder->customerBank ? $exportOrder->customerBank->bank_name . ' (' . ($exportOrder->customer_bank_type == 'owner' ? 'Owner' : ($exportOrder->customer_bank_type == 'company' ? 'Company' : 'Shipper')) . ')' : 'N/A' }}"
                                     disabled>
-                                <input type="hidden" name="customer_bank_id" value="{{ $exportOrder->customer_bank_id }}">
+                                <input type="hidden" id="bankSelect" name="customer_bank_id" value="{{ $exportOrder->customer_bank_id }}">
                                 <input type="hidden" name="customer_bank_type" id="bank_type_hidden" value="{{ old('customer_bank_type', $exportOrder->customer_bank_type) }}">
                             </div>
 
@@ -256,18 +258,28 @@
                             </div>
 
                             <div class="col-md-6 mt-2">
-                                <label>Branch Name:</label>
-                                <input type="text" id="branch_name" class="form-control" value="{{ $exportOrder->customerBank->branch_name ?? '' }}" disabled>
-                            </div>
-
-                            <div class="col-md-6 mt-2">
-                                <label>Branch Code:</label>
-                                <input type="text" id="branch_code" class="form-control" value="{{ $exportOrder->customerBank->branch_code ?? '' }}" disabled>
-                            </div>
-
-                            <div class="col-md-6 mt-2">
                                 <label>Account No:</label>
-                                <input type="text" id="account_no" class="form-control" value="{{ $exportOrder->customerBank->account_number ?? '' }}" disabled>
+                                <input type="text" id="account_no" class="form-control" value="{{ $exportOrder->customerBank->account_no ?? $exportOrder->customerBank->account_number ?? '' }}" disabled>
+                            </div>
+
+                            <div class="col-md-6 mt-2">
+                                <label>IBAN:</label>
+                                <input type="text" id="iban" class="form-control" value="{{ $exportOrder->customerBank->iban ?? '' }}" disabled>
+                            </div>
+
+                            <div class="col-md-6 mt-2">
+                                <label>SWIFT Code:</label>
+                                <input type="text" id="swift_code" class="form-control" value="{{ $exportOrder->customerBank->swift_code ?? '' }}" disabled>
+                            </div>
+
+                            <div class="col-md-6 mt-2">
+                                <label>Bank Address:</label>
+                                <input type="text" id="bank_address" class="form-control" value="{{ $exportOrder->customerBank->bank_address ?? '' }}" disabled>
+                            </div>
+
+                            <div class="col-md-12 mt-2">
+                                <label>Description:</label>
+                                <textarea id="description" class="form-control" rows="2" disabled>{{ $exportOrder->customerBank->description ?? '' }}</textarea>
                             </div>
                         </div>
 
@@ -335,12 +347,12 @@
                 </div>
             </div>
 
-            <div class="col-md-12">
+            <!-- <div class="col-md-12">
                 <div class="form-group">
                     <label>Consignee Details:</label>
                     <textarea name="consigned_details" id="consigned_details" class="form-control" rows="4">{{ old('consigned_details', $proforma->consigned_details) }}</textarea>
                 </div>
-            </div>
+            </div> -->
 
             {{-- shipping instructions --}}
             <div class="col-md-12 mb-4">
@@ -622,19 +634,12 @@
                             </select>
                         </td>
                     </tr>
-                    <tr>
-                        <td style="width: 30%; font-weight: bold; vertical-align: middle;">RATE</td>
-                        <td style="width: 70%;">
-                            <input type="text" name="currency_rate" id="currencyRate" class="form-control"
-                                readonly value="{{ old('currency_rate', $exportOrder->currency_rate) }}" disabled>
-                        </td>
-                    </tr>
                 </table>
             </div>
 
         </div>
 
-        <div class="col-md-12 mt-4">
+        <div class="col-md-12 mt-4 d-none" id="proforma-packing-source">
             <h6 class="header-heading-sepration">Packing Details</h6>
             @forelse ($exportOrder->packingItems as $itemIndex => $item)
                 <div class="packing-item card border-secondary mb-4 shadow-sm">
@@ -653,14 +658,15 @@
                             <div class="col-md-2"><div class="form-group"><label>Bag Size (kg):</label><input type="text" class="form-control" value="{{ number_format($item->bag_size, 2) }}" readonly></div></div>
                             <div class="col-md-2"><div class="form-group"><label>No. of Bags:</label><input type="text" class="form-control font-weight-bold" value="{{ number_format($item->no_of_bags, 0) }}" readonly></div></div>
                             <div class="col-md-2"><div class="form-group"><label>Extra Bags:</label><input type="text" class="form-control" value="{{ $item->extra_bags }}" readonly></div></div>
+                            <div class="col-md-2"><div class="form-group"><label>Extra Bags %:</label><input type="text" class="form-control" value="{{ number_format((float) ($item->extra_bags_percentage ?? 0), 2) }}" readonly></div></div>
                             <div class="col-md-2"><div class="form-group"><label>Empty Bags:</label><input type="text" class="form-control" value="{{ $item->empty_bags }}" readonly></div></div>
+                            <div class="col-md-2"><div class="form-group"><label>Empty Bags %:</label><input type="text" class="form-control" value="{{ number_format((float) ($item->empty_bags_percentage ?? 0), 2) }}" readonly></div></div>
                             <div class="col-md-2"><div class="form-group"><label>Qty (MT):</label><input type="text" class="form-control font-weight-bold text-primary" value="{{ number_format($item->metric_tons, 3) }}" readonly></div></div>
                             <div class="col-md-2"><div class="form-group"><label>Total Bags:</label><input type="text" class="form-control" value="{{ number_format($item->total_bags, 0) }}" readonly></div></div>
                             <div class="col-md-2"><div class="form-group"><label>Stuffing/Cont (MT):</label><input type="text" class="form-control" value="{{ number_format($item->stuffing_in_container, 3) }}" readonly></div></div>
                             <div class="col-md-2"><div class="form-group"><label>Containers:</label><input type="text" class="form-control" value="{{ $item->no_of_containers }}" readonly></div></div>
                             <div class="col-md-2"><div class="form-group"><label>Rate/Ton:</label><input type="text" class="form-control" value="{{ number_format($item->rate, 2) }}" readonly></div></div>
                             <div class="col-md-2"><div class="form-group"><label>Amount:</label><input type="text" class="form-control font-weight-bold" value="{{ number_format($item->amount, 2) }}" readonly></div></div>
-                            <div class="col-md-2"><div class="form-group"><label>Amount (PKR):</label><input type="text" class="form-control font-weight-bold text-success" value="{{ number_format($item->amount_pkr, 2) }}" readonly></div></div>
                             <div class="col-md-2"><div class="form-group"><label>Min Weight Empty Bags:</label><input type="text" class="form-control" value="{{ number_format($item->min_weight_empty_bags, 2) }}" readonly></div></div>
                             <div class="col-md-4">
                                 <div class="form-group">
@@ -672,6 +678,18 @@
                                         }
                                     @endphp
                                     <input type="text" class="form-control" value="{{ count($fNames) ? implode(', ', $fNames) : '-' }}" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Inspection By:</label>
+                                    @php
+                                        $inspectionNames = [];
+                                        if (is_array($item->inspection_by)) {
+                                            $inspectionNames = $inspectionCompanies->whereIn('id', $item->inspection_by)->pluck('name')->toArray();
+                                        }
+                                    @endphp
+                                    <input type="text" class="form-control" value="{{ count($inspectionNames) ? implode(', ', $inspectionNames) : '-' }}" readonly>
                                 </div>
                             </div>
                         </div>
@@ -745,7 +763,18 @@
 <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.js"></script>
 
 <script>
-    $(document).ready(function() {
+    function initializeProformaEditForm() {
+        const $form = $('#ajaxSubmit');
+        if ($form.data('proforma-edit-initialized')) {
+            return;
+        }
+        $form.data('proforma-edit-initialized', true);
+
+        if ($('#proforma-packing-source').length && $('#proforma-packing-section').length) {
+            $('#proforma-packing-section').append($('#proforma-packing-source').children());
+            $('#proforma-packing-source').remove();
+        }
+
         // Initialize Summernote (safe re-open in modal)
         $('#shipping_instructions, #documents_to_be_provided, #other_condition, #force_majure, #application_law, #other_specifications, #consigned_details, #additional_info').each(function() {
             if ($(this).next('.note-editor').length) {
@@ -907,8 +936,6 @@
             let mt = parseFloat(row.find('.metric-tons').val()) || 0;
             let amount = rate * mt;
             row.find('.amount').val(amount.toFixed(2));
-            let currencyRate = parseFloat($('#currencyRate').val()) || 1;
-            row.find('.amount_pkr').val((amount * currencyRate).toFixed(2));
         }
 
         function reindexPackingItems() {
@@ -922,15 +949,6 @@
                 });
             });
         }
-
-        // Currency Rate Change
-        $('#currencySelect').on('change', function() {
-            let rate = $(this).find(':selected').data('rate') || '';
-            $('#currencyRate').val(rate);
-            $('.packing-item').each(function() {
-                calculateAmount($(this));
-            });
-        });
 
         $('#correspondentBankSelect').on('change', function() {
             let bankId = $(this).val();
@@ -949,5 +967,7 @@
             });
         }).trigger('change');
 
-    });
+    }
+
+    $(document).ready(initializeProformaEditForm);
 </script>

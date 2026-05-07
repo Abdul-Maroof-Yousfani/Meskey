@@ -647,8 +647,10 @@
 
     @php
         $is_pending = isset($isRequestApprovalPage) && $isRequestApprovalPage && $paymentRequest && $paymentRequest->status == "pending";
+       
     @endphp
-    @if(!($has_pendings > 0 && isset($paymentRequestData) && $paymentRequestData->is_paid_by_supplier))
+
+    @if ($is_pending || !isset($isRequestApprovalPage) || !$isRequestApprovalPage)
         <div class="row bottom-button-bar">
             <div class="col-12">
                 <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
@@ -681,6 +683,31 @@
 
         // Initialize state
         isPaidBySupplier();
+
+        let canSubmitt = true;
+        function updateButtonVisibility() {
+            // Check the balance available (Net - Already Paid)
+            const netAmount = parseFloat($('[name="net_amount"]').val()) || 0;
+            const paidAmount = parseFloat($('[name="paid_amount"]').val()) || 0;
+            const availableBalance = netAmount - paidAmount;
+
+            if (availableBalance > 0) {
+                $('.bottom-button-bar').show();
+                canSubmitt = true;
+            } else {
+                $('.bottom-button-bar').hide();
+                canSubmitt = false;
+            }
+        }
+
+        $('#ajaxSubmit').on('keydown', function (e) {
+            if (e.keyCode === 13) {
+                if (!canSubmitt) {
+                    e.preventDefault();
+                    return false;
+                }
+            }
+        });
 
         calculateNetShortageDeduction()
         $('.editable-field').on('input', calculatePaymentSummary);
@@ -918,6 +945,7 @@
             }
 
             calculateCommission();
+            updateButtonVisibility();
         }
 
         // Request History Toggle

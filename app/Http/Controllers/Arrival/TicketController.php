@@ -185,6 +185,13 @@ class TicketController extends Controller
             // ->where('status', 'active')
             ->get();
 
+        $suppliers = $suppliers->map(function ($supplier) {
+            return [
+                'id' => $supplier->id,
+                'name' => $supplier->company_name
+            ];
+        });
+
         return response()->json([
             'suppliers' => $suppliers
         ]);

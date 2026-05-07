@@ -585,6 +585,14 @@ class PurchaseOrderReceivingController extends Controller
         DB::beginTransaction();
         try {
             $PurchaseOrderReceiving = PurchaseOrderReceiving::findOrFail($id);
+            
+            if($PurchaseOrderReceiving->am_approval_status == "approved" || $PurchaseOrderReceiving->am_approval_status == "rejected") {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Purchase request is already approved or rejected.',
+                ], 422);
+            }
+
             $PurchaseOrderReceiving->update([
                 "truck_no" => $request->truck_no,
                 "dc_no" => $request->dc_no,
@@ -637,6 +645,15 @@ class PurchaseOrderReceivingController extends Controller
      */
     public function destroy($id)
     {
+        $PurchaseOrderReceiving = PurchaseOrderReceiving::where('id', $id)->first();
+
+        if($PurchaseOrderReceiving->am_approval_status == "approved" || $PurchaseOrderReceiving->am_approval_status == "rejected") {
+            return response()->json([
+                'success' => false,
+                'message' => 'Purchase Order Receiving is already approved or rejected.',
+            ], 422);
+        }
+        
         $PurchaseOrderReceivingData = PurchaseOrderReceivingData::where('purchase_order_receiving_id', $id)->get();
 
         foreach($PurchaseOrderReceivingData as $data) {
@@ -645,7 +662,6 @@ class PurchaseOrderReceivingController extends Controller
             } 
         }
 
-        $PurchaseOrderReceiving = PurchaseOrderReceiving::where('id', $id)->first();
         if(!$PurchaseOrderReceiving->purchaseOrderReceivingData()->exists()) {
             $PurchaseOrderReceiving->delete();
         }

@@ -1016,12 +1016,10 @@
                     row.find(`input[name="packing_items[${index}][extra_bags_percentage]"]`).val(perc.toFixed(2));
                 }
                 
-                // Trigger total bags calculation
-                row.find('.no-of-bags').trigger('input');
-
                 // Inside sub items
                 if(item.sub_items && item.sub_items.length > 0) {
                     item.sub_items.forEach(function(sub, sIdx) {
+                        let subRowHtml = $('.sub-packing-item-template tbody').html();
                         // Replace placeholders securely - SUB_INDEX first so INDEX doesn't partially match it!
                         subRowHtml = subRowHtml.replace(/\[SUB_INDEX\]/g, '[' + sIdx + ']').replace(/\[INDEX\]/g, '[' + index + ']');
                         let subRow = $(subRowHtml);
@@ -1057,6 +1055,9 @@
                         subRow.find('.sub-no-of-bags').trigger('input');
                     });
                 }
+
+                // Trigger total bags calculation AFTER sub-items are added
+                row.find('.no-of-bags').trigger('input');
             });
             reindexPackingItems();
         }

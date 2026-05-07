@@ -42,12 +42,13 @@
                                     <thead>
                                         <tr>
                                             <th width="5%">S no.</th>
-                                            <th width="16%">CI No</th>
-                                            <th width="12%">Date</th>
-                                            <th width="16%">Export Order</th>
-                                            <th width="16%">Bill Of Lading</th>
+                                            <th width="15%">CI No</th>
+                                            <th width="10%">Date</th>
+                                            <th width="15%">Export Order</th>
+                                            <th width="15%">Bill Of Lading</th>
                                             <th width="15%">Customer</th>
-                                            <th width="10%">Amount</th>
+                                            <th width="8%">Amount</th>
+                                            <th width="7%">Status</th>
                                             <th width="10%">Action</th>
                                         </tr>
                                     </thead>

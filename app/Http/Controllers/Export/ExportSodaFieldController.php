@@ -32,10 +32,11 @@ class ExportSodaFieldController extends Controller
     {
         $export_soda_fields = ExportSodaField::with(['product', 'buyer', 'packingItems'])
             ->when($request->filled('search'), function ($q) use ($request) {
-            $searchTerm = '%' . $request->search . '%';
-            return $q->where(function ($sq) use ($searchTerm) {
-                    $sq->where('reference', 'like', $searchTerm);
-                }
+                $searchTerm = '%' . $request->search . '%';
+                return $q->where(
+                    function ($sq) use ($searchTerm) {
+                        $sq->where('reference', 'like', $searchTerm);
+                    }
                 );
             })
             ->latest()
@@ -66,7 +67,6 @@ class ExportSodaFieldController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'reference' => 'required',
             'buyer_id' => 'required',
             'product_id' => 'required',
         ]);
@@ -75,10 +75,25 @@ class ExportSodaFieldController extends Controller
 
         try {
             $data = $request->only([
-                'reference', 'buyer_id', 'product_id',
-                'incoterm_id', 'mode_of_term_id', 'shipment_period',
-                'commission_percentage', 'commission_amount_per_ton', 'commission',
+                'buyer_id',
+                'product_id',
+                'incoterm_id',
+                'mode_of_term_id',
+                'shipment_date_from',
+                'shipment_date_to',
+                'commission_percentage',
+                'commission_amount_per_ton',
+                'commission',
                 'additional_info'
+            ]);
+
+            $data['reference'] = generateUniversalUniqueNo('export_soda_fields', [
+                'prefix' => 'SAUDA',
+                'column' => 'reference',
+                'with_date' => true,
+                'custom_date' => $request->voucher_date ?? date('Y-m-d'),
+                'date_format' => 'm-Y',
+                'serial_at_end' => true,
             ]);
 
             $company_id = session('company_id') ?? auth()->user()->company_id ?? 1;
@@ -97,11 +112,10 @@ class ExportSodaFieldController extends Controller
             DB::commit();
 
             return response()->json([
-                'success' => 'Export Sauda created successfully',
+                'success' => 'Sauda created successfully',
             ], 201);
 
-        }
-        catch (\Throwable $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
 
             return response()->json([
@@ -150,7 +164,6 @@ class ExportSodaFieldController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'reference' => 'required',
             'buyer_id' => 'required',
             'product_id' => 'required',
         ]);
@@ -158,12 +171,27 @@ class ExportSodaFieldController extends Controller
         DB::beginTransaction();
 
         try {
-            $exportSodaField = ExportSodaField::findOrFail($id);
+            $exportSodaField = ExportSodaField::lockForUpdate()->find($id);
+
+            if (!$exportSodaField) {
+                DB::rollBack();
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Record already deleted or not found.',
+                ], 404);
+            }
 
             $data = $request->only([
-                'reference', 'buyer_id', 'product_id',
-                'incoterm_id', 'mode_of_term_id', 'shipment_period',
-                'commission_percentage', 'commission_amount_per_ton', 'commission',
+                'buyer_id',
+                'product_id',
+                'incoterm_id',
+                'mode_of_term_id',
+                'shipment_date_from',
+                'shipment_date_to',
+                'commission_percentage',
+                'commission_amount_per_ton',
+                'commission',
                 'additional_info'
             ]);
 
@@ -179,11 +207,10 @@ class ExportSodaFieldController extends Controller
             DB::commit();
 
             return response()->json([
-                'success' => 'Export Sauda updated successfully',
+                'success' => 'Sauda updated successfully',
             ], 200);
 
-        }
-        catch (\Throwable $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
 
             return response()->json([
@@ -198,23 +225,29 @@ class ExportSodaFieldController extends Controller
         DB::beginTransaction();
 
         try {
-            $exportSodaField = ExportSodaField::findOrFail($id);
+            $exportSodaField = ExportSodaField::lockForUpdate()->find($id);
+
+            if (!$exportSodaField) {
+                DB::rollBack();
+
+                return response()->json([
+                    'success' => 'Record already deleted or not found.',
+                ], 404);
+            }
+
             $exportSodaField->delete();
 
             DB::commit();
 
             return response()->json([
-                'success' => true,
-                'message' => 'Export Sauda deleted successfully.',
+                'success' => 'Sauda deleted successfully.',
             ], 200);
 
-        }
-        catch (\Throwable $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
 
             return response()->json([
-                'success' => false,
-                'message' => 'Failed to delete Export Sauda',
+                'success' => 'Failed to delete Sauda',
                 'error' => $e->getMessage(),
             ], 500);
         }

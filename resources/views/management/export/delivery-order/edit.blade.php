@@ -78,60 +78,136 @@
                         <input type="text" name="ref_no" id="ref_no" value="{{ $deliveryOrder->ref_no }}" class="form-control">
                     </div>
                 </div>
+                <div class="col-md-3 mt-2">
+                    <div class="form-group">
+                        <label>Job Order No:</label>
+                        <input type="text" name="job_order_no" id="job_order_no" value="{{ $deliveryOrder->job_order_no }}" class="form-control" readonly>
+                    </div>
+                </div>
+                <div class="col-md-3 mt-2">
+                    <div class="form-group">
+                        <label>Financial Instrument No:</label>
+                        <input type="text" name="financial_instrument_no" id="financial_instrument_no" value="{{ $deliveryOrder->financial_instrument_no }}" class="form-control">
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Location Details Section -->
     <div class="row form-mar">
+        <div class="col-12 mt-3 d-flex justify-content-between align-items-center">
+            <h6 class="header-heading-sepration mb-0" style="width:100%; margin: 0 10px 0 0;">Location Details</h6>
+            <button type="button" class="btn btn-sm btn-success" id="addLocationRow">Add More Location</button>
+        </div>
         <div class="col-12 mt-3">
-            <h6 class="header-heading-sepration">Location Details</h6>
-        </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Locations:</label>
-                <select name="location_id" id="locations" onchange="selectLocation(this)" class="form-control select2">
-                    <option value="">Select Locations</option>
-                    @foreach (get_locations() as $location)
-                        <option value="{{ $location->id }}" @selected($location->id == $deliveryOrder->location_id)>{{ $location->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Factory:</label>
-                <select name="arrival_id[]" id="arrivals" class="form-control select2" multiple @if (!$deliveryOrder->arrival_location_id) disabled @endif>
-                    <option value="">Select Factory</option>
-                    @php
-                        $selectedArrivalIds = $deliveryOrder->arrival_location_id ? explode(',', $deliveryOrder->arrival_location_id) : [];
-                    @endphp
-                    @if($deliveryOrder->location_id)
-                        @foreach (get_arrivals_by($deliveryOrder->location_id) as $location)
-                            <option value="{{ $location->id }}" @selected(in_array($location->id, $selectedArrivalIds))>{{ $location->name }}</option>
-                        @endforeach
-                    @endif
-                </select>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Section:</label>
-                <select name="storage_id[]" id="storages" class="form-control select2" multiple>
-                    <option value="">Select Section</option>
-                    @php
-                        $selectedSubArrivalIds = $deliveryOrder->sub_arrival_location_id ? explode(',', $deliveryOrder->sub_arrival_location_id) : [];
-                        $arrivalIds = $deliveryOrder->arrival_location_id ? explode(',', $deliveryOrder->arrival_location_id) : [];
-                    @endphp
-                    @if(!empty($arrivalIds))
-                        @foreach (get_sub_arrivals_by_multiple($arrivalIds) as $location)
-                            <option value="{{ $location->id }}" @selected(in_array($location->id, $selectedSubArrivalIds))>{{ $location->name }} ({{ $location->arrivalLocation->name }})</option>
-                        @endforeach
-                    @endif
-                </select>
-            </div>
+            <table class="table table-bordered" id="locationTable">
+                <thead>
+                    <tr>
+                        <th style="width: 30%;">Location</th>
+                        <th style="width: 30%;">Factory</th>
+                        <th style="width: 30%;">Section</th>
+                        <th style="width: 10%;">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="locationRows">
+                    @forelse($deliveryOrder->locations as $index => $loc)
+                    <tr class="location-row">
+                        <td>
+                            <select name="locations[{{ $index }}][location_id]" class="form-control select2 location-select">
+                                <option value="">Select Location</option>
+                                @foreach (get_locations() as $location)
+                                    <option value="{{ $location->id }}" @selected($location->id == $loc->company_location_id)>{{ $location->name }}</option>
+                                @endforeach
+                            </select>
+                        </td>
+                        <td>
+                            <select name="locations[{{ $index }}][arrival_ids][]" class="form-control select2 arrival-select" multiple>
+                                <option value="">Select Factory</option>
+                                @php
+                                    $selectedArrivalIds = $loc->arrival_location_ids ? explode(',', $loc->arrival_location_ids) : [];
+                                @endphp
+                                @foreach (get_arrivals_by($loc->company_location_id) as $arrival)
+                                    <option value="{{ $arrival->id }}" @selected(in_array($arrival->id, $selectedArrivalIds))>{{ $arrival->name }}</option>
+                                @endforeach
+                            </select>
+                        </td>
+                        <td>
+                            <select name="locations[{{ $index }}][storage_ids][]" class="form-control select2 storage-select" multiple>
+                                <option value="">Select Section</option>
+                                @php
+                                    $selectedSubArrivalIds = $loc->sub_arrival_location_ids ? explode(',', $loc->sub_arrival_location_ids) : [];
+                                    $arrivalIds = $loc->arrival_location_ids ? explode(',', $loc->arrival_location_ids) : [];
+                                @endphp
+                                @if(!empty($arrivalIds))
+                                    @foreach (get_sub_arrivals_by_multiple($arrivalIds) as $sub)
+                                        <option value="{{ $sub->id }}" @selected(in_array($sub->id, $selectedSubArrivalIds))>{{ $sub->name }} ({{ $sub->arrivalLocation->name }})</option>
+                                    @endforeach
+                                @endif
+                            </select>
+                        </td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-sm btn-danger remove-location-row" @if($deliveryOrder->locations->count() <= 1) style="display: none;" @endif><i class="ft-trash font-medium-1"></i></button>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr class="location-row">
+                        <td>
+                            <select name="locations[0][location_id]" class="form-control select2 location-select">
+                                <option value="">Select Location</option>
+                                @foreach (get_locations() as $location)
+                                    <option value="{{ $location->id }}">{{ $location->name }}</option>
+                                @endforeach
+                            </select>
+                        </td>
+                        <td>
+                            <select name="locations[0][arrival_ids][]" class="form-control select2 arrival-select" multiple disabled>
+                                <option value="">Select Factory</option>
+                            </select>
+                        </td>
+                        <td>
+                            <select name="locations[0][storage_ids][]" class="form-control select2 storage-select" multiple disabled>
+                                <option value="">Select Section</option>
+                            </select>
+                        </td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-sm btn-danger remove-location-row" style="display: none;"><i class="ft-trash font-medium-1"></i></button>
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
     </div>
+
+    <!-- Hidden Template for Location Row -->
+    <table class="d-none">
+        <tbody id="locationRowTemplate">
+            <tr class="location-row">
+                <td>
+                    <select name="locations[INDEX][location_id]" class="form-control location-select">
+                        <option value="">Select Location</option>
+                        @foreach (get_locations() as $location)
+                            <option value="{{ $location->id }}">{{ $location->name }}</option>
+                        @endforeach
+                    </select>
+                </td>
+                <td>
+                    <select name="locations[INDEX][arrival_ids][]" class="form-control arrival-select" multiple disabled>
+                        <option value="">Select Factory</option>
+                    </select>
+                </td>
+                <td>
+                    <select name="locations[INDEX][storage_ids][]" class="form-control storage-select" multiple disabled>
+                        <option value="">Select Section</option>
+                    </select>
+                </td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-sm btn-danger remove-location-row"><i class="ft-trash font-medium-1"></i></button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
 
     <div id="exportOrderSnapshotEdit" class="snapshot-area" style="pointer-events: none;">
         <div class="row form-mar">
@@ -304,15 +380,42 @@
                             <td style="width: 30%; font-weight: bold; vertical-align: middle;">CURRENCY</td>
                             <td style="width: 70%;"><input type="text" id="snap_currency_edit" class="form-control" disabled></td>
                         </tr>
-                        <tr>
+                        <!-- <tr>
                             <td style="width: 30%; font-weight: bold; vertical-align: middle;">RATE</td>
                             <td style="width: 70%;"><input type="text" id="snap_currency_rate_edit" class="form-control" disabled></td>
-                        </tr>
+                        </tr> -->
                     </table>
                 </div>
             </div>{{-- end col-4 --}}
         </div>{{-- end row --}}
     </div> <!-- End of exportOrderSnapshotEdit -->
+    
+    <!-- Logistics & Shipment Details -->
+    <div class="row form-mar mt-3">
+        <div class="col-md-12">
+            <h6 class="header-heading-sepration">Logistics & Shipment Details</h6>
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Financial Instrument No:</label>
+                        <input type="text" name="financial_instrument_no" id="financial_instrument_no" class="form-control" value="{{ $deliveryOrder->financial_instrument_no }}">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Shipping Line:</label>
+                        <input type="text" name="shipping_line" id="shipping_line" class="form-control" value="{{ $deliveryOrder->shipping_line }}">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Empty Container Pickup:</label>
+                        <input type="text" name="empty_container_pickup" id="empty_container_pickup" class="form-control" value="{{ $deliveryOrder->empty_container_pickup }}">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Packing Details (full width, below snapshot) -->
     <div class="row form-mar">
@@ -465,6 +568,58 @@
                                 <input type="number" name="packing_items[0][min_weight_empty_bags]" class="form-control min-weight" value="0" min="0" step="0.01" readonly>
                             </div>
                         </div>
+
+                        <!-- New Logistics Row per Packing Item -->
+                        <div class="col-md-12">
+                            <div class="row">
+
+                                <div class="col-md-2">
+                                    <div class="form-group">
+                                        <label>Fumigation:</label>
+                                        <select name="packing_items[0][fumigation_company_id][]" class="form-control select2 fumigation-select" multiple disabled>
+                                            @foreach($fumigationCompanies as $fCompany)
+                                                <option value="{{ $fCompany->id }}">{{ $fCompany->name }}</option>
+                                            @endforeach
+                                        </select>
+                                        <input type="hidden" name="packing_items[0][fumigation_company_id_hidden]" class="fumigation-hidden-mirror">
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="form-group">
+                                        <label>Phyto Certificate:</label>
+                                        <select name="packing_items[0][phyto_certificate][]" class="form-control select2 phyto-select" multiple>
+                                            @foreach($fumigationCompanies as $fCompany)
+                                                <option value="{{ $fCompany->id }}">{{ $fCompany->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="form-group">
+                                        <label>Inspection Company:</label>
+                                        <input type="text" name="packing_items[0][inspection_company]" class="form-control inspection-company" readonly>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="form-group">
+                                        <label>Carton Supplier:</label>
+                                        <input type="text" name="packing_items[0][carton_supplier]" class="form-control carton-supplier">
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="form-group">
+                                        <label>Fumigation Tablets:</label>
+                                        <input type="text" name="packing_items[0][fumigation_tablets]" class="form-control fumigation-tablets">
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="form-group">
+                                        <label>Fumigation Ref No:</label>
+                                        <input type="text" name="packing_items[0][fumigation_ref_no]" class="form-control fumigation-ref-no">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         
                         <!-- Master Packing Section -->
                         <div class="col-md-12 mt-4">
@@ -574,6 +729,79 @@
             </tr>
         </tbody>
     </table>
+    <!-- Logistics & Shipment Details (Moved here after Packing Details and before Remarks) -->
+    <div class="row form-mar mt-3">
+        <div class="col-md-12">
+            <h6 class="header-heading-sepration">Logistics & Shipment Details</h6>
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Vessel Name:</label>
+                        <input type="text" name="vessel_name" id="vessel_name" class="form-control" value="{{ $deliveryOrder->vessel_name }}">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Vessel ETD:</label>
+                        <input type="date" name="vessel_etd" id="vessel_etd" class="form-control" value="{{ $deliveryOrder->vessel_etd }}">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Vessel ETA:</label>
+                        <input type="date" name="vessel_eta" id="vessel_eta" class="form-control" value="{{ $deliveryOrder->vessel_eta }}">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Loading Date:</label>
+                        <input type="date" name="loading_date" id="loading_date" class="form-control" value="{{ $deliveryOrder->loading_date }}">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Estimated Payment Date:</label>
+                        <input type="date" name="estimated_payment_date" id="estimated_payment_date" class="form-control" value="{{ $deliveryOrder->estimated_payment_date }}">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Freight Amount:</label>
+                        <input type="number" name="freight_amount" id="freight_amount" class="form-control" value="{{ $deliveryOrder->freight_amount }}" step="0.01">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Transporter:</label>
+                        <select name="transporter_id" id="transporter_id" class="form-control select2">
+                            <option value="">Select Transporter</option>
+                            @foreach ($transporters as $transporter)
+                                <option value="{{ $transporter->id }}" {{ $deliveryOrder->transporter_id == $transporter->id ? 'selected' : '' }}>{{ $transporter->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Clearing Agent:</label>
+                        <input type="text" name="c_agent" id="c_agent" class="form-control" value="{{ $deliveryOrder->c_agent }}">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Shipping Line:</label>
+                        <input type="text" name="shipping_line" id="shipping_line" class="form-control" value="{{ $deliveryOrder->shipping_line }}">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Empty Container Pickup:</label>
+                        <input type="text" name="empty_container_pickup" id="empty_container_pickup" class="form-control" value="{{ $deliveryOrder->empty_container_pickup }}">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Editable Remarks -->
     <div class="row form-mar mt-3">
@@ -595,34 +823,37 @@
 
 <script>
     // Location Selection Functions (Global - accessible from HTML onchange)
-    function selectLocation(el) {
+    function selectLocationRow(el) {
+        const row = $(el).closest('.location-row');
         const locationId = $(el).val();
+        const arrivalSelect = row.find('.arrival-select');
+        const storageSelect = row.find('.storage-select');
         
         if (!locationId) {
-            $("#arrivals").prop("disabled", true).empty();
-            $("#storages").prop("disabled", true).empty();
+            arrivalSelect.prop("disabled", true).empty();
+            storageSelect.prop("disabled", true).empty();
             return;
         }
 
-        $("#arrivals").prop("disabled", false);
+        arrivalSelect.prop("disabled", false);
         $.ajax({
             url: "{{ route('export.get-arrival-locations') }}",
             method: "GET",
             data: { location_id: locationId },
             dataType: "json",
             success: function(res) {
-                $("#arrivals").empty();
+                arrivalSelect.empty();
                 // Auto-select ALL factories
                 res.forEach(loc => {
                     const option = new Option(loc.text, loc.id, true, true);
-                    $("#arrivals").append(option);
+                    arrivalSelect.append(option);
                 });
-                $("#arrivals").select2();
+                arrivalSelect.select2();
                 
                 // Auto-populate and select all sections
                 if (res.length > 0) {
                     const arrivalIds = res.map(loc => loc.id);
-                    selectStorage(arrivalIds);
+                    fetchStorageRow(row, arrivalIds);
                 }
             },
             error: function(error) {
@@ -631,37 +862,83 @@
         });
     }
 
-    function selectStorage(arrivalIds) {
-        if (!arrivalIds || (Array.isArray(arrivalIds) && arrivalIds.length === 0)) {
-            $("#storages").prop("disabled", true).empty();
-            return;
-        }
+    function selectStorageRow(el) {
+        const row = $(el).closest('.location-row');
+        const arrivalIds = $(el).val();
+        fetchStorageRow(row, arrivalIds);
+    }
 
-        // Handle both direct call with IDs and call from onchange
-        const ids = Array.isArray(arrivalIds) ? arrivalIds : $(arrivalIds).val();
+    function fetchStorageRow(row, arrivalIds) {
+        const storageSelect = row.find('.storage-select');
         
-        if (!ids || ids.length === 0) {
-            $("#storages").prop("disabled", true).empty();
+        if (!arrivalIds || (Array.isArray(arrivalIds) && arrivalIds.length === 0)) {
+            storageSelect.prop("disabled", true).empty();
             return;
         }
 
         $.ajax({
             url: "{{ route('export.get-sub-arrival-locations') }}",
             method: "GET",
-            data: { arrival_id: ids },
+            data: { arrival_id: arrivalIds },
             dataType: "json",
             success: function(res) {
-                $("#storages").empty();
+                storageSelect.empty();
                 // Auto-select ALL sections
                 res.forEach(storage => {
                     const option = new Option(storage.text, storage.id, true, true);
-                    $("#storages").append(option);
+                    storageSelect.append(option);
                 });
-                $("#storages").prop("disabled", false).select2();
+                storageSelect.prop("disabled", false).select2();
             },
             error: function(error) {
                 console.error("Error fetching sub-arrival locations:", error);
             }
+        });
+    }
+
+    // Global delegated listeners for location selection
+    $(document).off('change', '.location-select').on('change', '.location-select', function() {
+        selectLocationRow(this);
+    });
+
+    $(document).off('change', '.arrival-select').on('change', '.arrival-select', function() {
+        selectStorageRow(this);
+    });
+
+    // Row manipulation
+    $(document).off('click', '#addLocationRow').on('click', '#addLocationRow', function() {
+        let index = $('#locationRows tr.location-row').length;
+        let template = $('#locationRowTemplate').html();
+        template = template.replace(/\[INDEX\]/g, '[' + index + ']');
+        
+        let $newRow = $(template);
+        $('#locationRows').append($newRow);
+        
+        // Initialize Select2 for new row
+        $newRow.find('.select2, .location-select, .arrival-select, .storage-select').select2({ width: '100%' });
+        
+        // Show remove buttons if more than one row
+        $('.remove-location-row').show();
+    });
+
+    $(document).off('click', '.remove-location-row').on('click', '.remove-location-row', function() {
+        if ($('#locationRows tr.location-row').length > 1) {
+            $(this).closest('tr').remove();
+            reindexLocationRows();
+        }
+        if ($('#locationRows tr.location-row').length === 1) {
+            $('.remove-location-row').hide();
+        }
+    });
+
+    function reindexLocationRows() {
+        $('#locationRows tr.location-row').each(function(index) {
+            $(this).find('select').each(function() {
+                let name = $(this).attr('name');
+                if (name) {
+                    $(this).attr('name', name.replace(/locations\[\d+\]/, 'locations[' + index + ']'));
+                }
+            });
         });
     }
 
@@ -676,13 +953,14 @@
             populateSnapshotEdit(snapshotData, packingItems);
         }
 
-        // Initialize Location Dropdowns for Edit Mode - Only initialize Select2, don't re-populate
-        setTimeout(function() {
-            // Just initialize Select2 for existing dropdowns, don't change their values
-            $("#locations").select2();
-            $("#arrivals").select2();
-            $("#storages").select2();
-        }, 100);
+        // Initialize Location Dropdowns for Edit Mode
+        $('.location-select, .arrival-select, .storage-select').select2({ width: '100%' });
+        
+        if ($('#locationRows tr.location-row').length > 1) {
+            $('.remove-location-row').show();
+        } else {
+            $('.remove-location-row').hide();
+        }
 
         $('#export_form_e_id').on('change', function() {
             var formEId = $(this).val();
@@ -715,6 +993,11 @@
 
                         $('#lbl_consumed_mt').text(consumedVal.toFixed(3));
                         $('#lbl_remaining_mt').text((parseFloat(response.total) - consumedVal - parseFloat($('#lbl_current_request_mt').text())).toFixed(3));
+                        
+                        // Update Job Order No
+                        if (response.job_order_no) {
+                            $('#job_order_no').val(response.job_order_no);
+                        }
                         
                         if (typeof checkCapacity === "function") {
                             checkCapacity();
@@ -803,7 +1086,7 @@
             $('#snap_advance_payment_edit').val(data.advance_payment || '');
             $('#snap_payment_days_edit').val(data.payment_days || '');
             $('#snap_currency_edit').val(data.currency ? data.currency.currency_name : '');
-            $('#snap_currency_rate_edit').val(data.currency_rate || '');
+            // $('#snap_currency_rate_edit').val(data.currency_rate || '');
 
             // Populate relational packing items instead of data.packing_items from JSON
             $('#packingItemsWrapper').show();
@@ -867,6 +1150,30 @@
                 row.find(`input[name="packing_items[0][stuffing_in_container]"]`).val(item.stuffing_in_container);
                 row.find(`input[name="packing_items[0][no_of_containers]"]`).val(item.no_of_containers);
                 row.find(`input[name="packing_items[0][min_weight_empty_bags]"]`).val(item.min_weight_empty_bags);
+
+                // Populate new logistics fields
+                // Fumigation is readonly (auto-filled from EO, saved in DO)
+                row.find('.fumigation-select').val(item.fumigation_company_id || []).trigger('change');
+                // Since fumigation-select is disabled, pass values via hidden field
+                row.find('.fumigation-hidden-mirror').val(JSON.stringify(item.fumigation_company_id || []));
+
+                // Phyto Certificate is editable multi-select
+                row.find('.phyto-select').val(item.phyto_certificate || []).trigger('change');
+                
+                // Resolve inspection company IDs to names if they are IDs
+                let inspectionMap = @json($inspectionCompanies->pluck('name', 'id'));
+                let inspectionVal = item.inspection_company || '';
+                if (inspectionVal) {
+                    let ids = inspectionVal.split(',').map(id => id.trim());
+                    let names = ids.map(id => inspectionMap[id] || id);
+                    row.find('.inspection-company').val(names.join(', '));
+                } else {
+                    row.find('.inspection-company').val('');
+                }
+
+                row.find('.carton-supplier').val(item.carton_supplier || '');
+                row.find('.fumigation-tablets').val(item.fumigation_tablets || '');
+                row.find('.fumigation-ref-no').val(item.fumigation_ref_no || '');
                 
                 let subContainer = row.find('.sub-packing-items-container');
                 subContainer.attr('data-index', index);
@@ -1050,7 +1357,7 @@
             if (balance < -0.001) {
                 $('#lbl_remaining_mt').removeClass('text-success').addClass('text-danger');
                 let errMsg = `Total Metric Tons (${currentRequest.toFixed(3)}) exceeds the remaining capacity of Export Form-E (${remaining.toFixed(3)} MT).`;
-                $('#qty_error_msg').html(`<i class="fas fa-exclamation-triangle mr-2"></i> ERROR: ${errMsg}`).slideDown();
+                $('#qty_error_msg').html(`<i class="fa fa-exclamation-triangle mr-2"></i> ERROR: ${errMsg}`).slideDown();
                 $('.submitbutton').attr('disabled', true);
             } else {
                 $('#lbl_remaining_mt').removeClass('text-danger').addClass('text-success');

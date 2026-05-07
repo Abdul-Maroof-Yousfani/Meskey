@@ -851,6 +851,7 @@ class PurchaseQuotationController extends Controller
 
         $dataItems = PurchaseRequestData::with(['purchase_request', 'item', 'category', 'JobOrder.job_order_data'])
             ->where('purchase_request_id', $requestId)
+            ->where('am_approval_status', 'approved')
             ->get();
 
 
@@ -919,10 +920,13 @@ class PurchaseQuotationController extends Controller
      */
     public function create()
     {
-        $approvedRequests = PurchaseRequest::with('PurchaseData')->where('am_approval_status', 'approved')->whereHas('PurchaseData', function ($q) {
+        $approvedRequests = PurchaseRequest::with(['PurchaseData' => function($query) {
+            $query->where("am_approval_status", "approved");
+        }])->whereHas('PurchaseData', function ($q) {
             // $q->where('am_approval_status', 'approved');
             // ->where('quotation_status', 1);
-            $q->whereRaw('qty > (SELECT COALESCE(SUM(pod.qty), 0) FROM purchase_order_data pod JOIN purchase_orders po ON po.id = pod.purchase_order_id WHERE pod.purchase_request_data_id = purchase_request_data.id AND pod.am_approval_status != "rejected" AND po.am_approval_status != "rejected")');
+            $q->whereRaw('qty > (SELECT COALESCE(SUM(pod.qty), 0) FROM purchase_order_data pod JOIN purchase_orders po ON po.id = pod.purchase_order_id WHERE pod.purchase_request_data_id = purchase_request_data.id AND pod.am_approval_status != "rejected" AND po.am_approval_status != "rejected")')
+                ->where('am_approval_status', 'approved');
         })
             ->get();
         
@@ -1002,6 +1006,14 @@ class PurchaseQuotationController extends Controller
             'purchase_request.PurchaseData'
         ])->findOrFail($id);
 
+        $approvedRequests = PurchaseRequest::with(['PurchaseData' => function($query) {
+            $query->where("am_approval_status", "approved");
+        }])->whereHas('PurchaseData', function ($q) {
+            $q->whereRaw('qty > (SELECT COALESCE(SUM(pod.qty), 0) FROM purchase_order_data pod JOIN purchase_orders po ON po.id = pod.purchase_order_id WHERE pod.purchase_request_data_id = purchase_request_data.id AND pod.am_approval_status != "rejected" AND po.am_approval_status != "rejected")')
+                ->where('am_approval_status', 'approved');
+        })
+            ->get();
+
         $purchase_request_id = request()->purchase_request_id ?? $purchaseQuotation->purchase_request_id;
    
         $PurchaseQuotationIds = PurchaseQuotation::where('purchase_request_id', $purchase_request_id)
@@ -1045,13 +1057,17 @@ class PurchaseQuotationController extends Controller
 
         $purchaseQuotationDataCount = $purchaseQuotation->quotation_data->count();
 
-        // Calculate total quoted quantities for each PR item to determine max limits
+        // Calculate total quoted quantities for each PR item to determine max limits (Supplier-wise)
         $pr_data_ids = $purchaseRequest->PurchaseData->pluck('id');
         $all_quoted = \App\Models\Procurement\Store\PurchaseQuotationData::whereIn('purchase_request_data_id', $pr_data_ids)
             ->where('am_approval_status', '!=', 'rejected')
-            ->select('purchase_request_data_id', DB::raw('SUM(qty) as total_qty'))
+            ->select('purchase_request_data_id', 'supplier_id', DB::raw('SUM(qty) as total_qty'))
+            ->groupBy('purchase_request_data_id', 'supplier_id')
+            ->get()
             ->groupBy('purchase_request_data_id')
-            ->pluck('total_qty', 'purchase_request_data_id')
+            ->map(function ($items) {
+                return $items->pluck('total_qty', 'supplier_id');
+            })
             ->toArray();
 
         return view('management.procurement.store.purchase_quotation.edit', compact(
@@ -1063,7 +1079,8 @@ class PurchaseQuotationController extends Controller
             'job_orders',
             'purchaseQuotationDataCount',
             'locations_id',
-            'all_quoted'
+            'all_quoted',
+            'approvedRequests'
         ));
     }
 

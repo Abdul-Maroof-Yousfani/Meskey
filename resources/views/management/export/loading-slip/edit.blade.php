@@ -24,6 +24,11 @@
                     </li>
                 @endforeach
             </ul>
+            @php
+                $selectedGalas = array_map('trim', explode(',', $loadingSlip->gala));
+                $allGalaNames = collect($Orders)->pluck('gala_names')->flatten()->filter()->unique()->values();
+                $factoryNames = collect($Orders)->pluck('factory_names')->flatten()->filter()->unique()->implode(', ');
+            @endphp
             <div class="tab-content pt-1" id="orderTabsContent">
                 @foreach($Orders as $index => $order)
                     <div class="tab-pane fade show {{ $index === 0 ? 'active' : '' }}" id="order-content-{{ $index }}" role="tabpanel" aria-labelledby="order-tab-{{ $index }}">
@@ -34,12 +39,34 @@
                             <div class="col-xs-12 col-sm-6 col-md-3"><div class="form-group"><label>DO Qty (MT):</label><input type="number" value="{{ $order['do_qty'] }}" class="form-control" readonly step="0.01" /></div></div>
                         </div>
                         <div class="row">
-                            <div class="col-xs-12 col-sm-6 col-md-4"><div class="form-group"><label>Factory:</label><select class="form-control select2 w-100" multiple disabled style="width: 100% !important;">@foreach($order['factory_names'] as $name)<option selected>{{ $name }}</option>@endforeach</select></div></div>
-                            <div class="col-xs-12 col-sm-6 col-md-4"><div class="form-group"><label>Gala:</label><select class="form-control select2 w-100" multiple disabled style="width: 100% !important;">@foreach($order['gala_names'] as $name)<option selected>{{ $name }}</option>@endforeach</select></div></div>
-                            <div class="col-xs-12 col-sm-6 col-md-4"><div class="form-group"><label>Bag Size:</label><input type="number" value="{{ $order['bag_size'] }}" class="form-control" readonly step="0.01" /></div></div>
+                            <div class="col-xs-12 col-sm-6 col-md-12">
+                                <div class="form-group">
+                                    <label>Factory:</label>
+                                    <input type="text" value="{{ implode(', ', $order['factory_names']) ?: 'N/A' }}" class="form-control" readonly />
+                                </div>
+                            </div>
                         </div>
                     </div>
                 @endforeach
+            </div>
+
+            <div class="row pt-2">
+                <div class="col-xs-12 col-sm-6 col-md-6">
+                    <div class="form-group">
+                        <label>Bag Size:</label>
+                        <input type="number" value="{{ $loadingSlip->bag_size }}" class="form-control" readonly step="0.01" />
+                    </div>
+                </div>
+                <div class="col-xs-12 col-sm-6 col-md-6">
+                    <div class="form-group">
+                        <label>Gala: <span class="text-danger">*</span></label>
+                        <select class="form-control select2 w-100" name="gala[]" multiple required style="width: 100% !important;" {{ (isset($canEdit) && !$canEdit) ? 'disabled' : '' }}>
+                            @foreach($allGalaNames as $name)
+                                <option value="{{ $name }}" @selected(in_array($name, $selectedGalas))>{{ $name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
             </div>
 
             <input type="hidden" name="customer" value="{{ $loadingSlip->customer }}" />
@@ -47,7 +74,6 @@
             <input type="hidden" name="so_qty" value="{{ $loadingSlip->so_qty }}" />
             <input type="hidden" name="do_qty" value="{{ $loadingSlip->do_qty }}" />
             <input type="hidden" name="factory" value="{{ $loadingSlip->factory }}" />
-            <input type="hidden" name="gala" value="{{ $loadingSlip->gala }}" />
             <input type="hidden" name="bag_size" value="{{ $loadingSlip->bag_size }}" />
         @else
             <div class="col-12 text-center">No order data found.</div>
@@ -80,6 +106,60 @@
                 <label>Metric Tons:</label>
                 <input type="number" id="metric_tons_display" value="{{ number_format(($loadingSlip->kilogram ?? 0) / 1000, 2, '.', '') }}" class="form-control" readonly step="0.01" />
             </div>
+        </div>
+        <div class="col-xs-12 col-sm-6 col-md-3">
+            <div class="form-group">
+                <label>Seal No: <span class="text-danger">*</span></label>
+                <input type="text" name="seal_no" id="seal_no" value="{{ $loadingSlip->seal_no }}" class="form-control" placeholder="Enter Seal No" {{ (isset($canEdit) && !$canEdit) ? 'readonly' : '' }} required />
+            </div>
+        </div>
+    </div>
+
+    <div class="row pt-3">
+        <div class="col-12">
+            <h6 class="header-heading-sepration">Stack</h6>
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Bag Type</th>
+                        <th>Packing Size (KG)</th>
+                        <th>Input Size (KG)<span class="text-danger">*</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($loadingSlip->stacks as $idx => $stack)
+                        <tr>
+                            <td>
+                                {{ $stack->bag_type }}
+                                <input type="hidden" name="stacks[{{ $idx }}][bag_type]" value="{{ $stack->bag_type }}">
+                            </td>
+                            <td>
+                                {{ $stack->packing_size }}
+                                <input type="hidden" name="stacks[{{ $idx }}][packing_size]" value="{{ $stack->packing_size }}">
+                            </td>
+                            <td>
+                                <input type="text" name="stacks[{{ $idx }}][input_size]" value="{{ $stack->input_size }}" class="form-control" placeholder="Enter Input Size" required {{ (isset($canEdit) && !$canEdit) ? 'readonly' : '' }}>
+                            </td>
+                        </tr>
+                    @empty
+                        @foreach ($fallbackStacks as $idx => $item)
+                            <tr>
+                                <td>
+                                    {{ $item['bag_type'] }}
+                                    <input type="hidden" name="stacks[{{ $idx }}][bag_type]" value="{{ $item['bag_type'] }}">
+                                </td>
+                                <td>
+                                    {{ $item['packing_size'] }}
+                                    <input type="hidden" name="stacks[{{ $idx }}][packing_size]" value="{{ $item['packing_size'] }}">
+                                </td>
+                                <td>
+                                    <input type="text" name="stacks[{{ $idx }}][input_size]" class="form-control" placeholder="Enter Input Size" required {{ (isset($canEdit) && !$canEdit) ? 'readonly' : '' }}>
+                                </td>
+                            </tr>
+                        @endforeach
+                    @endforelse
+                </tbody>
+            </table>
         </div>
     </div>
     @if($rejectedDispatchQc)

@@ -85,6 +85,7 @@ class CommercialInvoiceController extends Controller
                     'commercial_invoice_no' => $invoice_no,
                     'invoice_no' => $invoice_no,
                     'invoice_date' => $validated['invoice_date'] ?? null,
+                    'remarks' => $validated['remarks'] ?? null,
                     'created_by' => auth()->user()?->id,
                 ]);
             });
@@ -126,12 +127,20 @@ class CommercialInvoiceController extends Controller
 
     public function update(Request $request, $id): JsonResponse
     {
-        $commercialInvoice = CommercialInvoice::findOrFail($id);
-        $validated = $this->validateCommercialInvoice($request, $commercialInvoice->id);
-
         DB::beginTransaction();
 
         try {
+            $commercialInvoice = CommercialInvoice::lockForUpdate()->find($id);
+
+            if (!$commercialInvoice) {
+                DB::rollBack();
+                return response()->json([
+                    'error' => 'Commercial Invoice already deleted or not found.'
+                ], 404);
+            }
+
+            $validated = $this->validateCommercialInvoice($request, $commercialInvoice->id);
+
             [$billOfLadings, $preview, $goodsSummary] = $this->buildPayloadFromRequest($validated, $commercialInvoice->id);
 
             $commercialInvoice->update([
@@ -141,6 +150,9 @@ class CommercialInvoiceController extends Controller
                 'commercial_invoice_no' => $validated['commercial_invoice_no'],
                 'invoice_no' => $validated['commercial_invoice_no'],
                 'invoice_date' => $validated['invoice_date'] ?? null,
+                'remarks' => $validated['remarks'] ?? null,
+                'am_approval_status' => 'pending',
+                'am_change_made' => 1,
             ]);
 
             DB::commit();
@@ -155,10 +167,31 @@ class CommercialInvoiceController extends Controller
 
     public function destroy($id): JsonResponse
     {
-        $commercialInvoice = CommercialInvoice::findOrFail($id);
-        $commercialInvoice->delete();
+        DB::beginTransaction();
 
-        return response()->json(['message' => 'Commercial Invoice has been deleted']);
+        try {
+            $commercialInvoice = CommercialInvoice::lockForUpdate()->find($id);
+
+            if (!$commercialInvoice) {
+                DB::rollBack();
+                return response()->json([
+                    'error' => 'Commercial Invoice already deleted or not found.'
+                ], 404);
+            }
+
+            $commercialInvoice->delete();
+
+            DB::commit();
+
+            return response()->json(['message' => 'Commercial Invoice has been deleted']);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function getNumber(Request $request): JsonResponse
@@ -222,6 +255,7 @@ class CommercialInvoiceController extends Controller
             'bill_of_lading_ids.*' => ['integer', 'exists:bill_of_ladings,id'],
             'commercial_invoice_no' => ['nullable', 'string', 'max:255'],
             'invoice_date' => ['nullable', 'date'],
+            'remarks' => ['nullable', 'string'],
             'current_invoice_id' => ['nullable', 'integer', 'exists:commercial_invoices,id'],
         ]);
 
@@ -235,7 +269,7 @@ class CommercialInvoiceController extends Controller
             ])->render(),
             'preview' => $preview,
             'goods_summary' => $goodsSummary,
-            'bill_of_ladings' => $billOfLadings->map(fn (BillOfLading $billOfLading) => [
+            'bill_of_ladings' => $billOfLadings->map(fn(BillOfLading $billOfLading) => [
                 'id' => $billOfLading->id,
                 'bill_no' => $billOfLading->bill_no,
             ])->values(),
@@ -258,6 +292,7 @@ class CommercialInvoiceController extends Controller
                 'max:255',
             ],
             'invoice_date' => ['nullable', 'date'],
+            'remarks' => ['nullable', 'string'],
         ]);
     }
 
@@ -301,7 +336,7 @@ class CommercialInvoiceController extends Controller
             abort(422, 'Some selected Bill of Lading records are invalid.');
         }
 
-        $invalidBill = $billOfLadings->first(fn (BillOfLading $billOfLading) => (int) $billOfLading->export_order_id !== (int) $validated['export_order_id']);
+        $invalidBill = $billOfLadings->first(fn(BillOfLading $billOfLading) => (int) $billOfLading->export_order_id !== (int) $validated['export_order_id']);
         if ($invalidBill) {
             abort(422, 'Selected Bill of Lading does not belong to the selected Export Order.');
         }
@@ -318,7 +353,7 @@ class CommercialInvoiceController extends Controller
                     ->push($billOfLading->export_delivery_challan_id);
             })
             ->filter()
-            ->map(fn ($id) => (int) $id)
+            ->map(fn($id) => (int) $id)
             ->unique()
             ->values()
             ->all();
@@ -329,6 +364,8 @@ class CommercialInvoiceController extends Controller
             'delivery_order.exportFormE',
             'delivery_challan_data.deliveryOrderData.brand',
             'delivery_challan_data.deliveryOrderData.bagType',
+            'delivery_challan_data.deliveryOrderData.deliveryOrder.exportOrder.packingItems',
+            'delivery_challan_data.loadingProgramItem.exportLoadingProgram',
             'delivery_challan_data.deliveryOrderData.subItems.bagType',
             'delivery_challan_data.deliveryOrderData.subItems.bagSize',
             'delivery_challan_data.product',
@@ -352,6 +389,7 @@ class CommercialInvoiceController extends Controller
             'bill_of_lading_ids' => $commercialInvoice->resolved_bill_of_lading_ids,
             'commercial_invoice_no' => $commercialInvoice->invoice_no ?: $commercialInvoice->commercial_invoice_no,
             'invoice_date' => optional($commercialInvoice->invoice_date)->format('Y-m-d'),
+            'remarks' => $commercialInvoice->remarks,
         ];
 
         return $this->buildPayloadFromRequest($input, $commercialInvoice->id);
@@ -379,9 +417,9 @@ class CommercialInvoiceController extends Controller
         array $input
     ): array {
         $primaryBill = $billOfLadings->first();
-        $bolSnapshots = $billOfLadings->map(fn (BillOfLading $billOfLading) => $billOfLading->snapshot_data ?? []);
+        $bolSnapshots = $billOfLadings->map(fn(BillOfLading $billOfLading) => $billOfLading->snapshot_data ?? []);
         $customer = $deliveryOrders->first()?->customer ?? $deliveryChallans->first()?->customer ?? $primaryBill?->exportDeliveryChallan?->customer;
-        
+
         $consigneeLines = collect([
             $customer?->name ?? null,
             $customer?->address ?? null,
@@ -391,7 +429,7 @@ class CommercialInvoiceController extends Controller
         $bank = $exportOrder->correspondentBank ?: $exportOrder->customer_bank;
         $paymentTermId = $deliveryOrders->pluck('payment_term_id')->filter()->first();
         $paymentTerm = PaymentTerm::find($paymentTermId);
-        
+
         $company = $exportOrder->company;
         $originName = $exportOrder->originCountry?->name ?? 'Pakistan';
         $visualName = $exportOrder->visual_name ?: ($exportOrder->product?->name ?: 'N/A');
@@ -410,9 +448,22 @@ class CommercialInvoiceController extends Controller
         }
 
         $quantitySummary = collect($goodsSummary['rows'] ?? [])
-            ->map(fn ($row) => number_format((float) ($row['quantity_mt'] ?? 0), 3) . ' MTS')
+            ->map(fn($row) => number_format((float) ($row['quantity_mt'] ?? 0), 3) . ' MTS')
             ->filter()
             ->implode(' + ');
+
+        $vesselName = $bolSnapshots->pluck('vessel_name')->filter()->unique()->implode(' / ');
+        if (!$vesselName) {
+            $vesselName = $deliveryChallans->flatMap(function ($challan) {
+                return $challan->delivery_challan_data->map(function ($data) {
+                    return $data->loadingProgramItem?->exportLoadingProgram?->vessel_name;
+                });
+            })->filter()->unique()->implode(' / ');
+        }
+        if (!$vesselName) {
+            $vesselName = $deliveryOrders->pluck('vessel_name')->filter()->unique()->implode(' / ');
+        }
+        $vesselName = $vesselName ?: 'N/A';
 
         return [
             'commercial_invoice_no' => $input['commercial_invoice_no'] ?? null,
@@ -435,13 +486,13 @@ class CommercialInvoiceController extends Controller
             'contents' => $originalName,
             'quantity_summary' => $quantitySummary,
             'bill_of_lading_no' => $billOfLadings->pluck('bill_no')->filter()->unique()->implode(', '),
-            'bill_of_lading_date' => $billOfLadings->pluck('bill_date')->filter()->map(fn ($date) => Carbon::parse($date)->format('d.m.Y'))->unique()->implode(', '),
+            'bill_of_lading_date' => $billOfLadings->pluck('bill_date')->filter()->map(fn($date) => Carbon::parse($date)->format('d.m.Y'))->unique()->implode(', '),
             'shipped_on_board_date' => $bolSnapshots->pluck('shipped_on_board_date')->filter()->unique()->implode(', ') ?: $primaryBill?->shipped_on_board_date,
             'form_e_no' => $bolSnapshots->pluck('form_e_no')->filter()->implode(', ') ?: 'N/A',
             'form_e_date' => $bolSnapshots->pluck('form_e_date')->filter()->unique()->implode(', '),
             'delivery_challan_no' => $deliveryChallans->pluck('dc_no')->filter()->unique()->implode(', '),
             'delivery_order_no' => $deliveryOrders->pluck('reference_no')->filter()->unique()->implode(', '),
-            'vessel_name' => $bolSnapshots->pluck('vessel_name')->filter()->unique()->implode(' / ') ?: $exportOrder->vessel_name,
+            'vessel_name' => $vesselName,
             'payment_terms' => $paymentTerm?->title ?: ($exportOrder->partial_payment ?: 'As per contract'),
             'incoterm' => $exportOrder->incoterm?->name ?: ($exportOrder->modeOfTerm?->name ?? 'N/A'),
             'mode_of_term' => $exportOrder->modeOfTerm?->name,
@@ -460,6 +511,7 @@ class CommercialInvoiceController extends Controller
             'net_weight_mt' => round(($goodsSummary['totals']['net_weight_kg'] ?? 0) / 1000, 3),
             'total_amount' => $totalAmount,
             'amount_in_words' => $amountInWords,
+            'remarks' => $input['remarks'] ?? null,
             'selected_bol_summary' => trim(($billOfLadings->pluck('bill_no')->filter()->unique()->implode(', ') ?: 'N/A') . ' / ' . ($deliveryChallans->pluck('dc_no')->filter()->unique()->implode(', ') ?: 'N/A')),
         ];
     }
@@ -566,24 +618,32 @@ class CommercialInvoiceController extends Controller
 
     protected function getProRatedBagCount($deliveryChallanData, string $field): float
     {
-        $deliveryOrderData = $deliveryChallanData->deliveryOrderData;
-        if (!$deliveryOrderData) {
+        $packingItem = $deliveryChallanData->deliveryOrderData;
+        if (!$packingItem) {
             return 0;
         }
 
-        $sourceCount = (float) ($deliveryOrderData->{$field} ?? 0);
-        if ($sourceCount <= 0) {
-            return 0;
+        // Get Export Order associated with this packing item through Delivery Order
+        $exportOrder = $packingItem->deliveryOrder?->exportOrder;
+        
+        if ($exportOrder) {
+            // Use EO-based ratio for accurate distribution across multiple DOs
+            $eoPackingItems = $exportOrder->packingItems;
+            $sourceMetricTons = (float) $eoPackingItems->sum('metric_tons');
+            $sourceCount = (float) $eoPackingItems->sum($field);
+        } else {
+            // Fallback to individual packing item ratio
+            $sourceMetricTons = (float) ($packingItem->metric_tons ?? 0);
+            $sourceCount = (float) ($packingItem->{$field} ?? 0);
         }
 
-        $sourceMetricTons = (float) ($deliveryOrderData->metric_tons ?? 0);
         $dispatchMetricTons = (float) ($deliveryChallanData->qty ?? 0);
 
         if ($sourceMetricTons <= 0 || $dispatchMetricTons <= 0) {
             return 0;
         }
 
-        $ratio = min(max($dispatchMetricTons / $sourceMetricTons, 0), 1);
+        $ratio = $dispatchMetricTons / $sourceMetricTons;
 
         return round($sourceCount * $ratio, 2);
     }

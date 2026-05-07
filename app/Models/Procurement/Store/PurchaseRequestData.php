@@ -121,4 +121,105 @@ class PurchaseRequestData extends Model
     {
         return $this->belongsTo(\App\Models\Master\Size::class, 'size_id');
     }
+
+    protected function onApprovalComplete()
+    {
+        $module = $this->getApprovalModule();
+        if (isset($module->approval_column)) {
+            $this->update([$module->approval_column => 'approved']);
+        }
+
+        $parent = $this->purchase_request;
+        if ($parent) {
+            $parent->syncStatusFromItems('System: Item approved');
+        }
+    }
+
+    protected function onApprovalRejected()
+    {
+        $module = $this->getApprovalModule();
+        if (isset($module->approval_column)) {
+            $this->update([$module->approval_column => 'rejected']);
+        }
+
+        $parent = $this->purchase_request;
+        if ($parent) {
+            $parent->syncStatusFromItems('System: Item rejected');
+        }
+    }
+
+    protected function onApprovalReverted()
+    {
+        $module = $this->getApprovalModule();
+        if (isset($module->approval_column)) {
+            $this->update([$module->approval_column => 'reverted']);
+        }
+
+        $parent = $this->purchase_request;
+        if ($parent) {
+            $parent->syncStatusFromItems('System: Item reverted');
+        }
+    }
+
+    public function canApprove()
+    {
+        $status = $this->getApprovalStatus();
+        if ($status === 'approved' || $status === 'rejected') {
+            return false;
+        }
+
+        $user = auth()->user();
+        if (!$user) return false;
+
+        $module = $this->getApprovalModule();
+        if (!$module) return false;
+
+        if (isset($this->am_change_made) && $this->am_change_made == 0) return false;
+
+        $userRoleIds = $user->roles->pluck('id')->toArray();
+        $requiredRoles = $module->roles->pluck('role_id')->toArray();
+
+        if (empty(array_intersect($userRoleIds, $requiredRoles))) return false;
+
+        $currentCycle = $this->getCurrentApprovalCycle();
+
+        $userAlreadyApproved = $this->approvalLogs()
+            ->where('module_id', $module->id)
+            ->where('approval_cycle', $currentCycle)
+            ->where('user_id', $user->id)
+            ->where('action', 'approved')
+            ->where('status', 'active')
+            ->exists();
+
+        if ($userAlreadyApproved) return false;
+
+        if ($module->requires_sequential_approval) {
+            $approvalRows = $this->approvalRows()
+                ->where('module_id', $module->id)
+                ->where('approval_cycle', $currentCycle)
+                ->orderBy('id')
+                ->get();
+
+            foreach ($approvalRows as $row) {
+                if ($row->current_count < $row->required_count) {
+                    return in_array($row->role_id, $userRoleIds);
+                }
+            }
+        }
+
+        $userApprovalRows = $this->approvalRows()
+            ->where('module_id', $module->id)
+            ->where('approval_cycle', $currentCycle)
+            ->whereIn('role_id', $userRoleIds)
+            ->where('status', 'pending')
+            ->get();
+
+        foreach ($userApprovalRows as $row) {
+            if ($row->current_count < $row->required_count) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

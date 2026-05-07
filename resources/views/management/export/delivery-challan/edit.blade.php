@@ -64,7 +64,7 @@
                 <input type="hidden" name="customer_id" id="customer_id" value="{{ $delivery_challan->customer_id }}">
             </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-6 d-none">
             <div class="form-group">
                 <label class="form-label">DO Number:</label>
                 <select id="do_no" class="form-control select2" disabled>
@@ -149,7 +149,7 @@
                 <input type="number" name="labour_amount" id="labour_amount" class="form-control" value="{{ $delivery_challan->labour_amount }}" readonly>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-4 d-none">
             <div class="form-group">
                 <label class="form-label">Transporter Amount:</label>
                 <input type="number" name="transporter_amount" id="transporter_amount" class="form-control" value="{{ $delivery_challan->transporter_amount }}">
@@ -207,7 +207,7 @@
                     <tbody id="dcTableBody"></tbody>
                 </table>
             </div>
-            <small id="qty_validation_message" class="text-danger d-none">Total line item quantity second weighbridge quantity se exceed nahi kar sakti.</small>
+            <small id="qty_validation_message" class="text-danger d-none">Total line item quantity couldn't exceed the second weighbridge quantity.</small>
         </div>
     </div>
 
@@ -234,10 +234,6 @@
     window.syncBagsFromQty = function (el) {
         const row = $(el).closest('tr');
         const form = $(el).closest('form');
-        const bagSize = parseFloat(row.find('.bag_size').val()) || 0;
-        const qty = parseFloat($(el).val()) || 0;
-        const bags = bagSize > 0 ? Math.round((qty * 1000) / bagSize) : 0;
-        row.find('.no_of_bags').val(bags);
         window.updateExportDcLineAmount(row);
         window.recalculateExportDcTotals(form);
     };

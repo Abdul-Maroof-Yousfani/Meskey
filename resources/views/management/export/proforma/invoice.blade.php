@@ -10,289 +10,367 @@
             margin: 10mm;
         }
         body {
-            font-family: 'Arial', sans-serif;
-            font-size: 10px;
-            color: #000;
-            line-height: 1.2;
             margin: 0;
-            padding: 0;
+            font-family: Arial, sans-serif;
+            font-size: 10px;
+            color: #111;
+            line-height: 1.25;
+        }
+        .print-bar {
+            padding: 10px;
+            text-align: center;
+            background: #eef2f7;
+            border-bottom: 1px solid #cbd5e1;
+        }
+        .print-btn {
+            border: 0;
+            background: #1d4ed8;
+            color: #fff;
+            padding: 8px 24px;
+            font-weight: 700;
+            cursor: pointer;
         }
         .invoice-box {
-            max-width: 800px;
-            margin: auto;
+            max-width: 790px;
+            margin: 0 auto;
             padding: 10px;
         }
         .header-table {
             width: 100%;
-            margin-bottom: 10px;
-            border-bottom: 2px solid #000;
-            padding-bottom: 5px;
+            border-collapse: collapse;
+            margin-bottom: 8px;
+            border-bottom: 2px solid #111;
+        }
+        .header-table td {
+            vertical-align: top;
+            padding-bottom: 6px;
         }
         .logo {
             max-width: 180px;
+            max-height: 72px;
         }
-        .company-info h1 {
-            margin: 0;
-            font-size: 20px;
-        }
-        .company-info p {
-            margin: 1px 0;
-        }
-        .title-section {
-            text-align: center;
-            margin-bottom: 10px;
-        }
-        .title-section h2 {
-            margin: 0;
-            text-decoration: underline;
-            font-size: 16px;
-            text-transform: uppercase;
-        }
-        .info-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 10px;
-        }
-        .info-table td {
-            width: 50%;
-            vertical-align: top;
-            padding: 4px;
-            border: 1px solid #000;
-        }
-        .info-table th {
-            background: #eee;
-            text-align: left;
-            padding: 3px;
-            border: 1px solid #000;
-            font-weight: bold;
-            text-transform: uppercase;
+        .company-info {
+            text-align: right;
             font-size: 9px;
         }
-        .items-table {
+        .company-info strong {
+            display: block;
+            font-size: 15px;
+            margin-bottom: 2px;
+        }
+        .party-table,
+        .meta-table,
+        .items-table,
+        .bank-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
-        .items-table th, .items-table td {
-            border: 1px solid #000;
-            padding: 5px;
-            text-align: center;
+        .meta-table td,
+        .party-table td,
+        .items-table td,
+        .items-table th,
+        .bank-table td {
+            border: 1px solid #111;
+            padding: 5px 6px;
+            vertical-align: top;
+        }
+        .ref-row {
+            margin: 2px 0 12px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .ref-row::after {
+            content: "";
+            display: block;
+            clear: both;
+        }
+        .ref-left {
+            float: left;
+            width: 68%;
+        }
+        .ref-right {
+            float: right;
+            width: 28%;
+            text-align: right;
         }
         .items-table th {
-            background-color: #eee;
+            background: #e8edf5;
+            text-align: left;
+            font-weight: 700;
+            text-transform: uppercase;
             font-size: 9px;
         }
-        .details-section {
-            margin-bottom: 10px;
+        .label {
+            width: 22%;
+            background: #f6f8fb;
+            font-weight: 700;
         }
-        .details-section table {
-            width: 100%;
-            border-collapse: collapse;
+        .block-label {
+            width: 18%;
+            font-weight: 700;
+            text-transform: uppercase;
+            background: #eef3f8;
         }
-        .details-section td {
-            border: 1px solid #000;
-            padding: 4px;
+        .party-table td strong {
+            display: block;
+            margin-bottom: 2px;
         }
-        .bank-details {
-            border: 1px solid #000;
-            padding: 5px;
-            margin-bottom: 10px;
+        .party-table td,
+        .meta-table td,
+        .bank-table td {
+            padding: 7px 8px;
         }
-        .bank-details h4 {
-            margin: 0 0 5px 0;
-            text-decoration: underline;
-            font-size: 10px;
+        .stack-line {
+            margin-top: 2px;
+        }
+        .party-content {
+            line-height: 1.4;
+        }
+        .total-row td {
+            font-weight: 700;
+            font-size: 12px;
+            padding: 10px 8px;
+            background: #f4f7fb;
+            text-align: center;
+        }
+        .bank-title {
+            margin: 14px 0 6px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .section-title {
+            margin: 14px 0 6px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .closing {
+            margin-top: 14px;
+        }
+        .closing p {
+            margin: 0 0 4px;
         }
         .footer {
-            margin-top: 30px;
+            margin-top: 28px;
             width: 100%;
         }
         .footer td {
-            width: 50%;
-            text-align: center;
+            width: 100%;
+            text-align: right;
+            vertical-align: bottom;
         }
         .signature-line {
-            margin-top: 25px;
-            border-top: 1px solid #000;
+            margin: 0 0 6px auto;
+            border-top: 1px solid #111;
             display: inline-block;
             width: 180px;
         }
-        .text-right { text-align: right; }
-        .text-left { text-align: left; }
-        .font-bold { font-weight: bold; }
+        .align-center {
+            text-align: center;
+        }
+        .meta-value {
+            line-height: 1.4;
+        }
+        .text-nowrap {
+            white-space: nowrap;
+        }
         @media print {
-            .no-print { display: none; }
-            body { margin: 0; }
+            .print-bar {
+                display: none;
+            }
+            .invoice-box {
+                padding-top: 0;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="no-print" style="text-align: center; padding: 10px; background: #eee; border-bottom: 1px solid #ccc;">
-        <button onclick="window.print()" style="padding: 10px 30px; cursor: pointer; background: #007bff; color: white; border: none; font-weight: bold;">PRINT INVOICE</button>
+    <div class="print-bar">
+        <button class="print-btn" onclick="window.print()">PRINT PROFORMA</button>
     </div>
+
+    @php
+        $company = $exportOrder->company;
+        $bank = $proforma->customer_bank;
+        $buyer = $exportOrder->buyer;
+        $consignee = $exportOrder->consignee;
+        $notifyParty = $proforma->consigned_details;
+        $packingItems = $exportOrder->packingItems;
+        $totalAmount = $packingItems->sum('amount');
+        $shipmentPeriod = $exportOrder->shipment_delivery_date_from && $exportOrder->shipment_delivery_date_to
+            ? $exportOrder->shipment_delivery_date_from->format('F') . ' - ' . $exportOrder->shipment_delivery_date_to->format('F Y')
+            : '-';
+    @endphp
 
     <div class="invoice-box">
         <table class="header-table">
             <tr>
-                <td width="50%">
-                    @if (getCurrentCompany() && getCurrentCompany()->logo)
-                        <img src="{{ image_path(getCurrentCompany()->logo) }}" class="logo" alt="Logo">
+                <td width="44%">
+                    @if ($company && $company->logo)
+                        <img src="{{ image_path($company->logo) }}" class="logo" alt="Logo">
                     @else
-                        <h1>{{ getCurrentCompany()->name ?? 'MESKEY & FEMTEE' }}</h1>
+                        <strong>{{ $company->name ?? 'MESKEY & FEMTEE' }}</strong>
                     @endif
                 </td>
-                <td width="50%" class="text-right company-info">
-                    <p><strong>{{ $exportOrder->company->name ?? 'MESKEY & FEMTEE (PVT) LTD' }}</strong></p>
-                    <p>{{ $exportOrder->company->address ?? '' }}</p>
-                    <p>Phone: {{ $exportOrder->company->phone ?? '' }} Email: {{ $exportOrder->company->email ?? '' }}</p>
-                    <p>NTN: {{ $exportOrder->company->ntn ?? 'N/A' }} STRN: {{ $exportOrder->company->stn ?? 'N/A' }}</p>
+                <td width="56%" class="company-info">
+                    <strong>{{ $company->name ?? 'MESKEY & FEMTEE (PVT) LTD' }}</strong>
+                    <div>{{ $company->address ?? '' }}</div>
+                    <div>{{ $company->phone ?? '' }}{{ !empty($company->phone) && !empty($company->email) ? ' | ' : '' }}{{ $company->email ?? '' }}</div>
+                    <div>NTN: {{ $company->ntn ?? 'N/A' }} | STRN: {{ $company->stn ?? 'N/A' }}</div>
                 </td>
             </tr>
         </table>
 
-        <div class="title-section">
-            <h2>Proforma Invoice</h2>
+        <div class="ref-row">
+            <div class="ref-left">REFERENCE NO: {{ $proforma->proforma_no ?: ($exportOrder->contract_no ?? $exportOrder->voucher_no) }}</div>
+            <div class="ref-right">DATE: {{ \Carbon\Carbon::parse($proforma->proforma_date ?? $exportOrder->voucher_date)->format('d.m.Y') }}</div>
         </div>
 
-        <table class="info-table">
+        <table class="party-table">
             <tr>
-                <th width="50%">Exporter / Beneficiary</th>
-                <th width="50%">Invoice Details</th>
-            </tr>
-            <tr>
-                <td>
-                    <strong>{{ $exportOrder->company->name ?? 'N/A' }}</strong><br>
-                    {!! nl2br(e($exportOrder->company->address ?? '')) !!}
-                </td>
-                <td>
-                    <table width="100%" style="border:none;">
-                        <tr><td style="border:none; padding:1px;">Invoice No:</td><td style="border:none; padding:1px;"><strong>{{ $proforma->proforma_no }}</strong></td></tr>
-                        <tr><td style="border:none; padding:1px;">Date:</td><td style="border:none; padding:1px;"><strong>{{ \Carbon\Carbon::parse($proforma->proforma_date)->format('d-M-Y') }}</strong></td></tr>
-                        <tr><td style="border:none; padding:1px;">Contract No:</td><td style="border:none; padding:1px;">{{ $exportOrder->contract_no ?? 'N/A' }}</td></tr>
-                        <tr><td style="border:none; padding:1px;">Voucher No:</td><td style="border:none; padding:1px;">{{ $exportOrder->voucher_no ?? 'N/A' }}</td></tr>
-                    </table>
+                <td class="block-label">Shipper</td>
+                <td class="party-content">
+                    <strong>{{ $company->name ?? '-' }}</strong>
+                    <div>{!! nl2br(e($company->address ?? '-')) !!}</div>
                 </td>
             </tr>
             <tr>
-                <th>Buyer / Importer</th>
-                <th>Consignee</th>
-            </tr>
-            <tr>
-                <td>
-                    <strong>{{ $exportOrder->buyer->name ?? 'N/A' }}</strong><br>
-                    {!! nl2br(e($exportOrder->buyer->address ?? 'N/A')) !!}
+                <td class="block-label">Consignee</td>
+                <td class="party-content">
+                    @if ($consignee)
+                        <strong>{{ $consignee->name ?: '-' }}</strong>
+                        <div class="stack-line">{{ $consignee->contact ?: '' }}</div>
+                        <div class="stack-line">{!! nl2br(e($consignee->address ?: '-')) !!}</div>
+                    @else
+                        <strong>{{ $buyer->name ?? '-' }}</strong>
+                        <div class="stack-line">{!! nl2br(e($buyer->address ?? '-')) !!}</div>
+                    @endif
                 </td>
-                <td>
-                    {!! nl2br(e($proforma->consigned_details ?? 'SAME AS BUYER')) !!}
-                </td>
             </tr>
-        </table>
-
-        <table class="info-table" style="margin-top: -11px; border-top:none;">
-            <tr>
-                <td width="25%"><strong>Origin:</strong> {{ $exportOrder->originCountry?->name ?? 'PAKISTAN' }}</td>
-                <td width="25%"><strong>Loading:</strong> {{ $exportOrder->portOfLoading?->name ?? 'N/A' }}</td>
-                <td width="25%"><strong>Discharge:</strong> {{ $exportOrder->portOfDischarge?->name ?? 'N/A' }}</td>
-                <td width="25%"><strong>Transport:</strong> {{ $exportOrder->modeOfTransport?->name ?? 'BY SEA' }}</td>
-            </tr>
+            @if (filled(strip_tags((string) $notifyParty)) || $buyer)
+                <tr>
+                    <td class="block-label">Notify Party</td>
+                    <td class="party-content">
+                        @if (filled(strip_tags((string) $notifyParty)))
+                            {!! $notifyParty !!}
+                        @else
+                            <strong>{{ $buyer->name ?? '-' }}</strong>
+                            <div class="stack-line">{!! nl2br(e($buyer->address ?? '-')) !!}</div>
+                        @endif
+                    </td>
+                </tr>
+            @endif
         </table>
 
         <table class="items-table">
             <thead>
                 <tr>
-                    <th width="35%">Description of Goods</th>
-                    <th width="12%">HS Code</th>
-                    <th width="15%">Quantity</th>
-                    <th width="18%">Unit Price ({{ $exportOrder->currency->currency_code ?? '$' }})</th>
-                    <th width="20%">Total Amount</th>
+                    <th width="24%">Commodity</th>
+                    <th width="24%">Specification</th>
+                    <th width="12%">Quantity</th>
+                    <th width="18%">Packing</th>
+                    <th width="10%">Bags Marks</th>
+                    <th width="12%">Unit Price</th>
                 </tr>
             </thead>
             <tbody>
-                @php $totalAmount = 0; $totalMT = 0; @endphp
-                @foreach($exportOrder->packingItems as $item)
+                @foreach($packingItems as $item)
                 <tr>
-                    <td class="text-left">
-                        <strong>{{ $exportOrder->product->name ?? 'Commodity' }}</strong><br>
-                        <span style="font-size: 9px;">
-                            Packing: {{ $item->bagType->name ?? '' }} ({{ $item->bag_size }} kg)<br>
-                            Brand: {{ $item->brand->name ?? 'N/A' }}
-                        </span>
+                    <td>
+                        <strong>{{ $exportOrder->visual_name ?? $exportOrder->product->name ?? 'Commodity' }}</strong>
                     </td>
-                    <td>{{ $exportOrder->hsCode?->code ?? 'N/A' }}</td>
-                    <td>{{ number_format($item->metric_tons, 3) }} MT</td>
-                    <td>{{ number_format($item->rate, 2) }}</td>
-                    <td>{{ number_format($item->amount, 2) }}</td>
+                    <td>AS PER CONTRACT.</td>
+                    <td class="align-center">{{ number_format((float) $item->metric_tons, 3) }} MT</td>
+                    <td>
+                        IN {{ rtrim(rtrim(number_format((float) $item->bag_size, 2), '0'), '.') }} KG {{ $item->bagCondition->name ?? '-' }} {{ $item->bagType->name ?? '' }} BAG{{ $item->bagPacking?->name ? '.' : '' }}
+                        @if($item->bagPacking?->name)
+                            <div class="stack-line">{{ $item->bagPacking->name }}</div>
+                        @endif
+                    </td>
+                    <td>{{ $item->brand->name ?? ($exportOrder->marking_labeling ?: '-') }}</td>
+                    <td class="text-nowrap">
+                        {{ $exportOrder->currency->currency_code ?? 'USD' }} {{ number_format((float) $item->rate, 2) }}
+                        @if($exportOrder->incoterm || $exportOrder->portOfDischarge)
+                            <div class="stack-line">
+                                PMT {{ strtoupper($exportOrder->incoterm->name ?? '') }}{{ $exportOrder->portOfDischarge ? ' ' . strtoupper($exportOrder->portOfDischarge->name) : '' }}
+                            </div>
+                        @endif
+                    </td>
                 </tr>
-                @php 
-                    $totalAmount += $item->amount; 
-                    $totalMT += $item->metric_tons;
-                @endphp
                 @endforeach
-                
-                @if($exportOrder->specifications->count() > 0)
-                <tr>
-                    <td colspan="5" class="text-left" style="background: #fafafa; font-size: 9px;">
-                        <strong>Quality Specifications:</strong> 
-                        @foreach($exportOrder->specifications as $spec)
-                            {{ $spec->spec_name }}: {{ $spec->spec_value }} {{ $spec->uom }} |
-                        @endforeach
-                    </td>
-                </tr>
-                @endif
             </tbody>
             <tfoot>
-                <tr class="font-bold">
-                    <td colspan="2" class="text-right">TOTAL</td>
-                    <td>{{ number_format($totalMT, 3) }} MT</td>
-                    <td></td>
-                    <td>{{ $exportOrder->currency->currency_code ?? '' }} {{ number_format($totalAmount, 2) }}</td>
-                </tr>
-                <tr>
-                    <td colspan="5" class="text-left">
-                        <strong>Amount in Words:</strong> {{ $amountInWords }}
+                <tr class="total-row">
+                    <td colspan="6">
+                        TOTAL AMOUNTING {{ $exportOrder->currency->currency_code ?? 'USD' }} {{ number_format((float) $totalAmount, 2) }}
                     </td>
                 </tr>
             </tfoot>
         </table>
 
-        <table class="info-table">
+        <div class="section-title">Shipment Terms</div>
+        <table class="meta-table">
             <tr>
-                <th colspan="2">Terms and Conditions</th>
+                <td class="label">Inspection</td>
+                <td class="meta-value">{{ $exportOrder->inspection_required ?: 'SGS' }}</td>
             </tr>
-            <tr><td width="30%"><strong>Payment Terms:</strong></td><td>{{ $exportOrder->modeOfTerm->name ?? 'N/A' }} @if($exportOrder->payment_days) ({{ $exportOrder->payment_days }} Days) @endif</td></tr>
-            <tr><td><strong>Incoterms:</strong></td><td>{{ $exportOrder->incoterm?->name ?? 'N/A' }}</td></tr>
-            <tr><td><strong>Shipment Period:</strong></td><td>{{ \Carbon\Carbon::parse($exportOrder->shipment_delivery_date_from)->format('d-M-Y') }} To {{ \Carbon\Carbon::parse($exportOrder->shipment_delivery_date_to)->format('d-M-Y') }}</td></tr>
-            <tr><td><strong>Shipping Marks:</strong></td><td>{!! nl2br(e($exportOrder->marking_labeling ?? 'N/A')) !!}</td></tr>
-            <!-- <tr><td><strong>Packing Details:</strong></td><td>{!! nl2br(e($exportOrder->packing_description ?? 'N/A')) !!}</td></tr> -->
-            @if($exportOrder->other_condition)<tr><td><strong>Other Conditions:</strong></td><td>{!! $exportOrder->other_condition !!}</td></tr>@endif
-            @if($exportOrder->force_majure)<tr><td><strong>Force Majeure:</strong></td><td>{!! $exportOrder->force_majure !!}</td></tr>@endif
-            @if($exportOrder->application_law)<tr><td><strong>Application Law:</strong></td><td>{!! $exportOrder->application_law !!}</td></tr>@endif
+            <tr>
+                <td class="label">Insurance</td>
+                <td class="meta-value">{{ $exportOrder->insurance_covered_by ? 'AT ' . strtoupper($exportOrder->insurance_covered_by) . "'S COST & ACCOUNT." : "AT BUYER'S COST & ACCOUNT." }}</td>
+            </tr>
+            <tr>
+                <td class="label">Shipment</td>
+                <td class="meta-value">{{ $shipmentPeriod }}</td>
+            </tr>
+            <tr>
+                <td class="label">Payment Term</td>
+                <td class="meta-value">{{ $exportOrder->modeOfTerm->name ?? '-' }}</td>
+            </tr>
         </table>
 
-        @php $bank = $proforma->customer_bank; @endphp
         @if($bank)
-        <div class="bank-details">
-            <h4 style="text-decoration: none;">Beneficiary Bank Details:</h4>
-            <table width="100%" style="border:none;">
-                <tr><td width="30%" style="border:none; padding:2px;"><strong>Beneficiary Bank:</strong></td><td style="border:none; padding:2px;">{{ $bank->bank_name }}</td></tr>
-                <tr><td style="border:none; padding:2px;"><strong>Account Title:</strong></td><td style="border:none; padding:2px;">{{ $bank->account_title }}</td></tr>
-                <tr><td style="border:none; padding:2px;"><strong>Bank Name:</strong></td><td style="border:none; padding:2px;">{{ $bank->bank_name }}</td></tr>
-                <tr><td style="border:none; padding:2px;"><strong>Branch Name:</strong></td><td style="border:none; padding:2px;">{{ $bank->branch_name }}</td></tr>
-                <tr><td style="border:none; padding:2px;"><strong>Account No:</strong></td><td style="border:none; padding:2px;">{{ $bank->account_number }}</td></tr>
-                <tr><td style="border:none; padding:2px;"><strong>Branch Code:</strong></td><td style="border:none; padding:2px;">{{ $bank->branch_code }}</td></tr>
+            <div class="bank-title">Banking Details:</div>
+            <table class="bank-table">
+                <tr>
+                    <td class="label">Bank Name</td>
+                    <td>{{ $bank->bank_name ?? '-' }}</td>
+                </tr>
+                <tr>
+                    <td class="label">SWIFT Code</td>
+                    <td>{{ $bank->swift_code ?? '-' }}</td>
+                </tr>
+                <tr>
+                    <td class="label">Account Title</td>
+                    <td>{{ $bank->account_title ?? '-' }}</td>
+                </tr>
+                <tr>
+                    <td class="label">Account No</td>
+                    <td>{{ $bank->account_no ?? $bank->account_number ?? '-' }}</td>
+                </tr>
+                <tr>
+                    <td class="label">IBAN No</td>
+                    <td>{{ $bank->iban ?? '-' }}</td>
+                </tr>
             </table>
-        </div>
         @endif
 
-        <div class="footer">
+        <div class="footer" style="margin: 80px 0 0 0;">
             <table width="100%">
                 <tr>
-                    <td><div class="signature-line"></div><p>Buyer's Signature</p></td>
-                    <td><div class="signature-line"></div><p>Authorized Signature<br><strong>{{ $exportOrder->company->name ?? 'Meskey & Femtee' }}</strong></p></td>
+                    <td>
+                        <div class="signature-line"></div>
+                        <p>Authorized Signature</p>
+                    </td>
                 </tr>
             </table>
         </div>
     </div>
-    <script>window.onload = function() { setTimeout(function() { window.print(); }, 500); }</script>
+    <script>
+        window.onload = function () {
+            setTimeout(function () { window.print(); }, 300);
+        };
+    </script>
 </body>
 </html>

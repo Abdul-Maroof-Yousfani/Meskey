@@ -64,6 +64,12 @@
                 </select>
             </div>
 
+            <div class="form-group">
+                <label>Remarks</label>
+                <textarea name="remarks" id="remarks" rows="5" class="form-control text-editor"
+                    placeholder="Enter remarks...">{!! old('remarks', $commercialInvoice->remarks ?? '') !!}</textarea>
+            </div>
+
         </div>
 
         {{-- ===== RIGHT: PREVIEW ===== --}}
@@ -92,6 +98,36 @@
 
     $(document).ready(function() {
         $('.select2').select2({ width: '100%' });
+
+        // Summernote initialization
+        if (!document.querySelector('link[data-ci-summernote]')) {
+            var link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = 'https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.css';
+            link.setAttribute('data-ci-summernote', '1');
+            document.head.appendChild(link);
+        }
+        if (!document.querySelector('script[data-ci-summernote]')) {
+            var script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.js';
+            script.defer = true;
+            script.setAttribute('data-ci-summernote', '1');
+            document.head.appendChild(script);
+        }
+        
+        var initSummernote = function() {
+            if ($.fn.summernote) {
+                $('#remarks').summernote({
+                    height: 140,
+                    callbacks: {
+                        onChange: function() { fetchCommercialInvoicePreview(); }
+                    }
+                });
+            } else {
+                setTimeout(initSummernote, 300);
+            }
+        };
+        initSummernote();
 
         if (!$('#commercial_invoice_no').val()) {
             getCommercialInvoiceNumber();
@@ -157,6 +193,7 @@
     function fetchCommercialInvoicePreview() {
         var exportOrderId  = $('#export_order_id').val();
         var billOfLadingIds = $('#bill_of_lading_ids').val() || [];
+        var remarks = $.fn.summernote ? $('#remarks').summernote('code') : $('#remarks').val();
 
         if (!exportOrderId || billOfLadingIds.length === 0) {
             showCIHint('Select both Export Order and Bill of Ladings to generate the preview.');
@@ -171,6 +208,7 @@
                 'bill_of_lading_ids[]': billOfLadingIds,
                 commercial_invoice_no: $('#commercial_invoice_no').val(),
                 invoice_date:          $('#invoice_date').val(),
+                remarks:               remarks,
                 current_invoice_id:    currentInvoiceId,
             },
             dataType: 'json',

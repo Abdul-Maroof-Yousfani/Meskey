@@ -205,9 +205,15 @@
                             </td>
 
                             <td style="min-width: 150px;">
+                                @php
+                                    $alreadyReceived = \App\Models\Procurement\Store\PurchaseOrderReceivingData::where('purchase_order_data_id', $data->purchase_order_data_id)
+                                        ->where('purchase_order_receiving_id', '!=', $purchaseOrderReceiving->id)
+                                        ->sum('qty');
+                                    $maxAllowed = ($data->purchase_order_data->qty ?? 0) - $alreadyReceived;
+                                @endphp
                                 <input style="width: 100%" type="number" onkeyup="calc({{ $key }})"
                                     onblur="calc({{ $key }})" name="qty[]" value="{{ $data->qty }}"
-                                    id="qty_{{ $key }}" class="form-control" @readonly($data->qc) step="0.01" min="0" max="{{ $data->qty }}"
+                                    id="qty_{{ $key }}" class="form-control" @readonly($data->qc) step="0.01" min="0" max="{{ $maxAllowed }}"
                                    >
                             </td>
 @if(optional($purchaseOrderReceiving->purchase_request)->category_id == 38)
@@ -624,11 +630,11 @@ $(document).ready(function () {
         var qty = parseFloat(qtyInput.val());
         var rate = parseFloat($('#rate_' + num).val());
 
-       // if (qty > maxQty) {
-       //     alert('Maximum allowed quantity is ' + maxQty);
-       //     qty = maxQty;
-       //     qtyInput.val(maxQty); 
-       // }
+        if (qty > maxQty) {
+            alert('Maximum allowed quantity is ' + maxQty);
+            qty = maxQty;
+            qtyInput.val(maxQty); 
+        }
 
         var total = qty * rate;
         $('#total_' + num).val(total);

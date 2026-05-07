@@ -1,17 +1,12 @@
 <table class="table table-striped m-0">
     <thead>
         <tr>
+            <th>ID</th>
             <th>EO No.</th>
             <th>DO No.</th>
-            <th>Buyer</th>
-            <th>Commodity</th>
-            <th>Ticket No.</th>
-            <th>Truck No.</th>
-            <th>Container No.</th>
-            <th>Factory</th>
-            <th>Gala</th>
-            <th class="text-right">Suggested Qty</th>
-            <th>Created</th>
+            <th>Vessel Name</th>
+            <th>Status</th>
+            <th>Created By</th>
             <th>Action</th>
         </tr>
     </thead>
@@ -19,165 +14,63 @@
         @if($loadingPrograms->count() > 0)
             @foreach($loadingPrograms as $loadingProgram)
                 @php
-                    $tickets = $loadingProgram->loadingProgramItems;
-                    $ticketCount = $tickets->count();
-                    $rowspan = $ticketCount > 0 ? $ticketCount : 1;
-                    $isFirstRow = true;
-
-                    // Support multiple EOs and DOs
-                    $eoReferences = $loadingProgram->exportOrders->map(function($eo) {
+                    $eoReferences = $loadingProgram->exportOrders->map(function ($eo) {
                         return $eo->voucher_no ?? $eo->contract_no ?? 'EO-' . $eo->id;
                     })->toArray();
-                    
-                    if ($loadingProgram->exportOrder) {
-                        $ref = $loadingProgram->exportOrder->voucher_no ?? $loadingProgram->exportOrder->contract_no ?? 'EO-' . $loadingProgram->exportOrder->id;
-                        if (!in_array($ref, $eoReferences)) {
-                            array_unshift($eoReferences, $ref);
-                        }
-                    }
                     $eoReferences = array_unique(array_filter($eoReferences));
 
                     $doReferences = $loadingProgram->deliveryOrders->pluck('reference_no')->toArray();
-                    if ($loadingProgram->deliveryOrder && !in_array($loadingProgram->deliveryOrder->reference_no, $doReferences)) {
-                        array_unshift($doReferences, $loadingProgram->deliveryOrder->reference_no);
-                    }
                     $doReferences = array_unique(array_filter($doReferences));
-
-                    $buyerNames = $loadingProgram->exportOrders->pluck('buyer.name')->toArray();
-                    if ($loadingProgram->exportOrder && !in_array($loadingProgram->exportOrder->buyer->name, $buyerNames)) {
-                        array_unshift($buyerNames, $loadingProgram->exportOrder->buyer->name);
-                    }
-                    $buyerNames = array_unique(array_filter($buyerNames));
-
-                    $commodities = [];
-                    foreach ($loadingProgram->exportOrders as $eo) {
-                        $item = $eo->product->name ?? null;
-                        if ($item) $commodities[] = $item;
-                    }
-                    if ($loadingProgram->exportOrder) {
-                        $item = $loadingProgram->exportOrder->product->name ?? null;
-                        if ($item) $commodities[] = $item;
-                    }
-                    $commodities = array_unique(array_filter($commodities));
                 @endphp
-
-                @if($ticketCount > 0)
-                    @foreach($tickets as $ticket)
-                        <tr>
-                            {{-- Parent columns with rowspan (only on first row) --}}
-                            @if($isFirstRow)
-                                <td rowspan="{{ $rowspan }}" style="background-color: #e3f2fd; vertical-align: middle;">
-                                    @forelse($eoReferences as $ref)
-                                        <div class="badge badge-secondary mb-1 d-block">{{ $ref }}</div>
-                                    @empty
-                                        N/A
-                                    @endforelse
-                                </td>
-                                <td rowspan="{{ $rowspan }}" style="background-color: #e8f5e8; vertical-align: middle;">
-                                    @forelse($doReferences as $ref)
-                                        <div class="badge badge-success mb-1 d-block">{{ $ref }}</div>
-                                    @empty
-                                        N/A
-                                    @endforelse
-                                </td>
-                                <td rowspan="{{ $rowspan }}" style="vertical-align: middle;">
-                                    {{ implode(', ', $buyerNames) ?: 'N/A' }}
-                                </td>
-                                <td rowspan="{{ $rowspan }}" style="vertical-align: middle;">
-                                    {{ implode(', ', $commodities) ?: 'N/A' }}
-                                </td>
-                            @endif
-
-                            {{-- Ticket columns (repeated for each ticket) --}}
-                            <td style="background-color: #fff3e0;">
-                                <span class="badge badge-primary">{{ $ticket->transaction_number ?? 'N/A' }}</span>
-                            </td>
-                            <td>
-                                {{ $ticket->truck_number ?? 'N/A' }}
-                            </td>
-                            <td>
-                                {{ $ticket->container_number ?? '-' }}
-                            </td>
-                            <td>
-                                {{ $ticket->arrivalLocation->name ?? 'N/A' }}
-                            </td>
-                            <td>
-                                {{ $ticket->subArrivalLocation->name ?? 'N/A' }}
-                            </td>
-                            <td class="text-right">
-                                {{ number_format($ticket->qty ?? 0, 2) }}
-                            </td>
-
-                            {{-- Parent columns with rowspan (only on first row) --}}
-                            @if($isFirstRow)
-                                <td rowspan="{{ $rowspan }}" style="vertical-align: middle;">
-                                    {{ $loadingProgram->created_at->format('d-m-Y H:i') }}
-                                </td>
-                                <td rowspan="{{ $rowspan }}" style="vertical-align: middle;">
-                                    <div class="d-flex gap-1">
-                                        @if($loadingProgram?->loadingProgramItems()->whereDoesntHave("firstWeighbridge")->count() > 0)
-                                        <a onclick="openModal(this,'{{ route('export-loading-program.edit', $loadingProgram->id) }}','Edit Loading Program', false, '90%')"
-                                                class="warning p-1 text-center mr-1 position-relative" title="Edit">
-                                                <i class="ft-edit font-medium-3"></i>
-                                            </a>
-                                        @endif
-                                        <a onclick="openModal(this,'{{ route('export-loading-program.show', $loadingProgram->id) }}','View Loading Program', true, '90%')"
-                                            class="info p-1 text-center mr-1 position-relative" title="View">
-                                            <i class="ft-eye font-medium-3"></i>
-                                        </a>
-                                    </div>
-                                </td>
-                                @php $isFirstRow = false; @endphp
-                            @endif
-                        </tr>
-                    @endforeach
-                @else
-                    {{-- No tickets - show single row with N/A for ticket columns --}}
-                    <tr>
-                        <td style="background-color: #e3f2fd; vertical-align: middle;">
-                            @forelse($eoReferences as $ref)
-                                <div class="badge badge-secondary mb-1 d-block">{{ $ref }}</div>
-                            @empty
-                                N/A
-                            @endforelse
-                        </td>
-                        <td style="background-color: #e8f5e8; vertical-align: middle;">
-                            @forelse($doReferences as $ref)
-                                <div class="badge badge-success mb-1 d-block">{{ $ref }}</div>
-                            @empty
-                                N/A
-                            @endforelse
-                        </td>
-                        <td>
-                            {{ implode(', ', $buyerNames) ?: 'N/A' }}
-                        </td>
-                        <td>
-                            {{ implode(', ', $commodities) ?: 'N/A' }}
-                        </td>
-                        <td colspan="6" class="text-center text-muted">
-                            No tickets added
-                        </td>
-                        <td>
-                            {{ $loadingProgram->created_at->format('d-m-Y H:i') }}
-                        </td>
-                        <td>
-                            <div class="d-flex gap-1">
-                                    <a onclick="openModal(this,'{{ route('export-loading-program.edit', $loadingProgram->id) }}','Edit Loading Program', false)"
-                                        class="warning p-1 text-center mr-1 position-relative" title="Edit">
-                                        <i class="ft-edit font-medium-3"></i>
-                                    </a>
-                                <a onclick="openModal(this,'{{ route('export-loading-program.show', $loadingProgram->id) }}','View Loading Program', true)"
-                                    class="info p-1 text-center mr-1 position-relative" title="View">
-                                    <i class="ft-eye font-medium-3"></i>
+                <tr>
+                    <td>{{ $loadingProgram->id }}</td>
+                    <td>
+                        @forelse($eoReferences as $ref)
+                            <div class="badge badge-secondary mb-1 d-block">{{ $ref }}</div>
+                        @empty
+                            N/A
+                        @endforelse
+                    </td>
+                    <td>
+                        @forelse($doReferences as $ref)
+                            <div class="badge badge-success mb-1 d-block">{{ $ref }}</div>
+                        @empty
+                            N/A
+                        @endforelse
+                    </td>
+                    <td>{{ $loadingProgram->vessel_name ?? 'N/A' }}</td>
+                    <td>
+                        @if(!empty($loadingProgram->status) && $loadingProgram->status == 'pending')
+                            <span class="badge badge-warning">Pending</span>
+                        @elseif(!empty($loadingProgram->status) && $loadingProgram->status == 'completed')
+                            <span class="badge badge-success">Completed</span>
+                        @else
+                            -
+                        @endif
+                    </td>
+                    <td>
+                        {{ $loadingProgram->createdBy->name ?? 'N/A' }}<br>
+                        <small class="text-muted">{{ $loadingProgram->created_at->format('d-m-Y H:i') }}</small>
+                    </td>
+                    <td>
+                        <div class="d-flex gap-1">
+                            @if($loadingProgram->status == 'pending')
+                                <a onclick="openModal(this,'{{ route('export-loading-program.edit', $loadingProgram->id) }}','Edit Loading Program Request', false, '90%')"
+                                    class="warning p-1 text-center mr-1 position-relative" title="Edit">
+                                    <i class="ft-edit font-medium-3"></i>
                                 </a>
-                            </div>
-                        </td>
-                    </tr>
-                @endif
+                            @endif
+                            <a onclick="openModal(this,'{{ route('export-loading-program.show', $loadingProgram->id) }}','View Loading Program', true, '90%')"
+                                class="info p-1 text-center mr-1 position-relative" title="View">
+                                <i class="ft-eye font-medium-3"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
             @endforeach
         @else
             <tr class="ant-table-placeholder">
-                <td colspan="12" class="ant-table-cell text-center">
+                <td colspan="7" class="ant-table-cell text-center">
                     <div class="my-5">
                         <svg width="64" height="41" viewBox="0 0 64 41" xmlns="http://www.w3.org/2000/svg">
                             <g transform="translate(0 1)" fill="none" fill-rule="evenodd">
@@ -192,7 +85,7 @@
                                 </g>
                             </g>
                         </svg>
-                        <p class="ant-empty-description">No Loading Programs found</p>
+                        <p class="ant-empty-description">No Loading Program Requests found</p>
                     </div>
                 </td>
             </tr>

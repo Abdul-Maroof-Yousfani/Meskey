@@ -893,8 +893,16 @@ function get_second_weighbridge_balance(LoadingSlip $loadingSlip, $delivery_orde
         );
     }
     // Otherwise, if the ticket (item) has multiple DOs, use all of them (Aggregate Balance)
-    elseif ($item && $item->deliveryOrders->isNotEmpty()) {
-        $deliveryOrders = $item->deliveryOrders->loadMissing(['delivery_order_data', 'exportPackingItems', 'saleSecondWeighbridge']);
+    elseif ($item) {
+        $deliveryOrders = $item->deliveryOrders()->withoutGlobalScopes()->get();
+        if ($item->exportLoadingProgram) {
+            $deliveryOrders = $deliveryOrders->merge($item->exportLoadingProgram->deliveryOrders()->withoutGlobalScopes()->get());
+            if ($item->exportLoadingProgram->deliveryOrder) {
+                $deliveryOrders->push($item->exportLoadingProgram->deliveryOrder);
+            }
+        }
+        $deliveryOrders = $deliveryOrders->filter()->unique('id')->values();
+        $deliveryOrders->loadMissing(['delivery_order_data', 'exportPackingItems', 'saleSecondWeighbridge']);
     }
     // Fallback to the single DO on the loading slip if it exists
     elseif ($loadingSlip->deliveryOrder) {
@@ -951,8 +959,16 @@ function get_second_weighbridge_balance_kg(LoadingSlip $loadingSlip, $delivery_o
                 ->with(['delivery_order_data', 'exportPackingItems', 'saleSecondWeighbridge'])
                 ->find($delivery_order_id)
         );
-    } elseif ($item && $item->deliveryOrders->isNotEmpty()) {
-        $deliveryOrders = $item->deliveryOrders->loadMissing(['delivery_order_data', 'exportPackingItems', 'saleSecondWeighbridge']);
+    } elseif ($item) {
+        $deliveryOrders = $item->deliveryOrders()->withoutGlobalScopes()->get();
+        if ($item->exportLoadingProgram) {
+            $deliveryOrders = $deliveryOrders->merge($item->exportLoadingProgram->deliveryOrders()->withoutGlobalScopes()->get());
+            if ($item->exportLoadingProgram->deliveryOrder) {
+                $deliveryOrders->push($item->exportLoadingProgram->deliveryOrder);
+            }
+        }
+        $deliveryOrders = $deliveryOrders->filter()->unique('id')->values();
+        $deliveryOrders->loadMissing(['delivery_order_data', 'exportPackingItems', 'saleSecondWeighbridge']);
     } elseif ($loadingSlip->deliveryOrder) {
         $deliveryOrders->push($loadingSlip->deliveryOrder->loadMissing(['delivery_order_data', 'exportPackingItems', 'saleSecondWeighbridge']));
     }
@@ -2153,11 +2169,12 @@ function areQcParametersOk(QCRequest $request): bool
 function isQcAutoApprovable(QCRequest $bagQc): bool
 {
     $tolerance = $bagQc->grn->purchase_order_data->tolerance;
+    $deduction_qty = $bagQc->rejected_quantity;
     $qcParametersOk = areQcParametersOk($bagQc);
     $min_weight = $bagQc->grn->min_weight;
     $allowed_value = $min_weight - $tolerance;
 
-    return $bagQc->sample_average_weight >= $allowed_value && $qcParametersOk;
+    return $bagQc->sample_average_weight >= $allowed_value && $qcParametersOk && $deduction_qty == 0;
 }
 
 function approve_qc(PurchaseBagQC $bag_qc)
@@ -2198,4 +2215,27 @@ if (!function_exists('getStockByItem')) {
 
         return $stockIn - $stockOut;
     }
+}
+
+
+function delivery_order_qty_balance($sale_order_data_id)
+{
+    $data = DeliveryOrderData::whereHas("delivery_order", function($query) {
+        $query->where("am_approval_status", "!=", "rejected");
+    })->where("so_data_id", $sale_order_data_id)->get();
+    
+    $spent = $data->sum("qty");
+    $soData = SalesOrderData::find($sale_order_data_id);
+    $able_to_spend = $soData ? $soData->qty : 0;
+    
+    return $able_to_spend - $spent;
+}   
+
+function delivery_order_qty_used($sale_order_data_id)
+{
+    $data = DeliveryOrderData::whereHas("delivery_order", function ($query) {
+        $query->where("am_approval_status", "!=", "rejected");
+    })->where("so_data_id", $sale_order_data_id)->get();
+
+    return $data->sum("qty");
 }

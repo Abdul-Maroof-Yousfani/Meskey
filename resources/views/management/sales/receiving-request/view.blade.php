@@ -41,7 +41,10 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Transporter</label>
-                <input type="text" class="form-control bg-light" value="{{ $transporterOptions[$receivingRequest->transporter] ?? 'N/A' }}" readonly>
+                @php
+                    $transporterName = \App\Models\Master\Transporter::find($receivingRequest->transporter)?->name ?? 'N/A';
+                @endphp
+                <input type="text" class="form-control bg-light" value="{{ $transporterName }}" readonly>
             </div>
         </div>
         <div class="col-md-3">

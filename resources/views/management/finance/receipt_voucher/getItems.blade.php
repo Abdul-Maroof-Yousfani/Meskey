@@ -18,7 +18,7 @@
         <td>{{ $item->customer_name }}</td>
         <td>
             <input type="number" step="0.01" class="form-control amount-input" name="items[{{ $idx }}][amount_display]"
-                value="{{ $balance }}" max="{{ $balance }}">
+                value="{{ $balance }}">
             Balance: {{ $balance }}
         </td>
         <td>

@@ -87,6 +87,8 @@ class BillOfLadingController extends Controller
                     'place_of_issue' => $preview['place_of_issue'] ?? null,
                     'snapshot_data' => $preview,
                     'goods_summary' => $goodsSummary,
+                    'am_approval_status' => 'pending',
+                    'am_change_made' => 1,
                     'created_by' => auth()->user()?->id,
                 ]);
             });
@@ -103,11 +105,36 @@ class BillOfLadingController extends Controller
 
     public function show($id): View
     {
-        $billOfLading = BillOfLading::with(['exportOrder'])->findOrFail($id);
+        $billOfLading = BillOfLading::with(['exportOrder', 'exportDeliveryChallan'])->findOrFail($id);
+        
+        $preview = $billOfLading->snapshot_data ?? [];
+        if (empty($preview['vessel_name']) || $preview['vessel_name'] === 'N/A') {
+            // Heal vessel name for old records
+            $vesselName = $billOfLading->exportDeliveryChallan?->delivery_challan_data->map(function ($data) {
+                return $data->loadingProgramItem?->exportLoadingProgram?->vessel_name;
+            })->filter()->unique()->implode(' / ');
+
+            if (!$vesselName) {
+                // Check linked Delivery Orders
+                $vesselName = $billOfLading->deliveryOrder?->vessel_name;
+                if (!$vesselName && !empty($billOfLading->selected_delivery_order_ids)) {
+                    $vesselName = \App\Models\Export\ExportDeliveryOrder::whereIn('id', (array)$billOfLading->selected_delivery_order_ids)
+                        ->pluck('vessel_name')
+                        ->filter()
+                        ->unique()
+                        ->implode(' / ');
+                }
+            }
+
+            if (!$vesselName) {
+                $vesselName = $billOfLading->exportOrder->vessel_name ?? $billOfLading->exportOrder->carrier_name ?? 'N/A';
+            }
+            $preview['vessel_name'] = $vesselName;
+        }
 
         return view('management.export.bill-of-lading.show', [
             'billOfLading' => $billOfLading,
-            'preview' => $billOfLading->snapshot_data ?? [],
+            'preview' => $preview,
             'goodsSummary' => $billOfLading->goods_summary ?? [],
         ]);
     }
@@ -126,12 +153,20 @@ class BillOfLadingController extends Controller
 
     public function update(Request $request, $id): JsonResponse
     {
-        $billOfLading = BillOfLading::findOrFail($id);
-        $validated = $this->validateBillOfLading($request, $billOfLading->id);
-
         DB::beginTransaction();
 
         try {
+            $billOfLading = BillOfLading::lockForUpdate()->find($id);
+
+            if (!$billOfLading) {
+                DB::rollBack();
+                return response()->json([
+                    'error' => 'Bill of Lading already deleted or not found.'
+                ], 404);
+            }
+
+            $validated = $this->validateBillOfLading($request, $billOfLading->id);
+
             [$exportOrder, $formEs, $deliveryChallans, $deliveryOrders] = $this->resolveSelections($validated);
             $this->ensureFormEsAreAvailable($formEs->pluck('id')->all(), $billOfLading->id);
             $this->ensureChallansAreAvailable($deliveryChallans->pluck('id')->all(), $billOfLading->id);
@@ -155,6 +190,8 @@ class BillOfLadingController extends Controller
                 'place_of_issue' => $preview['place_of_issue'] ?? null,
                 'snapshot_data' => $preview,
                 'goods_summary' => $goodsSummary,
+                'am_approval_status' => 'pending',
+                'am_change_made' => 1,
             ]);
 
             DB::commit();
@@ -169,10 +206,31 @@ class BillOfLadingController extends Controller
 
     public function destroy($id): JsonResponse
     {
-        $billOfLading = BillOfLading::findOrFail($id);
-        $billOfLading->delete();
+        DB::beginTransaction();
 
-        return response()->json(['message' => 'Bill of Lading has been deleted']);
+        try {
+            $billOfLading = BillOfLading::lockForUpdate()->find($id);
+
+            if (!$billOfLading) {
+                DB::rollBack();
+                return response()->json([
+                    'error' => 'Bill of Lading already deleted or not found.'
+                ], 404);
+            }
+
+            $billOfLading->delete();
+
+            DB::commit();
+
+            return response()->json(['message' => 'Bill of Lading has been deleted']);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function getRelatedData(Request $request): JsonResponse
@@ -341,7 +399,7 @@ class BillOfLadingController extends Controller
         $takenChallanIds = BillOfLading::query()
             ->when($currentBolId, fn($q) => $q->where('id', '!=', $currentBolId))
             ->get()
-            ->flatMap(function($bol) {
+            ->flatMap(function ($bol) {
                 $ids = is_array($bol->selected_delivery_challan_ids) ? $bol->selected_delivery_challan_ids : [];
                 if ($bol->export_delivery_challan_id) {
                     $ids[] = $bol->export_delivery_challan_id;
@@ -353,7 +411,7 @@ class BillOfLadingController extends Controller
             ->where('am_approval_status', 'approved')
             ->whereHas('deliveryOrders.delivery_challans', function ($q) use ($takenChallanIds) {
                 $q->whereNotIn('delivery_challans.id', $takenChallanIds)
-                  ->where('delivery_challans.am_approval_status', 'approved');
+                    ->where('delivery_challans.am_approval_status', 'approved');
             })
             ->latest()
             ->get();
@@ -389,6 +447,7 @@ class BillOfLadingController extends Controller
             'delivery_challan_data.deliveryOrderData.brand',
             'delivery_challan_data.deliveryOrderData.bagType',
             'delivery_challan_data.product',
+            'delivery_challan_data.loadingProgramItem.exportLoadingProgram',
         ])->where('am_approval_status', 'approved')
             ->whereIn('id', $validated['export_delivery_challan_ids'])
             ->get();
@@ -411,8 +470,8 @@ class BillOfLadingController extends Controller
             abort(422, 'Selected Delivery Challans do not match the selected Export Order / Form-E.');
         }
 
-        $selectedFormEIds = $formEs->pluck('id')->map(fn ($id) => (int) $id)->values()->all();
-        $coveredFormEIds = $deliveryOrders->pluck('export_form_e_id')->map(fn ($id) => (int) $id)->filter()->unique()->values()->all();
+        $selectedFormEIds = $formEs->pluck('id')->map(fn($id) => (int) $id)->values()->all();
+        $coveredFormEIds = $deliveryOrders->pluck('export_form_e_id')->map(fn($id) => (int) $id)->filter()->unique()->values()->all();
         $uncoveredFormEIds = array_values(array_diff($selectedFormEIds, $coveredFormEIds));
         if (!empty($uncoveredFormEIds)) {
             abort(422, 'Please select at least one Delivery Challan against every selected Form-E.');
@@ -471,6 +530,23 @@ class BillOfLadingController extends Controller
         $placeOfIssue = $this->resolvePlaceOfIssue($deliveryChallans);
         $goodsSummary = $this->buildGoodsSummaryFromDeliveryChallans($deliveryChallans, $exportOrder);
 
+        $vesselName = $deliveryChallans->flatMap(function ($challan) {
+            return $challan->delivery_challan_data->map(function ($data) {
+                return $data->loadingProgramItem?->exportLoadingProgram?->vessel_name;
+            });
+        })->filter()->unique()->implode(' / ');
+
+        if (!$vesselName) {
+            // Check linked Delivery Orders
+            $vesselName = $deliveryChallans->flatMap(function ($challan) {
+                return $challan->delivery_order->pluck('vessel_name');
+            })->filter()->unique()->implode(' / ');
+        }
+
+        if (!$vesselName) {
+            $vesselName = $exportOrder->vessel_name ?? $exportOrder->carrier_name ?? 'N/A';
+        }
+
         $preview = [
             'bill_no' => $input['bill_no'] ?? null,
             'bill_date' => $input['bill_date'] ?? null,
@@ -491,12 +567,12 @@ class BillOfLadingController extends Controller
             'notify_address' => $notify?->address,
             'notify_phone' => $notify?->contact ?? $notify?->phone ?? null,
             'notify_contact_person' => $notify?->contact_person ?? null,
-            'vessel_name' => $exportOrder->vessel_name,
+            'vessel_name' => $vesselName,
             'port_of_loading' => $this->formatPort($exportOrder->portOfLoading),
             'port_of_discharge' => $this->formatPort($exportOrder->portOfDischarge),
             'product_name' => $exportOrder->visual_name ?: ($exportOrder->product?->name ?: 'N/A'),
             'form_e_no' => $formEs->pluck('form_e_no')->filter()->implode(', '),
-            'form_e_date' => $formEs->pluck('form_e_date')->filter()->map(fn ($date) => Carbon::parse($date)->format('d.m.Y'))->implode(', '),
+            'form_e_date' => $formEs->pluck('form_e_date')->filter()->map(fn($date) => Carbon::parse($date)->format('d.m.Y'))->implode(', '),
             'delivery_challan_no' => $deliveryChallans->pluck('dc_no')->filter()->implode(', '),
             'delivery_order_no' => $deliveryChallans->flatMap->delivery_order->pluck('reference_no')->filter()->unique()->implode(', '),
             'export_order_no' => $exportOrder->voucher_no,
@@ -522,7 +598,7 @@ class BillOfLadingController extends Controller
             $first = $items->first();
             $packingText = $this->normalizePackingText($first->bag_size);
             $packingKg = $this->parsePackingKg($packingText);
-            $brandName = $items->pluck('brand_id')->map(fn ($id) => getBrandById($id)?->name)->filter()->unique()->implode(', ');
+            $brandName = $items->pluck('brand_id')->map(fn($id) => getBrandById($id)?->name)->filter()->unique()->implode(', ');
             $bagTypeName = $first->bag_type ? bag_type_name($first->bag_type) : 'N/A';
             $quantityMt = round((float) $items->sum(function ($item) {
                 return (float) ($item->qty ?? 0);
@@ -580,11 +656,33 @@ class BillOfLadingController extends Controller
 
     protected function resolvePlaceOfIssue(Collection $deliveryChallans): string
     {
-        $locationIds = $deliveryChallans->flatMap(function ($challan) {
-            return $challan->delivery_order->flatMap(function ($deliveryOrder) {
-                return array_values(array_filter(array_map('trim', explode(',', (string) $deliveryOrder->location_id))));
-            });
-        })->filter()->unique()->values();
+        $locationIds = collect();
+        
+        foreach ($deliveryChallans as $challan) {
+            // 1. Check Challan location_id
+            if ($challan->location_id) {
+                $ids = array_values(array_filter(array_map('trim', explode(',', (string) $challan->location_id))));
+                $locationIds = $locationIds->concat($ids);
+            }
+            
+            // 2. Check linked Delivery Orders
+            foreach ($challan->delivery_order as $deliveryOrder) {
+                if ($deliveryOrder->location_id) {
+                    $ids = array_values(array_filter(array_map('trim', explode(',', (string) $deliveryOrder->location_id))));
+                    $locationIds = $locationIds->concat($ids);
+                }
+            }
+            
+            // 3. Check Tickets (Loading Program) associated with the Challan
+            foreach ($challan->delivery_challan_data as $data) {
+                $ticket = $data->loadingProgramItem;
+                if ($ticket && $ticket->exportLoadingProgram && $ticket->exportLoadingProgram->company_locations) {
+                    $locationIds = $locationIds->concat((array) $ticket->exportLoadingProgram->company_locations);
+                }
+            }
+        }
+        
+        $locationIds = $locationIds->filter()->unique()->values();
 
         if ($locationIds->isEmpty()) {
             return 'N/A';
@@ -605,24 +703,32 @@ class BillOfLadingController extends Controller
 
     protected function getProRatedBagCount($deliveryChallanData, string $field): float
     {
-        $deliveryOrderData = $deliveryChallanData->deliveryOrderData;
-        if (!$deliveryOrderData) {
+        $packingItem = $deliveryChallanData->deliveryOrderData;
+        if (!$packingItem) {
             return 0;
         }
 
-        $sourceCount = (float) ($deliveryOrderData->{$field} ?? 0);
-        if ($sourceCount <= 0) {
-            return 0;
+        // Get Export Order associated with this packing item through Delivery Order
+        $exportOrder = $packingItem->deliveryOrder?->exportOrder;
+        
+        if ($exportOrder) {
+            // Use EO-based ratio for accurate distribution across multiple DOs
+            $eoPackingItems = $exportOrder->packingItems;
+            $sourceMetricTons = (float) $eoPackingItems->sum('metric_tons');
+            $sourceCount = (float) $eoPackingItems->sum($field);
+        } else {
+            // Fallback to individual packing item ratio
+            $sourceMetricTons = (float) ($packingItem->metric_tons ?? 0);
+            $sourceCount = (float) ($packingItem->{$field} ?? 0);
         }
 
-        $sourceMetricTons = (float) ($deliveryOrderData->metric_tons ?? 0);
         $dispatchMetricTons = (float) ($deliveryChallanData->qty ?? 0);
 
         if ($sourceMetricTons <= 0 || $dispatchMetricTons <= 0) {
             return 0;
         }
 
-        $ratio = min(max($dispatchMetricTons / $sourceMetricTons, 0), 1);
+        $ratio = $dispatchMetricTons / $sourceMetricTons;
 
         return round($sourceCount * $ratio, 2);
     }

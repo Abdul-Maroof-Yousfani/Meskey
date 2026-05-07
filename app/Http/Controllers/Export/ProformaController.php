@@ -44,7 +44,7 @@ class ProformaController extends Controller
     {
         $proformas = Proforma::with(['exportOrder', 'exportOrder.modeOfTerm', 'exportOrder.buyer'])
             ->when($request->filled('search'), function ($q) use ($request) {
-                $searchTerm = '%'.$request->search.'%';
+                $searchTerm = '%' . $request->search . '%';
 
                 return $q->where(function ($sq) use ($searchTerm) {
                     $sq->where('proforma_no', 'like', $searchTerm)
@@ -158,10 +158,19 @@ class ProformaController extends Controller
         DB::beginTransaction();
 
         try {
-            $proforma = Proforma::findOrFail($id);
             $request->validate([
                 'consigned_details' => 'nullable|string',
             ]);
+
+            $proforma = Proforma::lockForUpdate()->find($id);
+
+            if (!$proforma) {
+                DB::rollBack();
+
+                return response()->json([
+                    'success' => 'Proforma already deleted or not found.',
+                ], 404);
+            }
 
             $proforma->update([
                 'consigned_details' => $request->consigned_details,
@@ -189,7 +198,16 @@ class ProformaController extends Controller
         DB::beginTransaction();
 
         try {
-            $proforma = Proforma::findOrFail($id);
+            $proforma = Proforma::lockForUpdate()->find($id);
+
+            if (!$proforma) {
+                DB::rollBack();
+
+                return response()->json([
+                    'success' => 'Proforma already deleted or not found.',
+                ], 404);
+            }
+
             $proforma->delete();
 
             DB::commit();
@@ -210,61 +228,80 @@ class ProformaController extends Controller
 
     public function print($id)
     {
-        $proforma = Proforma::with(['exportOrder.product', 'exportOrder.specifications', 'exportOrder.packingItems', 'exportOrder.company', 'exportOrder.buyer', 'exportOrder.modeOfTerm', 'exportOrder.currency', 'exportOrder.portOfLoading', 'exportOrder.portOfDischarge', 'exportOrder.modeOfTransport', 'exportOrder.hsCode', 'exportOrder.incoterm'])->findOrFail($id);
+        $proforma = Proforma::with([
+            'exportOrder.product',
+            'exportOrder.specifications',
+            'exportOrder.packingItems.brand',
+            'exportOrder.packingItems.bagType',
+            'exportOrder.packingItems.bagPacking',
+            'exportOrder.packingItems.bagCondition',
+            'exportOrder.company',
+            'exportOrder.buyer',
+            'exportOrder.consignee',
+            'exportOrder.modeOfTerm',
+            'exportOrder.currency',
+            'exportOrder.portOfLoading',
+            'exportOrder.portOfDischarge',
+            'exportOrder.modeOfTransport',
+            'exportOrder.hsCode',
+            'exportOrder.incoterm',
+        ])->findOrFail($id);
         $exportOrder = $proforma->exportOrder;
-        
+
         $totalAmount = $exportOrder->packingItems->sum('amount');
         $amountInWords = $this->numberToWords($totalAmount);
-        
+
         return view('management.export.proforma.invoice', compact('proforma', 'exportOrder', 'amountInWords'));
     }
 
     private function numberToWords($number)
     {
-        $hyphen      = '-';
+        $hyphen = '-';
         $conjunction = ' and ';
-        $separator   = ', ';
-        $negative    = 'negative ';
-        $dictionary  = array(
-            0                   => 'zero',
-            1                   => 'one',
-            2                   => 'two',
-            3                   => 'three',
-            4                   => 'four',
-            5                   => 'five',
-            6                   => 'six',
-            7                   => 'seven',
-            8                   => 'eight',
-            9                   => 'nine',
-            10                  => 'ten',
-            11                  => 'eleven',
-            12                  => 'twelve',
-            13                  => 'thirteen',
-            14                  => 'fourteen',
-            15                  => 'fifteen',
-            16                  => 'sixteen',
-            17                  => 'seventeen',
-            18                  => 'eighteen',
-            19                  => 'nineteen',
-            20                  => 'twenty',
-            30                  => 'thirty',
-            40                  => 'fourty',
-            50                  => 'fifty',
-            60                  => 'sixty',
-            70                  => 'seventy',
-            80                  => 'eighty',
-            90                  => 'ninety',
-            100                 => 'hundred',
-            1000                => 'thousand',
-            1000000             => 'million',
-            1000000000          => 'billion',
-            1000000000000       => 'trillion',
-            1000000000000000    => 'quadrillion',
+        $separator = ', ';
+        $negative = 'negative ';
+        $dictionary = array(
+            0 => 'zero',
+            1 => 'one',
+            2 => 'two',
+            3 => 'three',
+            4 => 'four',
+            5 => 'five',
+            6 => 'six',
+            7 => 'seven',
+            8 => 'eight',
+            9 => 'nine',
+            10 => 'ten',
+            11 => 'eleven',
+            12 => 'twelve',
+            13 => 'thirteen',
+            14 => 'fourteen',
+            15 => 'fifteen',
+            16 => 'sixteen',
+            17 => 'seventeen',
+            18 => 'eighteen',
+            19 => 'nineteen',
+            20 => 'twenty',
+            30 => 'thirty',
+            40 => 'fourty',
+            50 => 'fifty',
+            60 => 'sixty',
+            70 => 'seventy',
+            80 => 'eighty',
+            90 => 'ninety',
+            100 => 'hundred',
+            1000 => 'thousand',
+            1000000 => 'million',
+            1000000000 => 'billion',
+            1000000000000 => 'trillion',
+            1000000000000000 => 'quadrillion',
             1000000000000000000 => 'quintillion'
         );
 
-        if (!is_numeric($number)) return false;
-        if ($number < 0) return $negative . $this->numberToWords(abs($number));
+        if (!is_numeric($number))
+            return false;
+        if ($number < 0)
+            return $negative . $this->numberToWords(abs($number));
 
         $string = $fraction = null;
         if (strpos($number, '.') !== false) {
@@ -276,16 +313,18 @@ class ProformaController extends Controller
                 $string = $dictionary[$number];
                 break;
             case $number < 100:
-                $tens   = ((int) ($number / 10)) * 10;
-                $units  = $number % 10;
+                $tens = ((int) ($number / 10)) * 10;
+                $units = $number % 10;
                 $string = $dictionary[$tens];
-                if ($units) $string .= $hyphen . $dictionary[$units];
+                if ($units)
+                    $string .= $hyphen . $dictionary[$units];
                 break;
             case $number < 1000:
-                $hundreds  = $number / 100;
+                $hundreds = $number / 100;
                 $remainder = $number % 100;
                 $string = $dictionary[(int) $hundreds] . ' ' . $dictionary[100];
-                if ($remainder) $string .= $conjunction . $this->numberToWords($remainder);
+                if ($remainder)
+                    $string .= $conjunction . $this->numberToWords($remainder);
                 break;
             default:
                 $baseUnit = pow(1000, floor(log($number, 1000)));
@@ -301,8 +340,8 @@ class ProformaController extends Controller
 
         if (null !== $fraction && is_numeric($fraction)) {
             $string .= ' Rupees';
-            $fraction = (int)substr($fraction, 0, 2);
-            if($fraction > 0) {
+            $fraction = (int) substr($fraction, 0, 2);
+            if ($fraction > 0) {
                 $string .= $conjunction . $this->numberToWords($fraction) . ' Paise';
             }
         } else {

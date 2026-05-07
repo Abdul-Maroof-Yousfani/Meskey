@@ -721,7 +721,6 @@
                 </ul>
             </li>
 
-            @canAccess("logistics")
             <li class="dropdown nav-item {{ request()->is('logistics*') ? 'active' : '' }}" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-package"></i><span data-i18n="Apps">Logistics</span></a>
@@ -737,8 +736,8 @@
                 </ul>
             </li>
             @endcanAccess
-            @endcanAccess
-            @canAccess('export-sales')
+            {{-- @endcanAccess --}}
+            {{-- @canAccess('export-sales') --}} 
             <li class="dropdown nav-item {{ request()->is('export*') ? 'active' : '' }}" data-menu="dropdown"><a {{--
                     @canAccess('export-module') --}} <li class="dropdown nav-item" data-menu="dropdown"><a
                         class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
@@ -809,7 +808,7 @@
                         </li>
                         @endcanAccess
 
-                        @canAccess('export-soda-field')
+                        <!-- @canAccess('export-soda-field') -->
                         <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                 href="{{ route('export-soda-field.index') }}"
                                 onclick="loadPageContent('{{ route('export-soda-field.index') }}')"
@@ -817,7 +816,7 @@
                                 <span data-i18n="Task Board">Export Sauda</span>
                             </a>
                         </li>
-                        @endcanAccess
+                        <!-- @endcanAccess -->
 
                         {{-- @canAccess('quotation') --}}
                         <li data-menu=""><a class="dropdown-item d-flex align-items-center"
@@ -838,7 +837,7 @@
                         </li>
                         {{-- @endcanAccess --}}
 
-                        @canAccess('proforma')
+                        <!-- @canAccess('proforma') -->
                         <li data-menu="">
                             <a class="dropdown-item d-flex align-items-center" href="{{ route('proforma.index') }}"
                                 onclick="loadPageContent('{{ route('proforma.index') }}')" data-toggle="dropdown">
@@ -846,16 +845,16 @@
                                 <span data-i18n="Extended">Proforma</span>
                             </a>
                         </li>
-                        @endcanAccess
+                        <!-- @endcanAccess -->
 
-                        @canAccess('export-form-e')
+                        <!-- @canAccess('export-form-e') -->
                         <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                 href="{{ route('export-form-e.index') }}"
                                 onclick="loadPageContent('{{ route('export-form-e.index') }}')"
                                 data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
                                     data-i18n="Extended">Form-E</span></a>
                         </li>
-                        @endcanAccess
+                        <!-- @endcanAccess -->
 
                         {{-- @canAccess('export-delivery-order') --}}
                         <li data-menu=""><a class="dropdown-item d-flex align-items-center"
@@ -867,14 +866,26 @@
                         </li>
                         {{--@endcanAccess --}}
 
-                        @canAccess('export-loading-program')
+                        <!-- @canAccess('export-loading-program') -->
                         <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                 href="{{ route('export-loading-program.index') }}"
                                 onclick="loadPageContent('{{ route('export-loading-program.index') }}')"
                                 data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                    data-i18n="Extended">Loading Program Request</span></a>
+                        </li>
+                        <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                href="{{ route('export-loading-program-complete.index') }}"
+                                onclick="loadPageContent('{{ route('export-loading-program-complete.index') }}')"
+                                data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
                                     data-i18n="Extended">Loading Program</span></a>
                         </li>
-                        @endcanAccess
+                        <!-- @endcanAccess -->
+
+                        <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                href="{{ route('export-qc.index') }}"
+                                onclick="loadPageContent('{{ route('export-qc.index') }}')" data-toggle="dropdown"><i
+                                    class="ft-arrow-right submenu-icon"></i><span data-i18n="Extended">QC</span></a>
+                        </li>
 
                         <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                 href="{{ route('export-first-weighbridge.index') }}"
@@ -884,16 +895,17 @@
                         </li>
 
                         <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                                href="{{ route('export-qc.index') }}"
-                                onclick="loadPageContent('{{ route('export-qc.index') }}')" data-toggle="dropdown"><i
-                                    class="ft-arrow-right submenu-icon"></i><span data-i18n="Extended">QC</span></a>
-                        </li>
-
-                        <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                 href="{{ route('export-loading-slip.index') }}"
                                 onclick="loadPageContent('{{ route('export-loading-slip.index') }}')"
                                 data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
                                     data-i18n="Extended">Loading Slip</span></a>
+                        </li>
+
+                        <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                href="{{ route('export-outer-item.index') }}"
+                                onclick="loadPageContent('{{ route('export-outer-item.index') }}')"
+                                data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                    data-i18n="Extended">Outer Items</span></a>
                         </li>
 
                         <li data-menu=""><a class="dropdown-item d-flex align-items-center"
@@ -940,7 +952,7 @@
                     </ul>
 
             </li>
-            @endcanAccess
+            {{-- @endcanAccess --}} 
 
             @canAccess('access-control')
             <li class="dropdown nav-item {{ request()->is('acl*') ? 'active' : '' }}" data-menu="dropdown"><a

@@ -195,7 +195,7 @@
                 success: function(response) {
                     if (response.success) {
                         window.isUpdatingUI = true;
-                        $soSelect.append('<option value="">Select Sale Order</option>');
+                        // $soSelect.append('<option value="">Select Sale Order</option>');
                         response.sale_orders.forEach(so => {
                             $soSelect.append(`<option value="${so.id}" data-type="${so.pay_type_id}">${so.reference_no}</option>`);
                         });
@@ -321,7 +321,7 @@
             } else {
                 window.isUpdatingUI = true;
                 $('.delivery-order-select').each(function() {
-                    $(this).empty().append('<option value="">Select Delivery Order</option>').select2();
+                    // $(this).empty().append('<option value="">Select Delivery Order</option>').select2();
                 });
 
                 var isOptional = $('#is_delivery_order_optional').val() === '1';
@@ -545,7 +545,6 @@
                     <td>
                         <div class="row-do-container">
                             <select name="loading_program_items[${index}][delivery_order_id][]" class="form-control form-control-sm select2 delivery-order-select" multiple>
-                                <option value="">Select Delivery Order</option>
                             </select>
                             <span class="text-danger row-do-required-mark" style="display: none;">*</span>
                         </div>
@@ -612,9 +611,12 @@
                             if (response.success) {
                                 window.isUpdatingUI = true;
                                 const currentDOVals = $doSelect.val() || [];
+                                const selectedGlobalDoIds = $('#delivery_order_id').val() || [];
                                 $doSelect.empty();
                                 response.delivery_orders.forEach(do_item => {
-                                    $doSelect.append(new Option(do_item.reference_no, do_item.id, false, currentDOVals.includes(do_item.id.toString())));
+                                    if (selectedGlobalDoIds.includes(do_item.id.toString())) {
+                                        $doSelect.append(new Option(do_item.reference_no, do_item.id, false, currentDOVals.includes(do_item.id.toString())));
+                                    }
                                 });
                                 $doSelect.trigger('change.select2');
                                 $row.data('delivery_orders', response.delivery_orders);
@@ -975,4 +977,11 @@
         $doSelect.removeAttr('required');
         $mark.hide();
     }
+
+    $('.select2').on('select2:open', function (e) {
+        // Remove all Select2 scroll blockers from window & parents
+        $(document).off('scroll.select2');
+        $(window).off('scroll.select2');
+        $('*').off('scroll.select2');           // aggressive but often works
+    });
 </script>

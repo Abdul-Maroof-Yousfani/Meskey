@@ -262,12 +262,13 @@
                         <th>Qty (MT)</th>
                         <th style="display: none;">Qty (Mnds)</th>
                         <th>Bags</th>
+                        <th style="display: none;">Total KGs</th>
                         <th>Stuffing (MT)</th>
                         <th>Containers</th>
                         <th>Rate/Ton</th>
                         <th style="display: none;">Rate/Mnd</th>
                         <th>Amount</th>
-                        <th>Amount (PKR)</th>
+                        <th style="display: none;">Amount (PKR)</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -279,12 +280,13 @@
                             <td class="p-2"><input type="text" class="form-control" value="{{ number_format($item->metric_tons, 3) }}" readonly></td>
                             <td class="p-2" style="display: none;"><input type="text" class="form-control" value="{{ number_format($item->maunds, 2) }}" readonly></td>
                             <td class="p-2"><input type="text" class="form-control" value="{{ number_format($item->no_of_bags, 0) }}" readonly></td>
-                            <td class="p-2"><input type="text" class="form-control" value="{{ number_format($quotation->stuffing_in_container, 3) }}" readonly></td>
-                            <td class="p-2"><input type="text" class="form-control" value="{{ $quotation->no_of_containers }}" readonly></td>
+                            <td class="p-2" style="display: none;"><input type="text" class="form-control" value="{{ number_format($item->total_kgs, 2) }}" readonly></td>
+                            <td class="p-2"><input type="text" class="form-control" value="{{ number_format($item->stuffing_in_container, 3) }}" readonly></td>
+                            <td class="p-2"><input type="text" class="form-control" value="{{ $item->no_of_containers }}" readonly></td>
                             <td class="p-2"><input type="text" class="form-control" value="{{ number_format($item->rate, 2) }}" readonly></td>
                             <td class="p-2" style="display: none;"><input type="text" class="form-control" value="{{ number_format($item->rate_per_maund, 2) }}" readonly></td>
                             <td class="p-2"><input type="text" class="form-control" value="{{ number_format($item->amount, 2) }}" readonly></td>
-                            <td class="p-2"><input type="text" class="form-control" value="{{ number_format($item->amount_pkr, 2) }}" readonly></td>
+                            <td class="p-2" style="display: none;"><input type="text" class="form-control" value="{{ number_format($item->amount_pkr, 2) }}" readonly></td>
                         </tr>
                     @endforeach
                 </tbody>
@@ -301,6 +303,12 @@
 <div class="row bottom-button-bar">
     <div class="col-12 mb-3">
         <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <x-approval-status :model="$quotation" />
     </div>
 </div>
 

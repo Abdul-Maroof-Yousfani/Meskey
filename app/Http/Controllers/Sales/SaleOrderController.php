@@ -17,8 +17,11 @@ use App\Models\Master\Broker;
 use App\Models\Sales\SalesInquiry;
 use App\Models\Sales\SalesOrder;
 use Carbon\Carbon;
+use App\Models\ReceiptVoucherItem;
 use DB;
 use Illuminate\Http\Request;
+use App\Models\ReceiptVoucher;
+use App\Models\Master\Account\Transaction;
 
 class SaleOrderController extends Controller
 {
@@ -124,6 +127,17 @@ class SaleOrderController extends Controller
         $payload["transporter_used"]  =  !$request->transporter_used ? 'no' : $request->transporter_used;
         $payload["payment_term_id"]  =  !$request->payment_term_id ? PaymentTerm::first()->id : $request->payment_term_id;
         $payload["commission_per_kg"] = $request->commission_per_kg ?? 0;
+        $payload["receipt_voucher_item_ids"] = $request->receipt_voucher_item_ids ?? null;
+       
+        $soTotal = array_sum($request->amount ?? []);
+        if($request->pay_type_id == 10 && $request->receipt_voucher_item_ids) { // Advanced
+            
+            $rvTotal = ReceiptVoucherItem::whereIn('id', $request->receipt_voucher_item_ids)->sum('amount');
+            if ($soTotal > $rvTotal) {
+                return response()->json(['error' => "The total Sale Order amount ($soTotal) exceeds the selected Receipt Voucher total ($rvTotal)."], 400);
+            }
+        }
+
 
         DB::beginTransaction();
         try {
@@ -158,6 +172,21 @@ class SaleOrderController extends Controller
                     "rate_per_mond" => $request->rate_per_mond[$index]
                 ]);
             }
+
+            // Sync Unallocated Receipt Vouchers
+            if ($request->has('receipt_voucher_item_ids')) {
+                ReceiptVoucherItem::whereIn('id', $request->receipt_voucher_item_ids)->update([
+                    'reference_type' => 'sale_order',
+                    'reference_id' => $sales_order->id,
+                ]);
+
+                // Update associated transactions to have the SO reference no
+                Transaction::whereIn('receipt_voucher_item_id', $request->receipt_voucher_item_ids)
+                    ->update([
+                        'voucher_no' => DB::raw('payment_against')
+                    ]);
+            }
+
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
@@ -165,6 +194,51 @@ class SaleOrderController extends Controller
         }
 
         return response()->json(['data' => 'Sale Order has been created']);
+    }
+
+    public function generateRvNumber($voucher_type, $rv_date)
+    {
+    
+
+        $prefix = $voucher_type === 'bank_payment_voucher' ? 'BRV' : 'CRV';
+        $prefixForAccounts = $voucher_type === 'bank_payment_voucher' ? '1-1' : '1-4';
+
+        $accounts = Account::whereHas('parent', function ($query) use ($prefixForAccounts) {
+            $query->where('hierarchy_path', $prefixForAccounts);
+        })->get();
+
+        $rvDate = $rv_date ? date('m-d-Y', strtotime($rv_date)) : date('m-d-Y');
+        $datePrefix = $prefix . '-' . $rvDate . '-';
+        $uniqueNo = generateUniqueNumberByDate('receipt_vouchers', $datePrefix, null, 'unique_no', false);
+
+        return response()->json([
+            'success' => true,
+            'rv_number' => $uniqueNo,
+            'accounts' => $accounts
+        ]);
+    }
+
+    public function getUnallocatedReceiptVouchers(Request $request) {
+        $customer_id = $request->customer_id;
+        $sale_order_id = $request->sale_order_id;
+
+        if(!$customer_id) {
+            return response()->json([]);
+        }
+
+        $receiptVoucherItems = ReceiptVoucherItem::where("customer_id", $customer_id)
+            ->where(function($query) use ($sale_order_id) {
+                $query->where("reference_type", "not-allocated");
+                if ($sale_order_id) {
+                    $query->orWhere(function($q) use ($sale_order_id) {
+                        $q->where("reference_type", "sale_order")
+                          ->where("reference_id", $sale_order_id);
+                    });
+                }
+            })
+            ->get();
+        
+        return response()->json($receiptVoucherItems);
     }
 
     public function update(SalesOrderRequest $request, int $id)
@@ -175,6 +249,14 @@ class SaleOrderController extends Controller
             
             if($sales_order->am_approval_status == "approved" || $sales_order->am_approval_status == 'rejected') {
                 return response()->json("Sales Order has been approved/rejected and cannot be updated.", 400);
+            }
+
+            $soTotal = array_sum($request->amount ?? []);
+            if($request->pay_type_id == 10) { // Advanced
+                $rvTotal = ReceiptVoucherItem::whereIn('id', $request->receipt_voucher_item_ids)->sum('amount');
+                if ($soTotal > $rvTotal) {
+                    return response()->json(['error' => "The total Sale Order amount ($soTotal) exceeds the selected Receipt Voucher total ($rvTotal)."], 400);
+                }
             }
 
             $factoryIds = $request->arrival_location_id ?? [];
@@ -191,6 +273,7 @@ class SaleOrderController extends Controller
             $payload["transporter_used"]  =  !$request->transporter_used ? 'no' : $request->transporter_used;
             $payload["payment_term_id"]  =  !$request->payment_term_id ? PaymentTerm::first()->id : $request->payment_term_id;
             $payload["commission_per_kg"] = $request->commission_per_kg ?? 0;
+            $payload["receipt_voucher_item_ids"] = $request->receipt_voucher_item_ids;
 
             // Update parent sale order data
             $sales_order->update($payload);
@@ -236,6 +319,38 @@ class SaleOrderController extends Controller
                     "rate_per_mond" => $request->rate_per_mond[$index]
                 ]);
             }
+
+            // Sync Unallocated Receipt Vouchers
+            // 1. Unset old ones linked to this SO
+            $oldItemIds = ReceiptVoucherItem::where('reference_type', 'sale_order')
+                ->where('reference_id', $id)
+                ->pluck('id');
+
+            Transaction::whereIn('receipt_voucher_item_id', $oldItemIds)
+                ->update(['voucher_no' => '-']);
+
+            ReceiptVoucherItem::where('reference_type', 'sale_order')
+                ->where('reference_id', $id)
+                ->update([
+                    'reference_type' => 'not-allocated',
+                    'reference_id' => null
+                ]);
+
+            // 2. Set new ones
+            if ($request->has('receipt_voucher_item_ids')) {
+                ReceiptVoucherItem::whereIn('id', $request->receipt_voucher_item_ids)->update([
+                    'reference_type' => 'sale_order',
+                    'reference_id' => $id
+                ]);
+
+                // Update associated transactions to have the SO reference no
+      
+                Transaction::whereIn('receipt_voucher_item_id', $request->receipt_voucher_item_ids)
+                    ->update([
+                        'voucher_no' => DB::raw('payment_against')
+                    ]);
+            }
+
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
@@ -391,6 +506,7 @@ class SaleOrderController extends Controller
                 'arrival_sub_location_id' => $inquiry->sections->pluck("arrival_sub_location_id")->toArray(),
                 'arrival_locations' => $factory_locations,
                 'arrival_sub_locations' => $section_locations,
+                'remarks' => $inquiry->remarks
             ]);
         }
 

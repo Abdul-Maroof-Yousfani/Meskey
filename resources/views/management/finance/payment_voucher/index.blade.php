@@ -7,14 +7,14 @@
 <div class="content-wrapper">
     <section id="extended">
         <div class="row w-100 mx-auto">
-            <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
+            <div class="col-xs-5 col-sm-5 col-md-5 col-lg-5">
                 <h2 class="page-title">Bank/Cash Payment Voucher</h2>
             </div>
-            <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
+            <div class="col-xs-7 col-sm-7 col-md-7 col-lg-7 text-right">
                 <!-- Create Regular Payment Voucher -->
 
                 <a href="{{ route('bill.payment-voucher') }}" class="btn btn-warning position-relative mr-2">
-                    <i class="ft-plus"></i> Create Bill Payment Voucher
+                    <i class="ft-plus"></i> Create Bill Payment Voucher for Purchase
                 </a>
                 <a href="{{ route('payment-voucher.create') }}" class="btn btn-primary position-relative mr-2">
                     <i class="ft-plus"></i> Create Payment Voucher
