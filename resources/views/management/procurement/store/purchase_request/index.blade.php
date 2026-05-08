@@ -144,14 +144,6 @@
                     // Optionally reset items to all items or just leave it
                 }
             });
-
-            // Select first category on load if not already selected
-            if ($('#category_id').val() == 'all' || !$('#category_id').val()) {
-                let firstCat = $('#category_id option:eq(1)').val();
-                if (firstCat && firstCat !== 'all') {
-                    $('#category_id').val(firstCat).trigger('change');
-                }
-            }
         });
     </script>
 @endsection

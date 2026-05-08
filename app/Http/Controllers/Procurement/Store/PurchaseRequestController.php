@@ -29,14 +29,7 @@ class PurchaseRequestController extends Controller
     public function index()
     {
         $categories = Category::where('category_type', 'general_items')->get();
-        $firstCategoryId = $categories->first()?->id;
-        $items = Product::where('status', 'active')
-            ->when($firstCategoryId, function($q) use ($firstCategoryId) {
-                return $q->where('category_id', $firstCategoryId);
-            }, function($q) {
-                return $q->where('product_type', 'general_items');
-            })
-            ->get();
+        $items = Product::where('product_type', 'general_items')->where('status', 'active')->get();
         return view('management.procurement.store.purchase_request.index', compact('categories', 'items'));
     }
 
