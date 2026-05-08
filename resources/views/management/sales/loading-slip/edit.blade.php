@@ -66,7 +66,8 @@
                         'do_qty' => $do->delivery_order_data->sum('qty'),
                         'factory_names' => $factoryNames,
                         'gala_names' => $galaNames,
-                        'bag_size' => $do->delivery_order_data->first()->bag_size ?? 0
+                        'bag_size' => $do->delivery_order_data->first()->bag_size ?? 0,
+                        'brand' => $item->brand->name ?? 'N/A'
                     ];
                 }
             } 
@@ -91,7 +92,8 @@
                     'do_qty' => $do->delivery_order_data->sum('qty'),
                     'factory_names' => $factoryNames,
                     'gala_names' => $galaNames,
-                    'bag_size' => $do->delivery_order_data->first()->bag_size ?? 0
+                    'bag_size' => $do->delivery_order_data->first()->bag_size ?? 0,
+                    'brand' => $item->brand->name ?? 'N/A'
                 ];
             }
 
@@ -108,7 +110,8 @@
                             'do_qty' => 0,
                             'factory_names' => $item->arrivalLocation ? [$item->arrivalLocation->name] : [],
                             'gala_names' => $item->subArrivalLocation ? [$item->subArrivalLocation->name] : [],
-                            'bag_size' => $so->sales_order_data->first()->bag_size ?? 0
+                            'bag_size' => $so->sales_order_data->first()->bag_size ?? 0,
+                            'brand' => $item->brand->name ?? 'N/A'
                         ];
                     }
                 }
@@ -123,7 +126,8 @@
                     'do_qty' => 0,
                     'factory_names' => $item->arrivalLocation ? [$item->arrivalLocation->name] : [],
                     'gala_names' => $item->subArrivalLocation ? [$item->subArrivalLocation->name] : [],
-                    'bag_size' => $so->sales_order_data->first()->bag_size ?? 0
+                    'bag_size' => $so->sales_order_data->first()->bag_size ?? 0,
+                    'brand' => $item->brand->name ?? 'N/A'
                 ];
             }
         @endphp
@@ -168,7 +172,7 @@
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-xs-12 col-sm-6 col-md-4">
+                            <div class="col-xs-12 col-sm-6 col-md-3">
                                 <div class="form-group">
                                     <label>Factory:</label>
                                     <select class="form-control select2 w-100" multiple disabled style="width: 100% !important;">
@@ -178,7 +182,7 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="col-xs-12 col-sm-6 col-md-4">
+                            <div class="col-xs-12 col-sm-6 col-md-3">
                                 <div class="form-group">
                                     <label>Gala:</label>
                                     <select class="form-control select2 w-100" multiple disabled style="width: 100% !important;">
@@ -188,10 +192,16 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="col-xs-12 col-sm-6 col-md-4">
+                            <div class="col-xs-12 col-sm-6 col-md-3">
                                 <div class="form-group">
                                     <label>Bag Size:</label>
                                     <input type="number" value="{{ $order['bag_size'] }}" class="form-control" readonly step="0.01" />
+                                </div>
+                            </div>
+                            <div class="col-xs-12 col-sm-6 col-md-3">
+                                <div class="form-group">
+                                    <label>Brand:</label>
+                                    <input type="text" value="{{ $order['brand'] }}" class="form-control" readonly />
                                 </div>
                             </div>
                         </div>
@@ -202,6 +212,7 @@
             {{-- Hidden inputs for backward compatibility --}}
             <input type="hidden" name="customer" value="{{ $loadingSlip->customer }}" />
             <input type="hidden" name="commodity" value="{{ $loadingSlip->commodity }}" />
+            <input type="hidden" name="brand" value="{{ $loadingSlip->brand ?? $loadingSlip->loadingProgramItem->brand->name ?? '' }}" />
             <input type="hidden" name="so_qty" value="{{ $loadingSlip->so_qty }}" />
             <input type="hidden" name="do_qty" value="{{ $loadingSlip->do_qty }}" />
             <input type="hidden" name="factory" value="{{ $loadingSlip->factory }}" />
