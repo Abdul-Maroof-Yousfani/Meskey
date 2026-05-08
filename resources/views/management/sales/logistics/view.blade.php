@@ -68,8 +68,15 @@
 
             <div class="col-md-4">
                 <div class="form-group">
-                    <label class="form-label text-uppercase">Location</label>
+                    <label class="form-label text-uppercase">From Location</label>
                     <input type="text" class="form-control" value="{{ $logistics->location }}" readonly>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label class="form-label text-uppercase">To Location</label>
+                    <input type="text" class="form-control" value="{{ optional(getLocation($logistics->to_location))->name ?? 'N/A' }}" readonly>
                 </div>
             </div>
 
