@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Procurement\Store\PurchaseBillRequest;
 use App\Models\Category;
 use App\Models\Master\CompanyLocation;
+use App\Models\Master\Supplier;
 use App\Models\Master\Tax;
 use App\Models\Procurement\Store\PurchaseBill;
 use App\Models\Procurement\Store\PurchaseBillData;
@@ -35,10 +36,22 @@ class PurchaseBillController extends Controller
                 $q->whereRaw('qty > (SELECT COALESCE(SUM(qty), 0) FROM purchase_bills_data WHERE purchase_bills_data.purchase_bill_id = purchase_bills.id)');
             })
             ->get();
+
+        $billableSupplierIds = PurchaseOrderReceiving::whereIn('am_approval_status', ['approved', 'pending'])
+            ->whereHas('purchaseOrderReceivingData', function ($q) {
+                $q->whereHas('qc', function ($sq) {
+                    $sq->where('am_approval_status', 'approved');
+                })->whereDoesntHave('bill');
+            })
+            ->pluck('supplier_id')
+            ->unique();
+
+        $suppliers = Supplier::whereIn('id', $billableSupplierIds)->get();
+
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $purchaseRequests = PurchaseRequest::select('id', 'purchase_request_no')->where('am_approval_status', 'approved')->get();
 
-        return view('management.procurement.store.purchase-bill.create', compact('categories', 'approvedPurchaseOrders', 'purchaseRequests'));
+        return view('management.procurement.store.purchase-bill.create', compact('categories', 'approvedPurchaseOrders', 'purchaseRequests', 'suppliers'));
     }
 
     public function edit(Request $request, int $id)
@@ -49,6 +62,18 @@ class PurchaseBillController extends Controller
         // dd($job_orders);
 
         $purchase_bill = PurchaseBill::with(['bill_data', 'grn'])->findOrFail($id);
+
+        $billableSupplierIds = PurchaseOrderReceiving::whereIn('am_approval_status', ['approved', 'pending'])
+            ->whereHas('purchaseOrderReceivingData', function ($q) {
+                $q->whereHas('qc', function ($sq) {
+                    $sq->where('am_approval_status', 'approved');
+                })->whereDoesntHave('bill');
+            })
+            ->pluck('supplier_id')
+            ->push($purchase_bill->supplier_id) // Ensure current supplier is included
+            ->unique();
+
+        $suppliers = Supplier::whereIn('id', $billableSupplierIds)->get();
 
         $purchaseBillData = PurchaseBillData::with("PurchaseOrderReceivingData.purchase_order_data")->where('purchase_bill_id', $id)
             ->when($purchase_bill->am_approval_status === 'approved', function ($query) {
@@ -62,6 +87,7 @@ class PurchaseBillController extends Controller
             'purchase_bill' => $purchase_bill,
             'categories' => $categories,
             'locations' => $locations,
+            'suppliers' => $suppliers,
             'taxes' => $taxes,
             // 'job_orders' => $job_orders,
             'purchaseBillData' => $purchaseBillData,
