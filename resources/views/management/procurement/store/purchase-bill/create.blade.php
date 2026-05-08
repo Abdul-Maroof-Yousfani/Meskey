@@ -174,8 +174,10 @@
                 const categoryId = firstRow.data('category-id');
                 if (categoryId != 38) {
                     $('.deduction-header').hide();
+                    $('.deduction-col').hide();
                 } else {
                     $('.deduction-header').show();
+                    $('.deduction-col').show();
                 }
             },
             error: function () {
