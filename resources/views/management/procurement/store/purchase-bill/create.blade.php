@@ -170,15 +170,7 @@
             success: function (response) {
                 $('#company_location_id').val(response.location_ids).trigger('change');
                 $('#billBody').html(response.html);
-                const firstRow = $('#billBody').find('tr').first();
-                const categoryId = firstRow.data('category-id');
-                if (categoryId != 38) {
-                    $('.deduction-header').hide();
-                    $('.deduction-col').hide();
-                } else {
-                    $('.deduction-header').show();
-                    $('.deduction-col').show();
-                }
+                $('#billBody').html(response.html);
             },
             error: function () {
                 $('#purchaseRequestBody').html('<p>Error loading data.</p>');

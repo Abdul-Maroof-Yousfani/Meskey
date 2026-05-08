@@ -344,12 +344,6 @@
 
 <script>
     $(document).ready(function() {
-        const firstRow = $('#billBody').find('tr').first();
-        const categoryId = firstRow.data('category-id');
-        if (categoryId && categoryId != 38) {
-            $('.deduction-header').hide();
-            $('.deduction-col').hide();
-        }
 
         $(document).on('change', '#purchase_date', function() {
             fetchUniqueNumber();

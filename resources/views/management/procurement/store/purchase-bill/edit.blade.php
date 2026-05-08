@@ -151,7 +151,7 @@
                                 <td style="min-width: 150px;">
                                     <input style="width: 100%" type="number"
                                         onkeyup=""
-                                        onblur="" name="qty[]" value="{{ $data->rejected_qty }}"
+                                        onblur="" name="rejected_qty[]" value="{{ $data->rejected_qty }}"
                                         id="qty_{{ $key }}" class="form-control qty" step="0.01" readonly
                                         {{-- {{ $isQuotationAvailable ? 'readonly' : '' }} --}}>
                                 </td>
@@ -280,12 +280,6 @@
         // Initial setup
         getGrns();
 
-        const firstRow = $('#billBody').find('tr').first();
-        const categoryId = firstRow.data('category-id');
-        if (categoryId && categoryId != 38) {
-            $('.deduction-header').hide();
-            $('.deduction-col').hide();
-        }
 
         $(document).on('change', '#purchase_date', function() {
             fetchUniqueNumber();
@@ -327,15 +321,7 @@
                 },
                 success: function(response) {
                     $('#billBody').html(response.html);
-                    const firstRow = $('#billBody').find('tr').first();
-                    const categoryId = firstRow.data('category-id');
-                    if (categoryId != 38) {
-                        $('.deduction-header').hide();
-                        $('.deduction-col').hide();
-                    } else {
-                        $('.deduction-header').show();
-                        $('.deduction-col').show();
-                    }
+                    $('#billBody').html(response.html);
                 },
                 error: function() {
                     $('#purchaseRequestBody').html('<p>Error loading data.</p>');
