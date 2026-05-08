@@ -188,7 +188,6 @@
                                         id="discount_amount_{{ $key }}" class="form-control discount_amount"
                                         step="0.01" min="0" readonly>
                                 </td>
-                                @if($data->PurchaseOrderReceivingData->category_id == 38)
                                     <td style="min-width: 200px;" class="deduction-col">
                                         <input style="width: 100%" type="number" readonly name="deduction_per_piece[]"
                                             id="deduction_per_piece_{{ $key }}"
@@ -202,10 +201,6 @@
                                             value="{{ $data->deduction }}" id="deduction_{{ $key }}"
                                             class="form-control deduction" step="0.01" min="0" readonly>
                                     </td>
-                                @else
-                                    <input type="hidden" name="deduction_per_piece[]" value="0" class="deduction_per_piece">
-                                    <input type="hidden" name="deduction[]" value="0" class="deduction">
-                                @endif
 
                                 <td style="min-width: 250px;">
                                     <input style="width: 100%" type="number" readonly name="net_amount[]"
@@ -285,6 +280,13 @@
         // Initial setup
         getGrns();
 
+        const firstRow = $('#billBody').find('tr').first();
+        const categoryId = firstRow.data('category-id');
+        if (categoryId && categoryId != 38) {
+            $('.deduction-header').hide();
+            $('.deduction-col').hide();
+        }
+
         $(document).on('change', '#purchase_date', function() {
             fetchUniqueNumber();
         });
@@ -329,8 +331,10 @@
                     const categoryId = firstRow.data('category-id');
                     if (categoryId != 38) {
                         $('.deduction-header').hide();
+                        $('.deduction-col').hide();
                     } else {
                         $('.deduction-header').show();
+                        $('.deduction-col').show();
                     }
                 },
                 error: function() {
