@@ -34,7 +34,7 @@ class QCRequest extends FormRequest
             "printing" => $isBag ? "required" : "nullable",
             "bottom_stitching" => $isBag ? "required" : "nullable",
             "ready_to_pack" => $isBag ? "required" : "nullable",
-            "remarks" => "required",
+            "remarks" => "nullable",
             "date" => "required",
             "accepted_quantity" => [
                 "required",
