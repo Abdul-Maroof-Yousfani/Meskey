@@ -118,6 +118,7 @@
                         <input type="checkbox" id="check-all" class="form-check-input" style="cursor: pointer; transform: scale(1.2); margin: 0;">
                     </div>
                 </th>
+                <th style="min-width: 250px;">Category</th>
                 <th style="min-width: 450px;">Item</th>
                 <th style="min-width: 200px;">Item UOM</th>
                 <th class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">Pack Size (KG)</th>
@@ -149,6 +150,18 @@
                     <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
                         <input type="checkbox" class="form-check-input item-checkbox" style="cursor: pointer; transform: scale(1.2); margin: 0;" @disabled(in_array(strtolower($item->am_approval_status), ['approved', 'rejected', 'reverted']))>
                     </div>
+                </td>
+
+                <td style="min-width: 250px;">
+                    <select name="category_id[]" id="category_id_{{ $rowIdApproval }}" onchange="filter_items(this.value, '{{ $rowIdApproval }}')"
+                        class="form-control category-select select2" data-index="{{ $rowIdApproval }}" disabled>
+                        <option value="">Select Category</option>
+                        @foreach ($categories ?? [] as $category)
+                            <option value="{{ $category->id }}" @selected($item->category_id == $category->id)>
+                                {{ $category->name }}
+                            </option>
+                        @endforeach
+                    </select>
                 </td>
 
                 <td style="min-width: 450px;">

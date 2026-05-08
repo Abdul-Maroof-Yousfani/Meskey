@@ -191,7 +191,7 @@ class QcController extends Controller
 
                     $approvalModule = ApprovalModule::select("id")->where("slug", "qc")->first();
                     $hasApprovalPermission = ApprovalModuleRole::where("module_id", $approvalModule->id)
-                                                                ->where("role_id", auth()->user()->id)
+                                                                ->whereIn("role_id", auth()->user()->roles->pluck('id'))
                                                                 ->exists();
 
                     $processedData[] = [
@@ -251,6 +251,8 @@ class QcController extends Controller
             $quotationNo = $row->purchase_order_receiving->purchase_quotation->purchase_quotation_no ?? 'N/A';
             $orderNo = $row->purchase_order_receiving->purchase_order_receiving_no ?? 'N/A';
             $itemId = $row->item->id ?? 'unknown';
+            $dataId = $row->id;
+            $uniqueItemKey = $itemId . '_' . $dataId;
             $supplierKey = ($row->supplier->id ?? 'unknown') . '_' . $row->id;
             $purchase_order_receving_id = $row->id;
 
@@ -282,8 +284,8 @@ class QcController extends Controller
                 ];
             }
 
-            if (!isset($groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo]['items'][$itemId])) {
-                $groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo]['items'][$itemId] = [
+            if (!isset($groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo]['items'][$uniqueItemKey])) {
+                $groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo]['items'][$uniqueItemKey] = [
                     'item_data' => $row,
                     'qc_status' => $row->qc?->am_approval_status,
                     'canUserApprove' => $row->qc?->canUserApprove(),
@@ -291,7 +293,7 @@ class QcController extends Controller
                 ];
             }
 
-            $groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo]['items'][$itemId]['suppliers'][$supplierKey] = $row;
+            $groupedData[$orderNo]['quotations'][$quotationNo]['orders'][$orderNo]['items'][$uniqueItemKey]['suppliers'][$supplierKey] = $row;
         }
 
         // Process grouped data (unchanged)
@@ -351,7 +353,6 @@ class QcController extends Controller
                         'items' => $requestItems,
                         'has_approved_item' => $hasApprovedItem
                     ];
-                    // dd($processedData);
                 }
             }
         }
@@ -446,13 +447,19 @@ class QcController extends Controller
 
         $tolerance = $purchase_receiving_data->tolerance;
 
-        $qcParametersOk = areQcParametersOk($request);
-        $min_weight = $purchase_receiving_data->purchase_order_data->min_weight;
-        $allowed_value = $min_weight - $tolerance;
-        $is_auto_approval = $request->sample_average_weight >= $allowed_value && $qcParametersOk;
+        $isBag = $purchase_receiving_data->category_id == 38;
+        $qcParametersOk = $isBag ? areQcParametersOk($request) : true;
+        
+        if ($isBag) {
+            $min_weight = $purchase_receiving_data->purchase_order_data->min_weight;
+            $allowed_value = $min_weight - $tolerance;
+            $is_auto_approval = ($request->sample_average_weight >= $allowed_value) && $qcParametersOk;
+        } else {
+            // For non-bags, auto-approve if no rejected quantity
+            $is_auto_approval = ($request->rejected_quantity == 0);
+        }
 
-
-        $qc = $purchase_receiving_data->qc()->create([...$request->validated(), "deduction_per_bag" => $request->deduction_per_bag]);
+        $qc = $purchase_receiving_data->qc()->create([...$request->validated(), "deduction_per_bag" => $request->deduction_per_bag ?? 0]);
        
         if($is_auto_approval) {
             $qc->am_approval_status = "approved";
@@ -461,12 +468,14 @@ class QcController extends Controller
             approve_qc($qc);
         }
         
-        foreach($net_weights as $index => $net_weight) {
-            if(is_null($net_weights[$index]) || is_null($bag_weights[$index])) continue;
-            $purchase_receiving_data->qc->bags()->create([
-                "net_weight" => $net_weights[$index],
-                "bag_weight" => $bag_weights[$index]
-            ]);
+        if ($isBag && $net_weights) {
+            foreach($net_weights as $index => $net_weight) {
+                if(is_null($net_weights[$index]) || is_null($bag_weights[$index])) continue;
+                $purchase_receiving_data->qc->bags()->create([
+                    "net_weight" => $net_weights[$index],
+                    "bag_weight" => $bag_weights[$index]
+                ]);
+            }
         }
 
         return response()->json(["qc has been stored"], 200);
@@ -482,12 +491,18 @@ class QcController extends Controller
 
         $tolerance = $purchase_receiving_data->tolerance;
 
-        $qcParametersOk = areQcParametersOk($request);
-        $min_weight = $purchase_receiving_data->purchase_order_data->min_weight;
-        $allowed_value = $min_weight - $tolerance;
-        $is_auto_approval = $request->sample_average_weight >= $allowed_value && $qcParametersOk;
+        $isBag = $purchase_receiving_data->category_id == 38;
+        $qcParametersOk = $isBag ? areQcParametersOk($request) : true;
+        
+        if ($isBag) {
+            $min_weight = $purchase_receiving_data->purchase_order_data->min_weight;
+            $allowed_value = $min_weight - $tolerance;
+            $is_auto_approval = ($request->sample_average_weight >= $allowed_value) && $qcParametersOk;
+        } else {
+            $is_auto_approval = ($request->rejected_quantity == 0);
+        }
      
-        $purchase_receiving_data->qc()->update([...collect($request->validated())->except("net_weight", "bag_weight"), "deduction_per_bag" => $request->deduction_per_bag]);
+        $purchase_receiving_data->qc()->update([...collect($request->validated())->except("net_weight", "bag_weight"), "deduction_per_bag" => $request->deduction_per_bag ?? 0]);
         if($is_auto_approval) {
             $purchase_receiving_data->qc->am_approval_status = "approved";
             $purchase_receiving_data->qc->save();
@@ -497,12 +512,14 @@ class QcController extends Controller
 
 
 
-        foreach($net_weights as $index => $net_weight) {
-            if(is_null($net_weights[$index]) || is_null($bag_weights[$index])) continue;
-            $purchase_receiving_data->qc->bags()->create([
-                "net_weight" => $net_weights[$index],
-                "bag_weight" => $bag_weights[$index]
-            ]);
+        if ($isBag && $net_weights) {
+            foreach($net_weights as $index => $net_weight) {
+                if(is_null($net_weights[$index]) || is_null($bag_weights[$index])) continue;
+                $purchase_receiving_data->qc->bags()->create([
+                    "net_weight" => $net_weights[$index],
+                    "bag_weight" => $bag_weights[$index]
+                ]);
+            }
         }
 
         return response()->json(["qc has been updated"], 200);

@@ -125,19 +125,14 @@
                             {{-- QC Actions --}}
                             <td>
                                 @if($requestGroup['created_by_id'] == auth()->user()->id || $requestGroup["canApprove"])
-                                    @if($supplierRow['data']->category_id == 38)
-                                        
-                                        @if($itemGroup["qc_status"] != 'approved' && $itemGroup["qc_status"] != 'rejected')
-                                            @if(!$itemGroup["qc_status"] == 'pending')
-                                                <button onclick="createQc('{{ $itemGroup['item_data']->id }}', '{{ $itemGroup['item_data']->id }}')" style="width: 100px;" type="button" class="btn btn-success btn-sm createQc">Create QC</button>
-                                            @else
-                                                <button onclick="editQc('{{ $itemGroup['item_data']->id }}', '{{ $itemGroup['item_data']->id }}')" style="width: 100px;" type="button" class="btn btn-warning btn-sm createQc">Edit QC</button>
-                                            @endif
+                                    @if($itemGroup["qc_status"] != 'approved' && $itemGroup["qc_status"] != 'rejected')
+                                        @if(is_null($itemGroup["qc_status"]))
+                                            <button onclick="createQc('{{ $itemGroup['item_data']->id }}', '{{ $itemGroup['item_data']->id }}')" style="width: 100px;" type="button" class="btn btn-success btn-sm createQc">Create QC</button>
                                         @else
-                                            <button style="width: 100px;" type="button" class="btn btn-warning btn-sm createQc" disabled>Edit QC</button>
+                                            <button onclick="editQc('{{ $itemGroup['item_data']->id }}', '{{ $itemGroup['item_data']->id }}')" style="width: 100px;" type="button" class="btn btn-warning btn-sm createQc">Edit QC</button>
                                         @endif
                                     @else
-                                        <span class="badge badge-secondary">Not a bag</span>
+                                        <button style="width: 100px;" type="button" class="btn btn-warning btn-sm createQc" disabled>Edit QC</button>
                                     @endif
                                 @else
                                     <button style="width: 100px;" type="button" class="btn btn-secondary" disabled>Edit QC</button>
@@ -147,18 +142,14 @@
                             {{-- QC Status --}}
                             <td>
                                 <p class="m-0 text-right">
-                                    @if($supplierRow['data']->category_id == 38)
-                                        @if($itemGroup["qc_status"] == 'pending')
-                                            <span class="badge badge-warning">Pending</span>
-                                        @elseif($itemGroup["qc_status"] == 'approved')
-                                            <span class="badge badge-success">Approved</span>
-                                        @elseif($itemGroup["qc_status"] == 'rejected')
-                                            <span class="badge badge-danger">Rejected</span>
-                                        @else
-                                            <span class="badge badge-info">Not Created</span>
-                                        @endif
+                                    @if($itemGroup["qc_status"] == 'pending')
+                                        <span class="badge badge-warning">Pending</span>
+                                    @elseif($itemGroup["qc_status"] == 'approved')
+                                        <span class="badge badge-success">Approved</span>
+                                    @elseif($itemGroup["qc_status"] == 'rejected')
+                                        <span class="badge badge-danger">Rejected</span>
                                     @else
-                                        <span class="badge badge-secondary">Not a bag</span>
+                                        <span class="badge badge-info">Not Created</span>
                                     @endif
                                 </p>
                             </td>

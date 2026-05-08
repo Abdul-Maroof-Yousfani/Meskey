@@ -19,14 +19,27 @@
             $discountAmount = ($discountPercent / 100) * $grossAmount ?? 0;
 
             $taxPercent = $billData->tax_percent ?? 0;
-            $deduction = $billData->deduction  ?? 0;
+            $deduction_per_piece = $billData->deduction_per_piece ?? 0;
+            $deduction = $quantity * $deduction_per_piece;
             $amount = $grossAmount - $discountAmount - $deduction;
             $taxAmount = ($taxPercent / 100) * $amount ?? 0;
 
             $netAmount = $amount + $taxAmount;
             $description = $billData->description ?? '';
         @endphp
-        <tr id="row_{{ $rowIndex }}">
+        <tr id="row_{{ $rowIndex }}" data-category-id="{{ $billData->category_id }}">
+            <td style="min-width: 250px;">
+                <select name="category_id[]" id="category_id_{{ $rowIndex }}" class="form-control category-select select2" disabled>
+                    <option value="">Select Category</option>
+                    @foreach ($categories ?? [] as $category)
+                        <option value="{{ $category->id }}" @selected(($billData->category_id ?? ($billData->item->category_id ?? '')) == $category->id)>
+                            {{ $category->name }}
+                        </option>
+                    @endforeach
+                </select>
+                <input type="hidden" name="category_id[]" value="{{ $billData->category_id }}">
+            </td>
+
             <td style="min-width: 200px;">
                 <select name="item_id[]" id="item_id_{{ $rowIndex }}" class="form-control select2">
                     <option value="">Select Item</option>
@@ -62,6 +75,9 @@
             </td>
             <td style="min-width: 120px;">
                 <input readonly type="number" name="discount_amount[]" id="discount_amount_{{ $rowIndex }}" class="form-control discount_amount" readonly value="{{ $discountAmount }}">
+            </td>
+            <td style="min-width: 120px;">
+                <input type="number" name="deduction_per_piece[]" id="deduction_per_piece_{{ $rowIndex }}" onkeyup="calc(this)" class="form-control deduction_per_piece" step="0.01" min="0" value="{{ $billData->deduction_per_piece ?? 0 }}">
             </td>
             <td style="min-width: 120px;">
                 <input readonly type="number" name="deduction[]" id="deduction_{{ $rowIndex }}" class="form-control deduction" readonly value="{{ $deduction }}">

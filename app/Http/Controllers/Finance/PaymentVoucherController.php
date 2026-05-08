@@ -420,6 +420,7 @@ class PaymentVoucherController extends Controller
             $remaining_qty = getPaymentVoucherBillBalance($bill);
             $bill->amount = $remaining_qty;
             $bill->debit_amount = getDebitNoteAmountOfBill($bill);
+            $bill->return_amount = getPurchaseReturnAmountOfBill($bill);
             $bill->total_bill = totalBill($bill);
             $bill->spent_bill = spentBill($bill);
         });

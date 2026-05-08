@@ -1,14 +1,15 @@
 
 @foreach ($dataItems ?? [] as $key => $data)
     @php
-        $remainingQty = ($data->category_id == 38) ? ($data->qc?->accepted_quantity ?? 0) : ($data->qty ?? 0);
-        $rejectedQty = ($data->category_id == 38) ? ($data->qc?->rejected_quantity ?? 0) : ($data->qty ?? 0);
-        $deductionPerBag = ($data->category_id == 38) ? ($data->qc?->deduction_per_bag ?? 0) : null;
-        $deduction_type = ($data->category_id == 38) ? $data->qc?->deduction_type ?? '' : '';
+        $hasQc = !is_null($data->qc);
+        $remainingQty = $hasQc ? ($data->qc->accepted_quantity ?? 0) : ($data->qty ?? 0);
+        $rejectedQty = $hasQc ? ($data->qc->rejected_quantity ?? 0) : 0;
+        $deductionPerBag = $hasQc ? ($data->qc->deduction_per_bag ?? 0) : 0;
+        $deduction_type = $hasQc ? ($data->qc->deduction_type ?? '') : '';
         $deduction = 0;
-        $acceptedQty = ($data->category_id == 38) ? ($data->qc?->accepted_quantity ?? 0) : ($data->qty ?? 0);
+        $acceptedQty = $hasQc ? ($data->qc->accepted_quantity ?? 0) : ($data->qty ?? 0);
 
-        if($deduction_type != '') {
+        if($hasQc && $deduction_type != '') {
             if($deduction_type == 'full_deduction') {
                 $remainingQty += $rejectedQty;
                 $deduction = $remainingQty * $deductionPerBag;
@@ -17,14 +18,22 @@
                 $remainingQty += $rejectedQty;
             }
         }
-
-
     @endphp
 
 
 <tr id="row_{{ $key }}" data-category-id="{{ $data->category_id }}">
+        <td style="min-width: 250px;">
+            <select name="category_id[]" id="category_id_{{ $key }}" class="form-control category-select select2" disabled>
+                <option value="">Select Category</option>
+                @foreach ($categories ?? [] as $category)
+                    <option value="{{ $category->id }}" @selected($data->category_id == $category->id)>
+                        {{ $category->name }}
+                    </option>
+                @endforeach
+            </select>
+            <input type="hidden" name="category_id[]" value="{{ $data->category_id }}">
+        </td>
 
-      
         <td style="min-width: 350px;">
             <select id="item_id_{{ $key }}" onchange="get_uom({{ $key }})"
                 class="form-control item-select select2" data-index="{{ $key }}" disabled>
@@ -88,7 +97,7 @@
                 id="discount_amount_{{ $key }}" class="form-control discount_amount" step="0.01"
                 min="0" readonly>
         </td>
-        @if($data->category_id == 38)
+        @if($hasQc)
             <td style="min-width: 200px;" class="deduction-col">
                 <input style="width: 100%" type="number" readonly name="deduction_per_piece[]" readonly
                     id="deduction_per_piece_{{ $key }}" value="{{ $data->qc?->deduction_per_bag ?? 0 }}"

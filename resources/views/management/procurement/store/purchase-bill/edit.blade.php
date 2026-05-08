@@ -85,6 +85,7 @@
                 <table class="table table-bordered" id="purchaseRequestTable" style="min-width: 3500px;">
                     <thead>
                         <tr>
+                            <th style="min-width: 250px;">Category</th>
                             <th>Item</th>
                             <th>Description</th>
                             <th>Total Qty</th>
@@ -109,7 +110,15 @@
                         @foreach ($purchaseBillData as $key => $data)
                             <tr id="row_{{ $key }}" data-category-id="{{ $data->PurchaseOrderReceivingData->category_id }}">
 
-                                <td style="min-width: 350px;">
+                                <td style="min-width: 250px;">
+                                <input type="text" style="width: 100%;" 
+                                       name="category[]" 
+                                       value="{{ $data->PurchaseOrderReceivingData->category->name ?? 'N/A' }}"
+                                       class="form-control" 
+                                       readonly>
+                            </td>
+
+                            <td style="min-width: 350px;">
                                     
                                     <input type="text" style="width: 100%;" name="item[]" value="{{ getItem($data->item_id)?->name }}"
                                         id="item_{{ $key }}" class="form-control item" readonly>
@@ -164,10 +173,10 @@
                                          class="form-control gross_amount" readonly>
                                  </td>
 
-                                  <td style="min-width: 150px;">
+                                <td style="min-width: 150px;">
 
 
-                                    <input style="width: 100%" type="number" name="discount_id[]"
+                                <input style="width: 100%" type="number" name="discount_id[]"
                                         value="{{ $data->discount_percent }}" id="total_{{ $key }}"
                                         class="form-control discounts" onkeyup="calculatePercentage(this)"
                                         step="0.01" min="0" max="100">

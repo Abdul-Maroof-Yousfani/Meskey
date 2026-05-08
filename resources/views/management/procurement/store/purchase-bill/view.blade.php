@@ -73,6 +73,7 @@
             <table class="table table-bordered" id="purchaseRequestTable">
                 <thead>
                     <tr>
+                        <th style="min-width: 250px;">Category</th>
                         <th>Item</th>
                         <th>Description</th>
                         <th>Total Qty</th>
@@ -96,6 +97,14 @@
                 <tbody id="billBody">
                     @foreach ($purchaseBillData as $key => $data)
                     <tr id="row_{{ $key }}" data-category-id="{{ $data->PurchaseOrderReceivingData->category_id }}">
+
+                        <td style="min-width: 250px;">
+                            <input type="text" style="width: 100%;" 
+                                   name="category[]" 
+                                   value="{{ $data->PurchaseOrderReceivingData->category->name ?? 'N/A' }}"
+                                   class="form-control" 
+                                   readonly>
+                        </td>
 
                         <td style="width: 320px; min-width: 320px;">
                             <input type="text" style="width: 100%;" 

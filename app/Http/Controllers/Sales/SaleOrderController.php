@@ -251,13 +251,18 @@ class SaleOrderController extends Controller
                 return response()->json("Sales Order has been approved/rejected and cannot be updated.", 400);
             }
 
+
+
             $soTotal = array_sum($request->amount ?? []);
             if($request->pay_type_id == 10) { // Advanced
-                $rvTotal = ReceiptVoucherItem::whereIn('id', $request->receipt_voucher_item_ids)->sum('amount');
-                if ($soTotal > $rvTotal) {
-                    return response()->json(['error' => "The total Sale Order amount ($soTotal) exceeds the selected Receipt Voucher total ($rvTotal)."], 400);
+                if(!is_null($request->receipt_voucher_item_ids)) {
+                    $rvTotal = ReceiptVoucherItem::whereIn('id', $request->receipt_voucher_item_ids)->sum('amount');
+                    if ($soTotal > $rvTotal) {
+                        return response()->json(['error' => "The total Sale Order amount ($soTotal) exceeds the selected Receipt Voucher total ($rvTotal)."], 400);
+                    }
                 }
             }
+
 
             $factoryIds = $request->arrival_location_id ?? [];
             $sectionIds = $request->arrival_sub_location_id ?? [];
@@ -277,6 +282,7 @@ class SaleOrderController extends Controller
 
             // Update parent sale order data
             $sales_order->update($payload);
+
 
             // Update locations
             if ($request->has('locations')) {
@@ -406,7 +412,7 @@ class SaleOrderController extends Controller
                     $itemRows[] = [
                     'item_data' => $itemData,
                         'item' => $itemData->item,
-                ];
+                    ];
                 }
             }
 

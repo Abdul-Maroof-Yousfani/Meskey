@@ -259,36 +259,20 @@ class PurchaseBillController extends Controller
     {
         $supplier_id = $request->supplier_id;
 
-        $purchase_order_receivings = PurchaseOrderReceiving::where(function ($q) {
-            $q->whereHas('purchaseOrderReceivingData.qc', function ($query) {
-                $query->where('am_approval_status', 'approved');
-                        // ->where("accepted_quantity", ">", 0);
-            })->orWhere(function ($subQ) {
-                $subQ->where('am_approval_status', 'approved')
-                     ->whereHas('purchaseOrderReceivingData', function ($dataQ) {
-                         $dataQ->where('category_id', '!=', 38);
-                     });
-            });
-        })
+        $purchase_order_receivings = PurchaseOrderReceiving::whereIn('am_approval_status', ['approved', 'pending'])
             // ->whereDoesntHave("bills")
             ->select('id', 'purchase_order_receiving_no')
             ->where('supplier_id', $supplier_id)
             ->get()
             ->filter(function ($data) {
-                $purchase_order_receiving_data = PurchaseOrderReceivingData::where('purchase_order_receiving_id', $data->id)->get();
-                $is_bag = ! $purchase_order_receiving_data->isEmpty() && $purchase_order_receiving_data->first()->category_id == 38;
-
+                $purchase_order_receiving_data = PurchaseOrderReceivingData::where('purchase_order_receiving_id', $data->id)
+                    ->whereHas('qc', function($q) {
+                        $q->where('am_approval_status', 'approved');
+                    })->get();
                 $ids = $purchase_order_receiving_data->pluck('id');
                 $bills_count = PurchaseBillData::whereIn('purchase_order_receiving_data_id', $ids)->count();
 
-                if ($is_bag) {
-                    $approved_qc_count = \App\Models\Procurement\Store\PurchaseBagQC::whereIn('purchase_order_receiving_data_id', $ids)
-                        ->where('am_approval_status', 'approved')
-                        ->count();
-                    return $bills_count != $approved_qc_count;
-                }
-
-                return $bills_count != $purchase_order_receiving_data->count();
+                return $bills_count < $purchase_order_receiving_data->count() && $purchase_order_receiving_data->count() > 0;
             });
 
         $results = [];
@@ -315,15 +299,12 @@ class PurchaseBillController extends Controller
         
         $dataItems = collect();
 
-        $dataItems = PurchaseOrderReceivingData::where(function ($q) {
-            $q->whereHas('qc', function ($query) {
-                $query->where('am_approval_status', 'approved');
-                        // ->where("accepted_quantity", ">", 0);
-            })->orWhere('category_id', '!=', 38);
-        })
+        $dataItems = PurchaseOrderReceivingData::where('purchase_order_receiving_id', $master->id)
             ->whereDoesntHave('bill')
+            ->whereHas('qc', function($q) {
+                $q->where('am_approval_status', 'approved');
+            })
             ->with(['purchase_request_data', 'item', 'purchase_order_data', 'qc'])
-            ->where('purchase_order_receiving_id', $master->id)
             ->get();
 
         // $dataItems = $dataItems->reject(function($datum) {

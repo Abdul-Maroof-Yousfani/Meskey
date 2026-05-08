@@ -469,7 +469,7 @@
                             `<option data-uom="${product.unit_of_measure?.name ?? ''}" 
                                  value="${product.id}">
                                  ${product.name}
-                         </option>`
+                            </option>`
                         );
                     });
 

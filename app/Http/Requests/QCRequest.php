@@ -21,23 +21,27 @@ class QCRequest extends FormRequest
      */
     public function rules(): array
     {
+        $id = $this->purchase_receiving_data_id;
+        $purchaseOrderReceivingData = \App\Models\Procurement\Store\PurchaseOrderReceivingData::find($id);
+        $isBag = $purchaseOrderReceivingData && $purchaseOrderReceivingData->category_id == 38;
+
         return [
-            "average_weight_of_one_bag" => "required",
+            "average_weight_of_one_bag" => $isBag ? "required" : "nullable",
             "sample_average_weight" => "nullable",
-            "size" => "required",
-            "bio" => "required",
-            "smell" => "required",
-            "printing" => "required",
-            "bottom_stitching" => "required",
-            "ready_to_pack" => "required",
+            "size" => $isBag ? "required" : "nullable",
+            "bio" => $isBag ? "required" : "nullable",
+            "smell" => $isBag ? "required" : "nullable",
+            "printing" => $isBag ? "required" : "nullable",
+            "bottom_stitching" => $isBag ? "required" : "nullable",
+            "ready_to_pack" => $isBag ? "required" : "nullable",
             "remarks" => "required",
             "date" => "required",
             "accepted_quantity" => [
                 "required",
-                function($attribute, $value, $fail) {
+                function($attribute, $value, $fail) use ($purchaseOrderReceivingData) {
                     $accepted_quantity = $this->accepted_quantity;
                     $rejected_quantity = $this->rejected_quantity;
-                    $qty = $this->total_bags;
+                    $qty = $purchaseOrderReceivingData->qty ?? 0;
 
                     if(((int)$accepted_quantity + (int)$rejected_quantity) != $qty) {
                         $fail("Accepted quantity, and Rejected quantity should be equal to $qty");
@@ -47,20 +51,20 @@ class QCRequest extends FormRequest
             "deduction_per_bag" => ["nullable"],
             "rejected_quantity" => [
                 "required",
-                function($attribute, $value, $fail) {
+                function($attribute, $value, $fail) use ($purchaseOrderReceivingData) {
                     $accepted_quantity = $this->accepted_quantity;
                     $rejected_quantity = $this->rejected_quantity;
-                    $qty = $this->total_bags;
+                    $qty = $purchaseOrderReceivingData->qty ?? 0;
 
                     if(((int)$accepted_quantity + (int)$rejected_quantity) != $qty) {
                         $fail("Accepted quantity, and Rejected quantity should be equal to $qty");
                     }
                 }
             ],
-            "net_weight" => "required|array|size:10",
-            "net_weight.*" => "required|numeric|min:0.01",
-            "bag_weight" => "required|array|size:10",
-            "bag_weight.*" => "required|numeric|min:1",
+            "net_weight" => $isBag ? "required|array|size:10" : "nullable|array",
+            "net_weight.*" => $isBag ? "required|numeric|min:0.01" : "nullable|numeric",
+            "bag_weight" => $isBag ? "required|array|size:10" : "nullable|array",
+            "bag_weight.*" => $isBag ? "required|numeric|min:1" : "nullable|numeric",
         ];
     }
 }

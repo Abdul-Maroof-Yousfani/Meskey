@@ -93,10 +93,12 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Company Location:</label>
-                        <select name="company_location_id" id="company_location_id" class="form-control select2" disabled>
-                            <option value="">Select Company Location</option>
+                        @php
+                            $selectedLocations = explode(',', $purchaseReturn->company_location_id);
+                        @endphp
+                        <select name="company_location_id[]" id="company_location_id" class="form-control select2" disabled multiple>
                             @foreach (get_locations() ?? [] as $location)
-                                <option value="{{ $location->id }}" @selected($purchaseReturn->company_location_id == $location->id)>{{ $location->name }}</option>
+                                <option value="{{ $location->id }}" @selected(in_array($location->id, $selectedLocations))>{{ $location->name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -128,6 +130,7 @@
                 <table class="table table-bordered" id="purchaseBillTable" style="min-width:2000px;">
                     <thead>
                         <tr>
+                            <th style="min-width: 250px;">Category</th>
                             <th>Item</th>
                             <th>Qty</th>
                             <th>Rate</th>
@@ -165,6 +168,13 @@
                                 $description = $purchase_return_data->description ?? '';
                             @endphp
                             <tr id="row_{{ $rowIndex }}">
+                                <td style="min-width: 250px;">
+                                    <input type="text" style="width: 100%;" 
+                                           name="category[]" 
+                                           value="{{ $data->purchase_bill_data->category->name ?? 'N/A' }}"
+                                           class="form-control" 
+                                           readonly>
+                                </td>
                                 <td style="min-width: 200px;">
                                     <select name="item_id[]" id="item_id_{{ $rowIndex }}"
                                         class="form-control select2" style="width: 100%;" disabled>

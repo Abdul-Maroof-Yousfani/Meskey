@@ -27,12 +27,24 @@
                 }
                 $display_balance = $balance + $this_pr_usage;
             @endphp
+            <td style="min-width: 250px;">
+                <select name="category_id[]" id="category_id_{{ $i }}" onchange="filter_items(this.value, '{{ $i }}')" class="form-control category-select select2Dropdown" style="width: 100%;">
+                    <option value="">Select Category</option>
+                    @foreach ($categories ?? [] as $category)
+                        <option value="{{ $category->id }}" @selected(($category_id ?? ($packing_item->category_id ?? '')) == $category->id)>
+                            {{ $category->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </td>
             <td style="min-width: 450px;">
                 <select name="item_id[]" id="item_id_{{ $i }}" onchange="get_uom('{{ $i }}')"
                     class="form-control item-select select2Dropdown" data-index="{{ $i }}" style="width: 100%;">
                     <option value="">Select Item</option>
                     @foreach($items as $item)
-                        <option value="{{ $item->id }}" data-uom="{{ $item->unitOfMeasure->name }}" @selected($packing_item->bag_product_id == $item->id)>{{ $item->name }}</option>
+                        @if($packing_item->bag_product_id == $item->id)
+                            <option value="{{ $item->id }}" data-uom="{{ $item->unitOfMeasure->name }}" selected>{{ $item->name }}</option>
+                        @endif
                     @endforeach
                 </select>
 
@@ -191,12 +203,24 @@
                 }
                 $display_sub_balance = $balance + $this_pr_sub_usage;
             @endphp
+            <td style="min-width: 250px;">
+                <select name="category_id[]" id="category_id_{{ $i }}" onchange="filter_items(this.value, '{{ $i }}')" class="form-control category-select select2Dropdown" style="width: 100%;">
+                    <option value="">Select Category</option>
+                    @foreach ($categories ?? [] as $category)
+                        <option value="{{ $category->id }}" @selected(($category_id ?? ($sub_packing_item->category_id ?? '')) == $category->id)>
+                            {{ $category->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </td>
             <td style="min-width: 450px;">
                 <select name="item_id[]" id="item_id_{{ $i }}" onchange="get_uom('{{ $i }}')"
                     class="form-control item-select select2Dropdown" data-index="{{ $i }}" style="width: 100%;">
                     <option value="">Select Item</option>
                     @foreach($items as $item)
-                        <option value="{{ $item->id }}" data-uom="{{ $item->unitOfMeasure->name }}" @selected($sub_packing_item->bag_product_id == $item->id)>{{ $item->name }}</option>
+                        @if($sub_packing_item->bag_product_id == $item->id)
+                            <option value="{{ $item->id }}" data-uom="{{ $item->unitOfMeasure->name }}" selected>{{ $item->name }}</option>
+                        @endif
                     @endforeach
                 </select>
 

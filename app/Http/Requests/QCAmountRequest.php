@@ -22,28 +22,31 @@ class QCAmountRequest extends FormRequest
     public function rules(): array
     {
         return [
-           "accepted_quantity" => [
+            "accepted_quantity" => [
                 "required",
                 function($attribute, $value, $fail) {
                     $accepted_quantity = $this->accepted_quantity;
                     $rejected_quantity = $this->rejected_quantity;
+                    $rejection_return = $this->rejection_return ?? 0;
                     $qty = $this->total_bags;
 
-                    if(((int)$accepted_quantity + (int)$rejected_quantity) != $qty) {
-                        $fail("Accepted quantity, and Rejected quantity should be equal to $qty");
+                    if((round((float)$accepted_quantity + (float)$rejected_quantity + (float)$rejection_return, 2)) != round((float)$qty, 2)) {
+                        $fail("Accepted quantity, Rejected quantity, and Rejection Return should be equal to $qty");
                     }
                 }
             ],
             "deduction_per_bag" => ["nullable"],
+            "rejection_return" => ["required", "numeric", "min:0"],
             "rejected_quantity" => [
                 "required",
                 function($attribute, $value, $fail) {
                     $accepted_quantity = $this->accepted_quantity;
                     $rejected_quantity = $this->rejected_quantity;
+                    $rejection_return = $this->rejection_return ?? 0;
                     $qty = $this->total_bags;
 
-                    if(((int)$accepted_quantity + (int)$rejected_quantity) != $qty) {
-                        $fail("Accepted quantity, and Rejected quantity should be equal to $qty");
+                    if((round((float)$accepted_quantity + (float)$rejected_quantity + (float)$rejection_return, 2)) != round((float)$qty, 2)) {
+                        $fail("Accepted quantity, Rejected quantity, and Rejection Return should be equal to $qty");
                     }
                 }
             ],  

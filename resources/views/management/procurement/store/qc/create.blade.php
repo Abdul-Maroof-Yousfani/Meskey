@@ -58,13 +58,19 @@
                             <th style="min-width: 200px;">Brand</th>
                             <th style="min-width: 250px;">Job Order</th>
                             @endif
-                            <th style="min-width: 200px;">DC No</th>
+                             <th style="min-width: 200px;">DC No</th>
+                            @if($purchaseOrderReceivingData->category_id == 38)
                             <th style="min-width: 250px;">Required Weight Per Bag (grams)</th>
                             <!-- <th>Tolerance</th> -->
                             <th style="min-width: 250px;">Average Weight of 1 Bag (grams)</th>
+                            @endif
+                            @if($purchaseOrderReceivingData->category_id == 38)
                             <th style="min-width: 150px;">Total Bags</th>
+                            @endif
+                            @if($purchaseOrderReceivingData->category_id == 38)
                             <th style="min-width: 250px;">Total Weight Required (kg)</th>
                             <th style="min-width: 250px;">Sample Average Weight (grams)</th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody id="purchaseOrderBody">
@@ -103,13 +109,14 @@
                             @endif
 
 
-                            <td>
+                             <td>
                                 <input type="text" name="dc_no" id="dc_no" value="{{ $purchaseOrderReceivingData->purchase_order_receiving->dc_no }}" readonly
                                     class="form-control">
                             </td>
 
+                            @if($purchaseOrderReceivingData->category_id == 38)
                             <td>
-                                <input type="text" name="required_weight_per_bag" value="{{ $purchaseOrderReceivingData->category_id == 38 ? ($purchaseOrderReceivingData?->purchase_order_data?->min_weight ?? null) : 0 }}" id="required_weight_per_bag" readonly class="form-control">
+                                <input type="text" name="required_weight_per_bag" value="{{ $purchaseOrderReceivingData?->purchase_order_data?->min_weight ?? null }}" id="required_weight_per_bag" readonly class="form-control">
                             </td>
                             <!-- <td>
                                 <input type="text" name="tolerance" value="{{ $purchaseOrderReceivingData->tolerance ?? 0 }}" readonly class="form-control">
@@ -119,12 +126,18 @@
                                 <input type="text" name="average_weight_of_one_bag" onkeyup="calculate_total_recieved_weight(this)" id="average_weight_of_1_bag"
                                      class="form-control" placeholder="Average Weight of One Bag" value="{{ (round(($purchaseOrderReceivingData->receive_weight * 1000) / $purchaseOrderReceivingData->qty, 5)) }}" readonly>
                             </td>
+                            @endif
 
+                            @if($purchaseOrderReceivingData->category_id == 38)
                             <td>
                                 <input type="text" name="total_bags" id="total_bags" value="{{ $purchaseOrderReceivingData->qty }}" readonly
                                     class="form-control">
                             </td>
+                            @else
+                                <input type="hidden" name="total_bags" id="total_bags" value="{{ $purchaseOrderReceivingData->qty }}">
+                            @endif
 
+                            @if($purchaseOrderReceivingData->category_id == 38)
                             <td>
                                 <input type="text" name="total_weight_required" value="{{ (($purchaseOrderReceivingData->qty ?? 0) * ($purchaseOrderReceivingData?->purchase_order_data?->min_weight / 1000 ?? 0)) }}" id="total_weight_required" value="Total Weight Required"
                                     readonly class="form-control">
@@ -134,6 +147,7 @@
                                 <input type="text" name="sample_average_weight" id="total_weight_received"
                                     class="form-control" value="" readonly>
                             </td>
+                            @endif
 
                         </tr>
                     </tbody>
@@ -142,6 +156,7 @@
             </div>
         </div>
 
+        @if($purchaseOrderReceivingData->category_id == 38)
         <p style="margin-top: 20px; font-size: 20px;">Weight of randomly-selected bags sets</p>
         <div class="row" style="margin-top: 10px;">
             <div class="col-md-6" style="padding: 0px; padding-left: 10px;">
@@ -217,6 +232,13 @@
                 </table>
             </div>
         </div>
+        @else
+            @for ($i = 0; $i < 10; $i++)
+                <input type="hidden" name="net_weight[]" value="0">
+                <input type="hidden" name="bag_weight[]" value="0">
+                <input type="hidden" name="total_weight[]" value="0">
+            @endfor
+        @endif
 
 
         <p style="margin-top: 20px; font-size: 20px;">Additional Data</p>

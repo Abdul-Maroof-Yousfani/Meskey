@@ -129,8 +129,8 @@
                      <th>Item UOM</th>
                      <th>Job Order</th>
                      <th>Qty</th>
-@if(optional($purchaseOrderReceiving->purchase_request)->category_id == 38)
                      <th>Receive Weight (kg)</th>
+@if(optional($purchaseOrderReceiving->purchase_request)->category_id == 38)
                      <th>Accepted Quantity</th>
                      <th>Rejected Quantity</th>
                      <th>Deduction Per KG</th>
@@ -216,13 +216,13 @@
                                     id="qty_{{ $key }}" class="form-control" @readonly($data->qc) step="0.01" min="0" max="{{ $maxAllowed }}"
                                    >
                             </td>
-@if(optional($purchaseOrderReceiving->purchase_request)->category_id == 38)
                              <td style="min-width: 200px;">
                                 <input style="width: 100%" onkeyup="calc({{ $key }})"
                                     onblur="calc({{ $key }})" name="receive_weight[]" value="{{ $data->receive_weight }}"
                                     id="receive_weight_{{ $key }}" class="form-control" @readonly($data->qc)
                                    >
                             </td>
+@if(optional($purchaseOrderReceiving->purchase_request)->category_id == 38)
                              <td style="min-width: 150px;">
                                 <input style="width: 100%" type="number" onkeyup="calc({{ $key }})"
                                     onblur="calc({{ $key }})" name="accepted_qty[]" readonly value="{{ $data->qc?->accepted_quantity ?? null }}"
@@ -351,21 +351,15 @@
                                     id="remark_{{ $key }}" class="form-control">
                             </td>
                             <td style="min-width: 250px;">
-                                <div class="d-flex" style="gap: 5px;">
-                                    <button style="width: 70px;" type="button" class="btn btn-danger btn-sm removeRowBtn"
-                                        onclick="remove({{ $key }})"
-                                        @disabled($data->qc?->am_approval_status == "approved")
-                                        data-id="{{ $key }}">Remove</button>
+                                    <div class="d-flex" style="gap: 5px;">
+                                        <button style="width: 70px;" type="button" class="btn btn-danger btn-sm removeRowBtn"
+                                            onclick="remove({{ $key }})"
+                                            @disabled($data->qc?->am_approval_status == "approved")
+                                            data-id="{{ $key }}">Remove</button>
 
-                                    @if($data->category_id == 38)
-                                    <button onclick="createQc('{{ $data->id }}', '{{ $key }}')" @disabled(($data->qc?->exists())) style="width: 70px;" type="button" class="btn btn-success btn-sm createQc">Create QC</button>
-                                    <button onclick="editQc('{{ $data->id }}', '{{ $key }}')" @disabled($data->qc?->am_approval_status == "approved" || !$data->qc?->exists()) style="width: 70px;" type="button" class="btn btn-warning btn-sm createQc">Edit QC</button>
-                                    @else
-                                    <span class="badge badge-secondary">Not a Bag</span>
-                                    @endif
-                                    {{-- <button onclick="viewQc('{{ $data->id }}', '{{ $key }}')" style="width: 70px;" type="button" class="btn btn-primary btn-sm viewQc">View QC</button>
-              --}}
-                                </div>
+                                        <button onclick="createQc('{{ $data->id }}', '{{ $key }}')" @disabled(($data->qc?->exists())) style="width: 70px;" type="button" class="btn btn-success btn-sm createQc">Create QC</button>
+                                        <button onclick="editQc('{{ $data->id }}', '{{ $key }}')" @disabled($data->qc?->am_approval_status == "approved" || !$data->qc?->exists()) style="width: 70px;" type="button" class="btn btn-warning btn-sm createQc">Edit QC</button>
+                                    </div>
                             </td>
                         </tr>
                     @endforeach

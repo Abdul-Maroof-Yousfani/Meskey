@@ -23,6 +23,10 @@
         @if($purchaseBill->debit_amount > 0)
             <p>Debit Note Reduction: {{ $purchaseBill->debit_amount }}</p>
         @endif
+        
+        @if($purchaseBill->return_amount > 0)
+            <p>Purchase Return Reduction: {{ $purchaseBill->return_amount }}</p>
+        @endif
 
         @if($purchaseBill->spent_bill > 0)
             <p>Used Amount: {{ $purchaseBill->spent_bill }}</p>

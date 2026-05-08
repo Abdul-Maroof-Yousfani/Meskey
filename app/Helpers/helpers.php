@@ -1983,6 +1983,16 @@ function getDebitNoteAmountOfBill(PurchaseBill $bill)
     return $debit_note_items_amount;
 }
 
+function getPurchaseReturnAmountOfBill(PurchaseBill $bill) {
+    $bill_data_ids = $bill->bill_data->pluck('id')->toArray();
+    $amount = PurchaseReturnData::whereIn('purchase_bill_data_id', $bill_data_ids)
+        ->whereHas('purchase_return', function ($query) {
+            $query->where('am_approval_status', 'approved');
+        })
+        ->sum('net_amount');
+    return $amount;
+}
+
 function totalBill(PurchaseBill $bill)
 {
     $total_qty = $bill->bill_data->sum('final_amount');
@@ -1999,10 +2009,11 @@ function getPaymentVoucherBillBalance(PurchaseBill $bill)
 {
 
     $debit_note_items_amount = getDebitNoteAmountOfBill($bill);
+    $purchase_return_amount = getPurchaseReturnAmountOfBill($bill);
 
     $total_qty = totalBill($bill);
     $spent_qty = spentBill($bill);
-    $remaining_qty = ($total_qty - $spent_qty) - $debit_note_items_amount;
+    $remaining_qty = ($total_qty - $spent_qty) - $debit_note_items_amount - $purchase_return_amount;
     return $remaining_qty;
 }
 

@@ -37,11 +37,12 @@ class PurchaseRequestController extends Controller
     {
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $job_orders = JobOrder::with('packing_items.subItems')->where('id', request()->job_order)->get();
-        $items = Product::with("unitOfMeasure")->where("product_type", "general_items")->where("status", "active")->get();
+        $items = Product::with("unitOfMeasure")->where("status", "active")->when(request()->category_id, function($q) { return $q->where("category_id", request()->category_id); }, function($q) { return $q->whereRaw("1 = 0"); })->get();
         $sizes = Size::all();
 
         $purchase_request_id = request()->purchase_request_id;
-        return view('management.procurement.store.purchase_request.getItem', compact('job_orders', 'categories', 'items', 'purchase_request_id', 'sizes'));
+        $category_id = request()->category_id;
+        return view('management.procurement.store.purchase_request.getItem', compact('job_orders', 'categories', 'items', 'purchase_request_id', 'sizes', 'category_id'));
 
     }
 
@@ -277,7 +278,7 @@ class PurchaseRequestController extends Controller
 
                 $requestData = PurchaseRequestData::create([
                     'purchase_request_id' => $purchaseRequest->id,
-                    'category_id' => $request->category_id_header,
+                    'category_id' => $request->category_id[$index] ?? $request->category_id_header,
                     'item_id' => $itemId,
                     'qty' => $request->qty[$index],
                     'approved_qty' => 0,
@@ -504,7 +505,7 @@ class PurchaseRequestController extends Controller
                         }
 
                         $dataToUpdate = [
-                            'category_id' => $request->category_id_header,
+                            'category_id' => $request->category_id[$index] ?? $request->category_id_header,
                             'item_id' => $itemId,
                             'qty' => $request->qty[$index],
                             'min_weight' => $request->min_weight[$index] ?? null,
@@ -588,7 +589,7 @@ class PurchaseRequestController extends Controller
 
                     $requestData = PurchaseRequestData::create([
                         'purchase_request_id' => $purchaseRequest->id,
-                        'category_id' => $request->category_id_header,
+                        'category_id' => $request->category_id[$index] ?? $request->category_id_header,
                         'item_id' => $itemId,
                         'qty' => $request->qty[$index],
                         'approved_qty' => 0,
