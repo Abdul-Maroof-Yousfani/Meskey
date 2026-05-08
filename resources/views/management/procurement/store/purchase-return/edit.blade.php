@@ -186,14 +186,14 @@
                                 $netAmount = $data->net_amount;
                                 $description = $purchase_return_data->description ?? '';
                             @endphp
-                            <tr id="row_{{ $rowIndex }}" data-category-id="{{ $data->category_id }}">
+                            <tr id="row_{{ $rowIndex }}" data-category-id="{{ $data->item->category_id }}">
                                 <td style="min-width: 250px;">
                                     <input type="text" style="width: 100%;" 
                                            name="category[]" 
-                                           value="{{ $data->category->name ?? 'N/A' }}"
+                                           value="{{ $data->item->category->name ?? 'N/A' }}"
                                            class="form-control" 
                                            readonly>
-                                    <input type="hidden" name="category_id[]" value="{{ $data->category_id }}">
+                                    <input type="hidden" name="category_id[]" value="{{ $data->item->category_id }}">
                                 </td>
 
                                 <td style="min-width: 200px;">
