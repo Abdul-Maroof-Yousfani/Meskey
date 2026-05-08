@@ -27,17 +27,17 @@
             $netAmount = $amount + $taxAmount;
             $description = $billData->description ?? '';
         @endphp
-        <tr id="row_{{ $rowIndex }}" data-category-id="{{ $billData->category_id }}">
+        <tr id="row_{{ $rowIndex }}" data-category-id="{{ $billData->item->category_id ?? '' }}">
             <td style="min-width: 250px;">
                 <select name="category_id[]" id="category_id_{{ $rowIndex }}" class="form-control category-select select2" disabled>
                     <option value="">Select Category</option>
                     @foreach ($categories ?? [] as $category)
-                        <option value="{{ $category->id }}" @selected(($billData->category_id ?? ($billData->item->category_id ?? '')) == $category->id)>
+                        <option value="{{ $category->id }}" @selected(($billData->item->category_id ?? '') == $category->id)>
                             {{ $category->name }}
                         </option>
                     @endforeach
                 </select>
-                <input type="hidden" name="category_id[]" value="{{ $billData->category_id }}">
+                <input type="hidden" name="category_id[]" value="{{ $billData->item->category_id ?? '' }}">
             </td>
 
             <td style="min-width: 200px;">

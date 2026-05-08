@@ -7,6 +7,7 @@ use App\Models\Sales\Logistics;
 use App\Models\Sales\LogisticsItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\Master\CompanyLocation;
 
 class LogisticsController extends Controller
 {
@@ -37,8 +38,10 @@ class LogisticsController extends Controller
             });
 
         $transporters = \App\Models\Master\Transporter::where('status', 'active')->get();
+        
+        $locations = CompanyLocation::where('status', 'active')->get();
 
-        return view('management.sales.logistics.create', compact('saleOrders', 'transporters'));
+        return view('management.sales.logistics.create', compact('saleOrders', 'transporters', 'locations'));
     }
 
     public function getOrderDetails($id)
@@ -64,6 +67,7 @@ class LogisticsController extends Controller
         // Get Location, Factory, Section safer
         $location = $order->locations->first();
         $locationName = $location && $location->companyLocation ? $location->companyLocation->name : 'N/A';
+        $toLocationId = $order->arrival_location_id;
         
         $factory = $order->factories->first();
         $factoryName = $factory && $factory->factory ? $factory->factory->name : 'N/A';
@@ -82,6 +86,7 @@ class LogisticsController extends Controller
             'customer' => $order->customer->name ?? 'N/A',
             'delivery_address' => 'Static Delivery Address 123', 
             'location' => $locationName,
+            'to_location_id' => $toLocationId ?: '',
             'factory' => $factoryName,
             'section' => $sectionName,
             'logistics' => $logistics
@@ -99,6 +104,7 @@ class LogisticsController extends Controller
             'items.*.rate' => 'required|numeric',
             'items.*.transporter' => 'required|string',
             'items.*.qty' => 'required|numeric',
+            'to_location' => 'required|exists:company_locations,id',
         ]);
 
         DB::beginTransaction();
@@ -108,6 +114,8 @@ class LogisticsController extends Controller
             if (!$logistics->exists) {
                 $logistics->created_by = auth()->user()->id;
             }
+
+            $logistics->to_location = $request->to_location;
             $logistics->am_approval_status = 'pending';
             $logistics->am_change_made = 1;
             
