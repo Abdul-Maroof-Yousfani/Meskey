@@ -172,17 +172,17 @@ class PurchaseBillController extends Controller
      */
 
             foreach ($row->bill_data as $billItem) {
-                $itemId = $billItem->item_id;
+                $billItemId = $billItem->id;
                 // Create item group
-                if (! isset($groupedData[$orderNo]['purchase_order_receiving_no'][$purchaseOrderReceivingNo]['orders'][$orderNo]['items'][$itemId])) {
-                    $groupedData[$orderNo]['purchase_order_receiving_no'][$purchaseOrderReceivingNo]['orders'][$orderNo]['items'][$itemId] = [
+                if (! isset($groupedData[$orderNo]['purchase_order_receiving_no'][$purchaseOrderReceivingNo]['orders'][$orderNo]['items'][$billItemId])) {
+                    $groupedData[$orderNo]['purchase_order_receiving_no'][$purchaseOrderReceivingNo]['orders'][$orderNo]['items'][$billItemId] = [
                         'item_data' => $billItem,
                         'suppliers' => [],
                     ];
                 }
 
                 // Add supplier under that item
-                $groupedData[$orderNo]['purchase_order_receiving_no'][$purchaseOrderReceivingNo]['orders'][$orderNo]['items'][$itemId]['suppliers'][$supplierKey] = $row;
+                $groupedData[$orderNo]['purchase_order_receiving_no'][$purchaseOrderReceivingNo]['orders'][$orderNo]['items'][$billItemId]['suppliers'][$supplierKey] = $row;
             }
         }
 
