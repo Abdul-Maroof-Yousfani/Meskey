@@ -171,7 +171,7 @@
                                 <td style="min-width: 250px;">
                                     <input type="text" style="width: 100%;" 
                                            name="category[]" 
-                                           value="{{ $data->purchase_bill_data->category->name ?? 'N/A' }}"
+                                           value="{{ $data->item->category->name ?? 'N/A' }}"
                                            class="form-control" 
                                            readonly>
                                 </td>
