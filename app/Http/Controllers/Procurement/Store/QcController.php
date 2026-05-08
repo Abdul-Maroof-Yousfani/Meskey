@@ -453,7 +453,7 @@ class QcController extends Controller
         if ($isBag) {
             $min_weight = $purchase_receiving_data->purchase_order_data->min_weight;
             $allowed_value = $min_weight - $tolerance;
-            $is_auto_approval = ($request->sample_average_weight >= $allowed_value) && $qcParametersOk;
+            $is_auto_approval = ($request->sample_average_weight >= $allowed_value) && $qcParametersOk && ($request->rejected_quantity == 0);
         } else {
             // For non-bags, auto-approve if no rejected quantity
             $is_auto_approval = ($request->rejected_quantity == 0);
