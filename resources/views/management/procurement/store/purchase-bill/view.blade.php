@@ -205,34 +205,29 @@
                                    min="0">
                         </td>
                     
-                        @if($data->PurchaseOrderReceivingData->category_id == 38)
-                            <td style="width: 160px; min-width: 160px;" class="deduction-col">
-                                <input style="width: 100%;" 
-                                       type="number" 
-                                       readonly 
-                                       name="deduction_per_piece[]" 
-                                       id="deduction_per_piece_{{ $key }}"
-                                       value="{{ $data->deduction_per_piece }}"
-                                       class="form-control deduction_per_piece" 
-                                       step="0.01" 
-                                       min="0">
-                            </td>
-                        
-                            <td style="width: 160px; min-width: 160px;" class="deduction-col">
-                                <input style="width: 100%;" 
-                                       type="number" 
-                                       readonly 
-                                       name="deduction[]" 
-                                       value="{{ $data->deduction }}" 
-                                       id="deduction_{{ $key }}"
-                                       class="form-control deduction" 
-                                       step="0.01" 
-                                       min="0">
-                            </td>
-                        @else
-                            <input type="hidden" name="deduction_per_piece[]" value="0" class="deduction_per_piece">
-                            <input type="hidden" name="deduction[]" value="0" class="deduction">
-                        @endif
+                        <td style="width: 160px; min-width: 160px;" class="deduction-col">
+                            <input style="width: 100%;" 
+                                    type="number" 
+                                    readonly 
+                                    name="deduction_per_piece[]" 
+                                    id="deduction_per_piece_{{ $key }}"
+                                    value="{{ $data->deduction_per_piece }}"
+                                    class="form-control deduction_per_piece" 
+                                    step="0.01" 
+                                    min="0">
+                        </td>
+                    
+                        <td style="width: 160px; min-width: 160px;" class="deduction-col">
+                            <input style="width: 100%;" 
+                                    type="number" 
+                                    readonly 
+                                    name="deduction[]" 
+                                    value="{{ $data->deduction }}" 
+                                    id="deduction_{{ $key }}"
+                                    class="form-control deduction" 
+                                    step="0.01" 
+                                    min="0">
+                        </td>
                     
                         <td style="width: 170px; min-width: 170px;">
                             <input style="width: 100%;" 
@@ -353,6 +348,7 @@
         const categoryId = firstRow.data('category-id');
         if (categoryId && categoryId != 38) {
             $('.deduction-header').hide();
+            $('.deduction-col').hide();
         }
 
         $(document).on('change', '#purchase_date', function() {
