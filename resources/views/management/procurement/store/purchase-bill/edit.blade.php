@@ -423,7 +423,7 @@
     const net_amount = row.find(".net_amount");
     const deduction_input = row.find(".deduction");
     const categoryId = row.data("category-id");
-    const deduction_amount = (categoryId == 38) ? (parseFloat(deduction_input.val()) || 0) : 0;
+    const deduction_amount = parseFloat(deduction_input.val()) || 0;
 
     const rateVal = parseFloat(rate.val()) || 0;
     const qtyVal = parseFloat(qty.val()) || 0;
