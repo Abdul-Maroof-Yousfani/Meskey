@@ -21,8 +21,9 @@ class PurchaseRequest extends FormRequest
             'description'           => 'nullable|string',
 
             'category_id_header'    => 'required|exists:categories,id',
-            'category_id'           => 'required|array|min:1',
-            'category_id.*'         => 'required|exists:categories,id',
+            
+            // 'category_id'           => 'required|array|min:1',
+            // 'category_id.*'         => 'required|exists:categories,id',
 
             'item_id'               => 'required|array|min:1',
             'item_id.*'             => [
