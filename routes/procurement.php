@@ -136,6 +136,7 @@ Route::prefix('raw-material')->name('raw-material.')->group(function () {
 });
 
 Route::prefix('store')->name('store.')->group(function () {
+    Route::get('purchase-request/get-products-json', [StorePurchaseRequestController::class, 'getProductsJson'])->name('purchase-request.get-products-json');
     Route::resource('purchase-request', StorePurchaseRequestController::class);
     Route::get("job-order/get", [StorePurchaseRequestController::class, "getItems"])->name("get.jobOrdersDataForPurchaseRequest");
 

@@ -119,6 +119,39 @@
             $(document).on('ajaxSuccess', function() {
                 $('#category_id, #item_id, #status').select2();
             });
+
+            $('#category_id').on('change', function() {
+                let category_id = $(this).val();
+                let $itemSelect = $('#item_id');
+                
+                if (category_id && category_id !== 'all') {
+                    $.ajax({
+                        url: '{{ route('store.purchase-request.get-products-json') }}',
+                        type: 'GET',
+                        data: { category_id: category_id },
+                        success: function(response) {
+                            if (response.success) {
+                                $itemSelect.empty();
+                                $itemSelect.append('<option value="all">All Items</option>');
+                                $.each(response.products, function(index, item) {
+                                    $itemSelect.append('<option value="' + item.id + '">' + item.name + '</option>');
+                                });
+                                $itemSelect.select2();
+                            }
+                        }
+                    });
+                } else if (category_id === 'all') {
+                    // Optionally reset items to all items or just leave it
+                }
+            });
+
+            // Select first category on load if not already selected
+            if ($('#category_id').val() == 'all' || !$('#category_id').val()) {
+                let firstCat = $('#category_id option:eq(1)').val();
+                if (firstCat && firstCat !== 'all') {
+                    $('#category_id').val(firstCat).trigger('change');
+                }
+            }
         });
     </script>
 @endsection

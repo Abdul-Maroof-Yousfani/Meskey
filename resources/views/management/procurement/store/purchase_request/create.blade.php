@@ -223,6 +223,15 @@
                 });
             }
         });
+
+        // Select first category and populate items accordingly
+        let firstCategory = $('#category_id_header option:eq(1)').val();
+        if (firstCategory) {
+            $('#category_id_header').val(firstCategory).trigger('change');
+            if (firstCategory != 38) {
+                addRow();
+            }
+        }
     });
 
     function toggleVisibility(categoryId) {
@@ -474,7 +483,7 @@
 
     function filter_items(category_id, count) {
         $.ajax({
-            url: '{{ route('get.items') }}',
+            url: '{{ route('store.purchase-request.get-products-json') }}',
             type: 'GET',
             data: {
                 category_id: category_id
