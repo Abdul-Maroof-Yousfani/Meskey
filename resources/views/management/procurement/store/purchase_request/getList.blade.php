@@ -3,8 +3,7 @@
 
         <tr>
             <th style="width: 11%;">Purchase Request No</th>
-            <th style="width: 13%;">Category</th>
-            <th style="width: 20%;">Item</th>
+            <th style="width: 25%;">Item</th>
             <th style="width: 9%;">Qty</th>
             <th style="width: 9%;">PO Qty</th>
             <th style="width: 11%;">PR Date</th>
@@ -34,12 +33,6 @@
                                 {{ optional($itemGroup['item_data']->purchase_request->location)->name ?? 'N/A' }}
                             </p>
                         </td> --}}
-
-                        <td style="background-color: #e8f5e8; vertical-align: middle;">
-                            <p class="m-0 font-weight-bold">
-                                {{ optional($itemGroup['item_data']->category)->name ?? 'N/A' }}
-                            </p>
-                        </td>
 
                         <td>
                             <p class="m-0 font-weight-bold">
@@ -151,7 +144,7 @@
 
         @else
             <tr class="ant-table-placeholder">
-                <td colspan="9" class="ant-table-cell text-center">
+                <td colspan="8" class="ant-table-cell text-center">
                     <div class="my-5">
                         <svg width="64" height="41" viewBox="0 0 64 41" xmlns="http://www.w3.org/2000/svg">
                             <g transform="translate(0 1)" fill="none" fill-rule="evenodd">

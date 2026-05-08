@@ -101,7 +101,6 @@
     <table class="table table-bordered" id="purchaseRequestTable" style="width:100%;">
         <thead>
             <tr>
-                <th style="min-width: 250px;">Category</th>
                 <th style="min-width: 450px;">Item</th>
                 <th style="min-width: 200px;">Item UOM</th>
                 <th class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">Pack Size (KG)</th>
@@ -293,16 +292,6 @@
    
         let row = `
                 <tr id="row_${index}">
-                    <td style="min-width: 250px;">
-                        <select name="category_id[]" id="category_id_${index}" onchange="filter_items(this.value, '${index}')" class="form-control category-select select2Dropdown" style="width: 100%;">
-                            <option value="">Select Category</option>
-                            @foreach ($categories ?? [] as $category)
-                                <option value="{{ $category->id }}">
-                                    {{ $category->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </td>
                     <td style="min-width: 450px;">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
@@ -448,7 +437,7 @@
         });
 
         if ($('#category_id_header').val()) {
-            $('#category_id_' + index).val($('#category_id_header').val()).trigger('change');
+            filter_items($('#category_id_header').val(), index);
         }
 
         toggleVisibility($('#category_id_header').val());

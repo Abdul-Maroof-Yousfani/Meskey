@@ -116,7 +116,6 @@
     <table class="table table-bordered" id="purchaseRequestTable" style="width:100%;">
                     <thead>
             <tr>
-                <th style="min-width: 250px;">Category</th>
                 <th style="min-width: 450px;">Item</th>
                 <th style="min-width: 200px;">Item UOM</th>
                 <th class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">Pack Size (KG)</th>
@@ -144,20 +143,6 @@
             @endphp
             <tr id="row_{{ $rowId }}" class="{{ $item->is_single_job_order ? 'jo-' . $item->JobOrder->pluck("job_order_id")->toArray()[0] : '' }}">
                 <input type="hidden" name="item_row_id[]" value="{{ $item->id }}">
-
-                <td style="min-width: 250px;">
-                    <select name="category_id[]" id="category_id_{{ $rowId }}" onchange="filter_items(this.value, '{{ $rowId }}')" class="form-control category-select select2Dropdown" style="width: 100%;" @disabled($isApproved)>
-                        <option value="">Select Category</option>
-                        @foreach ($categories ?? [] as $category)
-                            <option value="{{ $category->id }}" @selected($item->category_id == $category->id)>
-                                {{ $category->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @if($isApproved)
-                        <input type="hidden" name="category_id[]" value="{{ $item->category_id }}">
-                    @endif
-                </td>
 
                 <td style="min-width: 450px;">
 
@@ -512,16 +497,6 @@
 
         let index = `${purchaseRequestRowIndex++}0`;
         let row = `<tr id="row_${index}">
-                    <td style="min-width: 250px;">
-                        <select name="category_id[]" id="category_id_${index}" onchange="filter_items(this.value, '${index}')" class="form-control category-select select2Dropdown" style="width: 100%;">
-                            <option value="">Select Category</option>
-                            @foreach ($categories ?? [] as $category)
-                                <option value="{{ $category->id }}">
-                                    {{ $category->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </td>
                     <td style="min-width: 450px;">
                         <div class="loop-fields">
                             <div class="form-group mb-0">
@@ -677,7 +652,7 @@
         $('#size_id_' + index).select2();
 
         if ($('#category_id_header').val()) {
-            $('#category_id_' + index).val($('#category_id_header').val()).trigger('change');
+            filter_items($('#category_id_header').val(), index);
         }
 
         toggleVisibility($('#category_id_header').val());
@@ -694,7 +669,7 @@
 
     function filter_items(category_id, count, selectedItemId = null) {
         $.ajax({
-            url: '{{ route('get.items') }}',
+            url: '{{ route('store.purchase-request.get-products-json') }}',
             type: 'GET',
             data: {
                 category_id: category_id
