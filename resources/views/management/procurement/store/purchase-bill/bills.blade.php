@@ -97,22 +97,17 @@
                 id="discount_amount_{{ $key }}" class="form-control discount_amount" step="0.01"
                 min="0" readonly>
         </td>
-        @if($hasQc)
-            <td style="min-width: 200px;" class="deduction-col">
-                <input style="width: 100%" type="number" readonly name="deduction_per_piece[]" readonly
-                    id="deduction_per_piece_{{ $key }}" value="{{ $data->qc?->deduction_per_bag ?? 0 }}"
-                    class="form-control deduction_per_piece" step="0.01" min="0">
-            </td>
+        <td style="min-width: 200px;" class="deduction-col">
+            <input style="width: 100%" type="number" readonly name="deduction_per_piece[]" readonly
+                id="deduction_per_piece_{{ $key }}" value="{{ $data->qc?->deduction_per_bag ?? 0 }}"
+                class="form-control deduction_per_piece" step="0.01" min="0">
+        </td>
 
-            <td style="min-width: 200px;" class="deduction-col">
-                <input style="width: 100%" type="number" readonly name="deduction[]"
-                    value="{{ $deduction }}" id="deduction_{{ $key }}"
-                    class="form-control deduction" step="0.01" min="0" readonly>
-            </td>
-        @else
-            <input type="hidden" name="deduction_per_piece[]" value="0" class="deduction_per_piece">
-            <input type="hidden" name="deduction[]" value="0" class="deduction">
-        @endif
+        <td style="min-width: 200px;" class="deduction-col">
+            <input style="width: 100%" type="number" readonly name="deduction[]"
+                value="{{ $deduction }}" id="deduction_{{ $key }}"
+                class="form-control deduction" step="0.01" min="0" readonly>
+        </td>
 
         @php
             // $deduction = ($data->category_id == 38) ? (($data->qc?->deduction_per_bag ?? 0) * $remainingQty) : 0;
