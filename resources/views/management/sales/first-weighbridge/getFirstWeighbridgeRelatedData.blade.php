@@ -32,31 +32,37 @@
                     @foreach($DeliveryOrders as $index => $do)
                         <div class="tab-pane fade {{ $index === 0 ? 'show active' : '' }}" id="do-content-{{ $do->id }}" role="tabpanel" aria-labelledby="do-tab-{{ $do->id }}">
                             <div class="row">
-                                <div class="col-xs-12 col-sm-6 col-md-6">
+                                <div class="col-xs-12 col-sm-6 col-md-4">
                                     <div class="form-group">
                                         <label>Customer:</label>
                                         <input type="text" value="{{ $do->customer->name ?? 'N/A' }}" disabled class="form-control" readonly />
                                     </div>
                                 </div>
-                                <div class="col-xs-12 col-sm-6 col-md-6">
+                                <div class="col-xs-12 col-sm-6 col-md-4">
                                     <div class="form-group">
                                         <label>Commodity:</label>
                                         <input type="text" value="{{ $do->delivery_order_data->first()->item->name ?? 'N/A' }}" disabled class="form-control" readonly />
                                     </div>
                                 </div>
-                                <div class="col-xs-12 col-sm-6 col-md-6">
+                                <div class="col-xs-12 col-sm-6 col-md-4">
                                     <div class="form-group">
                                         <label>SO Qty:</label>
                                         <input type="text" value="{{ $do->delivery_order_data->first()->salesOrderData->qty ?? 'N/A' }}" disabled class="form-control" readonly />
                                     </div>
                                 </div>
-                                <div class="col-xs-12 col-sm-6 col-md-6">
+                                <div class="col-xs-12 col-sm-6 col-md-4">
                                     <div class="form-group">
                                         <label>DO Qty:</label>
                                         <input type="text" value="{{ $do->delivery_order_data->first()->qty ?? 'N/A' }}" disabled class="form-control" readonly />
                                     </div>
                                 </div>
-                                <div class="col-xs-12 col-sm-6 col-md-6">
+                                <div class="col-xs-12 col-sm-6 col-md-4">
+                                    <div class="form-group">
+                                        <label>DO Balance (kg):</label>
+                                        <input type="text" value="{{ number_format(get_second_weighbridge_balance_by_delivery_order_kg($do->id), 2) }}" disabled class="form-control" readonly />
+                                    </div>
+                                </div>
+                                <div class="col-xs-12 col-sm-6 col-md-4">
                                     <div class="form-group">
                                         <label>Arrival Location:</label>
                                         <input type="text" value="{{ get_location_name_by_id($do->location_id) }}" disabled class="form-control" readonly />
