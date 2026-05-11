@@ -341,7 +341,6 @@
 </form>
 
 <script>
-    $("#order_date").trigger("change");
     salesInquiryRowIndex = 1;
 
     function calculateForRatePerKg(mond) {
@@ -522,6 +521,7 @@
         populateFactories();
         populateSections();
         validateExpiry();
+        $("#order_date").trigger("change");
     });
 
     function calcBagTypes(el) {
