@@ -56,7 +56,7 @@ class PurchaseRequestData extends Model
             function ($model) {
                 if ($model->getOriginal('am_approval_status') === 'approved') {
                     throw \Illuminate\Validation\ValidationException::withMessages([
-                        'am_approval_status' => ['This item has already been approved and cannot be modified.'],
+                        'am_approval_status' => ['This item has already been approved and cannot modified.'],
                     ]);
                 }
 
