@@ -206,6 +206,10 @@
                     <div class="field-value">{{ $loadingSlip->commodity ?? '' }}</div>
                 </div>
                 <div class="field-group">
+                    <div class="field-label">Brand</div>
+                    <div class="field-value">{{ $loadingSlip->brand ?? $loadingSlip->loadingProgramItem->brand->name ?? '' }}</div>
+                </div>
+                <div class="field-group">
                     <div class="field-label">Second Weight</div>
                     <div class="field-value">{{ number_format($loadingSlip->secondWeighbridge->second_weight ?? 0, 0) }}</div>
                 </div>
