@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('delivery_challans_data', function (Blueprint $table) {
+        Schema::table('delivery_challan_data', function (Blueprint $table) {
             $table->string("bag_size")->nullable()->change();
         });
     }
