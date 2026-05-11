@@ -192,6 +192,17 @@
                 <div class="col-12 mt-3">
                     <h6 class="header-heading-sepration">Service Providers</h6>
                 </div>
+                @php
+                    $firstTicketData = $delivery_challan->delivery_challan_data->first();
+                    $hasTicketTransporter = false;
+                    if ($firstTicketData && $firstTicketData->ticket_id) {
+                        $ticket = \App\Models\Sales\LoadingProgramItem::find($firstTicketData->ticket_id);
+                        if ($ticket && $ticket->transporter_id) {
+                            $hasTicketTransporter = true;
+                        }
+                    }
+                    $transporterId = $delivery_challan->transporter;
+                @endphp
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Labour:</label>
@@ -205,17 +216,6 @@
                 <div class="col-md-6" id="transporter_col" @if(!$hasTicketTransporter && !$delivery_challan->transporter) style="display: none;" @endif>
                     <div class="form-group">
                         <label class="form-label">Transporter:</label>
-                        @php
-                            $transporterId = $delivery_challan->transporter;
-                            $firstTicketData = $delivery_challan->delivery_challan_data->first();
-                            $hasTicketTransporter = false;
-                            if ($firstTicketData && $firstTicketData->ticket_id) {
-                                $ticket = \App\Models\Sales\LoadingProgramItem::find($firstTicketData->ticket_id);
-                                if ($ticket && $ticket->transporter_id) {
-                                    $hasTicketTransporter = true;
-                                }
-                            }
-                        @endphp
                         <select id="transporter_display" class="form-control select2" onchange="$('#transporter').val(this.value)" {{ $hasTicketTransporter ? 'disabled' : '' }}>
                             <option value="">Select Transporter</option>
                             @foreach ($transporters ?? [] as $transporter)
