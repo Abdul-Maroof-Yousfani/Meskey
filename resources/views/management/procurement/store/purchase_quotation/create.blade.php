@@ -174,17 +174,20 @@
         }
     });
 
-    $(document).on('change', 'input[name*="delivery_date"]', function() {
+    $(document).on('change blur', 'input[name*="delivery_date"]', function() {
         let quotationDate = $('#purchase_date').val();
         let deliveryDate = $(this).val();
-        if (quotationDate && deliveryDate && deliveryDate < quotationDate) {
-            Swal.fire({
-                title: 'Invalid Date',
-                text: 'Delivery date cannot be before quotation date.',
-                icon: 'error',
-                confirmButtonText: 'OK'
-            });
-            $(this).val(quotationDate);
+        // Only validate if we have a full date (YYYY-MM-DD has 10 chars)
+        if (quotationDate && deliveryDate && deliveryDate.length === 10) {
+            if (deliveryDate < quotationDate) {
+                Swal.fire({
+                    title: 'Invalid Date',
+                    text: 'Delivery date cannot be before quotation date.',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+                $(this).val(quotationDate);
+            }
         }
     });
 
