@@ -350,7 +350,7 @@
 
                     <div class="col-md-3">
                         <div class="form-group">
-                            <label class="form-label">Rejection Return:</label>
+                            <label class="form-label">Rejected qty without deduction:</label>
                             <input type="text" name="rejection_return" id="rejection_return" onkeyup="calculateQcQty('return')"
                                 value="{{ $purchaseOrderReceivingData->qc->rejection_return ?? 0 }}"
                                 class="form-control" @readonly($type == "view")>
