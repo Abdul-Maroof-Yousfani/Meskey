@@ -481,4 +481,22 @@ class LoadingSlipController extends Controller
             ]
         ]);
     }
+
+    public function print(string $id)
+    {
+        $loadingSlip = LoadingSlip::with([
+            'loadingProgramItem.loadingProgram.deliveryOrder.customer',
+            'loadingProgramItem.loadingProgram.deliveryOrder.delivery_order_data.item',
+            'loadingProgramItem.loadingProgram.deliveryOrder.arrivalLocation',
+            'loadingProgramItem.loadingProgram.deliveryOrder.subArrivalLocation',
+            'loadingProgramItem.deliveryOrders.customer',
+            'loadingProgramItem.deliveryOrders.delivery_order_data.item',
+            'loadingProgramItem.deliveryOrders.delivery_order_data.salesOrderData',
+            'loadingProgramItem.saleOrders.customer',
+            'loadingProgramItem.saleOrders.sales_order_data.item',
+            'createdBy'
+        ])->findOrFail($id);
+
+        return view('management.sales.loading-slip.print', compact('loadingSlip'));
+    }
 }

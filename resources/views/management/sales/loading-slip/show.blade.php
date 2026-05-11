@@ -224,6 +224,12 @@
         </div> --}}
     </div>
 </div>
+<div>
+    <button type="button" class="btn btn-secondary" style="float: right; margin-bottom: 20px;" data-dismiss="modal">Close</button>
+    <a href="{{ route('sales.loading-slip.print', $loadingSlip->id) }}" target="_blank" class="btn btn-primary" style="float: right; margin-bottom: 20px; margin-right: 10px;">
+        <i class="ft-printer"></i> Print
+    </a>
+</div>
 <script>
     $(".select2").select2();
     </script>
