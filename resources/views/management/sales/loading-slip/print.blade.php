@@ -272,6 +272,10 @@
                     <div class="field-value">{{ $loadingSlip->customer ?? '' }}</div>
                 </div>
                 <div class="field-group">
+                    <div class="field-label">DO Qty</div>
+                    <div class="field-value">{{ number_format($loadingSlip->do_qty ?? 0, 0) }}</div>
+                </div>
+                <div class="field-group">
                     <div class="field-label">Station</div>
                     <div class="field-value"></div>
                 </div>
