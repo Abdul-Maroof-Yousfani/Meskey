@@ -163,7 +163,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-6" id="transporter_col">
                     <div class="form-group">
                         <label class="form-label">Transporter:</label>
                         <select id="transporter_display" class="form-control select2" onchange="$('#transporter').val(this.value)">
@@ -202,7 +202,7 @@
                         <small class="text-muted">(Rate * Total Bags)</small>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-4" id="transporter_amount_col">
                     <div class="form-group">
                         <label class="form-label">Transporter Amount:</label>
                         <input type="number" name="transporter_amount" onchange="" id="transporter_amount" class="form-control">
@@ -416,10 +416,14 @@
                         transSelect.val(response.transporter.id).trigger('change');
                         transSelect.prop('disabled', true);
                         $("#transporter").val(response.transporter.id);
+                        $("#transporter_col").show();
+                        $("#transporter_amount_col").show();
                     } else {
                         transSelect.val('').trigger('change');
                         transSelect.prop('disabled', false);
                         $("#transporter").val('');
+                        $("#transporter_col").hide();
+                        $("#transporter_amount_col").hide();
                     }
 
                     // Set Remarks
