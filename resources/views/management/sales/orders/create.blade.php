@@ -45,13 +45,13 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Entry Date:</label>
-                        <input type="date" name="order_date" id="order_date" onchange="getNumber(); validateExpiry()" class="form-control" value="{{ date('Y-m-d') }}" min="{{ date('Y-m-d') }}">
+                        <input type="date" name="order_date" id="order_date" class="form-control" value="{{ date('Y-m-d') }}">
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Delivery Date:</label>
-                        <input type="date" name="delivery_date" id="delivery_date" onchange="validateExpiry()" class="form-control" min="{{ date('Y-m-d') }}">
+                        <input type="date" name="delivery_date" id="delivery_date" class="form-control">
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -413,25 +413,14 @@
     // apply validate expiry date for order date and delivery date
     function validateExpiry() {
         const inquiryId = $('#inquiry_id').val();
-        
-        if (inquiryId) {
-            $('#order_date').removeAttr('min');
-            $('#delivery_date').removeAttr('min');
-            return;
-        } else {
-            $('#order_date').attr('min', "{{ date('Y-m-d') }}");
-            const orderDate = $('#order_date').val();
-            if (orderDate) {
-                $('#delivery_date').attr('min', orderDate);
-            } else {
-                $('#delivery_date').attr('min', "{{ date('Y-m-d') }}");
-            }
-        }
-
         const orderDate = $('#order_date').val();
         const deliveryDate = $('#delivery_date').val();
 
-        if (orderDate && deliveryDate) {
+        // Only validate if dates are fully formed (length 10)
+        const isOrderDateComplete = orderDate && orderDate.length === 10;
+        const isDeliveryDateComplete = deliveryDate && deliveryDate.length === 10;
+
+        if (isOrderDateComplete && isDeliveryDateComplete) {
             if (orderDate > deliveryDate) {
                 $('#delivery_date').val('');
                 Swal.fire({
@@ -443,6 +432,28 @@
             }
         }
     }
+
+    // Attach listeners with debouncing or on blur to prevent typing issues
+    $(document).on('change blur', '#order_date', function() {
+        const val = this.value;
+        if (val && val.length === 10) {
+            const year = parseInt(val.split('-')[0]);
+            if (year >= 2000) { // Throttle until a sensible year is entered
+                getNumber();
+                validateExpiry();
+            }
+        }
+    });
+
+    $(document).on('change blur', '#delivery_date', function() {
+        const val = this.value;
+        if (val && val.length === 10) {
+            const year = parseInt(val.split('-')[0]);
+            if (year >= 2000) { // Throttle until a sensible year is entered
+                validateExpiry();
+            }
+        }
+    });
     
     allLocations = @json(get_locations());
     factories = @json($arrivalLocations);
