@@ -19,6 +19,7 @@ Route::get('job-orders/{id}/print', [JobOrderController::class, 'printJobOrder']
 Route::post('get-job-orders', [JobOrderController::class, 'getList'])->name('get.job_orders');
 Route::get('get-product-specs/{productId}', [JobOrderController::class, 'getProductSpecs'])->name('get.product_specs');
 Route::get('get-export-order-details/{id}', [JobOrderController::class, 'getExportOrderDetails'])->name('get.export_order_details');
+Route::get('get-arrival-locations', [JobOrderController::class, 'getArrivalLocations'])->name('job-orders.get-arrival-locations');
 
 Route::resource("bag-requests", BagRequestController::class);
 Route::post("get/bag-request", [BagRequestController::class, "getList"])->name("get.bag-requests");
