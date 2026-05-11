@@ -247,6 +247,22 @@ class LoadingProgramController extends Controller
                     }
                     if (!empty($selected_do_ids)) {
                         $loadingProgramItem->deliveryOrders()->sync($selected_do_ids);
+                        
+                        // Enforce balance check
+                        $totalBalance = 0;
+                        foreach ($selected_do_ids as $do_id) {
+                            $lpBalance = getLoadingProgramBalance($do_id, $loadingProgramItem->id);
+                            $swbBalance = get_second_weighbridge_balance_by_delivery_order($do_id);
+                            $totalBalance += min($lpBalance, $swbBalance);
+                        }
+
+                        $qty = $itemData['qty'] ?? 0;
+                        if ($qty > $totalBalance) {
+                            DB::rollBack();
+                            return response()->json([
+                                "errors" => ["loading_program_items.$index.qty" => ["Suggested quantity ($qty) exceeds the total available balance ($totalBalance) of the selected delivery orders."]]
+                            ], 422);
+                        }
                     }
                 }
             }
@@ -616,6 +632,22 @@ class LoadingProgramController extends Controller
                     }
                     if (!empty($selected_do_ids)) {
                         $loadingProgramItem->deliveryOrders()->sync($selected_do_ids);
+
+                        // Enforce balance check
+                        $totalBalance = 0;
+                        foreach ($selected_do_ids as $do_id) {
+                            $lpBalance = getLoadingProgramBalance($do_id, $loadingProgramItem->id);
+                            $swbBalance = get_second_weighbridge_balance_by_delivery_order($do_id);
+                            $totalBalance += min($lpBalance, $swbBalance);
+                        }
+
+                        $qty = $itemData['qty'] ?? 0;
+                        if ($qty > $totalBalance) {
+                            DB::rollBack();
+                            return response()->json([
+                                "errors" => ["loading_program_items.$index.qty" => ["Suggested quantity ($qty) exceeds the total available balance ($totalBalance) of the selected delivery orders."]]
+                            ], 422);
+                        }
                     }
                 }
             }
@@ -674,6 +706,11 @@ class LoadingProgramController extends Controller
             ];
         }
         
+        $excludeItemIds = null;
+        if ($request->loading_program_id) {
+            $excludeItemIds = LoadingProgramItem::where('loading_program_id', $request->loading_program_id)->pluck('id')->toArray();
+        }
+
         $DeliveryOrders = DeliveryOrder::whereIn('so_id', $sale_order_ids)
             ->where('am_approval_status', 'approved')
             ->when($company_location_id, function($q) use ($company_location_id) {
@@ -683,12 +720,19 @@ class LoadingProgramController extends Controller
             ->withSum('delivery_order_data', 'qty')
             ->withSum('loadingProgramItems', 'qty')
             ->get()
-            /* ->reject(function($delivery_order) {
-                return getLoadingProgramBalance($delivery_order->id) <= 0 || get_second_weighbridge_balance_by_delivery_order($delivery_order->id) <= 0;
-            }) */
-            ->map(function($delivery_order) {
+            ->reject(function($delivery_order) use ($excludeItemIds) {
+                $lpBalance = getLoadingProgramBalance($delivery_order->id, $excludeItemIds);
+                $swbBalance = get_second_weighbridge_balance_by_delivery_order($delivery_order->id);
+                return $lpBalance <= 0 || $swbBalance <= 0;
+            })
+            ->map(function($delivery_order) use ($request) {
                 $location_name = getLocation($delivery_order->location_id)?->name ?? 'N/A';
                 $delivery_order->reference_no = $delivery_order->reference_no . " - " . $location_name;
+                
+                $lpBalance = getLoadingProgramBalance($delivery_order->id, $request->loading_program_item_id);
+                $swbBalance = get_second_weighbridge_balance_by_delivery_order($delivery_order->id);
+                $delivery_order->balance = min($lpBalance, $swbBalance);
+                
                 return $delivery_order;
             });
 
@@ -739,17 +783,22 @@ class LoadingProgramController extends Controller
             ->select('id', 'reference_no', 'customer_id', 'so_id', 'location_id', 'arrival_location_id', 'sub_arrival_location_id', 'am_approval_status')
             ->get();
 
-        /* $deliveryOrders = $deliveryOrders->reject(function($deliveryOrder){
-            $lpBalance = getLoadingProgramBalance($deliveryOrder->id);
+        $deliveryOrders = $deliveryOrders->reject(function($deliveryOrder) use ($request) {
+            $lpBalance = getLoadingProgramBalance($deliveryOrder->id, $request->loading_program_item_id);
             $swbBalance = get_second_weighbridge_balance_by_delivery_order($deliveryOrder->id);
             return $lpBalance <= 0 || $swbBalance <= 0;
-        }); */
+        });
 
-        $deliveryOrders = $deliveryOrders->map(function($deliveryOrder) {
+        $deliveryOrders = $deliveryOrders->map(function($deliveryOrder) use ($request) {
             $locationIds = explode(',', $deliveryOrder->location_id);
             $locationNames = \App\Models\Master\CompanyLocation::whereIn('id', $locationIds)->pluck('name')->toArray();
             $locationNameStr = implode(', ', $locationNames);
             $deliveryOrder->reference_no = $deliveryOrder->reference_no . " - " . ($locationNameStr ?: 'N/A');
+
+            $lpBalance = getLoadingProgramBalance($deliveryOrder->id, $request->loading_program_item_id);
+            $swbBalance = get_second_weighbridge_balance_by_delivery_order($deliveryOrder->id);
+            $deliveryOrder->balance = min($lpBalance, $swbBalance);
+
             return $deliveryOrder;
         });
         
@@ -820,21 +869,26 @@ class LoadingProgramController extends Controller
                 ->toArray();
         }
 
-        /* $deliveryOrders = $deliveryOrders->reject(function($deliveryOrder) use ($linkedDoIds) {
+        $deliveryOrders = $deliveryOrders->reject(function($deliveryOrder) use ($linkedDoIds, $request) {
             if (in_array($deliveryOrder->id, $linkedDoIds)) {
                 return false;
             }
 
-            $lpBalance = getLoadingProgramBalance($deliveryOrder->id);
+            $lpBalance = getLoadingProgramBalance($deliveryOrder->id, $request->loading_program_item_id);
             $swbBalance = get_second_weighbridge_balance_by_delivery_order($deliveryOrder->id);
             return $lpBalance <= 0 || $swbBalance <= 0;
-        }); */
+        });
 
-        $deliveryOrders = $deliveryOrders->map(function($deliveryOrder) {
+        $deliveryOrders = $deliveryOrders->map(function($deliveryOrder) use ($request) {
             $locationIds = explode(',', $deliveryOrder->location_id);
             $locationNames = \App\Models\Master\CompanyLocation::whereIn('id', $locationIds)->pluck('name')->toArray();
             $locationNameStr = implode(', ', $locationNames);
             $deliveryOrder->reference_no = $deliveryOrder->reference_no . " - " . ($locationNameStr ?: 'N/A');
+
+            $lpBalance = getLoadingProgramBalance($deliveryOrder->id, $request->loading_program_item_id);
+            $swbBalance = get_second_weighbridge_balance_by_delivery_order($deliveryOrder->id);
+            $deliveryOrder->balance = min($lpBalance, $swbBalance);
+
             return $deliveryOrder;
         });
 
@@ -915,12 +969,42 @@ class LoadingProgramController extends Controller
     public function fetchSaleOrdersByLocation(Request $request)
     {
         $location_id = $request->location_id;
-        
+        $excludeItemIds = null;
+        if ($request->loading_program_id) {
+            $excludeItemIds = LoadingProgramItem::where('loading_program_id', $request->loading_program_id)->pluck('id')->toArray();
+        }
+
         $SaleOrders = SalesOrder::where('am_approval_status', 'approved')
             ->whereHas('locations', function($q) use ($location_id) {
                 $q->where('location_id', $location_id);
             })
-            ->get();
+            ->get()
+            ->filter(function($so) use ($location_id, $excludeItemIds, $request) {
+                // Keep Type 11 orders as DOs are optional for them
+                if ($so->pay_type_id == 11) {
+                    return true;
+                }
+
+                // If editing, always keep Sale Orders that are already part of this Loading Program
+                if ($request->loading_program_id) {
+                    $isPart = LoadingProgramItem::where('loading_program_id', $request->loading_program_id)
+                        ->whereHas('saleOrders', function($q) use ($so) {
+                            $q->where('sales_order_id', $so->id);
+                        })->exists();
+                    if ($isPart) return true;
+                }
+
+                // For other orders, check if they have any approved DO with remaining balance
+                return DeliveryOrder::where('so_id', $so->id)
+                    ->where('am_approval_status', 'approved')
+                    ->where('location_id', (string)$location_id)
+                    ->get()
+                    ->some(function($do) use ($excludeItemIds) {
+                        return getLoadingProgramBalance($do->id, $excludeItemIds) > 0 && 
+                               get_second_weighbridge_balance_by_delivery_order($do->id) > 0;
+                    });
+            })
+            ->values();
 
         return response()->json([
             'success' => true,
