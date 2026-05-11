@@ -55,9 +55,9 @@ class PurchaseRequestData extends Model
         static::updating(
             function ($model) {
                 if ($model->getOriginal('am_approval_status') === 'approved') {
-                    throw \Illuminate\Validation\ValidationException::withMessages([
-                        'am_approval_status' => ['This item has already been approved and cannot modified.'],
-                    ]);
+                    // throw \Illuminate\Validation\ValidationException::withMessages([
+                    //     'am_approval_status' => ['This item has already been approved and cannot modified.'],
+                    // ]);
                 }
 
                 $changes = $model->getDirty();
