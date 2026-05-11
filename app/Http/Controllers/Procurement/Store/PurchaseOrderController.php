@@ -380,17 +380,17 @@ class PurchaseOrderController extends Controller
                     'remarks' => $request->remarks[$index] ?? null,
                 ]);
 
-                if ($request->purchase_request_data_id[$index] != 0) {
-                    $data = PurchaseRequestData::find($request->purchase_request_data_id[$index])->update([
-                        'po_status' => 2,
-                    ]);
-                }
+                // if ($request->purchase_request_data_id[$index] != 0) {
+                //     $data = PurchaseRequestData::find($request->purchase_request_data_id[$index])->update([
+                //         'po_status' => 2,
+                //     ]);
+                // }
 
-                if ($request->purchase_quotation_data_id[$index] != 0) {
-                    $data = PurchaseQuotationData::find($request->purchase_quotation_data_id[$index])->update([
-                        'quotation_status' => 2,
-                    ]);
-                }
+                // if ($request->purchase_quotation_data_id[$index] != 0) {
+                //     $data = PurchaseQuotationData::find($request->purchase_quotation_data_id[$index])->update([
+                //         'quotation_status' => 2,
+                //     ]);
+                // }
             }
 
             DB::commit();
