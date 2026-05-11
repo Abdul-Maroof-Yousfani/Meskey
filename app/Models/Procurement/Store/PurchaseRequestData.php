@@ -54,6 +54,12 @@ class PurchaseRequestData extends Model
     {
         static::updating(
             function ($model) {
+                $hasChanged = $model->isDirty();
+                if($hasChanged && ($model->am_approval_status == "approved" || $model->am_approval_status == "rejected")) {
+                    throw new \Exception("This item has already been approved or rejected.");
+                }
+
+
                 $changes = $model->getDirty();
                 $changedColumns = [];
 
