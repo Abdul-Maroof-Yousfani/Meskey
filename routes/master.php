@@ -92,6 +92,7 @@ Route::post('/get-customer', [CustomerController::class, 'getList'])->name('get.
 Route::resource('vendor', VendorsController::class);
 Route::post('/get-vendor', [VendorsController::class, 'getList'])->name('get.vendor');
 Route::get('/get-arrival-location/{companyLocationId}', [VendorsController::class, 'getArrivalLocations'])->name('vendor.get-arrival-locations');
+Route::get('/get-vendors-by-locations', [VendorsController::class, 'getVendorsByLocations'])->name('vendor.get-vendors-by-locations');
 
 Route::resource('division', DivisionController::class);
 Route::post('/get-division', [DivisionController::class, 'getList'])->name('get.division');

@@ -157,9 +157,9 @@
                     <div class="form-group">
                         <label class="form-label">Labour:</label>
                         <select name="labour" id="labour" onchange="" class="form-control select2">
-                            <option value="">Select Labours</option>
-                            <option value="1">Labour 1</option>
-                            <option value="2">Labour 2</option>
+                            @foreach ($labours ?? [] as $labour)
+                                <option value="{{ $labour->id }}">{{ $labour->name }}</option>
+                            @endforeach
                         </select>
                     </div>
                 </div>
@@ -438,6 +438,9 @@
                         arrival_names: Object.fromEntries(response.locations.arrival_locations.map(l => [l.id, l.text])),
                         section_names: Object.fromEntries(response.locations.sub_arrival_locations.map(l => [l.id, l.text])),
                     };
+
+                    // Fetch and populate labours based on factories
+                    updateLabourVendors(response.locations.arrival_location_ids);
 
                     // Trigger get_items to load the ticket item row
                     $.ajax({
@@ -1188,4 +1191,32 @@
         originalCalcAmount(el);
         calculateLabourAmount();
     };
+    function updateLabourVendors(arrivalLocationIds) {
+        if (!arrivalLocationIds || arrivalLocationIds.length === 0) {
+            $("#labour").empty().trigger('change.select2');
+            return;
+        }
+
+        $.ajax({
+            url: "{{ route('vendor.get-vendors-by-locations') }}",
+            method: "GET",
+            data: { arrival_location_ids: arrivalLocationIds },
+            dataType: "json",
+            success: function(vendors) {
+                const labourSelect = $("#labour");
+                const currentVal = labourSelect.val();
+                labourSelect.empty();
+                vendors.forEach(function(vendor) {
+                    labourSelect.append(`<option value="${vendor.id}" ${vendor.id == currentVal ? 'selected' : ''}>${vendor.name}</option>`);
+                });
+                if (vendors.length === 1 && !currentVal) {
+                    labourSelect.val(vendors[0].id).trigger('change');
+                }
+                labourSelect.trigger('change.select2');
+            },
+            error: function(error) {
+                console.error('Error fetching vendors by locations:', error);
+            }
+        });
+    }
 </script>

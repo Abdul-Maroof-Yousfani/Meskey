@@ -278,4 +278,30 @@ class VendorsController extends Controller
         $locations = \App\Models\Master\ArrivalLocation::where('company_location_id', $companyLocationId)->get();
         return response()->json($locations);
     }
+    public function getVendorsByLocations(Request $request)
+    {
+        $arrivalLocationIds = $request->arrival_location_ids;
+        if (empty($arrivalLocationIds)) {
+            return response()->json(Vendor::all(['id', 'name']));
+        }
+
+        if (!is_array($arrivalLocationIds)) {
+            $arrivalLocationIds = [$arrivalLocationIds];
+        }
+
+        $vendors = Vendor::where(function($query) use ($arrivalLocationIds) {
+            foreach ($arrivalLocationIds as $id) {
+                if ($id) {
+                    $query->orWhereJsonContains('arrival_location_ids', (string)$id)
+                          ->orWhereJsonContains('arrival_location_ids', (int)$id);
+                }
+            }
+        })->get(['id', 'name']);
+
+        if ($vendors->isEmpty()) {
+            $vendors = Vendor::all(['id', 'name']);
+        }
+
+        return response()->json($vendors);
+    }
 }

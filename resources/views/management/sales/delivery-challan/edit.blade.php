@@ -207,9 +207,12 @@
                     <div class="form-group">
                         <label class="form-label">Labour:</label>
                         <select name="labour" id="labour" class="form-control select2">
-                            <option value="">Select Labours</option>
-                            <option value="1" @selected($delivery_challan->labour == 1)>Labour 1</option>
-                            <option value="2" @selected($delivery_challan->labour == 2)>Labour 2</option>
+                            @if($delivery_challan->labour)
+                                @php $v = \App\Models\Master\Vendor::find($delivery_challan->labour); @endphp
+                                @if($v)
+                                    <option value="{{ $v->id }}" selected>{{ $v->name }}</option>
+                                @endif
+                            @endif
                         </select>
                     </div>
                 </div>
@@ -427,6 +430,12 @@
             loadAdditionalTickets(Array.isArray(selectedDos) ? selectedDos : [selectedDos]);
         }
 
+        // Initialize labour population based on existing arrival locations
+        const arrivalIds = $("#arrival_location_csv").val();
+        if (arrivalIds) {
+            updateLabourVendors(arrivalIds.split(','));
+        }
+
         // Calculate labour amount on load
         calculateLabourAmount();
     });
@@ -530,6 +539,9 @@
                     });
                     arrSelect.trigger('change');
                     $("#arrival_location_csv").val(response.locations.arrival_location_ids.join(','));
+
+                    // Fetch and populate labours based on factories
+                    updateLabourVendors(response.locations.arrival_location_ids);
 
                     // Set Gala
                     const secSelect = $("#storages");
@@ -799,4 +811,32 @@
         originalCalcAmount(el);
         calculateLabourAmount();
     };
+    function updateLabourVendors(arrivalLocationIds) {
+        if (!arrivalLocationIds || arrivalLocationIds.length === 0) {
+            $("#labour").empty().trigger('change.select2');
+            return;
+        }
+
+        $.ajax({
+            url: "{{ route('vendor.get-vendors-by-locations') }}",
+            method: "GET",
+            data: { arrival_location_ids: arrivalLocationIds },
+            dataType: "json",
+            success: function(vendors) {
+                const labourSelect = $("#labour");
+                const currentVal = labourSelect.val();
+                labourSelect.empty();
+                vendors.forEach(function(vendor) {
+                    labourSelect.append(`<option value="${vendor.id}" ${vendor.id == currentVal ? 'selected' : ''}>${vendor.name}</option>`);
+                });
+                if (vendors.length === 1 && !currentVal) {
+                    labourSelect.val(vendors[0].id).trigger('change');
+                }
+                labourSelect.trigger('change.select2');
+            },
+            error: function(error) {
+                console.error('Error fetching vendors by locations:', error);
+            }
+        });
+    }
 </script>
