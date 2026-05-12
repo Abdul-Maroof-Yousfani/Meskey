@@ -657,7 +657,7 @@ class PurchaseRequestController extends Controller
                 // Also clean up job order associations only for the deleted items
                 $actuallyDeletedIds = PurchaseRequestData::whereIn('id', $itemsToDelete)
                     ->whereNotIn('am_approval_status', ['approved', 'rejected'])
-                    ->withTrashed() // If using SoftDeletes, or just use the same logic
+                    // ->withTrashed() // If using SoftDeletes, or just use the same logic
                     ->pluck('id');
                 
                 PurchaseAgainstJobOrder::whereIn('purchase_request_data_id', $itemsToDelete)
