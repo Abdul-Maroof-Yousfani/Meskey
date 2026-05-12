@@ -446,12 +446,12 @@ class PurchaseRequestController extends Controller
         try {
             $purchaseRequest = PurchaseRequest::findOrFail($id);
 
-            if($purchaseRequest->am_approval_status == "approved" || $purchaseRequest->am_approval_status == "rejected") {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Purchase request is already approved or rejected.',
-                ], 422);
-            }
+            // if($purchaseRequest->am_approval_status == "approved" || $purchaseRequest->am_approval_status == "rejected") {
+            //     return response()->json([
+            //         'success' => false,
+            //         'message' => 'Purchase request is already approved or rejected.',
+            //     ], 422);
+            // }
 
             $updateData = [
                 'purchase_date' => $request->purchase_date,
