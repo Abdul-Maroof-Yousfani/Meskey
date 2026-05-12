@@ -54,9 +54,12 @@ class PurchaseRequestData extends Model
     {
         static::updating(
             function ($model) {
-                if ($model->getOriginal('am_approval_status') === 'approved') {
+                if (
+                    $model->am_approval_status === 'approved' &&
+                    $model->isDirty()
+                ) {
                     return response()->json([
-                        'success' => 'This item has already been approved and cannot modified.',
+                        'success' => 'This item has already been approved and cannot be modified.',
                         'data' => $model,
                     ], 403);
                 }
