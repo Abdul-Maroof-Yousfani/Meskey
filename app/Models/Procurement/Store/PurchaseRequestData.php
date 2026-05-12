@@ -54,7 +54,7 @@ class PurchaseRequestData extends Model
     {
         static::updating(
             function ($model) {
-                dd($model->isDirty());
+                return $model->isDirty();
                 if (
                     $model->am_approval_status === 'approved' &&
                     $model->isDirty()
