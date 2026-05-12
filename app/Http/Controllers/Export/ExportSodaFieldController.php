@@ -87,6 +87,9 @@ class ExportSodaFieldController extends Controller
                 'additional_info'
             ]);
 
+            $data['shipment_date_from'] = $request->shipment_date_from ?: null;
+            $data['shipment_date_to'] = $request->shipment_date_to ?: null;
+
             $data['reference'] = generateUniversalUniqueNo('export_soda_fields', [
                 'prefix' => 'SAUDA',
                 'column' => 'reference',
@@ -195,6 +198,9 @@ class ExportSodaFieldController extends Controller
                 'additional_info'
             ]);
 
+            $data['shipment_date_from'] = $request->shipment_date_from ?: null;
+            $data['shipment_date_to'] = $request->shipment_date_to ?: null;
+
             $exportSodaField->update($data);
 
             if ($request->has('packing_items')) {
@@ -251,5 +257,26 @@ class ExportSodaFieldController extends Controller
                 'error' => $e->getMessage(),
             ], 500);
         }
+    }
+
+    public function updateStatus(Request $request, $id)
+    {
+        $exportSodaField = ExportSodaField::findOrFail($id);
+
+        if (auth()->user()->id != $exportSodaField->created_by) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only the creator can perform this action.',
+            ], 403);
+        }
+
+        $exportSodaField->update(['status' => $request->status]);
+
+        $message = $request->status == 'rejected' ? 'Sauda rejected successfully' : 'Sauda reverted to approved';
+
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+        ], 200);
     }
 }

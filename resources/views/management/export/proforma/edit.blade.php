@@ -16,6 +16,8 @@
         padding-bottom: 15px !important;
     }
 </style>
+<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.js"></script>
 
 <form action="{{ route('proforma.update', $proforma->id) }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
@@ -969,5 +971,12 @@
 
     }
 
-    $(document).ready(initializeProformaEditForm);
+    // Robust initialization for AJAX-loaded modals
+    if (document.readyState === 'complete') {
+        setTimeout(initializeProformaEditForm, 200);
+    } else {
+        $(window).on('load', function() {
+            setTimeout(initializeProformaEditForm, 200);
+        });
+    }
 </script>

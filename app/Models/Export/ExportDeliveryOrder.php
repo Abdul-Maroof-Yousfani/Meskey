@@ -93,6 +93,11 @@ class ExportDeliveryOrder extends DeliveryOrder
         return $this->belongsTo(\App\Models\Master\Transporter::class, 'transporter_id');
     }
 
+    public function clearingAgent()
+    {
+        return $this->belongsTo(\App\Models\Master\ClearingAgent::class, 'c_agent');
+    }
+
     /**
      * Override createApprovalRows from HasApproval trait to handle duplicates safely
      */

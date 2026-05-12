@@ -47,11 +47,13 @@
                                             <th width="5%">S no.</th>
                                             <th width="15%">Reference#</th>
                                             <th width="15%">Buyer</th>
-                                            <th width="15%">Packing</th>
-                                            <th width="15%">Commodity</th>
+                                            <th width="10%">Packing</th>
+                                            <th width="10%">Commodity</th>
+                                            <th width="10%">Shipment</th>
                                             <th width="10%">Price</th>
                                             <th width="10%">Quantity</th>
-                                            <th width="15%">Action</th>
+                                            <th width="10%">Status</th>
+                                            <th width="13%">Action</th>
                                         </tr>
                                     </thead>
 

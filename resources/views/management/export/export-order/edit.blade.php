@@ -35,8 +35,9 @@
                             <select name="quotation_id" class="form-control select2">
                                 <option value="">Select Quotation</option>
                                 @foreach ($quotations as $quotation)
-                                    <option value="{{ $quotation->id }}" {{ old('quotation_id', $exportOrder->quotation_id) == $quotation->id ? 'selected' : '' }}>{{ $quotation->reference ?? ('#' . $quotation->id) }} -
-                                        {{ $quotation->product->name ?? '' }}</option>
+                                    <option value="{{ $quotation->id }}" {{ old('quotation_id', $exportOrder->quotation_id) == $quotation->id ? 'selected' : '' }}>
+                                        {{ $quotation->id }} - {{ $quotation->buyer->name ?? 'N/A' }} ({{ $quotation->product->name ?? '' }})
+                                    </option>
                                 @endforeach
                             </select>
                         </div>
@@ -395,20 +396,6 @@
                     class="form-control">{{ old('shipping_instructions', $exportOrder->shipping_instructions) }}</textarea>
             </div>
 
-            {{-- broker --}}
-            <div class="col-md-12 mb-3">
-                <div class="form-group">
-                    <label>Broker:</label>
-                    <select name="broker_id" class="form-control select2">
-                        <option value="">Select Broker</option>
-                        @foreach ($brokers as $broker)
-                            <option value="{{ $broker->id }}" {{ old('broker_id', $exportOrder->broker_id) == $broker->id ? 'selected' : '' }}>
-                                {{ $broker->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
 
             {{-- doucments to be povided --}}
             <div class="col-md-12 mb-3">
@@ -447,11 +434,23 @@
                     </div>
                 </div>
             </div>
-            {{-- Commission Section --}}
             <div class="mt-4">
                 <h6 class="header-heading-sepration">Commission</h6>
                 <div class="row">
                     <div class="col-md-4">
+                        <div class="form-group">
+                            <label>Broker:</label>
+                            <select name="broker_id" class="form-control select2">
+                                <option value="">Select Broker</option>
+                                @foreach ($brokers as $broker)
+                                    <option value="{{ $broker->id }}" {{ old('broker_id', $exportOrder->broker_id) == $broker->id ? 'selected' : '' }}>
+                                        {{ $broker->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
                         <div class="form-group">
                             <label>Commission (%):</label>
                             <input type="number" id="commission_percentage" name="commission_percentage"
@@ -459,7 +458,7 @@
                                 value="{{ old('commission_percentage', $exportOrder->commission_percentage) }}">
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-2">
                         <div class="form-group">
                             <label>Amt/Ton:</label>
                             <input type="number" id="commission_amount_per_ton" name="commission_amount_per_ton"
@@ -467,7 +466,7 @@
                                 value="{{ old('commission_amount_per_ton', $exportOrder->commission_amount_per_ton) }}">
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="form-group">
                             <label>Total Commission:</label>
                             <input type="number" id="commission" name="commission" class="form-control" step="0.01"
@@ -711,10 +710,10 @@
                                         <div class="form-group">
                                             <label>Packing Type:</label>
                                             <select name="packing_items[{{ $pIdx }}][bag_packing_id]"
-                                                class="form-control select2" required>
+                                                class="form-control select2 bag-packing-id" required>
                                                 <option value="">Select Packing</option>
                                                 @foreach ($bagPackings as $packing)
-                                                    <option value="{{ $packing->id }}" {{ $item->bag_packing_id == $packing->id ? 'selected' : '' }}>{{ $packing->name }}</option>
+                                                    <option value="{{ $packing->id }}" {{ $item->bag_packing_id == $packing->id ? 'selected' : '' }} data-size="{{ preg_replace('/[^0-9.]/', '', $packing->name) }}">{{ $packing->name }}</option>
                                                 @endforeach
                                             </select>
                                         </div>
@@ -793,7 +792,7 @@
                                         <div class="form-group">
                                             <label>Extra Bags %:</label>
                                             <input type="number" name="packing_items[{{ $pIdx }}][extra_bags_percentage]"
-                                                class="form-control extra-bags-percentage" value="{{ $item->extra_bags_percentage ?? 0 }}" step="0.01" readonly>
+                                                class="form-control extra-bags-percentage" value="{{ $item->extra_bags_percentage ?? 0 }}" step="0.01">
                                         </div>
                                     </div>
                                     <div class="col-md-2">
@@ -807,7 +806,7 @@
                                         <div class="form-group">
                                             <label>Empty Bags %:</label>
                                             <input type="number" name="packing_items[{{ $pIdx }}][empty_bags_percentage]"
-                                                class="form-control empty-bags-percentage" value="{{ $item->empty_bags_percentage ?? 0 }}" step="0.01" readonly>
+                                                class="form-control empty-bags-percentage" value="{{ $item->empty_bags_percentage ?? 0 }}" step="0.01">
                                         </div>
                                     </div>
                                     <div class="col-md-2">
@@ -964,7 +963,7 @@
                                                             <td><input type="number"
                                                                     name="packing_items[{{ $pIdx }}][sub_items][{{ $sIdx }}][empty_bags_percentage]"
                                                                     class="form-control form-control-sm sub-empty-bags-percentage"
-                                                                    value="{{ $sub->empty_bags_percentage ?? 0 }}" readonly step="0.01"></td>
+                                                                    value="{{ $sub->empty_bags_percentage ?? 0 }}" step="0.01"></td>
                                                             <td><input type="number"
                                                                     name="packing_items[{{ $pIdx }}][sub_items][{{ $sIdx }}][extra_bags]"
                                                                     class="form-control form-control-sm sub-extra-bags"
@@ -972,7 +971,7 @@
                                                             <td><input type="number"
                                                                     name="packing_items[{{ $pIdx }}][sub_items][{{ $sIdx }}][extra_bags_percentage]"
                                                                     class="form-control form-control-sm sub-extra-bags-percentage"
-                                                                    value="{{ $sub->extra_bags_percentage ?? 0 }}" readonly step="0.01"></td>
+                                                                    value="{{ $sub->extra_bags_percentage ?? 0 }}" step="0.01"></td>
                                                             <td><input type="number"
                                                                     name="packing_items[{{ $pIdx }}][sub_items][{{ $sIdx }}][empty_bag_weight]"
                                                                     class="form-control form-control-sm sub-empty-bag-weight"
@@ -1074,6 +1073,10 @@
         }
         $form.data('eo-edit-initialized', true);
 
+        $form.on('submit', function() {
+            $('select[name="buyer_id"], select[name="product_id"]').prop('disabled', false);
+        });
+
         const defaultCompanyId = '{{ auth()->user()->current_company_id }}';
         const savedBeneficiaryBankId = '{{ $exportOrder->customer_bank_type && $exportOrder->customer_bank_id ? $exportOrder->customer_bank_type . "_" . $exportOrder->customer_bank_id : "" }}';
         const savedCorrespondentBankId = '{{ old('correspondent_bank_id', $exportOrder->correspondent_bank_id) }}';
@@ -1099,6 +1102,11 @@
 
         // Initialize Select2
         $('.select2').select2({ width: '100%' });
+
+        // Lock fields if quotation is already selected (on load)
+        if ($('select[name="quotation_id"]').val()) {
+            $('select[name="buyer_id"], select[name="product_id"]').prop('disabled', true).addClass('readonly-select');
+        }
 
         // Product selection
         $('#productSelect').on('change', function () {
@@ -1146,8 +1154,8 @@
         }
 
         function clearFormFields() {
-            $('select[name="buyer_id"]').val('').trigger('change');
-            $('#productSelect').val('').trigger('change');
+            $('select[name="buyer_id"]').val('').trigger('change').prop('disabled', false).removeClass('readonly-select');
+            $('#productSelect').val('').trigger('change').prop('disabled', false).removeClass('readonly-select');
             $('#visualName').val('');
             $('#companyId').val(defaultCompanyId);
             loadCompanyBanks(defaultCompanyId);
@@ -1239,7 +1247,7 @@
                     row.find('select[name*="[fumigation_company_id]"]').val(item.fumigation_company_id).trigger('change.select2');
                 }
 
-                row.find('input.metric-tons, input.bag-size, input.no_of_bags').trigger('input');
+                row.find('input.metric-tons, input.bag-size, input.no_of_bags, .extra-bags, .empty-bags, .extra-bags-percentage, .empty-bags-percentage').trigger('input');
             });
 
             reindexAll();
@@ -1249,8 +1257,8 @@
             // Basic fields
             $('#companyId').val(data.company_id || defaultCompanyId);
             loadCompanyBanks($('#companyId').val(), '', '');
-            if (data.buyer_id) $('select[name="buyer_id"]').val(data.buyer_id).trigger('change');
-            if (data.product_id) $('select[name="product_id"]').val(data.product_id).trigger('change');
+            if (data.buyer_id) $('select[name="buyer_id"]').val(data.buyer_id).trigger('change').prop('disabled', true).addClass('readonly-select');
+            if (data.product_id) $('select[name="product_id"]').val(data.product_id).trigger('change').prop('disabled', true).addClass('readonly-select');
             if (data.visual_name) $('input[name="visual_name"], #visualName').val(data.visual_name);
 
             // Dates
@@ -1372,9 +1380,9 @@
                     <td><input type="number" name="packing_items[${parentIndex}][sub_items][${subIndex}][no_of_primary_bags]" class="form-control form-control-sm sub-no-of-primary-bags" value="0"></td>
                     <td><input type="number" name="packing_items[${parentIndex}][sub_items][${subIndex}][no_of_bags]" class="form-control form-control-sm sub-no-of-bags" value="0" readonly></td>
                     <td><input type="number" name="packing_items[${parentIndex}][sub_items][${subIndex}][empty_bags]" class="form-control form-control-sm sub-empty-bags" value="0"></td>
-                    <td><input type="number" name="packing_items[${parentIndex}][sub_items][${subIndex}][empty_bags_percentage]" class="form-control form-control-sm sub-empty-bags-percentage" value="0" readonly step="0.01"></td>
+                    <td><input type="number" name="packing_items[${parentIndex}][sub_items][${subIndex}][empty_bags_percentage]" class="form-control form-control-sm sub-empty-bags-percentage" value="0" step="0.01"></td>
                     <td><input type="number" name="packing_items[${parentIndex}][sub_items][${subIndex}][extra_bags]" class="form-control form-control-sm sub-extra-bags" value="0"></td>
-                    <td><input type="number" name="packing_items[${parentIndex}][sub_items][${subIndex}][extra_bags_percentage]" class="form-control form-control-sm sub-extra-bags-percentage" value="0" readonly step="0.01"></td>
+                    <td><input type="number" name="packing_items[${parentIndex}][sub_items][${subIndex}][extra_bags_percentage]" class="form-control form-control-sm sub-extra-bags-percentage" value="0" step="0.01"></td>
                     <td><input type="number" name="packing_items[${parentIndex}][sub_items][${subIndex}][empty_bag_weight]" class="form-control form-control-sm sub-empty-bag-weight" value="0" min="0" step="0.01"></td>
                     <td><input type="number" name="packing_items[${parentIndex}][sub_items][${subIndex}][total_bags]" class="form-control form-control-sm sub-total-bags" value="0" readonly></td>
                     <td>
@@ -1422,21 +1430,28 @@
         });
 
         // Calculations (JobOrder Style)
-        $(document).off('input', '.no_of_bags, .bag-size, .metric-tons, .extra-bags, .empty-bags, .rate-per-ton, .stuffing, .containers').on('input', '.no_of_bags, .bag-size, .metric-tons, .extra-bags, .empty-bags, .rate-per-ton, .stuffing, .containers', function () {
+        $(document).off('input', '.no_of_bags, .bag-size, .metric-tons, .extra-bags, .extra-bags-percentage, .empty-bags, .empty-bags-percentage, .rate-per-ton, .stuffing, .containers').on('input', '.no_of_bags, .bag-size, .metric-tons, .extra-bags, .extra-bags-percentage, .empty-bags, .empty-bags-percentage, .rate-per-ton, .stuffing, .containers', function() {
             let sourceField = null;
             if ($(this).hasClass('no_of_bags')) sourceField = 'no_of_bags';
             if ($(this).hasClass('bag-size')) sourceField = 'bag-size';
             if ($(this).hasClass('metric-tons')) sourceField = 'metric-tons';
             if ($(this).hasClass('stuffing')) sourceField = 'stuffing';
             if ($(this).hasClass('containers')) sourceField = 'containers';
-
+            if ($(this).hasClass('empty-bags-percentage')) sourceField = 'empty-bags-percentage';
+            if ($(this).hasClass('extra-bags-percentage')) sourceField = 'extra-bags-percentage';
+            
             calculateMainRow($(this).closest('.packing-item'), sourceField);
         });
 
-        $(document).off('input', '.sub-no-of-primary-bags, .sub-no-of-bags, .sub-empty-bags, .sub-extra-bags').on('input', '.sub-no-of-primary-bags, .sub-no-of-bags, .sub-empty-bags, .sub-extra-bags', function () {
+        $(document).off('input', '.sub-no-of-primary-bags, .sub-no-of-bags, .sub-empty-bags, .sub-empty-bags-percentage, .sub-extra-bags, .sub-extra-bags-percentage').on('input', '.sub-no-of-primary-bags, .sub-no-of-bags, .sub-empty-bags, .sub-empty-bags-percentage, .sub-extra-bags, .sub-extra-bags-percentage', function() {
             const subRow = $(this).closest('tr');
             const mainRow = $(this).closest('.packing-item');
-            calculateSubItemNoOfBags(subRow, mainRow);
+            let source = 'manual';
+            if ($(this).hasClass('sub-empty-bags-percentage')) source = 'empty-percentage';
+            if ($(this).hasClass('sub-extra-bags-percentage')) source = 'extra-percentage';
+            if ($(this).hasClass('sub-empty-bags')) source = 'empty-bags';
+            if ($(this).hasClass('sub-extra-bags')) source = 'extra-bags';
+            calculateSubItemNoOfBags(subRow, mainRow, source);
         });
 
         $(document).off('change', '.sub-bag-size-id').on('change', '.sub-bag-size-id', function () {
@@ -1452,27 +1467,41 @@
             });
         });
 
-        function calculateSubItemNoOfBags(subRow, mainRow) {
+        function calculateSubItemNoOfBags(subRow, mainRow, source = 'manual') {
             const noOfBagsMain = parseInt(mainRow.find('.no_of_bags').val()) || 0;
             const noOfPrimaryBags = parseInt(subRow.find('.sub-no-of-primary-bags').val()) || 0;
-            const bagSize = parseFloat(subRow.find('.sub-bag-size-id option:selected').data('size')) || 0;
-
+            
             if (noOfPrimaryBags > 0) {
                 // If main no_of_bags exists, suggest a breakdown
                 if (noOfBagsMain > 0) {
                     const suggestedBags = Math.floor(noOfBagsMain / noOfPrimaryBags);
                     subRow.find('.sub-no-of-bags').val(suggestedBags);
                 }
-
+                
                 const noOfBags = parseInt(subRow.find('.sub-no-of-bags').val()) || 0;
-                const emptyBags = parseInt(subRow.find('.sub-empty-bags').val()) || 0;
-                const extraBags = parseInt(subRow.find('.sub-extra-bags').val()) || 0;
-                subRow.find('.sub-empty-bags-percentage').val(noOfBags > 0 ? ((emptyBags / noOfBags) * 100).toFixed(2) : 0);
-                subRow.find('.sub-extra-bags-percentage').val(noOfBags > 0 ? ((extraBags / noOfBags) * 100).toFixed(2) : 0);
+                let emptyBags = parseInt(subRow.find('.sub-empty-bags').val()) || 0;
+                let emptyPct = parseFloat(subRow.find('.sub-empty-bags-percentage').val()) || 0;
+                let extraBags = parseInt(subRow.find('.sub-extra-bags').val()) || 0;
+                let extraPct = parseFloat(subRow.find('.sub-extra-bags-percentage').val()) || 0;
+
+                if (source === 'empty-percentage') {
+                    emptyBags = Math.round((noOfBags * emptyPct) / 100);
+                    subRow.find('.sub-empty-bags').val(emptyBags);
+                } else if (source === 'empty-bags' || source === 'manual') {
+                    emptyPct = noOfBags > 0 ? ((emptyBags / noOfBags) * 100).toFixed(2) : 0;
+                    subRow.find('.sub-empty-bags-percentage').val(emptyPct);
+                }
+
+                if (source === 'extra-percentage') {
+                    extraBags = Math.round((noOfBags * extraPct) / 100);
+                    subRow.find('.sub-extra-bags').val(extraBags);
+                } else if (source === 'extra-bags' || source === 'manual') {
+                    extraPct = noOfBags > 0 ? ((extraBags / noOfBags) * 100).toFixed(2) : 0;
+                    subRow.find('.sub-extra-bags-percentage').val(extraPct);
+                }
+
                 subRow.find('.sub-total-bags').val(noOfBags + emptyBags + extraBags);
             }
-
-            // NO sumUpSubItemsToMain(mainRow); // One-way flow: Main -> Sub
         }
 
         // Removed sumUpSubItemsToMain logic to avoid circular dependency
@@ -1515,11 +1544,39 @@
                 }
             }
 
-            const extraBags = parseInt(row.find('.extra-bags').val()) || 0;
-            const emptyBags = parseInt(row.find('.empty-bags').val()) || 0;
+            let extraBags = parseInt(row.find('.extra-bags').val()) || 0;
+            let extraPct = parseFloat(row.find('.extra-bags-percentage').val()) || 0;
+            let emptyBags = parseInt(row.find('.empty-bags').val()) || 0;
+            let emptyPct = parseFloat(row.find('.empty-bags-percentage').val()) || 0;
+
+            if (sourceField === 'empty-bags-percentage') {
+                emptyBags = Math.round((noOfBags * emptyPct) / 100);
+                row.find('.empty-bags').val(emptyBags);
+            } else {
+                emptyPct = noOfBags > 0 ? ((emptyBags / noOfBags) * 100).toFixed(2) : 0;
+                row.find('.empty-bags-percentage').val(emptyPct);
+            }
+
+            if (sourceField === 'extra-bags-percentage') {
+                extraBags = Math.round((noOfBags * extraPct) / 100);
+                row.find('.extra-bags').val(extraBags);
+            } else {
+                extraPct = noOfBags > 0 ? ((extraBags / noOfBags) * 100).toFixed(2) : 0;
+                row.find('.extra-bags-percentage').val(extraPct);
+            }
+
+            if (sourceField === 'bag-size') {
+                const size = parseFloat(row.find('.bag-size').val()) || 0;
+                const packingSelect = row.find('.bag-packing-id');
+                packingSelect.find('option').each(function() {
+                    if (parseFloat($(this).data('size')) === size) {
+                        packingSelect.val($(this).val()).trigger('change.select2');
+                        return false;
+                    }
+                });
+            }
+
             const totalBags = noOfBags + extraBags + emptyBags;
-            row.find('.extra-bags-percentage').val(noOfBags > 0 ? ((extraBags / noOfBags) * 100).toFixed(2) : 0);
-            row.find('.empty-bags-percentage').val(noOfBags > 0 ? ((emptyBags / noOfBags) * 100).toFixed(2) : 0);
 
             row.find('.total-bags').val(totalBags);
             row.find('.total-kgs').val((metricTons * 1000).toFixed(2));

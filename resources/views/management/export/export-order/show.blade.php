@@ -35,7 +35,7 @@
                     <div class="form-group">
                         <label>Quotation#:</label>
                         <input type="text" class="form-control"
-                            value="{{ $exportOrder->quotation ? ($exportOrder->quotation->reference ?? '#' . $exportOrder->quotation_id) . ' - ' . ($exportOrder->quotation->product->name ?? '') : '-' }}"
+                            value="{{ $exportOrder->quotation ? $exportOrder->quotation_id . ' - ' . ($exportOrder->quotation->buyer->name ?? 'N/A') . ' (' . ($exportOrder->quotation->product->name ?? '') . ')' : '-' }}"
                             readonly>
                     </div>
                 </div>

@@ -213,12 +213,12 @@
                             </select>
                         </td>
                     </tr>
-                    <tr>
+                    <!-- <tr>
                         <td style="font-weight:bold;vertical-align:middle;">RATE</td>
                         <td>
                             <input type="text" name="currency_rate" id="currencyRate" class="form-control" readonly>
                         </td>
-                    </tr>
+                    </tr> -->
                 </table>
             </div>
         </div>
@@ -560,7 +560,7 @@ $(document).ready(function() {
                 
                 // Basic Info
                 $('#buyerSelect').val(data.buyer_id).trigger('change.select2');
-                $('#productSelect').val(data.product_id).trigger('change');
+                $('#productSelect').val(data.product_id).trigger('change').prop('disabled', true);
                 
                 if (data.buyer) {
                     $('#buyer_phone').val(data.buyer.phone || data.buyer.owner_mobile_no || '');
@@ -589,7 +589,7 @@ $(document).ready(function() {
             selectedSaudaQty = 0;
             // Clear everything on deselection
             $('#buyerSelect').val('').trigger('change.select2');
-            $('#productSelect').val('').trigger('change');
+            $('#productSelect').val('').trigger('change').prop('disabled', false);
             $('#buyer_phone, #buyer_email, #buyer_address').val('');
             $('select[name="incoterm_id"]').val('').trigger('change');
             $('select[name="mode_of_term_id"]').val('').trigger('change');
@@ -606,6 +606,10 @@ $(document).ready(function() {
             }
             calculateOverallTotals();
         }
+    });
+
+    $('#ajaxSubmit').on('submit', function() {
+        $('#productSelect').prop('disabled', false);
     });
 
     function addNewPackingItemWithData(item, index) {

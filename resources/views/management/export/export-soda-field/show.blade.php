@@ -35,7 +35,9 @@
                         <select class="form-control select2" disabled>
                             <option value="">Select Buyer</option>
                             @foreach ($users as $user)
-                                <option value="{{ $user->id }}" {{ $exportSodaField->buyer_id == $user->id ? 'selected' : '' }}>{{ $user->name }}</option>
+                                <option value="{{ $user->id }}" {{ $exportSodaField->buyer_id == $user->id ? 'selected' : '' }}>
+                                    {{ $user->name }} ({{ ucfirst($user->type) }})
+                                </option>
                             @endforeach
                         </select>
                     </div>

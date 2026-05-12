@@ -34,8 +34,8 @@
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Customer:</label>
-                        <select name="buyer_id" id="buyer_id" class="form-control select2" required>
+                        <label>Customer: <span class="text-danger">*</span></label>
+                        <select name="buyer_id" id="buyer_id" class="form-control select2">
                             <option value="">Select Customer</option>
                             @foreach ($buyers as $buyer)
                                 <option value="{{ $buyer->id }}">{{ $buyer->name }}</option>
@@ -45,8 +45,8 @@
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Export Order:</label>
-                        <select name="export_order_id" id="export_order_id" class="form-control select2" required>
+                        <label>Export Order: <span class="text-danger">*</span></label>
+                        <select name="export_order_id" id="export_order_id" class="form-control select2">
                             <option value="">Select Export Order</option>
                         </select>
                     </div>
@@ -54,14 +54,14 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label>Form-E Select: <span class="text-danger">*</span></label>
-                        <select name="export_form_e_id" id="export_form_e_id" class="form-control select2" required>
+                        <select name="export_form_e_id" id="export_form_e_id" class="form-control select2">
                             <option value="">Select Form-E</option>
                         </select>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Reference Number:</label>
+                        <label>Reference Number: <span class="text-danger">*</span></label>
                         <input type="text" name="ref_no" id="ref_no" class="form-control">
                     </div>
                 </div>
@@ -73,7 +73,7 @@
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Financial Instrument No:</label>
+                        <label>Financial Instrument No: <span class="text-danger">*</span></label>
                         <input type="text" name="financial_instrument_no" id="financial_instrument_no" class="form-control">
                     </div>
                 </div>
@@ -106,6 +106,7 @@
                                     <option value="{{ $location->id }}">{{ $location->name }}</option>
                                 @endforeach
                             </select>
+                            <span class="text-danger error-message" id="error_locations_0_location_id"></span>
                         </td>
                         <td>
                             <select name="locations[0][arrival_ids][]" class="form-control select2 arrival-select" multiple disabled>
@@ -123,6 +124,7 @@
                     </tr>
                 </tbody>
             </table>
+            <span class="text-danger error-message" id="error_locations"></span>
         </div>
     </div>
 
@@ -137,6 +139,7 @@
                             <option value="{{ $location->id }}">{{ $location->name }}</option>
                         @endforeach
                     </select>
+                    <span class="text-danger error-message" id="error_locations_INDEX_location_id"></span>
                 </td>
                 <td>
                     <select name="locations[INDEX][arrival_ids][]" class="form-control arrival-select" multiple disabled>
@@ -271,30 +274,6 @@
                     <div id="snap_productSpecs"></div>
                 </div>
 
-                {{-- Commission Section (from EO snapshot) --}}
-                <div class="mt-4">
-                    <h6 class="header-heading-sepration">Commission</h6>
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label>Commission (%):</label>
-                                <input type="text" data-name="commission_percentage" class="form-control" readonly>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label>Amt/Ton:</label>
-                                <input type="text" data-name="commission_amount_per_ton" class="form-control" readonly>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label>Total Commission:</label>
-                                <input type="text" data-name="commission" class="form-control" readonly>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>{{-- end col-8 --}}
 
             <div class="col-4">
@@ -580,13 +559,13 @@
                                             <option value="{{ $fCompany->id }}">{{ $fCompany->name }}</option>
                                         @endforeach
                                     </select>
-                                    <input type="hidden" name="packing_items[0][fumigation_company_id_hidden]" class="fumigation-hidden-mirror">
+                                    <input type="hidden" name="packing_items[0][fumigation_company_id_hidden]" class="fumigation-hidden-mirror" disabled>
                                 </div>
                             </div>
                             <div class="col-md-2">
                                 <div class="form-group">
                                     <label>Phyto Certificate:</label>
-                                    <select name="packing_items[0][phyto_certificate][]" class="form-control select2 phyto-select" multiple>
+                                    <select name="packing_items[0][phyto_certificate][]" class="form-control select2 phyto-select" multiple disabled>
                                         @foreach($fumigationCompanies as $fCompany)
                                             <option value="{{ $fCompany->id }}">{{ $fCompany->name }}</option>
                                         @endforeach
@@ -596,25 +575,25 @@
                             <div class="col-md-2">
                                 <div class="form-group">
                                     <label>Inspection Company:</label>
-                                    <input type="text" name="packing_items[0][inspection_company]" class="form-control inspection-company" readonly>
+                                    <input type="text" name="packing_items[0][inspection_company]" class="form-control inspection-company" readonly disabled>
                                 </div>
                             </div>
                             <div class="col-md-2">
                                 <div class="form-group">
                                     <label>Carton Supplier:</label>
-                                    <input type="text" name="packing_items[0][carton_supplier]" class="form-control carton-supplier">
+                                    <input type="text" name="packing_items[0][carton_supplier]" class="form-control carton-supplier" disabled>
                                 </div>
                             </div>
                             <div class="col-md-2">
                                 <div class="form-group">
                                     <label>Fumigation Tablets:</label>
-                                    <input type="text" name="packing_items[0][fumigation_tablets]" class="form-control fumigation-tablets">
+                                    <input type="text" name="packing_items[0][fumigation_tablets]" class="form-control fumigation-tablets" disabled>
                                 </div>
                             </div>
                             <div class="col-md-2">
                                 <div class="form-group">
                                     <label>Fumigation Ref No:</label>
-                                    <input type="text" name="packing_items[0][fumigation_ref_no]" class="form-control fumigation-ref-no">
+                                    <input type="text" name="packing_items[0][fumigation_ref_no]" class="form-control fumigation-ref-no" disabled>
                                 </div>
                             </div>
                         </div>
@@ -666,43 +645,43 @@
             <div class="row">
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Vessel Name:</label>
+                        <label>Vessel Name: <span class="text-danger">*</span></label>
                         <input type="text" name="vessel_name" id="vessel_name" class="form-control">
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Vessel ETD:</label>
+                        <label>Vessel ETD: <span class="text-danger">*</span></label>
                         <input type="date" name="vessel_etd" id="vessel_etd" class="form-control">
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Vessel ETA:</label>
+                        <label>Vessel ETA: <span class="text-danger">*</span></label>
                         <input type="date" name="vessel_eta" id="vessel_eta" class="form-control">
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Loading Date:</label>
+                        <label>Loading Date: <span class="text-danger">*</span></label>
                         <input type="date" name="loading_date" id="loading_date" class="form-control">
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Estimated Payment Date:</label>
+                        <label>Estimated Payment Date: <span class="text-danger">*</span></label>
                         <input type="date" name="estimated_payment_date" id="estimated_payment_date" class="form-control">
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Freight Amount:</label>
+                        <label>Freight Amount: <span class="text-danger">*</span></label>
                         <input type="number" name="freight_amount" id="freight_amount" class="form-control" value="0" step="0.01">
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Transporter:</label>
+                        <label>Transporter: <span class="text-danger">*</span></label>
                         <select name="transporter_id" id="transporter_id" class="form-control select2">
                             <option value="">Select Transporter</option>
                             @foreach ($transporters as $transporter)
@@ -713,20 +692,52 @@
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Clearing Agent:</label>
-                        <input type="text" name="c_agent" id="c_agent" class="form-control">
+                        <label>Clearing Agent: <span class="text-danger">*</span></label>
+                        <select name="c_agent" id="c_agent" class="form-control select2">
+                            <option value="">Select Clearing Agent</option>
+                            @foreach ($clearingAgents as $agent)
+                                <option value="{{ $agent->id }}">{{ $agent->name }}</option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Shipping Line:</label>
+                        <label>Shipping Line: <span class="text-danger">*</span></label>
                         <input type="text" name="shipping_line" id="shipping_line" class="form-control">
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Empty Container Pickup:</label>
+                        <label>Empty Container Pickup: <span class="text-danger">*</span></label>
                         <input type="text" name="empty_container_pickup" id="empty_container_pickup" class="form-control">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Commission Section (Moved here) -->
+    <div class="row form-mar mt-3" id="commissionSection">
+        <div class="col-md-12">
+            <h6 class="header-heading-sepration">Commission</h6>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>Commission (%):</label>
+                        <input type="text" data-name="commission_percentage" name="commission_percentage" class="form-control" readonly>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>Amt/Ton:</label>
+                        <input type="text" data-name="commission_amount_per_ton" name="commission_amount_per_ton" class="form-control" readonly>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>Total Commission:</label>
+                        <input type="text" data-name="commission" name="commission" class="form-control" readonly>
                     </div>
                 </div>
             </div>
@@ -738,7 +749,7 @@
         <div class="col-md-12">
             <div class="form-group">
                 <label>Remarks:</label>
-                <textarea name="remarks" class="form-control" rows="3"></textarea>
+                <textarea name="remarks" id="remarks" class="form-control" rows="3"></textarea>
             </div>
         </div>
     </div>
@@ -947,6 +958,35 @@
     $(document).ready(function() {
         $('.select2').select2({ width: '100%' });
 
+        // Track Form-E remaining qty for packing row autofill
+        var currentFormERemainingMt = 0;
+        var currentFormETotalMt = 0;
+        var currentFormEConsumedMt = 0;
+
+        function applyFormEQtyToPackingRows(remainingMt) {
+            var $rows = $('#packingItems').find('.packing-item:not(#dummyPackingRow):visible');
+            if ($rows.length === 0 || remainingMt <= 0) return;
+
+            if ($rows.length === 1) {
+                $rows.first().find('.metric-tons').val(remainingMt.toFixed(3)).trigger('input');
+            } else {
+                var totalMt = 0;
+                $rows.each(function() { totalMt += parseFloat($(this).find('.metric-tons').val()) || 0; });
+                if (totalMt > 0) {
+                    $rows.each(function() {
+                        var proportion = (parseFloat($(this).find('.metric-tons').val()) || 0) / totalMt;
+                        $(this).find('.metric-tons').val((remainingMt * proportion).toFixed(3)).trigger('input');
+                    });
+                } else {
+                    var perItem = remainingMt / $rows.length;
+                    $rows.each(function() {
+                        $(this).find('.metric-tons').val(perItem.toFixed(3)).trigger('input');
+                    });
+                }
+            }
+            checkCapacity();
+        }
+
         getNumber();
 
         function getNumber() {
@@ -1034,10 +1074,13 @@
                         // Autofill new fields
                         if (response.data.autofill) {
                             $('#job_order_no').val(response.data.autofill.job_order_no);
-                            $('#inspection_company').val(response.data.autofill.inspection_company);
-                            $('#fumigation').val(response.data.autofill.fumigation);
-                            $('#phyto_certificate').val(response.data.autofill.fumigation); // same as fumigation as requested
                         }
+
+                        // After packing rows are added, apply Form-E qty (overrides EO qty)
+                        if (currentFormERemainingMt > 0) {
+                            applyFormEQtyToPackingRows(currentFormERemainingMt);
+                        }
+
                         checkCapacity();
                     }
                 },
@@ -1051,6 +1094,9 @@
         $('#export_form_e_id').on('change', function() {
             var formEId = $(this).val();
             if (!formEId) {
+                currentFormERemainingMt = 0;
+                currentFormETotalMt = 0;
+                currentFormEConsumedMt = 0;
                 $('#qty_info_alert').hide();
                 return;
             }
@@ -1060,20 +1106,21 @@
                 type: 'GET',
                 success: function(response) {
                     if (response.success) {
-                        $('#qty_info_alert').show();
-                        $('#lbl_total_eo_mt').text(parseFloat(response.total).toFixed(3));
-                        $('#lbl_consumed_mt').text(parseFloat(response.consumed).toFixed(3));
-                        $('#lbl_remaining_mt').text(parseFloat(response.remaining).toFixed(3));
+                        currentFormETotalMt    = parseFloat(response.total);
+                        currentFormEConsumedMt = parseFloat(response.consumed);
+                        currentFormERemainingMt= parseFloat(response.remaining);
 
-                        // Update Job Order No
+                        $('#qty_info_alert').show();
+                        $('#lbl_total_eo_mt').text(currentFormETotalMt.toFixed(3));
+                        $('#lbl_consumed_mt').text(currentFormEConsumedMt.toFixed(3));
+                        $('#lbl_remaining_mt').text(currentFormERemainingMt.toFixed(3));
+
                         if (response.job_order_no) {
                             $('#job_order_no').val(response.job_order_no);
                         }
-                        
-                        // Trigger checkCapacity to account for any already entered packing items
-                        if (typeof checkCapacity === "function") {
-                            checkCapacity();
-                        }
+
+                        // Apply Form-E qty to any already-loaded packing rows
+                        applyFormEQtyToPackingRows(currentFormERemainingMt);
                     }
                 },
                 error: function(err) {
@@ -1200,8 +1247,8 @@
                 });
                 
                 row.show();
-                row.find('.no-of-bags, .metric-tons, .stuffing, .containers').removeAttr('disabled');
-                row.find('.hidden-mirror').removeAttr('disabled');
+                row.find('.no-of-bags, .metric-tons, .stuffing, .containers, .phyto-select, .inspection-company, .carton-supplier, .fumigation-tablets, .fumigation-ref-no').removeAttr('disabled');
+                row.find('.hidden-mirror, .fumigation-hidden-mirror').removeAttr('disabled');
                 
                 // Helper to find bag product ID by name
                 function findOptionIdByName(name, selectElement) {
@@ -1378,10 +1425,10 @@
             var containers = parseInt(item.find('.containers').val()) || 0;
 
             if (source.hasClass('metric-tons') || source.hasClass('no-of-bags') || source.hasClass('bag-size')) {
-                // When MT increases, stuffing should increase if Containers is fixed
-                if (containers > 0) {
-                    stuffing = metricTons / containers;
-                    item.find('.stuffing').val(stuffing.toFixed(3));
+                // Qty changed: stuffing stays fixed, containers update
+                if (stuffing > 0) {
+                    containers = Math.ceil(metricTons / stuffing);
+                    item.find('.containers').val(containers);
                 }
             } else if (source.hasClass('stuffing')) {
                 // When manual stuffing edit, containers should update

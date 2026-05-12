@@ -178,3 +178,4 @@ Route::get('/packing-list/{id}/container-list', [PackingListController::class, '
 // export soda field 
 Route::resource('export-soda-field', ExportSodaFieldController::class);
 Route::post('/get-export-soda-field', [ExportSodaFieldController::class, 'getExportSodaFieldTable'])->name('get.export-soda-field');
+Route::post('/export-soda-field/update-status/{id}', [ExportSodaFieldController::class, 'updateStatus'])->name('export-soda-field.update-status');
