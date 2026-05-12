@@ -71,7 +71,7 @@ class QuotationController extends Controller
         $countries = Country::get();
         $ports = Port::where('status', 1)->get();
         $currencies = Currency::where('status', 1)->get();
-        $exportSodas = ExportSodaField::latest()->get();
+        $exportSodas = ExportSodaField::where('status', '!=', 'rejected')->latest()->get();
 
         return view('management.export.quotation.create', compact(
             'exportSodas',
@@ -188,7 +188,7 @@ class QuotationController extends Controller
         $countries = Country::get();
         $ports = Port::where('status', 1)->get();
         $currencies = Currency::where('status', 1)->get();
-        $exportSodas = ExportSodaField::latest()->get();
+        $exportSodas = ExportSodaField::where('status', '!=', 'rejected')->latest()->get();
 
         return view('management.export.quotation.show', compact(
             'quotation',
@@ -220,7 +220,7 @@ class QuotationController extends Controller
         $countries = Country::get();
         $ports = Port::where('status', 1)->get();
         $currencies = Currency::where('status', 1)->get();
-        $exportSodas = ExportSodaField::latest()->get();
+        $exportSodas = ExportSodaField::where('status', '!=', 'rejected')->latest()->get();
 
         return view('management.export.quotation.edit', compact(
             'quotation',

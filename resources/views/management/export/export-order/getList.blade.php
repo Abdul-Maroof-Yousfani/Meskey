@@ -3,6 +3,7 @@
         <tr>
             <th width="5%">S no.</th>
             <th width="15%">Export Order</th>
+            <th width="15%">Buyer</th>
             <th width="15%">Voucher Date</th>
             <th width="15%">Commodity/Product</th>
             <!-- <th width="10%">Broker</th> -->
@@ -25,6 +26,8 @@
                         </div>
                     </td>
 
+                    <td>{{ $export->buyer->name ?? '-' }}</td>
+
                     <td>{{ \Carbon\Carbon::parse($export->voucher_date)->format('d/m/Y') }}</td>
                     <td>{{ Str::limit($export->product->name ?? 'N/A', 30) }}</td>
                     <!-- <td>{{ Str::limit($export->broker->name ?? 'N/A', 30) }}</td> -->
@@ -36,12 +39,12 @@
                     <td>
                         @php
                             $status = $export->am_approval_status ?? 'pending';
-                            $badge = match(strtolower($status)) {
+                            $badge = match (strtolower($status)) {
                                 'approved' => 'badge-success',
                                 'rejected' => 'badge-danger',
-                                'pending'  => 'badge-warning',
+                                'pending' => 'badge-warning',
                                 'reverted' => 'badge-secondary',
-                                default    => 'badge-secondary',
+                                default => 'badge-secondary',
                             };
                         @endphp
                         <span class="badge {{ $badge }} px-2 py-1">
@@ -56,7 +59,8 @@
                         {{-- @endcanAccess --}}
 
                         @if (strtolower($export->am_approval_status ?? '') === 'approved')
-                            <a class="info p-1 text-center position-relative" href="{{ route('export-order.print', $export->id) }}" target="_blank">
+                            <a class="info p-1 text-center position-relative" href="{{ route('export-order.print', $export->id) }}"
+                                target="_blank">
                                 <i class="ft-printer font-medium-3"></i></a>
                         @endif
 
@@ -65,19 +69,21 @@
                             $approvalStatus = strtolower($export->{$approvalColumn} ?? '');
                         @endphp
 
-                        @if ($approvalStatus === 'pending' || $approvalStatus === 'reverted')
-                            {{-- @canAccess('export-order-edit') --}}
-                            <a class="info p-1 text-center position-relative "
-                                onclick="openModal(this,'{{ route('export-order.edit', $export->id) }}','Edit Export Order',false,'90%')">
-                                <i class="ft-edit font-medium-3"></i></a>
-                            {{-- @endcanAccess --}}
-                            {{-- @canAccess('export-order-delete') --}}
-                            <a onclick="deletemodal('{{ route('export-order.destroy', $export->id) }}','{{ route('get.export-order') }}')"
-                                class="danger p-1 text-center mr-2 position-relative ">
+                        @if(auth()->user()->id == $export->created_by)
+                            @if ($approvalStatus === 'pending' || $approvalStatus === 'reverted')
+                                {{-- @canAccess('export-order-edit') --}}
+                                <a class="info p-1 text-center position-relative "
+                                    onclick="openModal(this,'{{ route('export-order.edit', $export->id) }}','Edit Export Order',false,'90%')">
+                                    <i class="ft-edit font-medium-3"></i></a>
+                                {{-- @endcanAccess --}}
+                                {{-- @canAccess('export-order-delete') --}}
+                                <a onclick="deletemodal('{{ route('export-order.destroy', $export->id) }}','{{ route('get.export-order') }}')"
+                                    class="danger p-1 text-center mr-2 position-relative ">
 
-                                <i class="ft-x font-medium-3"></i>
-                            </a>
-                            {{-- @endcanAccess --}}
+                                    <i class="ft-x font-medium-3"></i>
+                                </a>
+                                {{-- @endcanAccess --}}
+                            @endif
                         @endif
                     </td>
                 </tr>

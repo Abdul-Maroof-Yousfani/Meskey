@@ -9,6 +9,7 @@
             <th width="10%">Shipment</th>
             <th width="10%">Price</th>
             <th width="10%">Quantity</th>
+            <th width="10%">Status</th>
             <th width="13%">Action</th>
         </tr>
     </thead>
@@ -28,15 +29,22 @@
                     </td>
                     <td>{{ Str::limit($exportSoda->product->name ?? 'N/A', 30) }}</td>
                     <td>
-                        {{ $exportSoda->shipment_date_from ? $exportSoda->shipment_date_from->format('d-M') : 'N/A' }} - 
+                        {{ $exportSoda->shipment_date_from ? $exportSoda->shipment_date_from->format('d-M') : 'N/A' }} -
                         {{ $exportSoda->shipment_date_to ? $exportSoda->shipment_date_to->format('d-M-Y') : 'N/A' }}
                     </td>
                     <td>
-                        {{ number_format($exportSoda->packingItems->first()->rate ?? 0, 2) }} 
+                        {{ number_format($exportSoda->packingItems->first()->rate ?? 0, 2) }}
                         <small>({{ $exportSoda->incoterm->name ?? '' }})</small>
                     </td>
                     <td>
                         {{ number_format($exportSoda->packingItems->sum('metric_tons'), 3) }} MT
+                    </td>
+                    <td>
+                        @if($exportSoda->status == 'approved')
+                            <span class="badge badge-success">Approved</span>
+                        @else
+                            <span class="badge badge-danger">Rejected</span>
+                        @endif
                     </td>
                     <td>
                         <a class="info p-1 text-center position-relative"
@@ -47,6 +55,21 @@
                             onclick="openModal(this,'{{ route('export-soda-field.edit', $exportSoda->id) }}','Edit Export Sauda',false,'90%')">
                             <i class="ft-edit font-medium-3"></i>
                         </a>
+
+                        @if(auth()->user()->id == $exportSoda->created_by)
+                            @if($exportSoda->status == 'approved')
+                                <a onclick="updateSaudaStatus('{{ route('export-soda-field.update-status', $exportSoda->id) }}', 'rejected')"
+                                    class="danger p-1 text-center position-relative" title="Reject">
+                                    <i class="ft-slash font-medium-3"></i>
+                                </a>
+                            @else
+                                <a onclick="updateSaudaStatus('{{ route('export-soda-field.update-status', $exportSoda->id) }}', 'approved')"
+                                    class="success p-1 text-center position-relative" title="Revert to Approved">
+                                    <i class="ft-rotate-ccw font-medium-3"></i>
+                                </a>
+                            @endif
+                        @endif
+
                         <a onclick="deletemodal('{{ route('export-soda-field.destroy', $exportSoda->id) }}','{{ route('get.export-soda-field') }}')"
                             class="danger p-1 text-center mr-2 position-relative">
                             <i class="ft-x font-medium-3"></i>
@@ -87,3 +110,39 @@
         </div>
     </div>
 </div>
+
+<script>
+    function updateSaudaStatus(url, status) {
+        let title = status === 'rejected' ? 'Are you sure you want to reject?' : 'Are you sure you want to approve?';
+
+        Swal.fire({
+            title: title,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, proceed!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        status: status
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            location.reload();
+                        } else {
+                            toastr.error(response.message);
+                        }
+                    },
+                    error: function (xhr) {
+                        toastr.error('Something went wrong');
+                    }
+                });
+            }
+        });
+    }
+</script>

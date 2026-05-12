@@ -78,8 +78,8 @@ class ExportOrderController extends Controller
         $ports = Port::where('status', 1)->get();
         $hscodes = HsCode::where('status', 1)->get();
         $currencies = Currency::where('status', 1)->get();
-        $exportSodas = ExportSodaField::latest()->get();
-        $quotations = Quotation::latest()->get();
+        $exportSodas = ExportSodaField::where('status', '!=', 'rejected')->latest()->get();
+        $quotations = Quotation::where('am_approval_status', 'approved')->latest()->get();
         $companyLocations = CompanyLocation::where('status', 'active')->get();
         $bagConditions = BagCondition::where('status', 1)->get();
         $bagSizes = BagPacking::where('status', 1)->get();
@@ -277,8 +277,8 @@ class ExportOrderController extends Controller
         $ports = Port::where('status', 1)->get();
         $hscodes = HsCode::where('status', 1)->get();
         $currencies = Currency::where('status', 1)->get();
-        $exportSodas = ExportSodaField::latest()->get();
-        $quotations = Quotation::latest()->get();
+        $exportSodas = ExportSodaField::where('status', '!=', 'rejected')->latest()->get();
+        $quotations = Quotation::where('am_approval_status', 'approved')->latest()->get();
         $companyLocations = CompanyLocation::where('status', 'active')->get();
         $bagConditions = BagCondition::where('status', 1)->get();
         $bagSizes = BagPacking::where('status', 1)->get();
@@ -335,8 +335,8 @@ class ExportOrderController extends Controller
         $ports = Port::where('status', 1)->get();
         $hscodes = HsCode::where('status', 1)->get();
         $currencies = Currency::where('status', 1)->get();
-        $exportSodas = ExportSodaField::latest()->get();
-        $quotations = Quotation::latest()->get();
+        $exportSodas = ExportSodaField::where('status', '!=', 'rejected')->latest()->get();
+        $quotations = Quotation::where('am_approval_status', 'approved')->latest()->get();
         $companyLocations = CompanyLocation::where('status', 'active')->get();
         $bagConditions = BagCondition::where('status', 1)->get();
         $bagSizes = BagPacking::where('status', 1)->get();
