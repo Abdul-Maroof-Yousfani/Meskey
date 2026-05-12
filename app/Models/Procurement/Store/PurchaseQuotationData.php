@@ -44,10 +44,14 @@ class PurchaseQuotationData extends Model
     {
         static::updating(
             function ($model) {
-                if ($model->getOriginal('am_approval_status') === 'approved') {
-                    throw \Illuminate\Validation\ValidationException::withMessages([
-                        'am_approval_status' => ['This item has already been approved and cannot be modified.'],
-                    ]);
+                if (
+                    $model->am_approval_status === 'approved' &&
+                    $model->isDirty()
+                ) {
+                    return response()->json([
+                        'success' => 'This item has already been approved and cannot be modified.',
+                        'data' => $model,
+                    ], 403);
                 }
 
                 $changes = $model->getDirty();
