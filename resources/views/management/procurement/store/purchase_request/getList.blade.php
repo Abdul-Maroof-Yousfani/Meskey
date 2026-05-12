@@ -50,7 +50,9 @@
                                         default => 'badge-secondary',
                                     };
                                 @endphp
-                                <span class="badge {{ $badgeClass }}" style="font-size: 10px; padding: 3px 10px; border-radius: 20px;">
+                                <span class="badge {{ $badgeClass }}" 
+                                      onclick="openModal(this, '{{ route('store.purchase-request.approvals', $itemGroup['item_data']->id) }}', 'Approval Voucher', false, '100%')"
+                                      style="font-size: 10px; padding: 3px 10px; border-radius: 20px; cursor: pointer;">
                                     {{ ucwords($itemStatus) }}
                                 </span>
 
@@ -104,7 +106,9 @@
                                         default => 'badge-secondary',
                                     };
                                 @endphp
-                                <span class="badge {{ $badgeClass }}">
+                                <span class="badge {{ $badgeClass }}"
+                                      onclick="openModal(this, '{{ route('store.purchase-request.approvals', $itemGroup['item_data']->id) }}', 'Approval Voucher', false, '100%')"
+                                      style="cursor: pointer;">
                                     {{ $approvalStatus }}
                                 </span>
                             </td>
@@ -117,7 +121,9 @@
                                             Approval
                                         </a>
                                     @else
-                                        <span class="bg-success text-white p-1 text-center position-relative" style="border-radius: 4px; width: 90px;">
+                                        <span class="bg-success text-white p-1 text-center position-relative" 
+                                              onclick="openModal(this, '{{ route('store.purchase-request.approvals', $itemGroup['item_data']->id) }}', 'Approval Voucher', false, '100%')"
+                                              style="border-radius: 4px; width: 90px; cursor: pointer;">
                                             Approved
                                         </span>
                                     @endif
