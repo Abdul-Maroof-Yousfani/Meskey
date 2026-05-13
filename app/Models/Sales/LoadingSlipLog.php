@@ -28,6 +28,8 @@ class LoadingSlipLog extends Model
         'labour',
         'qc_remarks',
         'edited_by',
+        'empty_bags',
+        'seal_no',
         // 'delivery_order_id'
     ];
 
