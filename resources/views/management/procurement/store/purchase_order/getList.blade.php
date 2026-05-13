@@ -112,22 +112,27 @@
                                 </p>
                             </td> --}}
 
-                            {{-- Approval Status + Actions --}}
+                            {{-- Item Status --}}
+                            <td>
+                                @php
+                                    $itemApprovalStatus = $supplierRow['data']->am_approval_status ?? 'pending';
+                                    $itemBadgeClass = match (strtolower($itemApprovalStatus)) {
+                                        'approved' => 'badge-success',
+                                        'partial_approved' => 'badge-warning',
+                                        'rejected' => 'badge-danger',
+                                        'pending' => 'badge-warning',
+                                        'returned' => 'badge-info',
+                                        'reverted' => 'badge-primary',
+                                        default => 'badge-secondary',
+                                    };
+                                @endphp
+                                <span class="badge {{ $itemBadgeClass }}">
+                                    {{ str_replace('_', ' ', ucfirst($itemApprovalStatus)) }}
+                                </span>
+                            </td>
+
+                            {{-- Actions --}}
                             @if ($isFirstRequestRow)
-                                <td rowspan="{{ $requestGroup['request_rowspan'] }}">
-                                    @php
-                                        $badgeClass = match (strtolower($approvalStatus)) {
-                                            'approved' => 'badge-success',
-                                            'rejected' => 'badge-danger',
-                                            'pending' => 'badge-warning',
-                                            'returned' => 'badge-info',
-                                            default => 'badge-secondary',
-                                        };
-                                    @endphp
-                                    <span class="badge {{ $badgeClass }}">
-                                        {{ $approvalStatus }}
-                                    </span>
-                                </td>
                                 <td rowspan="{{ $requestGroup['request_rowspan'] }}">
                                     <div class="d-flex flex-column align-items-start" style="gap: 5px;">
                                         @php
@@ -149,7 +154,7 @@
                                         {{-- Edit/Delete (only if not approved or rejected) --}}
                                         @if($requestGroup['created_by_id'] == auth()->user()->id)
 
-                                            @if ($requestGroup['request_status'] != 'approved' && $requestGroup['request_status'] != 'rejected')
+                                            @if ($requestGroup['has_pending_item'])
                                                 <a onclick="openModal(this, '{{ route('store.purchase-order.edit', $supplierRow['data']->purchase_order->id) }}', 'Edit Purchase Order', false, '100%')"
                                                     class="bg-warning text-white p-1 text-center position-relative" title="Edit" style="border-radius: 4px; min-width: 90px;">
                                                     Edit
