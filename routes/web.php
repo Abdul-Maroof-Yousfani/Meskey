@@ -335,6 +335,10 @@ Route::group(['middleware' => ['auth', 'check.company']], function () {
         Route::post('/bulk_purchase_request_approval/{modelType}/{id}', [ApprovalController::class, 'bulk_purchase_request_approval'])
             ->middleware(['auth', 'approval.permission'])
             ->name('approval.bulk_purchase_request_approval');
+
+        Route::post('/bulk_purchase_order_approval/{modelType}/{id}', [ApprovalController::class, 'bulk_purchase_order_approval'])
+            ->middleware(['auth', 'approval.permission'])
+            ->name('approval.bulk_purchase_order_approval');
     });
 
     Route::get('/dashboard', [App\Http\Controllers\HomeController::class, 'index'])->name('home');

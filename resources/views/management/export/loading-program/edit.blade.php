@@ -49,6 +49,12 @@
                 <input type="text" name="vessel_name" class="form-control" value="{{ $loadingProgram->vessel_name }}" placeholder="Enter Vessel Name" readonly>
             </div>
         </div>
+        <div class="col-xs-12 col-sm-4 col-md-4">
+            <div class="form-group">
+                <label>S. Bill No:</label>
+                <input type="text" name="s_bill_no" class="form-control" value="{{ $loadingProgram->s_bill_no }}" placeholder="Enter S. Bill No" readonly>
+            </div>
+        </div>
         <input type="hidden" id="is_delivery_order_optional" value="0">
     </div>
 

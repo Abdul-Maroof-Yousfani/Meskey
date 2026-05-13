@@ -1,6 +1,10 @@
 <form action="{{ route('export-loading-slip.store') }}" method="POST" id="ajaxSubmit" autocomplete="off" enctype="multipart/form-data">
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('get.export-loading-slip') }}" />
+    <style>
+        .select2-container, .select2-container--default, .select2-selection--single { width: 100% !important; }
+        .header-heading-sepration { border-bottom: 2px solid #ebeef3; padding-bottom: 5px; margin-bottom: 10px; }
+    </style>
 
     <div class="row form-mar">
         <div class="col-xs-12 col-sm-12 col-md-12">
@@ -163,15 +167,8 @@
                 <div class="col-xs-12 col-sm-6 col-md-6">
                     <div class="form-group">
                         <label>Bag Size:</label>
-                        <input type="number" value="${data.bag_size}" class="form-control" readonly step="0.01" />
-                    </div>
-                </div>
-                <div class="col-xs-12 col-sm-6 col-md-6">
-                    <div class="form-group">
-                        <label>Gala: <span class="text-danger">*</span></label>
-                        <select class="form-control select2 w-100" name="gala[]" id="gala_select" multiple required style="width: 100% !important;">
-                            ${galaOptions}
-                        </select>
+                        <input type="number" name="bag_size_display" value="${data.bag_size}" class="form-control" readonly step="0.01" />
+                        <input type="hidden" name="bag_size" value="${data.bag_size}" />
                     </div>
                 </div>
                 <div class="col-xs-12 col-sm-6 col-md-6">
@@ -181,64 +178,64 @@
                         <small class="text-muted">Available bags: ${typeof data.remaining_bags !== 'undefined' ? data.remaining_bags : 0}</small>
                     </div>
                 </div>
+            </div>
+
+            <div class="row">
                 <div class="col-xs-12 col-sm-6 col-md-6">
                     <div class="form-group">
-                        <label>Labour:</label>
-                        <select name='labour' id='labour' class='form-control select2'>
-                            <option value='paid'>Paid</option>
-                            <option value='not_paid'>Not Paid</option>
+                        <label>Empty Bags:</label>
+                        <input type="text" name="empty_bags" id="empty_bags" class="form-control" placeholder="Enter Empty Bags">
+                    </div>
+                </div>
+                <div class="col-xs-12 col-sm-6 col-md-6">
+                    <div class="form-group">
+                        <label>Gala: <span class="text-danger">*</span></label>
+                        <select class="form-control select2-common w-100" name="gala[]" id="gala_select" multiple required style="width: 100% !important;">
+                            ${galaOptions}
                         </select>
                     </div>
                 </div>
-                <div class="col-xs-12 col-sm-6 col-md-3">
+            </div>
+
+            <div class="row">
+                <div class="col-xs-12 col-sm-4 col-md-4">
                     <div class="form-group">
                         <label>Kilogram: <span class="text-danger">*</span></label>
                         <input type="number" name="kilogram" id="kilogram" value="0.00" class="form-control" readonly required step="0.01" />
                     </div>
                 </div>
-                <div class="col-xs-12 col-sm-6 col-md-3">
+                <div class="col-xs-12 col-sm-4 col-md-4">
                     <div class="form-group">
                         <label>Metric Tons:</label>
                         <input type="number" id="metric_tons_display" value="0.00" class="form-control" readonly step="0.01" />
                     </div>
                 </div>
-                <div class="col-xs-12 col-sm-6 col-md-3">
+                <div class="col-xs-12 col-sm-4 col-md-4">
                     <div class="form-group">
                         <label>Seal No: <span class="text-danger">*</span></label>
                         <input type="text" name="seal_no" id="seal_no" class="form-control" placeholder="Enter Seal No" required />
                     </div>
                 </div>
-                <input type="hidden" name="bag_size" value="${data.bag_size}" />
                 <input type="hidden" name="company_id" value="{{ auth()->user()->current_company_id }}" />
             </div>
 
             <div class="row pt-3">
                 <div class="col-12">
-                    <h6 class="header-heading-sepration">Stack</h6>
-                    <table class="table table-bordered table-striped">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <h6 class="header-heading-sepration mb-0" style="flex-grow: 1;">Stack</h6>
+                        <button type="button" class="btn btn-sm btn-success" id="add_stack_row"><i class="ft-plus"></i> Add More</button>
+                    </div>
+                    <table class="table table-bordered table-striped" id="stacks_table">
                         <thead>
                             <tr>
-                                <th>Bag Type</th>
-                                <th>Packing Size (KG)</th>
+                                <th>Bag Type <span class="text-danger">*</span></th>
+                                <th>Packing Size (KG) <span class="text-danger">*</span></th>
                                 <th>Input Size (KG) <span class="text-danger">*</span></th>
+                                <th width="50px">Action</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${(data.stack_items || []).map((item, idx) => `
-                                <tr>
-                                    <td>
-                                        ${item.bag_type}
-                                        <input type="hidden" name="stacks[${idx}][bag_type]" value="${item.bag_type}">
-                                    </td>
-                                    <td>
-                                        ${item.packing_size}
-                                        <input type="hidden" name="stacks[${idx}][packing_size]" value="${item.packing_size}">
-                                    </td>
-                                    <td>
-                                        <input type="text" name="stacks[${idx}][input_size]" class="form-control" placeholder="Enter Input Size" required>
-                                    </td>
-                                </tr>
-                            `).join('')}
+                            <!-- Rows will be added here -->
                         </tbody>
                     </table>
                 </div>
@@ -252,7 +249,31 @@
         `;
 
         $('#ticketDataContainer').html(tabsHtml + contentHtml + commonInputsHtml);
-        $('.select2').select2({ dropdownParent: $('#modal-sidebar') });
+        $('.select2-common').select2({ width: '100%' });
+
+        $(document).on('select2:select select2:unselect', '.select2-common, .select2-dynamic', function() {
+            $(this).next('.select2-container').css('width', '100%');
+        });
+
+        // Store bag types and packing sizes for dynamic row addition
+        window.availableBagTypes = data.bag_types || [];
+        window.availablePackingSizes = data.packing_sizes || [];
+
+        // Add first row
+        addStackRow();
+
+        $('#add_stack_row').on('click', function() {
+            addStackRow();
+        });
+
+        $(document).off('click', '.remove_stack_row').on('click', '.remove_stack_row', function() {
+            if ($('#stacks_table tbody tr').length > 1) {
+                $(this).closest('tr').remove();
+                updateStackIndices();
+            } else {
+                Swal.fire("Warning", "At least one stack row is required.", "warning");
+            }
+        });
 
         $('#no_of_bags').on('input', function() {
             var noOfBags = parseFloat($('#no_of_bags').val()) || 0;
@@ -262,4 +283,47 @@
             $('#metric_tons_display').val((kilogram / 1000).toFixed(2));
         });
     }
+
+    function addStackRow() {
+        var idx = $('#stacks_table tbody tr').length;
+        var bagTypeOptions = window.availableBagTypes.map(type => `<option value="${type}">${type}</option>`).join('');
+        var packingSizeOptions = window.availablePackingSizes.map(size => `<option value="${size}">${size}</option>`).join('');
+
+        var row = `
+            <tr>
+                <td>
+                    <select name="stacks[${idx}][bag_type]" class="form-control select2-dynamic" required style="width: 100%;">
+                        <option value="">Select Bag Type</option>
+                        ${bagTypeOptions}
+                    </select>
+                </td>
+                <td>
+                    <select name="stacks[${idx}][packing_size]" class="form-control select2-dynamic" required style="width: 100%;">
+                        <option value="">Select Packing Size</option>
+                        ${packingSizeOptions}
+                    </select>
+                </td>
+                <td>
+                    <input type="text" name="stacks[${idx}][input_size]" class="form-control" placeholder="Enter Input Size" required>
+                </td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-sm btn-danger remove_stack_row"><i class="ft-trash-2"></i></button>
+                </td>
+            </tr>
+        `;
+        $('#stacks_table tbody').append(row);
+        $('#stacks_table tbody tr').last().find('.select2-dynamic').select2({ width: '100%' });
+    }
+
+    function updateStackIndices() {
+        $('#stacks_table tbody tr').each(function(idx) {
+            $(this).find('select, input').each(function() {
+                var name = $(this).attr('name');
+                if (name) {
+                    $(this).attr('name', name.replace(/stacks\[\d+\]/, `stacks[${idx}]`));
+                }
+            });
+        });
+    }
+
 </script>

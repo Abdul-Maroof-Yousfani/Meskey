@@ -87,6 +87,20 @@
         </div>
     </div>
 
+    @if($ExportQc->status === 'reject')
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-12">
+                <div class="alert alert-warning mb-1">
+                    <strong>Note:</strong>
+                    <ul class="mb-0 pl-2">
+                        <li>If approved, the rejection will be approved.</li>
+                        <li>If declined, the rejection will be declined and the truck will move to First Weighbridge.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    @endif
+
     @if($ExportQc->attachments->count() > 0)
     <div class="row">
         <div class="col-xs-12 col-sm-12 col-md-12">

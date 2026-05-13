@@ -62,7 +62,10 @@ class ExportLoadingSlipController extends Controller
         $availableTickets = $this->ticketQuery()
             ->whereHas('exportQc', function ($query) {
                 $query->where('status', 'accept')
-                    ->orWhere('am_approval_status', 'approved');
+                    ->orWhere(function ($approvalQuery) {
+                        $approvalQuery->where('status', 'reject')
+                            ->where('am_approval_status', 'rejected');
+                    });
             })
             ->whereHas('exportFirstWeighbridge')
             ->whereDoesntHave('exportLoadingSlip')
@@ -84,10 +87,10 @@ class ExportLoadingSlipController extends Controller
             'gala' => 'required|array|min:1',
             'gala.*' => 'required|string|max:255',
             'no_of_bags' => 'required|integer|min:1',
+            'empty_bags' => 'nullable|string|max:255',
             'bag_size' => 'required|numeric|min:0',
             'kilogram' => 'required|numeric|min:0',
             'remarks' => 'nullable|string',
-            'labour' => 'required|in:paid,not_paid',
             'company_id' => 'required|numeric',
             'seal_no' => 'required|string|max:255',
             'stacks' => 'required|array|min:1',
@@ -131,14 +134,14 @@ class ExportLoadingSlipController extends Controller
                 'so_qty' => $request->so_qty,
                 'do_qty' => $request->do_qty,
                 'factory' => is_array($request->factory) ? implode(', ', $request->factory) : $request->factory,
-                'gala' => is_array($request->gala) ? implode(', ', $request->gala) : $request->gala,
+                'gala' => $this->encodeStoredMultiValue($request->gala),
                 'no_of_bags' => $request->no_of_bags,
+                'empty_bags' => $request->empty_bags,
                 'bag_size' => $request->bag_size,
                 'kilogram' => $request->kilogram,
                 'delivery_order_id' => $deliveryOrders->first()?->id,
                 'remarks' => $request->remarks,
                 'created_by' => auth()->user()->id,
-                'labour' => $request->labour,
                 'company_id' => $request->company_id,
                 'seal_no' => $request->seal_no,
             ]);
@@ -169,21 +172,9 @@ class ExportLoadingSlipController extends Controller
         ])->findOrFail($id);
 
         $Orders = $this->buildOrders($loadingSlip->loadingProgramItem?->loadMissing($this->ticketRelations()));
+        $selectedGalas = $this->parseStoredMultiValue($loadingSlip->gala);
 
-        $fallbackStacks = collect();
-        if ($loadingSlip->stacks->isEmpty()) {
-            $deliveryOrders = $this->resolveDeliveryOrders($loadingSlip->loadingProgramItem)->unique('id');
-            $fallbackStacks = $deliveryOrders->flatMap(function ($do) {
-                return $do->exportPackingItems;
-            })->unique('id')->map(function ($item) {
-                return [
-                    'bag_type' => $item->bagType->name ?? 'N/A',
-                    'packing_size' => $item->bag_size ?? '0',
-                ];
-            })->values();
-        }
-
-        return view('management.export.loading-slip.show', compact('loadingSlip', 'Orders', 'fallbackStacks'));
+        return view('management.export.loading-slip.show', compact('loadingSlip', 'Orders', 'selectedGalas'));
     }
 
     public function edit(string $id)
@@ -205,20 +196,21 @@ class ExportLoadingSlipController extends Controller
             $rejectedDispatchQc = $loadingSlip->getLatestRejectedDispatchQc();
         }
 
-        $fallbackStacks = collect();
-        if ($loadingSlip->stacks->isEmpty()) {
-            $deliveryOrders = $this->resolveDeliveryOrders($loadingSlip->loadingProgramItem);
-            $fallbackStacks = $deliveryOrders->flatMap(function ($do) {
-                return $do->exportPackingItems->map(function ($item) {
-                    return [
-                        'bag_type' => $item->bagType->name ?? 'N/A',
-                        'packing_size' => $item->bag_size ?? '0',
-                    ];
-                });
-            });
-        }
+        $deliveryOrders = $this->resolveDeliveryOrders($loadingSlip->loadingProgramItem);
+        $selectedGalas = $this->parseStoredMultiValue($loadingSlip->gala);
+        $bagTypes = $deliveryOrders->flatMap(function ($do) {
+            return $do->exportPackingItems;
+        })->map(function ($item) {
+            return $item->bagType->name ?? 'N/A';
+        })->unique()->values();
 
-        return view('management.export.loading-slip.edit', compact('loadingSlip', 'Orders', 'canEdit', 'rejectedDispatchQc', 'fallbackStacks'));
+        $packingSizes = $deliveryOrders->flatMap(function ($do) {
+            return $do->exportPackingItems;
+        })->map(function ($item) {
+            return (string) ($item->bag_size ?? '0');
+        })->unique()->values();
+
+        return view('management.export.loading-slip.edit', compact('loadingSlip', 'Orders', 'canEdit', 'rejectedDispatchQc', 'bagTypes', 'packingSizes', 'selectedGalas'));
     }
 
     public function update(Request $request, string $id)
@@ -235,10 +227,10 @@ class ExportLoadingSlipController extends Controller
                 'gala' => 'required|array|min:1',
                 'gala.*' => 'required|string|max:255',
                 'no_of_bags' => 'required|integer|min:1',
+                'empty_bags' => 'nullable|string|max:255',
                 'bag_size' => 'required|numeric|min:0',
                 'kilogram' => 'required|numeric|min:0',
                 'remarks' => 'nullable|string',
-                'labour' => 'required|in:paid,not_paid',
                 'seal_no' => 'required|string|max:255',
                 'stacks' => 'required|array|min:1',
                 'stacks.*.bag_type' => 'required|string',
@@ -262,10 +254,12 @@ class ExportLoadingSlipController extends Controller
                 ], 404);
             }
 
+            /* 
             if (!$loadingSlip->canBeEdited()) {
                 DB::rollBack();
                 return response()->json(['error' => 'This loading slip cannot be edited because its Dispatch QC has been accepted.'], 422);
             }
+            */
 
             $LoadingProgramItem = $this->ticketQuery()
                 ->whereHas('exportFirstWeighbridge')
@@ -293,15 +287,15 @@ class ExportLoadingSlipController extends Controller
                     'so_qty' => $loadingSlip->so_qty,
                     'do_qty' => $loadingSlip->do_qty,
                     'factory' => $loadingSlip->factory,
-                    'gala' => $loadingSlip->gala,
+                    'gala' => $this->encodeStoredMultiValue($this->parseStoredMultiValue($loadingSlip->gala)),
                     'no_of_bags' => $loadingSlip->no_of_bags,
                     'bag_size' => $loadingSlip->bag_size,
                     'kilogram' => $loadingSlip->kilogram,
                     'remarks' => $loadingSlip->remarks,
-                    'labour' => $loadingSlip->labour,
                     'qc_remarks' => $rejectedDispatchQc->qc_remarks,
                     'edited_by' => auth()->user()->id,
                     'seal_no' => $loadingSlip->seal_no,
+                    'empty_bags' => $loadingSlip->empty_bags,
                 ]);
             }
 
@@ -311,12 +305,12 @@ class ExportLoadingSlipController extends Controller
                 'so_qty' => $request->so_qty,
                 'do_qty' => $request->do_qty,
                 'factory' => is_array($request->factory) ? implode(', ', $request->factory) : $request->factory,
-                'gala' => is_array($request->gala) ? implode(', ', $request->gala) : $request->gala,
+                'gala' => $this->encodeStoredMultiValue($request->gala),
                 'no_of_bags' => $request->no_of_bags,
+                'empty_bags' => $request->empty_bags,
                 'bag_size' => $request->bag_size,
                 'kilogram' => $request->kilogram,
                 'remarks' => $request->remarks,
-                'labour' => $request->labour,
                 'seal_no' => $request->seal_no,
             ]);
 
@@ -403,14 +397,16 @@ class ExportLoadingSlipController extends Controller
                 'used_bags' => $bagSummary['used_bags'],
                 'remaining_bags' => $bagSummary['remaining_bags'],
                 'is_pohanch' => false,
-                'stack_items' => $deliveryOrders->flatMap(function ($do) {
+                'bag_types' => $deliveryOrders->flatMap(function ($do) {
                     return $do->exportPackingItems;
-                })->unique('id')->map(function ($item) {
-                    return [
-                        'bag_type' => $item->bagType->name ?? 'N/A',
-                        'packing_size' => $item->bag_size ?? '0',
-                    ];
-                })->values(),
+                })->map(function ($item) {
+                    return $item->bagType->name ?? 'N/A';
+                })->unique()->values(),
+                'packing_sizes' => $deliveryOrders->flatMap(function ($do) {
+                    return $do->exportPackingItems;
+                })->map(function ($item) {
+                    return (string) ($item->bag_size ?? '0');
+                })->unique()->values(),
             ],
         ]);
     }
@@ -691,5 +687,39 @@ class ExportLoadingSlipController extends Controller
             'used_bags' => $usedBags,
             'remaining_bags' => max($totalBags - $usedBags, 0),
         ];
+    }
+
+    private function parseStoredMultiValue($value): array
+    {
+        if (blank($value)) {
+            return [];
+        }
+
+        if (is_array($value)) {
+            return collect($value)->map(fn($item) => trim((string) $item))->filter()->values()->all();
+        }
+
+        $decoded = json_decode((string) $value, true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+            return collect($decoded)->map(fn($item) => trim((string) $item))->filter()->values()->all();
+        }
+
+        return collect(explode(',', (string) $value))
+            ->map(fn($item) => trim($item))
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    private function encodeStoredMultiValue($value): string
+    {
+        return json_encode(
+            collect(is_array($value) ? $value : [$value])
+                ->map(fn($item) => trim((string) $item))
+                ->filter()
+                ->unique()
+                ->values()
+                ->all()
+        );
     }
 }

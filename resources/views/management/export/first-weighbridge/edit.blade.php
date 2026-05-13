@@ -13,7 +13,10 @@
                             $query->where('type', 'export_order');
                         })->whereHas('exportQc', function ($query) {
                             $query->where('status', 'accept')
-                                ->orWhere('am_approval_status', 'approved');
+                                ->orWhere(function ($approvalQuery) {
+                                    $approvalQuery->where('status', 'reject')
+                                        ->where('am_approval_status', 'rejected');
+                                });
                         })->where(function ($query) use ($FirstWeighbridge) {
                             $query->whereDoesntHave('exportFirstWeighbridge')
                                 ->orWhere('id', $FirstWeighbridge->loading_program_item_id);

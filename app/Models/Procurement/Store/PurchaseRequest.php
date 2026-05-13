@@ -13,6 +13,34 @@ class PurchaseRequest extends Model
 {
     use HasFactory, HasApproval;
 
+    protected static function boot()
+    {
+        parent::boot();
+        static::updating(function ($model) {
+            $original = $model->getOriginal();
+            $oldStatus = strtolower($original['am_approval_status'] ?? 'pending');
+
+            if ($oldStatus === 'approved' || $oldStatus === 'rejected') {
+                $dirty = $model->getDirty();
+                // Allow only approval-related columns to change (e.g. for revert/neglect workflow)
+                $allowedColumns = ['am_approval_status', 'updated_at', 'am_approval_log'];
+                
+                foreach ($dirty as $column => $value) {
+                    if (!in_array($column, $allowedColumns)) {
+                        return false;
+                    }
+                }
+            }
+        });
+
+        static::deleting(function ($model) {
+            $status = strtolower($model->am_approval_status ?? 'pending');
+            if ($status === 'approved' || $status === 'rejected') {
+                return false;
+            }
+        });
+    }
+
     protected $fillable = [
         'purchase_request_no',
         'company_id',

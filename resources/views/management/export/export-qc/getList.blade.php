@@ -6,7 +6,8 @@
                 <th>Truck No.</th>
                 <th>Customer</th>
                 <th>Commodity</th>
-                <th>Status</th>
+                <th>Qc Status</th>
+                <th>Approval Status</th>
                 <th>Created</th>
                 <th>Action</th>
             </tr>
@@ -27,10 +28,29 @@
                         {{ $exportQc->commodity ?? 'N/A' }}
                     </td>
                     <td>
-                        <span class="badge badge-{{ $exportQc->status == 'accept' || $exportQc->am_approval_status === 'approved' ? 'success' : 'danger' }}">
-                            {{ $exportQc->status === 'accept' || $exportQc->am_approval_status === 'approved' ? 'Approved' : 'Rejected' }}
+                        <span class="badge badge-{{ $exportQc->status == 'accept' ? 'success' : 'danger' }}">
+                            {{ $exportQc->status === 'accept' ? 'Accepted' : 'Rejected' }}
                         </span>
 
+                    </td>
+                    <td>
+                        @if($exportQc->status === 'reject')
+                            @php
+                                $apprStatus = $exportQc->am_approval_status ?? 'pending';
+                                $apprBadge = match(strtolower((string)$apprStatus)) {
+                                    'approved' => 'badge-success',
+                                    'rejected' => 'badge-danger',
+                                    'reverted' => 'badge-secondary',
+                                    'pending'  => 'badge-warning',
+                                    default    => 'badge-warning',
+                                };
+                            @endphp
+                            <span class="badge {{ $apprBadge }} px-2 py-1">
+                                {{ ucfirst($apprStatus) }}
+                            </span>
+                        @else
+                            -
+                        @endif
                     </td>
                     <td>
                         {{ $exportQc->created_at->format('d-m-Y H:i') }}

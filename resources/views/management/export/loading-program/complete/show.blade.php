@@ -31,6 +31,12 @@
                 <input type="text" value="{{ $loadingProgram->vessel_name ?? 'N/A' }}" disabled class="form-control" />
             </div>
         </div>
+        <div class="col-xs-4 col-sm-4 col-md-4">
+            <div class="form-group">
+                <label>S. Bill No:</label>
+                <input type="text" value="{{ $loadingProgram->s_bill_no ?? 'N/A' }}" disabled class="form-control" />
+            </div>
+        </div>
     </div>
 
     {{-- Export Order Details Tabs --}}
@@ -205,10 +211,27 @@
                             <th>Driver Name</th>
                             <th>Contact Details</th>
                             <th>Transporter</th>
+                            <th>Qty (MT)</th>
+                            <th>QC Status</th>
+                            <th>Approval Status</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($loadingProgram->loadingProgramItems as $item)
+                        @php
+                            $qc = $item->exportQc;
+                            $qcStatus = $qc ? ($qc->status == 'accept' ? 'Accepted' : 'Rejected') : 'Pending';
+                            $qcBadge = $qc ? ($qc->status == 'accept' ? 'badge-success' : 'badge-danger') : 'badge-warning';
+                            
+                            $apprStatus = $qc && $qc->status == 'reject' ? ($qc->am_approval_status ?? 'pending') : null;
+                            $apprBadge = match(strtolower((string)$apprStatus)) {
+                                'approved' => 'badge-success',
+                                'rejected' => 'badge-danger',
+                                'reverted' => 'badge-secondary',
+                                'pending'  => 'badge-warning',
+                                default    => 'badge-warning',
+                            };
+                        @endphp
                         <tr>
                             <td>{{ $item->truck_number }}</td>
                             <td>{{ $item->container_number ?? '-' }}</td>
@@ -217,10 +240,21 @@
                             <td>{{ $item->driver_name ?? '-' }}</td>
                             <td>{{ $item->contact_details ?? '-' }}</td>
                             <td>{{ $item->transporter->name ?? '-' }}</td>
+                            <td>{{ $item->qty ? number_format($item->qty, 3) : '-' }}</td>
+                            <td>
+                                <span class="badge {{ $qcBadge }} px-2 py-1">{{ $qcStatus }}</span>
+                            </td>
+                            <td>
+                                @if($apprStatus)
+                                    <span class="badge {{ $apprBadge }} px-2 py-1">{{ ucfirst($apprStatus) }}</span>
+                                @else
+                                    -
+                                @endif
+                            </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="5" class="text-center">No items added yet.</td>
+                            <td colspan="10" class="text-center">No items added yet.</td>
                         </tr>
                         @endforelse
                     </tbody>
