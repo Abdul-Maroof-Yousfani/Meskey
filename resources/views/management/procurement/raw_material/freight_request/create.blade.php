@@ -683,30 +683,30 @@
         // Initialize state
         isPaidBySupplier();
 
-        let canSubmitt = true;
-        function updateButtonVisibility() {
-            // Check the balance available (Net - Already Paid)
-            const netAmount = parseFloat($('[name="net_amount"]').val()) || 0;
-            const paidAmount = parseFloat($('[name="paid_amount"]').val()) || 0;
-            const availableBalance = netAmount - paidAmount;
+        // let canSubmitt = true;
+        // function updateButtonVisibility() {
+        //     // Check the balance available (Net - Already Paid)
+        //     const netAmount = parseFloat($('[name="net_amount"]').val()) || 0;
+        //     const paidAmount = parseFloat($('[name="paid_amount"]').val()) || 0;
+        //     const availableBalance = netAmount - paidAmount;
 
-            if (availableBalance > 0) {
-                $('.bottom-button-bar').show();
-                canSubmitt = true;
-            } else {
-                $('.bottom-button-bar').hide();
-                canSubmitt = false;
-            }
-        }
+        //     if (availableBalance > 0) {
+        //         $('.bottom-button-bar').show();
+        //         canSubmitt = true;
+        //     } else {
+        //         $('.bottom-button-bar').hide();
+        //         canSubmitt = false;
+        //     }
+        // }
 
-        $('#ajaxSubmit').on('keydown', function (e) {
-            if (e.keyCode === 13) {
-                if (!canSubmitt) {
-                    e.preventDefault();
-                    return false;
-                }
-            }
-        });
+        // $('#ajaxSubmit').on('keydown', function (e) {
+        //     if (e.keyCode === 13) {
+        //         if (!canSubmitt) {
+        //             e.preventDefault();
+        //             return false;
+        //         }
+        //     }
+        // });
 
         calculateNetShortageDeduction()
         $('.editable-field').on('input', calculatePaymentSummary);
@@ -944,7 +944,7 @@
             }
 
             calculateCommission();
-            updateButtonVisibility();
+            // updateButtonVisibility();
         }
 
         // Request History Toggle
