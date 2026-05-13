@@ -95,8 +95,9 @@
                 <select name="accounts_of_display" id="accounts_of" class="form-control select2">
                     <option value="" hidden>Accounts Of</option>
                     @foreach ($suppliers as $supplier)
-                        <option value="{{ $supplier->name }}" @selected($arrivalTicket->accounts_of_name == $supplier->name)>
-                            {{ $supplier->name }}
+                        <option value="{{ $supplier->company_name }}"
+                            @selected($arrivalTicket->accounts_of_name == $supplier->company_name)>
+                            {{ $supplier->company_name }}
                         </option>
                     @endforeach
                 </select>
