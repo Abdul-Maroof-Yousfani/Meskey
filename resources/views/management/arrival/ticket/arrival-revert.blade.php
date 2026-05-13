@@ -170,9 +170,9 @@
                                             <select name="broker_name" id="broker_name" class="form-control select2">
                                                 <option value="">Broker Name</option>
                                                 @foreach ($suppliers as $supplier)
-                                                    <option value="{{ $supplier->name }}"
-                                                        @selected($arrivalTicket->broker_name == $supplier->name)>
-                                                        {{ $supplier->name }}
+                                                    <option value="{{ $supplier->company_name }}"
+                                                        @selected($arrivalTicket->broker_name == $supplier->company_name)>
+                                                        {{ $supplier->company_name }}
                                                     </option>
                                                 @endforeach
                                             </select>
@@ -194,9 +194,9 @@
                                                 class="form-control select2">
                                                 <option value="" hidden>Accounts Of</option>
                                                 @foreach ($suppliers as $supplier)
-                                                    <option value="{{ $supplier->name }}"
-                                                        @selected($arrivalTicket->accounts_of_name == $supplier->name)>
-                                                        {{ $supplier->name }}
+                                                    <option value="{{ $supplier->company_name }}"
+                                                        @selected($arrivalTicket->accounts_of_name == $supplier->company_name)>
+                                                        {{ $supplier->company_name }}
                                                     </option>
                                                 @endforeach
                                             </select>
@@ -565,12 +565,12 @@
                                                             value="{{ $arrivalTicket->approvals->total_bags }}"
                                                             autocomplete="off"
                                                             mddax="{{ $arrivalTicket->document_approval_status == 'half_approved' ? $arrivalTicket->bags : '' }}"" required />
-                                                                                                                                                                                                                        </div>
-                                                                                                                                                                                                                    </div>
-                                                                                                                                                                                                                </div>
+                                                                                                                                                                                                                                        </div>
+                                                                                                                                                                                                                                    </div>
+                                                                                                                                                                                                                                </div>
 
-                                                                                                                                                                                                                <div
-                                                                                                                                                                                                                    class="
+                                                                                                                                                                                                                                <div
+                                                                                                                                                                                                                                    class="
                                                             row total-rejection-section {{ $arrivalTicket->document_approval_status == 'fully_approved' ? 'd-none' : '' }}">
 
                                                         <div class="col-12">
@@ -996,9 +996,9 @@
                                                     <div class="form-group ">
                                                         <label>Status:</label>
                                                         <!-- @if (in_array($arrivalSamplingRequest->approved_status, ['approved', 'resampling', 'rejected']))
-                                                                    <input type="hidden" name="stage_status"
-                                                                        value="{{ $arrivalSamplingRequest->approved_status }}">
-                                                                @endif -->
+                                                                                    <input type="hidden" name="stage_status"
+                                                                                        value="{{ $arrivalSamplingRequest->approved_status }}">
+                                                                                @endif -->
                                                         @if($arrivalSamplingRequest->sampling_type == 'initial' && $arrivalSamplingRequest->approved_status == 'approved' && $arrivalTicket->location_transfer_status == 'transfered')
 
                                                             <input type="hidden" name="stage_status"
@@ -1012,7 +1012,7 @@
                                                             <option {{ $arrivalSamplingRequest->approved_status == 'approved' ? 'selected' : '' }} value="approved">
                                                                 Approved</option>
                                                             <!-- <option {{ $arrivalSamplingRequest->approved_status == 'resampling' ? 'selected' : '' }} value="resampling">Request Resampling
-                                                                    </option> -->
+                                                                                    </option> -->
                                                             <option {{ $arrivalSamplingRequest->approved_status == 'rejected' ? 'selected' : '' }} value="rejected">
                                                                 Rejected</option>
                                                         </select>
@@ -1988,13 +1988,13 @@
 
 
                                                                     <!-- @if($arrivalSamplingRequest->is_done == 'yes' && $arrivalSamplingRequest->approved_status == 'pending')
-                                                                                                            <div class="col-12 alert bg-light-danger">Sampling has been
-                                                                                                                completed
-                                                                                                                and
-                                                                                                                is awaiting purchaser approval. Updates are not allowed at
-                                                                                                                this
-                                                                                                                stage.</div>
-                                                                                                        @endif -->
+                                                                                                                                                            <div class="col-12 alert bg-light-danger">Sampling has been
+                                                                                                                                                                completed
+                                                                                                                                                                and
+                                                                                                                                                                is awaiting purchaser approval. Updates are not allowed at
+                                                                                                                                                                this
+                                                                                                                                                                stage.</div>
+                                                                                                                                                        @endif -->
 
                                                                     @if($arrivalTicket->bilty_return_confirmation == 1)
                                                                         <div class="col-12 alert bg-light-danger">Editing is disabled
