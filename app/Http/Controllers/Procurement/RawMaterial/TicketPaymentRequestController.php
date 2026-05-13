@@ -166,9 +166,11 @@ class TicketPaymentRequestController extends Controller
                             $approvedPaymentSum += $pRequest->total_amount;
                         }
                     } else {
-                        $totalFreightSum += $pRequest->total_amount;
-                        if ($pRequest->status == 'approved') {
-                            $approvedFreightSum += $pRequest->total_amount;
+                        if ($pRequest->request_type == 'freight_payment') {
+                            $totalFreightSum += $pRequest->total_amount;
+                            if ($pRequest->status == 'approved') {
+                                $approvedFreightSum += $pRequest->total_amount;
+                            }
                         }
                     }
                 }
