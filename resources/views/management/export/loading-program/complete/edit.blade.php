@@ -11,7 +11,7 @@
         <div class="col-xs-12 col-sm-4 col-md-4">
             <div class="form-group">
                 <label>Company Location:</label>
-                <select class="form-control select2" name="main_company_location_id" id="main_company_location_id">
+                <select class="form-control select2" name="main_company_location_id" id="main_company_location_id" disabled>
                     <option value="">Select Company Location</option>
                     @foreach (get_locations() as $loc)
                         <option value="{{ $loc->id }}" @selected($mainCompanyLocationId == $loc->id)>{{ $loc->name }}</option>
@@ -23,7 +23,7 @@
         <div class="col-xs-12 col-sm-4 col-md-4">
             <div class="form-group">
                 <label>Export Order:</label>
-                <select class="form-control select2" name="export_order_id[]" id="export_order_id" multiple>
+                <select class="form-control select2" name="export_order_id[]" id="export_order_id" multiple disabled>
                     @foreach ($ExportOrders as $eo)
                         <option value="{{ $eo->id }}" @selected($loadingProgram->exportOrders->contains($eo->id))>
                             {{ $eo->voucher_no ?? $eo->contract_no ?? 'EO-' . $eo->id }}
@@ -36,7 +36,7 @@
             <div class="form-group">
                 <label id="delivery_order_label">Delivery Order: <span id="delivery_order_required_mark"
                         class="text-danger">*</span></label>
-                <select class="form-control select2" name="delivery_order_id[]" id="delivery_order_id" multiple>
+                <select class="form-control select2" name="delivery_order_id[]" id="delivery_order_id" multiple disabled>
                     @foreach($loadingProgram->deliveryOrders as $do)
                         <option value="{{ $do->id }}" selected>{{ $do->reference_no }}</option>
                     @endforeach
@@ -46,10 +46,18 @@
         <div class="col-xs-12 col-sm-4 col-md-4">
             <div class="form-group">
                 <label>Vessel Name:</label>
-                <input type="text" name="vessel_name" class="form-control" value="{{ $loadingProgram->vessel_name }}" placeholder="Enter Vessel Name">
+                <input type="text" name="vessel_name" class="form-control" value="{{ $loadingProgram->vessel_name }}" placeholder="Enter Vessel Name" readonly>
+            </div>
+        </div>
+        <div class="col-xs-12 col-sm-4 col-md-4">
+            <div class="form-group">
+                <label>S. Bill No:</label>
+                <input type="text" name="s_bill_no" id="s_bill_no" class="form-control" readonly
+                    value="{{ $sBillNo ?? '' }}" placeholder="Enter S. Bill No"> 
             </div>
         </div>
         <input type="hidden" id="is_delivery_order_optional" value="0">
+        <input type="hidden" id="do_balance_qty" value="{{ $doBalanceQty }}">
     </div>
 
     <div class="row" id="exportOrderDataContainer" style="display: none;">
@@ -121,13 +129,14 @@
                 <table class="table table-bordered table-striped" id="itemsTable">
                     <thead class="thead-light">
                         <tr>
-                            <th style="width: 15%">Truck Number *</th>
-                            <th style="width: 15%">Container Number</th>
-                            <th style="width: 10%">Berth No</th>
+                            <th style="width: 13%">Truck Number *</th>
+                            <th style="width: 12%">Container Number</th>
+                            <th style="width: 8%">Berth No</th>
                             <th style="width: 10%">S.Bill No</th>
-                            <th style="width: 15%">Driver Name</th>
-                            <th style="width: 15%">Contact Details</th>
-                            <th style="width: 15%">Transporter</th>
+                            <th style="width: 12%">Driver Name</th>
+                            <th style="width: 12%">Contact Details</th>
+                            <th style="width: 13%">Transporter</th>
+                            <th style="width: 9%">Qty (MT)</th>
                             <th style="width: 5%">Actions</th>
                         </tr>
                     </thead>
@@ -135,43 +144,49 @@
                         @foreach($loadingProgram->loadingProgramItems as $index => $item)
                             <tr class="item-row" data-index="{{ $index }}">
                                 <td>
-                                    <input type="text" name="loading_program_items[{{ $index }}][truck_number]"
+                                        <input type="text" name="loading_program_items[{{ $index }}][truck_number]"
                                         class="form-control form-control-sm" required
-                                        value="{{ $item->truck_number }}" @disabled($item->firstWeighbridge)>
+                                        value="{{ $item->truck_number }}" @disabled($item->exportFirstWeighbridge)>
                                     <input type="hidden" name="loading_program_items[{{ $index }}][id]" value="{{ $item->id }}">
                                     <input type="hidden" name="loading_program_items[{{ $index }}][transaction_number]"
                                         value="{{ $item->transaction_number }}">
                                 </td>
                                 <td>
-                                    <input type="text" name="loading_program_items[{{ $index }}][container_number]" 
-                                        class="form-control form-control-sm" value="{{ $item->container_number }}" @disabled($item->firstWeighbridge)>
+                                    <input type="text" name="loading_program_items[{{ $index }}][container_number]"
+                                        class="form-control form-control-sm" value="{{ $item->container_number }}" @disabled($item->exportFirstWeighbridge)>
                                 </td>
                                 <td>
-                                    <input type="text" name="loading_program_items[{{ $index }}][berth_no]" 
-                                        class="form-control form-control-sm" value="{{ $item->berth_no }}" @disabled($item->firstWeighbridge)>
+                                    <input type="text" name="loading_program_items[{{ $index }}][berth_no]"
+                                        class="form-control form-control-sm" value="{{ $item->berth_no }}" @disabled($item->exportFirstWeighbridge)>
                                 </td>
                                 <td>
-                                    <input type="text" name="loading_program_items[{{ $index }}][s_bill_no]" 
-                                        class="form-control form-control-sm" value="{{ $item->s_bill_no }}" @disabled($item->firstWeighbridge)>
+                                    <input type="text" class="form-control form-control-sm item-sbill-display"
+                                        value="{{ $item->s_bill_no ?? '' }}" readonly
+                                        style="background:#f8f9fa; color:#555;" tabindex="-1">
                                 </td>
                                 <td>
-                                    <input type="text" name="loading_program_items[{{ $index }}][driver_name]" 
-                                        class="form-control form-control-sm" value="{{ $item->driver_name }}" @disabled($item->firstWeighbridge)>
+                                    <input type="text" name="loading_program_items[{{ $index }}][driver_name]"
+                                        class="form-control form-control-sm" value="{{ $item->driver_name }}" @disabled($item->exportFirstWeighbridge)>
                                 </td>
                                 <td>
-                                    <input type="text" name="loading_program_items[{{ $index }}][contact_details]" 
-                                        class="form-control form-control-sm" value="{{ $item->contact_details }}" @disabled($item->firstWeighbridge)>
+                                    <input type="text" name="loading_program_items[{{ $index }}][contact_details]"
+                                        class="form-control form-control-sm" value="{{ $item->contact_details }}" @disabled($item->exportFirstWeighbridge)>
                                 </td>
                                 <td>
-                                    <select name="loading_program_items[{{ $index }}][transporter_id]" class="form-control form-control-sm select2 transporter-select" @disabled($item->firstWeighbridge)>
+                                    <select name="loading_program_items[{{ $index }}][transporter_id]" class="form-control form-control-sm select2 transporter-select" @disabled($item->exportFirstWeighbridge)>
                                         <option value="">Select Transporter</option>
                                         @foreach($Transporters as $transporter)
                                             <option value="{{ $transporter->id }}" @selected($item->transporter_id == $transporter->id)>{{ $transporter->name }}</option>
                                         @endforeach
                                     </select>
                                 </td>
+                                <td>
+                                    <input type="number" name="loading_program_items[{{ $index }}][qty]"
+                                        class="form-control form-control-sm item-qty" step="0.001" min="0"
+                                        value="{{ $item->qty ?? 0 }}" @disabled($item->exportFirstWeighbridge)>
+                                </td>
                                 <td class="text-center">
-                                    <button type="button" class="btn btn-sm btn-danger remove-item-btn" @disabled($item->firstWeighbridge)>
+                                    <button type="button" class="btn btn-sm btn-danger remove-item-btn" @disabled($item->exportFirstWeighbridge)>
                                         <i class="ft-trash-2"></i>
                                     </button>
                                 </td>
@@ -191,10 +206,15 @@
             </div>
         </div>
     </div>
+    <div class="row mt-2">
+        <div class="col-12">
+            <div class="alert alert-danger" id="qty-balance-alert" style="display:none;"></div>
+        </div>
+    </div>
     <div class="row bottom-button-bar">
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
-            <button type="submit" class="btn btn-primary submitbutton">Save & Complete</button>
+            <button type="submit" class="btn btn-primary submitbutton">Save &amp; Complete</button>
         </div>
     </div>
 </form>
@@ -429,15 +449,17 @@
         }
 
         function addItemRow(index) {
+            const transporterOptions = `@foreach($Transporters as $transporter)<option value="{{ $transporter->id }}">{{ $transporter->name }}</option>@endforeach`;
             const itemHtml = `
                 <tr class="item-row" data-index="${index}">
                     <td><input type="text" name="loading_program_items[${index}][truck_number]" class="form-control form-control-sm" required></td>
                     <td><input type="text" name="loading_program_items[${index}][container_number]" class="form-control form-control-sm"></td>
                     <td><input type="text" name="loading_program_items[${index}][berth_no]" class="form-control form-control-sm"></td>
-                    <td><input type="text" name="loading_program_items[${index}][s_bill_no]" class="form-control form-control-sm"></td>
+                    <td><input type="text" class="form-control form-control-sm item-sbill-display" value="${$('#s_bill_no').val()}" readonly style="background:#f8f9fa; color:#555;" tabindex="-1"></td>
                     <td><input type="text" name="loading_program_items[${index}][driver_name]" class="form-control form-control-sm"></td>
                     <td><input type="text" name="loading_program_items[${index}][contact_details]" class="form-control form-control-sm"></td>
-                    <td><select name="loading_program_items[${index}][transporter_id]" class="form-control form-control-sm select2 transporter-select"><option value="">Select Transporter</option>@foreach($Transporters as $transporter)<option value="{{ $transporter->id }}">{{ $transporter->name }}</option>@endforeach</select></td>
+                    <td><select name="loading_program_items[${index}][transporter_id]" class="form-control form-control-sm select2 transporter-select"><option value="">Select Transporter</option>${transporterOptions}</select></td>
+                    <td><input type="number" name="loading_program_items[${index}][qty]" class="form-control form-control-sm item-qty" step="0.001" min="0" value="0"></td>
                     <td class="text-center"><button type="button" class="btn btn-sm btn-danger remove-item-btn"><i class="ft-trash-2"></i></button></td>
                 </tr>
             `;
@@ -446,6 +468,41 @@
             $newRow.find('.select2').select2({ width: '100%' });
         }
 
-        $(document).on('click', '.remove-item-btn', function() { $(this).closest('tr').remove(); });
+        // --- Qty Balance Validation ---
+        const doBalance = parseFloat($('#do_balance_qty').val()) || 0;
+
+        function checkQtyBalance() {
+            let totalQty = 0;
+            $('.item-qty:not([disabled])').each(function() {
+                totalQty += parseFloat($(this).val()) || 0;
+            });
+            totalQty = Math.round(totalQty * 1000) / 1000;
+            const balance = Math.round(doBalance * 1000) / 1000;
+
+            if (totalQty > balance) {
+                $('#qty-balance-alert').html(
+                    `<i class="fa fa-exclamation-triangle mr-1"></i> Total Qty <b>${totalQty.toFixed(3)} MT</b> exceeds DO Balance <b>${balance.toFixed(3)} MT</b>.`
+                ).show();
+                $('.submitbutton').attr('disabled', true);
+            } else {
+                $('#qty-balance-alert').hide();
+                $('.submitbutton').attr('disabled', false);
+            }
+        }
+
+        $(document).on('input change', '.item-qty', checkQtyBalance);
+        $(document).on('click', '.remove-item-btn', function() {
+            $(this).closest('tr').remove();
+            checkQtyBalance();
+        });
+
+        // --- S.Bill No Sync: header input → all item rows (readonly) ---
+        function syncSBillNo() {
+            const val = $('#s_bill_no').val();
+            $('.item-sbill-display').val(val);
+        }
+        $('#s_bill_no').on('input', syncSBillNo);
+        // On page load, sync existing rows
+        syncSBillNo();
     });
 </script>

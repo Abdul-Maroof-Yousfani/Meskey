@@ -54,12 +54,16 @@
                     </td>
                     <td>
                         <div class="d-flex gap-1">
-                            @if($loadingProgram->status == 'pending')
+                            <!-- @if($loadingProgram->status == 'pending')
                                 <a onclick="openModal(this,'{{ route('export-loading-program.edit', $loadingProgram->id) }}','Edit Loading Program Request', false, '90%')"
                                     class="warning p-1 text-center mr-1 position-relative" title="Edit">
                                     <i class="ft-edit font-medium-3"></i>
                                 </a>
-                            @endif
+                            @endif -->
+                            <a onclick="openModal(this,'{{ route('export-loading-program-complete.edit', $loadingProgram->id) }}','Manage Loading Program Items', false, '90%')"
+                                class="warning p-1 text-center mr-1 position-relative" title="Manage Items (Trucks)">
+                                <i class="ft-edit font-medium-3"></i>
+                            </a>
                             <a onclick="openModal(this,'{{ route('export-loading-program.show', $loadingProgram->id) }}','View Loading Program', true, '90%')"
                                 class="info p-1 text-center mr-1 position-relative" title="View">
                                 <i class="ft-eye font-medium-3"></i>

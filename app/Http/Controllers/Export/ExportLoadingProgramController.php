@@ -44,6 +44,7 @@ class ExportLoadingProgramController extends Controller
                     ->orWhere('vessel_name', 'like', $searchTerm);
                 });
             })
+            ->where('status', 'completed')
             ->latest()
             ->paginate($request->get('per_page', 25));
 
@@ -103,6 +104,7 @@ class ExportLoadingProgramController extends Controller
                 'arrival_locations' => $arrivalLocationIds,
                 'sub_arrival_locations' => $subArrivalLocationIds,
                 'vessel_name' => $request->vessel_name ?: ($deliveryOrders->first()?->vessel_name ?? 'N/A'),
+                's_bill_no' => $request->s_bill_no,
                 'remark' => $request->remark,
                 'status' => 'pending',
                 'created_by' => auth()->user()->id,
@@ -127,6 +129,7 @@ class ExportLoadingProgramController extends Controller
     {
         $loadingProgram = LoadingProgram::with([
             'loadingProgramItems.transporter',
+            'loadingProgramItems.exportQc',
             'exportOrders.buyer',
             'exportOrders.product',
             'exportOrders.packingItems',
@@ -144,6 +147,7 @@ class ExportLoadingProgramController extends Controller
     {
         $loadingProgram = LoadingProgram::with([
             'loadingProgramItems.transporter',
+            'loadingProgramItems.exportQc',
             'exportOrders.buyer',
             'exportOrders.product',
             'exportOrders.packingItems',
@@ -158,6 +162,7 @@ class ExportLoadingProgramController extends Controller
         $loadingProgram = LoadingProgram::with([
             'exportOrders',
             'deliveryOrders.locations.companyLocation',
+            'loadingProgramItems.exportFirstWeighbridge',
         ])->findOrFail($id);
 
         $selectedExportOrderIds = $loadingProgram->exportOrders->pluck('id')->toArray();
@@ -252,6 +257,7 @@ class ExportLoadingProgramController extends Controller
                 'arrival_locations' => $arrivalLocationIds,
                 'sub_arrival_locations' => $subArrivalLocationIds,
                 'vessel_name' => $request->vessel_name ?: ($deliveryOrders->first()?->vessel_name ?? $loadingProgram->vessel_name),
+                's_bill_no' => $request->s_bill_no,
                 'remark' => $request->remark,
             ]);
 
@@ -285,8 +291,8 @@ class ExportLoadingProgramController extends Controller
             'deliveryOrders',
             'createdBy',
         ])
-            // ->where('status', 'pending')
-            ->whereNotNull('status')
+            ->where('status', 'pending')
+            // ->whereNotNull('status')
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
                 return $q->where(function ($sq) use ($searchTerm) {
@@ -331,12 +337,24 @@ class ExportLoadingProgramController extends Controller
         $arrivalLocations = ArrivalLocation::whereIn('id', $arrivalLocationIds)->get()->map(fn($l) => ['id' => $l->id, 'text' => $l->name]);
         $subArrivalLocations = ArrivalSubLocation::whereIn('id', $subArrivalLocationIds)->get()->map(fn($l) => ['id' => $l->id, 'text' => $l->name]);
 
+        $doBalanceQty = $loadingProgram->deliveryOrders->sum(function($do) {
+            return get_second_weighbridge_balance_by_delivery_order($do->id);
+        });
+
+        // Add already-saved items' qty back (they are part of the same LP being edited)
+        $existingItemsQty = $loadingProgram->loadingProgramItems->sum('qty');
+        $doBalanceQty = $doBalanceQty + $existingItemsQty;
+
+        $sBillNo = $loadingProgram->s_bill_no ?: $loadingProgram->loadingProgramItems->first()?->s_bill_no;
+
         return view('management.export.loading-program.complete.edit', [
             'loadingProgram' => $loadingProgram,
             'ExportOrders' => $ExportOrders,
             'Transporters' => \App\Models\Master\Transporter::where('status', 'active')->get(),
             'arrivalLocations' => $arrivalLocations,
             'subArrivalLocations' => $subArrivalLocations,
+            'doBalanceQty' => round($doBalanceQty, 3),
+            'sBillNo' => $sBillNo,
         ]);
     }
 
@@ -382,22 +400,23 @@ class ExportLoadingProgramController extends Controller
                     'contact_details' => $itemData['contact_details'] ?? null,
                     'transporter_id' => $itemData['transporter_id'] ?? null,
                     'berth_no' => $itemData['berth_no'] ?? null,
-                    's_bill_no' => $itemData['s_bill_no'] ?? null,
-                    'qty' => 0,
+                    's_bill_no' => $request->s_bill_no ?? null,
+                    'qty' => $itemData['qty'] ?? 0,
                     'delivery_order_id' => $loadingProgram->delivery_order_id,
                 ];
 
                 if (!empty($itemData['id'])) {
-                    // Update existing
                     LoadingProgramItem::where('id', $itemData['id'])->update($itemPayload);
                 } else {
-                    // Create new
                     $itemPayload['transaction_number'] = $prefix . '-' . str_pad($lastNum++, 3, '0', STR_PAD_LEFT);
                     LoadingProgramItem::create($itemPayload);
                 }
             }
 
-            $loadingProgram->update(['status' => 'completed']);
+            $loadingProgram->update([
+                'status' => 'completed',
+                's_bill_no' => $request->s_bill_no
+            ]);
 
             DB::commit();
         } catch (Exception $e) {

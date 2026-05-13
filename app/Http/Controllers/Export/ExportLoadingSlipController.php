@@ -62,7 +62,10 @@ class ExportLoadingSlipController extends Controller
         $availableTickets = $this->ticketQuery()
             ->whereHas('exportQc', function ($query) {
                 $query->where('status', 'accept')
-                    ->orWhere('am_approval_status', 'approved');
+                    ->orWhere(function ($approvalQuery) {
+                        $approvalQuery->where('status', 'reject')
+                            ->where('am_approval_status', 'rejected');
+                    });
             })
             ->whereHas('exportFirstWeighbridge')
             ->whereDoesntHave('exportLoadingSlip')

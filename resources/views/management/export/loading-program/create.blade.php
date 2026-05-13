@@ -37,6 +37,12 @@
                 <input type="text" name="vessel_name" class="form-control" placeholder="Enter Vessel Name" readonly>
             </div>
         </div>
+        <div class="col-xs-12 col-sm-4 col-md-4">
+            <div class="form-group">
+                <label>S. Bill No:</label>
+                <input type="text" name="s_bill_no" class="form-control" placeholder="Enter S. Bill No">
+            </div>
+        </div>
         <input type="hidden" id="is_delivery_order_optional" value="0">
     </div>
 
