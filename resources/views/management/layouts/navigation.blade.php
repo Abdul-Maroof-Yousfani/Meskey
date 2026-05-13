@@ -866,20 +866,27 @@
                         </li>
                         {{--@endcanAccess --}}
 
-                        <!-- @canAccess('export-loading-program') -->
-                        <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                                href="{{ route('export-loading-program.index') }}"
-                                onclick="loadPageContent('{{ route('export-loading-program.index') }}')"
+                        @canAccess('export-loading-program')
+                        <li class="dropdown dropdown-submenu" data-menu="dropdown-submenu"><a
+                                class="dropdown-item d-flex align-items-center dropdown-toggle" href="javascript:;"
                                 data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
-                                    data-i18n="Extended">Loading Program Request</span></a>
+                                    data-i18n="Bootstrap Tables">Loading Program</span></a>
+                            <ul class="dropdown-menu">
+                                <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                        href="{{ route('export-loading-program.index') }}"
+                                        onclick="loadPageContent('{{ route('export-loading-program.index') }}')"
+                                        data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                            data-i18n="Extended">Loading Program</span></a>
+                                </li>
+                                <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                        href="{{ route('export-loading-program-complete.index') }}"
+                                        onclick="loadPageContent('{{ route('export-loading-program-complete.index') }}')"
+                                        data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                            data-i18n="Extended">Pending Loading Program</span></a>
+                                </li>
+                            </ul>
                         </li>
-                        <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                                href="{{ route('export-loading-program-complete.index') }}"
-                                onclick="loadPageContent('{{ route('export-loading-program-complete.index') }}')"
-                                data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
-                                    data-i18n="Extended">Loading Program</span></a>
-                        </li>
-                        <!-- @endcanAccess -->
+                        @endcanAccess
 
                         <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                 href="{{ route('export-qc.index') }}"

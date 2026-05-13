@@ -31,6 +31,12 @@
                 <input type="text" value="{{ $loadingProgram->vessel_name ?? 'N/A' }}" disabled class="form-control" />
             </div>
         </div>
+        <div class="col-xs-4 col-sm-4 col-md-4">
+            <div class="form-group">
+                <label>S. Bill No:</label>
+                <input type="text" value="{{ $loadingProgram->s_bill_no ?? 'N/A' }}" disabled class="form-control" />
+            </div>
+        </div>
     </div>
 
     {{-- Export Order Details Tabs --}}

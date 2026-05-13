@@ -62,7 +62,10 @@ class ExportFirstWeighBridgeController extends Controller
             })
                 ->whereHas('exportQc', function ($query) {
                     $query->where('status', 'accept')
-                        ->orWhere('am_approval_status', 'approved');
+                        ->orWhere(function ($approvalQuery) {
+                            $approvalQuery->where('status', 'reject')
+                                ->where('am_approval_status', 'rejected');
+                        });
                 })
                 ->whereDoesntHave('exportFirstWeighbridge')
                 ->with($this->ticketRelations())
