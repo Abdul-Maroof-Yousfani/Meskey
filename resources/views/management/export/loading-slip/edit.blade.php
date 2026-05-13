@@ -2,6 +2,10 @@
     @csrf
     @method('PUT')
     <input type="hidden" id="listRefresh" value="{{ route('get.export-loading-slip') }}" />
+    <style>
+        .select2-container, .select2-container--default, .select2-selection--single { width: 100% !important; }
+        .header-heading-sepration { border-bottom: 2px solid #ebeef3; padding-bottom: 5px; margin-bottom: 10px; }
+    </style>
 
     <div class="row form-mar">
         <div class="col-xs-12 col-sm-12 col-md-12">
@@ -25,9 +29,11 @@
                 @endforeach
             </ul>
             @php
-                $selectedGalas = array_map('trim', explode(',', $loadingSlip->gala));
-                $allGalaNames = collect($Orders)->pluck('gala_names')->flatten()->filter()->unique()->values();
-                $factoryNames = collect($Orders)->pluck('factory_names')->flatten()->filter()->unique()->implode(', ');
+                $allGalaNames = collect($Orders)->flatMap(fn($o) => $o['gala_names'] ?? [])->filter()->unique()->values();
+                $factoryNames = collect($Orders)->flatMap(fn($o) => $o['factory_names'] ?? [])->filter()->unique()->implode(', ');
+                $selectedGalaNames = $allGalaNames
+                    ->filter(fn($name) => in_array($name, $selectedGalas) || str_contains((string) $loadingSlip->gala, (string) $name))
+                    ->values();
             @endphp
             <div class="tab-content pt-1" id="orderTabsContent">
                 @foreach($Orders as $index => $order)
@@ -54,110 +60,117 @@
                 <div class="col-xs-12 col-sm-6 col-md-6">
                     <div class="form-group">
                         <label>Bag Size:</label>
-                        <input type="number" value="{{ $loadingSlip->bag_size }}" class="form-control" readonly step="0.01" />
+                        <input type="number" name="bag_size_display" value="{{ $loadingSlip->bag_size }}" class="form-control" readonly step="0.01" />
+                        <input type="hidden" name="bag_size" value="{{ $loadingSlip->bag_size }}" />
+                    </div>
+                </div>
+                <div class="col-xs-12 col-sm-6 col-md-6">
+                    <div class="form-group">
+                        <label>No. of Bags: <span class="text-danger">*</span></label>
+                        <input type="number" name="no_of_bags" id="no_of_bags" value="{{ $loadingSlip->no_of_bags }}" class="form-control" min="1" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-xs-12 col-sm-6 col-md-6">
+                    <div class="form-group">
+                        <label>Empty Bags:</label>
+                        <input type="text" name="empty_bags" id="empty_bags" value="{{ $loadingSlip->empty_bags }}" class="form-control" placeholder="Enter Empty Bags">
                     </div>
                 </div>
                 <div class="col-xs-12 col-sm-6 col-md-6">
                     <div class="form-group">
                         <label>Gala: <span class="text-danger">*</span></label>
-                        <select class="form-control select2 w-100" name="gala[]" multiple required style="width: 100% !important;" {{ (isset($canEdit) && !$canEdit) ? 'disabled' : '' }}>
+                        <select class="form-control select2-common w-100" name="gala[]" multiple required style="width: 100% !important;">
                             @foreach($allGalaNames as $name)
-                                <option value="{{ $name }}" @selected(in_array($name, $selectedGalas))>{{ $name }}</option>
+                                <option value="{{ $name }}" @selected($selectedGalaNames->contains($name))>{{ $name }}</option>
                             @endforeach
                         </select>
                     </div>
                 </div>
             </div>
 
+            <div class="row">
+                <div class="col-xs-12 col-sm-4 col-md-4">
+                    <div class="form-group">
+                        <label>Kilogram:</label>
+                        <input type="number" name="kilogram" id="kilogram" value="{{ $loadingSlip->kilogram ?? '' }}" class="form-control" readonly step="0.01" />
+                    </div>
+                </div>
+                <div class="col-xs-12 col-sm-4 col-md-4">
+                    <div class="form-group">
+                        <label>Metric Tons:</label>
+                        <input type="number" id="metric_tons_display" value="{{ number_format(($loadingSlip->kilogram ?? 0) / 1000, 2, '.', '') }}" class="form-control" readonly step="0.01" />
+                    </div>
+                </div>
+                <div class="col-xs-12 col-sm-4 col-md-4">
+                    <div class="form-group">
+                        <label>Seal No: <span class="text-danger">*</span></label>
+                        <input type="text" name="seal_no" id="seal_no" value="{{ $loadingSlip->seal_no }}" class="form-control" placeholder="Enter Seal No" required />
+                    </div>
+                </div>
             <input type="hidden" name="customer" value="{{ $loadingSlip->customer }}" />
             <input type="hidden" name="commodity" value="{{ $loadingSlip->commodity }}" />
             <input type="hidden" name="so_qty" value="{{ $loadingSlip->so_qty }}" />
             <input type="hidden" name="do_qty" value="{{ $loadingSlip->do_qty }}" />
             <input type="hidden" name="factory" value="{{ $loadingSlip->factory }}" />
-            <input type="hidden" name="bag_size" value="{{ $loadingSlip->bag_size }}" />
+            <input type="hidden" name="company_id" value="{{ auth()->user()->current_company_id }}" />
         @else
             <div class="col-12 text-center">No order data found.</div>
         @endif
     </div>
-    <div class="row">
-        <div class="col-xs-12 col-sm-6 col-md-6">
-            <div class="form-group">
-                <label>No. of Bags: <span class="text-danger">*</span></label>
-                <input type="number" name="no_of_bags" id="no_of_bags" value="{{ $loadingSlip->no_of_bags }}" class="form-control" min="1" required {{ (isset($canEdit) && !$canEdit) ? 'readonly' : '' }}>
-            </div>
-        </div>
-        <div class="col-xs-12 col-sm-6 col-md-6">
-            <div class="form-group">
-                <label>Labour</label>
-                <select name='labour' id='labour' class='form-control select2' {{ (isset($canEdit) && !$canEdit) ? 'disabled' : '' }}>
-                    <option value='paid' @selected($loadingSlip->labour == 'paid')>Paid</option>
-                    <option value='not_paid' @selected($loadingSlip->labour == 'not_paid')>Not Paid</option>
-                </select>
-            </div>
-        </div>
-        <div class="col-xs-12 col-sm-6 col-md-3">
-            <div class="form-group">
-                <label>Kilogram:</label>
-                <input type="number" name="kilogram" id="kilogram" value="{{ $loadingSlip->kilogram ?? '' }}" class="form-control" readonly step="0.01" />
-            </div>
-        </div>
-        <div class="col-xs-12 col-sm-6 col-md-3">
-            <div class="form-group">
-                <label>Metric Tons:</label>
-                <input type="number" id="metric_tons_display" value="{{ number_format(($loadingSlip->kilogram ?? 0) / 1000, 2, '.', '') }}" class="form-control" readonly step="0.01" />
-            </div>
-        </div>
-        <div class="col-xs-12 col-sm-6 col-md-3">
-            <div class="form-group">
-                <label>Seal No: <span class="text-danger">*</span></label>
-                <input type="text" name="seal_no" id="seal_no" value="{{ $loadingSlip->seal_no }}" class="form-control" placeholder="Enter Seal No" {{ (isset($canEdit) && !$canEdit) ? 'readonly' : '' }} required />
-            </div>
-        </div>
-    </div>
 
     <div class="row pt-3">
         <div class="col-12">
-            <h6 class="header-heading-sepration">Stack</h6>
-            <table class="table table-bordered table-striped">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+                <h6 class="header-heading-sepration mb-0" style="flex-grow: 1;">Stack</h6>
+                <button type="button" class="btn btn-sm btn-success" id="add_stack_row"><i class="ft-plus"></i> Add More</button>
+            </div>
+            <table class="table table-bordered table-striped" id="stacks_table">
                 <thead>
                     <tr>
-                        <th>Bag Type</th>
-                        <th>Packing Size (KG)</th>
+                        <th>Bag Type <span class="text-danger">*</span></th>
+                        <th>Packing Size (KG) <span class="text-danger">*</span></th>
                         <th>Input Size (KG)<span class="text-danger">*</span></th>
+                        <th width="50px">Action</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse ($loadingSlip->stacks as $idx => $stack)
+                    @php
+                        $displayStacks = $loadingSlip->stacks;
+                    @endphp
+                    @foreach ($displayStacks as $idx => $stack)
+                        @php
+                            $currentBagType = is_object($stack) ? $stack->bag_type : ($stack['bag_type'] ?? '');
+                            $currentPackingSize = is_object($stack) ? $stack->packing_size : ($stack['packing_size'] ?? '');
+                            $currentInputSize = is_object($stack) ? $stack->input_size : ($stack['input_size'] ?? '');
+                        @endphp
                         <tr>
                             <td>
-                                {{ $stack->bag_type }}
-                                <input type="hidden" name="stacks[{{ $idx }}][bag_type]" value="{{ $stack->bag_type }}">
+                                <select name="stacks[{{ $idx }}][bag_type]" class="form-control select2-dynamic" required style="width: 100%;">
+                                    <option value="">Select Bag Type</option>
+                                    @foreach($bagTypes as $type)
+                                        <option value="{{ $type }}" @selected($currentBagType == $type)>{{ $type }}</option>
+                                    @endforeach
+                                </select>
                             </td>
                             <td>
-                                {{ $stack->packing_size }}
-                                <input type="hidden" name="stacks[{{ $idx }}][packing_size]" value="{{ $stack->packing_size }}">
+                                <select name="stacks[{{ $idx }}][packing_size]" class="form-control select2-dynamic" required style="width: 100%;">
+                                    <option value="">Select Packing Size</option>
+                                    @foreach($packingSizes as $size)
+                                        <option value="{{ $size }}" @selected($currentPackingSize == $size)>{{ $size }}</option>
+                                    @endforeach
+                                </select>
                             </td>
                             <td>
-                                <input type="text" name="stacks[{{ $idx }}][input_size]" value="{{ $stack->input_size }}" class="form-control" placeholder="Enter Input Size" required {{ (isset($canEdit) && !$canEdit) ? 'readonly' : '' }}>
+                                <input type="text" name="stacks[{{ $idx }}][input_size]" value="{{ $currentInputSize }}" class="form-control" placeholder="Enter Input Size" required>
+                            </td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-sm btn-danger remove_stack_row"><i class="ft-trash-2"></i></button>
                             </td>
                         </tr>
-                    @empty
-                        @foreach ($fallbackStacks as $idx => $item)
-                            <tr>
-                                <td>
-                                    {{ $item['bag_type'] }}
-                                    <input type="hidden" name="stacks[{{ $idx }}][bag_type]" value="{{ $item['bag_type'] }}">
-                                </td>
-                                <td>
-                                    {{ $item['packing_size'] }}
-                                    <input type="hidden" name="stacks[{{ $idx }}][packing_size]" value="{{ $item['packing_size'] }}">
-                                </td>
-                                <td>
-                                    <input type="text" name="stacks[{{ $idx }}][input_size]" class="form-control" placeholder="Enter Input Size" required {{ (isset($canEdit) && !$canEdit) ? 'readonly' : '' }}>
-                                </td>
-                            </tr>
-                        @endforeach
-                    @endforelse
+                    @endforeach
                 </tbody>
             </table>
         </div>
@@ -171,7 +184,7 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Remarks:</label>
-                <textarea name="remarks" placeholder="Enter remarks" class="form-control" rows="3" {{ (isset($canEdit) && !$canEdit) ? 'readonly' : '' }}>{{ $loadingSlip->remarks }}</textarea>
+                <textarea name="remarks" placeholder="Enter remarks" class="form-control" rows="3">{{ $loadingSlip->remarks }}</textarea>
             </div>
         </div>
     </div>
@@ -219,16 +232,36 @@
     <div class="row bottom-button-bar">
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
-            @if(!isset($canEdit) || $canEdit)
             <button type="submit" class="btn btn-primary submitbutton">Update</button>
-            @endif
         </div>
     </div>
 </form>
 
 <script>
     $(document).ready(function() {
-        $(".select2").select2({ dropdownParent: $('#modal-sidebar') });
+        $(".select2-common, .select2-dynamic").select2({ width: '100%' });
+
+        $(document).on('select2:select select2:unselect', '.select2-common, .select2-dynamic', function() {
+            $(this).next('.select2-container').css('width', '100%');
+        });
+
+        // Store bag types and packing sizes for dynamic row addition
+        window.availableBagTypes = @json($bagTypes);
+        window.availablePackingSizes = @json($packingSizes);
+
+        $('#add_stack_row').on('click', function() {
+            addStackRow();
+        });
+
+        $(document).off('click', '.remove_stack_row').on('click', '.remove_stack_row', function() {
+            if ($('#stacks_table tbody tr').length > 1) {
+                $(this).closest('tr').remove();
+                updateStackIndices();
+            } else {
+                Swal.fire("Warning", "At least one stack row is required.", "warning");
+            }
+        });
+
         $('#no_of_bags').on('input', function() {
             var noOfBags = parseFloat($('#no_of_bags').val()) || 0;
             var bagSize = parseFloat($('input[name="bag_size"]').val()) || 0;
@@ -237,4 +270,47 @@
             $('#metric_tons_display').val((kilogram / 1000).toFixed(2));
         });
     });
+
+    function addStackRow() {
+        var idx = $('#stacks_table tbody tr').length;
+        var bagTypeOptions = window.availableBagTypes.map(type => `<option value="${type}">${type}</option>`).join('');
+        var packingSizeOptions = window.availablePackingSizes.map(size => `<option value="${size}">${size}</option>`).join('');
+
+        var row = `
+            <tr>
+                <td>
+                    <select name="stacks[${idx}][bag_type]" class="form-control select2-dynamic" required style="width: 100%;">
+                        <option value="">Select Bag Type</option>
+                        ${bagTypeOptions}
+                    </select>
+                </td>
+                <td>
+                    <select name="stacks[${idx}][packing_size]" class="form-control select2-dynamic" required style="width: 100%;">
+                        <option value="">Select Packing Size</option>
+                        ${packingSizeOptions}
+                    </select>
+                </td>
+                <td>
+                    <input type="text" name="stacks[${idx}][input_size]" class="form-control" placeholder="Enter Input Size" required>
+                </td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-sm btn-danger remove_stack_row"><i class="ft-trash-2"></i></button>
+                </td>
+            </tr>
+        `;
+        $('#stacks_table tbody').append(row);
+        $('#stacks_table tbody tr').last().find('.select2-dynamic').select2({ width: '100%' });
+    }
+
+    function updateStackIndices() {
+        $('#stacks_table tbody tr').each(function(idx) {
+            $(this).find('select, input').each(function() {
+                var name = $(this).attr('name');
+                if (name) {
+                    $(this).attr('name', name.replace(/stacks\[\d+\]/, `stacks[${idx}]`));
+                }
+            });
+        });
+    }
+
 </script>

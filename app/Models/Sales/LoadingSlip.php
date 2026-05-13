@@ -27,6 +27,7 @@ class LoadingSlip extends Model
         'delivery_order_id',
         'labour',
         'seal_no',
+        'empty_bags',
         'created_by',
         'company_id'
     ];
