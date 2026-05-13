@@ -290,9 +290,24 @@
         $('#second_weight').on('input', function() {
             const firstWeight = parseFloat($('#first_weight_display').val()) || 0;
             const secondWeight = parseFloat($(this).val()) || 0;
+            const balance = parseFloat($('#weight_difference').val()) || 0;
 
             const netWeight = secondWeight - firstWeight;
             $('#net_weight').val(netWeight.toFixed(2));
+
+            if (netWeight > balance) {
+                $(this).addClass('is-invalid');
+                if (!$(this).next('.invalid-feedback').length) {
+                    $(this).after('<div class="invalid-feedback">Net weight (' + netWeight.toFixed(2) + ') exceeds balance (' + balance.toFixed(2) + ')</div>');
+                } else {
+                    $(this).next('.invalid-feedback').text('Net weight (' + netWeight.toFixed(2) + ') exceeds balance (' + balance.toFixed(2) + ')');
+                }
+                $('.submitbutton').prop('disabled', true);
+            } else {
+                $(this).removeClass('is-invalid');
+                $(this).next('.invalid-feedback').remove();
+                $('.submitbutton').prop('disabled', false);
+            }
         });
     });
 </script>

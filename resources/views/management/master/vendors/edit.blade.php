@@ -273,23 +273,38 @@
              </div>
          </div>
      </div>
-     <div class="row form-mar">
-         <div class="col-12">
-             <h6 class="header-heading-sepration">
-                 Locations
-             </h6>
-         </div>
-         <div class="col-xs-12 col-sm-12 col-md-12">
-             @foreach ($companyLocations as $location)
-                 <div class="checkbox">
-                     <input name="company_location_ids[]" type="checkbox" id="location_{{ $location->id }}"
-                         value="{{ $location->id }}"
-                         {{ in_array($location->id, $selectedLocations) ? 'checked' : '' }}>
-                     <label for="location_{{ $location->id }}"><span>{{ $location->name }}</span></label>
-                 </div>
-             @endforeach
-         </div>
-     </div>
+      <div class="row form-mar">
+          <div class="col-12">
+              <h6 class="header-heading-sepration">
+                  Locations
+              </h6>
+          </div>
+          <div class="col-xs-6 col-sm-6 col-md-6">
+              <div class="form-group">
+                  <label>Company Location:</label>
+                  <select name="company_location_ids[]" id="company_location_ids" class="form-control select2">
+                      <option value="">Select Location</option>
+                      @foreach ($companyLocations as $location)
+                          <option value="{{ $location->id }}" {{ in_array($location->id, (array)$selectedLocations) ? 'selected' : '' }}>
+                              {{ $location->name }}
+                          </option>
+                      @endforeach
+                  </select>
+              </div>
+          </div>
+          <div class="col-xs-6 col-sm-6 col-md-6">
+              <div class="form-group">
+                  <label>Sub Location:</label>
+                  <select name="arrival_location_ids[]" id="arrival_location_ids" class="form-control select2" multiple>
+                      @foreach ($arrivalLocations as $arrival)
+                          <option value="{{ $arrival->id }}" {{ in_array($arrival->id, (array)($supplier->arrival_location_ids ?? [])) ? 'selected' : '' }}>
+                              {{ $arrival->name }}
+                          </option>
+                      @endforeach
+                  </select>
+              </div>
+          </div>
+      </div>
 
      <div class="row">
          <div class="col-12">
@@ -481,5 +496,27 @@
 
          toggleRemoveButton();
          toggleRemoveButton2();
+
+         $('.select2').select2();
+
+         $('#company_location_ids').on('change', function() {
+             var companyLocationId = $(this).val();
+             if (companyLocationId) {
+                 $.ajax({
+                     url: '/master/get-arrival-location/' + companyLocationId,
+                     type: 'GET',
+                     success: function(data) {
+                         $('#arrival_location_ids').empty();
+                         $.each(data, function(key, value) {
+                             $('#arrival_location_ids').append('<option value="' + value.id + '">' + value.name + '</option>');
+                         });
+                         $('#arrival_location_ids').trigger('change.select2');
+                     }
+                 });
+             } else {
+                 $('#arrival_location_ids').empty();
+                 $('#arrival_location_ids').trigger('change.select2');
+             }
+         });
      });
  </script>

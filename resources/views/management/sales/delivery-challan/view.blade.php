@@ -159,9 +159,12 @@
                 <div class="form-group">
                     <label class="form-label">Labour:</label>
                     <select class="form-control select2" disabled>
-                        <option value="">Select Labours</option>
-                        <option value="1" @selected($delivery_challan->labour == 1)>Labour 1</option>
-                        <option value="2" @selected($delivery_challan->labour == 2)>Labour 2</option>
+                        @if($delivery_challan->labour)
+                            @php $v = \App\Models\Master\Vendor::find($delivery_challan->labour); @endphp
+                            @if($v)
+                                <option value="{{ $v->id }}" selected>{{ $v->name }}</option>
+                            @endif
+                        @endif
                     </select>
                 </div>
             </div>

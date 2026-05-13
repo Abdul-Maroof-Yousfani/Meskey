@@ -23,10 +23,17 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label>Party Name (Buyer):</label>
-                        <select name="buyer_id" class="form-control select2" required>
+                        <div class="buyer-type-filter mb-1" style="font-size: 12px;">
+                            <label class="mr-2"><input type="radio" name="buyer_type" value="all" checked> All</label>
+                            <label class="mr-2"><input type="radio" name="buyer_type" value="local"> Local</label>
+                            <label class="mr-2"><input type="radio" name="buyer_type" value="international"> International</label>
+                        </div>
+                        <select name="buyer_id" id="buyer_id" class="form-control select2" required>
                             <option value="">Select Buyer</option>
                             @foreach ($users as $user)
-                                <option value="{{ $user->id }}" {{ $exportSodaField->buyer_id == $user->id ? 'selected' : '' }}>{{ $user->name }}</option>
+                                <option value="{{ $user->id }}" {{ $exportSodaField->buyer_id == $user->id ? 'selected' : '' }} data-type="{{ strtolower($user->type) }}">
+                                    {{ $user->name }} ({{ ucfirst($user->type) }})
+                                </option>
                             @endforeach
                         </select>
                     </div>
@@ -239,6 +246,39 @@
 <script>
 $(document).ready(function() {
     $('.select2').select2({ width: '100%'});
+
+    // ---- BUYER FILTER LOGIC ----
+    const allBuyerOptions = $('#buyer_id option').clone();
+    
+    $('input[name="buyer_type"]').on('change', function() {
+        let selectedType = $(this).val();
+        let buyerSelect = $('#buyer_id');
+        let currentVal = buyerSelect.val();
+        
+        buyerSelect.empty().append('<option value="">Select Buyer</option>');
+        
+        allBuyerOptions.each(function() {
+            let optionType = $(this).data('type');
+            if (selectedType === 'all' || optionType === selectedType) {
+                if ($(this).val() !== "") {
+                    buyerSelect.append($(this).clone());
+                }
+            }
+        });
+        
+        buyerSelect.val(currentVal).trigger('change.select2');
+        
+        // Dropdown ko dubara kholna taake user ko asani ho
+        setTimeout(() => {
+            buyerSelect.select2('open');
+        }, 100);
+    });
+
+    // Auto-select type based on existing buyer
+    let initialBuyerType = $('#buyer_id option:selected').data('type');
+    if (initialBuyerType) {
+        // $('input[name="buyer_type"][value="' + initialBuyerType + '"]').prop('checked', true).trigger('change');
+    }
 
     // ---- ROW LEVEL CALCULATIONS ----
     $(document).on('input', '.metric-tons, .bag-size', function() {

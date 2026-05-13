@@ -341,6 +341,7 @@ class PurchaseRequestController extends Controller
 
             DB::commit();
 
+            
             return response()->json([
                 'success' => 'Purchase request created successfully.',
                 'data' => $purchaseRequest,
@@ -445,12 +446,12 @@ class PurchaseRequestController extends Controller
         try {
             $purchaseRequest = PurchaseRequest::findOrFail($id);
 
-            if($purchaseRequest->am_approval_status == "approved" || $purchaseRequest->am_approval_status == "rejected") {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Purchase request is already approved or rejected.',
-                ], 422);
-            }
+            // if($purchaseRequest->am_approval_status == "approved" || $purchaseRequest->am_approval_status == "rejected") {
+            //     return response()->json([
+            //         'success' => false,
+            //         'message' => 'Purchase request is already approved or rejected.',
+            //     ], 422);
+            // }
 
             $updateData = [
                 'purchase_date' => $request->purchase_date,
@@ -656,7 +657,7 @@ class PurchaseRequestController extends Controller
                 // Also clean up job order associations only for the deleted items
                 $actuallyDeletedIds = PurchaseRequestData::whereIn('id', $itemsToDelete)
                     ->whereNotIn('am_approval_status', ['approved', 'rejected'])
-                    ->withTrashed() // If using SoftDeletes, or just use the same logic
+                    // ->withTrashed() // If using SoftDeletes, or just use the same logic
                     ->pluck('id');
                 
                 PurchaseAgainstJobOrder::whereIn('purchase_request_data_id', $itemsToDelete)

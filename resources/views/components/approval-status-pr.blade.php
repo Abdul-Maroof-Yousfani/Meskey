@@ -10,7 +10,7 @@
         
         $hasPendingItems = false;
         if (method_exists($model, 'PurchaseData')) {
-            $hasPendingItems = $model->PurchaseData()->whereNotIn('am_approval_status', ['approved', 'rejected', 'neglected'])->exists();
+            $hasPendingItems = $model->PurchaseData()->whereNotIn('am_approval_status', ['approved', 'rejected', 'neglected', 'reverted', 'returned'])->exists();
         }
 
         $userAlreadyActed = $userAlreadyApproved && !$hasPendingItems;

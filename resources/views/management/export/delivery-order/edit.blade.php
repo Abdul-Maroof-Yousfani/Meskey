@@ -15,12 +15,14 @@
         padding-top: 15px !important;
         padding-bottom: 15px !important;
     }
+
     .snapshot-area {
         opacity: 0.9;
     }
 </style>
 
-<form action="{{ route('export-delivery-order.update', $deliveryOrder->id) }}" method="POST" id="ajaxSubmit" autocomplete="off">
+<form action="{{ route('export-delivery-order.update', $deliveryOrder->id) }}" method="POST" id="ajaxSubmit"
+    autocomplete="off">
     @csrf
     @method('PUT')
     <input type="hidden" id="listRefresh" value="{{ route('get.export-delivery-order') }}" />
@@ -33,12 +35,13 @@
                 <div class="col-md-3 mt-2">
                     <div class="form-group">
                         <label>Do No:</label>
-                        <input type="text" name="reference_no" id="reference_no" value="{{ $deliveryOrder->reference_no }}" class="form-control" readonly>
+                        <input type="text" name="reference_no" id="reference_no"
+                            value="{{ $deliveryOrder->reference_no }}" class="form-control" readonly>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Customer:</label>
+                        <label>Customer: <span class="text-danger">*</span></label>
                         <select name="buyer_id" id="buyer_id_edit" class="form-control" disabled>
                             @foreach ($buyers as $buyer)
                                 <option value="{{ $buyer->id }}" {{ $deliveryOrder->customer_id == $buyer->id ? 'selected' : '' }}>{{ $buyer->name }}</option>
@@ -48,7 +51,7 @@
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Export Order:</label>
+                        <label>Export Order: <span class="text-danger">*</span></label>
                         <select name="export_order_id" id="export_order_id_edit" class="form-control" disabled>
                             @foreach ($export_orders as $eo)
                                 <option value="{{ $eo->id }}" {{ $deliveryOrder->export_order_id == $eo->id ? 'selected' : '' }}>#{{ $eo->voucher_no }}</option>
@@ -59,14 +62,15 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label>Form-E Select: <span class="text-danger">*</span></label>
-                        <select name="export_form_e_id" id="export_form_e_id_edit" class="form-control select2" required>
+                        <select name="export_form_e_id" id="export_form_e_id_edit" class="form-control select2"
+                            required>
                             <option value="">Select Form-E</option>
                             @php
                                 $formEs = \App\Models\Export\ExportFormE::where('export_order_id', $deliveryOrder->export_order_id)->get();
                             @endphp
                             @foreach($formEs as $fe)
                                 <option value="{{ $fe->id }}" {{ $deliveryOrder->export_form_e_id == $fe->id ? 'selected' : '' }}>
-                                    {{ $fe->form_e_no ?? 'FE-'.$fe->id }} (Qty: {{ $fe->input_quantity }} MT)
+                                    {{ $fe->form_e_no ?? 'FE-' . $fe->id }} (Qty: {{ $fe->input_quantity }} MT)
                                 </option>
                             @endforeach
                         </select>
@@ -74,20 +78,23 @@
                 </div>
                 <div class="col-md-3 mt-2">
                     <div class="form-group">
-                        <label>Reference Number:</label>
-                        <input type="text" name="ref_no" id="ref_no" value="{{ $deliveryOrder->ref_no }}" class="form-control">
+                        <label>Reference Number: <span class="text-danger">*</span></label>
+                        <input type="text" name="ref_no" id="ref_no" value="{{ $deliveryOrder->ref_no }}"
+                            class="form-control" required>
                     </div>
                 </div>
                 <div class="col-md-3 mt-2">
                     <div class="form-group">
                         <label>Job Order No:</label>
-                        <input type="text" name="job_order_no" id="job_order_no" value="{{ $deliveryOrder->job_order_no }}" class="form-control" readonly>
+                        <input type="text" name="job_order_no" id="job_order_no"
+                            value="{{ $deliveryOrder->job_order_no }}" class="form-control" readonly>
                     </div>
                 </div>
                 <div class="col-md-3 mt-2">
                     <div class="form-group">
-                        <label>Financial Instrument No:</label>
-                        <input type="text" name="financial_instrument_no" id="financial_instrument_no" value="{{ $deliveryOrder->financial_instrument_no }}" class="form-control">
+                        <label>Financial Instrument No: <span class="text-danger">*</span></label>
+                        <input type="text" name="financial_instrument_no" id="financial_instrument_no"
+                            value="{{ $deliveryOrder->financial_instrument_no }}" class="form-control">
                     </div>
                 </div>
             </div>
@@ -112,71 +119,84 @@
                 </thead>
                 <tbody id="locationRows">
                     @forelse($deliveryOrder->locations as $index => $loc)
-                    <tr class="location-row">
-                        <td>
-                            <select name="locations[{{ $index }}][location_id]" class="form-control select2 location-select">
-                                <option value="">Select Location</option>
-                                @foreach (get_locations() as $location)
-                                    <option value="{{ $location->id }}" @selected($location->id == $loc->company_location_id)>{{ $location->name }}</option>
-                                @endforeach
-                            </select>
-                        </td>
-                        <td>
-                            <select name="locations[{{ $index }}][arrival_ids][]" class="form-control select2 arrival-select" multiple>
-                                <option value="">Select Factory</option>
-                                @php
-                                    $selectedArrivalIds = $loc->arrival_location_ids ? explode(',', $loc->arrival_location_ids) : [];
-                                @endphp
-                                @foreach (get_arrivals_by($loc->company_location_id) as $arrival)
-                                    <option value="{{ $arrival->id }}" @selected(in_array($arrival->id, $selectedArrivalIds))>{{ $arrival->name }}</option>
-                                @endforeach
-                            </select>
-                        </td>
-                        <td>
-                            <select name="locations[{{ $index }}][storage_ids][]" class="form-control select2 storage-select" multiple>
-                                <option value="">Select Section</option>
-                                @php
-                                    $selectedSubArrivalIds = $loc->sub_arrival_location_ids ? explode(',', $loc->sub_arrival_location_ids) : [];
-                                    $arrivalIds = $loc->arrival_location_ids ? explode(',', $loc->arrival_location_ids) : [];
-                                @endphp
-                                @if(!empty($arrivalIds))
-                                    @foreach (get_sub_arrivals_by_multiple($arrivalIds) as $sub)
-                                        <option value="{{ $sub->id }}" @selected(in_array($sub->id, $selectedSubArrivalIds))>{{ $sub->name }} ({{ $sub->arrivalLocation->name }})</option>
+                        <tr class="location-row">
+                            <td>
+                                <select name="locations[{{ $index }}][location_id]"
+                                    class="form-control select2 location-select">
+                                    <option value="">Select Location</option>
+                                    @foreach (get_locations() as $location)
+                                        <option value="{{ $location->id }}" @selected($location->id == $loc->company_location_id)>
+                                            {{ $location->name }}</option>
                                     @endforeach
-                                @endif
-                            </select>
-                        </td>
-                        <td class="text-center">
-                            <button type="button" class="btn btn-sm btn-danger remove-location-row" @if($deliveryOrder->locations->count() <= 1) style="display: none;" @endif><i class="ft-trash font-medium-1"></i></button>
-                        </td>
-                    </tr>
+                                </select>
+                                <span class="text-danger error-message"
+                                    id="error_locations_{{ $index }}_location_id"></span>
+                            </td>
+                            <td>
+                                <select name="locations[{{ $index }}][arrival_ids][]"
+                                    class="form-control select2 arrival-select" multiple>
+                                    <option value="">Select Factory</option>
+                                    @php
+                                        $selectedArrivalIds = $loc->arrival_location_ids ? explode(',', $loc->arrival_location_ids) : [];
+                                    @endphp
+                                    @foreach (get_arrivals_by($loc->company_location_id) as $arrival)
+                                        <option value="{{ $arrival->id }}" @selected(in_array($arrival->id, $selectedArrivalIds))>{{ $arrival->name }}</option>
+                                    @endforeach
+                                </select>
+                            </td>
+                            <td>
+                                <select name="locations[{{ $index }}][storage_ids][]"
+                                    class="form-control select2 storage-select" multiple>
+                                    <option value="">Select Section</option>
+                                    @php
+                                        $selectedSubArrivalIds = $loc->sub_arrival_location_ids ? explode(',', $loc->sub_arrival_location_ids) : [];
+                                        $arrivalIds = $loc->arrival_location_ids ? explode(',', $loc->arrival_location_ids) : [];
+                                    @endphp
+                                    @if(!empty($arrivalIds))
+                                        @foreach (get_sub_arrivals_by_multiple($arrivalIds) as $sub)
+                                            <option value="{{ $sub->id }}" @selected(in_array($sub->id, $selectedSubArrivalIds))>
+                                                {{ $sub->name }} ({{ $sub->arrivalLocation->name }})</option>
+                                        @endforeach
+                                    @endif
+                                </select>
+                            </td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-sm btn-danger remove-location-row"
+                                    @if($deliveryOrder->locations->count() <= 1) style="display: none;" @endif><i
+                                        class="ft-trash font-medium-1"></i></button>
+                            </td>
+                        </tr>
                     @empty
-                    <tr class="location-row">
-                        <td>
-                            <select name="locations[0][location_id]" class="form-control select2 location-select">
-                                <option value="">Select Location</option>
-                                @foreach (get_locations() as $location)
-                                    <option value="{{ $location->id }}">{{ $location->name }}</option>
-                                @endforeach
-                            </select>
-                        </td>
-                        <td>
-                            <select name="locations[0][arrival_ids][]" class="form-control select2 arrival-select" multiple disabled>
-                                <option value="">Select Factory</option>
-                            </select>
-                        </td>
-                        <td>
-                            <select name="locations[0][storage_ids][]" class="form-control select2 storage-select" multiple disabled>
-                                <option value="">Select Section</option>
-                            </select>
-                        </td>
-                        <td class="text-center">
-                            <button type="button" class="btn btn-sm btn-danger remove-location-row" style="display: none;"><i class="ft-trash font-medium-1"></i></button>
-                        </td>
-                    </tr>
+                        <tr class="location-row">
+                            <td>
+                                <select name="locations[0][location_id]" class="form-control select2 location-select">
+                                    <option value="">Select Location</option>
+                                    @foreach (get_locations() as $location)
+                                        <option value="{{ $location->id }}">{{ $location->name }}</option>
+                                    @endforeach
+                                </select>
+                            </td>
+                            <td>
+                                <select name="locations[0][arrival_ids][]" class="form-control select2 arrival-select"
+                                    multiple disabled>
+                                    <option value="">Select Factory</option>
+                                </select>
+                            </td>
+                            <td>
+                                <select name="locations[0][storage_ids][]" class="form-control select2 storage-select"
+                                    multiple disabled>
+                                    <option value="">Select Section</option>
+                                </select>
+                            </td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-sm btn-danger remove-location-row"
+                                    style="display: none;"><i class="ft-trash font-medium-1"></i></button>
+                            </td>
+                        </tr>
                     @endforelse
                 </tbody>
             </table>
+            <span class="text-danger error-message" id="error_locations"></span>
         </div>
     </div>
 
@@ -191,19 +211,23 @@
                             <option value="{{ $location->id }}">{{ $location->name }}</option>
                         @endforeach
                     </select>
+                    <span class="text-danger error-message" id="error_locations_INDEX_location_id"></span>
                 </td>
                 <td>
-                    <select name="locations[INDEX][arrival_ids][]" class="form-control arrival-select" multiple disabled>
+                    <select name="locations[INDEX][arrival_ids][]" class="form-control arrival-select" multiple
+                        disabled>
                         <option value="">Select Factory</option>
                     </select>
                 </td>
                 <td>
-                    <select name="locations[INDEX][storage_ids][]" class="form-control storage-select" multiple disabled>
+                    <select name="locations[INDEX][storage_ids][]" class="form-control storage-select" multiple
+                        disabled>
                         <option value="">Select Section</option>
                     </select>
                 </td>
                 <td class="text-center">
-                    <button type="button" class="btn btn-sm btn-danger remove-location-row"><i class="ft-trash font-medium-1"></i></button>
+                    <button type="button" class="btn btn-sm btn-danger remove-location-row"><i
+                            class="ft-trash font-medium-1"></i></button>
                 </td>
             </tr>
         </tbody>
@@ -214,21 +238,27 @@
             <div class="col-8">
                 <!-- Basic Information -->
                 <div class="">
-                    <div class="alert alert-info mt-3" id="qty_info_alert" style="padding: 10px; margin-bottom:15px; border-radius: 5px; border-left: 5px solid #17a2b8;">
+                    <div class="alert alert-info mt-3" id="qty_info_alert"
+                        style="padding: 10px; margin-bottom:15px; border-radius: 5px; border-left: 5px solid #17a2b8;">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <strong>Form-E Capacity:</strong>
-                                Total Allowed: <span id="lbl_total_eo_mt" class="font-weight-bold">{{ round($totalAllowedMt, 3) }}</span> MT &nbsp;|&nbsp;
-                                Prev DO'd (Others): <span id="lbl_consumed_mt" class="font-weight-bold">{{ round($alreadyConsumedMt, 3) }}</span> MT &nbsp;|&nbsp;
-                                Current Request: <span id="lbl_current_request_mt" class="font-weight-bold text-primary">{{ round($currentRequestMt, 3) }}</span> MT
+                                Total Allowed: <span id="lbl_total_eo_mt"
+                                    class="font-weight-bold">{{ round($totalAllowedMt, 3) }}</span> MT &nbsp;|&nbsp;
+                                Prev DO'd (Others): <span id="lbl_consumed_mt"
+                                    class="font-weight-bold">{{ round($alreadyConsumedMt, 3) }}</span> MT &nbsp;|&nbsp;
+                                Current Request: <span id="lbl_current_request_mt"
+                                    class="font-weight-bold text-primary">{{ round($currentRequestMt, 3) }}</span> MT
                             </div>
                             <div class="badge badge-pill badge-light p-2" style="font-size: 1rem;">
-                                Balance: <span id="lbl_remaining_mt" class="font-weight-bold">{{ round($remainingMt, 3) }}</span> MT
+                                Balance: <span id="lbl_remaining_mt"
+                                    class="font-weight-bold">{{ round($remainingMt, 3) }}</span> MT
                             </div>
                         </div>
                     </div>
 
-                    <div id="qty_error_msg" class="alert alert-danger mt-2" style="display: none; font-weight: bold; border-left: 5px solid #dc3545;">
+                    <div id="qty_error_msg" class="alert alert-danger mt-2"
+                        style="display: none; font-weight: bold; border-left: 5px solid #dc3545;">
                         <i class="fas fa-exclamation-triangle mr-2"></i> ERROR: Quantity exceeds Export Form-E capacity!
                     </div>
 
@@ -285,7 +315,7 @@
                 <div class=" mt-3">
                     <label>Commodity/Product:</label>
                     <input type="text" id="snap_product_name_edit" class="form-control" disabled>
-                    
+
                     <label class="mt-2">Visual Name:</label>
                     <input type="text" id="snap_visual_name_edit" class="form-control" disabled>
                 </div>
@@ -297,23 +327,6 @@
                     </div>
                 </div>
 
-                <div class="mt-4">
-                    <h6 class="header-heading-sepration">Commission</h6>
-                    <div class="row">
-                        <div class="col-md-4">
-                            <label>Commission (%):</label>
-                            <input type="text" id="snap_commission_percentage_edit" class="form-control" disabled>
-                        </div>
-                        <div class="col-md-4">
-                            <label>Amt/Ton:</label>
-                            <input type="text" id="snap_commission_amount_per_ton_edit" class="form-control" disabled>
-                        </div>
-                        <div class="col-md-4">
-                            <label>Total Commission:</label>
-                            <input type="text" id="snap_commission_edit" class="form-control" disabled>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <div class="col-4">
@@ -322,63 +335,78 @@
                     <table class="table table-bordered spacing-table" style="margin-bottom:0; background: #fff;">
                         <tr>
                             <td style="width: 30%; font-weight: bold; vertical-align: middle;">INCOTERMS</td>
-                            <td style="width: 70%;"><input type="text" id="snap_incoterm_edit" class="form-control" disabled></td>
+                            <td style="width: 70%;"><input type="text" id="snap_incoterm_edit" class="form-control"
+                                    disabled></td>
                         </tr>
                         <tr>
                             <td style="width: 30%; font-weight: bold; vertical-align: middle;">PACKING TYPE</td>
-                            <td style="width: 70%;"><input type="text" id="snap_packing_type_edit" class="form-control" disabled></td>
+                            <td style="width: 70%;"><input type="text" id="snap_packing_type_edit" class="form-control"
+                                    disabled></td>
                         </tr>
                         <tr>
                             <td style="width: 30%; font-weight: bold; vertical-align: middle;">MODE OF TERM</td>
-                            <td style="width: 70%;"><input type="text" id="snap_mode_of_term_edit" class="form-control" disabled></td>
+                            <td style="width: 70%;"><input type="text" id="snap_mode_of_term_edit" class="form-control"
+                                    disabled></td>
                         </tr>
                         <tr>
                             <td style="width: 30%; font-weight: bold; vertical-align: middle;">MODE OF TRANSPORT</td>
-                            <td style="width: 70%;"><input type="text" id="snap_mode_of_transport_edit" class="form-control" disabled></td>
+                            <td style="width: 70%;"><input type="text" id="snap_mode_of_transport_edit"
+                                    class="form-control" disabled></td>
                         </tr>
                         <tr>
                             <td style="width: 30%; font-weight: bold; vertical-align: middle;">ORIGIN</td>
-                            <td style="width: 70%;"><input type="text" id="snap_origin_country_edit" class="form-control" disabled></td>
+                            <td style="width: 70%;"><input type="text" id="snap_origin_country_edit"
+                                    class="form-control" disabled></td>
                         </tr>
                         <tr>
                             <td style="width: 30%; font-weight: bold; vertical-align: middle;">PORT OF DISCHARGE</td>
-                            <td style="width: 70%;"><input type="text" id="snap_port_of_discharge_edit" class="form-control" disabled></td>
+                            <td style="width: 70%;"><input type="text" id="snap_port_of_discharge_edit"
+                                    class="form-control" disabled></td>
                         </tr>
                         <tr>
                             <td style="width: 30%; font-weight: bold; vertical-align: middle;">PORT OF LOADING</td>
-                            <td style="width: 70%;"><input type="text" id="snap_port_of_loading_edit" class="form-control" disabled></td>
+                            <td style="width: 70%;"><input type="text" id="snap_port_of_loading_edit"
+                                    class="form-control" disabled></td>
                         </tr>
                         <tr>
                             <td style="width: 30%; font-weight: bold; vertical-align: middle;">HS CODE</td>
-                            <td style="width: 70%;"><input type="text" id="snap_hs_code_edit" class="form-control" disabled></td>
+                            <td style="width: 70%;"><input type="text" id="snap_hs_code_edit" class="form-control"
+                                    disabled></td>
                         </tr>
                         <tr>
                             <td style="width: 30%; font-weight: bold; vertical-align: middle;">PARTIAL PAYMENT</td>
-                            <td style="width: 70%;"><input type="text" id="snap_partial_payment_edit" class="form-control" disabled></td>
+                            <td style="width: 70%;"><input type="text" id="snap_partial_payment_edit"
+                                    class="form-control" disabled></td>
                         </tr>
                         <tr>
                             <td style="width: 30%; font-weight: bold; vertical-align: middle;">TRANSHIPMENT</td>
-                            <td style="width: 70%;"><input type="text" id="snap_transhipment_edit" class="form-control" disabled></td>
+                            <td style="width: 70%;"><input type="text" id="snap_transhipment_edit" class="form-control"
+                                    disabled></td>
                         </tr>
                         <tr>
                             <td style="width: 30%; font-weight: bold; vertical-align: middle;">PART SHIPMENT</td>
-                            <td style="width: 70%;"><input type="text" id="snap_part_shipment_edit" class="form-control" disabled></td>
+                            <td style="width: 70%;"><input type="text" id="snap_part_shipment_edit" class="form-control"
+                                    disabled></td>
                         </tr>
                         <tr>
                             <td style="width: 30%; font-weight: bold; vertical-align: middle;">INSURANCE COVERED BY</td>
-                            <td style="width: 70%;"><input type="text" id="snap_insurance_covered_by_edit" class="form-control" disabled></td>
+                            <td style="width: 70%;"><input type="text" id="snap_insurance_covered_by_edit"
+                                    class="form-control" disabled></td>
                         </tr>
                         <tr>
                             <td style="width: 30%; font-weight: bold; vertical-align: middle;">ADVANCE PAYMENT(%)</td>
-                            <td style="width: 70%;"><input type="text" id="snap_advance_payment_edit" class="form-control" disabled></td>
+                            <td style="width: 70%;"><input type="text" id="snap_advance_payment_edit"
+                                    class="form-control" disabled></td>
                         </tr>
                         <tr>
                             <td style="width: 30%; font-weight: bold; vertical-align: middle;">PAYMENT DAYS</td>
-                            <td style="width: 70%;"><input type="text" id="snap_payment_days_edit" class="form-control" disabled></td>
+                            <td style="width: 70%;"><input type="text" id="snap_payment_days_edit" class="form-control"
+                                    disabled></td>
                         </tr>
                         <tr>
                             <td style="width: 30%; font-weight: bold; vertical-align: middle;">CURRENCY</td>
-                            <td style="width: 70%;"><input type="text" id="snap_currency_edit" class="form-control" disabled></td>
+                            <td style="width: 70%;"><input type="text" id="snap_currency_edit" class="form-control"
+                                    disabled></td>
                         </tr>
                         <!-- <tr>
                             <td style="width: 30%; font-weight: bold; vertical-align: middle;">RATE</td>
@@ -389,274 +417,270 @@
             </div>{{-- end col-4 --}}
         </div>{{-- end row --}}
     </div> <!-- End of exportOrderSnapshotEdit -->
-    
-    <!-- Logistics & Shipment Details -->
-    <div class="row form-mar mt-3">
-        <div class="col-md-12">
-            <h6 class="header-heading-sepration">Logistics & Shipment Details</h6>
-            <div class="row">
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>Financial Instrument No:</label>
-                        <input type="text" name="financial_instrument_no" id="financial_instrument_no" class="form-control" value="{{ $deliveryOrder->financial_instrument_no }}">
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>Shipping Line:</label>
-                        <input type="text" name="shipping_line" id="shipping_line" class="form-control" value="{{ $deliveryOrder->shipping_line }}">
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label>Empty Container Pickup:</label>
-                        <input type="text" name="empty_container_pickup" id="empty_container_pickup" class="form-control" value="{{ $deliveryOrder->empty_container_pickup }}">
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+
 
     <!-- Packing Details (full width, below snapshot) -->
     <div class="row form-mar">
         <div class="col-md-12" id="packingItemsWrapper">
-                <h6 class="header-heading-sepration d-flex justify-content-between align-items-center">
-                    Packing Details
-                </h6>
+            <h6 class="header-heading-sepration d-flex justify-content-between align-items-center">
+                Packing Details
+            </h6>
 
-                <div id="export-order-quantity-info" class="mb-3" style="display: none;"></div>
+            <div id="export-order-quantity-info" class="mb-3" style="display: none;"></div>
 
-                <div id="packingItems">
-                    <!-- Template for clone, kept visually hidden until populated -->
-                    <div class="packing-item row border-bottom pb-3 mb-3 w-100 mx-auto" style="display:none;" id="dummyPackingRow">
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <label>Brand:</label>
-                                <select name="packing_items[0][brand_id]" class="form-control select2" disabled>
-                                    <option value="">Select Brand</option>
-                                    @foreach($brands as $brand)
-                                        <option value="{{ $brand->id }}" >{{ $brand->name }}</option>
-                                    @endforeach
-                                </select>
-                                <input type="hidden" name="packing_items[0][brand_id]" class="hidden-mirror" disabled>
-                            </div>
+            <div id="packingItems">
+                <!-- Template for clone, kept visually hidden until populated -->
+                <div class="packing-item row border-bottom pb-3 mb-3 w-100 mx-auto" style="display:none;"
+                    id="dummyPackingRow">
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>Brand:</label>
+                            <select name="packing_items[0][brand_id]" class="form-control select2" disabled>
+                                <option value="">Select Brand</option>
+                                @foreach($brands as $brand)
+                                    <option value="{{ $brand->id }}">{{ $brand->name }}</option>
+                                @endforeach
+                            </select>
+                            <input type="hidden" name="packing_items[0][brand_id]" class="hidden-mirror" disabled>
                         </div>
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <label>Bag Type/Product:</label>
-                                <select name="packing_items[0][bag_product_id]" class="form-control select2" disabled>
-                                    <option value="">Select Bag Type/Product</option>
-                                    @foreach($bagTypes as $bagType)
-                                        <option value="{{ $bagType->id }}">{{ $bagType->name }}</option>
-                                    @endforeach
-                                </select>
-                                <input type="hidden" name="packing_items[0][bag_product_id]" class="hidden-mirror" disabled>
-                            </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>Bag Type/Product:</label>
+                            <select name="packing_items[0][bag_product_id]" class="form-control select2" disabled>
+                                <option value="">Select Bag Type/Product</option>
+                                @foreach($bagTypes as $bagType)
+                                    <option value="{{ $bagType->id }}">{{ $bagType->name }}</option>
+                                @endforeach
+                            </select>
+                            <input type="hidden" name="packing_items[0][bag_product_id]" class="hidden-mirror" disabled>
                         </div>
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <label>Bag Condition:</label>
-                                <select name="packing_items[0][bag_condition_id]" class="form-control select2" disabled>
-                                    <option value="">Select Condition</option>
-                                    @foreach($bagConditions as $condition)
-                                        <option value="{{ $condition->id }}">{{ $condition->name }}</option>
-                                    @endforeach
-                                </select>
-                                <input type="hidden" name="packing_items[0][bag_condition_id]" class="hidden-mirror" disabled>
-                            </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>Bag Condition:</label>
+                            <select name="packing_items[0][bag_condition_id]" class="form-control select2" disabled>
+                                <option value="">Select Condition</option>
+                                @foreach($bagConditions as $condition)
+                                    <option value="{{ $condition->id }}">{{ $condition->name }}</option>
+                                @endforeach
+                            </select>
+                            <input type="hidden" name="packing_items[0][bag_condition_id]" class="hidden-mirror"
+                                disabled>
                         </div>
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <label>Bag Color:</label>
-                                <select name="packing_items[0][bag_color_id]" class="form-control select2" disabled>
-                                    <option value="">Select Color</option>
-                                    @foreach($bagColors as $color)
-                                        <option value="{{ $color->id }}">{{ $color->color }}</option>
-                                    @endforeach
-                                </select>
-                                <input type="hidden" name="packing_items[0][bag_color_id]" class="hidden-mirror" disabled>
-                            </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>Bag Color:</label>
+                            <select name="packing_items[0][bag_color_id]" class="form-control select2" disabled>
+                                <option value="">Select Color</option>
+                                @foreach($bagColors as $color)
+                                    <option value="{{ $color->id }}">{{ $color->color }}</option>
+                                @endforeach
+                            </select>
+                            <input type="hidden" name="packing_items[0][bag_color_id]" class="hidden-mirror" disabled>
                         </div>
-                        <div class="col-md-1">
-                            <div class="form-group">
-                                <label>Thread Color:</label>
-                                <select name="packing_items[0][thread_color_id]" class="form-control select2" disabled>
-                                    <option value="">Select Color</option>
-                                    @foreach($bagColors as $color)
-                                        <option value="{{ $color->id }}">{{ $color->color }}</option>
-                                    @endforeach
-                                </select>
-                                <input type="hidden" name="packing_items[0][thread_color_id]" class="hidden-mirror" disabled>
-                            </div>
+                    </div>
+                    <div class="col-md-1">
+                        <div class="form-group">
+                            <label>Thread Color:</label>
+                            <select name="packing_items[0][thread_color_id]" class="form-control select2" disabled>
+                                <option value="">Select Color</option>
+                                @foreach($bagColors as $color)
+                                    <option value="{{ $color->id }}">{{ $color->color }}</option>
+                                @endforeach
+                            </select>
+                            <input type="hidden" name="packing_items[0][thread_color_id]" class="hidden-mirror"
+                                disabled>
                         </div>
-                        <div class="col-md-1">
-                            <div class="form-group">
-                                <label>Stitching:</label>
-                                <select name="packing_items[0][stitching_id]" class="form-control select2" disabled>
-                                    <option value="">Select Stitching</option>
-                                    @foreach($stitchings as $stitching)
-                                        <option value="{{ $stitching->id }}">{{ $stitching->name }}</option>
-                                    @endforeach
-                                </select>
-                                <input type="hidden" name="packing_items[0][stitching_id]" class="hidden-mirror" disabled>
-                            </div>
+                    </div>
+                    <div class="col-md-1">
+                        <div class="form-group">
+                            <label>Stitching:</label>
+                            <select name="packing_items[0][stitching_id]" class="form-control select2" disabled>
+                                <option value="">Select Stitching</option>
+                                @foreach($stitchings as $stitching)
+                                    <option value="{{ $stitching->id }}">{{ $stitching->name }}</option>
+                                @endforeach
+                            </select>
+                            <input type="hidden" name="packing_items[0][stitching_id]" class="hidden-mirror" disabled>
                         </div>
-                        
-                        <div class="col-md-1">
-                            <div class="form-group">
-                                <label>Packing Size:</label>
-                                <input type="number" name="packing_items[0][bag_size]" class="form-control bag-size" readonly step="0.01">
-                            </div>
-                        </div>
-                        <div class="col-md-1">
-                            <div class="form-group">
-                                <label>No. of Bags:</label>
-                                <input type="number" name="packing_items[0][no_of_bags]" class="form-control no-of-bags" style="background-color: #fff9e6; border-color: #ffc107;">
-                            </div>
-                        </div>
-                        <div class="col-md-1">
-                            <div class="form-group">
-                                <label>Extra Bags:</label>
-                                <input type="number" name="packing_items[0][extra_bags]" class="form-control extra-bags" readonly value="0">
-                            </div>
-                        </div>
-                        <div class="col-md-1">
-                            <div class="form-group">
-                                <label>Extra Bags %:</label>
-                                <input type="number" name="packing_items[0][extra_bags_percentage]" class="form-control extra-bags-percentage" readonly step="0.01" value="0">
-                            </div>
-                        </div>
-                        <div class="col-md-1">
-                            <div class="form-group">
-                                <label>Empty Bags:</label>
-                                <input type="number" name="packing_items[0][empty_bags]" class="form-control empty-bags" readonly value="0">
-                            </div>
-                        </div>
-                        <div class="col-md-1">
-                            <div class="form-group">
-                                <label>Total Bags:</label>
-                                <input type="number" min="0" name="packing_items[0][total_bags]" class="form-control total-bags" readonly>
-                            </div>
-                        </div>
-                        <div class="col-md-1">
-                            <div class="form-group">
-                                <label>Total KGs:</label>
-                                <input type="number" name="packing_items[0][total_kgs]" class="form-control total-kgs" step="0.01" readonly>
-                            </div>
-                        </div>
-                        <div class="col-md-1">
-                            <div class="form-group">
-                                <label>Qty (MT):</label>
-                                <input type="number" name="packing_items[0][metric_tons]" class="form-control metric-tons" step="0.001" min="0" style="background-color: #fff9e6; border-color: #ffc107;">
-                            </div>
-                        </div>
-                        <div class="col-md-1">
-                            <div class="form-group">
-                                <label>Stuffing (MT):</label>
-                                <input type="number" name="packing_items[0][stuffing_in_container]" value="0" class="form-control stuffing" step="0.001" min="0">
-                            </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <label>No. Containers:</label>
-                                <input type="number" name="packing_items[0][no_of_containers]" class="form-control containers" value="0" min="0">
-                            </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <label>Min Wt Empty(g):</label>
-                                <input type="number" name="packing_items[0][min_weight_empty_bags]" class="form-control min-weight" value="0" min="0" step="0.01" readonly>
-                            </div>
-                        </div>
+                    </div>
 
-                        <!-- New Logistics Row per Packing Item -->
-                        <div class="col-md-12">
-                            <div class="row">
+                    <div class="col-md-1">
+                        <div class="form-group">
+                            <label>Packing Size:</label>
+                            <input type="number" name="packing_items[0][bag_size]" class="form-control bag-size"
+                                readonly step="0.01">
+                        </div>
+                    </div>
+                    <div class="col-md-1">
+                        <div class="form-group">
+                            <label>No. of Bags:</label>
+                            <input type="number" name="packing_items[0][no_of_bags]" class="form-control no-of-bags"
+                                style="background-color: #fff9e6; border-color: #ffc107;">
+                        </div>
+                    </div>
+                    <div class="col-md-1">
+                        <div class="form-group">
+                            <label>Extra Bags:</label>
+                            <input type="number" name="packing_items[0][extra_bags]" class="form-control extra-bags"
+                                readonly value="0">
+                        </div>
+                    </div>
+                    <div class="col-md-1">
+                        <div class="form-group">
+                            <label>Extra Bags %:</label>
+                            <input type="number" name="packing_items[0][extra_bags_percentage]"
+                                class="form-control extra-bags-percentage" readonly step="0.01" value="0">
+                        </div>
+                    </div>
+                    <div class="col-md-1">
+                        <div class="form-group">
+                            <label>Empty Bags:</label>
+                            <input type="number" name="packing_items[0][empty_bags]" class="form-control empty-bags"
+                                readonly value="0">
+                        </div>
+                    </div>
+                    <div class="col-md-1">
+                        <div class="form-group">
+                            <label>Total Bags:</label>
+                            <input type="number" min="0" name="packing_items[0][total_bags]"
+                                class="form-control total-bags" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-1">
+                        <div class="form-group">
+                            <label>Total KGs:</label>
+                            <input type="number" name="packing_items[0][total_kgs]" class="form-control total-kgs"
+                                step="0.01" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-1">
+                        <div class="form-group">
+                            <label>Qty (MT):</label>
+                            <input type="number" name="packing_items[0][metric_tons]" class="form-control metric-tons"
+                                step="0.001" min="0" style="background-color: #fff9e6; border-color: #ffc107;">
+                        </div>
+                    </div>
+                    <div class="col-md-1">
+                        <div class="form-group">
+                            <label>Stuffing (MT):</label>
+                            <input type="number" name="packing_items[0][stuffing_in_container]" value="0"
+                                class="form-control stuffing" step="0.001" min="0">
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>No. Containers:</label>
+                            <input type="number" name="packing_items[0][no_of_containers]"
+                                class="form-control containers" value="0" min="0">
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>Min Wt Empty(g):</label>
+                            <input type="number" name="packing_items[0][min_weight_empty_bags]"
+                                class="form-control min-weight" value="0" min="0" step="0.01" readonly>
+                        </div>
+                    </div>
 
-                                <div class="col-md-2">
-                                    <div class="form-group">
-                                        <label>Fumigation:</label>
-                                        <select name="packing_items[0][fumigation_company_id][]" class="form-control select2 fumigation-select" multiple disabled>
-                                            @foreach($fumigationCompanies as $fCompany)
-                                                <option value="{{ $fCompany->id }}">{{ $fCompany->name }}</option>
-                                            @endforeach
-                                        </select>
-                                        <input type="hidden" name="packing_items[0][fumigation_company_id_hidden]" class="fumigation-hidden-mirror">
-                                    </div>
+                    <!-- New Logistics Row per Packing Item -->
+                    <div class="col-md-12">
+                        <div class="row">
+
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>Fumigation:</label>
+                                    <select name="packing_items[0][fumigation_company_id][]"
+                                        class="form-control select2 fumigation-select" multiple disabled>
+                                        @foreach($fumigationCompanies as $fCompany)
+                                            <option value="{{ $fCompany->id }}">{{ $fCompany->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <input type="hidden" name="packing_items[0][fumigation_company_id_hidden]"
+                                        class="fumigation-hidden-mirror" disabled>
                                 </div>
-                                <div class="col-md-2">
-                                    <div class="form-group">
-                                        <label>Phyto Certificate:</label>
-                                        <select name="packing_items[0][phyto_certificate][]" class="form-control select2 phyto-select" multiple>
-                                            @foreach($fumigationCompanies as $fCompany)
-                                                <option value="{{ $fCompany->id }}">{{ $fCompany->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>Phyto Certificate:</label>
+                                    <select name="packing_items[0][phyto_certificate][]"
+                                        class="form-control select2 phyto-select" multiple disabled>
+                                        @foreach($fumigationCompanies as $fCompany)
+                                            <option value="{{ $fCompany->id }}">{{ $fCompany->name }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
-                                <div class="col-md-2">
-                                    <div class="form-group">
-                                        <label>Inspection Company:</label>
-                                        <input type="text" name="packing_items[0][inspection_company]" class="form-control inspection-company" readonly>
-                                    </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>Inspection Company:</label>
+                                    <input type="text" name="packing_items[0][inspection_company]"
+                                        class="form-control inspection-company" readonly disabled>
                                 </div>
-                                <div class="col-md-2">
-                                    <div class="form-group">
-                                        <label>Carton Supplier:</label>
-                                        <input type="text" name="packing_items[0][carton_supplier]" class="form-control carton-supplier">
-                                    </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>Carton Supplier:</label>
+                                    <input type="text" name="packing_items[0][carton_supplier]"
+                                        class="form-control carton-supplier" disabled>
                                 </div>
-                                <div class="col-md-2">
-                                    <div class="form-group">
-                                        <label>Fumigation Tablets:</label>
-                                        <input type="text" name="packing_items[0][fumigation_tablets]" class="form-control fumigation-tablets">
-                                    </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>Fumigation Tablets:</label>
+                                    <input type="text" name="packing_items[0][fumigation_tablets]"
+                                        class="form-control fumigation-tablets" disabled>
                                 </div>
-                                <div class="col-md-2">
-                                    <div class="form-group">
-                                        <label>Fumigation Ref No:</label>
-                                        <input type="text" name="packing_items[0][fumigation_ref_no]" class="form-control fumigation-ref-no">
-                                    </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label>Fumigation Ref No:</label>
+                                    <input type="text" name="packing_items[0][fumigation_ref_no]"
+                                        class="form-control fumigation-ref-no" disabled>
                                 </div>
                             </div>
                         </div>
-                        
-                        <!-- Master Packing Section -->
-                        <div class="col-md-12 mt-4">
-                            <div class="card border-primary shadow-sm">
-                                <div class="header-heading-sepration rounded-0 d-flex justify-content-between align-items-center">
-                                    <h6 class="mb-0 font-weight-bold">Master Packing</h6>
-                                </div>
-                                <div class="card-body p-0">
-                                    <div class="table-responsive special">
-                                        <table class="table table-bordered table-sm mb-0">
-                                            <thead class="thead-light">
-                                                <tr>
-                                                    <th class="col-2">Bag Type/Product</th>
-                                                    <th>Bag Size</th>
-                                                    <th>No of Primary Bags fit in master bag</th>
-                                                    <th>No. of Bags</th>
-                                                    <th>Empty Bags</th>
-                                                    <th>Extra Bags</th>
-                                                    <th>Extra Bags %</th>
-                                                    <th>Empty Bag Weight (g)</th>
-                                                    <th>Total Bags</th>
-                                                    <th class="col-1">Stitching</th>
-                                                    <th class="col-1">Bag Color</th>
-                                                    <th class="col-1">Brand</th>
-                                                    <th class="col-1">Thread Color</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody class="sub-packing-items-container" data-index="0">
-                                                <!-- Master packing items will be added here -->
-                                            </tbody>
-                                        </table>
-                                    </div>
+                    </div>
+
+                    <!-- Master Packing Section -->
+                    <div class="col-md-12 mt-4">
+                        <div class="card border-primary shadow-sm">
+                            <div
+                                class="header-heading-sepration rounded-0 d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0 font-weight-bold">Master Packing</h6>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive special">
+                                    <table class="table table-bordered table-sm mb-0">
+                                        <thead class="thead-light">
+                                            <tr>
+                                                <th class="col-2">Bag Type/Product</th>
+                                                <th>Bag Size</th>
+                                                <th>No of Primary Bags fit in master bag</th>
+                                                <th>No. of Bags</th>
+                                                <th>Empty Bags</th>
+                                                <th>Extra Bags</th>
+                                                <th>Extra Bags %</th>
+                                                <th>Empty Bag Weight (g)</th>
+                                                <th>Total Bags</th>
+                                                <th class="col-1">Stitching</th>
+                                                <th class="col-1">Bag Color</th>
+                                                <th class="col-1">Brand</th>
+                                                <th class="col-1">Thread Color</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="sub-packing-items-container" data-index="0">
+                                            <!-- Master packing items will be added here -->
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
         </div>{{-- end col-md-12 packingItemsWrapper --}}
     </div>{{-- end row --}}
 
@@ -665,66 +689,84 @@
         <tbody>
             <tr class="sub-packing-item-row">
                 <td>
-                    <select name="packing_items[INDEX][sub_items][SUB_INDEX][bag_product_id]" class="form-control form-control-sm select2 sub-bag-product" disabled>
+                    <select name="packing_items[INDEX][sub_items][SUB_INDEX][bag_product_id]"
+                        class="form-control form-control-sm select2 sub-bag-product" disabled>
                         <option value="">Select Bag Type/Product</option>
                         @foreach($bagTypes as $bagType)
                             <option value="{{ $bagType->id }}">{{ $bagType->name }}</option>
                         @endforeach
                     </select>
-                    <input type="hidden" name="packing_items[INDEX][sub_items][SUB_INDEX][bag_product_id]" class="hidden-mirror">
+                    <input type="hidden" name="packing_items[INDEX][sub_items][SUB_INDEX][bag_product_id]"
+                        class="hidden-mirror">
                 </td>
                 <td>
-                    <input type="hidden" name="packing_items[INDEX][sub_items][SUB_INDEX][bag_size_id]" class="hidden-mirror">
+                    <input type="hidden" name="packing_items[INDEX][sub_items][SUB_INDEX][bag_size_id]"
+                        class="hidden-mirror">
                     <input type="text" readonly class="form-control form-control-sm sub-bag-size-val">
                 </td>
                 <td>
-                    <input type="number" name="packing_items[INDEX][sub_items][SUB_INDEX][no_of_primary_bags]" class="form-control form-control-sm sub-no-of-primary-bags" readonly>
+                    <input type="number" name="packing_items[INDEX][sub_items][SUB_INDEX][no_of_primary_bags]"
+                        class="form-control form-control-sm sub-no-of-primary-bags" readonly>
                 </td>
                 <td>
-                    <input type="number" name="packing_items[INDEX][sub_items][SUB_INDEX][no_of_bags]" class="form-control form-control-sm sub-no-of-bags" style="background-color: #e9ecef;" readonly>
+                    <input type="number" name="packing_items[INDEX][sub_items][SUB_INDEX][no_of_bags]"
+                        class="form-control form-control-sm sub-no-of-bags" style="background-color: #e9ecef;" readonly>
                 </td>
                 <td>
-                    <input type="number" name="packing_items[INDEX][sub_items][SUB_INDEX][empty_bags]" class="form-control form-control-sm sub-empty-bags" value="0" readonly>
+                    <input type="number" name="packing_items[INDEX][sub_items][SUB_INDEX][empty_bags]"
+                        class="form-control form-control-sm sub-empty-bags" value="0" readonly>
                 </td>
-                <td><input type="number" name="packing_items[INDEX][sub_items][SUB_INDEX][extra_bags]" class="form-control form-control-sm sub-extra-bags" value="0" readonly></td>
-                <td><input type="number" name="packing_items[INDEX][sub_items][SUB_INDEX][extra_bags_percentage]" class="form-control form-control-sm sub-extra-bags-percentage" value="0" readonly></td>
-                <td><input type="number" name="packing_items[INDEX][sub_items][SUB_INDEX][empty_bag_weight]" class="form-control form-control-sm sub-empty-bag-weight" value="0" readonly></td>
-                <td><input type="number" name="packing_items[INDEX][sub_items][SUB_INDEX][total_bags]" class="form-control form-control-sm sub-total-bags" readonly></td>
+                <td><input type="number" name="packing_items[INDEX][sub_items][SUB_INDEX][extra_bags]"
+                        class="form-control form-control-sm sub-extra-bags" value="0" readonly></td>
+                <td><input type="number" name="packing_items[INDEX][sub_items][SUB_INDEX][extra_bags_percentage]"
+                        class="form-control form-control-sm sub-extra-bags-percentage" value="0" readonly></td>
+                <td><input type="number" name="packing_items[INDEX][sub_items][SUB_INDEX][empty_bag_weight]"
+                        class="form-control form-control-sm sub-empty-bag-weight" value="0" readonly></td>
+                <td><input type="number" name="packing_items[INDEX][sub_items][SUB_INDEX][total_bags]"
+                        class="form-control form-control-sm sub-total-bags" readonly></td>
                 <td>
-                    <select name="packing_items[INDEX][sub_items][SUB_INDEX][stitching_id]" class="form-control form-control-sm select2 sub-stitching" disabled>
+                    <select name="packing_items[INDEX][sub_items][SUB_INDEX][stitching_id]"
+                        class="form-control form-control-sm select2 sub-stitching" disabled>
                         <option value="">Select Stitching</option>
                         @foreach($stitchings as $stitching)
                             <option value="{{ $stitching->id }}">{{ $stitching->name }}</option>
                         @endforeach
                     </select>
-                    <input type="hidden" name="packing_items[INDEX][sub_items][SUB_INDEX][stitching_id]" class="hidden-mirror">
+                    <input type="hidden" name="packing_items[INDEX][sub_items][SUB_INDEX][stitching_id]"
+                        class="hidden-mirror">
                 </td>
                 <td class="col-1">
-                    <select name="packing_items[INDEX][sub_items][SUB_INDEX][bag_color_id]" class="form-control form-control-sm select2 sub-bag-color" disabled>
+                    <select name="packing_items[INDEX][sub_items][SUB_INDEX][bag_color_id]"
+                        class="form-control form-control-sm select2 sub-bag-color" disabled>
                         <option value="">Select Color</option>
                         @foreach($bagColors as $color)
                             <option value="{{ $color->id }}">{{ $color->color }}</option>
                         @endforeach
                     </select>
-                    <input type="hidden" name="packing_items[INDEX][sub_items][SUB_INDEX][bag_color_id]" class="hidden-mirror">
+                    <input type="hidden" name="packing_items[INDEX][sub_items][SUB_INDEX][bag_color_id]"
+                        class="hidden-mirror">
                 </td>
                 <td class="col-1">
-                    <select name="packing_items[INDEX][sub_items][SUB_INDEX][brand_id]" class="form-control form-control-sm select2 sub-brand" disabled>
+                    <select name="packing_items[INDEX][sub_items][SUB_INDEX][brand_id]"
+                        class="form-control form-control-sm select2 sub-brand" disabled>
                         <option value="">Select Brand</option>
                         @foreach($brands as $brand)
                             <option value="{{ $brand->id }}">{{ $brand->name }}</option>
                         @endforeach
                     </select>
-                    <input type="hidden" name="packing_items[INDEX][sub_items][SUB_INDEX][brand_id]" class="hidden-mirror">
+                    <input type="hidden" name="packing_items[INDEX][sub_items][SUB_INDEX][brand_id]"
+                        class="hidden-mirror">
                 </td>
                 <td class="col-1">
-                    <select name="packing_items[INDEX][sub_items][SUB_INDEX][thread_color_id]" class="form-control form-control-sm select2 sub-thread-color" disabled>
+                    <select name="packing_items[INDEX][sub_items][SUB_INDEX][thread_color_id]"
+                        class="form-control form-control-sm select2 sub-thread-color" disabled>
                         <option value="">Select Color</option>
                         @foreach($bagColors as $color)
                             <option value="{{ $color->id }}">{{ $color->color }}</option>
                         @endforeach
                     </select>
-                    <input type="hidden" name="packing_items[INDEX][sub_items][SUB_INDEX][thread_color_id]" class="hidden-mirror">
+                    <input type="hidden" name="packing_items[INDEX][sub_items][SUB_INDEX][thread_color_id]"
+                        class="hidden-mirror">
                 </td>
             </tr>
         </tbody>
@@ -736,43 +778,49 @@
             <div class="row">
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Vessel Name:</label>
-                        <input type="text" name="vessel_name" id="vessel_name" class="form-control" value="{{ $deliveryOrder->vessel_name }}">
+                        <label>Vessel Name: <span class="text-danger">*</span></label>
+                        <input type="text" name="vessel_name" id="vessel_name" class="form-control"
+                            value="{{ $deliveryOrder->vessel_name }}">
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Vessel ETD:</label>
-                        <input type="date" name="vessel_etd" id="vessel_etd" class="form-control" value="{{ $deliveryOrder->vessel_etd }}">
+                        <label>Vessel ETD: <span class="text-danger">*</span></label>
+                        <input type="date" name="vessel_etd" id="vessel_etd" class="form-control"
+                            value="{{ $deliveryOrder->vessel_etd }}">
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Vessel ETA:</label>
-                        <input type="date" name="vessel_eta" id="vessel_eta" class="form-control" value="{{ $deliveryOrder->vessel_eta }}">
+                        <label>Vessel ETA: <span class="text-danger">*</span></label>
+                        <input type="date" name="vessel_eta" id="vessel_eta" class="form-control"
+                            value="{{ $deliveryOrder->vessel_eta }}">
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Loading Date:</label>
-                        <input type="date" name="loading_date" id="loading_date" class="form-control" value="{{ $deliveryOrder->loading_date }}">
+                        <label>Loading Date: <span class="text-danger">*</span></label>
+                        <input type="date" name="loading_date" id="loading_date" class="form-control"
+                            value="{{ $deliveryOrder->loading_date }}">
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Estimated Payment Date:</label>
-                        <input type="date" name="estimated_payment_date" id="estimated_payment_date" class="form-control" value="{{ $deliveryOrder->estimated_payment_date }}">
+                        <label>Estimated Payment Date: <span class="text-danger">*</span></label>
+                        <input type="date" name="estimated_payment_date" id="estimated_payment_date"
+                            class="form-control" value="{{ $deliveryOrder->estimated_payment_date }}">
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Freight Amount:</label>
-                        <input type="number" name="freight_amount" id="freight_amount" class="form-control" value="{{ $deliveryOrder->freight_amount }}" step="0.01">
+                        <label>Freight Amount: <span class="text-danger">*</span></label>
+                        <input type="number" name="freight_amount" id="freight_amount" class="form-control"
+                            value="{{ $deliveryOrder->freight_amount }}" step="0.01">
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Transporter:</label>
+                        <label>Transporter: <span class="text-danger">*</span></label>
                         <select name="transporter_id" id="transporter_id" class="form-control select2">
                             <option value="">Select Transporter</option>
                             @foreach ($transporters as $transporter)
@@ -783,52 +831,117 @@
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Clearing Agent:</label>
-                        <input type="text" name="c_agent" id="c_agent" class="form-control" value="{{ $deliveryOrder->c_agent }}">
+                        <label>Clearing Agent: <span class="text-danger">*</span></label>
+                        <select name="c_agent" id="c_agent" class="form-control select2">
+                            <option value="">Select Clearing Agent</option>
+                            @foreach ($clearingAgents as $agent)
+                                <option value="{{ $agent->id }}" {{ $deliveryOrder->c_agent == $agent->id ? 'selected' : '' }}>{{ $agent->name }}</option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Shipping Line:</label>
-                        <input type="text" name="shipping_line" id="shipping_line" class="form-control" value="{{ $deliveryOrder->shipping_line }}">
+                        <label>Shipping Line: <span class="text-danger">*</span></label>
+                        <input type="text" name="shipping_line" id="shipping_line" class="form-control"
+                            value="{{ $deliveryOrder->shipping_line }}">
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Empty Container Pickup:</label>
-                        <input type="text" name="empty_container_pickup" id="empty_container_pickup" class="form-control" value="{{ $deliveryOrder->empty_container_pickup }}">
+                        <label>Empty Container Pickup: <span class="text-danger">*</span></label>
+                        <input type="text" name="empty_container_pickup" id="empty_container_pickup"
+                            class="form-control" value="{{ $deliveryOrder->empty_container_pickup }}">
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Editable Remarks -->
-    <div class="row form-mar mt-3">
-        <div class="col-md-12">
-            <div class="form-group">
-                <label>Remarks:</label>
-                <textarea name="remarks" class="form-control" rows="3">{{ $deliveryOrder->remarks }}</textarea>
+            <!-- Commission Section (Moved here) -->
+            <div class="row form-mar mt-3" id="commissionSection">
+                <div class="col-md-12">
+                    <h6 class="header-heading-sepration">Commission</h6>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Commission (%):</label>
+                                <input type="text" id="snap_commission_percentage_edit" name="commission_percentage"
+                                    class="form-control" readonly>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Amt/Ton:</label>
+                                <input type="text" id="snap_commission_amount_per_ton_edit"
+                                    name="commission_amount_per_ton" class="form-control" readonly>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Total Commission:</label>
+                                <input type="text" id="snap_commission_edit" name="commission" class="form-control"
+                                    readonly>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
 
-    <div class="row bottom-button-bar">
-        <div class="col-12 mb-3">
-            <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
-            <button type="submit" class="btn btn-primary submitbutton">Update Delivery Order</button>
-        </div>
-    </div>
+            <!-- Editable Remarks -->
+            <div class="row form-mar mt-3">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        <label>Remarks:</label>
+                        <textarea name="remarks" id="remarks" class="form-control" rows="3">{{ $deliveryOrder->remarks }}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row bottom-button-bar">
+                <div class="col-12 mb-3">
+                    <a type="button"
+                        class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
+                    <button type="submit" class="btn btn-primary submitbutton">Update Delivery Order</button>
+                </div>
+            </div>
 </form>
 
 <script>
+    // Track Form-E remaining qty for packing row autofill (Edit mode)
+    var currentFormERemainingMt = 0;
+    var currentFormETotalMt = 0;
+    var currentFormEConsumedMt = 0;
+
+    function applyFormEQtyToPackingRows(remainingMt) {
+        var $rows = $('#packingItems').find('.packing-item:not(#dummyPackingRow):visible');
+        if ($rows.length === 0 || remainingMt <= 0) return;
+
+        if ($rows.length === 1) {
+            $rows.first().find('.metric-tons').val(remainingMt.toFixed(3)).trigger('input');
+        } else {
+            var totalMt = 0;
+            $rows.each(function () { totalMt += parseFloat($(this).find('.metric-tons').val()) || 0; });
+            if (totalMt > 0) {
+                $rows.each(function () {
+                    var proportion = (parseFloat($(this).find('.metric-tons').val()) || 0) / totalMt;
+                    $(this).find('.metric-tons').val((remainingMt * proportion).toFixed(3)).trigger('input');
+                });
+            } else {
+                var perItem = remainingMt / $rows.length;
+                $rows.each(function () {
+                    $(this).find('.metric-tons').val(perItem.toFixed(3)).trigger('input');
+                });
+            }
+        }
+        checkCapacity();
+    }
+
     // Location Selection Functions (Global - accessible from HTML onchange)
     function selectLocationRow(el) {
         const row = $(el).closest('.location-row');
         const locationId = $(el).val();
         const arrivalSelect = row.find('.arrival-select');
         const storageSelect = row.find('.storage-select');
-        
+
         if (!locationId) {
             arrivalSelect.prop("disabled", true).empty();
             storageSelect.prop("disabled", true).empty();
@@ -841,7 +954,7 @@
             method: "GET",
             data: { location_id: locationId },
             dataType: "json",
-            success: function(res) {
+            success: function (res) {
                 arrivalSelect.empty();
                 // Auto-select ALL factories
                 res.forEach(loc => {
@@ -849,14 +962,14 @@
                     arrivalSelect.append(option);
                 });
                 arrivalSelect.select2();
-                
+
                 // Auto-populate and select all sections
                 if (res.length > 0) {
                     const arrivalIds = res.map(loc => loc.id);
                     fetchStorageRow(row, arrivalIds);
                 }
             },
-            error: function(error) {
+            error: function (error) {
                 console.error("Error fetching arrival locations:", error);
             }
         });
@@ -870,7 +983,7 @@
 
     function fetchStorageRow(row, arrivalIds) {
         const storageSelect = row.find('.storage-select');
-        
+
         if (!arrivalIds || (Array.isArray(arrivalIds) && arrivalIds.length === 0)) {
             storageSelect.prop("disabled", true).empty();
             return;
@@ -881,7 +994,7 @@
             method: "GET",
             data: { arrival_id: arrivalIds },
             dataType: "json",
-            success: function(res) {
+            success: function (res) {
                 storageSelect.empty();
                 // Auto-select ALL sections
                 res.forEach(storage => {
@@ -890,38 +1003,38 @@
                 });
                 storageSelect.prop("disabled", false).select2();
             },
-            error: function(error) {
+            error: function (error) {
                 console.error("Error fetching sub-arrival locations:", error);
             }
         });
     }
 
     // Global delegated listeners for location selection
-    $(document).off('change', '.location-select').on('change', '.location-select', function() {
+    $(document).off('change', '.location-select').on('change', '.location-select', function () {
         selectLocationRow(this);
     });
 
-    $(document).off('change', '.arrival-select').on('change', '.arrival-select', function() {
+    $(document).off('change', '.arrival-select').on('change', '.arrival-select', function () {
         selectStorageRow(this);
     });
 
     // Row manipulation
-    $(document).off('click', '#addLocationRow').on('click', '#addLocationRow', function() {
+    $(document).off('click', '#addLocationRow').on('click', '#addLocationRow', function () {
         let index = $('#locationRows tr.location-row').length;
         let template = $('#locationRowTemplate').html();
         template = template.replace(/\[INDEX\]/g, '[' + index + ']');
-        
+
         let $newRow = $(template);
         $('#locationRows').append($newRow);
-        
+
         // Initialize Select2 for new row
         $newRow.find('.select2, .location-select, .arrival-select, .storage-select').select2({ width: '100%' });
-        
+
         // Show remove buttons if more than one row
         $('.remove-location-row').show();
     });
 
-    $(document).off('click', '.remove-location-row').on('click', '.remove-location-row', function() {
+    $(document).off('click', '.remove-location-row').on('click', '.remove-location-row', function () {
         if ($('#locationRows tr.location-row').length > 1) {
             $(this).closest('tr').remove();
             reindexLocationRows();
@@ -932,8 +1045,8 @@
     });
 
     function reindexLocationRows() {
-        $('#locationRows tr.location-row').each(function(index) {
-            $(this).find('select').each(function() {
+        $('#locationRows tr.location-row').each(function (index) {
+            $(this).find('select').each(function () {
                 let name = $(this).attr('name');
                 if (name) {
                     $(this).attr('name', name.replace(/locations\[\d+\]/, 'locations[' + index + ']'));
@@ -943,7 +1056,7 @@
     }
 
     // DOM Ready Initialization
-    $(document).ready(function() {
+    $(document).ready(function () {
         // Render JSON dumped from backend for snapshot
         let snapshotData = @json($deliveryOrder->exportOrder);
         // Render relational packing items from DB
@@ -955,14 +1068,14 @@
 
         // Initialize Location Dropdowns for Edit Mode
         $('.location-select, .arrival-select, .storage-select').select2({ width: '100%' });
-        
+
         if ($('#locationRows tr.location-row').length > 1) {
             $('.remove-location-row').show();
         } else {
             $('.remove-location-row').hide();
         }
 
-        $('#export_form_e_id').on('change', function() {
+        $('#export_form_e_id').on('change', function () {
             var formEId = $(this).val();
             if (!formEId) {
                 $('#qty_info_alert').hide();
@@ -972,39 +1085,40 @@
             $.ajax({
                 url: "{{ route('export-delivery-order.form-e-usage', '') }}/" + formEId,
                 type: 'GET',
-                success: function(response) {
+                success: function (response) {
                     if (response.success) {
+                        currentFormETotalMt = parseFloat(response.total);
+                        currentFormEConsumedMt = parseFloat(response.consumed);
+
                         $('#qty_info_alert').show();
-                        $('#lbl_total_eo_mt').text(parseFloat(response.total).toFixed(3));
-                        // For Edit mode, we need to handle that response.consumed might include current DO depending on implementation.
-                        // But the endpoint getFormEUsage filters by export_form_e_id and sums ALL DOs.
-                        // In Edit, we want to show alreadyConsumed excluding current DO.
-                        // So we subtract current DO metric tons from response.consumed if it's the same Form-E.
-                        
+                        $('#lbl_total_eo_mt').text(currentFormETotalMt.toFixed(3));
+
                         let originalFormEId = "{{ $deliveryOrder->export_form_e_id }}";
-                        let consumedVal = parseFloat(response.consumed);
-                        
+                        let consumedVal = currentFormEConsumedMt;
+
                         if (formEId == originalFormEId) {
-                             // If user stays on original Form-E, we need to exclude CURRENT DO from 'Already Consumed'
-                             // to match the 'Others' label logic.
-                             let currentMtOnLoad = parseFloat("{{ $deliveryOrder->exportPackingItems->sum('metric_tons') }}") || 0;
-                             consumedVal = Math.max(0, consumedVal - currentMtOnLoad);
+                            let currentMtOnLoad = parseFloat("{{ $deliveryOrder->exportPackingItems->sum('metric_tons') }}") || 0;
+                            consumedVal = Math.max(0, consumedVal - currentMtOnLoad);
                         }
 
+                        currentFormERemainingMt = Math.max(0, currentFormETotalMt - consumedVal);
+
                         $('#lbl_consumed_mt').text(consumedVal.toFixed(3));
-                        $('#lbl_remaining_mt').text((parseFloat(response.total) - consumedVal - parseFloat($('#lbl_current_request_mt').text())).toFixed(3));
-                        
-                        // Update Job Order No
+                        $('#lbl_remaining_mt').text(currentFormERemainingMt.toFixed(3));
+
                         if (response.job_order_no) {
                             $('#job_order_no').val(response.job_order_no);
                         }
-                        
+
+                        // Apply Form-E qty to packing rows
+                        applyFormEQtyToPackingRows(currentFormERemainingMt);
+
                         if (typeof checkCapacity === "function") {
                             checkCapacity();
                         }
                     }
                 },
-                error: function(err) {
+                error: function (err) {
                     console.error("Failed to fetch Form-E usage details", err);
                 }
             });
@@ -1025,7 +1139,7 @@
             $('#snap_visual_name_edit').val(data.visual_name || '');
 
             // Specs - Align with Export Order Show style
-            if(data.specifications && data.specifications.length > 0) {
+            if (data.specifications && data.specifications.length > 0) {
                 let specHtml = `
                     <div class="table-responsive">
                         <table class="table table-bordered table-striped">
@@ -1104,11 +1218,11 @@
         function addPackingRowsFromExportOrder(items) {
             let container = $('#packingItems');
             let templateRow = $('#dummyPackingRow').clone();
-            
+
             // Remove existing rows except template
             container.find('.packing-item:not(#dummyPackingRow)').remove();
 
-            items.forEach(function(item, index) {
+            items.forEach(function (item, index) {
                 let row = templateRow.clone();
                 row.removeAttr('id');
 
@@ -1122,10 +1236,10 @@
                     $select.show().removeClass('select2-hidden-accessible');
                     $select.removeAttr('data-select2-id');
                 });
-                
+
                 row.show();
-                row.find('.no-of-bags, .metric-tons, .stuffing, .containers').removeAttr('disabled');
-                row.find('.hidden-mirror').removeAttr('disabled');
+                row.find('.no-of-bags, .metric-tons, .stuffing, .containers, .phyto-select, .inspection-company, .carton-supplier, .fumigation-tablets, .fumigation-ref-no').removeAttr('disabled');
+                row.find('.hidden-mirror, .fumigation-hidden-mirror').removeAttr('disabled');
 
                 function setDisabledSelectValue(selector, varName) {
                     row.find(selector).val(varName);
@@ -1138,14 +1252,14 @@
                 setDisabledSelectValue(`select[name="packing_items[0][bag_color_id]"]`, item.bag_color_id);
                 setDisabledSelectValue(`select[name="packing_items[0][thread_color_id]"]`, item.thread_color_id);
                 setDisabledSelectValue(`select[name="packing_items[0][stitching_id]"]`, item.stitching_id);
-                
+
                 row.find(`input[name="packing_items[0][bag_size]"]`).val(item.bag_size);
                 row.find(`input[name="packing_items[0][no_of_bags]"]`).val(item.no_of_bags);
                 row.find(`input[name="packing_items[0][extra_bags]"]`).val(item.extra_bags);
                 row.find(`input[name="packing_items[0][extra_bags_percentage]"]`).val(item.extra_bags_percentage);
                 row.find(`input[name="packing_items[0][empty_bags]"]`).val(item.empty_bags);
-                row.find(`input[name="packing_items[0][total_bags]"]`).val((item.no_of_bags||0) + (item.extra_bags||0) + (item.empty_bags||0));
-                row.find(`input[name="packing_items[0][total_kgs]"]`).val((item.metric_tons||0) * 1000);
+                row.find(`input[name="packing_items[0][total_bags]"]`).val((item.no_of_bags || 0) + (item.extra_bags || 0) + (item.empty_bags || 0));
+                row.find(`input[name="packing_items[0][total_kgs]"]`).val((item.metric_tons || 0) * 1000);
                 row.find(`input[name="packing_items[0][metric_tons]"]`).val(item.metric_tons);
                 row.find(`input[name="packing_items[0][stuffing_in_container]"]`).val(item.stuffing_in_container);
                 row.find(`input[name="packing_items[0][no_of_containers]"]`).val(item.no_of_containers);
@@ -1159,7 +1273,7 @@
 
                 // Phyto Certificate is editable multi-select
                 row.find('.phyto-select').val(item.phyto_certificate || []).trigger('change');
-                
+
                 // Resolve inspection company IDs to names if they are IDs
                 let inspectionMap = @json($inspectionCompanies->pluck('name', 'id'));
                 let inspectionVal = item.inspection_company || '';
@@ -1174,22 +1288,22 @@
                 row.find('.carton-supplier').val(item.carton_supplier || '');
                 row.find('.fumigation-tablets').val(item.fumigation_tablets || '');
                 row.find('.fumigation-ref-no').val(item.fumigation_ref_no || '');
-                
+
                 let subContainer = row.find('.sub-packing-items-container');
                 subContainer.attr('data-index', index);
                 subContainer.empty();
 
-                 // Update names for the main row
-                 row.find('input, select, textarea').each(function() {
+                // Update names for the main row
+                row.find('input, select, textarea').each(function () {
                     let name = $(this).attr('name');
-                    if(name) {
+                    if (name) {
                         name = name.replace(/\[0\]/, `[${index}]`);
                         $(this).attr('name', name);
                     }
                 });
 
-                if(item.sub_items && item.sub_items.length > 0) {
-                    item.sub_items.forEach(function(sub, sIdx) {
+                if (item.sub_items && item.sub_items.length > 0) {
+                    item.sub_items.forEach(function (sub, sIdx) {
                         let $template = $('.sub-packing-item-template tbody');
                         let subRowHtml = $template.html();
                         subRowHtml = subRowHtml.replace(/\[SUB_INDEX\]/g, '[' + sIdx + ']').replace(/\[INDEX\]/g, '[' + index + ']');
@@ -1199,7 +1313,7 @@
                             subRow.find(selector).val(val);
                             subRow.find(selector).siblings('.hidden-mirror').val(val);
                         }
-                        
+
                         setSubDisabledSelect(`select[name="packing_items[${index}][sub_items][${sIdx}][bag_product_id]"]`, sub.bag_type_id);
 
                         subRow.find(`input[name="packing_items[${index}][sub_items][${sIdx}][bag_size_id]"]`).val(sub.bag_size_id);
@@ -1209,7 +1323,7 @@
                         setSubDisabledSelect(`select[name="packing_items[${index}][sub_items][${sIdx}][bag_color_id]"]`, sub.bag_color_id);
                         setSubDisabledSelect(`select[name="packing_items[${index}][sub_items][${sIdx}][brand_id]"]`, sub.brand_id);
                         setSubDisabledSelect(`select[name="packing_items[${index}][sub_items][${sIdx}][thread_color_id]"]`, sub.thread_color_id);
-                        
+
                         subRow.find(`input[name="packing_items[${index}][sub_items][${sIdx}][no_of_primary_bags]"]`).val(sub.no_of_primary_bags);
                         subRow.find(`input[name="packing_items[${index}][sub_items][${sIdx}][no_of_bags]"]`).val(sub.no_of_bags);
                         subRow.find(`input[name="packing_items[${index}][sub_items][${sIdx}][empty_bags]"]`).val(sub.empty_bags);
@@ -1228,7 +1342,7 @@
                             $select.siblings('.select2-container').remove();
                             $select.show().removeClass('select2-hidden-accessible');
                             $select.removeAttr('data-select2-id');
-                            $select.select2({width: '100%'});
+                            $select.select2({ width: '100%' });
                         });
 
                         subContainer.append(subRow);
@@ -1238,8 +1352,8 @@
                 }
 
                 container.append(row);
-                
-                row.find('select.select2').each(function() {
+
+                row.find('select.select2').each(function () {
                     $(this).select2({
                         width: '100%',
                         dropdownParent: $(this).closest('.table-responsive').length ? $(this).closest('.table-responsive') : $('body')
@@ -1247,13 +1361,13 @@
                 });
             });
         }
-        
+
         // Setup Auto-calculation logic for packing items (Qty MT and Bags)
         $(document).off('input.exportDOEdit', '.no-of-bags, .metric-tons, .bag-size, .extra-bags, .empty-bags, .stuffing, .containers');
         $(document).on('input.exportDOEdit', '.no-of-bags, .metric-tons, .bag-size, .extra-bags, .empty-bags, .stuffing, .containers', function () {
             var item = $(this).closest('.packing-item');
             var source = $(this);
-            
+
             var noOfBags = parseInt(item.find('.no-of-bags').val()) || 0;
             var metricTons = parseFloat(item.find('.metric-tons').val()) || 0;
             var bagSize = parseFloat(item.find('.bag-size').val()) || 0;
@@ -1278,10 +1392,10 @@
             var containers = parseInt(item.find('.containers').val()) || 0;
 
             if (source.hasClass('metric-tons') || source.hasClass('no-of-bags') || source.hasClass('bag-size')) {
-                // When MT increases, stuffing should increase if Containers is fixed
-                if (containers > 0) {
-                    stuffing = metricTons / containers;
-                    item.find('.stuffing').val(stuffing.toFixed(3));
+                // Qty changed: stuffing stays fixed, containers update
+                if (stuffing > 0) {
+                    containers = Math.ceil(metricTons / stuffing);
+                    item.find('.containers').val(containers);
                 }
             } else if (source.hasClass('stuffing')) {
                 // When manual stuffing edit, containers should update
@@ -1300,10 +1414,10 @@
             // Recalculate Total Bags (Crucial: User wants NO auto-increase of extra bags)
             var totalBags = noOfBags + extraBags + emptyBags;
             var totalKgs = noOfBags * bagSize;
-            
+
             item.find('.total-bags').val(totalBags);
             item.find('.total-kgs').val(totalKgs.toFixed(2));
-            
+
             checkCapacity();
 
             // Now auto-calculate sub-items master packing no-of-bags
@@ -1313,7 +1427,7 @@
                 if (primaryBagsInMaster > 0 && totalBags > 0) {
                     var masterNoOfBags = Math.ceil(totalBags / primaryBagsInMaster);
                     subRow.find('.sub-no-of-bags').val(masterNoOfBags);
-                    
+
                     // Recalculate Sub-Total Bags
                     var subExtra = parseInt(subRow.find('.sub-extra-bags').val()) || 0;
                     var subEmpty = parseInt(subRow.find('.sub-empty-bags').val()) || 0;
@@ -1342,7 +1456,7 @@
             let consumed = parseFloat($('#lbl_consumed_mt').text()) || 0;
             let currentRequest = 0;
 
-            $('.packing-item:visible').each(function() {
+            $('.packing-item:visible').each(function () {
                 if ($(this).attr('id') !== 'dummyPackingRow') {
                     currentRequest += parseFloat($(this).find('.metric-tons').val()) || 0;
                 }

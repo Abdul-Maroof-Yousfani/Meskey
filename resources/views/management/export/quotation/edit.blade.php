@@ -250,12 +250,12 @@
                             </select>
                         </td>
                     </tr>
-                    <tr>
+                    <!-- <tr>
                         <td style="font-weight:bold;vertical-align:middle;">RATE</td>
                         <td>
                             <input type="text" name="currency_rate" id="currencyRate" class="form-control" value="{{ old('currency_rate', $quotation->currency_rate) }}" readonly>
                         </td>
-                    </tr>
+                    </tr> -->
                 </table>
             </div>
         </div>
@@ -649,6 +649,14 @@ $(document).ready(function() {
 
     // Initialization on load
     calculateOverallTotals();
+
+    if ($('input[name="export_soda_id"]').val()) {
+        $('#productSelect').prop('disabled', true);
+    }
+
+    $('#ajaxSubmit').on('submit', function() {
+        $('#productSelect').prop('disabled', false);
+    });
     
     // Initial reverse-calculation of commission on page load
     let totalMt_load = 0;

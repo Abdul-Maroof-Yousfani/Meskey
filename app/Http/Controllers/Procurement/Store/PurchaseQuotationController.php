@@ -971,11 +971,11 @@ class PurchaseQuotationController extends Controller
                 ]);
 
 
-                if ($request->data_id[$index] != 0) {
-                    $data = PurchaseRequestData::find($request->data_id[$index])->update([
-                        'quotation_status' => 2,
-                    ]);
-                }
+                // if ($request->data_id[$index] != 0) {
+                //     $data = PurchaseRequestData::find($request->data_id[$index])->update([
+                //         'quotation_status' => 2,
+                //     ]);
+                // }
             }
        
             DB::commit();

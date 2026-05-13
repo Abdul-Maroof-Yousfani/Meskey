@@ -211,23 +211,6 @@
                     </div>
                 </div>
 
-                <div class="mt-4">
-                    <h6 class="header-heading-sepration">Commission</h6>
-                    <div class="row">
-                        <div class="col-md-4">
-                            <label>Commission (%):</label>
-                            <input type="text" id="snap_commission_percentage_edit" class="form-control" disabled>
-                        </div>
-                        <div class="col-md-4">
-                            <label>Amt/Ton:</label>
-                            <input type="text" id="snap_commission_amount_per_ton_edit" class="form-control" disabled>
-                        </div>
-                        <div class="col-md-4">
-                            <label>Total Commission:</label>
-                            <input type="text" id="snap_commission_edit" class="form-control" disabled>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <div class="col-4">
@@ -662,7 +645,7 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label>Clearing Agent:</label>
-                        <input type="text" class="form-control" value="{{ $deliveryOrder->c_agent }}" disabled>
+                        <input type="text" class="form-control" value="{{ $deliveryOrder->clearingAgent->name ?? $deliveryOrder->c_agent }}" disabled>
                     </div>
                 </div>
                 <div class="col-md-3">
@@ -675,6 +658,33 @@
                     <div class="form-group">
                         <label>Empty Container Pickup:</label>
                         <input type="text" class="form-control" value="{{ $deliveryOrder->empty_container_pickup }}" disabled>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Commission Section (Moved here) -->
+    <div class="row form-mar mt-3" id="commissionSection">
+        <div class="col-md-12">
+            <h6 class="header-heading-sepration">Commission</h6>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>Commission (%):</label>
+                        <input type="text" id="snap_commission_percentage_edit_show" class="form-control" disabled>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>Amt/Ton:</label>
+                        <input type="text" id="snap_commission_amount_per_ton_edit_show" class="form-control" disabled>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label>Total Commission:</label>
+                        <input type="text" id="snap_commission_edit_show" class="form-control" disabled>
                     </div>
                 </div>
             </div>
@@ -787,9 +797,9 @@
             let commission = parseFloat(data.commission) || 0;
             let amtPerTon = totalMt > 0 ? (commission / totalMt) : (parseFloat(data.commission_amount_per_ton) || 0);
 
-            $('#snap_commission_percentage_edit').val(data.commission_percentage || '');
-            $('#snap_commission_amount_per_ton_edit').val(amtPerTon.toFixed(2));
-            $('#snap_commission_edit').val(commission.toFixed(2));
+            $('#snap_commission_percentage_edit, #snap_commission_percentage_edit_show').val(data.commission_percentage || '');
+            $('#snap_commission_amount_per_ton_edit, #snap_commission_amount_per_ton_edit_show').val(amtPerTon.toFixed(2));
+            $('#snap_commission_edit, #snap_commission_edit_show').val(commission.toFixed(2));
 
             $('#snap_incoterm_edit').val(data.incoterm ? data.incoterm.name : '');
             $('#snap_packing_type_edit').val(data.packing_type || '');

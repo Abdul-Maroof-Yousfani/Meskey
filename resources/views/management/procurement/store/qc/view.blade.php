@@ -341,7 +341,7 @@
 
                     <div class="col-md-3">
                         <div class="form-group">
-                            <label class="form-label">Rejected Qty:</label>
+                            <label class="form-label">Rejected Qty with deduction:</label>
                             <input type="text" name="rejected_quantity" id="rejected_quantity" onkeyup="calculateQcQty('rejected')"
                                 value="{{ $purchaseOrderReceivingData->qc->rejected_quantity }}"
                                 class="form-control" @readonly($type == "view")>
@@ -350,7 +350,7 @@
 
                     <div class="col-md-3">
                         <div class="form-group">
-                            <label class="form-label">Rejection Return:</label>
+                            <label class="form-label">Rejected qty without deduction:</label>
                             <input type="text" name="rejection_return" id="rejection_return" onkeyup="calculateQcQty('return')"
                                 value="{{ $purchaseOrderReceivingData->qc->rejection_return ?? 0 }}"
                                 class="form-control" @readonly($type == "view")>
@@ -398,32 +398,49 @@
                 let rejectedQty = $('#rejected_quantity');
                 let returnQty = $('#rejection_return');
 
+                let accepted = parseFloat(acceptedQty.val()) || 0;
+                let rejected = parseFloat(rejectedQty.val()) || 0;
+                let returned = parseFloat(returnQty.val()) || 0;
+
                 if (type === 'accepted') {
-                    let accepted = parseFloat(acceptedQty.val()) || 0;
                     if (accepted > totalBags) {
-                        acceptedQty.val(totalBags);
                         accepted = totalBags;
+                        acceptedQty.val(accepted);
                     }
-                    rejectedQty.val(totalBags - accepted);
+                    rejectedQty.val((totalBags - accepted).toFixed(2));
                     returnQty.val(0);
                 } else if (type === 'rejected') {
-                    let accepted = parseFloat(acceptedQty.val()) || 0;
-                    let rejected = parseFloat(rejectedQty.val()) || 0;
-                    let remaining = totalBags - accepted;
-                    if (rejected > remaining) {
-                        rejectedQty.val(remaining);
-                        rejected = remaining;
+                    if (rejected > totalBags) {
+                        rejected = totalBags;
+                        rejectedQty.val(rejected);
                     }
-                    returnQty.val((remaining - rejected).toFixed(2));
+                    
+                    let remainingForRejected = totalBags - accepted;
+                    if (rejected > remainingForRejected) {
+                        // Reduce from accepted if rejected exceeds current rejection pool
+                        accepted = totalBags - rejected;
+                        acceptedQty.val(accepted.toFixed(2));
+                        returnQty.val(0);
+                    } else {
+                        // Fetch from the other rejected field (without deduction)
+                        returnQty.val((remainingForRejected - rejected).toFixed(2));
+                    }
                 } else if (type === 'return') {
-                    let accepted = parseFloat(acceptedQty.val()) || 0;
-                    let returned = parseFloat(returnQty.val()) || 0;
-                    let remaining = totalBags - accepted;
-                    if (returned > remaining) {
-                        returnQty.val(remaining);
-                        returned = remaining;
+                    if (returned > totalBags) {
+                        returned = totalBags;
+                        returnQty.val(returned);
                     }
-                    rejectedQty.val((remaining - returned).toFixed(2));
+
+                    let remainingForRejected = totalBags - accepted;
+                    if (returned > remainingForRejected) {
+                        // Reduce from accepted if returned exceeds current rejection pool
+                        accepted = totalBags - returned;
+                        acceptedQty.val(accepted.toFixed(2));
+                        rejectedQty.val(0);
+                    } else {
+                        // Fetch from the other rejected field (with deduction)
+                        rejectedQty.val((remainingForRejected - returned).toFixed(2));
+                    }
                 }
             }
         </script>

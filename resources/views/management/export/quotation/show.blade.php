@@ -239,12 +239,12 @@
                         </select>
                     </td>
                 </tr>
-                <tr>
+                <!-- <tr>
                     <td style="font-weight:bold;vertical-align:middle;">EXCHANGE RATE</td>
                     <td>
                         <input type="text" class="form-control" value="{{ number_format($quotation->currency_rate, 2) }}" readonly>
                     </td>
-                </tr>
+                </tr> -->
             </table>
         </div>
     </div>

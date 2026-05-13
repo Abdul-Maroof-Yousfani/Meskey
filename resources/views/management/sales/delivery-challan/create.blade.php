@@ -157,13 +157,13 @@
                     <div class="form-group">
                         <label class="form-label">Labour:</label>
                         <select name="labour" id="labour" onchange="" class="form-control select2">
-                            <option value="">Select Labours</option>
-                            <option value="1">Labour 1</option>
-                            <option value="2">Labour 2</option>
+                            @foreach ($labours ?? [] as $labour)
+                                <option value="{{ $labour->id }}">{{ $labour->name }}</option>
+                            @endforeach
                         </select>
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-6" id="transporter_col">
                     <div class="form-group">
                         <label class="form-label">Transporter:</label>
                         <select id="transporter_display" class="form-control select2" onchange="$('#transporter').val(this.value)">
@@ -202,7 +202,7 @@
                         <small class="text-muted">(Rate * Total Bags)</small>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-4" id="transporter_amount_col">
                     <div class="form-group">
                         <label class="form-label">Transporter Amount:</label>
                         <input type="number" name="transporter_amount" onchange="" id="transporter_amount" class="form-control">
@@ -416,10 +416,14 @@
                         transSelect.val(response.transporter.id).trigger('change');
                         transSelect.prop('disabled', true);
                         $("#transporter").val(response.transporter.id);
+                        $("#transporter_col").show();
+                        $("#transporter_amount_col").show();
                     } else {
                         transSelect.val('').trigger('change');
                         transSelect.prop('disabled', false);
                         $("#transporter").val('');
+                        $("#transporter_col").hide();
+                        $("#transporter_amount_col").hide();
                     }
 
                     // Set Remarks
@@ -434,6 +438,9 @@
                         arrival_names: Object.fromEntries(response.locations.arrival_locations.map(l => [l.id, l.text])),
                         section_names: Object.fromEntries(response.locations.sub_arrival_locations.map(l => [l.id, l.text])),
                     };
+
+                    // Fetch and populate labours based on factories
+                    updateLabourVendors(response.locations.arrival_location_ids);
 
                     // Trigger get_items to load the ticket item row
                     $.ajax({
@@ -1184,4 +1191,32 @@
         originalCalcAmount(el);
         calculateLabourAmount();
     };
+    function updateLabourVendors(arrivalLocationIds) {
+        if (!arrivalLocationIds || arrivalLocationIds.length === 0) {
+            $("#labour").empty().trigger('change.select2');
+            return;
+        }
+
+        $.ajax({
+            url: "{{ route('vendor.get-vendors-by-locations') }}",
+            method: "GET",
+            data: { arrival_location_ids: arrivalLocationIds },
+            dataType: "json",
+            success: function(vendors) {
+                const labourSelect = $("#labour");
+                const currentVal = labourSelect.val();
+                labourSelect.empty();
+                vendors.forEach(function(vendor) {
+                    labourSelect.append(`<option value="${vendor.id}" ${vendor.id == currentVal ? 'selected' : ''}>${vendor.name}</option>`);
+                });
+                if (vendors.length === 1 && !currentVal) {
+                    labourSelect.val(vendors[0].id).trigger('change');
+                }
+                labourSelect.trigger('change.select2');
+            },
+            error: function(error) {
+                console.error('Error fetching vendors by locations:', error);
+            }
+        });
+    }
 </script>

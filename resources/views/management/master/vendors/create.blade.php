@@ -1,3 +1,4 @@
+
 <form action="{{ route('vendor.store') }}" method="POST" id="ajaxSubmit" autocomplete="off" enctype="multipart/form-data">
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('get.vendor') }}" />
@@ -220,14 +221,24 @@
                 Locations
             </h6>
         </div>
-        <div class="col-xs-12 col-sm-12 col-md-12">
-            @foreach ($companyLocation as $companyLoc)
-                <div class="checkbox">
-                    <input name="company_location_ids[]" type="checkbox" id="checkbox{{ $companyLoc->id }}"
-                        value="{{ $companyLoc->id }}">
-                    <label for="checkbox{{ $companyLoc->id }}"><span>{{ $companyLoc->name }}</span></label>
-                </div>
-            @endforeach
+        <div class="col-xs-6 col-sm-6 col-md-6">
+            <div class="form-group">
+                <label>Company Location:</label>
+                <select name="company_location_ids[]" id="company_location_ids" class="form-control select2">
+                    <option value="">Select Location</option>
+                    @foreach ($companyLocation as $companyLoc)
+                        <option value="{{ $companyLoc->id }}">{{ $companyLoc->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+        <div class="col-xs-6 col-sm-6 col-md-6">
+            <div class="form-group">
+                <label>Sub Location:</label>
+                <select name="arrival_location_ids[]" id="arrival_location_ids" class="form-control select2" multiple>
+                    <option value="" disabled>Select Sub Location</option>
+                </select>
+            </div>
         </div>
     </div>
     <div class="row ">
@@ -327,6 +338,28 @@
         if ($('#card-container2 .clonecard2').length > 1) {
             $(this).closest('.clonecard2').remove();
             toggleRemoveButton2();
+        }
+    });
+
+    $('.select2').select2();
+
+    $('#company_location_ids').on('change', function() {
+        var companyLocationId = $(this).val();
+        if (companyLocationId) {
+            $.ajax({
+                url: '/master/get-arrival-location/' + companyLocationId,
+                type: 'GET',
+                success: function(data) {
+                    $('#arrival_location_ids').empty();
+                    $.each(data, function(key, value) {
+                        $('#arrival_location_ids').append('<option value="' + value.id + '">' + value.name + '</option>');
+                    });
+                    $('#arrival_location_ids').trigger('change.select2');
+                }
+            });
+        } else {
+            $('#arrival_location_ids').empty();
+            $('#arrival_location_ids').trigger('change.select2');
         }
     });
 </script>

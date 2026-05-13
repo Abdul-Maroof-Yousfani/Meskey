@@ -733,6 +733,15 @@ class JobOrderController extends Controller
         return view('management.production.job_orders.partials.product_specs', compact('specs'));
     }
 
+    public function getArrivalLocations(Request $request)
+    {
+        $locationIds = (array) $request->company_location_ids;
+        $arrivalLocations = ArrivalLocation::whereIn('company_location_id', $locationIds)
+            ->where('status', 'active')
+            ->get();
+        return response()->json($arrivalLocations);
+    }
+
     public function getExportOrderDetails($id)
     {
         $exportOrder = \App\Models\Export\ExportOrder::with([

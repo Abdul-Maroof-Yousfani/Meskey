@@ -43,7 +43,7 @@ class ExportOrderRequest extends FormRequest
                 'after_or_equal:shipment_delivery_date_from',
             ],
 
-            'other_specifications' => ['required', 'string'],
+            'other_specifications' => ['nullable', 'string'],
             'additional_info' => ['nullable', 'string'],
 
             /* ================= FOREIGN KEYS ================= */
@@ -67,7 +67,7 @@ class ExportOrderRequest extends FormRequest
             /* ================= PAYMENT ================= */
 
             'advance_payment' => ['required', 'numeric', 'min:0'],
-            'currency_rate' => ['required', 'numeric', 'min:0'],
+            'currency_rate' => ['nullable', 'numeric', 'min:0'],
             'payment_days' => ['required', 'integer', 'min:0'],
 
             'partial_payment' => ['required', 'string'],
@@ -81,9 +81,9 @@ class ExportOrderRequest extends FormRequest
             'marking_labeling' => ['nullable', 'string'],
             'shipping_instructions' => ['nullable', 'string'],
             'documents_to_be_provided' => ['required', 'string'],
-            'other_condition' => ['required', 'string'],
+            'other_condition' => ['nullable', 'string'],
             'force_majure' => ['nullable', 'string'],
-            'application_law' => ['required', 'string'],
+            'application_law' => ['nullable', 'string'],
 
             /* ================= LOCATIONS ================= */
 

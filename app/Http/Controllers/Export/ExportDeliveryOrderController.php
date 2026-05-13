@@ -16,6 +16,8 @@ use App\Models\Master\Stitching;
 use App\Models\Master\CompanyLocation;
 use App\Models\Master\InspectionCompany;
 use App\Models\Master\FumigationCompany;
+use App\Models\Master\ClearingAgent;
+use App\Models\Master\Transporter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
@@ -85,8 +87,9 @@ class ExportDeliveryOrderController extends Controller
         $bagConditions = BagCondition::all();
         $stitchings = Stitching::all();
         $inspectionCompanies = InspectionCompany::all();
-        $transporters = \App\Models\Master\Transporter::all();
+        $transporters = Transporter::all();
         $fumigationCompanies = FumigationCompany::where('status', 'active')->get();
+        $clearingAgents = ClearingAgent::where('status', 'active')->get();
 
         return view('management.export.delivery-order.create', compact(
             'buyers',
@@ -113,7 +116,8 @@ class ExportDeliveryOrderController extends Controller
             'stitchings',
             'inspectionCompanies',
             'transporters',
-            'fumigationCompanies'
+            'fumigationCompanies',
+            'clearingAgents'
         ));
     }
 
@@ -215,7 +219,7 @@ class ExportDeliveryOrderController extends Controller
                 'fumigation' => $item->fumigation_company_id ? 'Yes' : 'No',
                 'phyto_certificate' => $item->fumigation_company_id ?? [], // Same as fumigation, editable
                 'inspection_company' => collect($item->inspection_by ?? [])->map(function($id) {
-                    $company = \App\Models\Master\InspectionCompany::find($id);
+                    $company = InspectionCompany::find($id);
                     return $company ? $company->name : null;
                 })->filter()->implode(', '),
                 'sub_items' => $subItems,
@@ -241,12 +245,51 @@ class ExportDeliveryOrderController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
             'export_order_id' => 'required|exists:export_orders,id',
             'buyer_id' => 'required|exists:customers,id',
             'export_form_e_id' => 'required|exists:export_form_es,id',
+            'ref_no' => 'required',
             'packing_items' => 'required|array',
+            'financial_instrument_no' => 'required',
+            'vessel_name' => 'required',
+            'vessel_etd' => 'required|date',
+            'vessel_eta' => 'required|date|after_or_equal:vessel_etd',
+            'loading_date' => 'required|date',
+            'estimated_payment_date' => 'required|date',
+            'freight_amount' => 'required|numeric|min:0',
+            'transporter_id' => 'required|exists:transporters,id',
+            'c_agent' => 'required',
+            'shipping_line' => 'required',
+            'empty_container_pickup' => 'required',
+            'locations' => 'required|array|min:1',
+            'locations.0.location_id' => 'required',
+        ], [
+            'buyer_id.required' => 'Customer is required.',
+            'vessel_eta.after_or_equal' => 'Vessel ETA must be after or equal to Vessel ETD.',
+            'locations.required' => 'At least one location is required.',
+            'locations.0.location_id.required' => 'Please select a location.',
         ]);
+
+        if ($validator->fails()) {
+            $allErrors = $validator->errors()->messages();
+            $uniqueErrors = [];
+            $seenMessages = [];
+
+            foreach ($allErrors as $field => $messages) {
+                foreach ($messages as $message) {
+                    if (!in_array($message, $seenMessages)) {
+                        $uniqueErrors[$field] = [$message];
+                        $seenMessages[] = $message;
+                    }
+                }
+            }
+
+            return response()->json([
+                'status' => 422,
+                'errors' => $uniqueErrors
+            ], 422);
+        }
 
         DB::beginTransaction();
 
@@ -428,6 +471,7 @@ class ExportDeliveryOrderController extends Controller
             'exportPackingItems.threadColor',
             'exportPackingItems.stitching',
             'locations.companyLocation',
+            'clearingAgent',
         ])->findOrFail($id);
 
         $exportOrderData = $deliveryOrder->exportOrder;
@@ -449,7 +493,7 @@ class ExportDeliveryOrderController extends Controller
         $threadColors = Color::all();
         $stitchings = Stitching::all();
         $inspectionCompanies = InspectionCompany::all();
-        $fumigationCompanies = \App\Models\Master\FumigationCompany::where('status', 'active')->get();
+        $fumigationCompanies = FumigationCompany::where('status', 'active')->get();
         $bagTypes = BagType::where('status', 1)->get();
         $bagConditions = BagCondition::where('status', 1)->get();
 
@@ -526,8 +570,9 @@ class ExportDeliveryOrderController extends Controller
         $bagConditions = BagCondition::all();
         $stitchings = Stitching::all();
         $inspectionCompanies = InspectionCompany::all();
-        $transporters = \App\Models\Master\Transporter::all();
-        $fumigationCompanies = \App\Models\Master\FumigationCompany::where('status', 'active')->get();
+        $transporters = Transporter::all();
+        $fumigationCompanies = FumigationCompany::where('status', 'active')->get();
+        $clearingAgents = ClearingAgent::where('status', 'active')->get();
 
         return view('management.export.delivery-order.edit', compact(
             'deliveryOrder',
@@ -559,20 +604,59 @@ class ExportDeliveryOrderController extends Controller
             'totalAllowedMt',
             'alreadyConsumedMt',
             'remainingMt',
-            'currentRequestMt'
+            'currentRequestMt',
+            'clearingAgents'
         ));
     }
 
     public function update(Request $request, $id)
     {
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'export_form_e_id' => 'required|exists:export_form_es,id',
+            'ref_no' => 'required',
+            'packing_items' => 'required|array',
+            'financial_instrument_no' => 'required',
+            'vessel_name' => 'required',
+            'vessel_etd' => 'required|date',
+            'vessel_eta' => 'required|date|after_or_equal:vessel_etd',
+            'loading_date' => 'required|date',
+            'estimated_payment_date' => 'required|date',
+            'freight_amount' => 'required|numeric|min:0',
+            'transporter_id' => 'required|exists:transporters,id',
+            'c_agent' => 'required',
+            'shipping_line' => 'required',
+            'empty_container_pickup' => 'required',
+            'locations' => 'required|array|min:1',
+            'locations.0.location_id' => 'required',
+        ], [
+            'vessel_eta.after_or_equal' => 'Vessel ETA must be after or equal to Vessel ETD.',
+            'locations.required' => 'At least one location is required.',
+            'locations.0.location_id.required' => 'Please select a location.',
+        ]);
+
+        if ($validator->fails()) {
+            $allErrors = $validator->errors()->messages();
+            $uniqueErrors = [];
+            $seenMessages = [];
+
+            foreach ($allErrors as $field => $messages) {
+                foreach ($messages as $message) {
+                    if (!in_array($message, $seenMessages)) {
+                        $uniqueErrors[$field] = [$message];
+                        $seenMessages[] = $message;
+                    }
+                }
+            }
+
+            return response()->json([
+                'status' => 422,
+                'errors' => $uniqueErrors
+            ], 422);
+        }
+
         DB::beginTransaction();
 
         try {
-            $request->validate([
-                'export_form_e_id' => 'required|exists:export_form_es,id',
-                'packing_items' => 'required|array',
-            ]);
-
             $deliveryOrder = DeliveryOrder::with(['exportPackingItems.subItems'])
                 ->lockForUpdate()
                 ->find($id);
@@ -731,11 +815,19 @@ class ExportDeliveryOrderController extends Controller
                 'data' => $deliveryOrder
             ], 200);
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation failed',
+                'errors' => $e->errors(),
+            ], 422);
         } catch (\Throwable $e) {
             DB::rollBack();
 
             return response()->json([
-                'success' => 'Something went wrong',
+                'status' => 'error',
+                'message' => 'Something went wrong',
                 'error' => $e->getMessage(),
             ], 500);
         }

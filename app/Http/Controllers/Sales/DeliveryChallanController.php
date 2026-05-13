@@ -20,6 +20,7 @@ use App\Models\Sales\ReceivingRequestItem;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\Master\Vendor;
 
 class DeliveryChallanController extends Controller
 {
@@ -39,9 +40,10 @@ class DeliveryChallanController extends Controller
             ->join('sales_second_weighbridges', 'loading_slips.id', '=', 'sales_second_weighbridges.loading_slip_id')
             ->distinct()
             ->get();
+        $labours = Vendor::all();
 
         $transporters = \App\Models\Master\Transporter::all();
-        return view("management.sales.delivery-challan.create", compact("customers", "delivery_orders", "transporters"));
+        return view("management.sales.delivery-challan.create", compact("customers", "delivery_orders", "transporters", "labours"));
     }
 
     public function store(DeliveryChallanRequest $request) {

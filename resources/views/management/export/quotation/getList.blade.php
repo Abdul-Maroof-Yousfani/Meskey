@@ -2,6 +2,7 @@
     <thead>
         <tr>
             <th width="5%">S no.</th>
+            <th width="5%">ID</th>
             <th width="10%">Exp. Sauda</th>
             <th width="15%">Buyer</th>
             <th width="15%">Company</th>
@@ -18,12 +19,12 @@
             @foreach ($quotations as $key => $quotation)
                 <tr>
                     <td>{{ $key + 1 }}</td>
+                    <td>{{ $quotation->id }}</td>
                     <td>{{ $quotation->exportSoda ? $quotation->exportSoda->reference : '-' }}</td>
                     <td>{{ $quotation->buyer->name ?? 'N/A' }}</td>
                     <td>{{ $quotation->company->name ?? 'N/A' }}</td>
                     <td>{{ Str::limit($quotation->product->name ?? 'N/A', 30) }}</td>
-                    <td>{{ $quotation->currency->currency_code ?? '' }}
-                        ({{ number_format($quotation->currency_rate, 2) ?? '' }})</td>
+                    <td>{{ $quotation->currency->currency_code ?? '' }}</td>
                     {{-- <td>{{ number_format($quotation->rate, 2) }}</td> --}}
                     <td>{{ number_format($quotation->total_amount, 2) }}</td>
                     <td>

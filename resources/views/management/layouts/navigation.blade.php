@@ -1416,6 +1416,14 @@
                     </li>
                     @endcanAccess
 
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('clearing-agent.index') }}"
+                            onclick="loadPageContent('{{ route('clearing-agent.index') }}')" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Task Board">Manage Clearing Agents</span>
+                        </a>
+                    </li>
+
 
                 </ul>
             </li>

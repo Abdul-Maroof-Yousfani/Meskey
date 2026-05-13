@@ -87,6 +87,7 @@ class VendorsController extends Controller
             $requestData['unique_no'] = generateUniqueNumber('vendors', null, null, 'unique_no');
             $requestData['name'] = $request->company_name;
             $requestData['company_location_ids'] = $request->company_location_ids;
+            $requestData['arrival_location_ids'] = $request->arrival_location_ids;
 
             if ($request->account_id) {
                 $requestData['account_id'] = $request->account_id;
@@ -155,25 +156,31 @@ class VendorsController extends Controller
         ])->findOrFail($id);
 
         $companyLocations = CompanyLocation::all();
-        $selectedLocations = $supplier->company_location_ids ?? [];
         $accounts = Account::whereHas('parent', function ($query) {
             $query->where('name', 'Supplier')
                 ->orWhere('name', 'Broker');
         })->get();
 
+        $arrivalLocations = [];
+        if (!empty($supplier->company_location_ids)) {
+            $arrivalLocations = \App\Models\Master\ArrivalLocation::whereIn('company_location_id', (array)$supplier->company_location_ids)->get();
+        }
+
         return view('management.master.vendors.edit', [
             'supplier' => $supplier,
             'companyLocations' => $companyLocations,
-            'selectedLocations' => $selectedLocations,
-            'accounts' => $accounts
+            'selectedLocations' => $supplier->company_location_ids ?? [],
+            'accounts' => $accounts,
+            'arrivalLocations' => $arrivalLocations
         ]);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(VendorRequest $request, Vendor $supplier)
+    public function update(VendorRequest $request, $id)
     {
+        $supplier = Vendor::findOrFail($id);
         DB::beginTransaction();
 
         try {
@@ -184,7 +191,7 @@ class VendorsController extends Controller
                 $requestData['account_id'] = $request->account_id;
             } elseif (empty($supplier->account_id)) {
               
-                                                $account = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-4', 'vendors'));
+                $account = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-4', 'vendors'));
 
                 $requestData['account_id'] = $account->id;
             }
@@ -235,6 +242,7 @@ class VendorsController extends Controller
             if (empty($bankName)) continue;
 
             $bankData = [
+                'vendor_id' => $supplier->id,
                 'bank_name' => $bankName,
                 'branch_name' => $branchNames[$index] ?? '',
                 'branch_code' => $branchCodes[$index] ?? '',
@@ -263,5 +271,37 @@ class VendorsController extends Controller
     {
         $supplier->delete();
         return response()->json(['success' => 'Category deleted successfully.'], 200);
+    }
+
+    public function getArrivalLocations($companyLocationId)
+    {
+        $locations = \App\Models\Master\ArrivalLocation::where('company_location_id', $companyLocationId)->get();
+        return response()->json($locations);
+    }
+    public function getVendorsByLocations(Request $request)
+    {
+        $arrivalLocationIds = $request->arrival_location_ids;
+        if (empty($arrivalLocationIds)) {
+            return response()->json(Vendor::all(['id', 'name']));
+        }
+
+        if (!is_array($arrivalLocationIds)) {
+            $arrivalLocationIds = [$arrivalLocationIds];
+        }
+
+        $vendors = Vendor::where(function($query) use ($arrivalLocationIds) {
+            foreach ($arrivalLocationIds as $id) {
+                if ($id) {
+                    $query->orWhereJsonContains('arrival_location_ids', (string)$id)
+                          ->orWhereJsonContains('arrival_location_ids', (int)$id);
+                }
+            }
+        })->get(['id', 'name']);
+
+        if ($vendors->isEmpty()) {
+            $vendors = Vendor::all(['id', 'name']);
+        }
+
+        return response()->json($vendors);
     }
 }

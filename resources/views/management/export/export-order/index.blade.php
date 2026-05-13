@@ -47,6 +47,7 @@
                                         <tr>
                                             <th width="5%">S no.</th>
                                             <th width="15%">Export Order</th>
+                                            <th width="15%">Buyer</th>
                                             <th width="15%">Voucher Date</th>
                                             <th width="15%">Commodity/Product</th>
                                             <!-- <th width="10%">Broker</th> -->

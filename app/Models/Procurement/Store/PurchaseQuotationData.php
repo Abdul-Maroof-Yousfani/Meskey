@@ -44,6 +44,16 @@ class PurchaseQuotationData extends Model
     {
         static::updating(
             function ($model) {
+                if (
+                    $model->am_approval_status === 'approved' &&
+                    $model->isDirty()
+                ) {
+                    return response()->json([
+                        'success' => 'This item has already been approved and cannot be modified.',
+                        'data' => $model,
+                    ], 403);
+                }
+
                 $changes = $model->getDirty();
                 $changedColumns = [];
 

@@ -1166,6 +1166,7 @@
                 $(this).closest('.packing-item').remove();
                 // Re-index remaining items
                 reindexPackingItems();
+                $('select[name*="company_location_id"]').first().trigger('change');
             }
         });
 
@@ -1565,6 +1566,35 @@
                     }
                 });
             });
+        }
+    });
+
+    // Auto-populate arrival locations based on company location selection
+    $(document).on('change', 'select[name*="company_location_id"]', function() {
+        var locationIds = [];
+        $('select[name*="company_location_id"]').each(function() {
+            var val = $(this).val();
+            if (val) locationIds.push(val);
+        });
+        
+        if (locationIds.length > 0) {
+            $.ajax({
+                url: "{{ route('job-orders.get-arrival-locations') }}",
+                type: "GET",
+                data: { company_location_ids: locationIds },
+                success: function(response) {
+                    var arrivalSelect = $('select[name="arrival_locations[]"]');
+                    var currentValues = arrivalSelect.val() || [];
+                    arrivalSelect.empty();
+                    $.each(response, function(index, location) {
+                        var isSelected = currentValues.includes(location.id.toString()) ? 'selected' : '';
+                        arrivalSelect.append('<option value="' + location.id + '" ' + isSelected + '>' + location.name + '</option>');
+                    });
+                    arrivalSelect.trigger('change');
+                }
+            });
+        } else {
+            $('select[name="arrival_locations[]"]').empty().trigger('change');
         }
     });
 </script>
