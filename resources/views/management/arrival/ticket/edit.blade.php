@@ -69,7 +69,7 @@
                     <option value="">Broker Name</option>
                     @foreach ($suppliers as $supplier)
                         <option value="{{ $supplier->company_name }}"
-                            @selected($arrivalTicket->broker_name == $supplier->name)>
+                            @selected($arrivalTicket->broker_name == $supplier->company_name)>
                             {{ $supplier->company_name }}
                         </option>
                     @endforeach
