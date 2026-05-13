@@ -262,45 +262,40 @@ class PurchaseOrderReceivingController extends Controller
 
 
         $quotation = null;
-        $dataItems = collect();
-
-
-
-        if ($dataItems->isEmpty()) {
-         $dataItems = PurchaseOrderData::with(['purchase_order', 'item', 'category', 'purchase_request_data', 'job_orders.job_order_data'])
+        $dataItems = PurchaseOrderData::with(['purchase_order', 'item', 'category', 'purchase_request_data', 'job_orders.job_order_data'])
                 ->where('purchase_order_id', $requestId)
+                ->where('am_approval_status', 'approved')
                 ->get();
 
             $purchaseOrderDataIds = $dataItems->pluck('id');
 
             $existingQuotationCount = PurchaseOrderReceivingData::whereIn('purchase_order_data_id', $purchaseOrderDataIds)
-                // ->whereHas('purchase_order_receiving', function ($q) use ($supplierId) {
-                //     $q->where('supplier_id', $supplierId);
-                // })
                 ->count();
 
-                  if ($existingQuotationCount > 0) {
-                    $quotationQuantities = PurchaseOrderReceivingData::whereIn('purchase_order_data_id', $purchaseOrderDataIds)
-                        // ->whereHas('purchase_order_receiving', function ($q) use ($supplierId) {
-                        //     $q->where('supplier_id', $supplierId);
-                        // })
-                        ->select('item_id', DB::raw('SUM(qty) as total_quoted_qty'))
-                        ->groupBy('item_id')
-                        ->pluck('total_quoted_qty', 'item_id');
+            if ($existingQuotationCount > 0) {
+                $quotationQuantities = PurchaseOrderReceivingData::whereIn('purchase_order_data_id', $purchaseOrderDataIds)
+                    ->select('purchase_order_data_id', DB::raw('SUM(qty) as total_quoted_qty'))
+                    ->groupBy('purchase_order_data_id')
+                    ->pluck('total_quoted_qty', 'purchase_order_data_id');
 
-                foreach ($dataItems as $item) {
-                    $quotedQty = $quotationQuantities[$item->item_id] ?? 0;
+                $dataItems = $dataItems->filter(function($item) use ($quotationQuantities) {
+                    $quotedQty = $quotationQuantities[$item->id] ?? 0;
                     $remainingQty = $item->qty - $quotedQty;
-                    $item->qty = max($remainingQty, 0);
+                    
+                    if ($remainingQty <= 0) {
+                        return false;
+                    }
+                    
+                    $item->qty = $remainingQty;
                     $item->total_quoted_qty = $quotedQty;
-                }
+                    return true;
+                });
             } else {
                 foreach ($dataItems as $item) {
                     $item->total_quoted_qty = 0;
                     $item->qty = $item->qty;
                 }
             }
-        }
 
 
 
@@ -324,30 +319,11 @@ class PurchaseOrderReceivingController extends Controller
     public function create()
     {
 
-        $approvedPurchaseOrders = PurchaseOrder::where('am_approval_status', 'approved')->with([
-            'purchaseOrderData' => function ($query) {
-                // $query->where('am_approval_status', 'approved');
-            }
-        ])
-            
-            // ->whereHas('purchaseOrderData', function ($q): void {
-            //     $q->whereRaw('qty > (SELECT COALESCE(SUM(qty), 0) FROM purchase_order_receiving_data WHERE purchase_order_data_id = purchase_order_data.id)');
-            // })
-            ->get()
-            ->reject(function($purchaseOrder) {
-                $purchase_order_datas = $purchaseOrder->purchaseOrderData;
-
-                foreach($purchase_order_datas as $purchase_order_data) {
-                    $po_id = $purchase_order_data->id;
-                    $overall_qty = $purchase_order_data->qty;
-                    if(!$po_id) return false;
-                    $stock = getStockByGrnDataId($po_id);
-                    
-                   
-                    if($stock < $overall_qty) return false;
-                }
-                return true;
-            });
+        $approvedPurchaseOrders = PurchaseOrder::whereHas('purchaseOrderData', function ($q) {
+                $q->where('am_approval_status', 'approved')
+                  ->whereRaw('qty > (SELECT COALESCE(SUM(qty), 0) FROM purchase_order_receiving_data WHERE purchase_order_data_id = purchase_order_data.id)');
+            })
+            ->get();
 
   
 
@@ -480,7 +456,13 @@ class PurchaseOrderReceivingController extends Controller
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $locations = CompanyLocation::select('id', 'name')->get();
         // $job_orders = JobOrder::select('id', 'name')->get();
-        $purchaseOrder = PurchaseOrder::select('id', 'purchase_order_no')->get();
+        $purchaseOrder = PurchaseOrder::whereHas('purchaseOrderData', function ($q) {
+                $q->where('am_approval_status', 'approved')
+                  ->whereRaw('qty > (SELECT COALESCE(SUM(qty), 0) FROM purchase_order_receiving_data WHERE purchase_order_data_id = purchase_order_data.id)');
+            })
+            ->orWhere('id', $purchaseOrderReceiving->purchase_order_id)
+            ->select('id', 'purchase_order_no')
+            ->get();
         $location_ids = $purchaseOrderReceiving?->purchase_request?->locations?->pluck("location_id")->toArray();
         // $data = PurchaseOrderReceivingData::with('purchase_order_receiving', 'category', 'item')
         //     ->findOrFail($id);
