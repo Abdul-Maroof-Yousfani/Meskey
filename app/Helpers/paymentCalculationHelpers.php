@@ -60,7 +60,7 @@ function calculatePohaunchPayment($ticketId)
     $bagRate = 0; // For Pohanch, bag rate is 0
     $loadingWeight = $arrivalTicket->freight->arrived_weight ?? 0;
     // $noOfBags = $arrivalTicket->bags ?? 0;
-    $noOfBags = $arrivalTicket->approved ?? 0;
+    $noOfBags = $arrivalTicket->approvals->total_bags ?? 0;
 
     $ratePerKg = $purchaseOrder->rate_per_kg ?? 0;
     $kantaCharges = $arrivalTicket->freight->karachi_kanta_charges ?? 0;
