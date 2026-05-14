@@ -64,7 +64,7 @@
                             @endif
                             @if ($ticket->calculated_values['total_freight_sum'] > 0)
                                 @if ($ticket->freight_paid_by_supplier == 1)
-                                    <span class="badge badge-success mb-1">Freight: Paid By Supplier</span>
+                                    <span class="badge badge-warning mb-1">Freight: Paid By Supplier</span>
                                 @else
                                     <span class="badge badge-warning">
                                         Freight: {{ number_format($ticket->calculated_values['total_freight_sum'], 2) }}
