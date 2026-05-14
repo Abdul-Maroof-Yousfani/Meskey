@@ -885,4 +885,53 @@ class ExportDeliveryChallanController extends Controller
             ->sortBy('id')
             ->values();
     }
+
+    public function getLaboursByLocations(Request $request)
+    {
+        $arrivalLocationIds = $request->arrival_location_ids;
+        $companyLocationIds = $request->company_location_ids;
+
+        if (empty($arrivalLocationIds) && empty($companyLocationIds)) {
+            return response()->json(\App\Models\Master\Vendor::all(['id', 'name']));
+        }
+
+        if (!empty($arrivalLocationIds) && !is_array($arrivalLocationIds)) {
+            $arrivalLocationIds = [$arrivalLocationIds];
+        }
+        if (!empty($companyLocationIds) && !is_array($companyLocationIds)) {
+            $companyLocationIds = [$companyLocationIds];
+        }
+
+        $query = \App\Models\Master\Vendor::query();
+
+        if (!empty($companyLocationIds)) {
+            $query->where(function($q) use ($companyLocationIds) {
+                foreach ($companyLocationIds as $id) {
+                    if ($id) {
+                        $q->orWhereJsonContains('company_location_ids', (string)$id)
+                          ->orWhereJsonContains('company_location_ids', (int)$id);
+                    }
+                }
+            });
+        }
+
+        if (!empty($arrivalLocationIds)) {
+            $query->where(function($q) use ($arrivalLocationIds) {
+                foreach ($arrivalLocationIds as $id) {
+                    if ($id) {
+                        $q->orWhereJsonContains('arrival_location_ids', (string)$id)
+                          ->orWhereJsonContains('arrival_location_ids', (int)$id);
+                    }
+                }
+            });
+        }
+
+        $vendors = $query->get(['id', 'name']);
+
+        if ($vendors->isEmpty()) {
+            $vendors = \App\Models\Master\Vendor::all(['id', 'name']);
+        }
+
+        return response()->json($vendors);
+    }
 }

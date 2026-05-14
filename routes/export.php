@@ -116,6 +116,8 @@ Route::get('/get-export-delivery-challan-ticket-items', [ExportDeliveryChallanCo
 Route::get('/get-export-delivery-challan-tickets', [ExportDeliveryChallanController::class, 'getTickets'])->name('export-delivery-challan.get-tickets');
 Route::get('/get-export-tickets-with-dispatch-qc', [ExportDeliveryChallanController::class, 'getTicketsWithDispatchQc'])->name('export-delivery-challan.get-tickets-with-dispatch-qc');
 Route::get('/get-export-ticket-data-for-dc', [ExportDeliveryChallanController::class, 'getTicketDataForDC'])->name('export-delivery-challan.get-ticket-data');
+Route::get('/get-export-delivery-challan-labours', [ExportDeliveryChallanController::class, 'getLaboursByLocations'])->name('export-delivery-challan.get-labours');
+
 
 // bill of lading
 Route::resource('bill-of-lading', BillOfLadingController::class);

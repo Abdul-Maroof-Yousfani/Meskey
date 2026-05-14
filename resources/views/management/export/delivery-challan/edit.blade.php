@@ -117,10 +117,8 @@
         <div class="col-md-6">
             <div class="form-group">
                 <label class="form-label">Labour:</label>
-                <select name="labour" id="labour" class="form-control select2">
+                <select name="labour" id="labour" class="form-control select2" data-selected="{{ $delivery_challan->labour }}">
                     <option value="">Select Labours</option>
-                    <option value="1" @selected($delivery_challan->labour == 1)>Labour 1</option>
-                    <option value="2" @selected($delivery_challan->labour == 2)>Labour 2</option>
                 </select>
             </div>
         </div>
@@ -341,6 +339,31 @@
                     $f('#storage_location_csv').val((response.locations.sub_arrival_location_ids || []).join(','));
 
                     loadTicketItems(ticketId);
+                    loadLabours(response.locations.company_location_ids, response.locations.arrival_location_ids);
+                }
+            });
+        }
+
+        function loadLabours(companyLocationIds, arrivalLocationIds) {
+            $.ajax({
+                url: "{{ route('export-delivery-challan.get-labours') }}",
+                method: 'GET',
+                data: {
+                    company_location_ids: companyLocationIds,
+                    arrival_location_ids: arrivalLocationIds
+                },
+                dataType: 'json',
+                success: function (response) {
+                    const select = $f('#labour');
+                    let currentValue = select.val() || select.data('selected');
+                    select.empty().append('<option value="">Select Labours</option>');
+                    (response || []).forEach(function (vendor) {
+                        select.append(`<option value="${vendor.id}">${vendor.name}</option>`);
+                    });
+                    if (currentValue && select.find('option[value="' + currentValue + '"]').length > 0) {
+                        select.val(currentValue);
+                    }
+                    select.trigger('change.select2');
                 }
             });
         }
