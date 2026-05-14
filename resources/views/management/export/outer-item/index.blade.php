@@ -1,6 +1,6 @@
 @extends('management.layouts.master')
 @section('title')
-    Export Outer Items
+    Export Other Items
 @endsection
 @section('content')
     <div class="content-wrapper">
@@ -8,12 +8,12 @@
         <section id="extended">
             <div class="row w-100 mx-auto">
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-                    <h2 class="page-title"> Export Outer Items</h2>
+                    <h2 class="page-title"> Export Other Items</h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
                     <button onclick="openModal(this,'{{ route('export-outer-item.create') }}','Add Export Outer Items')"
                         type="button" class="btn btn-primary position-relative ">
-                        Create Export Outer Items
+                        Create Export Other Items
                     </button>
                 </div>
             </div>

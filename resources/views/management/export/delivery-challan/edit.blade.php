@@ -75,7 +75,7 @@
         </div>
         <div class="col-md-6">
             <div class="form-group">
-                <label class="form-label">Reference Number:</label>
+                <label class="form-label">Reference Number: <span class="text-danger">*</span></label>
                 <input type="text" name="reference_number" id="reference_number" class="form-control" value="{{ $delivery_challan->reference_number }}">
             </div>
         </div>
@@ -127,12 +127,13 @@
         <div class="col-md-6">
             <div class="form-group">
                 <label class="form-label">Transporter:</label>
-                <select name="transporter" id="transporter" class="form-control select2">
+                <select id="transporter_display" class="form-control select2" disabled>
                     <option value="">Select Transporter</option>
                     @foreach ($Transporters ?? [] as $transporter)
                         <option value="{{ $transporter->id }}" @selected($delivery_challan->transporter == $transporter->id)>{{ $transporter->name }}</option>
                     @endforeach
                 </select>
+                <input type="hidden" name="transporter" id="transporter" value="{{ $delivery_challan->transporter }}">
             </div>
         </div>
 
@@ -337,7 +338,8 @@
                     $f('#standard_labour_rate').val(response.rate || 'N/A');
 
                     if (response.transporter_id && !$f('#transporter').val()) {
-                        $f('#transporter').val(response.transporter_id).trigger('change');
+                        $f('#transporter_display').val(response.transporter_id).trigger('change');
+                        $f('#transporter').val(response.transporter_id);
                     }
 
                     setReadonlyMultiSelect('#locations', response.locations.company_locations || []);

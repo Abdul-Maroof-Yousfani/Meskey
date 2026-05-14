@@ -70,7 +70,7 @@
         </div>
         <div class="col-md-6">
             <div class="form-group">
-                <label class="form-label">Reference Number:</label>
+                <label class="form-label">Reference Number: <span class="text-danger">*</span></label>
                 <input type="text" name="reference_number" id="reference_number" class="form-control">
             </div>
         </div>
@@ -122,12 +122,13 @@
         <div class="col-md-6">
             <div class="form-group">
                 <label class="form-label">Transporter:</label>
-                <select name="transporter" id="transporter" class="form-control select2">
+                <select id="transporter_display" class="form-control select2" disabled>
                     <option value="">Select Transporter</option>
                     @foreach ($Transporters ?? [] as $transporter)
                         <option value="{{ $transporter->id }}">{{ $transporter->name }}</option>
                     @endforeach
                 </select>
+                <input type="hidden" name="transporter" id="transporter">
             </div>
         </div>
 
@@ -326,8 +327,11 @@
                     $f('#labour_status_hidden').val(response.loading_slip_labour || 'paid');
                     $f('#standard_labour_rate').val(response.rate || 'N/A');
 
+                    console.log('Rate => ' + response.rate);
+
                     if (response.transporter_id) {
-                        $f('#transporter').val(response.transporter_id).trigger('change');
+                        $f('#transporter_display').val(response.transporter_id).trigger('change');
+                        $f('#transporter').val(response.transporter_id);
                     }
 
                     $f('#do_no').empty().append(`<option value="${response.delivery_order.id}" selected>${response.delivery_order.reference_no}</option>`).trigger('change');

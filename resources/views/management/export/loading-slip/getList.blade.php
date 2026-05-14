@@ -41,6 +41,7 @@
                     </td>
                     <td>{{ $loadingSlip->created_at->format('d-m-Y H:i') }}</td>
                     <td>
+                        @if($loadingSlip->canBeEdited())
                         <a onclick="openModal(this,'{{ route('export-loading-slip.edit', $loadingSlip->id) }}','Edit Export Loading Slip', false)"
                             class="warning p-1 text-center mr-2 position-relative">
                             <i class="ft-edit font-medium-3"></i>
@@ -49,6 +50,7 @@
                             class="danger p-1 text-center mr-2 position-relative">
                             <i class="ft-trash-2"></i>
                         </a>
+                        @endif
                         <a onclick="openModal(this,'{{ route('export-loading-slip.show', $loadingSlip->id) }}','View Export Loading Slip', true)"
                             class="info p-1 text-center mr-2 position-relative">
                             <i class="ft-eye font-medium-3"></i>

@@ -80,6 +80,8 @@ class ExportDeliveryChallanController extends Controller
                     'section_id' => $storage_location_csv,
                     'dispatch_date' => $dispatch_date,
                     'dc_no' => $dc_no,
+                    'gp_no' => $this->getGPNumber($request, $dispatch_date),
+                    'loader_name' => auth()->user()->name,
                     'labour_status' => $request->labour_status ?? 'paid',
                     'company_id' => $request->company_id,
                     'labour' => $request->labour,
@@ -462,6 +464,26 @@ class ExportDeliveryChallanController extends Controller
         return $dc_no;
     }
 
+    public function getGPNumber(Request $request, $dispatchDate = null)
+    {
+        $date = Carbon::parse($dispatchDate ?? $request->date)->format('Y-m-d');
+        $prefix = 'GP-' . Carbon::parse($date)->format('Y-m-d');
+
+        $latest = ExportDeliveryChallan::where('gp_no', 'like', "$prefix-%")
+            ->latest()
+            ->first();
+
+        if ($latest) {
+            $parts = explode('-', $latest->gp_no);
+            $lastNumber = (int) end($parts);
+            $newNumber = $lastNumber + 1;
+        } else {
+            $newNumber = 1;
+        }
+
+        return 'GP-' . $date . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+    }
+
     public function getItemsByTickets(Request $request)
     {
         $ticket_id = $request->ticket_id;
@@ -650,9 +672,8 @@ class ExportDeliveryChallanController extends Controller
         $subArrivalLocations = [];
         $subArrivalLocationIds = [];
 
-        $galaNamesStr = $loadingSlip->gala ?? '';
-        if ($galaNamesStr) {
-            $galaNames = array_map('trim', explode(',', $galaNamesStr));
+        $galaNames = $this->decodeStoredMultiValue($loadingSlip->gala ?? '');
+        if (!empty($galaNames)) {
             $subArrivalLocs = ArrivalSubLocation::whereIn('name', $galaNames)->get();
             if ($subArrivalLocs->isNotEmpty()) {
                 $subArrivalLocationIds = $subArrivalLocs->pluck('id')->toArray();
@@ -665,6 +686,7 @@ class ExportDeliveryChallanController extends Controller
 
         return response()->json([
             'success' => true,
+            // 'rate' => $labour_rate->rate,
             'rate' => $labour_rate ? $labour_rate->rate : 'N/A',
             'second_weighbridge_qty_mt' => round(($loadingSlip->secondWeighbridge->net_weight ?? 0) / 1000, 3),
             'ticket' => [
@@ -802,7 +824,25 @@ class ExportDeliveryChallanController extends Controller
             return 0;
         }
 
-        return round(((float) $slip->secondWeighbridge->net_weight) / 1000, 3);
+        return round(($slip->secondWeighbridge->net_weight ?? 0) / 1000, 3);
+    }
+
+    private function decodeStoredMultiValue($value): array
+    {
+        if (blank($value)) {
+            return [];
+        }
+
+        $decoded = json_decode((string) $value, true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+            return collect($decoded)->map(fn($item) => trim((string) $item))->filter()->values()->all();
+        }
+
+        return collect(explode(',', (string) $value))
+            ->map(fn($item) => trim($item))
+            ->filter()
+            ->values()
+            ->all();
     }
 
     public function resolveDeliveryOrders($item): \Illuminate\Support\Collection

@@ -25,6 +25,7 @@ class DeliveryChallanRequest extends FormRequest
             "dc_no" => ["required"],
             "date" => ["required", "date"],
             "customer_id" => ["required", "numeric"],
+            "reference_number" => ["required"],
             "labour_rate" => ["required"],
         ];
 
