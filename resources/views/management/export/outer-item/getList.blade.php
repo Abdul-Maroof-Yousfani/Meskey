@@ -41,7 +41,7 @@
         <tbody>
             <tr>
                 <td colspan="7" class="text-center py-5">
-                    <h5 class="text-muted">No Export Outer Item records found</h5>
+                    <h5 class="text-muted">No Export Other Item records found</h5>
                 </td>
             </tr>
         </tbody>

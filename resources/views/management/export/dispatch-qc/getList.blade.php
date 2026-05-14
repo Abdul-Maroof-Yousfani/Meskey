@@ -29,6 +29,12 @@
                             class="info p-1 text-center mr-2 position-relative" title="View">
                             <i class="ft-eye font-medium-3"></i>
                         </a>
+                        @if($dispatchQc->status !== 'accept')
+                        <a onclick="openModal(this,'{{ route('export-dispatch-qc.edit', $dispatchQc->id) }}','Edit Export Dispatch QC')"
+                            class="success p-1 text-center mr-2 position-relative" title="Edit">
+                            <i class="ft-edit font-medium-3"></i>
+                        </a>
+                        @endif
                     </td>
                 </tr>
             @endforeach

@@ -254,12 +254,10 @@ class ExportLoadingSlipController extends Controller
                 ], 404);
             }
 
-            /* 
             if (!$loadingSlip->canBeEdited()) {
                 DB::rollBack();
                 return response()->json(['error' => 'This loading slip cannot be edited because its Dispatch QC has been accepted.'], 422);
             }
-            */
 
             $LoadingProgramItem = $this->ticketQuery()
                 ->whereHas('exportFirstWeighbridge')

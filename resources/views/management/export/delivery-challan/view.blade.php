@@ -18,9 +18,15 @@
     }
     
     $sections = collect();
-    $galaNamesStr = $firstTicket?->exportLoadingSlip?->gala ?? '';
-    if ($galaNamesStr) {
-        $galaNames = array_map('trim', explode(',', $galaNamesStr));
+    $galaValue = $firstTicket?->exportLoadingSlip?->gala ?? '';
+    $decodedGala = json_decode((string) $galaValue, true);
+    if (json_last_error() === JSON_ERROR_NONE && is_array($decodedGala)) {
+        $galaNames = $decodedGala;
+    } else {
+        $galaNames = array_map('trim', explode(',', (string) $galaValue));
+    }
+    
+    if (!empty($galaNames)) {
         $sections = \App\Models\Master\ArrivalSubLocation::whereIn('name', $galaNames)->get();
     }
 @endphp

@@ -53,7 +53,15 @@
 
         foreach ($unique_dos as $do) {
             $factoryNames = explode(', ', $LoadingSlip->factory);
-            $galaNames = explode(', ', $LoadingSlip->gala);
+            
+            // Fix: Correctly decode Gala names if stored as JSON
+            $galaValue = $LoadingSlip->gala;
+            $decodedGala = json_decode((string) $galaValue, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decodedGala)) {
+                $galaNames = $decodedGala;
+            } else {
+                $galaNames = explode(', ', (string) $galaValue);
+            }
 
             $total_qty = $do->exportPackingItems->sum('metric_tons');
             $current_balance = get_second_weighbridge_balance_by_delivery_order($do->id);
@@ -86,6 +94,10 @@
             }
 
             foreach ($exportOrders as $eo) {
+                $galaValue = $LoadingSlip->gala;
+                $decodedGala = json_decode((string) $galaValue, true);
+                $eoGalaNames = (json_last_error() === JSON_ERROR_NONE && is_array($decodedGala)) ? $decodedGala : explode(', ', (string) $galaValue);
+
                 $orders[] = [
                     'type' => 'EO',
                     'number' => $eo->voucher_no ?? $eo->contract_no ?? $eo->id,
@@ -95,7 +107,7 @@
                     'do_qty' => 0,
                     'balance' => 0,
                     'factory_names' => explode(', ', $LoadingSlip->factory),
-                    'gala_names' => explode(', ', $LoadingSlip->gala)
+                    'gala_names' => $eoGalaNames
                 ];
             }
         }

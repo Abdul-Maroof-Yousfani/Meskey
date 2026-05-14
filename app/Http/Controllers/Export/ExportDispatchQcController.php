@@ -134,6 +134,13 @@ class ExportDispatchQcController extends Controller
 
         $DispatchQc->loadMissing(['loadingProgramItem' => fn($query) => $query->with($this->ticketRelations())]);
 
+        if ($DispatchQc->status === 'accept') {
+            if (request()->ajax()) {
+                return response()->json(['error' => 'Accepted Dispatch QC cannot be edited.'], 403);
+            }
+            return redirect()->back()->with('error', 'Accepted Dispatch QC cannot be edited.');
+        }
+
         $Tickets = $this->ticketQuery()
             ->whereHas('exportLoadingSlip')
             ->with(array_merge($this->ticketRelations(), ['exportDispatchQcs', 'exportLoadingSlip']))
@@ -181,6 +188,11 @@ class ExportDispatchQcController extends Controller
                 return response()->json([
                     'error' => 'Dispatch Qc already deleted or not found.'
                 ], 404);
+            }
+
+            if ($dispatchQc->status === 'accept') {
+                DB::rollBack();
+                return response()->json(['error' => 'Accepted Dispatch QC cannot be edited.'], 403);
             }
 
             $LoadingProgramItem = $this->ticketQuery()
@@ -415,7 +427,7 @@ class ExportDispatchQcController extends Controller
                 'so_qty' => $this->getExportOrderQty($deliveryOrder->exportOrder),
                 'do_qty' => $this->getExportDeliveryOrderQty($deliveryOrder),
                 'factory_names' => $LoadingProgramItem->exportLoadingSlip ? explode(', ', $LoadingProgramItem->exportLoadingSlip->factory) : $this->getDeliveryOrderLocationNames($deliveryOrder, 'arrival_location_ids', ArrivalLocation::class),
-                'gala_names' => $LoadingProgramItem->exportLoadingSlip ? explode(', ', $LoadingProgramItem->exportLoadingSlip->gala) : $this->getDeliveryOrderLocationNames($deliveryOrder, 'sub_arrival_location_ids', ArrivalSubLocation::class),
+                'gala_names' => $LoadingProgramItem->exportLoadingSlip ? $this->decodeStoredMultiValue($LoadingProgramItem->exportLoadingSlip->gala) : $this->getDeliveryOrderLocationNames($deliveryOrder, 'sub_arrival_location_ids', ArrivalSubLocation::class),
             ];
         }
 
@@ -447,7 +459,7 @@ class ExportDispatchQcController extends Controller
                     'so_qty' => $this->getExportOrderQty($exportOrder),
                     'do_qty' => 0,
                     'factory_names' => $LoadingProgramItem->exportLoadingSlip ? explode(', ', $LoadingProgramItem->exportLoadingSlip->factory) : ($LoadingProgramItem->arrivalLocation ? [$LoadingProgramItem->arrivalLocation->name] : []),
-                    'gala_names' => $LoadingProgramItem->exportLoadingSlip ? explode(', ', $LoadingProgramItem->exportLoadingSlip->gala) : ($LoadingProgramItem->subArrivalLocation ? [$LoadingProgramItem->subArrivalLocation->name] : []),
+                    'gala_names' => $LoadingProgramItem->exportLoadingSlip ? $this->decodeStoredMultiValue($LoadingProgramItem->exportLoadingSlip->gala) : ($LoadingProgramItem->subArrivalLocation ? [$LoadingProgramItem->subArrivalLocation->name] : []),
                 ];
             }
         }
@@ -461,7 +473,7 @@ class ExportDispatchQcController extends Controller
                 'so_qty' => 0,
                 'do_qty' => 0,
                 'factory_names' => $LoadingProgramItem->exportLoadingSlip ? explode(', ', $LoadingProgramItem->exportLoadingSlip->factory) : ($LoadingProgramItem->arrivalLocation ? [$LoadingProgramItem->arrivalLocation->name] : []),
-                'gala_names' => $LoadingProgramItem->exportLoadingSlip ? explode(', ', $LoadingProgramItem->exportLoadingSlip->gala) : ($LoadingProgramItem->subArrivalLocation ? [$LoadingProgramItem->subArrivalLocation->name] : []),
+                'gala_names' => $LoadingProgramItem->exportLoadingSlip ? $this->decodeStoredMultiValue($LoadingProgramItem->exportLoadingSlip->gala) : ($LoadingProgramItem->subArrivalLocation ? [$LoadingProgramItem->subArrivalLocation->name] : []),
             ];
         }
 
@@ -485,7 +497,7 @@ class ExportDispatchQcController extends Controller
             'so_qty' => $request->so_qty ?: ($primaryOrder['so_qty'] ?? 0),
             'do_qty' => $request->do_qty ?: ($primaryOrder['do_qty'] ?? 0),
             'factory' => $request->factory ?: implode(', ', $primaryOrder['factory_names'] ?? []),
-            'gala' => $request->gala ?: implode(', ', $primaryOrder['gala_names'] ?? []),
+            'gala' => $this->encodeStoredMultiValue($this->decodeStoredMultiValue($request->gala ?: ($primaryOrder['gala_names'] ?? []))),
             'qc_remarks' => $request->qc_remarks,
             'status' => $request->status,
             'delivery_order_id' => $deliveryOrderId,
@@ -619,5 +631,35 @@ class ExportDispatchQcController extends Controller
             'factory_names' => array_values(array_unique($allFactories)),
             'gala_names' => array_values(array_unique($allGalas)),
         ];
+    }
+
+    private function decodeStoredMultiValue($value): array
+    {
+        if (blank($value)) {
+            return [];
+        }
+
+        $decoded = json_decode((string) $value, true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+            return collect($decoded)->map(fn($item) => trim((string) $item))->filter()->values()->all();
+        }
+
+        return collect(explode(',', (string) $value))
+            ->map(fn($item) => trim($item))
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    private function encodeStoredMultiValue($value): string
+    {
+        return json_encode(
+            collect(is_array($value) ? $value : [$value])
+                ->map(fn($item) => trim((string) $item))
+                ->filter()
+                ->unique()
+                ->values()
+                ->all()
+        );
     }
 }
