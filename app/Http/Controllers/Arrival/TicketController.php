@@ -13,12 +13,12 @@ use App\Models\ArrivalPurchaseOrder;
 use App\Models\Master\CompanyLocation;
 use App\Models\Master\Miller;
 use App\Models\Master\ProductSlab;
-use App\Models\Master\{Station,ArrivalSubLocation};
+use App\Models\Master\{Station, ArrivalSubLocation};
 use App\Models\Master\Supplier;
 use App\Models\Product;
 use App\Models\SaudaType;
 use App\Models\User;
-use App\Models\{BagType,BagCondition,BagPacking};
+use App\Models\{BagType, BagCondition, BagPacking};
 use App\Models\Master\ArrivalLocation;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -219,7 +219,7 @@ class TicketController extends Controller
         $requestData['unique_no'] = $uniqueNo;
 
         if (!empty($requestData['accounts_of'])) {
-            $supplier = Supplier::where('name', $requestData['accounts_of'])->first();
+            $supplier = Supplier::where('company_name', $requestData['accounts_of'])->first();
             $requestData['accounts_of_id'] = $supplier ? $supplier->id : null;
             $requestData['accounts_of_name'] = $requestData['accounts_of'];
         }
@@ -244,7 +244,7 @@ class TicketController extends Controller
 
 
         if (!empty($requestData['broker_name'])) {
-            $broker = Supplier::where('name', $requestData['broker_name'])->first();
+            $broker = Supplier::where('company_name', $requestData['broker_name'])->first();
             $requestData['broker_id'] = $broker ? $broker->id : null;
         }
 
@@ -505,8 +505,8 @@ class TicketController extends Controller
 
 
         $ArrivalLocations = ArrivalLocation::where('status', 'active')
-           ->where('company_location_id', $arrivalTicket->location_id)
-            
+            ->where('company_location_id', $arrivalTicket->location_id)
+
             ->get();
 
 
@@ -646,5 +646,5 @@ class TicketController extends Controller
 
 
 
-    
+
 }

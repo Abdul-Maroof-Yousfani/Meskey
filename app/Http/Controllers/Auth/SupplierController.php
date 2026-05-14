@@ -51,6 +51,7 @@ class SupplierController extends Controller
         $request = $request->all();
 
         $request['unique_no'] = generateUniqueNumber('suppliers', null, null, 'unique_no');
+        $request['name'] = $request['company_name'];
         $Supplier = Supplier::create($request);
 
         return response()->json(['success' => 'Supplier created successfully.', 'data' => $Supplier], 201);
@@ -72,6 +73,9 @@ class SupplierController extends Controller
     {
         $data = $request->validated();
         $supplier = Supplier::findOrFail($id);
+
+        $request['name'] = $request['company_name'];
+
         $supplier->update($data);
 
         return response()->json(['success' => 'Category updated successfully.', 'data' => $supplier], 200);
