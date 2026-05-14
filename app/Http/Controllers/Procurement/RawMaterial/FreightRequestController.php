@@ -1160,6 +1160,7 @@ class FreightRequestController extends Controller
                     'amount' => $request->total_labour ?? 0
                 ]);
 
+                dd($vendorLabourAcc->account_id);
                 $txnLabour = Transaction::where('grn_no', $grnNo)
                     ->where('purpose', "{$saudaType}-freight-labour")
                     ->first();
