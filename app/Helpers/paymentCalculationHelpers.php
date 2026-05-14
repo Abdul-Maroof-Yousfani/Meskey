@@ -4,6 +4,8 @@ use App\Models\Arrival\ArrivalTicket;
 use App\Models\Arrival\ArrivalSamplingRequest;
 use App\Models\Arrival\ArrivalSamplingResult;
 use App\Models\Arrival\ArrivalSamplingResultForCompulsury;
+use App\Models\ArrivalPurchaseOrder;
+use App\Models\Master\Account\Transaction;
 use App\Models\Procurement\PaymentRequestData;
 use App\Models\PurchaseTicket;
 use App\Models\PurchaseSamplingRequest;
@@ -873,4 +875,112 @@ function getFreightInfo($paymentRequestData, $advanceFreight)
         'paid_freight' => $paidFreight,
         'remaining_freight' => $advanceFreight - $paidFreight,
     ];
+}
+
+
+
+
+
+
+function updatetransactionofticket($ticketno)
+{
+    $arrivalTicket = ArrivalTicket::where('unique_no', $ticketno)->first();
+    if ($arrivalTicket == null) {
+        return "Ticket: " . $ticketno . " Not Found";
+    }
+    if ($arrivalTicket->arrival_purchase_order_id == null) {
+        return "Ticket: " . $arrivalTicket->unique_no . " don't have purchase order linked";
+    }
+
+    $purchaseOrder = ArrivalPurchaseOrder::findOrFail($arrivalTicket->arrival_purchase_order_id);
+
+    $grnNo = $arrivalTicket->arrivalSlip->unique_no;
+    $truckNo = $arrivalTicket->truck_no ?? 'N/A';
+    $biltyNo = $arrivalTicket->bilty_no ?? 'N/A';
+    $referenceNo = "$truckNo/$biltyNo";
+
+    $paymentDetails = calculatePaymentDetails($arrivalTicket->id, 1);
+    // $stockInTransitAccount = Account::where('name', 'Stock in Transit')->first();
+    $contractNo = $arrivalTicket->purchaseOrder->contract_no ?? 'N/A';
+    $inventoryAmount = $paymentDetails['calculations']['inventory_amount'] ?? 0;
+    $supplierNetAmount = $paymentDetails['calculations']['supplier_net_amount'] ?? 0;
+    $type = $arrivalTicket->saudaType->name == 'Pohanch' ? 'pohanch' : 'thadda';
+
+    $qcAccountId = $type == 'pohanch' ? $arrivalTicket->qcProduct->account_id : $purchaseOrder->qcProduct->account_id;
+    $arrivedWeight = $arrivalTicket['arrived_net_weight'];
+
+
+    $loadingWeight = $arrivedWeight;
+    $rate = $purchaseOrder->rate_per_kg;
+
+    $txn = Transaction::where('purpose', 'supplier-payable')
+        ->where('grn_no', $grnNo)
+        ->where('against_reference_no', $referenceNo)
+        ->first();
+
+    $supplierData = [
+        'amount' => $supplierNetAmount,
+        'account_id' => $purchaseOrder->supplier->account_id,
+        'type' => 'credit',
+        'counter_account_id' => $qcAccountId,
+        'voucher_no' => $purchaseOrder->contract_no,
+        'grn_no' => $grnNo,
+        'remarks' => "Accounts payable recorded against the contract ($contractNo) for Bilty: $biltyNo - Truck No: $truckNo. Amount payable to the supplier.",
+    ];
+
+    if ($txn) {
+        $txn->update($supplierData);
+    } else {
+        createTransaction(
+            $supplierNetAmount,
+            $purchaseOrder->supplier->account_id,
+            1,
+            $purchaseOrder->contract_no,
+            'credit',
+            'no',
+            [
+                'grn_no' => $grnNo,
+                'counter_account_id' => $qcAccountId,
+                'purpose' => "supplier-payable",
+                'payment_against' => $type . "-purchase",
+                'against_reference_no' => $referenceNo,
+                'remarks' => $supplierData['remarks'],
+            ]
+        );
+    }
+
+    $txnInv = Transaction::where('grn_no', $grnNo)
+        ->where('purpose', 'arrival-slip')
+        ->where('against_reference_no', $referenceNo)
+        ->first();
+
+    if ($txnInv) {
+        $txnInv->update([
+            'amount' => $inventoryAmount,
+            'account_id' => $qcAccountId,
+            'counter_account_id' => $purchaseOrder->supplier->account_id,
+            'type' => 'debit',
+            'voucher_no' => $purchaseOrder->contract_no,
+            'grn_no' => $grnNo,
+            'remarks' => "Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: $loadingWeight kg) at rate $rate/kg. Total amount: $inventoryAmount to be paid to supplier."
+        ]);
+    } else {
+        createTransaction(
+            $inventoryAmount,
+            $qcAccountId,
+            1,
+            $purchaseOrder->contract_no,
+            'debit',
+            'no',
+            [
+                'grn_no' => $grnNo,
+                'counter_account_id' => $purchaseOrder->supplier->account_id,
+                'purpose' => "arrival-slip",
+                'payment_against' => $type . "-purchase",
+                'against_reference_no' => $referenceNo,
+                'remarks' => "Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: $loadingWeight kg) at rate $rate/kg. Total amount: $inventoryAmount to be paid to supplier."
+            ]
+        );
+    }
+    return "Updateed Successfully";
 }

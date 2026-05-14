@@ -64,6 +64,15 @@ Route::get('testledgercalculation', function (Request $request) {
     $paymentDetails = calculatePaymentDetails($arrivalTicket->id, 1);
     dd($paymentDetails);
 });
+Route::get('update_ticket_ledgercalculation', function (Request $request) {
+
+    return updatetransactionofticket($request->unique_no);
+    // return "Updateed";
+
+
+
+
+});
 
 Route::get("/receipt-vouchers/delete", function () {
     $receipt_voucher = ReceiptVoucher::query()->delete();
