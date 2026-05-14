@@ -147,7 +147,7 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-xs-12 col-sm-6 col-md-4">
+                        <div class="col-xs-12 col-sm-6 col-md-3">
                             <div class="form-group">
                                 <label>Factory:</label>
                                 <select class="form-control select2 w-100" multiple disabled style="width: 100% !important;">
@@ -155,7 +155,7 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="col-xs-12 col-sm-6 col-md-4">
+                        <div class="col-xs-12 col-sm-6 col-md-3">
                             <div class="form-group">
                                 <label>Gala:</label>
                                 <select class="form-control select2 w-100" multiple disabled style="width: 100% !important;">
@@ -163,10 +163,16 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="col-xs-12 col-sm-6 col-md-4">
+                        <div class="col-xs-12 col-sm-6 col-md-3">
                             <div class="form-group">
                                 <label>Bag Size:</label>
                                 <input type="number" value="${order.bag_size}" class="form-control" readonly step="0.01" />
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-sm-6 col-md-3">
+                            <div class="form-group">
+                                <label>Brand:</label>
+                                <input type="text" value="${order.brand}" class="form-control" readonly />
                             </div>
                         </div>
                     </div>
@@ -207,6 +213,7 @@
 
             <input type="hidden" name="customer" value="${data.customer}" />
             <input type="hidden" name="commodity" value="${data.commodity}" />
+            <input type="hidden" name="brand" value="${data.brand}" />
             <input type="hidden" name="so_qty" value="${data.so_qty}" />
             <input type="hidden" name="do_qty" value="${data.do_qty}" />
             <input type="hidden" name="factory" value="${data.factory_names ? data.factory_names.join(', ') : ''}" />

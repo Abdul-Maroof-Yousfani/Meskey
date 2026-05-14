@@ -174,17 +174,22 @@
         }
     });
 
-    $(document).on('change', 'input[name*="delivery_date"]', function() {
+    $(document).on('change blur', 'input[name*="delivery_date"]', function() {
         let quotationDate = $('#purchase_date').val();
         let deliveryDate = $(this).val();
-        if (quotationDate && deliveryDate && deliveryDate < quotationDate) {
-            Swal.fire({
-                title: 'Invalid Date',
-                text: 'Delivery date cannot be before quotation date.',
-                icon: 'error',
-                confirmButtonText: 'OK'
-            });
-            $(this).val(quotationDate);
+        if (quotationDate && deliveryDate) {
+            let year = parseInt(deliveryDate.split('-')[0]);
+            if (year > 2000) {
+                if (deliveryDate < quotationDate) {
+                    Swal.fire({
+                        title: 'Invalid Date',
+                        text: 'Delivery date cannot be before quotation date.',
+                        icon: 'error',
+                        confirmButtonText: 'OK'
+                    });
+                    $(this).val(quotationDate);
+                }
+            }
         }
     });
 

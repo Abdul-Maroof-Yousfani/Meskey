@@ -3,8 +3,7 @@
 
         <tr>
             <th style="width: 11%;">Purchase Request No</th>
-            <th style="width: 13%;">Category</th>
-            <th style="width: 20%;">Item</th>
+            <th style="width: 25%;">Item</th>
             <th style="width: 9%;">Qty</th>
             <th style="width: 9%;">PO Qty</th>
             <th style="width: 11%;">PR Date</th>
@@ -35,12 +34,6 @@
                             </p>
                         </td> --}}
 
-                        <td style="background-color: #e8f5e8; vertical-align: middle;">
-                            <p class="m-0 font-weight-bold">
-                                {{ optional($itemGroup['item_data']->category)->name ?? 'N/A' }}
-                            </p>
-                        </td>
-
                         <td>
                             <p class="m-0 font-weight-bold">
                                 {{ optional($itemGroup['item_data']->item)->name ?? 'N/A' }}
@@ -57,7 +50,9 @@
                                         default => 'badge-secondary',
                                     };
                                 @endphp
-                                <span class="badge {{ $badgeClass }}" style="font-size: 10px; padding: 3px 10px; border-radius: 20px;">
+                                <span class="badge {{ $badgeClass }}" 
+                                      onclick="openModal(this, '{{ route('store.purchase-request.approvals', $itemGroup['item_data']->id) }}', 'Approval Voucher', false, '100%')"
+                                      style="font-size: 10px; padding: 3px 10px; border-radius: 20px; cursor: pointer;">
                                     {{ ucwords($itemStatus) }}
                                 </span>
 
@@ -111,7 +106,9 @@
                                         default => 'badge-secondary',
                                     };
                                 @endphp
-                                <span class="badge {{ $badgeClass }}">
+                                <span class="badge {{ $badgeClass }}"
+                                      onclick="openModal(this, '{{ route('store.purchase-request.approvals', $itemGroup['item_data']->id) }}', 'Approval Voucher', false, '100%')"
+                                      style="cursor: pointer;">
                                     {{ $approvalStatus }}
                                 </span>
                             </td>
@@ -124,7 +121,9 @@
                                             Approval
                                         </a>
                                     @else
-                                        <span class="bg-success text-white p-1 text-center position-relative" style="border-radius: 4px; width: 90px;">
+                                        <span class="bg-success text-white p-1 text-center position-relative" 
+                                              onclick="openModal(this, '{{ route('store.purchase-request.approvals', $itemGroup['item_data']->id) }}', 'Approval Voucher', false, '100%')"
+                                              style="border-radius: 4px; width: 90px; cursor: pointer;">
                                             Approved
                                         </span>
                                     @endif
@@ -151,7 +150,7 @@
 
         @else
             <tr class="ant-table-placeholder">
-                <td colspan="9" class="ant-table-cell text-center">
+                <td colspan="8" class="ant-table-cell text-center">
                     <div class="my-5">
                         <svg width="64" height="41" viewBox="0 0 64 41" xmlns="http://www.w3.org/2000/svg">
                             <g transform="translate(0 1)" fill="none" fill-rule="evenodd">

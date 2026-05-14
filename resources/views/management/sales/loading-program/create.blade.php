@@ -195,7 +195,7 @@
                 success: function(response) {
                     if (response.success) {
                         window.isUpdatingUI = true;
-                        $soSelect.append('<option value="">Select Sale Order</option>');
+                        // $soSelect.append('<option value="">Select Sale Order</option>');
                         response.sale_orders.forEach(so => {
                             $soSelect.append(`<option value="${so.id}" data-type="${so.pay_type_id}">${so.reference_no}</option>`);
                         });
@@ -321,7 +321,7 @@
             } else {
                 window.isUpdatingUI = true;
                 $('.delivery-order-select').each(function() {
-                    $(this).empty().append('<option value="">Select Delivery Order</option>').select2();
+                    // $(this).empty().append('<option value="">Select Delivery Order</option>').select2();
                 });
 
                 var isOptional = $('#is_delivery_order_optional').val() === '1';
@@ -545,7 +545,6 @@
                     <td>
                         <div class="row-do-container">
                             <select name="loading_program_items[${index}][delivery_order_id][]" class="form-control form-control-sm select2 delivery-order-select" multiple>
-                                <option value="">Select Delivery Order</option>
                             </select>
                             <span class="text-danger row-do-required-mark" style="display: none;">*</span>
                         </div>
@@ -583,7 +582,7 @@
                         </select>
                         <span class="transporter-placeholder text-muted" style="display: none;">-</span>
                     </td>
-                    <td><input type="number" name="loading_program_items[${index}][qty]" class="form-control form-control-sm" step="0.01"></td>
+                    <td><input type="number" name="loading_program_items[${index}][qty]" class="form-control form-control-sm qty-input" step="0.01"></td>
                     <td class="text-center"><button type="button" class="btn btn-sm btn-danger remove-item-btn"><i class="ft-trash-2"></i></button></td>
                 </tr>
             `;
@@ -606,7 +605,8 @@
                         type: 'GET',
                         data: { 
                             sale_order_id: rowSOIds,
-                            company_location_id: company_location_id
+                            company_location_id: company_location_id,
+                            loading_program_item_id: $row.data('item-id')
                         },
                         success: function(response) {
                             if (response.success) {
@@ -614,7 +614,6 @@
                                 const currentDOVals = $doSelect.val() || [];
                                 const selectedGlobalDoIds = $('#delivery_order_id').val() || [];
                                 $doSelect.empty();
-                                $doSelect.append('<option value="">Select Delivery Order</option>');
                                 response.delivery_orders.forEach(do_item => {
                                     if (selectedGlobalDoIds.includes(do_item.id.toString())) {
                                         $doSelect.append(new Option(do_item.reference_no, do_item.id, false, currentDOVals.includes(do_item.id.toString())));
@@ -669,6 +668,11 @@
                 
                 updateRowMetadata($row, filteredDOs);
                 updateItemLocations($row);
+                validateRowQty($row);
+            });
+
+            $newRow.find('.qty-input').on('input', function() {
+                validateRowQty($(this).closest('tr'));
             });
 
             updateItemLocations($newRow);
@@ -978,6 +982,34 @@
         // Required attribute removed as per user request
         $doSelect.removeAttr('required');
         $mark.hide();
+    }
+
+    function validateRowQty($row) {
+        const qty = parseFloat($row.find('input[name*="[qty]"]').val()) || 0;
+        const selectedDoIds = $row.find('.delivery-order-select').val() || [];
+        const allDOs = $row.data('delivery_orders') || [];
+        
+        let totalBalance = 0;
+        let hasSelectedDOs = selectedDoIds.length > 0;
+
+        selectedDoIds.forEach(id => {
+            const do_item = allDOs.find(d => d.id.toString() === id.toString());
+            if (do_item && typeof do_item.balance !== 'undefined') {
+                totalBalance += parseFloat(do_item.balance);
+            }
+        });
+
+        if (hasSelectedDOs && qty > totalBalance) {
+            $row.find('input[name*="[qty]"]').addClass('is-invalid');
+            if (!$row.find('.balance-error').length) {
+                $row.find('input[name*="[qty]"]').after(`<div class="text-danger balance-error" style="font-size: 0.8rem;">Max: ${totalBalance.toFixed(2)}</div>`);
+            } else {
+                $row.find('.balance-error').text(`Max: ${totalBalance.toFixed(2)}`);
+            }
+        } else {
+            $row.find('input[name*="[qty]"]').removeClass('is-invalid');
+            $row.find('.balance-error').remove();
+        }
     }
 
     $('.select2').on('select2:open', function (e) {

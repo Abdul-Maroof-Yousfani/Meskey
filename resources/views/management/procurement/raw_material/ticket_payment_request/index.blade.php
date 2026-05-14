@@ -18,33 +18,28 @@
                                 <div class="row mx-0">
                                     <div class="px-1 text-left" style="width: 10%;">
                                         <label for="contract_no" class="form-label">Contract No</label>
-                                        <input type="text" class="form-control" id="contract_no"
-                                            placeholder="Contract No" name="contract_no"
-                                            value="{{ request('contract_no', '') }}">
+                                        <input type="text" class="form-control" id="contract_no" placeholder="Contract No"
+                                            name="contract_no" value="{{ request('contract_no', '') }}">
                                     </div>
                                     <div class="px-1 text-left" style="width: 8%;">
                                         <label for="bilty_no" class="form-label">Bilty No</label>
-                                        <input type="text" class="form-control" id="bilty_no"
-                                            placeholder="Bilty No" name="bilty_no"
-                                            value="{{ request('bilty_no', '') }}">
+                                        <input type="text" class="form-control" id="bilty_no" placeholder="Bilty No"
+                                            name="bilty_no" value="{{ request('bilty_no', '') }}">
                                     </div>
                                     <div class="px-1 text-left" style="width: 8%;">
                                         <label for="truck_no" class="form-label">Truck No</label>
-                                        <input type="text" class="form-control" id="truck_no"
-                                            placeholder="Truck No" name="truck_no"
-                                            value="{{ request('truck_no', '') }}">
+                                        <input type="text" class="form-control" id="truck_no" placeholder="Truck No"
+                                            name="truck_no" value="{{ request('truck_no', '') }}">
                                     </div>
                                     <div class="px-1 text-left" style="width: 8%;">
                                         <label for="company_location" class="form-label">Location</label>
-                                        <select name="company_location_id" id="company_location"
-                                            class="form-control">
+                                        <select name="company_location_id" id="company_location" class="form-control">
                                             <option value="">Loc</option>
                                         </select>
                                     </div>
                                     <div class="px-1 text-left" style="width: 12%;">
                                         <label for="supplier_id_f" class="form-label">Accounts Of</label>
-                                        <select name="supplier_id" id="supplier_id_f"
-                                            class="form-control">
+                                        <select name="supplier_id" id="supplier_id_f" class="form-control">
                                             <option value="">Accounts Of</option>
                                         </select>
                                     </div>
@@ -60,24 +55,23 @@
                                             value="{{ request('loading_date', '') }}">
                                     </div>
                                     <div class="px-1 text-left" style="width: 12%;">
-                                        <label for="amount" class="form-label">Amount</label>
-                                        <input type="text" class="form-control" id="amount"
-                                            placeholder="Amount" name="amount"
-                                            value="{{ request('amount', '') }}">
+                                        <label for="amount_for_filter" class="form-label">Amount</label>
+                                        <input type="text" class="form-control" id="amount_for_filter" placeholder="Amount"
+                                            name="amount_for_filter" value="{{ request('amount_for_filter', '') }}">
                                     </div>
                                     <div class="px-1 text-left" style="width: 10%;">
-                                         <label for="requested_amount" class="form-label">Req. Amt</label>
-                                         <input type="text" class="form-control" id="requested_amount"
-                                             placeholder="Req Amt" name="requested_amount"
-                                             value="{{ request('requested_amount', '') }}">
-                                     </div>
-                                     <div class="px-1 text-left" style="width: 16%;">
-                                         <label for="daterange" class="form-label">Date Filter</label>
-                                         <input type="text" name="daterange" id="daterange" class="form-control"
-                                             value="{{ request('daterange', \Carbon\Carbon::now()->subMonth()->format('m/d/Y') . ' - ' . \Carbon\Carbon::now()->format('m/d/Y')) }}" />
-                                         <input type="hidden" name="page" value="{{ request('page', 1) }}">
-                                         <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
-                                     </div>
+                                        <label for="requested_amount_for_filter" class="form-label">Req. Amt</label>
+                                        <input type="text" class="form-control" id="requested_amount_for_filter"
+                                            placeholder="Req Amt" name="requested_amount_for_filter"
+                                            value="{{ request('requested_amount', '') }}">
+                                    </div>
+                                    <div class="px-1 text-left" style="width: 16%;">
+                                        <label for="daterange" class="form-label">Date Filter</label>
+                                        <input type="text" name="daterange" id="daterange" class="form-control"
+                                            value="{{ request('daterange', \Carbon\Carbon::now()->subMonth()->format('m/d/Y') . ' - ' . \Carbon\Carbon::now()->format('m/d/Y')) }}" />
+                                        <input type="hidden" name="page" value="{{ request('page', 1) }}">
+                                        <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
+                                    </div>
                                 </div>
                             </form>
                         </div>
@@ -110,7 +104,7 @@
 @endsection
 @section('script')
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             // initializeDynamicSelect2('#supplier_id', 'suppliers', 'name', 'id', true, false, true, true);
 
             initializeDynamicDependentSelect2(
@@ -133,7 +127,7 @@
             );
 
             // Persist current page and per_page for AJAX refreshes
-            $(document).on('click', '#paginationLinks a', function() {
+            $(document).on('click', '#paginationLinks a', function () {
                 var url = $(this).attr('href');
                 if (url) {
                     var page = url.split('page=')[1];
@@ -143,7 +137,7 @@
                 }
             });
 
-            $(document).on('change', '#per_page', function() {
+            $(document).on('change', '#per_page', function () {
                 $('input[name="per_page"]').val($(this).val());
                 $('input[name="page"]').val(1);
             });

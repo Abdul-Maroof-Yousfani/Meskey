@@ -81,8 +81,8 @@ class PurchaseOrderController extends Controller
                 $startDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[0]))->format('Y-m-d');
                 $endDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[1]))->format('Y-m-d');
 
-                return $q->whereDate('created_at', '>=', $startDate)
-                    ->whereDate('created_at', '<=', $endDate);
+                return $q->whereDate('contract_date', '>=', $startDate)
+                    ->whereDate('contract_date', '<=', $endDate);
             })
             ->when(auth()->user()->user_type != 'super-admin', function ($q) {
                 return $q->whereIn('company_location_id', getUserCurrentCompanyLocations());
@@ -241,7 +241,7 @@ class PurchaseOrderController extends Controller
         $data['brokers'] = Broker::all();
         $po = $data['arrivalPurchaseOrder'];
         $data['ticketcounts'] = $po->arrivalTickets()->count() ?? 0;
-        
+
         $getSlabs = ProductSlabForRmPo::with('slabType')
             ->where('product_id', $data['arrivalPurchaseOrder']->product_id)
             ->where('company_id', $data['arrivalPurchaseOrder']->company_id)
@@ -326,13 +326,13 @@ class PurchaseOrderController extends Controller
     public function update(ArrivalPurchaseOrderRequest $request, $id)
     {
         $arrivalPurchaseOrder = ArrivalPurchaseOrder::findOrFail($id);
-        if($arrivalPurchaseOrder->am_approval_status == "approved" || $arrivalPurchaseOrder->am_approval_status == 'rejected') {
+        if ($arrivalPurchaseOrder->am_approval_status == "approved" || $arrivalPurchaseOrder->am_approval_status == 'rejected') {
             return response()->json([
                 "success" => false,
                 "message" => "Purchase Order Already Approved or Rejected."
             ], 400);
         }
-        
+
         $data = $request->validated();
         $data = $request->all();
         // dd($data);
@@ -422,7 +422,7 @@ class PurchaseOrderController extends Controller
     public function destroy($id)
     {
         $arrival_location = ArrivalPurchaseOrder::findOrFail($id);
-        if($arrival_location->am_approval_status == "approved" || $arrival_location->am_approval_status == 'rejected') {
+        if ($arrival_location->am_approval_status == "approved" || $arrival_location->am_approval_status == 'rejected') {
             return response()->json([
                 "success" => false,
                 "message" => "Purchase Order Already Approved or Rejected."

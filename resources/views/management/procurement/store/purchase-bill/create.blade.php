@@ -22,7 +22,7 @@
                 <label class="form-label">Supplier:</label>
                 <select id="supplier_id" name="supplier_id" class="form-control item-select select2">
                     <option value="">Select Vendor</option>
-                    @foreach (get_supplier() as $supplier)
+                    @foreach ($suppliers ?? [] as $supplier)
                         <option value="{{ $supplier->id }}">
                             {{ $supplier->name }}
                         </option>
@@ -79,6 +79,7 @@
                 <table class="table table-bordered" id="purchaseRequestTable" style="min-width: 3500px;">
                     <thead>
                         <tr>
+                            <th style="min-width: 250px;">Category</th>
                             <th>Item</th>
                             <th>Description</th>
                             <th>Total Qty</th>
@@ -169,13 +170,7 @@
             success: function (response) {
                 $('#company_location_id').val(response.location_ids).trigger('change');
                 $('#billBody').html(response.html);
-                const firstRow = $('#billBody').find('tr').first();
-                const categoryId = firstRow.data('category-id');
-                if (categoryId != 38) {
-                    $('.deduction-header').hide();
-                } else {
-                    $('.deduction-header').show();
-                }
+                $('#billBody').html(response.html);
             },
             error: function () {
                 $('#purchaseRequestBody').html('<p>Error loading data.</p>');

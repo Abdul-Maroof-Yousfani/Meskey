@@ -20,6 +20,7 @@ use App\Models\Sales\ReceivingRequestItem;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\Master\Vendor;
 
 class DeliveryChallanController extends Controller
 {
@@ -39,8 +40,10 @@ class DeliveryChallanController extends Controller
             ->join('sales_second_weighbridges', 'loading_slips.id', '=', 'sales_second_weighbridges.loading_slip_id')
             ->distinct()
             ->get();
+        $labours = Vendor::all();
 
-        return view("management.sales.delivery-challan.create", compact("customers", "delivery_orders"));
+        $transporters = \App\Models\Master\Transporter::all();
+        return view("management.sales.delivery-challan.create", compact("customers", "delivery_orders", "transporters", "labours"));
     }
 
     public function store(DeliveryChallanRequest $request) {
@@ -333,6 +336,7 @@ class DeliveryChallanController extends Controller
             "locationIds" => $locationIds,
             "arrivalLocationIds" => $arrivalLocationIds,
             "sectionIds" => $sectionIds,
+            "transporters" => \App\Models\Master\Transporter::all(),
         ]);
     }
 
@@ -643,7 +647,8 @@ class DeliveryChallanController extends Controller
             'dispatchQc',
             'arrivalLocation',
             'subArrivalLocation',
-            'loadingSlip.secondWeighbridge'
+            'loadingSlip.secondWeighbridge',
+            'transporter'
         ])->findOrFail($ticket_id);
 
         $loadingSlip = \App\Models\Sales\LoadingSlip::where("loading_program_item_id", $ticket_id)->first();
@@ -745,6 +750,7 @@ class DeliveryChallanController extends Controller
                 'id' => $deliveryOrder->id,
                 'reference_no' => $deliveryOrder->reference_no,
                 'sauda_type' => strtolower($deliveryOrder->sauda_type ?? ''),
+                'remarks' => $deliveryOrder->remarks ?? '',
             ],
             'customer' => [
                 'id' => $deliveryOrder->customer->id ?? null,
@@ -759,7 +765,11 @@ class DeliveryChallanController extends Controller
                 'sub_arrival_location_ids' => $subArrivalLocationIds,
             ],
             'loading_slip_labour' => $loadingSlipLabour,
-            'is_labour_editable' => (strtolower($deliveryOrder->sauda_type ?? '') == 'x-mill' || strtolower($deliveryOrder->sauda_type ?? '') == 'xmill')
+            'is_labour_editable' => (strtolower($deliveryOrder->sauda_type ?? '') == 'x-mill' || strtolower($deliveryOrder->sauda_type ?? '') == 'xmill'),
+            'transporter' => [
+                'id' => $ticket->transporter_id,
+                'name' => $ticket->transporter->name ?? 'N/A'
+            ]
         ];
 
         return response()->json($data);

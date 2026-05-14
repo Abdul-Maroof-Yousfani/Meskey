@@ -182,13 +182,17 @@ class PurchaseOrderController extends Controller
                     $requestRowspan = 0;
                     $requestItems = [];
                     $hasApprovedItem = false;
+                    $hasPendingItem = false;
 
                     foreach ($orderGroup['items'] as $itemGroup) {
                         foreach ($itemGroup['suppliers'] as $supplierData) {
                             $approvalStatus = $supplierData->{$supplierData->getApprovalModule()->approval_column ?? 'am_approval_status'} ?? 'N/A';
-                            if (strtolower($approvalStatus) === 'approved') {
+                            $statusLower = strtolower($approvalStatus);
+                            if ($statusLower === 'approved') {
                                 $hasApprovedItem = true;
-                                break 2;
+                            }
+                            if ($statusLower === 'pending' || $statusLower === 'reverted') {
+                                $hasPendingItem = true;
                             }
                         }
                     }
@@ -226,7 +230,8 @@ class PurchaseOrderController extends Controller
                         'request_status' => $orderGroup['order_data']->am_approval_status ?? 'N/A',
                         'request_rowspan' => $requestRowspan,
                         'items' => $requestItems,
-                        'has_approved_item' => $hasApprovedItem
+                        'has_approved_item' => $hasApprovedItem,
+                        'has_pending_item' => $hasPendingItem
                     ];
                     // dd($processedData);
                 }
@@ -380,17 +385,17 @@ class PurchaseOrderController extends Controller
                     'remarks' => $request->remarks[$index] ?? null,
                 ]);
 
-                if ($request->purchase_request_data_id[$index] != 0) {
-                    $data = PurchaseRequestData::find($request->purchase_request_data_id[$index])->update([
-                        'po_status' => 2,
-                    ]);
-                }
+                // if ($request->purchase_request_data_id[$index] != 0) {
+                //     $data = PurchaseRequestData::find($request->purchase_request_data_id[$index])->update([
+                //         'po_status' => 2,
+                //     ]);
+                // }
 
-                if ($request->purchase_quotation_data_id[$index] != 0) {
-                    $data = PurchaseQuotationData::find($request->purchase_quotation_data_id[$index])->update([
-                        'quotation_status' => 2,
-                    ]);
-                }
+                // if ($request->purchase_quotation_data_id[$index] != 0) {
+                //     $data = PurchaseQuotationData::find($request->purchase_quotation_data_id[$index])->update([
+                //         'quotation_status' => 2,
+                //     ]);
+                // }
             }
 
             DB::commit();
@@ -503,12 +508,12 @@ class PurchaseOrderController extends Controller
         try {
             $PurchaseOrder = PurchaseOrder::findOrFail($id);
 
-            if($PurchaseOrder->am_approval_status == "approved" || $PurchaseOrder->am_approval_status == "rejected") {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Purchase request is already approved or rejected.',
-                ], 422);
-            }
+            // if($PurchaseOrder->am_approval_status == "approved" || $PurchaseOrder->am_approval_status == "rejected") {
+            //     return response()->json([
+            //         'success' => false,
+            //         'message' => 'Purchase request is already approved or rejected.',
+            //     ], 422);
+            // }
 
             $PurchaseOrder->update([
                 'purchase_quotation_id' => $request->quotation_no ?? null,
@@ -517,10 +522,9 @@ class PurchaseOrderController extends Controller
                 'am_approval_status' => 'pending',
                 'am_change_made' => 1,
             ]);
-            PurchaseOrderData::where('purchase_order_id', $PurchaseOrder->id)->delete();
-
+            $keepIds = [];
             foreach ($request->item_id as $index => $itemId) {
-                PurchaseOrderData::create([
+                $itemData = [
                     'purchase_order_id' => $PurchaseOrder->id,
                     'category_id' => $request->category_id[$index],
                     'item_id' => $itemId,
@@ -540,12 +544,30 @@ class PurchaseOrderController extends Controller
                     'stitching' => $request->input('stitching.'.$index),
                     'micron' => $request->input('micron.'.$index),
                     'tolerance' => $request->input('tolerance.'.$index),
+                    'am_approval_status' => $PurchaseOrder->am_approval_status == 'reverted' ? 'pending' : $PurchaseOrder->am_approval_status,
                     'printing_sample' => is_string($request->input('printing_sample.'.$index)) ? json_decode($request->input('printing_sample.'.$index), true) : $request->input('printing_sample.'.$index),
                     'delivery_date' => $request->input('delivery_date.'.$index),
                     'remarks' => $request->input('remarks.'.$index),
-                    
-                ]);
+                ];
+
+                $existingId = $request->data_id[$index] ?? 0;
+                if ($existingId > 0) {
+                    $record = PurchaseOrderData::find($existingId);
+                    if ($record) {
+                        $record->update($itemData);
+                        $keepIds[] = $record->id;
+                        continue;
+                    }
+                }
+
+                $newRecord = PurchaseOrderData::create($itemData);
+                $keepIds[] = $newRecord->id;
             }
+
+            // Delete items that were removed from the form
+            PurchaseOrderData::where('purchase_order_id', $PurchaseOrder->id)
+                ->whereNotIn('id', $keepIds)
+                ->delete();
 
             DB::commit();
 
@@ -607,13 +629,8 @@ class PurchaseOrderController extends Controller
         ])->findOrFail($id);
 
 
-        $purchaseOrderData = PurchaseOrderData::with("purchase_request_data")->where('purchase_order_id', $id)
-            ->when(
-                $purchaseOrder->am_approval_status === 'approved',
-                function ($query) {
-                    $query->where('am_approval_status', 'approved');
-                }
-            )
+        $purchaseOrderData = PurchaseOrderData::with("purchase_request_data")
+            ->where('purchase_order_id', $id)
             ->get();
 
      

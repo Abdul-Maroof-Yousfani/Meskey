@@ -1,320 +1,309 @@
-<style>
-    .gate-out-pass {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 12px;
-        padding: 4px;
-        max-width: 900px;
-        margin: 20px auto;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-    }
-    .gate-out-pass-inner {
-        background: #fff;
-        border-radius: 10px;
-        padding: 30px;
-    }
-    .gate-out-header {
-        text-align: center;
-        border-bottom: 2px dashed #ddd;
-        padding-bottom: 20px;
-        margin-bottom: 25px;
-    }
-    .gate-out-header h3 {
-        color: #667eea;
-        font-weight: 700;
-        margin-bottom: 5px;
-        font-size: 26px;
-    }
-    .gate-out-header .ticket-number {
-        font-size: 15px;
-        color: #666;
-    }
-    .gate-out-field {
-        margin-bottom: 18px;
-    }
-    .gate-out-field label {
-        font-weight: 600;
-        color: #555;
-        font-size: 13px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 6px;
-        display: block;
-    }
-    .gate-out-field .value {
-        font-size: 16px;
-        color: #333;
-        padding: 12px 15px;
-        background: #f8f9fa;
-        border-radius: 8px;
-        border: 1px solid #e9ecef;
-    }
-    .gate-out-field .value.highlight {
-        background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
-        border-color: #667eea40;
-        font-weight: 600;
-    }
-    .status-badge {
-        display: inline-block;
-        padding: 8px 20px;
-        border-radius: 30px;
-        font-size: 14px;
-        font-weight: 600;
-        text-transform: uppercase;
-    }
-    .status-badge.accepted {
-        background: #d4edda;
-        color: #155724;
-        border: 1px solid #c3e6cb;
-    }
-    .gate-out-footer {
-        margin-top: 30px;
-        padding-top: 20px;
-        border-top: 2px dashed #ddd;
-        text-align: center;
-    }
-    .gate-out-footer .timestamp {
-        font-size: 13px;
-        color: #888;
-    }
-
-    /* Center print button */
-    .print-button-container {
-        text-align: center;
-        margin: 40px auto;
-    }
-
-    /* ====================== FIXED PRINT STYLES - FULL MODAL CONTENT ====================== */
-    @media print {
-        /* Hide everything except the pass */
-        body * {
-            visibility: hidden !important;
-        }
-
-        /* Force the entire gate-out-pass and its content to be visible and properly positioned */
-        #gate-out-pass,
-        #gate-out-pass * {
-            visibility: visible !important;
-        }
-
-        /* Critical fix: Reset positioning and bring to front */
-        #gate-out-pass {
-            position: fixed !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 100% !important;
-            height: auto !important;
-            max-width: none !important;
-            margin: 0 !important;
-            padding: 20px !important;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-            border-radius: 12px !important;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important;
-            z-index: 9999 !important;
-            overflow: visible !important;
-
-            /* Force background printing */
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-        }
-
-        .gate-out-pass-inner {
-            padding: 40px !important;
-            border-radius: 10px !important;
-            background: white !important;
-            min-height: auto !important;
-            overflow: visible !important;
-        }
-
-        /* Ensure row and columns don't break */
-        .row {
-            display: flex !important;
-            flex-wrap: wrap !important;
-            margin: 0 -15px !important;
-        }
-        .col-md-4, .col-md-6, .col-md-12 {
-            padding: 0 15px !important;
-            box-sizing: border-box !important;
-        }
-        .col-md-4 { flex: 0 0 33.3333%; max-width: 33.3333%; }
-        .col-md-6 { flex: 0 0 50%; max-width: 50%; }
-        .col-md-12 { flex: 0 0 100%; max-width: 100%; }
-
-        /* Larger, clearer text */
-        .gate-out-header h3 {
-            font-size: 32px !important;
-            color: #667eea !important;
-        }
-        .gate-out-header .ticket-number {
-            font-size: 18px !important;
-        }
-        .gate-out-field .value {
-            font-size: 18px !important;
-        }
-        .gate-out-field .value.highlight span {
-            font-size: 28px !important;
-            font-weight: bold !important;
-        }
-        .status-badge.accepted {
-            background: #d4edda !important;
-            color: #155724 !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-        }
-        .gate-out-field .value.highlight {
-            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%) !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-        }
-
-        /* Hide modal backdrop, buttons, headers, etc. */
-        .modal, .modal-backdrop, .print-button-container, button, header, nav, footer, .no-print {
-            display: none !important;
-            visibility: hidden !important;
-        }
-
-        /* Page margins */
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LOCAL GATE PASS - #{{ $DispatchQc->loadingProgramItem->transaction_number ?? '' }}</title>
+    <style>
         @page {
-            margin: 1cm;
-            size: A4 portrait;
+            size: A4;
+            margin: 10mm;
         }
-    }
-</style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #000;
+            font-size: 12px;
+            line-height: 1.4;
+            -webkit-print-color-adjust: exact;
+        }
+        .container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 10px;
+            background: white;
+        }
+        .header {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 5px;
+        }
+        .logo-container {
+            width: 80px;
+            text-align: center;
+        }
+        .logo-container img {
+            width: 100%;
+            height: auto;
+        }
+        .logo-text {
+            font-size: 8px;
+            margin-top: 2px;
+            font-weight: bold;
+        }
+        .company-info {
+            flex-grow: 1;
+            padding-left: 15px;
+        }
+        .info-row {
+            display: flex;
+            margin-bottom: 2px;
+        }
+        .info-label {
+            font-weight: bold;
+            text-decoration: underline;
+            min-width: 80px;
+            font-size: 9px;
+        }
+        .info-content {
+            font-size: 9px;
+            padding-left: 5px;
+        }
+        .contact-details {
+            font-size: 8.5px;
+            margin-top: 5px;
+            border-top: 1px solid #000;
+            padding-top: 2px;
+        }
+        .iso-code {
+            text-align: right;
+            font-weight: bold;
+            font-size: 11px;
+            margin-top: -10px;
+        }
+        
+        .pass-title-section {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .pass-title {
+            font-size: 18px;
+            font-weight: bold;
+            text-decoration: underline;
+            text-transform: uppercase;
+        }
+        .pass-subtitle {
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
 
-<div class="gate-out-pass" id="gate-out-pass">
-    <div class="gate-out-pass-inner">
-        {{-- Header --}}
-        <div class="gate-out-header">
-            <h3><i class="ft-file-text mr-2"></i>GATE OUT</h3>
-            <div class="ticket-number">
-                Ticket: <strong>{{ $DispatchQc->loadingProgramItem->transaction_number ?? 'N/A' }}</strong>
-                &nbsp;|&nbsp;
-                Truck: <strong>{{ $DispatchQc->loadingProgramItem->truck_number ?? 'N/A' }}</strong>
+        .main-content {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 40px;
+            margin-top: 30px;
+        }
+        
+        .field-row {
+            display: flex;
+            margin-bottom: 12px;
+            align-items: baseline;
+        }
+        .field-label {
+            font-weight: bold;
+            min-width: 120px;
+        }
+        .field-value {
+            border-bottom: none;
+            flex-grow: 1;
+        }
+
+        .footer {
+            margin-top: 100px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .signature-item {
+            text-align: center;
+            width: 24%;
+        }
+        .signature-line {
+            border-top: 1px solid #000;
+            margin-bottom: 5px;
+        }
+        .signature-label {
+            font-weight: bold;
+        }
+
+        @media print {
+            .no-print, .modal-header, .close, .modal-sidebar-close, button { display: none !important; }
+            body, html { background: white; overflow: hidden !important; height: auto !important; }
+            * { overflow: visible !important; }
+            .modal, .modal-dialog, .modal-content, .modal-body { 
+                overflow: visible !important; 
+                height: auto !important; 
+                border: none !important; 
+                box-shadow: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .container { padding: 0; margin: 0; border: none; box-shadow: none; width: 100% !important; max-width: 100% !important; }
+        }
+
+        .print-button-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .btn-print {
+            padding: 10px 25px;
+            background: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="print-button-container no-print">
+        <button class="btn-print" onclick="window.print()">Print Gate Out Pass</button>
+    </div>
+
+    <div class="container" id="gate-out-pass">
+        <div class="header">
+            <div class="logo-container">
+                <img src="{{ asset('management/app-assets/img/meskay-logo.png') }}" alt="Logo">
+                <div class="logo-text">Original / Duplicate</div>
             </div>
-            <div class="mt-2">
-                <span class="status-badge accepted">
-                    <i class="ft-check-circle mr-1"></i> Accepted
-                </span>
+            <div class="company-info">
+                <div class="info-row">
+                    <span class="info-label">Head office:</span>
+                    <span class="info-content">Saima Trade Tower, Tower B, Room # 1511-13, I. I. Chundrigar Road, Karachi.</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Factory:</span>
+                    <span class="info-content">Plot No A-43, A-45 & A-46, Eastern, Industrial Zone, Port Qasim, Karachi, Pakistan.</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Retail Outlet:</span>
+                    <span class="info-content">Shop No. 4, K.A.I Center, Opp City Court, Dandia Bazar, Karachi Ph: +92 23 32713369, 3378</span>
+                </div>
+                <div class="contact-details">
+                    Tel: +92 21 32214981 - 82, 32275349-51 Fax: +92 21 23375352<br>
+                    Email: info@mft.com.pk, Web: www.mft.com.pk
+                </div>
             </div>
         </div>
 
-        {{-- Details --}}
-        <div class="row">
-            <div class="col-md-6">
-                <div class="gate-out-field">
-                    <label><i class="ft-user mr-1"></i>Customer Name</label>
-                    <div class="value">
-                        {{ $DispatchQc->customer ?? ($DispatchQc->loadingProgramItem->loadingProgram->deliveryOrder->customer->name ?? 'N/A') }}
+        <div class="iso-code">ISO Code: MFT/QR/033</div>
+
+        <div class="pass-title-section">
+            <div class="pass-title">LOCAL GATE PASS</div>
+            <div class="pass-subtitle">ORIGINAL</div>
+        </div>
+
+        <div class="main-content">
+            <div class="left-col">
+                <div class="field-row">
+                    <div class="field-label">Date:</div>
+                    <div class="field-value">{{ $DispatchQc->created_at->format('d/m/Y') }}</div>
+                </div>
+                <div class="field-row">
+                    <div class="field-label">SO #:</div>
+                    <div class="field-value">
+                        @if($DispatchQc->loadingProgramItem->saleOrders->isNotEmpty())
+                            {{ $DispatchQc->loadingProgramItem->saleOrders->pluck('reference_no')->implode(', ') }}
+                        @else
+                            {{ $DispatchQc->loadingProgramItem->loadingProgram->saleOrder->reference_no ?? 'N/A' }}
+                        @endif
                     </div>
                 </div>
-            </div>
-
-            <div class="col-md-6">
-                <div class="gate-out-field">
-                    <label><i class="ft-package mr-1"></i>Commodity</label>
-                    <div class="value">
-                        {{ $DispatchQc->commodity ?? ($DispatchQc->loadingProgramItem->loadingProgram->deliveryOrder->delivery_order_data->first()->item->name ?? 'N/A') }}
-                    </div>
+                <div class="field-row">
+                    <div class="field-label">Commodity #:</div>
+                    <div class="field-value">{{ $DispatchQc->commodity ?? ($DispatchQc->loadingProgramItem->loadingProgram->deliveryOrder->delivery_order_data->first()->item->name ?? 'N/A') }}</div>
                 </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="gate-out-field">
-                    <label><i class="ft-package mr-1"></i>Brand</label>
-                    <div class="value">
-                        {{ getBrandById($DispatchQc->loadingProgramItem->brand_id)?->name ?? "N/A" }}
-                    </div>
+                <div class="field-row">
+                    <div class="field-label">Trucks No.:</div>
+                    <div class="field-value">{{ $DispatchQc->loadingProgramItem->truck_number ?? 'N/A' }}</div>
                 </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="gate-out-field">
-                    <label><i class="ft-package mr-1"></i>Packing</label>
-                    <div class="value">
-                        {{ $DispatchQc->loadingProgramItem->packing ?? 'N/A' }}
-                    </div>
+                <div class="field-row">
+                    <div class="field-label">No. of Bags:</div>
+                    <div class="field-value">{{ $DispatchQc->loadingProgramItem->loadingSlip->no_of_bags ?? 'N/A' }}</div>
                 </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="gate-out-field">
-                    <label><i class="ft-package mr-1"></i>No of Bags</label>
-                    <div class="value">
-                        {{ $DispatchQc?->loadingProgramItem?->loadingSlip?->deliveryOrder?->delivery_order_data[0]?->no_of_bags ?? 'N/A' }}
-                    </div>
+                <div class="field-row">
+                    <div class="field-label">Loader Name:</div>
+                    <div class="field-value">{{ $DispatchQc->loadingProgramItem->loadingSlip->labour ?? 'N/A' }}</div>
                 </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="gate-out-field">
-                    <label><i class="ft-home mr-1"></i>Company Location</label>
-                    <div class="value">
-                        {{ get_location_name_by_id($DispatchQc->loadingProgramItem->loadingProgram->company_locations[0] ?? null) ?? 'N/A' }}
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="gate-out-field">
-                    <label><i class="ft-home mr-1"></i>Factory</label>
-                    <div class="value">
-                        {{ $DispatchQc->factory ?? ($DispatchQc->loadingProgramItem->arrivalLocation->name ?? 'N/A') }}
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="gate-out-field">
-                    <label><i class="ft-map-pin mr-1"></i>Gala</label>
-                    <div class="value">
-                        {{ $DispatchQc->gala ?? ($DispatchQc->loadingProgramItem->subArrivalLocation->name ?? 'N/A') }}
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-12">
-                <div class="gate-out-field">
-                    <label><i class="ft-activity mr-1"></i>Net Weight</label>
-                    <div class="value highlight">
+                <div class="field-row">
+                    <div class="field-label">Net Weight:</div>
+                    <div class="field-value">
                         @php
                             $secondWeighbridge = $DispatchQc->loadingProgramItem->loadingSlip->secondWeighbridge ?? null;
                             $netWeight = $secondWeighbridge ? $secondWeighbridge->net_weight : 0;
                         @endphp
-                        <span style="font-size: 18px;">{{ number_format($netWeight, 2) }} Kg</span>
+                        {{ number_format($netWeight, 0) }}
                     </div>
+                </div>
+                <div class="field-row">
+                    <div class="field-label">Location:</div>
+                    <div class="field-value">{{ $DispatchQc->factory ?? ($DispatchQc->loadingProgramItem->arrivalLocation->name ?? 'N/A') }}</div>
                 </div>
             </div>
-
-            @if($DispatchQc->qc_remarks)
-                <div class="col-md-12">
-                    <div class="gate-out-field">
-                        <label><i class="ft-message-square mr-1"></i>QC Remarks</label>
-                        <div class="value">
-                            {{ $DispatchQc->qc_remarks }}
-                        </div>
+            <div class="right-col">
+                <div class="field-row">
+                    <div class="field-label">G.P. NO. :</div>
+                    <div class="field-value">{{ $DispatchQc->id + 3000 }}</div>
+                </div>
+                <div class="field-row">
+                    <div class="field-label">Party Name:</div>
+                    <div class="field-value">{{ $DispatchQc->customer ?? ($DispatchQc->loadingProgramItem->loadingProgram->deliveryOrder->customer->name ?? 'N/A') }}</div>
+                </div>
+                <div class="field-row">
+                    <div class="field-label">Delivery Order No.:</div>
+                    <div class="field-value">
+                        @if($DispatchQc->loadingProgramItem->deliveryOrders->isNotEmpty())
+                            {{ $DispatchQc->loadingProgramItem->deliveryOrders->pluck('reference_no')->implode(', ') }}
+                        @else
+                            {{ $DispatchQc->loadingProgramItem->loadingProgram->deliveryOrder->reference_no ?? 'N/A' }}
+                        @endif
                     </div>
                 </div>
-            @endif
+                <div class="field-row">
+                    <div class="field-label">Container No.:</div>
+                    <div class="field-value">{{ $DispatchQc->loadingProgramItem->container_number ?? '0' }}</div>
+                </div>
+                <div class="field-row">
+                    <div class="field-label">Bag Packing:</div>
+                    <div class="field-value">{{ $DispatchQc->loadingProgramItem->packing ?? 'N/A' }}</div>
+                </div>
+                <div class="field-row">
+                    <div class="field-label">Prepared By:</div>
+                    <div class="field-value">Factory</div>
+                </div>
+                <div class="field-row">
+                    <div class="field-label">Gala:</div>
+                    <div class="field-value">{{ $DispatchQc->gala ?? ($DispatchQc->loadingProgramItem->subArrivalLocation->name ?? 'N/A') }}</div>
+                </div>
+            </div>
         </div>
 
-        {{-- Footer --}}
-        <div class="gate-out-footer">
-            <div class="timestamp">
-                <i class="ft-clock mr-1"></i>
-                Generated on: {{ now()->format('d M Y, h:i A') }}
+        <div class="footer">
+            <div class="signature-item">
+                <div class="signature-line"></div>
+                <div class="signature-label">Confirmed From</div>
             </div>
-            <div class="timestamp mt-1">
-                Dispatch QC Created: {{ $DispatchQc->created_at->format('d M Y, h:i A') }}
-                @if($DispatchQc->createdBy)
-                    by {{ $DispatchQc->createdBy->name ?? 'N/A' }}
-                @endif
+            <div class="signature-item">
+                <div class="signature-line"></div>
+                <div class="signature-label">Contact Number</div>
+            </div>
+            <div class="signature-item">
+                <div style="font-weight: bold; margin-bottom: 25px;">Factory</div>
+                <div class="signature-line"></div>
+                <div class="signature-label">Prepared By</div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Centered Print Button -->
-<div class="print-button-container no-print">
-    <button class="btn btn-primary" onclick="window.print()">
-        <i class="ft-printer mr-2"></i> Print Gate Out Pass
-    </button>
-</div>
+    <script>
+        window.onload = function() {
+            setTimeout(function() {
+                window.print();
+            }, 500);
+        };
+    </script>
+</body>
+</html>

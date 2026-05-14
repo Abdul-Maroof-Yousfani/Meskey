@@ -98,7 +98,7 @@ class RejectionReturnController extends Controller
     public function create()
     {
         $approvedGRNs = PurchaseOrderReceiving::whereHas('purchaseOrderReceivingData.qc', function($q) {
-                $q->where('deduction_type', 'no_deduction');
+                $q->where('rejection_return', '>', 0);
             })
             ->where(function($query) {
                 // Either no rejection return yet
@@ -118,9 +118,7 @@ class RejectionReturnController extends Controller
         $rejectionReturn = \App\Models\Procurement\Store\RejectionReturn::with(['items.item', 'grn.supplier'])->findOrFail($id);
         
         $approvedGRNs = PurchaseOrderReceiving::whereHas('purchaseOrderReceivingData.qc', function($q) {
-                $q->where('deduction_type', 'no_deduction')
-                  ->where('deduction_per_bag', 0)
-                  ->where('rejected_quantity', '>', 0);
+                  $q->where('rejection_return', '>', 0);
             })
             ->get();
             

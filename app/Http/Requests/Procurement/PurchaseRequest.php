@@ -21,6 +21,9 @@ class PurchaseRequest extends FormRequest
             'description'           => 'nullable|string',
 
             'category_id_header'    => 'required|exists:categories,id',
+            
+            // 'category_id'           => 'required|array|min:1',
+            // 'category_id.*'         => 'required|exists:categories,id',
 
             'item_id'               => 'required|array|min:1',
             'item_id.*'             => [
@@ -91,6 +94,8 @@ class PurchaseRequest extends FormRequest
 
             'category_id_header.required' => 'The category field is required.',
             'category_id_header.exists' => 'The selected category is invalid.',
+            'category_id.*.required' => 'Each item must have a category selected.',
+            'category_id.*.exists' => 'The selected category is invalid.',
 
             'item_id.required' => 'At least one item is required.',
             'item_id.array' => 'The item field must be an array.',

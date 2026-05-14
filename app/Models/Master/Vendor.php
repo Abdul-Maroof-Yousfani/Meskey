@@ -34,11 +34,13 @@ class Vendor extends Model
         'stn',
         'attachment',
         'status',
-        'company_location_ids'
+        'company_location_ids',
+        'arrival_location_ids'
     ];
 
     protected $casts = [
         'company_location_ids' => 'array',
+        'arrival_location_ids' => 'array',
     ];
 
     public function company()

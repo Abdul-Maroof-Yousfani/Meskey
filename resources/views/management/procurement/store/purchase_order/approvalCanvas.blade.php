@@ -1,6 +1,6 @@
 
 
-<input type="hidden" id="listRefresh" value="{{ route('store.get.purchase-order') }}" />
+<input type="hidden" id="listRefresh" value="{{ route('store.purchase-order.index') }}" />
  {{-- <input type="hidden" name="data_id" value="{{ $purchaseOrder->purchase_orde->id }}"> --}}
 {{-- <input type="hidden" name="purchase_request_data_id"
     value="{{ optional($purchaseOrder->orde_data->first())->purchase_request_data_id }}"> --}}
@@ -102,7 +102,12 @@
                 @endphp
                 <thead>
                     <tr>
-                         <th>Category</th>
+                        <th style="width: 50px; min-width: 50px; vertical-align: middle !important;">
+                            <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
+                                <input type="checkbox" id="check-all" class="form-check-input" style="cursor: pointer; transform: scale(1.2); margin: 0;">
+                            </div>
+                        </th>
+                        <th style="min-width: 250px;">Category</th>
                             <th>Item</th>
                             <th>Item UOM</th>
                             <th>Job Order</th>
@@ -128,14 +133,19 @@
                             <th>Delivery Date</th>
                             <th>Remarks</th>
                             <th>Net Amount</th>
-                            <th>Action</th>
+                            <th>Status</th>
                     </tr>
                 </thead>
             <tbody id="purchaseRequestBody">
         @foreach ($purchaseOrderData ?? [] as $key => $data)
             <tr id="row_{{ $key }}">
-                                <td style="width: 30%">
-                                    <select style="width: 100px;" id="category_id_{{ $key }}" disabled
+                <td style="vertical-align: middle !important;">
+                    <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
+                        <input type="checkbox" class="form-check-input item-checkbox" style="cursor: pointer; transform: scale(1.2); margin: 0;" @disabled(in_array(strtolower($data->am_approval_status), ['approved', 'rejected', 'reverted', 'neglected', 'returned']))>
+                    </div>
+                </td>
+                <td style="width: 30%">
+                    <select style="width: 100px;" id="category_id_{{ $key }}" disabled
                                         onchange="filter_items(this.value,{{ $key }})"
                                         class="form-control item-select select2" data-index="{{ $key }}">
                                         <option value="">Select Category</option>
@@ -336,10 +346,20 @@
                                         id="total_{{ $key }}" class="form-control net_amount"
                                         step="0.01" min="0" readonly name="total[]" readonly>
                                 </td>
-                                <td>
-                                    <button type="button" class="btn btn-danger btn-sm removeRowBtn"
-                                        onclick="remove({{ $key }})"
-                                        data-id="{{ $key }}">Remove</button>
+                                <td class="text-center">
+                                    @php
+                                        $itemStatus = $data->am_approval_status;
+                                        $badgeClass = match (strtolower($itemStatus)) {
+                                            'approved' => 'bg-success',
+                                            'rejected' => 'bg-danger',
+                                            'partial_approved' => 'bg-warning text-dark',
+                                            'reverted' => 'bg-primary',
+                                            default => 'bg-secondary',
+                                        };
+                                    @endphp
+                                    <span class="badge {{ $badgeClass }}">
+                                        {{ str_replace('_', ' ', ucfirst($itemStatus)) }}
+                                    </span>
                                 </td>
                             </tr>
         @endforeach
@@ -362,7 +382,7 @@
  <input type="hidden" id="rowCount" value="0">
  <div class="row">
      <div class="col-12">
-         <x-approval-status :model="$data1" :listRefresh="request()->get('listRefresh', route('store.get.purchase-order'))" />
+         <x-approval-status-po :model="$data1" :listRefresh="route('store.purchase-order.index')" />
      </div>
  </div>
  <div class="row bottom-button-bar">
@@ -526,5 +546,11 @@
         if ((this.value.match(/\./g) || []).length > 1) {
             this.value = this.value.replace(/\.+$/, "");
         }
+    });
+
+    $(document).ready(function() {
+        $('#check-all').on('change', function() {
+            $('.item-checkbox:not(:disabled)').prop('checked', $(this).prop('checked'));
+        });
     });
 </script>

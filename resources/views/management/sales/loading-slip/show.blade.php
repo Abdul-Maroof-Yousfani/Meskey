@@ -35,7 +35,8 @@
                         'do_qty' => $do->delivery_order_data->sum('qty'),
                         'factory_names' => $factoryNames,
                         'gala_names' => $galaNames,
-                        'bag_size' => $do->delivery_order_data->first()->bag_size ?? 0
+                        'bag_size' => $do->delivery_order_data->first()->bag_size ?? 0,
+                        'brand' => $item->brand->name ?? 'N/A'
                     ];
                 }
             } 
@@ -60,7 +61,8 @@
                     'do_qty' => $do->delivery_order_data->sum('qty'),
                     'factory_names' => $factoryNames,
                     'gala_names' => $galaNames,
-                    'bag_size' => $do->delivery_order_data->first()->bag_size ?? 0
+                    'bag_size' => $do->delivery_order_data->first()->bag_size ?? 0,
+                    'brand' => $item->brand->name ?? 'N/A'
                 ];
             }
 
@@ -77,7 +79,8 @@
                             'do_qty' => 0,
                             'factory_names' => $item->arrivalLocation ? [$item->arrivalLocation->name] : [],
                             'gala_names' => $item->subArrivalLocation ? [$item->subArrivalLocation->name] : [],
-                            'bag_size' => $so->sales_order_data->first()->bag_size ?? 0
+                            'bag_size' => $so->sales_order_data->first()->bag_size ?? 0,
+                            'brand' => $item->brand->name ?? 'N/A'
                         ];
                     }
                 }
@@ -92,7 +95,8 @@
                     'do_qty' => 0,
                     'factory_names' => $item->arrivalLocation ? [$item->arrivalLocation->name] : [],
                     'gala_names' => $item->subArrivalLocation ? [$item->subArrivalLocation->name] : [],
-                    'bag_size' => $so->sales_order_data->first()->bag_size ?? 0
+                    'bag_size' => $so->sales_order_data->first()->bag_size ?? 0,
+                    'brand' => $item->brand->name ?? 'N/A'
                 ];
             }
         @endphp
@@ -137,7 +141,7 @@
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-xs-12 col-sm-6 col-md-4">
+                            <div class="col-xs-12 col-sm-6 col-md-3">
                                 <div class="form-group">
                                     <label>Factory:</label>
                                     <select class="form-control select2 w-100" multiple disabled style="width: 100% !important;">
@@ -147,7 +151,7 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="col-xs-12 col-sm-6 col-md-4">
+                            <div class="col-xs-12 col-sm-6 col-md-3">
                                 <div class="form-group">
                                     <label>Gala:</label>
                                     <select class="form-control select2 w-100" multiple disabled style="width: 100% !important;">
@@ -157,10 +161,16 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="col-xs-12 col-sm-6 col-md-4">
+                            <div class="col-xs-12 col-sm-6 col-md-3">
                                 <div class="form-group">
                                     <label>Bag Size:</label>
                                     <input type="number" value="{{ $order['bag_size'] }}" class="form-control" readonly disabled />
+                                </div>
+                            </div>
+                            <div class="col-xs-12 col-sm-6 col-md-3">
+                                <div class="form-group">
+                                    <label>Brand:</label>
+                                    <input type="text" value="{{ $order['brand'] }}" class="form-control" readonly disabled />
                                 </div>
                             </div>
                         </div>
@@ -213,6 +223,12 @@
             </div>
         </div> --}}
     </div>
+</div>
+<div>
+    <button type="button" class="btn btn-secondary" style="float: right; margin-bottom: 20px;" data-dismiss="modal">Close</button>
+    <a href="{{ route('sales.loading-slip.print', $loadingSlip->id) }}" target="_blank" class="btn btn-primary" style="float: right; margin-bottom: 20px; margin-right: 10px;">
+        <i class="ft-printer"></i> Print
+    </a>
 </div>
 <script>
     $(".select2").select2();

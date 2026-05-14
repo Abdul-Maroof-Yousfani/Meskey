@@ -86,6 +86,7 @@ class LoadingSlipController extends Controller
             'loading_program_item_id' => 'required|exists:loading_program_items,id',
             'customer' => 'required|string|max:255',
             'commodity' => 'required|string|max:255',
+            'brand' => 'nullable|string|max:255',
             'so_qty' => 'required|numeric|min:0',
             'do_qty' => 'required|numeric|min:0',
             'factory' => 'required|string|max:255',
@@ -145,6 +146,7 @@ class LoadingSlipController extends Controller
                 'loading_program_item_id' => $request->loading_program_item_id,
                 'customer' => $request->customer,
                 'commodity' => $request->commodity,
+                'brand' => $request->brand,
                 'so_qty' => $request->so_qty,
                 'do_qty' => $request->do_qty,
                 'factory' => $request->factory,
@@ -228,6 +230,7 @@ class LoadingSlipController extends Controller
         $validator = Validator::make($request->all(), [
             'customer' => 'required|string|max:255',
             'commodity' => 'required|string|max:255',
+            'brand' => 'nullable|string|max:255',
             'so_qty' => 'required|numeric|min:0',
             'do_qty' => 'required|numeric|min:0',
             'factory' => 'required|string|max:255',
@@ -294,6 +297,7 @@ class LoadingSlipController extends Controller
             $loadingSlip->update([
                 'customer' => $request->customer,
                 'commodity' => $request->commodity,
+                'brand' => $request->brand,
                 'so_qty' => $request->so_qty,
                 'do_qty' => $request->do_qty,
                 'factory' => $request->factory,
@@ -375,6 +379,7 @@ class LoadingSlipController extends Controller
                     'factory_names' => $factoryNames,
                     'gala_names' => $galaNames,
                     'bag_size' => $do->delivery_order_data->first()->bag_size ?? 0,
+                    'brand' => $do->loadingProgramItem->brand->name ?? $LoadingProgramItem->brand->name ?? 'N/A',
                     'is_pohanch' => (strtolower($do->sauda_type ?? '') == 'pohanch')
                 ];
             }
@@ -402,6 +407,7 @@ class LoadingSlipController extends Controller
                 'factory_names' => $factoryNames,
                 'gala_names' => $galaNames,
                 'bag_size' => $do->delivery_order_data->first()->bag_size ?? 0,
+                'brand' => $LoadingProgramItem->brand->name ?? 'N/A',
                 'is_pohanch' => (strtolower($do->sauda_type ?? '') == 'pohanch')
             ];
         }
@@ -420,6 +426,7 @@ class LoadingSlipController extends Controller
                         'factory_names' => $LoadingProgramItem->arrivalLocation ? [$LoadingProgramItem->arrivalLocation->name] : [],
                         'gala_names' => $LoadingProgramItem->subArrivalLocation ? [$LoadingProgramItem->subArrivalLocation->name] : [],
                         'bag_size' => $so->sales_order_data->first()->bag_size ?? 0,
+                        'brand' => $LoadingProgramItem->brand->name ?? 'N/A',
                         'is_pohanch' => (strtolower($so->sauda_type ?? '') == 'pohanch')
                     ];
                 }
@@ -436,6 +443,7 @@ class LoadingSlipController extends Controller
                 'factory_names' => $LoadingProgramItem->arrivalLocation ? [$LoadingProgramItem->arrivalLocation->name] : [],
                 'gala_names' => $LoadingProgramItem->subArrivalLocation ? [$LoadingProgramItem->subArrivalLocation->name] : [],
                 'bag_size' => $so->sales_order_data->first()->bag_size ?? 0,
+                'brand' => $LoadingProgramItem->brand->name ?? 'N/A',
                 'is_pohanch' => (strtolower($so->sauda_type ?? '') == 'pohanch')
             ];
         }
@@ -452,6 +460,7 @@ class LoadingSlipController extends Controller
                 'factory_names' => $LoadingProgramItem->arrivalLocation ? [$LoadingProgramItem->arrivalLocation->name] : [],
                 'gala_names' => $LoadingProgramItem->subArrivalLocation ? [$LoadingProgramItem->subArrivalLocation->name] : [],
                 'bag_size' => 0,
+                'brand' => $LoadingProgramItem->brand->name ?? 'N/A',
                 'is_pohanch' => false
             ];
         }
@@ -467,8 +476,27 @@ class LoadingSlipController extends Controller
                 'factory_names' => $orders[0]['factory_names'],
                 'gala_names' => $orders[0]['gala_names'],
                 'bag_size' => $orders[0]['bag_size'],
+                'brand' => $orders[0]['brand'],
                 'is_pohanch' => $orders[0]['is_pohanch']
             ]
         ]);
+    }
+
+    public function print(string $id)
+    {
+        $loadingSlip = LoadingSlip::with([
+            'loadingProgramItem.loadingProgram.deliveryOrder.customer',
+            'loadingProgramItem.loadingProgram.deliveryOrder.delivery_order_data.item',
+            'loadingProgramItem.loadingProgram.deliveryOrder.arrivalLocation',
+            'loadingProgramItem.loadingProgram.deliveryOrder.subArrivalLocation',
+            'loadingProgramItem.deliveryOrders.customer',
+            'loadingProgramItem.deliveryOrders.delivery_order_data.item',
+            'loadingProgramItem.deliveryOrders.delivery_order_data.salesOrderData',
+            'loadingProgramItem.saleOrders.customer',
+            'loadingProgramItem.saleOrders.sales_order_data.item',
+            'createdBy'
+        ])->findOrFail($id);
+
+        return view('management.sales.loading-slip.print', compact('loadingSlip'));
     }
 }

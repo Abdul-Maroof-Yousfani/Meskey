@@ -91,15 +91,15 @@ class FreightRequestController extends Controller
             ->when($request->filled('loading_date'), function ($q) use ($request) {
                 return $q->whereDate('loading_date', $request->loading_date);
             })
-            ->when($request->filled('amount'), function ($q) use ($request) {
+            ->when($request->filled('amount_for_filter'), function ($q) use ($request) {
                 return $q->whereHas('paymentRequestData', function ($query) use ($request) {
-                    $query->where('total_amount', 'like', "%{$request->amount}%");
+                    $query->where('total_amount', 'like', "%{$request->amount_for_filter}%");
                 });
             })
-            ->when($request->filled('requested_amount'), function ($q) use ($request) {
+            ->when($request->filled('requested_amount_for_filter'), function ($q) use ($request) {
                 return $q->whereHas('paymentRequestData', function ($query) use ($request) {
                     $query->whereHas('paymentRequests', function ($pq) use ($request) {
-                        $pq->where('amount', 'like', "%{$request->requested_amount}%");
+                        $pq->where('amount', 'like', "%{$request->requested_amount_for_filter}%");
                     });
                 });
             })
@@ -317,7 +317,7 @@ class FreightRequestController extends Controller
                 $data['suggested_vendor_id'] = $suggestedVendor->id;
             }
         }
-        
+
         $html = view('management.procurement.raw_material.freight_request.create', $data)->render();
 
         return response()->json([
@@ -839,7 +839,7 @@ class FreightRequestController extends Controller
             'paymentRequests' => $paymentRequests,
         ];
         $data['vendors'] = Vendor::get();
-        
+
         return view('management.procurement.raw_material.freight_request.create', $data);
     }
 
@@ -913,16 +913,26 @@ class FreightRequestController extends Controller
     public function pohouch_freight_payment_request_approval(Request $request)
     {
 
-        if ($request->status == 'rejected') {
-            $paymentRequest = PaymentRequest::findOrFail($request->payment_request_id);
-            $paymentRequest->status = "rejected";
-            $paymentRequest->save();
-            return response()->json(['message' => 'Payment request rejected successfully!']);
-        }
+
 
 
         return DB::transaction(function () use ($request) {
             $paymentRequest = PaymentRequest::findOrFail($request->payment_request_id);
+
+            if ($paymentRequest->status == 'approved' || $paymentRequest->status == 'rejected') {
+                return response()->json([
+                    'message' => 'Payment request already approved or rejected',
+                ], 422);
+            }
+
+
+            if ($request->status == 'rejected') {
+                $paymentRequest->status = "rejected";
+                $paymentRequest->save();
+                return response()->json(['message' => 'Payment request rejected successfully!']);
+            }
+
+
             $ticket = ArrivalTicket::where('id', $request->ticket_id)->first();
 
             $paymentRequestData = $paymentRequest->paymentRequestData;
@@ -1272,15 +1282,24 @@ class FreightRequestController extends Controller
 
     public function pohouch_freight_payment_request_approval_wo_contract(Request $request)
     {
-        if ($request->status == 'rejected') {
-            $paymentRequest = PaymentRequest::findOrFail($request->payment_request_id);
-            $paymentRequest->status = "rejected";
-            $paymentRequest->save();
-            return response()->json(['message' => 'Payment request rejected successfully!']);
-        }
+
 
         return DB::transaction(function () use ($request) {
+
+
             $paymentRequest = PaymentRequest::findOrFail($request->payment_request_id);
+            if ($paymentRequest->status == 'approved' || $paymentRequest->status == 'rejected') {
+                return response()->json([
+                    'message' => 'Payment request already approved or rejected',
+                ], 422);
+            }
+
+
+            if ($request->status == 'rejected') {
+                $paymentRequest->status = "rejected";
+                $paymentRequest->save();
+                return response()->json(['message' => 'Payment request rejected successfully!']);
+            }
 
             $paymentRequestData = $paymentRequest->paymentRequestData;
             $vendorAccId = $paymentRequest->account_id;

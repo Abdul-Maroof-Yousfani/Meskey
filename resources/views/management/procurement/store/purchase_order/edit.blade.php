@@ -157,7 +157,9 @@
                     </thead>
                     <tbody id="purchaseRequestBody">
                         @foreach ($purchaseOrder->purchaseOrderData ?? [] as $key => $data)
-                            
+                            @php
+                                $isApprovedRow = $data->am_approval_status === 'approved';
+                            @endphp
                             <tr id="row_{{ $key }}">
                                 <td style="min-width: 250px;">
                                     <select  id="category_id_{{ $key }}" disabled
@@ -256,7 +258,8 @@
                                         onblur="calc({{ $key }})" name="qty[]"
                                         value="{{ $data->qty }}" id="qty_{{ $key }}"
                                         class="form-control qty" step="0.01" min="0"
-                                        max="{{ $maxAllowed }}">
+                                        max="{{ $maxAllowed }}" @disabled($isApprovedRow)>
+                                    @if($isApprovedRow) <input type="hidden" name="qty[]" value="{{ $data->qty }}"> @endif
                                     
                                     <div class="d-flex align-items-center">
                                         balance: {{ $currentBalance }}
@@ -272,18 +275,20 @@
                                         onkeyup="calc({{ $key }}); calculatePercentage(this)"
                                         onblur="calc({{ $key }})" name="rate[]"
                                         value="{{ $data->rate }}" id="rate_{{ $key }}"
-                                        class="form-control rate" step="0.01" min="{{ $key }}">
+                                        class="form-control rate" step="0.01" min="{{ $key }}" @disabled($isApprovedRow)>
+                                    @if($isApprovedRow) <input type="hidden" name="rate[]" value="{{ $data->rate }}"> @endif
                                 </td>
                                 <td style="min-width: 150px;">
                                     <input  type="number" readonly
                                         value="{{ $data->rate * $data->qty }}" id="total_{{ $key }}"
                                         class="form-control gross_amount" step="0.01" min="0" readonly
-                                        name="total[]">
+                                        name="total[]" @disabled($isApprovedRow)>
+                                    @if($isApprovedRow) <input type="hidden" name="total[]" value="{{ $data->rate * $data->qty }}"> @endif
                                 </td>
                                 <td style="min-width: 200px;">
                                     <select  id="tax_id_{{ $key }}" name="tax_id[]"
                                         onchange="calc({{ $key }}); calculatePercentage(this)"
-                                        class="form-control item-select select2 taxes">
+                                        class="form-control item-select select2 taxes" @disabled($isApprovedRow)>
                                         <option value="">Select Tax</option>
                                         @php
                                             $tax_percentage = 0;
@@ -301,19 +306,22 @@
                                             </option>
                                         @endforeach
                                     </select>
+                                    @if($isApprovedRow) <input type="hidden" name="tax_id[]" value="{{ $data->tax_id }}"> @endif
                                 </td>
                                 <td style="min-width: 150px;">
                                     <input  type="number" readonly
                                         oninput="calc({{ $key }})" name="tax_amount[]"
                                         value="{{ ((int) $tax_percentage / 100) * ($data->rate * $data->qty) }}"
                                         id="tax_amount_{{ $key }}" class="form-control percent_amount"
-                                        step="0.01" min="0">
+                                        step="0.01" min="0" @disabled($isApprovedRow)>
+                                    @if($isApprovedRow) <input type="hidden" name="tax_amount[]" value="{{ ((int) $tax_percentage / 100) * ($data->rate * $data->qty) }}"> @endif
                                 </td>
                                 <td style="min-width: 150px;">
                                     <input  type="number" onkeyup="calc({{ $key }}); calculatePercentage(this)"
                                         name="excise_duty[]" value="{{ $data->excise_duty }}"
                                         id="excise_duty_{{ $key }}" class="form-control excise_duty" step="0.01"
-                                        min="0">
+                                        min="0" @disabled($isApprovedRow)>
+                                    @if($isApprovedRow) <input type="hidden" name="excise_duty[]" value="{{ $data->excise_duty }}"> @endif
                                 </td>
 
                                 @if($isBag)
@@ -392,12 +400,14 @@
                                     @endphp
                                     <input type="date" name="delivery_date[]" value="{{ $initialDeliveryDate }}" 
                                         id="delivery_date_{{ $key }}" class="form-control"
-                                        {{ $pqSource ? 'readonly' : '' }}>
+                                        {{ $pqSource ? 'readonly' : '' }} @disabled($isApprovedRow)>
+                                    @if($isApprovedRow) <input type="hidden" name="delivery_date[]" value="{{ $initialDeliveryDate }}"> @endif
                                 </td>
                                 <td style="min-width: 400px;">
                                     <input  name="remarks[]" type="text"
                                         value="{{ $data->remarks }}" id="remark_{{ $key }}"
-                                        class="form-control">
+                                        class="form-control" @disabled($isApprovedRow)>
+                                    @if($isApprovedRow) <input type="hidden" name="remarks[]" value="{{ $data->remarks }}"> @endif
                                     {{-- <input type="hidden" name="remarks[]" value="{{ $data->remarks }}"> --}}
                                 </td>
 
@@ -408,9 +418,13 @@
                                         step="0.01" min="0" readonly name="total[]">
                                 </td>
                                 <td>
-                                    <button type="button" class="btn btn-danger btn-sm removeRowBtn"
-                                        onclick="remove({{ $key }})"
-                                        data-id="{{ $key }}">Remove</button>
+                                    @if(!$isApprovedRow)
+                                        <button type="button" class="btn btn-danger btn-sm removeRowBtn"
+                                            onclick="remove({{ $key }})"
+                                            data-id="{{ $key }}">Remove</button>
+                                    @else
+                                        <span class="badge bg-success">Approved</span>
+                                    @endif
                                 </td>
                             </tr>
                         @endforeach

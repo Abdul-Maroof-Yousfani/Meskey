@@ -84,15 +84,15 @@ class TicketPaymentRequestController extends Controller
             ->when($request->filled('loading_date'), function ($q) use ($request) {
                 return $q->whereDate('loading_date', $request->loading_date);
             })
-            ->when($request->filled('amount'), function ($q) use ($request) {
+            ->when($request->filled('amount_for_filter'), function ($q) use ($request) {
                 return $q->whereHas('paymentRequestData', function ($query) use ($request) {
-                    $query->where('total_amount', 'like', "%{$request->amount}%");
+                    $query->where('total_amount', 'like', "%{$request->amount_for_filter}%");
                 });
             })
-            ->when($request->filled('requested_amount'), function ($q) use ($request) {
+            ->when($request->filled('requested_amount_for_filter'), function ($q) use ($request) {
                 return $q->whereHas('paymentRequestData', function ($query) use ($request) {
                     $query->whereHas('paymentRequests', function ($pq) use ($request) {
-                        $pq->where('amount', 'like', "%{$request->requested_amount}%");
+                        $pq->where('amount', 'like', "%{$request->requested_amount_for_filter}%");
                     });
                 });
             })
@@ -166,9 +166,11 @@ class TicketPaymentRequestController extends Controller
                             $approvedPaymentSum += $pRequest->total_amount;
                         }
                     } else {
-                        $totalFreightSum += $pRequest->total_amount;
-                        if ($pRequest->status == 'approved') {
-                            $approvedFreightSum += $pRequest->total_amount;
+                        if ($pRequest->request_type == 'freight_payment') {
+                            $totalFreightSum += $pRequest->total_amount;
+                            if ($pRequest->status == 'approved') {
+                                $approvedFreightSum += $pRequest->total_amount;
+                            }
                         }
                     }
                 }

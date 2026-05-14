@@ -152,6 +152,11 @@ class PaymentRequestApprovalController extends Controller
     {
         return DB::transaction(function () use ($request) {
             $paymentRequest = PaymentRequest::findOrFail($request->payment_request_id);
+            if ($paymentRequest->status == 'approved' || $paymentRequest->status == 'rejected') {
+                return response()->json([
+                    'message' => 'Payment request already approved or rejected',
+                ], 422);
+            }
             $paymentRequestData = $paymentRequest->paymentRequestData;
             // dd($paymentRequest, $paymentRequestData);
             $moduleType = $paymentRequestData->module_type;
@@ -648,7 +653,7 @@ class PaymentRequestApprovalController extends Controller
             $approval = PaymentRequestApproval::where('payment_request_id', $paymentRequestId)
                 ->latest()
                 ->first();
-            
+
             $isUpdated = 1;
         }
         $moduleType = $paymentRequest->paymentRequestData->module_type;

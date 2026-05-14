@@ -54,10 +54,12 @@ class PaymentRequestController extends Controller
                 'qcProduct',
                 'purchaseFreight',
                 'paymentRequestData' => function ($query) {
-                    $query->with(['paymentRequests' => function ($q) {
-                        $q->selectRaw('payment_request_data_id, request_type, status, SUM(amount) as total_amount')
-                            ->groupBy('payment_request_data_id', 'request_type', 'status');
-                    }]);
+                    $query->with([
+                        'paymentRequests' => function ($q) {
+                            $q->selectRaw('payment_request_data_id, request_type, status, SUM(amount) as total_amount')
+                                ->groupBy('payment_request_data_id', 'request_type', 'status');
+                        }
+                    ]);
                 }
             ])
             ->when($request->filled('company_location_id'), function ($q) use ($request) {
@@ -75,15 +77,15 @@ class PaymentRequestController extends Controller
                     $query->where('contract_no', 'like', "%{$request->contract_no}%");
                 });
             })
-            ->when($request->filled('amount'), function ($q) use ($request) {
+            ->when($request->filled('amount_for_filter'), function ($q) use ($request) {
                 return $q->whereHas('paymentRequestData', function ($query) use ($request) {
-                    $query->where('total_amount', 'like', "%{$request->amount}%");
+                    $query->where('total_amount', 'like', "%{$request->amount_for_filter}%");
                 });
             })
-            ->when($request->filled('requested_amount'), function ($q) use ($request) {
+            ->when($request->filled('requested_amount_for_filter'), function ($q) use ($request) {
                 return $q->whereHas('paymentRequestData', function ($query) use ($request) {
                     $query->whereHas('paymentRequests', function ($pq) use ($request) {
-                        $pq->where('amount', 'like', "%{$request->requested_amount}%");
+                        $pq->where('amount', 'like', "%{$request->requested_amount_for_filter}%");
                     });
                 });
             })
@@ -119,8 +121,8 @@ class PaymentRequestController extends Controller
             })
             ->when($request->filled('daterange'), function ($q) use ($request) {
                 $dates = explode(' - ', $request->daterange);
-                $startDate = \Carbon\Carbon::parse( trim($dates[0]))->format('Y-m-d');
-                $endDate = \Carbon\Carbon::parse( trim($dates[1]))->format('Y-m-d');
+                $startDate = \Carbon\Carbon::parse(trim($dates[0]))->format('Y-m-d');
+                $endDate = \Carbon\Carbon::parse(trim($dates[1]))->format('Y-m-d');
 
                 return $q->whereDate('created_at', '>=', $startDate)
                     ->whereDate('created_at', '<=', $endDate);
@@ -223,7 +225,7 @@ class PaymentRequestController extends Controller
             ->get();
         $data['truckSizeRanges'] = TruckSizeRange::where('status', 'active')->get();
         $data['products'] = Product::where('product_type', 'raw_material')->get();
-        
+
         return view('management.procurement.raw_material.payment_request.create', $data);
     }
 
@@ -382,7 +384,7 @@ class PaymentRequestController extends Controller
 
 
             $existingBrokerTrx = Transaction::where('voucher_no', $contractNo)
-                ->where('payment_against',   'thadda-purchase')
+                ->where('payment_against', 'thadda-purchase')
                 ->where('account_id', $purchaseOrder->brokerTwo->account_id)
                 ->where('against_reference_no', "$truckNo/$biltyNo")
                 ->first();
@@ -417,7 +419,7 @@ class PaymentRequestController extends Controller
             $amount = ($loadingWeight * $purchaseOrder->broker_three_commission);
 
             $existingBrokerTrx = Transaction::where('voucher_no', $contractNo)
-                ->where('payment_against',   'thadda-purchase')
+                ->where('payment_against', 'thadda-purchase')
                 ->where('account_id', $purchaseOrder->brokerThree->account_id)
                 ->where('against_reference_no', "$truckNo/$biltyNo")
                 ->first();
@@ -460,7 +462,7 @@ class PaymentRequestController extends Controller
             ->where('against_reference_no', "$truckNo/$biltyNo")
             ->first();
 
-        $advanceFreight = (int)($requestData['advance_freight']);
+        $advanceFreight = (int) ($requestData['advance_freight']);
 
         if ($advanceFreight > 0) {
             if ($existingSiTFreightTrx) {
@@ -777,7 +779,7 @@ class PaymentRequestController extends Controller
         }
 
         $brokers = Broker::all();
-        
+
         $data['html'] = view('management.procurement.raw_material.payment_request.snippets.requestPurchaseForm', [
             'ticket' => $ticket,
             'brokers' => $brokers,

@@ -75,7 +75,7 @@
         </div>
     </td>
 
-    <td style="width: 200px; min-width: 200px;" class="bag-only">
+    <td style="width: 200px; min-width: 200px;">
         <div class="loop-fields">
             <div class="form-group mb-0">
                 <input type="number" style="width: 100%;" name="receive_weight[]" id="receive_weight_{{ $key }}"

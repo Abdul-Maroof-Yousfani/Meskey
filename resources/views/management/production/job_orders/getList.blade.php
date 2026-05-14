@@ -30,7 +30,7 @@
                         <span class="badge badge-light">{{ $job_order->company_locations_string ?? 'N/A' }}</span>
                     </td>
                     <td>
-                        <span class="text-primary">{{ Str::limit($job_order->product->name ?? 'N/A', 20) }}</span>
+                        <span class="text-primary">{{ $job_order->product->name ?? 'N/A' }}</span>
                     </td>
                     <td>
                         <div>

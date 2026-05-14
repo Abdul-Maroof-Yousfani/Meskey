@@ -94,7 +94,11 @@ class PurchaseReturnController extends Controller
             return $bill->bill_data->isNotEmpty();
         });
 
-        return view('management.procurement.store.purchase-return.getItem', ['purchase_bills' => $filtered_bills]);
+        $categories = \App\Models\Category::select('id', 'name')->where('category_type', 'general_items')->get();
+        return view('management.procurement.store.purchase-return.getItem', [
+            'purchase_bills' => $filtered_bills,
+            'categories' => $categories
+        ]);
     }
 
 
@@ -116,7 +120,8 @@ class PurchaseReturnController extends Controller
                 return [
                     'id' => $bill->id,
                     'text' => $bill->bill_no . ' - ' . ($bill->supplier->name ?? ''),
-                    'bill_date' => $bill->bill_date
+                    'bill_date' => $bill->bill_date,
+                    'location_id' => $bill->location_id
                 ];
             })
             ->values();
@@ -167,7 +172,7 @@ class PurchaseReturnController extends Controller
                 'date' => $request->date,
                 'reference_no' => $request->reference_no,
                 'supplier_id' => $request->supplier_id,
-                'company_location_id' => $request->company_location_id,
+                'company_location_id' => is_array($request->company_location_id) ? implode(',', $request->company_location_id) : $request->company_location_id,
                 'remarks' => $request->remarks,
                 'created_by' => auth()->user()->id,
                 'am_change_made' => 1,
@@ -235,7 +240,7 @@ class PurchaseReturnController extends Controller
                 'date' => $request->date,
                 'reference_no' => $request->reference_no,
                 'supplier_id' => $request->supplier_id,
-                'company_location_id' => $request->company_location_id,
+                'company_location_id' => is_array($request->company_location_id) ? implode(',', $request->company_location_id) : $request->company_location_id,
                 'remarks' => $request->remarks,
                 'am_approval_status' => 'pending',
                 'am_change_made' => 1,

@@ -254,7 +254,7 @@ $userLocation = $authUser->companyLocation ?? null;
 
 <script>
 
-  
+
 
     function calculateSampleMoney() {
         let truckTypeSelect = $('[name="arrival_truck_type_id"]');
@@ -537,7 +537,7 @@ $userLocation = $authUser->companyLocation ?? null;
                     $('#arrival_purchase_order_id').append(
                         `<option value="${contract.id}"
                         data-product-id="${contract.product_id}"
-                        data-supplier-id="${contract.supplier.name}"
+                        data-supplier-id="${contract.supplier.company_name}"
                         data-sauda-type-id="${contract.sauda_type_id}"
                         data-sauda-type-name="${contract.sauda_type?.name ?? 'N/A'}"
                         >
@@ -562,7 +562,7 @@ $userLocation = $authUser->companyLocation ?? null;
             });
         }
 
-     
+
 
         function getTicketNumber(locationId) {
             if (locationId) {
@@ -578,13 +578,13 @@ $userLocation = $authUser->companyLocation ?? null;
             getTicketNumber(locationId);
         });
         $(document).ready(function () {
-        // console.log($('#company_location_id option').length);
-        if ($('#company_location_id option').length == 2) {
-            $('#company_location_id').val($('#company_location_id option:nth-child(2)').val()).trigger('change');
-            getTicketNumber($('#company_location_id option:nth-child(2)').val());
-            loadLocationData($('#company_location_id option:nth-child(2)').val());
-        }
-    });
+            // console.log($('#company_location_id option').length);
+            if ($('#company_location_id option').length == 2) {
+                $('#company_location_id').val($('#company_location_id option:nth-child(2)').val()).trigger('change');
+                getTicketNumber($('#company_location_id option:nth-child(2)').val());
+                loadLocationData($('#company_location_id option:nth-child(2)').val());
+            }
+        });
 
         @if ($isRegularUser)
             loadLocationData('{{ $userLocation->id ?? null }}');

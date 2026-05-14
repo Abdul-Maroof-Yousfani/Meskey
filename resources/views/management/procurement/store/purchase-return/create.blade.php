@@ -95,12 +95,12 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Company Location:<span class="text-danger">*</span></label>
-                        <select name="company_location_id" id="company_location_id" class="form-control select2">
-                            <option value="">Select Company Location</option>
+                        <select id="company_location_id_display" class="form-control select2" multiple disabled>
                             @foreach (get_locations() ?? [] as $location)
                                 <option value="{{ $location->id }}">{{ $location->name }}</option>
                             @endforeach
                         </select>
+                        <div id="hidden_location_container"></div>
                     </div>
                 </div>
             </div>
@@ -131,12 +131,14 @@
                     <thead>
                         <tr>
 
+                            <th style="min-width: 250px;">Category</th>
                             <th>Item</th>
                             <th>Qty</th>
                             <th>Rate</th>
                             <th>Gross Amount</th>
                             <th>Disc %</th>
                             <th>Disc Amount</th>
+                            <th>Deduction Per Piece</th>
                             <th>Deduction</th>
                             <th>Amount</th>
                             <th>Tax %</th>
@@ -210,7 +212,7 @@
 
                 res.forEach(bill => {
                     $("#purchase_bill_ids").append(`
-                        <option value="${bill.id}" data-bill-date="${bill.bill_date}">
+                        <option value="${bill.id}" data-bill-date="${bill.bill_date}" data-location-id="${bill.location_id}">
                             ${bill.text}
                         </option>
                     `);
@@ -250,6 +252,21 @@
             success: function(res) {
                 $("#pbTableBody").empty();
                 $("#pbTableBody").html(res);
+                
+                // Pre-fill company locations
+                let selectedLocations = [];
+                let hiddenContainer = $("#hidden_location_container");
+                hiddenContainer.empty();
+
+                $("#purchase_bill_ids option:selected").each(function() {
+                    let locId = $(this).data("location-id");
+                    if (locId && !selectedLocations.includes(locId.toString())) {
+                        selectedLocations.push(locId.toString());
+                        hiddenContainer.append(`<input type="hidden" name="company_location_id[]" value="${locId}">`);
+                    }
+                });
+                $("#company_location_id_display").val(selectedLocations).trigger('change');
+
                 console.log(res);
             },
             error: function(error) {
@@ -291,6 +308,15 @@
             </td>
             <td style="min-width: 110px; text-align: center;">
                 <input type="number" name="discount_amount[]" id="discount_amount_${index}" class="form-control discount_amount" readonly style="text-align: center;">
+            </td>
+            <td style="min-width: 110px; text-align: center;">
+                <input type="number" name="deduction_per_piece[]" id="deduction_per_piece_${index}" onkeyup="calculateRow(this)" class="form-control deduction_per_piece" step="0.01" min="0" value="0" style="text-align: center;">
+            </td>
+            <td style="min-width: 110px; text-align: center;">
+                <input type="number" name="deduction[]" id="deduction_${index}" class="form-control deduction" readonly style="text-align: center;">
+            </td>
+            <td style="min-width: 110px; text-align: center;">
+                <input type="number" name="amount[]" id="amount_${index}" class="form-control amount" readonly style="text-align: center;">
             </td>
             <td style="min-width: 110px; text-align: center;">
                 <input type="number" name="net_amount[]" id="net_amount_${index}" class="form-control net_amount" readonly style="text-align: center;">
@@ -337,7 +363,11 @@
         const rate = parseFloat(rateInput.val()) || 0;
         const taxPercent = parseFloat(taxPercentInput.val()) || 0;
         const discountPercent = parseFloat(discountPercentInput.val()) || 0;
-        const deduction = parseFloat(deductionInput.val()) || 0;
+        const deductionPerPiece = parseFloat(row.find(".deduction_per_piece").val()) || 0;
+
+        // Calculate Deduction = Quantity * Deduction Per Piece
+        const deduction = quantity * deductionPerPiece;
+        deductionInput.val(round(deduction));
 
         // Calculate Gross Amount = Quantity * Rate
         const grossAmount = quantity * rate;

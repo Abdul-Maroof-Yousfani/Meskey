@@ -37,11 +37,12 @@ class PurchaseRequestController extends Controller
     {
         $categories = Category::select('id', 'name')->where('category_type', 'general_items')->get();
         $job_orders = JobOrder::with('packing_items.subItems')->where('id', request()->job_order)->get();
-        $items = Product::with("unitOfMeasure")->where("product_type", "general_items")->where("status", "active")->get();
+        $items = Product::with("unitOfMeasure")->where("status", "active")->when(request()->category_id, function($q) { return $q->where("category_id", request()->category_id); }, function($q) { return $q->whereRaw("1 = 0"); })->get();
         $sizes = Size::all();
 
         $purchase_request_id = request()->purchase_request_id;
-        return view('management.procurement.store.purchase_request.getItem', compact('job_orders', 'categories', 'items', 'purchase_request_id', 'sizes'));
+        $category_id = request()->category_id;
+        return view('management.procurement.store.purchase_request.getItem', compact('job_orders', 'categories', 'items', 'purchase_request_id', 'sizes', 'category_id'));
 
     }
 
@@ -195,13 +196,36 @@ class PurchaseRequestController extends Controller
                 }
                 return true;
             });
-        $items = Product::with("unitOfMeasure")->where("product_type", "general_items")->where("status", "active")->get();
+        $firstCategoryId = $categories->first()?->id;
+        $items = Product::with("unitOfMeasure")->where("status", "active")
+            ->when($firstCategoryId, function($q) use ($firstCategoryId) {
+                return $q->where('category_id', $firstCategoryId);
+            }, function($q) {
+                return $q->where("product_type", "general_items");
+            })
+            ->get();
         $departments = Department::where('status', 'active')->get();
         $request_bies = RequestBy::where('status', 'active')->get();
         $sizes = Size::all();
 
       
         return view('management.procurement.store.purchase_request.create', compact('categories', 'job_orders', 'items', 'departments', 'request_bies', 'sizes'));
+    }
+
+    public function getProductsJson(Request $request)
+    {
+        $category_id = $request->query('category_id');
+        $products = Product::with('unitOfMeasure')
+            ->where('status', 'active')
+            ->when($category_id, function ($q) use ($category_id) {
+                return $q->where('category_id', $category_id);
+            })
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'products' => $products
+        ], 200);
     }
 
     /**
@@ -277,7 +301,7 @@ class PurchaseRequestController extends Controller
 
                 $requestData = PurchaseRequestData::create([
                     'purchase_request_id' => $purchaseRequest->id,
-                    'category_id' => $request->category_id_header,
+                    'category_id' => $request->category_id[$index] ?? $request->category_id_header,
                     'item_id' => $itemId,
                     'qty' => $request->qty[$index],
                     'approved_qty' => 0,
@@ -317,6 +341,7 @@ class PurchaseRequestController extends Controller
 
             DB::commit();
 
+            
             return response()->json([
                 'success' => 'Purchase request created successfully.',
                 'data' => $purchaseRequest,
@@ -421,12 +446,12 @@ class PurchaseRequestController extends Controller
         try {
             $purchaseRequest = PurchaseRequest::findOrFail($id);
 
-            if($purchaseRequest->am_approval_status == "approved" || $purchaseRequest->am_approval_status == "rejected") {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Purchase request is already approved or rejected.',
-                ], 422);
-            }
+            // if($purchaseRequest->am_approval_status == "approved" || $purchaseRequest->am_approval_status == "rejected") {
+            //     return response()->json([
+            //         'success' => false,
+            //         'message' => 'Purchase request is already approved or rejected.',
+            //     ], 422);
+            // }
 
             $updateData = [
                 'purchase_date' => $request->purchase_date,
@@ -504,7 +529,7 @@ class PurchaseRequestController extends Controller
                         }
 
                         $dataToUpdate = [
-                            'category_id' => $request->category_id_header,
+                            'category_id' => $request->category_id[$index] ?? $request->category_id_header,
                             'item_id' => $itemId,
                             'qty' => $request->qty[$index],
                             'min_weight' => $request->min_weight[$index] ?? null,
@@ -588,7 +613,7 @@ class PurchaseRequestController extends Controller
 
                     $requestData = PurchaseRequestData::create([
                         'purchase_request_id' => $purchaseRequest->id,
-                        'category_id' => $request->category_id_header,
+                        'category_id' => $request->category_id[$index] ?? $request->category_id_header,
                         'item_id' => $itemId,
                         'qty' => $request->qty[$index],
                         'approved_qty' => 0,
@@ -632,7 +657,7 @@ class PurchaseRequestController extends Controller
                 // Also clean up job order associations only for the deleted items
                 $actuallyDeletedIds = PurchaseRequestData::whereIn('id', $itemsToDelete)
                     ->whereNotIn('am_approval_status', ['approved', 'rejected'])
-                    ->withTrashed() // If using SoftDeletes, or just use the same logic
+                    // ->withTrashed() // If using SoftDeletes, or just use the same logic
                     ->pluck('id');
                 
                 PurchaseAgainstJobOrder::whereIn('purchase_request_data_id', $itemsToDelete)

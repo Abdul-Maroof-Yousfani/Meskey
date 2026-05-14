@@ -32,7 +32,9 @@
                     class="form-control item-select select2Dropdown" data-index="{{ $i }}" style="width: 100%;">
                     <option value="">Select Item</option>
                     @foreach($items as $item)
-                        <option value="{{ $item->id }}" data-uom="{{ $item->unitOfMeasure->name }}" @selected($packing_item->bag_product_id == $item->id)>{{ $item->name }}</option>
+                        @if($packing_item->bag_product_id == $item->id)
+                            <option value="{{ $item->id }}" data-uom="{{ $item->unitOfMeasure->name }}" selected>{{ $item->name }}</option>
+                        @endif
                     @endforeach
                 </select>
 
@@ -196,7 +198,9 @@
                     class="form-control item-select select2Dropdown" data-index="{{ $i }}" style="width: 100%;">
                     <option value="">Select Item</option>
                     @foreach($items as $item)
-                        <option value="{{ $item->id }}" data-uom="{{ $item->unitOfMeasure->name }}" @selected($sub_packing_item->bag_product_id == $item->id)>{{ $item->name }}</option>
+                        @if($sub_packing_item->bag_product_id == $item->id)
+                            <option value="{{ $item->id }}" data-uom="{{ $item->unitOfMeasure->name }}" selected>{{ $item->name }}</option>
+                        @endif
                     @endforeach
                 </select>
 

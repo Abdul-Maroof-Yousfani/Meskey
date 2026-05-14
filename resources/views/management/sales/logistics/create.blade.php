@@ -83,8 +83,23 @@
                     <!-- Row 3: Location, Factory, Section -->
                     <div class="col-md-4">
                         <div class="form-group">
-                            <label for="location" class="text-uppercase">Location</label>
+                            <label for="location" class="text-uppercase">From Location</label>
                             <input type="text" name="location" id="location" class="form-control" readonly>
+                        </div>
+                    </div>
+
+
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="to_location" class="text-uppercase">To Location</label>
+                             <select name="to_location" id="to_location" class="form-control select2" required style="width: 100%;">
+                                <option value="">Select To Location</option>
+                                @foreach($locations as $location)
+                                    <option value="{{ $location->id }}">
+                                        {{ $location->name }}
+                                    </option>
+                                @endforeach
+                            </select>
                         </div>
                     </div>
 
@@ -282,6 +297,7 @@
                         $('#customer').val(data.customer);
                         $('#delivery_address').val(data.delivery_address);
                         $('#location').val(data.location);
+                        $('#to_location').val(data.to_location_id || '').trigger('change');
                         $('#factory').val(data.factory);
                         $('#section').val(data.section);
                         $('#loading_request').val($('#sale_order_id option:selected').text().trim());
@@ -293,6 +309,9 @@
                             }
                             $('#date').val(data.logistics.date);
                             if(data.logistics.delivery_address) $('#delivery_address').val(data.logistics.delivery_address);
+                            
+                            let finalToLocation = data.logistics.to_location || data.to_location_id || '';
+                            $('#to_location').val(finalToLocation).trigger('change');
                             
                             $('#itemsBody').empty();
                             rowCount = 0;
@@ -319,7 +338,7 @@
                 });
             } else {
                 // Clear fields if no order selected
-                $('#date, #so_no, #so_qty, #commodity, #sauda_type, #customer, #delivery_address, #location, #factory, #section, #loading_request').val('');
+                $('#date, #so_no, #so_qty, #commodity, #sauda_type, #customer, #delivery_address, #location, #factory, #section, #loading_request, #to_location').val('').trigger('change');
                 $('#itemsBody').empty();
                 rowCount = 0;
                 addRow();

@@ -159,7 +159,7 @@
                     <tbody id="itemsList">
                         <!-- Items will be added here dynamically -->
                         @forelse($LoadingProgram->loadingProgramItems as $index => $item)
-                            <tr class="item-row" data-index="{{ $index }}">
+                            <tr class="item-row" data-index="{{ $index }}" data-item-id="{{ $item->id }}">
                                 <td>
                                     <div @if($item->firstWeighbridge) data-toggle="tooltip" title="Locked: Ticket already in Weighbridge" @endif>
                                         <select name="loading_program_items[{{ $index }}][sale_order_id][]"
@@ -365,7 +365,7 @@
                                         @endif
                                     >
                                         <input type="number" name="loading_program_items[{{ $index }}][qty]"
-                                            class="form-control form-control-sm" step="0.01"
+                                            class="form-control form-control-sm qty-input" step="0.01"
                                             value="{{ $item->qty }}" @disabled($item->firstWeighbridge)>
                                     </div>
                                 </td>
@@ -440,7 +440,10 @@
             $.ajax({
                 url: '{{ route('sales.fetchSaleOrdersByLocation') }}',
                 type: 'GET',
-                data: { location_id: locationId },
+                data: { 
+                    location_id: locationId,
+                    loading_program_id: '{{ $LoadingProgram->id }}'
+                },
                 success: function(response) {
                     if (response.success) {
                         window.isUpdatingUI = true;
@@ -487,8 +490,9 @@
                             type: 'GET',
                             data: { 
                                 sale_order_id: soIds,
-                                company_location_id: $('#main_company_location_id').val()
-                            },
+                                company_location_id: $('#main_company_location_id').val(),
+                                loading_program_item_id: $row.data('item-id')
+                             },
                             success: function(response) {
                                 if (response.success) {
                                     window.isUpdatingUI = true;
@@ -515,6 +519,7 @@
                                     updateItemLocations($row);
                                     updateRowDORequiredStatus($row);
                                     updateTransporterOptions($row);
+                                    validateRowQty($row);
                                 }
                             }
                         });
@@ -550,6 +555,10 @@
                 updateRowDORequiredStatus($row);
                 updateTransporterOptions($row);
             }
+
+            $row.find('.qty-input').on('input', function() {
+                validateRowQty($row);
+            });
         });
     get_sale_order(initialSOIds, $('#sale_order_id option:selected').first().data('type'));
         }
@@ -738,7 +747,8 @@
             type: 'GET',
             data: { 
                 sale_order_id: sale_order_ids,
-                company_location_id: company_location_id
+                company_location_id: company_location_id,
+                loading_program_id: '{{ $LoadingProgram->id }}'
             },
             dataType: 'json',
             beforeSend: function() {
@@ -881,7 +891,7 @@
                     </select>
                     <span class="transporter-placeholder text-muted" style="display: none;">-</span>
                 </td>
-                <td><input type="number" name="loading_program_items[${index}][qty]" class="form-control form-control-sm" step="0.01"></td>
+                <td><input type="number" name="loading_program_items[${index}][qty]" class="form-control form-control-sm qty-input" step="0.01"></td>
                 <td class="text-center">
                     <button type="button" class="btn btn-sm btn-danger remove-item-btn"><i class="ft-trash-2"></i></button>
                 </td>
@@ -905,7 +915,8 @@
                         data: { 
                             sale_order_id: rowSOIds,
                             company_location_id: company_location_id,
-                            loading_program_id: '{{ $LoadingProgram->id }}'
+                            loading_program_id: '{{ $LoadingProgram->id }}',
+                            loading_program_item_id: $newRow.data('item-id')
                         },
                     success: function(response) {
                         if (response.success) {
@@ -963,6 +974,11 @@
             const filteredDOs = allDOs.filter(d => selectedDoIds.includes(d.id.toString()));
             updateRowMetadata($row, filteredDOs);
             updateItemLocations($row);
+            validateRowQty($row);
+        });
+
+        $newRow.find('.qty-input').on('input', function() {
+            validateRowQty($(this).closest('tr'));
         });
 
         updateItemLocations($newRow);
@@ -1242,6 +1258,34 @@
         // Required attribute removed as per user request
         $doSelect.removeAttr('required');
         $mark.hide();
+    }
+
+    function validateRowQty($row) {
+        const qty = parseFloat($row.find('input[name*="[qty]"]').val()) || 0;
+        const selectedDoIds = $row.find('.delivery-order-select').val() || [];
+        const allDOs = $row.data('delivery_orders') || [];
+        
+        let totalBalance = 0;
+        let hasSelectedDOs = selectedDoIds.length > 0;
+
+        selectedDoIds.forEach(id => {
+            const do_item = allDOs.find(d => d.id.toString() === id.toString());
+            if (do_item && typeof do_item.balance !== 'undefined') {
+                totalBalance += parseFloat(do_item.balance);
+            }
+        });
+
+        if (hasSelectedDOs && qty > totalBalance) {
+            $row.find('input[name*="[qty]"]').addClass('is-invalid');
+            if (!$row.find('.balance-error').length) {
+                $row.find('input[name*="[qty]"]').after(`<div class="text-danger balance-error" style="font-size: 0.8rem;">Max: ${totalBalance.toFixed(2)}</div>`);
+            } else {
+                $row.find('.balance-error').text(`Max: ${totalBalance.toFixed(2)}`);
+            }
+        } else {
+            $row.find('input[name*="[qty]"]').removeClass('is-invalid');
+            $row.find('.balance-error').remove();
+        }
     }
 
     $('.select2').on('select2:open', function (e) {

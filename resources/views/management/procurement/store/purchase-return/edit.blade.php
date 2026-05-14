@@ -59,6 +59,7 @@
                                         data-supplier-id="{{ $bill->supplier_id }}"
                                         data-supplier-name="{{ $bill->supplier->name ?? '' }}"
                                         data-bill-date="{{ $bill->bill_date }}"
+                                        data-location-id="{{ $bill->location_id }}"
                                         {{ $purchaseReturn->purchaseBills->contains($bill->id) ? 'selected' : '' }}>
                                     {{ $bill->bill_no }} - {{ $bill->supplier->name ?? '' }}
                                 </option>
@@ -104,12 +105,19 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Company Location:<span class="text-danger">*</span></label>
-                        <select name="company_location_id" id="company_location_id" class="form-control select2">
-                            <option value="">Select Company Location</option>
+                        @php
+                            $selectedLocations = explode(',', $purchaseReturn->company_location_id);
+                        @endphp
+                        <select id="company_location_id_display" class="form-control select2" multiple disabled>
                             @foreach (get_locations() ?? [] as $location)
-                                <option value="{{ $location->id }}" @selected($purchaseReturn->company_location_id == $location->id)>{{ $location->name }}</option>
+                                <option value="{{ $location->id }}" @selected(in_array($location->id, $selectedLocations))>{{ $location->name }}</option>
                             @endforeach
                         </select>
+                        <div id="hidden_location_container">
+                            @foreach($selectedLocations as $locId)
+                                <input type="hidden" name="company_location_id[]" value="{{ $locId }}">
+                            @endforeach
+                        </div>
                     </div>
                 </div>
             </div>
@@ -139,12 +147,14 @@
                 <table class="table table-bordered" id="purchaseBillTable" style="min-width:2000px;">
                     <thead>
                         <tr>
+                            <th style="min-width: 250px;">Category</th>
                             <th>Item</th>
                             <th>Qty</th>
                             <th>Rate</th>
                             <th>Gross Amount</th>
                             <th>Disc %</th>
                             <th>Disc Amount</th>
+                            <th>Deduction Per Piece</th>
                             <th>Deduction</th>
                             <th>Amount</th>
                             <th>GST %</th>
@@ -168,14 +178,24 @@
                                 $discountPercent = $purchase_return_data->discount_percent ?? 0;
                                 $discountAmount = ($discountPercent / 100) * $grossAmount;
                                 $taxPercent = $data->tax_percent ?? 0;
-                                $deduction = $data->deduction ?? 0; // Additional deduction if any
+                                $deduction_per_piece = $data->deduction_per_piece ?? 0;
+                                $deduction = $quantity * $deduction_per_piece;
                                 $amount_after_deduction = $grossAmount - $discountAmount - $deduction;
                                 $taxAmount = ($taxPercent / 100) * $amount_after_deduction;
                                 $amount = $amount_after_deduction + $taxAmount; // Amount after discount
                                 $netAmount = $data->net_amount;
                                 $description = $purchase_return_data->description ?? '';
                             @endphp
-                            <tr id="row_{{ $rowIndex }}">
+                            <tr id="row_{{ $rowIndex }}" data-category-id="{{ $data->item->category_id }}">
+                                <td style="min-width: 250px;">
+                                    <input type="text" style="width: 100%;" 
+                                           name="category[]" 
+                                           value="{{ $data->item->category->name ?? 'N/A' }}"
+                                           class="form-control" 
+                                           readonly>
+                                    <input type="hidden" name="category_id[]" value="{{ $data->item->category_id }}">
+                                </td>
+
                                 <td style="min-width: 200px;">
                                     <select name="item_id[]" id="item_id_{{ $rowIndex }}"
                                         class="form-control select2">
@@ -212,7 +232,10 @@
                                         id="discount_amount_{{ $rowIndex }}" class="form-control discount_amount" readonly
                                         value="{{ $discountAmount }}" style="text-align: center;">
                                 </td>
-                                <td style="min-width: 80px; text-align: center;">
+                                <td style="min-width: 110px; text-align: center;">
+                                    <input type="number" name="deduction_per_piece[]" id="deduction_per_piece_{{ $rowIndex }}" onkeyup="calculateRow(this)" class="form-control deduction_per_piece" step="0.01" min="0" value="{{ $deduction_per_piece }}" style="text-align: center;">
+                                </td>
+                                <td style="min-width: 110px; text-align: center;">
                                     <input readonly type="number" name="deduction[]" id="deduction_{{ $rowIndex }}" class="form-control deduction" step="0.01" min="0" value="{{ $deduction }}" style="text-align: center;">
                                 </td>
                                 <td style="min-width: 110px; text-align: center;">
@@ -337,8 +360,11 @@
             <td style="min-width: 110px; text-align: center;">
                 <input type="number" name="discount_amount[]" id="discount_amount_${index}" class="form-control discount_amount" readonly style="text-align: center;">
             </td>
-            <td style="min-width: 80px; text-align: center;">
-                <input type="number" name="deduction[]" id="deduction_${index}" class="form-control deduction" step="0.01" min="0" value="0" readonly style="text-align: center;">
+            <td style="min-width: 110px; text-align: center;">
+                <input type="number" name="deduction_per_piece[]" id="deduction_per_piece_${index}" onkeyup="calculateRow(this)" class="form-control deduction_per_piece" step="0.01" min="0" value="0" style="text-align: center;">
+            </td>
+            <td style="min-width: 110px; text-align: center;">
+                <input type="number" name="deduction[]" id="deduction_${index}" class="form-control deduction" readonly style="text-align: center;">
             </td>
             <td style="min-width: 80px; text-align: center;">
                 <input readonly type="number" name="tax_percent[]" id="tax_percent_${index}" onkeyup="calculateRow(this)" class="form-control tax_percent" step="0.01" min="0" value="0" style="text-align: center;">
@@ -394,7 +420,11 @@
         const rate = parseFloat(rateInput.val()) || 0;
         const taxPercent = parseFloat(taxPercentInput.val()) || 0;
         const discountPercent = parseFloat(discountPercentInput.val()) || 0;
-        const deduction = parseFloat(deductionInput.val()) || 0;
+        const deductionPerPiece = parseFloat(row.find(".deduction_per_piece").val()) || 0;
+
+        // Calculate Deduction = Quantity * Deduction Per Piece
+        const deduction = quantity * deductionPerPiece;
+        deductionInput.val(round(deduction));
 
         // Calculate Gross Amount = Quantity * Rate
         const grossAmount = quantity * rate;
@@ -493,7 +523,7 @@
 
                 res.forEach(bill => {
                     $("#purchase_bill_ids").append(`
-                        <option value="${bill.id}" data-bill-date="${bill.bill_date}">
+                        <option value="${bill.id}" data-bill-date="${bill.bill_date}" data-location-id="${bill.location_id}">
                             ${bill.text}
                         </option>
                     `);
@@ -530,6 +560,20 @@
             success: function(res) {
                 $("#pbTableBody").empty();
                 $("#pbTableBody").html(res);
+
+                // Pre-fill company locations
+                let selectedLocations = [];
+                let hiddenContainer = $("#hidden_location_container");
+                hiddenContainer.empty();
+
+                $("#purchase_bill_ids option:selected").each(function() {
+                    let locId = $(this).data("location-id");
+                    if (locId && !selectedLocations.includes(locId.toString())) {
+                        selectedLocations.push(locId.toString());
+                        hiddenContainer.append(`<input type="hidden" name="company_location_id[]" value="${locId}">`);
+                    }
+                });
+                $("#company_location_id_display").val(selectedLocations).trigger('change');
             },
             error: function(error) {
                 console.error("Error:", error);
@@ -565,8 +609,11 @@
             <td style="min-width: 110px; text-align: center;">
                 <input type="number" name="discount_amount[]" id="discount_amount_${index}" class="form-control discount_amount" readonly style="text-align: center;">
             </td>
-            <td style="min-width: 80px; text-align: center;">
-                <input type="number" name="deduction[]" id="deduction_${index}" class="form-control deduction" step="0.01" min="0" value="0" readonly style="text-align: center;">
+            <td style="min-width: 110px; text-align: center;">
+                <input type="number" name="deduction_per_piece[]" id="deduction_per_piece_${index}" onkeyup="calculateRow(this)" class="form-control deduction_per_piece" step="0.01" min="0" value="0" style="text-align: center;">
+            </td>
+            <td style="min-width: 110px; text-align: center;">
+                <input type="number" name="deduction[]" id="deduction_${index}" class="form-control deduction" readonly style="text-align: center;">
             </td>
             <td style="min-width: 80px; text-align: center;">
                 <input type="number" name="tax_percent[]" id="tax_percent_${index}" onkeyup="calculateRow(this)" class="form-control tax_percent" step="0.01" min="0" value="0" style="text-align: center;">

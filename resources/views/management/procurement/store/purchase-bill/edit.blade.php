@@ -23,7 +23,7 @@
                 <label class="form-label">Supplier:</label>
                 <select id="supplier_id" name="supplier_id" class="form-control item-select select2">
                     <option value="">Select Vendor</option>
-                    @foreach (get_supplier() as $supplier)
+                    @foreach ($suppliers ?? [] as $supplier)
                         <option @selected($supplier->id == $purchase_bill->supplier_id) value="{{ $supplier->id }}">
                             {{ $supplier->name }}
                         </option>
@@ -85,6 +85,7 @@
                 <table class="table table-bordered" id="purchaseRequestTable" style="min-width: 3500px;">
                     <thead>
                         <tr>
+                            <th style="min-width: 250px;">Category</th>
                             <th>Item</th>
                             <th>Description</th>
                             <th>Total Qty</th>
@@ -109,7 +110,15 @@
                         @foreach ($purchaseBillData as $key => $data)
                             <tr id="row_{{ $key }}" data-category-id="{{ $data->PurchaseOrderReceivingData->category_id }}">
 
-                                <td style="min-width: 350px;">
+                                <td style="min-width: 250px;">
+                                <input type="text" style="width: 100%;" 
+                                       name="category[]" 
+                                       value="{{ $data->PurchaseOrderReceivingData->category->name ?? 'N/A' }}"
+                                       class="form-control" 
+                                       readonly>
+                            </td>
+
+                            <td style="min-width: 350px;">
                                     
                                     <input type="text" style="width: 100%;" name="item[]" value="{{ getItem($data->item_id)?->name }}"
                                         id="item_{{ $key }}" class="form-control item" readonly>
@@ -142,7 +151,7 @@
                                 <td style="min-width: 150px;">
                                     <input style="width: 100%" type="number"
                                         onkeyup=""
-                                        onblur="" name="qty[]" value="{{ $data->rejected_qty }}"
+                                        onblur="" name="rejected_qty[]" value="{{ $data->rejected_qty }}"
                                         id="qty_{{ $key }}" class="form-control qty" step="0.01" readonly
                                         {{-- {{ $isQuotationAvailable ? 'readonly' : '' }} --}}>
                                 </td>
@@ -164,10 +173,10 @@
                                          class="form-control gross_amount" readonly>
                                  </td>
 
-                                  <td style="min-width: 150px;">
+                                <td style="min-width: 150px;">
 
 
-                                    <input style="width: 100%" type="number" name="discount_id[]"
+                                <input style="width: 100%" type="number" name="discount_id[]"
                                         value="{{ $data->discount_percent }}" id="total_{{ $key }}"
                                         class="form-control discounts" onkeyup="calculatePercentage(this)"
                                         step="0.01" min="0" max="100">
@@ -179,7 +188,6 @@
                                         id="discount_amount_{{ $key }}" class="form-control discount_amount"
                                         step="0.01" min="0" readonly>
                                 </td>
-                                @if($data->PurchaseOrderReceivingData->category_id == 38)
                                     <td style="min-width: 200px;" class="deduction-col">
                                         <input style="width: 100%" type="number" readonly name="deduction_per_piece[]"
                                             id="deduction_per_piece_{{ $key }}"
@@ -193,10 +201,6 @@
                                             value="{{ $data->deduction }}" id="deduction_{{ $key }}"
                                             class="form-control deduction" step="0.01" min="0" readonly>
                                     </td>
-                                @else
-                                    <input type="hidden" name="deduction_per_piece[]" value="0" class="deduction_per_piece">
-                                    <input type="hidden" name="deduction[]" value="0" class="deduction">
-                                @endif
 
                                 <td style="min-width: 250px;">
                                     <input style="width: 100%" type="number" readonly name="net_amount[]"
@@ -276,6 +280,7 @@
         // Initial setup
         getGrns();
 
+
         $(document).on('change', '#purchase_date', function() {
             fetchUniqueNumber();
         });
@@ -316,13 +321,7 @@
                 },
                 success: function(response) {
                     $('#billBody').html(response.html);
-                    const firstRow = $('#billBody').find('tr').first();
-                    const categoryId = firstRow.data('category-id');
-                    if (categoryId != 38) {
-                        $('.deduction-header').hide();
-                    } else {
-                        $('.deduction-header').show();
-                    }
+                    $('#billBody').html(response.html);
                 },
                 error: function() {
                     $('#purchaseRequestBody').html('<p>Error loading data.</p>');
@@ -424,7 +423,7 @@
     const net_amount = row.find(".net_amount");
     const deduction_input = row.find(".deduction");
     const categoryId = row.data("category-id");
-    const deduction_amount = (categoryId == 38) ? (parseFloat(deduction_input.val()) || 0) : 0;
+    const deduction_amount = parseFloat(deduction_input.val()) || 0;
 
     const rateVal = parseFloat(rate.val()) || 0;
     const qtyVal = parseFloat(qty.val()) || 0;

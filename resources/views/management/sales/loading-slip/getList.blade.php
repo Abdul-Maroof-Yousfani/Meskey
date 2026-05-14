@@ -5,6 +5,7 @@
                 <th>Ticket No.</th>
                 <th>Truck No.</th>
                 <th>Customer</th>
+                <th>Brand</th>
                 <th>Commodity</th>
                 <th>No. of Bags</th>
                 <th>Kilogram</th>
@@ -24,6 +25,9 @@
                     </td>
                     <td>
                         {{ $loadingSlip->customer ?? 'N/A' }}
+                    </td>
+                    <td>
+                        {{ $loadingSlip->brand ?? $loadingSlip->loadingProgramItem->brand->name ?? 'N/A' }}
                     </td>
                     <td>
                         {{ $loadingSlip->commodity ?? 'N/A' }}
@@ -78,8 +82,12 @@
                             </a>
                         @endif
                         <a onclick="openModal(this,'{{ route('sales.loading-slip.show', $loadingSlip->id) }}','View Loading Slip', true)"
-                            class="info p-1 text-center mr-2 position-relative">
+                            class="info p-1 text-center mr-2 position-relative" title="View">
                             <i class="ft-eye font-medium-3"></i>
+                        </a>
+                        <a href="{{ route('sales.loading-slip.print', $loadingSlip->id) }}" target="_blank"
+                            class="primary p-1 text-center mr-2 position-relative" title="Print">
+                            <i class="ft-printer font-medium-3"></i>
                         </a>
 
                     </td>

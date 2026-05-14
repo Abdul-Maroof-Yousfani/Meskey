@@ -70,7 +70,7 @@ class PurchaseOrderRequest extends FormRequest
             // 'quotation_ids.*' => 'sometimes|exists:purchase_quotation_data,id',
             'purchase_quotation_data_id' => 'nullable|array',
             'purchase_quotation_data_id.*' => 'nullable|exists:purchase_quotation_data,id',
-            'quotation_no' => 'required|exists:purchase_quotations,id',
+            'quotation_no' => 'nullable|exists:purchase_quotations,id',
         ];
     }
 
@@ -173,41 +173,6 @@ class PurchaseOrderRequest extends FormRequest
     //     });
     // }
 
-    /**
-     * Prepare the data for validation.
-     */
-    protected function prepareForValidation()
-    {
-        $this->ensureArrayCountsMatch();
-    }
-
-    /**
-     * Ensure all array fields have the same number of elements.
-     */
-    protected function ensureArrayCountsMatch()
-    {
-        $arrayFields = [
-            'category_id',
-            'item_id',
-            // 'supplier_id',
-            'qty',
-            'rate'
-        ];
-
-        $count = null;
-        foreach ($arrayFields as $field) {
-            if ($this->has($field) && is_array($this->$field)) {
-                if ($count === null) {
-                    $count = count($this->$field);
-                } elseif (count($this->$field) !== $count) {
-                    $this->validator->errors()->add(
-                        $field,
-                        "The number of $field must match the number of other array fields."
-                    );
-                }
-            }
-        }
-    }
 
     /**
      * Get the validated data from the request.
@@ -223,6 +188,25 @@ class PurchaseOrderRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
+            // Check array counts consistency
+            $item_id = $this->input('item_id', []);
+            $category_id = $this->input('category_id', []);
+            $qty = $this->input('qty', []);
+            $rate = $this->input('rate', []);
+            $prDataIds = $this->input('purchase_request_data_id', []);
+
+            if (is_array($item_id)) {
+                $count = count($item_id);
+                if (
+                    count($category_id) !== $count ||
+                    count($qty) !== $count ||
+                    count($rate) !== $count ||
+                    count($prDataIds) !== $count
+                ) {
+                    $validator->errors()->add('item_id', 'The number of items, categories, quantities, rates, and request references must match.');
+                }
+            }
+
             if ($validator->errors()->any()) return;
 
             $orderId = $this->route('purchase_order'); // Get ID if it's an update route

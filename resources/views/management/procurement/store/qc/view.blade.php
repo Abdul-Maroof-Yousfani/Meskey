@@ -51,12 +51,14 @@
                                 <th style="min-width: 200px;">Brand</th>
                                 <th style="min-width: 250px;">Job Order</th>
                                 @endif
+                                @if($purchaseOrderReceivingData->category_id == 38)
                                 <th style="min-width: 250px;">Required Weight Per Bag (grams)</th>
                                 <!-- <th>Tolerance</th> -->
                                 <th style="min-width: 250px;">Average Weight of 1 Bag (grams)</th>
                                 <th style="min-width: 150px;">Total Bags</th>
                                 <th style="min-width: 250px;">Total Weight Required (Kg)</th>
                                 <th style="min-width: 250px;">Sample Average Weight (grams)</th>
+                                @endif
                             </tr>
                         </thead>
                         <tbody id="purchaseOrderBody">
@@ -87,6 +89,7 @@
                                     class="form-control">
                             </td>
                             @endif
+                            @if($purchaseOrderReceivingData->category_id == 38)
                             <td>
                                 <input type="text" name="required_weight_per_bag" value="{{ $purchaseOrderReceivingData->category_id == 38 ? ($purchaseOrderReceivingData?->purchase_order_data?->min_weight ?? null) : 0 }}" id="required_weight_per_bag" readonly class="form-control">
                             </td>
@@ -113,6 +116,7 @@
                                 <input type="text" name="sample_average_weight" id="total_weight_received" value="{{ $purchaseOrderReceivingData?->qc?->sample_average_weight }}"
                                     readonly class="form-control">
                             </td>
+                            @endif
 
                             </tr>
                         </tbody>
@@ -121,6 +125,7 @@
                 </div>
             </div>
 
+            @if($purchaseOrderReceivingData->category_id == 38)
             <p style="margin-top: 20px; font-size: 20px;">Weight of randomly-selected 10-bags sets</p>
             <div class="row" style="margin-top: 10px;">
                 <div class="col-md-6" style="padding: 0px; padding-left: 10px;">
@@ -213,6 +218,7 @@
                     </table>
                 </div>
             </div>
+            @endif
 
 
             <p style="margin-top: 20px; font-size: 20px;">Additional Data</p>
@@ -321,28 +327,38 @@
                 <input type="hidden" name="total_bags" id="total_bags"
                     value="{{ $purchaseOrderReceivingData?->qty }}" readonly
                     class="form-control">
+                    
 
                 <div class="row" style="margin-top: 10px; margin-bottom: 30px;">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="form-group">
                             <label class="form-label">Accepted Qty:</label>
-                            <input type="text" name="accepted_quantity" id="accepted_quantity"
+                            <input type="text" name="accepted_quantity" id="accepted_quantity" onkeyup="calculateQcQty('accepted')"
                                 value="{{ $purchaseOrderReceivingData->qc->accepted_quantity }}"
                                 class="form-control" @readonly($type == "view")>
                         </div>
                     </div>
 
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="form-group">
-                            <label class="form-label">Rejected Qty:</label>
-                            <input type="text" name="rejected_quantity" id="rejected_quantity"
+                            <label class="form-label">Rejected Qty with deduction:</label>
+                            <input type="text" name="rejected_quantity" id="rejected_quantity" onkeyup="calculateQcQty('rejected')"
                                 value="{{ $purchaseOrderReceivingData->qc->rejected_quantity }}"
                                 class="form-control" @readonly($type == "view")>
                         </div>
                     </div>
 
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label class="form-label">Rejected qty without deduction:</label>
+                            <input type="text" name="rejection_return" id="rejection_return" onkeyup="calculateQcQty('return')"
+                                value="{{ $purchaseOrderReceivingData->qc->rejection_return ?? 0 }}"
+                                class="form-control" @readonly($type == "view")>
+                        </div>
+                    </div>
+
                     @canApprove('qc')
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="form-group">
                             <label class="form-label">Deduction Per Bag:</label>
                             <input type="text" name="deduction_per_bag" id="deduction_per_bag"
@@ -375,4 +391,56 @@
                 ? '{{ route('store.qc.getList') }}' 
                 : '{{ route('store.get.purchase-order-receiving') }}';
             $('#ajaxSubmit').append('<input type="hidden" name="listRefresh" id="listRefresh" value="' + refreshRoute + '">');
+
+            function calculateQcQty(type) {
+                let totalBags = parseFloat($('#total_bags').val()) || 0;
+                let acceptedQty = $('#accepted_quantity');
+                let rejectedQty = $('#rejected_quantity');
+                let returnQty = $('#rejection_return');
+
+                let accepted = parseFloat(acceptedQty.val()) || 0;
+                let rejected = parseFloat(rejectedQty.val()) || 0;
+                let returned = parseFloat(returnQty.val()) || 0;
+
+                if (type === 'accepted') {
+                    if (accepted > totalBags) {
+                        accepted = totalBags;
+                        acceptedQty.val(accepted);
+                    }
+                    rejectedQty.val((totalBags - accepted).toFixed(2));
+                    returnQty.val(0);
+                } else if (type === 'rejected') {
+                    if (rejected > totalBags) {
+                        rejected = totalBags;
+                        rejectedQty.val(rejected);
+                    }
+                    
+                    let remainingForRejected = totalBags - accepted;
+                    if (rejected > remainingForRejected) {
+                        // Reduce from accepted if rejected exceeds current rejection pool
+                        accepted = totalBags - rejected;
+                        acceptedQty.val(accepted.toFixed(2));
+                        returnQty.val(0);
+                    } else {
+                        // Fetch from the other rejected field (without deduction)
+                        returnQty.val((remainingForRejected - rejected).toFixed(2));
+                    }
+                } else if (type === 'return') {
+                    if (returned > totalBags) {
+                        returned = totalBags;
+                        returnQty.val(returned);
+                    }
+
+                    let remainingForRejected = totalBags - accepted;
+                    if (returned > remainingForRejected) {
+                        // Reduce from accepted if returned exceeds current rejection pool
+                        accepted = totalBags - returned;
+                        acceptedQty.val(accepted.toFixed(2));
+                        rejectedQty.val(0);
+                    } else {
+                        // Fetch from the other rejected field (with deduction)
+                        rejectedQty.val((remainingForRejected - returned).toFixed(2));
+                    }
+                }
+            }
         </script>

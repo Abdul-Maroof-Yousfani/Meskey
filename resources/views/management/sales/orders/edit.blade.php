@@ -47,15 +47,15 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Entry Date:</label>
-                        <input type="date" onchange="validateExpiry()" name="order_date" id="order_date" value="{{ $sale_order->order_date }}"
-                            class="form-control" min="{{ date('Y-m-d') }}">
+                        <input type="date" name="order_date" id="order_date" value="{{ $sale_order->order_date }}"
+                            class="form-control">
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Delivery Date:</label>
-                        <input type="date" name="delivery_date" onchange="validateExpiry()" value="{{ $sale_order->delivery_date }}" 
-                            id="delivery_date" class="form-control" min="{{ date('Y-m-d') }}">
+                        <input type="date" name="delivery_date" value="{{ $sale_order->delivery_date }}" 
+                            id="delivery_date" class="form-control">
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -495,25 +495,14 @@
     }
     function validateExpiry() {
         const inquiryId = $('#inquiry_id').val();
-        
-        if (inquiryId) {
-            $('#order_date').removeAttr('min');
-            $('#delivery_date').removeAttr('min');
-            return;
-        } else {
-            $('#order_date').attr('min', "{{ date('Y-m-d') }}");
-            const orderDate = $('#order_date').val();
-            if (orderDate) {
-                $('#delivery_date').attr('min', orderDate);
-            } else {
-                $('#delivery_date').attr('min', "{{ date('Y-m-d') }}");
-            }
-        }
-
         const orderDate = $('#order_date').val();
         const deliveryDate = $('#delivery_date').val();
 
-        if (orderDate && deliveryDate) {
+        // Only validate if dates are fully formed (length 10)
+        const isOrderDateComplete = orderDate && orderDate.length === 10;
+        const isDeliveryDateComplete = deliveryDate && deliveryDate.length === 10;
+
+        if (isOrderDateComplete && isDeliveryDateComplete) {
             if (orderDate > deliveryDate) {
                 $('#delivery_date').val('');
                 Swal.fire({
@@ -525,6 +514,26 @@
             }
         }
     }
+
+    $(document).on('change blur', '#order_date', function() {
+        const val = this.value;
+        if (val && val.length === 10) {
+            const year = parseInt(val.split('-')[0]);
+            if (year >= 2000) {
+                validateExpiry();
+            }
+        }
+    });
+
+    $(document).on('change blur', '#delivery_date', function() {
+        const val = this.value;
+        if (val && val.length === 10) {
+            const year = parseInt(val.split('-')[0]);
+            if (year >= 2000) {
+                validateExpiry();
+            }
+        }
+    });
     
 
     function is_type_credit(el) {
@@ -688,6 +697,10 @@
                 // Fill token money
                 if (res.token_money !== null && res.token_money !== undefined) {
                     $("#token_money").val(res.token_money);
+                }
+
+                if (res.remarks !== null && res.remarks !== undefined) {
+                    $("#remarks").val(res.remarks);
                 }
 
                 // Make fields readonly

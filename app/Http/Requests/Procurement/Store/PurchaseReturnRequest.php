@@ -28,7 +28,7 @@ class PurchaseReturnRequest extends FormRequest
             'supplier_id' => 'required|exists:suppliers,id',
             'purchase_bill_ids' => 'required|array|min:1',
             'purchase_bill_ids.*' => 'required|exists:purchase_bills,id',
-            'company_location_id' => 'required|exists:company_locations,id',
+            'company_location_id' => 'required',
             'remarks' => 'nullable|string',
             'item_id' => 'required|array|min:1',
             'item_id.*' => 'required|exists:products,id',

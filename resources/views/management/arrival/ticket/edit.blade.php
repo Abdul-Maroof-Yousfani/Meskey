@@ -22,13 +22,15 @@
                     @foreach ($arrivalPurchaseOrders as $order)
                         <option value="{{ $order->id }}" data-product-id="{{ $order->product->id ?? '' }}"
                             data-product-name="{{ $order->product->name ?? '' }}"
-                            data-supplier-id="{{ $order->supplier->name ?? '' }}"
-                            data-supplier-name="{{ $order->supplier->name ?? '' }}"
+                            data-supplier-id="{{ $order->supplier->company_name ?? '' }}"
+                            data-supplier-name="{{ $order->supplier->company_name ?? '' }}"
                             data-created-by-id="{{ $order->created_by ?? '' }}"
                             data-created-by-name="{{ $order->createdByUser->name ?? '' }}"
                             data-sauda-type-name="{{ $order->saudaType->name ?? '' }}"
-                            data-created-at="{{ $order->created_at ?? '' }}" @selected($arrivalTicket->arrival_purchase_order_id == $order->id)>
-                            #{{ $order->contract_no }} - Type: {{ $order->saudaType->name ?? 'N/A' }} - Purchase Type: {{ formatEnumValue($order->purchase_type ?? 'N/A') }}
+                            data-created-at="{{ $order->created_at ?? '' }}"
+                            @selected($arrivalTicket->arrival_purchase_order_id == $order->id)>
+                            #{{ $order->contract_no }} - Type: {{ $order->saudaType->name ?? 'N/A' }} - Purchase Type:
+                            {{ formatEnumValue($order->purchase_type ?? 'N/A') }}
                         </option>
                     @endforeach
                 </select>
@@ -45,8 +47,7 @@
                         </option>
                     @endforeach
                 </select>
-                <input type="hidden" name="product_id" id="product_id_hidden"
-                    value="{{ $arrivalTicket->product_id }}">
+                <input type="hidden" name="product_id" id="product_id_hidden" value="{{ $arrivalTicket->product_id }}">
             </div>
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
@@ -67,8 +68,9 @@
                 <select name="broker_name" id="broker_name" class="form-control select2">
                     <option value="">Broker Name</option>
                     @foreach ($suppliers as $supplier)
-                        <option value="{{ $supplier->name }}" @selected($arrivalTicket->broker_name == $supplier->name)>
-                            {{ $supplier->name }}
+                        <option value="{{ $supplier->company_name }}"
+                            @selected($arrivalTicket->broker_name == $supplier->company_name)>
+                            {{ $supplier->company_name }}
                         </option>
                     @endforeach
                 </select>
@@ -93,8 +95,9 @@
                 <select name="accounts_of_display" id="accounts_of" class="form-control select2">
                     <option value="" hidden>Accounts Of</option>
                     @foreach ($suppliers as $supplier)
-                        <option value="{{ $supplier->name }}" @selected($arrivalTicket->accounts_of_name == $supplier->name)>
-                            {{ $supplier->name }}
+                        <option value="{{ $supplier->company_name }}"
+                            @selected($arrivalTicket->accounts_of_name == $supplier->company_name)>
+                            {{ $supplier->company_name }}
                         </option>
                     @endforeach
                 </select>
@@ -109,7 +112,8 @@
                     <option value="" hidden>Station</option>
                     @if ($arrivalTicket->station)
                         <option value="{{ $arrivalTicket->station->name }}" selected>
-                            {{ $arrivalTicket->station->name }}</option>
+                            {{ $arrivalTicket->station->name }}
+                        </option>
                     @endif
                 </select>
             </div>
@@ -135,7 +139,8 @@
                     <option value="">Truck Type</option>
                     @foreach (getTableData('arrival_truck_types', ['id', 'name', 'sample_money']) as $arrival_truck_types)
                         <option data-samplemoney="{{ $arrival_truck_types->sample_money ?? 0 }}"
-                            value="{{ $arrival_truck_types->id }}" @selected($arrivalTicket->truck_type_id == $arrival_truck_types->id)>
+                            value="{{ $arrival_truck_types->id }}"
+                            @selected($arrivalTicket->truck_type_id == $arrival_truck_types->id)>
                             {{ $arrival_truck_types->name }}
                         </option>
                     @endforeach
@@ -162,15 +167,14 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group ">
                 <label>No of bags: </label>
-                <input type="text" name="bags" placeholder="No of bags" class="form-control"
-                    autocomplete="off" value="{{ $arrivalTicket->bags }}" />
+                <input type="text" name="bags" placeholder="No of bags" class="form-control" autocomplete="off"
+                    value="{{ $arrivalTicket->bags }}" />
             </div>
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group ">
                 <label>Loading Date: (Optional)</label>
-                <input type="date" name="loading_date" placeholder="Bilty No" class="form-control"
-                    autocomplete="off"
+                <input type="date" name="loading_date" placeholder="Bilty No" class="form-control" autocomplete="off"
                     value="{{ optional($arrivalTicket)->loading_date ? \Carbon\Carbon::parse($arrivalTicket->loading_date)->format('Y-m-d') : '' }}" />
             </div>
         </div>
@@ -184,8 +188,8 @@
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group">
                 <label>First Weight:</label>
-                <input type="text" name="first_weight" id="first_weight" placeholder="First Weight"
-                    class="form-control" autocomplete="off" value="{{ $arrivalTicket->first_weight }}" />
+                <input type="text" name="first_weight" id="first_weight" placeholder="First Weight" class="form-control"
+                    autocomplete="off" value="{{ $arrivalTicket->first_weight }}" />
             </div>
         </div>
         <div class="col-xs-4 col-sm-4 col-md-4">
@@ -198,8 +202,8 @@
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group">
                 <label>Net Weight:</label>
-                <input type="text" name="net_weight" id="net_weight" placeholder="Net Weight"
-                    class="form-control" readonly autocomplete="off" value="{{ $arrivalTicket->net_weight }}" />
+                <input type="text" name="net_weight" id="net_weight" placeholder="Net Weight" class="form-control"
+                    readonly autocomplete="off" value="{{ $arrivalTicket->net_weight }}" />
                 <div class="error-message text-danger" style="display: none;">Please check your values. Net weight
                     cannot be negative.</div>
             </div>
@@ -210,7 +214,8 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group ">
                 <label>Remarks (Optional):</label>
-                <textarea name="remarks" row="4" class="form-control" placeholder="Description">{{ $arrivalTicket->remarks }}</textarea>
+                <textarea name="remarks" row="4" class="form-control"
+                    placeholder="Description">{{ $arrivalTicket->remarks }}</textarea>
             </div>
         </div>
     </div>
@@ -241,7 +246,7 @@
         $('input[name="sample_money"]').val(sampleMoney || 0);
     }
 
-    $(document).ready(function() {
+    $(document).ready(function () {
         calculateSampleMoney();
 
         $(document).on('change', '[name="arrival_truck_type_id"]', calculateSampleMoney);
@@ -271,15 +276,15 @@
             }
         }
 
-        $('#first_weight, #second_weight').on('input', function() {
+        $('#first_weight, #second_weight').on('input', function () {
             calculateNetWeight();
         });
 
-        $(document).on('change', '#accounts_of', function() {
+        $(document).on('change', '#accounts_of', function () {
             $('#accounts_of_hidden').val($(this).val());
         });
 
-        $(document).on('change', '[name="arrival_purchase_order_id"]', function() {
+        $(document).on('change', '[name="arrival_purchase_order_id"]', function () {
             resetAllFormFields();
 
             var selectedOption = $(this).find('option:selected');
@@ -344,7 +349,7 @@
             $('#net_weight').siblings('.error-message').hide();
         }
 
-        $(document).on('change', '#product_id', function() {
+        $(document).on('change', '#product_id', function () {
             $('#product_id_hidden').val($(this).val());
         });
     });

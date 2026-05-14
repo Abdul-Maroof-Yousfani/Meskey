@@ -313,58 +313,77 @@ if (!function_exists("numberToOrdinalWord")) {
 }
 
 if (!function_exists("getLoadingProgramBalance")) {
-    function getLoadingProgramBalance($delivery_order_id)
+    function getLoadingProgramBalance($delivery_order_id, $excludeItemIds = null)
     {
+        static $balanceCache = [];
+        $excludeKey = is_array($excludeItemIds) ? implode(',', $excludeItemIds) : $excludeItemIds;
+        $cacheKey = $delivery_order_id . ($excludeKey ? "_ex_$excludeKey" : "");
+        if (isset($balanceCache[$cacheKey])) {
+            return $balanceCache[$cacheKey];
+        }
+
         $delivery_order = DeliveryOrder::withoutGlobalScopes()->find($delivery_order_id);
         if (!$delivery_order) return 0;
         
-        if ($delivery_order->type == 'export_order') {
-            $total_qty = $delivery_order->exportPackingItems()->sum("metric_tons");
-        } else {
-            $total_qty = $delivery_order->delivery_order_data()->sum("qty");
+        // Get all items and their linked DOs to perform global FIFO allocation
+        // We order by ID to ensure a consistent FIFO sequence for items
+        $allItems = LoadingProgramItem::with('deliveryOrders')
+            ->when($excludeItemIds, function($q) use ($excludeItemIds) {
+                if (is_array($excludeItemIds)) {
+                    return $q->whereNotIn('id', $excludeItemIds);
+                }
+                return $q->where('id', '!=', $excludeItemIds);
+            })
+            ->orderBy('id')
+            ->get();
+        
+        $allDoIds = $allItems->flatMap(function($item) {
+            $ids = $item->deliveryOrders->pluck('id')->toArray();
+            if (empty($ids) && $item->delivery_order_id) $ids = [$item->delivery_order_id];
+            return $ids;
+        })->unique()->toArray();
+        
+        if (!in_array($delivery_order_id, $allDoIds)) {
+            $allDoIds[] = $delivery_order_id;
+        }
+
+        $doCapacities = [];
+        $doUsed = [];
+        $dos = DeliveryOrder::withoutGlobalScopes()->whereIn('id', $allDoIds)
+            ->with(['exportPackingItems', 'delivery_order_data'])
+            ->get();
+
+        foreach ($dos as $d) {
+            $doCapacities[$d->id] = ($d->type == 'export_order') 
+                ? $d->exportPackingItems->sum("metric_tons") 
+                : $d->delivery_order_data->sum("qty");
+            $doUsed[$d->id] = 0;
         }
         
-        // Find all items linked to this DO via pivot table or direct column
-        $itemTotalQty = 0;
-        $items = LoadingProgramItem::where(function($q) use ($delivery_order_id) {
-            $q->where('delivery_order_id', $delivery_order_id)
-              ->orWhereHas('deliveryOrders', function($sq) use ($delivery_order_id) {
-                  $sq->where('delivery_order_id', $delivery_order_id);
-              });
-        })->with('deliveryOrders')->get();
-
-        foreach ($items as $item) {
+        foreach ($allItems as $item) {
             $linkedDos = $item->deliveryOrders->sortBy('id')->pluck('id')->toArray();
             if (empty($linkedDos) && $item->delivery_order_id) {
                 $linkedDos = [$item->delivery_order_id];
             }
-
-            if (count($linkedDos) <= 1) {
-                if (in_array($delivery_order_id, $linkedDos)) {
-                    $itemTotalQty += $item->qty;
-                }
-            } else {
-                // FIFO logic for multi-DO participation
-                $remainingQty = $item->qty;
-                foreach ($linkedDos as $d_id) {
-                    $d = DeliveryOrder::withoutGlobalScopes()->find($d_id);
-                    if (!$d) continue;
-                    $d_capacity = ($d->type == 'export_order') ? $d->exportPackingItems()->sum("metric_tons") : $d->delivery_order_data()->sum("qty");
-                    
-                    // This is still a bit circular, but for the purpose of attribution:
-                    // We assume each DO takes as much as it can from the item in FIFO order.
-                    $consumed = min($remainingQty, $d_capacity); 
-                    if ($d_id == $delivery_order_id) {
-                        $itemTotalQty += $consumed;
-                        break;
-                    }
-                    $remainingQty -= $consumed;
-                    if ($remainingQty <= 0) break;
-                }
+            
+            $remainingQty = $item->qty;
+            foreach ($linkedDos as $d_id) {
+                if (!isset($doCapacities[$d_id])) continue;
+                
+                $available = max(0, $doCapacities[$d_id] - $doUsed[$d_id]);
+                $consumed = min($remainingQty, $available);
+                
+                $doUsed[$d_id] += $consumed;
+                $remainingQty -= $consumed;
+                
+                if ($remainingQty <= 0) break;
             }
         }
-
-        return $total_qty - $itemTotalQty;
+        
+        // Update cache for the specific request
+        $balanceCache[$cacheKey] = max(0, $doCapacities[$delivery_order_id] - $doUsed[$delivery_order_id]);
+        
+        return $balanceCache[$cacheKey];
     }
 }
 
@@ -1983,6 +2002,16 @@ function getDebitNoteAmountOfBill(PurchaseBill $bill)
     return $debit_note_items_amount;
 }
 
+function getPurchaseReturnAmountOfBill(PurchaseBill $bill) {
+    $bill_data_ids = $bill->bill_data->pluck('id')->toArray();
+    $amount = PurchaseReturnData::whereIn('purchase_bill_data_id', $bill_data_ids)
+        ->whereHas('purchase_return', function ($query) {
+            $query->where('am_approval_status', 'approved');
+        })
+        ->sum('net_amount');
+    return $amount;
+}
+
 function totalBill(PurchaseBill $bill)
 {
     $total_qty = $bill->bill_data->sum('final_amount');
@@ -1999,10 +2028,11 @@ function getPaymentVoucherBillBalance(PurchaseBill $bill)
 {
 
     $debit_note_items_amount = getDebitNoteAmountOfBill($bill);
+    $purchase_return_amount = getPurchaseReturnAmountOfBill($bill);
 
     $total_qty = totalBill($bill);
     $spent_qty = spentBill($bill);
-    $remaining_qty = ($total_qty - $spent_qty) - $debit_note_items_amount;
+    $remaining_qty = ($total_qty - $spent_qty) - $debit_note_items_amount - $purchase_return_amount;
     return $remaining_qty;
 }
 
@@ -2169,11 +2199,12 @@ function areQcParametersOk(QCRequest $request): bool
 function isQcAutoApprovable(QCRequest $bagQc): bool
 {
     $tolerance = $bagQc->grn->purchase_order_data->tolerance;
+    $deduction_qty = $bagQc->rejected_quantity;
     $qcParametersOk = areQcParametersOk($bagQc);
     $min_weight = $bagQc->grn->min_weight;
     $allowed_value = $min_weight - $tolerance;
 
-    return $bagQc->sample_average_weight >= $allowed_value && $qcParametersOk;
+    return $bagQc->sample_average_weight >= $allowed_value && $qcParametersOk && $deduction_qty == 0;
 }
 
 function approve_qc(PurchaseBagQC $bag_qc)

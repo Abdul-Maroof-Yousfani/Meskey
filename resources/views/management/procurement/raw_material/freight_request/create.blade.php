@@ -29,7 +29,7 @@
     $loading_kanta = $paymentRequestData->loading_kanta ?? $freightPaymentRequest?->loading_kanta ?? ($ticket->freight->kanta_golarchi_charges ?? '0');
     $arrived_kanta = $paymentRequestData->arrived_kanta ?? $freightPaymentRequest?->arrived_kanta ?? ($ticket->freight->karachi_kanta_charges ?? '0');
     $other_plus_labour = $paymentRequestData->other_plus_labour ?? $freightPaymentRequest?->other_plus_labour ?? ($ticket->freight->other_labour_charges ?? '0');
-    $dehari_plus_extra = $paymentRequestData->dehari_plus_extra ?? $freightPaymentRequest?->dehari_plus_extra ?? ($ticket->freight->other_labour_charges ?? '0');
+    $dehari_plus_extra = $paymentRequestData->dehari_plus_extra ?? $freightPaymentRequest?->dehari_plus_extra ?? '0';
     $market_comm = $paymentRequestData->market_comm ?? $freightPaymentRequest?->market_comm ?? 0;
     $over_weight_ded = $paymentRequestData->over_weight_ded ?? $freightPaymentRequest?->over_weight_ded ?? 0;
     $godown_penalty = $paymentRequestData->godown_penalty ?? $ticket->freight?->other_deduction ?? 0;
@@ -647,10 +647,9 @@
 
     @php
         $is_pending = isset($isRequestApprovalPage) && $isRequestApprovalPage && $paymentRequest && $paymentRequest->status == "pending";
-       
     @endphp
 
-    @if ($is_pending || !isset($isRequestApprovalPage) || !$isRequestApprovalPage)
+    @if (!($has_pendings > 0 && isset($paymentRequestData) && $paymentRequestData->is_paid_by_supplier))
         <div class="row bottom-button-bar">
             <div class="col-12">
                 <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
@@ -684,30 +683,30 @@
         // Initialize state
         isPaidBySupplier();
 
-        let canSubmitt = true;
-        function updateButtonVisibility() {
-            // Check the balance available (Net - Already Paid)
-            const netAmount = parseFloat($('[name="net_amount"]').val()) || 0;
-            const paidAmount = parseFloat($('[name="paid_amount"]').val()) || 0;
-            const availableBalance = netAmount - paidAmount;
+        // let canSubmitt = true;
+        // function updateButtonVisibility() {
+        //     // Check the balance available (Net - Already Paid)
+        //     const netAmount = parseFloat($('[name="net_amount"]').val()) || 0;
+        //     const paidAmount = parseFloat($('[name="paid_amount"]').val()) || 0;
+        //     const availableBalance = netAmount - paidAmount;
 
-            if (availableBalance > 0) {
-                $('.bottom-button-bar').show();
-                canSubmitt = true;
-            } else {
-                $('.bottom-button-bar').hide();
-                canSubmitt = false;
-            }
-        }
+        //     if (availableBalance > 0) {
+        //         $('.bottom-button-bar').show();
+        //         canSubmitt = true;
+        //     } else {
+        //         $('.bottom-button-bar').hide();
+        //         canSubmitt = false;
+        //     }
+        // }
 
-        $('#ajaxSubmit').on('keydown', function (e) {
-            if (e.keyCode === 13) {
-                if (!canSubmitt) {
-                    e.preventDefault();
-                    return false;
-                }
-            }
-        });
+        // $('#ajaxSubmit').on('keydown', function (e) {
+        //     if (e.keyCode === 13) {
+        //         if (!canSubmitt) {
+        //             e.preventDefault();
+        //             return false;
+        //         }
+        //     }
+        // });
 
         calculateNetShortageDeduction()
         $('.editable-field').on('input', calculatePaymentSummary);
@@ -945,7 +944,7 @@
             }
 
             calculateCommission();
-            updateButtonVisibility();
+            // updateButtonVisibility();
         }
 
         // Request History Toggle

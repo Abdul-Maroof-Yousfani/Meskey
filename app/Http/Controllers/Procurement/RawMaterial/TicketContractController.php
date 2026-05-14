@@ -500,11 +500,20 @@ class TicketContractController extends Controller
             DB::commit();
             // dd(route('raw-material.ticket-contracts.index', request()->query()));
 
-            $query = $request->query_string;
+            $queryString = $request->query_string;
+
+            // Parse query string into array
+            parse_str($queryString, $queryParams);
+
+            // Remove ticket_id if exists
+            unset($queryParams['ticket_id']);
+
+            // Rebuild query string
+            $newQueryString = http_build_query($queryParams);
 
             return response()->json([
                 'success' => 'Ticket successfully linked to contract',
-                'redirect' => route('raw-material.ticket-contracts.index') . ($query ? '?' . $query : '')
+                'redirect' => route('raw-material.ticket-contracts.index') . ($newQueryString ? '?' . $newQueryString : '')
             ]);
 
             return response()->json([

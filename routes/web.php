@@ -215,6 +215,19 @@ Route::get("add-permission", function() {
     ]);
 });
 
+Route::get("testing-purchase-bill", function() {
+    $purchase_bills = PurchaseBill::where("bill_no", "LIKE", "%" . 'BILL-2026-04-13-001' . "%" )->get();
+    $i = 1;
+
+    foreach($purchase_bills as $purchase_bill) {
+        $purchase_bill->update([
+            "bill_no" => str_replace("001", "00" . $i, $purchase_bill->bill_no)
+        ]);
+        $i++;
+    }
+
+});
+
 Route::get("testing-data", function() {
     $suppliers = \App\Models\Master\Supplier::where("owner_mobile_no", "LIKE", "%-%")->get();
     foreach($suppliers as $supplier) {
@@ -322,6 +335,10 @@ Route::group(['middleware' => ['auth', 'check.company']], function () {
         Route::post('/bulk_purchase_request_approval/{modelType}/{id}', [ApprovalController::class, 'bulk_purchase_request_approval'])
             ->middleware(['auth', 'approval.permission'])
             ->name('approval.bulk_purchase_request_approval');
+
+        Route::post('/bulk_purchase_order_approval/{modelType}/{id}', [ApprovalController::class, 'bulk_purchase_order_approval'])
+            ->middleware(['auth', 'approval.permission'])
+            ->name('approval.bulk_purchase_order_approval');
     });
 
     Route::get('/dashboard', [App\Http\Controllers\HomeController::class, 'index'])->name('home');

@@ -358,9 +358,7 @@
                                         value="{{ $data->qty }}" class="form-control qty" step="0.01" data-balance="{{ delivery_order_balance($data->so_data_id) + $data->no_of_bags }}"
                                         min="0" onchange="check_balance(this, 'no_of_bags_{{ $index }}')" onkeyup="check_balance(this, 'no_of_bags_{{ $index }}')" oninput="calc(this)" @readonly($delivery_order->salesOrder->pay_type_id == 10)>
                                      
-                                    <input type="hidden" name="current_qty[]" id="qty_{{ $index }}"
-                                        value="{{ $data->qty }}" class="form-control qty" step="0.01" data-balance="{{ delivery_order_balance($data->so_data_id) + $data->no_of_bags }}"
-                                        min="0" onchange="check_balance(this, 'no_of_bags_{{ $index }}')" onkeyup="check_balance(this, 'no_of_bags_{{ $index }}')" oninput="calc(this)">
+                                    <input type="hidden" name="current_qty[]" id="current_qty_{{ $index }}" value="{{ $data->qty }}">
 
                                     <span style="font-size: 14px;;">Used Quantity:
                                         {{ delivery_order_qty_used($data->so_data_id) }}</span>
@@ -865,6 +863,7 @@
             </td>
             <td>
                 <input type="text" name="qty[]" id="qty_${index}" class="form-control qty" step="0.01" min="0" oninput="calc(this)">
+                <input type="hidden" name="current_qty[]" value="0">
             </td>
             <td>
                 <input type="text" name="rate[]" id="rate_${index}" onkeyup="calc(this)" class="form-control rate" step="0.01" min="0">
@@ -1145,6 +1144,11 @@
 
                 if (!isInitialLoad) {
                     $("#delivery_date").val(res.delivery_date);
+                }
+
+
+                if (res.remarks !== null && res.remarks !== undefined) {
+                    $("#remarks").val(res.remarks);
                 }
                 isInitialLoad = false;
                 $("#delivery_date").prop("readonly", false);

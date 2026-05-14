@@ -103,6 +103,7 @@
             <tr>
                 <th style="min-width: 450px;">Item</th>
                 <th style="min-width: 200px;">Item UOM</th>
+                
                 <th class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">Pack Size (KG)</th>
                 <th style="min-width: 150px;">Qty</th>
                 <th class="bag-only" style="min-width: 450px;">Job Orders</th>
@@ -186,9 +187,11 @@
 
         $('#category_id_header').on('change', function() {
             let category_id = $(this).val();
+            
             // Clear items and job orders if category changes
             $("#purchaseRequestBody").empty();
             $(".job_orders").val(null).trigger('change');
+
             toggleVisibility(category_id);
 
             if (category_id) {
@@ -220,6 +223,15 @@
                 });
             }
         });
+
+        // Select first category and populate items accordingly
+        let firstCategory = $('#category_id_header option:eq(1)').val();
+        if (firstCategory) {
+            $('#category_id_header').val(firstCategory).trigger('change');
+            if (firstCategory != 38) {
+                addRow();
+            }
+        }
     });
 
     function toggleVisibility(categoryId) {
@@ -425,7 +437,10 @@
             width: '100%'
         });
 
-        filter_items($('#category_id_header').val(), index);
+        if ($('#category_id_header').val()) {
+            filter_items($('#category_id_header').val(), index);
+        }
+
         toggleVisibility($('#category_id_header').val());
 
 
@@ -458,7 +473,7 @@
 
     function filter_items(category_id, count) {
         $.ajax({
-            url: '{{ route('get.items') }}',
+            url: '{{ route('store.purchase-request.get-products-json') }}',
             type: 'GET',
             data: {
                 category_id: category_id
@@ -490,8 +505,13 @@
     }
     $(document).on('input', '.qty-input-check', function () {
         let input = $(this);
+        let balanceAttr = input.attr('data-balance');
+        if (typeof balanceAttr === 'undefined' || balanceAttr === false) {
+            return;
+        }
+
         let val = parseFloat(input.val()) || 0;
-        let balance = parseFloat(input.data('balance')) || 0;
+        let balance = parseFloat(balanceAttr) || 0;
 
         if (val > balance) {
             alert("Quantity cannot exceed available Job Order balance (" + balance + ")");

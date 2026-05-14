@@ -150,7 +150,9 @@
                             class="form-control item-select select2Dropdown" data-index="{{ $rowId }}" style="width: 100%;" @disabled($isApproved)>
                             <option value="">Select Item</option>
                             @foreach($items as $product)
-                                <option value="{{ $product->id }}" data-uom="{{ $product->unitOfMeasure->name }}" @selected($product->id == $item->item->id)>{{ $product->name }}</option>
+                                @if($item->item_id == $product->id)
+                                    <option value="{{ $product->id }}" data-uom="{{ $product->unitOfMeasure->name }}" selected>{{ $product->name }}</option>
+                                @endif
                             @endforeach
                         </select>
                         @if($isApproved)
@@ -170,16 +172,6 @@
 
                 <td class="bag-only" style="width: 300px; min-width: 300px; max-width: 300px;">
                     @php
-                        $jo_size = $jo_data->bag_size ?? ($jo_data?->bagSize?->size ?? '');
-                        $current_size = $item->size;
-                        $display_size = (is_numeric($jo_size) && $jo_size > 0) ? $jo_size : (getSizeById($current_size)->size ?? $current_size);
-                    @endphp
-                    <input type="text" id="size_{{ $rowId }}" name="size[]" class="form-control size-input-check" placeholder="Size"
-                        value="{{ $display_size }}" {{ (is_numeric($jo_size) && $jo_size > 0) || $isApproved ? 'readonly' : '' }}>
-                </td>
-
-                <td style="min-width: 150px;">
-                    @php
                         $jo_data = null;
                         if($item->is_single_job_order == 1) {
                             if($item->module_type == 'packing') {
@@ -188,6 +180,16 @@
                                 $jo_data = \App\Models\Production\JobOrder\JobOrderPackingSubItem::find($item->packing_id);
                             }
                         }
+                        $jo_size = $jo_data->bag_size ?? ($jo_data?->bagSize?->size ?? '');
+                        $current_size = $item->size;
+                        $display_size = (is_numeric($jo_size) && $jo_size > 0) ? $jo_size : (getSizeById($current_size)->size ?? $current_size);
+                    @endphp
+                    <input type="text" id="size_{{ $rowId }}" name="size[]" class="form-control size-input-check" placeholder="Size"
+                        value="{{ $display_size }}" {{ $item->is_single_job_order == 1 || (is_numeric($jo_size) && $jo_size > 0) || $isApproved ? 'readonly' : '' }}>
+                </td>
+
+                <td style="min-width: 150px;">
+                    @php
                         $jo_balance = 0;
                         if($jo_data) {
                             if($item->module_type == 'packing') {
@@ -393,9 +395,11 @@
 
     $('#category_id_header').on('change', function() {
         let category_id = $(this).val();
+        
         // Clear items and job orders if category changes
         $("#purchaseRequestBody").empty();
         $(".job_orders").val(null).trigger('change');
+
         toggleVisibility(category_id);
     });
 
@@ -647,7 +651,10 @@
         });
         $('#size_id_' + index).select2();
 
-        filter_items($('#category_id_header').val(), index);
+        if ($('#category_id_header').val()) {
+            filter_items($('#category_id_header').val(), index);
+        }
+
         toggleVisibility($('#category_id_header').val());
     }
 
@@ -662,7 +669,7 @@
 
     function filter_items(category_id, count, selectedItemId = null) {
         $.ajax({
-            url: '{{ route('get.items') }}',
+            url: '{{ route('store.purchase-request.get-products-json') }}',
             type: 'GET',
             data: {
                 category_id: category_id
