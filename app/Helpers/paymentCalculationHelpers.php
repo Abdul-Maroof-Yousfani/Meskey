@@ -59,9 +59,9 @@ function calculatePohaunchPayment($ticketId)
     $bagWeight = $arrivalTicket->bag_weight ?? 0;
     $bagRate = 0; // For Pohanch, bag rate is 0
     $loadingWeight = $arrivalTicket->freight->arrived_weight ?? 0;
-    $noOfBags = $arrivalTicket->bags ?? 0;
-    $bagweight = $arrivalTicket->bag_weight ?? 0;
-    $minusableweightfromloading = $noOfBags * $bagweight;
+    // $noOfBags = $arrivalTicket->bags ?? 0;
+    $noOfBags = $arrivalTicket->approved ?? 0;
+
     $ratePerKg = $purchaseOrder->rate_per_kg ?? 0;
     $kantaCharges = $arrivalTicket->freight->karachi_kanta_charges ?? 0;
     $grossFreightAmount = $arrivalTicket->freight->gross_freight_amount ?? 0;
@@ -69,8 +69,7 @@ function calculatePohaunchPayment($ticketId)
     $loadingInfo = [
         'bag_weight' => $bagWeight,
         'bag_rate' => $bagRate,
-        'actual_loading_weight' => $loadingWeight,
-        'loading_weight' => $loadingWeight - $minusableweightfromloading,
+        'loading_weight' => $loadingWeight,
         'no_of_bags' => $noOfBags,
         'rate_per_kg' => $ratePerKg,
         'kanta_charges' => $kantaCharges,
