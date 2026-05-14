@@ -141,25 +141,7 @@
         </div>
     </div>
 
-    <div class="col-12 mt-3"><h6 class="header-heading-sepration">Financials</h6></div>
-    <div class="col-md-4">
-        <div class="form-group">
-            <label class="form-label">Labour Rate:</label>
-            <input type="text" class="form-control" value="{{ $delivery_challan->labour_rate ?? 'N/A' }}" readonly>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="form-group">
-            <label class="form-label">Labour Amount:</label>
-            <input type="text" class="form-control" value="{{ $delivery_challan->labour_amount }}" readonly>
-        </div>
-    </div>
-    <div class="col-md-4 d-none">
-        <div class="form-group">
-            <label class="form-label">Transporter Amount:</label>
-            <input type="text" class="form-control" value="{{ $delivery_challan->transporter_amount }}" readonly>
-        </div>
-    </div>
+
     <div class="col-12 mt-3">
         <div class="form-group">
             <label class="form-label">Remarks:</label>
@@ -202,6 +184,8 @@
                         <th>Quantity (MT)</th>
                         <th>Rate per MT</th>
                         <th>Amount</th>
+                        <th>Labour Rate</th>
+                        <th>Labour Amount</th>
                         <th>Brand</th>
                         <th>Truck No.</th>
                         <th>Container No.</th>
@@ -218,6 +202,8 @@
                             <td><input type="text" class="form-control" value="{{ $data->qty }}" readonly></td>
                             <td><input type="text" class="form-control" value="{{ $data->rate }}" readonly></td>
                             <td><input type="text" class="form-control" value="{{ number_format($data->rate * $data->qty, 2) }}" readonly></td>
+                            <td><input type="text" class="form-control" value="{{ $data->labour_rate ?? 0 }}" readonly></td>
+                            <td><input type="text" class="form-control" value="{{ $data->labour_amount ?? 0 }}" readonly></td>
                             <td><input type="text" class="form-control" value="{{ getBrandById($data->brand_id)?->name ?? '-' }}" readonly></td>
                             <td><input type="text" class="form-control" value="{{ $data->truck_no }}" readonly></td>
                             <td><input type="text" class="form-control" value="{{ $data->container_number ?: ($data->loadingProgramItem->container_number ?? '') }}" readonly></td>

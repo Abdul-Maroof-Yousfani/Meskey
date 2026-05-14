@@ -85,7 +85,7 @@ class ExportDeliveryChallanController extends Controller
                     'labour_status' => $request->labour_status ?? 'paid',
                     'company_id' => $request->company_id,
                     'labour' => $request->labour,
-                    'labour_amount' => $request->labour_amount,
+                    'labour_amount' => $preparedItems['total_labour_amount'] ?? 0,
                     'transporter' => $request->transporter,
                     'transporter_amount' => $request->transporter_amount,
                     'inhouse-weighbridge' => $request->weighbridge,
@@ -132,6 +132,8 @@ class ExportDeliveryChallanController extends Controller
                     'do_data_id' => $itemData['do_data_id'],
                     'bag_type' => $itemData['bag_type'],
                     'ticket_id' => $itemData['ticket_id'],
+                    'labour_rate' => $itemData['item_labour_rate'],
+                    'labour_amount' => $itemData['item_labour_amount'],
                 ]);
                 $createdItems[] = $dcData;
             }
@@ -250,7 +252,7 @@ class ExportDeliveryChallanController extends Controller
                 'labour_status' => $request->labour_status ?? 'paid',
                 'company_id' => $request->company_id,
                 'labour' => $request->labour,
-                'labour_amount' => $request->labour_amount,
+                'labour_amount' => $preparedItems['total_labour_amount'] ?? 0,
                 'transporter' => $request->transporter,
                 'transporter_amount' => $request->transporter_amount,
                 'inhouse-weighbridge' => $request->weighbridge,
@@ -301,6 +303,8 @@ class ExportDeliveryChallanController extends Controller
                     'ticket_id' => $itemData['ticket_id'],
                     'do_data_id' => $itemData['do_data_id'],
                     'bag_type' => $itemData['bag_type'],
+                    'labour_rate' => $itemData['item_labour_rate'],
+                    'labour_amount' => $itemData['item_labour_amount'],
                 ]);
                 $createdItems[] = $dcData;
             }
@@ -757,6 +761,7 @@ class ExportDeliveryChallanController extends Controller
 
         $items = [];
         $totalQty = 0;
+        $totalLabourAmount = 0;
 
         foreach ($itemIds as $index => $itemId) {
             $itemId = (int) $itemId;
@@ -787,9 +792,12 @@ class ExportDeliveryChallanController extends Controller
                 'do_data_id' => $doDataId,
                 'bag_type' => $request->bag_type[$index] ?? null,
                 'ticket_id' => (int) ($request->ticket_id[$index] ?? 0),
+                'item_labour_rate' => round((float) ($request->item_labour_rate[$index] ?? 0), 2),
+                'item_labour_amount' => round((float) ($request->item_labour_amount[$index] ?? 0), 2),
             ];
 
             $totalQty += $qty;
+            $totalLabourAmount += (float) ($request->item_labour_amount[$index] ?? 0);
         }
 
         $totalQty = round($totalQty, 3);
@@ -810,6 +818,7 @@ class ExportDeliveryChallanController extends Controller
             'error' => null,
             'items' => $items,
             'total_qty' => $totalQty,
+            'total_labour_amount' => round($totalLabourAmount, 2),
             'available_qty_mt' => $availableQtyMt,
         ];
     }
