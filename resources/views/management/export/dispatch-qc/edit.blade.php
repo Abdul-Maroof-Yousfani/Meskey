@@ -328,7 +328,7 @@
             <input type="hidden" name="so_qty" value="${data.so_qty}" />
             <input type="hidden" name="do_qty" value="${data.do_qty}" />
             <input type="hidden" name="factory" value="${data.factory_names ? data.factory_names.join(', ') : ''}" />
-            <input type="hidden" name="gala" value="${data.gala_names ? data.gala_names.join(', ') : ''}" />
+            <input type="hidden" name="gala" value='${data.gala_names ? JSON.stringify(data.gala_names) : ""}' />
         `;
 
         $('#ticketDataContainer').html(tabsHtml + contentHtml + hiddenInputs);

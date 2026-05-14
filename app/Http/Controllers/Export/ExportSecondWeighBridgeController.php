@@ -471,4 +471,22 @@ class ExportSecondWeighBridgeController extends Controller
             ->sortBy('id')
             ->values();
     }
+
+    private function decodeStoredMultiValue($value): array
+    {
+        if (blank($value)) {
+            return [];
+        }
+
+        $decoded = json_decode((string) $value, true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+            return collect($decoded)->map(fn($item) => trim((string) $item))->filter()->values()->all();
+        }
+
+        return collect(explode(',', (string) $value))
+            ->map(fn($item) => trim($item))
+            ->filter()
+            ->values()
+            ->all();
+    }
 }

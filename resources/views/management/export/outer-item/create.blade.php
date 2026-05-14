@@ -32,12 +32,12 @@
     <div id="itemsSection" style="display: none;">
         <div class="row">
             <div class="col-12">
-                <h6 class="header-heading-sepration">Outer Items</h6>
+                <h6 class="header-heading-sepration">Other Items</h6>
                 <table class="table table-bordered table-striped" id="itemsTable">
                     <thead>
                         <tr>
                             <th width="35%">Item Name</th>
-                            <th width="20%">Weight (Per Item)</th>
+                            <th width="20%">Weight (Per Item) KG</th>
                             <th width="15%">Qty</th>
                             <th width="20%">Total Weight</th>
                             <th width="10%">Action</th>

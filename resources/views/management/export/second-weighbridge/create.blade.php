@@ -5,9 +5,9 @@
 
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
-                <label>Loading Slip:</label>
+                <label>Dispatch Qc:</label>
                 <select class="form-control select2" name="loading_slip_id" id="loading_slip_id">
-                    <option value="">Select Loading Slip</option>
+                    <option value="">Select Ticket</option>
                     @foreach ($LoadingSlips as $loadingSlip)
                         <option value="{{ $loadingSlip->id }}">
                             {{ $loadingSlip->loadingProgramItem->transaction_number }} -- {{ $loadingSlip->loadingProgramItem->truck_number }}

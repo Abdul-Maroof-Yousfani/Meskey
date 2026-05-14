@@ -39,6 +39,8 @@ class ExportDeliveryChallan extends Model
         'labour_status',
         'am_approval_status',
         'am_change_made',
+        'gp_no',
+        'loader_name',
     ];
 
     protected static function booted()

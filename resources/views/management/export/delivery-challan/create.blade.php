@@ -70,7 +70,7 @@
         </div>
         <div class="col-md-6">
             <div class="form-group">
-                <label class="form-label">Reference Number:</label>
+                <label class="form-label">Reference Number: <span class="text-danger">*</span></label>
                 <input type="text" name="reference_number" id="reference_number" class="form-control">
             </div>
         </div>
@@ -122,34 +122,17 @@
         <div class="col-md-6">
             <div class="form-group">
                 <label class="form-label">Transporter:</label>
-                <select name="transporter" id="transporter" class="form-control select2">
+                <select id="transporter_display" class="form-control select2" disabled>
                     <option value="">Select Transporter</option>
                     @foreach ($Transporters ?? [] as $transporter)
                         <option value="{{ $transporter->id }}">{{ $transporter->name }}</option>
                     @endforeach
                 </select>
+                <input type="hidden" name="transporter" id="transporter">
             </div>
         </div>
 
-        <div class="col-12 mt-3"><h6 class="header-heading-sepration">Financials</h6></div>
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Labour Rate:</label>
-                <input type="text" name="labour_rate" id="standard_labour_rate" class="form-control" readonly>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Labour Amount:</label>
-                <input type="number" name="labour_amount" id="labour_amount" class="form-control" readonly>
-            </div>
-        </div>
-        <div class="col-md-4 d-none">
-            <div class="form-group">
-                <label class="form-label">Transporter Amount:</label>
-                <input type="number" name="transporter_amount" id="transporter_amount" class="form-control">
-            </div>
-        </div>
+
         <div class="col-12 mt-3">
             <div class="form-group">
                 <label class="form-label">Remarks:</label>
@@ -193,6 +176,8 @@
                             <th>Rate per MT</th>
                             <th style="display:none;">Rate per Mond</th>
                             <th>Amount</th>
+                            <th>Labour Rate</th>
+                            <th>Labour Amount</th>
                             <th>Brand</th>
                             <th>Truck No.</th>
                             <th>Container No.</th>
@@ -257,8 +242,18 @@
         $form.find('#line_items_total_qty_mt').text(totalQty.toFixed(3));
         $form.find('#remaining_qty_mt').text(Math.max(remaining, 0).toFixed(3));
 
-        const labourRate = parseFloat($form.find('#standard_labour_rate').val()) || 0;
-        $form.find('#labour_amount').val((labourRate * totalBags).toFixed(2));
+        // Recalculate Labour
+        let totalLabourAmount = 0;
+        $form.find('#dcTableBody tr').each(function () {
+            const row = $(this);
+            const bags = parseFloat(row.find('.no_of_bags').val()) || 0;
+            const lRate = parseFloat(row.find('.item_labour_rate').val()) || 0;
+            const lAmount = bags * lRate;
+            row.find('.item_labour_amount').val(lAmount.toFixed(2));
+            totalLabourAmount += lAmount;
+        });
+        // We still keep a hidden field or some display if needed, but the user said remove financials.
+        // I'll add a hidden input for total labour if needed for the backend store method.
 
         const hasError = totalQty > currentSecondWeighbridgeQtyMt + 0.001;
         $form.find('#qty_validation_message').toggleClass('d-none', !hasError);
@@ -324,10 +319,12 @@
                     $f('#delivery_order_id').val(response.delivery_order.id);
                     $f('#labour_status').val(response.loading_slip_labour || 'paid').trigger('change');
                     $f('#labour_status_hidden').val(response.loading_slip_labour || 'paid');
-                    $f('#standard_labour_rate').val(response.rate || 'N/A');
+
+                    console.log('Rate => ' + response.rate);
 
                     if (response.transporter_id) {
-                        $f('#transporter').val(response.transporter_id).trigger('change');
+                        $f('#transporter_display').val(response.transporter_id).trigger('change');
+                        $f('#transporter').val(response.transporter_id);
                     }
 
                     $f('#do_no').empty().append(`<option value="${response.delivery_order.id}" selected>${response.delivery_order.reference_no}</option>`).trigger('change');
@@ -380,7 +377,6 @@
             $f('#labour_status_hidden').val('paid');
             $f('#dcTableBody').empty();
             $f('#second_weighbridge_qty_mt, #line_items_total_qty_mt, #remaining_qty_mt').text('0.000');
-            $f('#standard_labour_rate, #labour_amount').val('');
             $f('#reference_number').val('');
             $f('.submitbutton').prop('disabled', false);
             $f('#qty_validation_message').addClass('d-none');

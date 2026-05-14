@@ -124,7 +124,7 @@
     $galaa = $DispatchQc->gala ?? ($item->subArrivalLocation->name ?? '');
     $location = $DispatchQc->factory ?? ($item->arrivalLocation->name ?? '');
     
-    $gpNo = ''; // blank
+    $gpNo = $deliveryChallan->gp_no ?? ''; // from DB
     $brokerName = $exportOrder?->broker?->name ?? '';
     $formENo = $allDos->map(function($do) { return $do->exportFormE?->form_e_no; })->filter()->unique()->implode(' & ');
     $doNo = $allDos->pluck('reference_no')->unique()->implode(' / ');
@@ -134,7 +134,7 @@
     $shedBerthNo = $item?->berth_no ?? '';
     $sBillNo = $item?->s_bill_no ?? '0';
     $clearingAgent = $deliveryOrder?->c_agent ?? '';
-    $loaderName = ''; // blank
+    $loaderName = $deliveryChallan->loader_name ?? ''; // from DB
     $preparedBy = $deliveryChallan?->createdBy?->name ?? '';
 @endphp
 

@@ -80,10 +80,12 @@ class ExportDeliveryChallanController extends Controller
                     'section_id' => $storage_location_csv,
                     'dispatch_date' => $dispatch_date,
                     'dc_no' => $dc_no,
+                    'gp_no' => $this->getGPNumber($request, $dispatch_date),
+                    'loader_name' => auth()->user()->name,
                     'labour_status' => $request->labour_status ?? 'paid',
                     'company_id' => $request->company_id,
                     'labour' => $request->labour,
-                    'labour_amount' => $request->labour_amount,
+                    'labour_amount' => $preparedItems['total_labour_amount'] ?? 0,
                     'transporter' => $request->transporter,
                     'transporter_amount' => $request->transporter_amount,
                     'inhouse-weighbridge' => $request->weighbridge,
@@ -130,6 +132,8 @@ class ExportDeliveryChallanController extends Controller
                     'do_data_id' => $itemData['do_data_id'],
                     'bag_type' => $itemData['bag_type'],
                     'ticket_id' => $itemData['ticket_id'],
+                    'labour_rate' => $itemData['item_labour_rate'],
+                    'labour_amount' => $itemData['item_labour_amount'],
                 ]);
                 $createdItems[] = $dcData;
             }
@@ -248,7 +252,7 @@ class ExportDeliveryChallanController extends Controller
                 'labour_status' => $request->labour_status ?? 'paid',
                 'company_id' => $request->company_id,
                 'labour' => $request->labour,
-                'labour_amount' => $request->labour_amount,
+                'labour_amount' => $preparedItems['total_labour_amount'] ?? 0,
                 'transporter' => $request->transporter,
                 'transporter_amount' => $request->transporter_amount,
                 'inhouse-weighbridge' => $request->weighbridge,
@@ -299,6 +303,8 @@ class ExportDeliveryChallanController extends Controller
                     'ticket_id' => $itemData['ticket_id'],
                     'do_data_id' => $itemData['do_data_id'],
                     'bag_type' => $itemData['bag_type'],
+                    'labour_rate' => $itemData['item_labour_rate'],
+                    'labour_amount' => $itemData['item_labour_amount'],
                 ]);
                 $createdItems[] = $dcData;
             }
@@ -460,6 +466,26 @@ class ExportDeliveryChallanController extends Controller
         }
 
         return $dc_no;
+    }
+
+    public function getGPNumber(Request $request, $dispatchDate = null)
+    {
+        $date = Carbon::parse($dispatchDate ?? $request->date)->format('Y-m-d');
+        $prefix = 'GP-' . Carbon::parse($date)->format('Y-m-d');
+
+        $latest = ExportDeliveryChallan::where('gp_no', 'like', "$prefix-%")
+            ->latest()
+            ->first();
+
+        if ($latest) {
+            $parts = explode('-', $latest->gp_no);
+            $lastNumber = (int) end($parts);
+            $newNumber = $lastNumber + 1;
+        } else {
+            $newNumber = 1;
+        }
+
+        return 'GP-' . $date . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
     }
 
     public function getItemsByTickets(Request $request)
@@ -650,9 +676,8 @@ class ExportDeliveryChallanController extends Controller
         $subArrivalLocations = [];
         $subArrivalLocationIds = [];
 
-        $galaNamesStr = $loadingSlip->gala ?? '';
-        if ($galaNamesStr) {
-            $galaNames = array_map('trim', explode(',', $galaNamesStr));
+        $galaNames = $this->decodeStoredMultiValue($loadingSlip->gala ?? '');
+        if (!empty($galaNames)) {
             $subArrivalLocs = ArrivalSubLocation::whereIn('name', $galaNames)->get();
             if ($subArrivalLocs->isNotEmpty()) {
                 $subArrivalLocationIds = $subArrivalLocs->pluck('id')->toArray();
@@ -665,6 +690,7 @@ class ExportDeliveryChallanController extends Controller
 
         return response()->json([
             'success' => true,
+            // 'rate' => $labour_rate->rate,
             'rate' => $labour_rate ? $labour_rate->rate : 'N/A',
             'second_weighbridge_qty_mt' => round(($loadingSlip->secondWeighbridge->net_weight ?? 0) / 1000, 3),
             'ticket' => [
@@ -735,6 +761,7 @@ class ExportDeliveryChallanController extends Controller
 
         $items = [];
         $totalQty = 0;
+        $totalLabourAmount = 0;
 
         foreach ($itemIds as $index => $itemId) {
             $itemId = (int) $itemId;
@@ -765,9 +792,12 @@ class ExportDeliveryChallanController extends Controller
                 'do_data_id' => $doDataId,
                 'bag_type' => $request->bag_type[$index] ?? null,
                 'ticket_id' => (int) ($request->ticket_id[$index] ?? 0),
+                'item_labour_rate' => round((float) ($request->item_labour_rate[$index] ?? 0), 2),
+                'item_labour_amount' => round((float) ($request->item_labour_amount[$index] ?? 0), 2),
             ];
 
             $totalQty += $qty;
+            $totalLabourAmount += (float) ($request->item_labour_amount[$index] ?? 0);
         }
 
         $totalQty = round($totalQty, 3);
@@ -788,6 +818,7 @@ class ExportDeliveryChallanController extends Controller
             'error' => null,
             'items' => $items,
             'total_qty' => $totalQty,
+            'total_labour_amount' => round($totalLabourAmount, 2),
             'available_qty_mt' => $availableQtyMt,
         ];
     }
@@ -802,7 +833,25 @@ class ExportDeliveryChallanController extends Controller
             return 0;
         }
 
-        return round(((float) $slip->secondWeighbridge->net_weight) / 1000, 3);
+        return round(($slip->secondWeighbridge->net_weight ?? 0) / 1000, 3);
+    }
+
+    private function decodeStoredMultiValue($value): array
+    {
+        if (blank($value)) {
+            return [];
+        }
+
+        $decoded = json_decode((string) $value, true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+            return collect($decoded)->map(fn($item) => trim((string) $item))->filter()->values()->all();
+        }
+
+        return collect(explode(',', (string) $value))
+            ->map(fn($item) => trim($item))
+            ->filter()
+            ->values()
+            ->all();
     }
 
     public function resolveDeliveryOrders($item): \Illuminate\Support\Collection
