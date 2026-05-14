@@ -4,6 +4,7 @@ use App\Models\Arrival\ArrivalTicket;
 use App\Models\Arrival\ArrivalSamplingRequest;
 use App\Models\Arrival\ArrivalSamplingResult;
 use App\Models\Arrival\ArrivalSamplingResultForCompulsury;
+use App\Models\Procurement\PaymentRequestData;
 use App\Models\PurchaseTicket;
 use App\Models\PurchaseSamplingRequest;
 use App\Models\Arrival\PurchaseSamplingResult;
@@ -90,6 +91,12 @@ function calculatePohaunchPayment($ticketId)
     // Calculate Amounts
     $amounts = calculatePohaunchAmounts($loadingInfo, $deductions, $ratePerKg, $grossFreightAmount, $paymentHistory);
 
+
+
+    $grossFreightAmount = freightcalc($arrivalTicket) ?? 0;
+    // $grossFreightAmount = $freightPaymentRequestgrossAmount == 0 ? $arrivalTicket->freight->net_freight : $freightPaymentRequestgrossAmount;
+
+
     $supplierAmount = $loadingInfo['loading_weight'] * $purchaseOrder->supplier_commission;
 
     $supplierValue = $purchaseOrder->supplier_commission < 0
@@ -116,12 +123,40 @@ function calculatePohaunchPayment($ticketId)
             'total_deductions' => $deductions['total_deductions'],
             'net_amount' => $amounts['total_amount'],
             'inventory_amount' => $finalAmount,
-            'supplier_net_amount' => $supplierValue,
+            'supplier_net_amount' => $supplierValue - $grossFreightAmount,
+            'freight_amount_afterdeduction' => $grossFreightAmount,
+
             'remaining_amount' => $amounts['remaining_amount'],
         ]
     ];
 }
 
+
+
+function freightcalc($arrivalTicket)
+{
+    $freightPaymentRequestgrossAmount = PaymentRequestData::where('ticket_id', $arrivalTicket->id)
+        // ->where('purchase_order_id', $arrivalTicket->arrival_purchase_order_id)
+        ->where('module_type', 'freight_payment')
+        ->latest()->first(); // id ya created_at ke hisaab se last record
+    // ->value('gross_amount');
+    // dd($freightPaymentRequestgrossAmount);
+
+
+    // dd($freightPaymentRequestgrossAmount, $freightPaymentRequestgrossAmount->godown_penalty);
+    if ($freightPaymentRequestgrossAmount) {
+        if ($freightPaymentRequestgrossAmount->is_paid_by_supplier == 1) {
+            $freightPaymentRequestgrossAmount = $freightPaymentRequestgrossAmount->godown_penalty + $freightPaymentRequestgrossAmount->other_minus_labour + $freightPaymentRequestgrossAmount->commission_amount;
+        } else {
+            $freightPaymentRequestgrossAmount = $freightPaymentRequestgrossAmount->gross_amount;
+        }
+    } else {
+        $freightPaymentRequestgrossAmount = $arrivalTicket->freight->net_freight;
+    }
+
+    return $freightPaymentRequestgrossAmount;
+
+}
 /**
  * Calculate payment details for Thadda (PurchaseTicket)
  */
