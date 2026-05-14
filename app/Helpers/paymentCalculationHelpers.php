@@ -60,6 +60,8 @@ function calculatePohaunchPayment($ticketId)
     $bagRate = 0; // For Pohanch, bag rate is 0
     $loadingWeight = $arrivalTicket->freight->arrived_weight ?? 0;
     $noOfBags = $arrivalTicket->bags ?? 0;
+    $bagweight = $arrivalTicket->bag_weight ?? 0;
+    $minusableweightfromloading = $noOfBags * $bagweight;
     $ratePerKg = $purchaseOrder->rate_per_kg ?? 0;
     $kantaCharges = $arrivalTicket->freight->karachi_kanta_charges ?? 0;
     $grossFreightAmount = $arrivalTicket->freight->gross_freight_amount ?? 0;
@@ -67,7 +69,8 @@ function calculatePohaunchPayment($ticketId)
     $loadingInfo = [
         'bag_weight' => $bagWeight,
         'bag_rate' => $bagRate,
-        'loading_weight' => $loadingWeight,
+        'actual_loading_weight' => $loadingWeight,
+        'loading_weight' => $loadingWeight - $minusableweightfromloading,
         'no_of_bags' => $noOfBags,
         'rate_per_kg' => $ratePerKg,
         'kanta_charges' => $kantaCharges,
@@ -451,7 +454,7 @@ function calculatePohaunchDeductions($loadingInfo, $samplingData, $ratePerKg, $t
     }
 
     // Other calculations
-     $bagWeightInKgSum = $ratePerKg * ($loadingInfo['bag_weight'] * $loadingInfo['no_of_bags']);
+    $bagWeightInKgSum = $ratePerKg * ($loadingInfo['bag_weight'] * $loadingInfo['no_of_bags']);
     // $bagWeightInKgSum = 0;
     // $loadingWeighbridgeSum = $loadingInfo['kanta_charges'] / 2;
     $loadingWeighbridgeSum = 0;
@@ -622,7 +625,7 @@ function calculateThaddaAmounts($loadingInfo, $deductions, $ratePerKg)
     $arrivedFreightAmount = $loadingInfo['arrived_frieght_amount'] ?? 0;
 
     $totalAmount = $grossAmount - $totalDeductionsForFormula + $deductions['bags_rate_sum'];
-    $total_amount_inc_arrived_freight  = $grossAmount - $totalDeductionsForFormula + $deductions['bags_rate_sum'] + $arrivedFreightAmount;
+    $total_amount_inc_arrived_freight = $grossAmount - $totalDeductionsForFormula + $deductions['bags_rate_sum'] + $arrivedFreightAmount;
 
     return [
         'gross_amount' => $grossAmount,
