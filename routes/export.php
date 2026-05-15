@@ -4,6 +4,7 @@ use App\Http\Controllers\Export\BankController;
 use App\Http\Controllers\Export\BillOfLadingController;
 use App\Http\Controllers\Export\CommercialInvoiceController;
 use App\Http\Controllers\Export\PackingListController;
+use App\Http\Controllers\Export\ShipmentAdviseController;
 use App\Http\Controllers\Export\CurrencyController;
 use App\Http\Controllers\Export\ExportOrderController;
 use App\Http\Controllers\Export\ExportSodaFieldController;
@@ -176,6 +177,12 @@ Route::post('/get-packing-list', [PackingListController::class, 'getPackingListT
 Route::get('/get-packing-list-related-data', [PackingListController::class, 'getRelatedData'])->name('get.packing-list.related.data');
 Route::get('/get-packing-list-commercial-invoices', [PackingListController::class, 'getCommercialInvoicesByExportOrder'])->name('get.packing-list.commercial-invoices');
 Route::get('/packing-list/{id}/container-list', [PackingListController::class, 'containerList'])->name('packing-list.container-list');
+
+// shipment advise
+Route::resource('shipment-advise', ShipmentAdviseController::class);
+Route::post('/get-shipment-advise', [ShipmentAdviseController::class, 'getList'])->name('get.shipment-advise');
+Route::get('/get-shipment-advise-related-data', [ShipmentAdviseController::class, 'getRelatedData'])->name('get.shipment-advise.related.data');
+Route::get('/get-shipment-advise-packing-lists', [ShipmentAdviseController::class, 'getPackingListsByExportOrder'])->name('get.shipment-advise.packing-lists');
 
 // export soda field 
 Route::resource('export-soda-field', ExportSodaFieldController::class);
