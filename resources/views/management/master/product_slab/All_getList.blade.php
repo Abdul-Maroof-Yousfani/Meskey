@@ -66,8 +66,8 @@
                             </td>
                             {{-- <td>
                                 <p class="m-0">
-                                    <span class="badge badge-{{ $row->is_enabled ? 'success' : 'danger' }}">
-                                        {{ $row->is_enabled ? 'Enabled' : 'Disabled' }}
+                                    <span class="badge badge-{{ $row->status === 'active' ? 'success' : 'danger' }}">
+                                        {{ $row->status === 'active' ? 'Enabled' : 'Disabled' }}
                                     </span>
                                 </p>
                             </td> --}}

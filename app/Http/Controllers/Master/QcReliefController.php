@@ -24,7 +24,8 @@ class QcReliefController extends Controller
         ]);
 
         $product = Product::with('reliefParameters')->find($request->product_id);
-        $slabs = ProductSlab::with('slabType')
+        $slabs = ProductSlab::generalEnabled()
+            ->with('slabType')
             ->where('product_id', $request->product_id)
             ->get()
             ->unique('product_slab_type_id');

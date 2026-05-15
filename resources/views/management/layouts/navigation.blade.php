@@ -1112,6 +1112,14 @@
                                         data-i18n="Basic">Product Slab</span></a>
                             </li>
                             @endcanAccess
+                            @canAccess('product')
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('export-product-slab.index') }}"
+                                    onclick="loadPageContent('{{ route('export-product-slab.index') }}')"
+                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                        data-i18n="Basic">Export Product Slab</span></a>
+                            </li>
+                            @endcanAccess
 
                             @canAccess('uom')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"

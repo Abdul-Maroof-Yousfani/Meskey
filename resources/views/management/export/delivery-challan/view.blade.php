@@ -127,7 +127,7 @@
     <div class="col-md-6">
         <div class="form-group">
             <label class="form-label">Labour:</label>
-            <input type="text" class="form-control" value="{{ $delivery_challan->labour == 1 ? 'Labour 1' : 'Labour 2' }}" readonly>
+            <input type="text" class="form-control" value="{{ $delivery_challan->labour ? (\App\Models\Master\Vendor::find($delivery_challan->labour)?->name ?? 'N/A') : 'N/A' }}" readonly>
         </div>
     </div>
     <div class="col-md-6">
