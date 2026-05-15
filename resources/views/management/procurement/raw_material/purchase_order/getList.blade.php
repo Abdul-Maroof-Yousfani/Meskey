@@ -35,7 +35,7 @@
         @php
             //  $arrivedTrucks = $row->arrivalTickets()->sum('closing_trucks_qty');
             $arrivedTrucks = $row->approvedArrivalTickets()->sum('closing_trucks_qty');
-            $rejectedTrucks = $row->rejectedArrivalTickets->count();
+            $rejectedTrucks = $row->rejectedArrivalTickets()->sum('closing_trucks_qty');
             $rejectedHalfTrucks = $row->rejectedHalfArrivalTickets->count() != 0 ? $row->rejectedHalfArrivalTickets->count() / 2 : 0;
             $totalRejectedTrucks = $rejectedTrucks + $rejectedHalfTrucks;
             $inTransitTrucks = $row->stockInTransitTickets->count();
@@ -135,8 +135,8 @@
                     class="success p-1 text-center mr-2 position-relative">
                     <i class="ft-eye font-medium-3"></i>
                 </a>
-                
-                
+
+
                 @if($row->created_by == auth()->user()->id && ($row->am_approval_status != 'approved' && $row->am_approval_status != "rejected"))
                     <a onclick="openModal(this,'{{ route($row->purchase_type == 'gate_buying' ? 'raw-material.gate-buying.edit' : 'raw-material.purchase-order.edit', $row->id) }}','{{ $row->purchase_type == 'gate_buying' ? 'Edit Gate Buying' : 'Edit Purchase Order' }}')"
                         class="info p-1 text-center mr-2 position-relative">
