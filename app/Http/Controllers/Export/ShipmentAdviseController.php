@@ -422,7 +422,7 @@ class ShipmentAdviseController extends PackingListController
                 $multiPackingText = trim(
                     ($packingSizeLabel !== '' ? $packingSizeLabel . ' ' : '')
                     . ($bagType !== '' ? $bagType . ' BAGS' : 'BAGS')
-                    . ($masterPackingText !== '' ? ' STUFFED IN ' . $masterPackingText : '')
+                    . ($masterPackingText !== '' ? ' STUFFED IN ' . $masterPackingText . ' BAG' : '')
                 );
 
                 $singlePackingText = 'PACKED IN ';
@@ -438,7 +438,7 @@ class ShipmentAdviseController extends PackingListController
                 }
 
                 if ($masterPackingText !== '') {
-                    $singlePackingText .= ' STUFFED IN ' . $masterPackingText;
+                    $singlePackingText .= ' STUFFED IN ' . $masterPackingText . ' BAG';
                 }
 
                 $singlePackingText = rtrim(preg_replace('/\s+/', ' ', strtoupper($singlePackingText)), '.') . '.';

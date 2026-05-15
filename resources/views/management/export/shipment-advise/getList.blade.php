@@ -8,7 +8,7 @@
             <!-- <th width="16%">BOL No</th> -->
             <th width="14%">Customer</th>
             <th width="10%">Qty (MT)</th>
-            <th width="10%">Status</th>
+            <!-- <th width="10%">Status</th> -->
             <th width="10%">Action</th>
         </tr>
     </thead>
@@ -45,7 +45,7 @@
                     </div>
                 </td>
 
-                <td class="text-center align-middle">
+                <!-- <td class="text-center align-middle">
                     @php
                         $status = $shipmentAdvise->am_approval_status;
                         $badge = match (strtolower($status)) {
@@ -58,30 +58,28 @@
                     <span class="badge {{ $badge }} px-3 py-2">
                         {{ ucfirst($status) }}
                     </span>
-                </td>
+                </td> -->
                 <td>
                     <div class="d-flex justify-content-center">
                         <a class="info p-1 text-center position-relative" title="View"
                             onclick="openModal(this,'{{ route('shipment-advise.show', $shipmentAdvise->id) }}','Show Shipment Advice',true,'95%')">
                             <i class="ft-eye font-medium-3"></i>
                         </a>
-                        @if($shipmentAdvise->am_approval_status === 'approved')
                             <a class="success p-1 text-center position-relative" title="Print"
                                 onclick="openModal(this,'{{ route('shipment-advise.show', $shipmentAdvise->id) }}?print=1','Print Shipment Advice',true,'95%')">
                                 <i class="ft-printer font-medium-3"></i>
                             </a>
-                        @endif
                         @if (auth()->user()->id == $shipmentAdvise->created_by)
-                            @if($shipmentAdvise->am_approval_status === 'pending' || $shipmentAdvise->am_approval_status === 'reverted')
-                                <a class="info p-1 text-center position-relative" title="Edit"
+                            <!-- @if($shipmentAdvise->am_approval_status === 'pending' || $shipmentAdvise->am_approval_status === 'reverted') -->
+                                <!-- <a class="info p-1 text-center position-relative" title="Edit"
                                     onclick="openModal(this,'{{ route('shipment-advise.edit', $shipmentAdvise->id) }}','Edit Shipment Advice',false,'95%')">
                                     <i class="ft-edit font-medium-3"></i>
-                                </a>
+                                </a> -->
                                 <a onclick="deletemodal('{{ route('shipment-advise.destroy', $shipmentAdvise->id) }}','{{ route('get.shipment-advise') }}')"
                                     class="danger p-1 text-center mr-2 position-relative" title="Delete">
                                     <i class="ft-x font-medium-3"></i>
                                 </a>
-                            @endif
+                            <!-- @endif -->
                         @endif
                     </div>
                 </td>
