@@ -27,6 +27,11 @@
 @endphp
 
 <style>
+    @page {
+        size: A4;
+        margin: 12mm;
+    }
+
     .sa-sheet {
         background: #fff;
         color: #111;
@@ -35,28 +40,54 @@
         font-size: 15px;
         line-height: 1.45;
         font-family: "Arial", sans-serif;
+        width: 100%;
+        max-width: none;
+        min-height: auto;
+        margin: 0;
+        box-sizing: border-box;
     }
 
+    .sa-letterhead,
     .sa-topbar,
-    .sa-meta-row,
-    .sa-detail-row,
     .sa-signoff {
         display: flex;
         justify-content: space-between;
         gap: 18px;
     }
 
-    .sa-topbar {
+    .sa-letterhead {
+        display: none;
         align-items: flex-start;
-        margin-bottom: 24px;
+        margin-bottom: 18px;
     }
 
-    .sa-company {
+    .sa-logo-wrap {
+        max-width: 180px;
+    }
+
+    .sa-logo {
+        width: 100%;
+        max-width: 150px;
+        height: auto;
+        display: block;
+    }
+
+    .sa-head-office {
         max-width: 42%;
         margin-left: auto;
         text-align: left;
         font-size: 13px;
         line-height: 1.35;
+        text-transform: uppercase;
+    }
+
+    .sa-head-office-title {
+        font-weight: 700;
+    }
+
+    .sa-topbar {
+        align-items: flex-start;
+        margin-bottom: 24px;
     }
 
     .sa-buyer {
@@ -169,8 +200,28 @@
     }
 
     @media print {
+        html,
+        body {
+            width: auto !important;
+            height: auto !important;
+            overflow: visible !important;
+            background: #fff !important;
+        }
+
         body * {
             visibility: hidden;
+        }
+
+        .modal,
+        .modal-dialog,
+        .modal-content,
+        .modal-body,
+        .modal-sidebar,
+        .card,
+        .card-body {
+            overflow: visible !important;
+            height: auto !important;
+            max-height: none !important;
         }
 
         #ShipmentAdvisePreviewContainer,
@@ -179,32 +230,50 @@
         }
 
         #ShipmentAdvisePreviewContainer {
-            position: absolute;
+            position: static !important;
             top: 0;
             left: 0;
             width: 100%;
+            overflow: visible !important;
+        }
+
+        .sa-sheet {
+            border: 0 !important;
+            min-height: auto !important;
+            max-width: 210mm !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            page-break-inside: avoid !important;
+        }
+
+        .sa-letterhead {
+            display: flex !important;
         }
     }
 </style>
 
 <div class="sa-sheet">
+    <div class="sa-letterhead">
+        <div class="sa-logo-wrap">
+            <img src="{{ asset('management/app-assets/img/meskay-logo.png') }}" alt="Meskay & Femtee" class="sa-logo">
+        </div>
+
+        <div class="sa-head-office">
+            <div class="sa-head-office-title">HEAD OFFICE:</div>
+            @if (!empty($preview['company_address']))
+                <div>{{ $preview['company_address'] }}</div>
+            @endif
+            @if (!empty($preview['company_phone']))
+                <div>T: {{ $preview['company_phone'] }}</div>
+            @endif
+        </div>
+    </div>
+
     <div class="sa-topbar">
         <div class="sa-buyer">
             TO,
             <br>
             {!! nl2br(e($preview['buyer_block'] ?? 'N/A')) !!}
-        </div>
-
-        <div class="sa-company">
-            @if (!empty($preview['company_name']))
-                <div style="font-weight: 700; text-transform: uppercase;">{{ $preview['company_name'] }}</div>
-            @endif
-            @if (!empty($preview['company_address']))
-                <div style="text-transform: uppercase;">{{ $preview['company_address'] }}</div>
-            @endif
-            @if (!empty($preview['company_phone']))
-                <div>T: {{ $preview['company_phone'] }}</div>
-            @endif
         </div>
     </div>
 

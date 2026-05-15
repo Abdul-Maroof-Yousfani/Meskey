@@ -22,14 +22,34 @@
     }
 
     @media print {
+        html, body {
+            width: auto !important;
+            height: auto !important;
+            overflow: visible !important;
+            background: #fff !important;
+        }
         body * { visibility: hidden; }
+        .modal,
+        .modal-dialog,
+        .modal-content,
+        .modal-body,
+        .modal-sidebar,
+        .card,
+        .card-body,
+        .row,
+        .col-12 {
+            overflow: visible !important;
+            height: auto !important;
+            max-height: none !important;
+        }
         #ShipmentAdvisePreviewContainer,
         #ShipmentAdvisePreviewContainer * { visibility: visible; }
         #ShipmentAdvisePreviewContainer {
-            position: absolute;
+            position: static !important;
             left: 0;
             top: 0;
             width: 100%;
+            overflow: visible !important;
         }
         .pl-show-actions { display: none !important; }
     }
@@ -42,11 +62,9 @@
         &nbsp;|&nbsp;
         {{ !empty($preview['packing_list_date']) ? \Carbon\Carbon::parse($preview['packing_list_date'])->format('d M Y') : 'N/A' }}
     </div>
-    @if($shipmentAdvise->am_approval_status === 'approved')
     <button type="button" class="btn btn-secondary btn-sm" onclick="window.print()">
         <i class="ft-printer"></i> Print
     </button>
-    @endif
     <a type="button" class="btn btn-danger btn-sm modal-sidebar-close position-relative top-1 closebutton">
         <i class="ft-x"></i> Close
     </a>
