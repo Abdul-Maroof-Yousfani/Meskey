@@ -36,8 +36,7 @@ class TransactionController extends Controller
 
         $accountName = null;
         if ($request->filled('account_id')) {
-            $query->where('account_id', $request->account_id)
-                ->orWhere('counter_account_id', $request->account_id);
+            $query->where('account_id', $request->account_id);
 
             $account = Account::find($request->account_id);
             $accountName = $account ? $account->name : null;
