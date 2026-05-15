@@ -106,48 +106,25 @@ class BillOfLadingController extends Controller
     public function show($id): View
     {
         $billOfLading = BillOfLading::with(['exportOrder', 'exportDeliveryChallan'])->findOrFail($id);
-        
-        $preview = $billOfLading->snapshot_data ?? [];
-        if (empty($preview['vessel_name']) || $preview['vessel_name'] === 'N/A') {
-            // Heal vessel name for old records
-            $vesselName = $billOfLading->exportDeliveryChallan?->delivery_challan_data->map(function ($data) {
-                return $data->loadingProgramItem?->exportLoadingProgram?->vessel_name;
-            })->filter()->unique()->implode(' / ');
-
-            if (!$vesselName) {
-                // Check linked Delivery Orders
-                $vesselName = $billOfLading->deliveryOrder?->vessel_name;
-                if (!$vesselName && !empty($billOfLading->selected_delivery_order_ids)) {
-                    $vesselName = \App\Models\Export\ExportDeliveryOrder::whereIn('id', (array)$billOfLading->selected_delivery_order_ids)
-                        ->pluck('vessel_name')
-                        ->filter()
-                        ->unique()
-                        ->implode(' / ');
-                }
-            }
-
-            if (!$vesselName) {
-                $vesselName = $billOfLading->exportOrder->vessel_name ?? $billOfLading->exportOrder->carrier_name ?? 'N/A';
-            }
-            $preview['vessel_name'] = $vesselName;
-        }
+        [$preview, $goodsSummary] = $this->resolveDocumentPayloadFromBillOfLading($billOfLading);
 
         return view('management.export.bill-of-lading.show', [
             'billOfLading' => $billOfLading,
             'preview' => $preview,
-            'goodsSummary' => $billOfLading->goods_summary ?? [],
+            'goodsSummary' => $goodsSummary,
         ]);
     }
 
     public function edit($id): View
     {
         $billOfLading = BillOfLading::with(['exportOrder'])->findOrFail($id);
+        [$preview, $goodsSummary] = $this->resolveDocumentPayloadFromBillOfLading($billOfLading);
 
         return view('management.export.bill-of-lading.edit', [
             'billOfLading' => $billOfLading,
             'exportOrders' => $this->getApprovedExportOrders($billOfLading->id),
-            'preview' => $billOfLading->snapshot_data ?? [],
-            'goodsSummary' => $billOfLading->goods_summary ?? [],
+            'preview' => $preview,
+            'goodsSummary' => $goodsSummary,
         ]);
     }
 
@@ -529,6 +506,8 @@ class BillOfLadingController extends Controller
         $notify = $consignee ?: $customer;
         $placeOfIssue = $this->resolvePlaceOfIssue($deliveryChallans);
         $goodsSummary = $this->buildGoodsSummaryFromDeliveryChallans($deliveryChallans, $exportOrder);
+        $packingTypeSource = $firstDeliveryOrder?->exportOrder?->packing_type ?? $exportOrder->packing_type;
+        $packingType = $this->normalizePackingType($packingTypeSource);
 
         $vesselName = $deliveryChallans->flatMap(function ($challan) {
             return $challan->delivery_challan_data->map(function ($data) {
@@ -546,6 +525,12 @@ class BillOfLadingController extends Controller
         if (!$vesselName) {
             $vesselName = $exportOrder->vessel_name ?? $exportOrder->carrier_name ?? 'N/A';
         }
+
+        $totalQuantityMt = round((float) ($goodsSummary['totals']['quantity_mt'] ?? 0), 3);
+        $totalNetWeightMt = round(((float) ($goodsSummary['totals']['net_weight_kg'] ?? 0)) / 1000, 3);
+        $totalGrossWeightMt = round(((float) ($goodsSummary['totals']['gross_weight_kg'] ?? 0)) / 1000, 3);
+        $totalContainers = (int) round(collect($goodsSummary['rows'] ?? [])->sum('no_of_containers'));
+        $firstRow = $goodsSummary['rows'][0] ?? [];
 
         $preview = [
             'bill_no' => $input['bill_no'] ?? null,
@@ -568,15 +553,57 @@ class BillOfLadingController extends Controller
             'notify_phone' => $notify?->contact ?? $notify?->phone ?? null,
             'notify_contact_person' => $notify?->contact_person ?? null,
             'vessel_name' => $vesselName,
+            'packing_type' => $packingType,
+            'packing_type_source' => $packingTypeSource,
             'port_of_loading' => $this->formatPort($exportOrder->portOfLoading),
             'port_of_discharge' => $this->formatPort($exportOrder->portOfDischarge),
+            'place_of_delivery' => $this->formatPort($exportOrder->portOfDischarge),
             'product_name' => $exportOrder->visual_name ?: ($exportOrder->product?->name ?: 'N/A'),
             'form_e_no' => $formEs->pluck('form_e_no')->filter()->implode(', '),
             'form_e_date' => $formEs->pluck('form_e_date')->filter()->map(fn($date) => Carbon::parse($date)->format('d.m.Y'))->implode(', '),
             'delivery_challan_no' => $deliveryChallans->pluck('dc_no')->filter()->implode(', '),
             'delivery_order_no' => $deliveryChallans->flatMap->delivery_order->pluck('reference_no')->filter()->unique()->implode(', '),
             'export_order_no' => $exportOrder->voucher_no,
+            'quantity_summary' => number_format($totalQuantityMt, 3) . ' MT IN ' . number_format($totalContainers) . ' CONTAINERS',
+            'gross_weight_mt' => $totalGrossWeightMt,
+            'net_weight_mt' => $totalNetWeightMt,
+            'total_containers' => $totalContainers,
+            'bag_marking_text' => $firstRow['brand_name'] ?? 'N/A',
+            'packing_description' => $firstRow['container_packing_description'] ?? 'N/A',
+            'number_of_bags_summary' => $firstRow['container_bag_count_summary'] ?? 'N/A',
+            'financial_instrument_no' => $firstDeliveryOrder?->financial_instrument_no ?? 'N/A',
+            'empty_bags_note' => $this->buildContainerEmptyBagsNote($goodsSummary['rows'] ?? []),
         ];
+
+        return [$preview, $goodsSummary];
+    }
+
+    protected function resolveDocumentPayloadFromBillOfLading(BillOfLading $billOfLading): array
+    {
+        $preview = $billOfLading->snapshot_data ?? [];
+        $goodsSummary = $billOfLading->goods_summary ?? [];
+
+        $hasContainerAwarePayload = !empty($preview['packing_type']) && !empty($preview['place_of_delivery']);
+        $hasUsableStoredPayload = !empty($preview) && !empty($goodsSummary) && $hasContainerAwarePayload;
+
+        if ($hasUsableStoredPayload) {
+            return [$preview, $goodsSummary];
+        }
+
+        $validated = [
+            'export_order_id' => $billOfLading->export_order_id,
+            'export_form_e_ids' => array_values(array_filter((array) $billOfLading->selected_form_e_ids)),
+            'export_delivery_challan_ids' => array_values(array_filter((array) $billOfLading->selected_delivery_challan_ids)),
+            'bill_no' => $billOfLading->bill_no,
+            'bill_date' => optional($billOfLading->bill_date)->format('Y-m-d'),
+            'carrier_name' => $billOfLading->carrier_name,
+            'shipped_on_board_date' => optional($billOfLading->shipped_on_board_date)->format('Y-m-d'),
+            'charter_party_dated' => $billOfLading->charter_party_dated,
+            'cautions_text' => $billOfLading->cautions_text,
+        ];
+
+        [$exportOrder, $formEs, $deliveryChallans] = $this->resolveSelections($validated);
+        [$preview, $goodsSummary] = $this->buildDocumentPayload($exportOrder, $formEs, $deliveryChallans, $validated);
 
         return [$preview, $goodsSummary];
     }
@@ -600,12 +627,21 @@ class BillOfLadingController extends Controller
             $packingKg = $this->parsePackingKg($packingText);
             $brandName = $items->pluck('brand_id')->map(fn($id) => getBrandById($id)?->name)->filter()->unique()->implode(', ');
             $bagTypeName = $first->bag_type ? bag_type_name($first->bag_type) : 'N/A';
+            $bagConditionName = $first->deliveryOrderData?->bagCondition?->name
+                ?? optional(getBagConditionById($first->deliveryOrderData?->bag_condition_id))->name
+                ?? 'N/A';
             $quantityMt = round((float) $items->sum(function ($item) {
                 return (float) ($item->qty ?? 0);
             }), 3);
             $noOfBags = (int) round($items->sum(function ($item) {
                 return (float) ($item->no_of_bags ?? 0);
             }));
+            $containerCount = (int) round($items->sum(function ($item) {
+                return (float) ($item->deliveryOrderData?->no_of_containers ?? 0);
+            }));
+            if ($containerCount <= 0) {
+                $containerCount = (int) round((float) ($first->deliveryOrderData?->no_of_containers ?? 0));
+            }
             $netWeightKg = round($quantityMt * 1000, 2);
             $extraBags = (float) $items->sum(function ($item) {
                 return $this->getProRatedBagCount($item, 'extra_bags');
@@ -618,6 +654,17 @@ class BillOfLadingController extends Controller
 
             $grossBags = $noOfBags + $extraBags + $emptyBags;
             $grossWeightKg = round($netWeightKg + ($grossBags * $emptyBagWeightKg), 2);
+            $containerPackingDescription = 'PACKED IN ';
+
+            if (strtoupper($bagConditionName) !== 'N/A') {
+                $containerPackingDescription .= strtoupper($bagConditionName) . ' ';
+            }
+
+            $containerPackingDescription .= strtoupper((string) $bagTypeName) . ' BAGS';
+            if ($packingText !== '') {
+                $containerPackingDescription .= ' OF ' . $packingText . ' KGS NET EACH';
+            }
+            $containerPackingDescription .= '.';
 
             return [
                 'row_label' => chr(65 + $index),
@@ -633,8 +680,11 @@ class BillOfLadingController extends Controller
                 'gross_bags' => round($grossBags, 2),
                 'net_weight_kg' => $netWeightKg,
                 'gross_weight_kg' => $grossWeightKg,
+                'no_of_containers' => $containerCount,
                 'bag_markings' => trim($brandName . ($packingText ? ' - ' . $packingText : '')),
                 'number_of_bags_text' => trim(number_format($noOfBags) . ' BAGS OF ' . $packingText . ' | ' . number_format($quantityMt, 2, '.', '') . ' MT | ' . strtoupper($bagTypeName)),
+                'container_packing_description' => $containerPackingDescription,
+                'container_bag_count_summary' => number_format($noOfBags) . ' BAGS',
                 'description_lines' => [
                     trim(number_format($quantityMt, 2, '.', '') . ' MT ' . $productName),
                     trim('PACKING: ' . $packingText),
@@ -740,5 +790,27 @@ class BillOfLadingController extends Controller
         }
 
         return trim($port->name . ($port->country?->name ? ', ' . $port->country->name : ''));
+    }
+
+    protected function normalizePackingType(?string $packingType): string
+    {
+        $value = strtoupper(trim((string) $packingType));
+
+        if (in_array($value, ['IN CONTAINER', 'IN CONATINER'], true)) {
+            return 'container';
+        }
+
+        return 'bulk';
+    }
+
+    protected function buildContainerEmptyBagsNote(array $rows): ?string
+    {
+        $emptyBags = round(collect($rows)->sum('empty_bags'), 2);
+
+        if ($emptyBags <= 0) {
+            return null;
+        }
+
+        return rtrim(rtrim(number_format($emptyBags, 2, '.', ''), '0'), '.') . " PCT EMPTY BAGS WITH BUYER'S MARKING";
     }
 }
