@@ -1181,8 +1181,8 @@ if (!function_exists('getDeductionSuggestion')) {
     function getDeductionSuggestion($productSlabTypeId, $productId, $inspectionResult, $purchaseOrderID = null)
     {
         $slabs = ProductSlab::where('product_slab_type_id', $productSlabTypeId)
-            ->where('product_id', $productId)
             ->where('status', 'active')
+            ->where('product_id', $productId)
             ->orderBy('from', 'asc')
             ->get();
 

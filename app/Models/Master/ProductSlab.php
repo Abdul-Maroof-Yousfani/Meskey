@@ -23,7 +23,14 @@ class ProductSlab extends Model
         'is_tiered',
         'status',
         'from',
-        'to'
+        'to',
+        'is_export_enable',
+    ];
+
+    protected $casts = [
+        'is_export_enable' => 'boolean',
+        'is_tiered' => 'boolean',
+        'is_purchase_field' => 'boolean',
     ];
 
     public function company()
@@ -39,5 +46,20 @@ class ProductSlab extends Model
     public function slabType()
     {
         return $this->belongsTo(ProductSlabType::class, 'product_slab_type_id');
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('status', 'active');
+    }
+
+    public function scopeGeneralEnabled($query)
+    {
+        return $query->active();
+    }
+
+    public function scopeExportEnabled($query)
+    {
+        return $query->active()->where('is_export_enable', true);
     }
 }

@@ -51,7 +51,12 @@ class Product extends Model
 
     public function slabs()
     {
-        return $this->hasMany(ProductSlab::class);
+        return $this->hasMany(ProductSlab::class)->generalEnabled();
+    }
+
+    public function exportSlabs()
+    {
+        return $this->hasMany(ProductSlab::class)->exportEnabled();
     }
 
     public function reliefParameters()

@@ -353,23 +353,22 @@ class ProformaController extends Controller
 
     public function getProductSpecs($productId)
     {
-        $specs = ProductSlab::with('slabType')
+        $specs = ProductSlab::exportEnabled()
+            ->with('slabType')
             ->where('product_id', $productId)
-            ->where('status', 1)
             ->get()
             ->groupBy('product_slab_type_id')
             ->map(function ($slabs) {
-                // Pehla slab le rahe hain kyun ke har type ka ek hi slab hoga group mein
                 $firstSlab = $slabs->first();
 
                 return [
                     'id' => $firstSlab->slabType->id,
                     'spec_name' => $firstSlab->slabType->name ?? '',
-                    'spec_value' => $firstSlab->deduction_value ?? 0,
+                    'spec_value' => $firstSlab->prefill_spec_value ?? 0,
                     'uom' => $firstSlab->slabType->qc_symbol ?? '',
                 ];
             })
-            ->values(); // Array keys reset karega
+            ->values();
 
         return view('management.export.proforma.partials.product_specs', compact('specs'));
     }

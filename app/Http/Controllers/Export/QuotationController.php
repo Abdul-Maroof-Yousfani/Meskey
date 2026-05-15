@@ -407,19 +407,17 @@ class QuotationController extends Controller
 
     public function getProductSpecs(Request $request, $productId)
     {
-        $shouldPrefill = $request->boolean('prefill');
-
-        $specs = ProductSlab::with('slabType')
+        $specs = ProductSlab::exportEnabled()
+            ->with('slabType')
             ->where('product_id', $productId)
-            ->where('status', 1)
             ->get()
             ->groupBy('product_slab_type_id')
-            ->map(function ($slabs) use ($shouldPrefill) {
+            ->map(function ($slabs) {
                 $firstSlab = $slabs->first();
                 return [
                     'id' => $firstSlab->slabType->id,
                     'spec_name' => $firstSlab->slabType->name ?? '',
-                    'spec_value' => $shouldPrefill ? ($firstSlab->prefill_spec_value ?? 0) : 0,
+                    'spec_value' => $firstSlab->prefill_spec_value ?? 0,
                     'uom' => $firstSlab->slabType->qc_symbol ?? '',
                 ];
             })
