@@ -29,7 +29,8 @@ class ProductSlabController extends Controller
      */
     public function getList(Request $request)
     {
-        $productIds = ProductSlab::select('product_id')
+        $productIds = ProductSlab::generalEnabled()
+            ->select('product_id')
             ->when($request->filled('product_id'), function ($q) use ($request) {
                 return $q->where('product_id', $request->product_id);
             })
@@ -41,7 +42,8 @@ class ProductSlabController extends Controller
             ->latest()
             ->paginate(request('per_page', 25));
 
-        $productSlabs = ProductSlab::with(['product', 'slabType'])
+        $productSlabs = ProductSlab::generalEnabled()
+            ->with(['product', 'slabType'])
             ->whereIn('product_id', $productIds->pluck('product_id'))
             ->get()
             ->groupBy('product_id');
@@ -72,49 +74,7 @@ class ProductSlabController extends Controller
 
         DB::beginTransaction();
         try {
-            ProductSlab::where('product_id', $request->product_id)->delete();
-
-            foreach ($request->slabs as $slabTypeId => $slabData) {
-                if (isset($slabData['is_enabled']) && $slabData['is_enabled'] == 1) {
-                    $deductionType = $slabData['deduction_type'] ?? 'kg';
-                    $isTiered = ($slabData['is_tiered'] ?? 'off') == 'on' ? 1 : 0;
-                    $isPurchaseField = ($slabData['is_purchase_field'] ?? 'off') == 'on' ? 1 : 0;
-                    $prefillSpecValue = $slabData['prefill_spec_value'] ?? null;
-
-                    if (isset($slabData['ranges'])) {
-                        $validRanges = collect($slabData['ranges'])
-                            ->filter(function ($range) {
-                                return !is_null($range['from'] ?? null) &&
-                                    !is_null($range['to'] ?? null) &&
-                                    !is_null($range['deduction_value'] ?? null);
-                            })
-                            ->sortBy('from')
-                            ->values()
-                            ->all();
-
-                        foreach ($validRanges as $range) {
-                            if ($range['from'] >= $range['to']) {
-                                throw new \Exception("Invalid range: 'From' value must be less than 'To' value for slab type $slabTypeId");
-                            }
-
-                            ProductSlab::create([
-                                'company_id' => $request->company_id,
-                                'product_id' => $request->product_id,
-                                'product_slab_type_id' => $slabTypeId,
-                                'from' => $range['from'],
-                                'to' => $range['to'],
-                                'deduction_type' => $deductionType,
-                                'is_tiered' => $isTiered,
-                                'is_purchase_field' => $isPurchaseField,
-                                'deduction_value' => $range['deduction_value'],
-                                'prefill_spec_value' => $prefillSpecValue,
-                                'is_enabled' => true,
-                                'status' => 'active'
-                            ]);
-                        }
-                    }
-                }
-            }
+            $this->syncGeneralSlabs($request);
 
             DB::commit();
 
@@ -140,49 +100,7 @@ class ProductSlabController extends Controller
 
         DB::beginTransaction();
         try {
-            ProductSlab::where('product_id', $request->product_id)->delete();
-
-            foreach ($request->slabs as $slabTypeId => $slabData) {
-                if (isset($slabData['is_enabled']) && $slabData['is_enabled'] == 1) {
-                    $deductionType = $slabData['deduction_type'] ?? 'kg';
-                    $isTiered = ($slabData['is_tiered'] ?? 'off') == 'on' ? 1 : 0;
-                    $isPurchaseField = ($slabData['is_purchase_field'] ?? 'off') == 'on' ? 1 : 0;
-                    $prefillSpecValue = $slabData['prefill_spec_value'] ?? null;
-
-                    if (isset($slabData['ranges'])) {
-                        $validRanges = collect($slabData['ranges'])
-                            ->filter(function ($range) {
-                                return !is_null($range['from'] ?? null) &&
-                                    !is_null($range['to'] ?? null) &&
-                                    !is_null($range['deduction_value'] ?? null);
-                            })
-                            ->sortBy('from')
-                            ->values()
-                            ->all();
-
-                        foreach ($validRanges as $range) {
-                            if ($range['from'] >= $range['to']) {
-                                throw new \Exception("Invalid range: 'From' value must be less than 'To' value for slab type $slabTypeId");
-                            }
-
-                            ProductSlab::create([
-                                'company_id' => $request->company_id,
-                                'product_id' => $request->product_id,
-                                'product_slab_type_id' => $slabTypeId,
-                                'from' => $range['from'],
-                                'to' => $range['to'],
-                                'is_tiered' => $isTiered,
-                                'is_purchase_field' => $isPurchaseField,
-                                'deduction_type' => $deductionType,
-                                'deduction_value' => $range['deduction_value'],
-                                'prefill_spec_value' => $prefillSpecValue,
-                                'is_enabled' => true,
-                                'status' => 'active'
-                            ]);
-                        }
-                    }
-                }
-            }
+            $this->syncGeneralSlabs($request);
 
             DB::commit();
 
@@ -275,7 +193,8 @@ class ProductSlabController extends Controller
             }
 
             $compulsoryParams = ArrivalCompulsoryQcParam::get();
-            $slabs = ProductSlab::where('product_id', $request->product_id)
+            $slabs = ProductSlab::generalEnabled()
+                ->where('product_id', $request->product_id)
                 ->get()
                 ->groupBy('product_slab_type_id')
                 ->map(function ($group) {
@@ -332,11 +251,91 @@ class ProductSlabController extends Controller
         }
 
         $product_id = $arrivalSamplingRequest->arrivalTicket->product_id;
-        $slabs = ProductSlab::where('product_id', $product_id)->get()->unique('product_slab_type_id');
+        $slabs = ProductSlab::generalEnabled()->where('product_id', $product_id)->get()->unique('product_slab_type_id');
 
         // Render view with the slabs wrapped inside a div
         $html = view('management.master.product_slab.forInspection', compact('slabs', 'compulsoryParams'))->render();
 
         return response()->json(['success' => true, 'html' => $html]);
+    }
+
+    private function syncGeneralSlabs(Request $request): void
+    {
+        $companyId = $request->company_id ?? auth()->user()->current_company_id;
+
+        foreach ($request->slabs as $slabTypeId => $slabData) {
+            $existingRows = ProductSlab::withTrashed()
+                ->where('product_id', $request->product_id)
+                ->where('product_slab_type_id', $slabTypeId)
+                ->orderBy('id')
+                ->get()
+                ->values();
+
+            $isEnabled = isset($slabData['is_enabled']) && (int) $slabData['is_enabled'] === 1;
+            $deductionType = $slabData['deduction_type'] ?? 'kg';
+            $isTiered = ($slabData['is_tiered'] ?? 'off') === 'on' ? 1 : 0;
+            $isPurchaseField = ($slabData['is_purchase_field'] ?? 'off') === 'on' ? 1 : 0;
+
+            $validRanges = collect($slabData['ranges'] ?? [])
+                ->filter(function ($range) {
+                    return !is_null($range['from'] ?? null)
+                        && !is_null($range['to'] ?? null)
+                        && !is_null($range['deduction_value'] ?? null);
+                })
+                ->sortBy('from')
+                ->values();
+
+            foreach ($validRanges as $range) {
+                if ($range['from'] >= $range['to']) {
+                    throw new \Exception("Invalid range: 'From' value must be less than 'To' value for slab type $slabTypeId");
+                }
+            }
+
+            if ($isEnabled) {
+                foreach ($validRanges as $index => $range) {
+                    $row = $existingRows->get($index) ?? new ProductSlab();
+
+                    if ($row->trashed()) {
+                        $row->restore();
+                    }
+
+                    $row->fill([
+                        'company_id' => $row->company_id ?: $companyId,
+                        'product_id' => $request->product_id,
+                        'product_slab_type_id' => $slabTypeId,
+                        'from' => $range['from'],
+                        'to' => $range['to'],
+                        'deduction_type' => $deductionType,
+                        'is_tiered' => $isTiered,
+                        'is_purchase_field' => $isPurchaseField,
+                        'deduction_value' => $range['deduction_value'],
+                        'status' => 'active',
+                    ]);
+                    $row->save();
+                }
+            }
+
+            $existingRows->slice($isEnabled ? $validRanges->count() : 0)->each(function ($row) {
+                if ($row->trashed()) {
+                    $row->restore();
+                }
+
+                $row->update([
+                    'status' => $row->is_export_enable ? 'active' : 'inactive',
+                ]);
+            });
+
+            if (!$isEnabled) {
+                $existingRows->take($validRanges->count())->each(function ($row) {
+                    if ($row->trashed()) {
+                        $row->restore();
+                    }
+
+                    $row->update([
+                        'status' => $row->is_export_enable ? 'active' : 'inactive',
+                    ]);
+                });
+            }
+        }
     }
 }

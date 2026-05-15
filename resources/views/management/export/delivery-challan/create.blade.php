@@ -336,6 +336,31 @@
                     $f('#storage_location_csv').val((response.locations.sub_arrival_location_ids || []).join(','));
 
                     loadTicketItems(ticketId);
+                    loadLabours(response.locations.company_location_ids, response.locations.arrival_location_ids);
+                }
+            });
+        }
+
+        function loadLabours(companyLocationIds, arrivalLocationIds) {
+            $.ajax({
+                url: "{{ route('export-delivery-challan.get-labours') }}",
+                method: 'GET',
+                data: {
+                    company_location_ids: companyLocationIds,
+                    arrival_location_ids: arrivalLocationIds
+                },
+                dataType: 'json',
+                success: function (response) {
+                    const select = $f('#labour');
+                    const currentValue = select.val();
+                    select.empty().append('<option value="">Select Labours</option>');
+                    (response || []).forEach(function (vendor) {
+                        select.append(`<option value="${vendor.id}">${vendor.name}</option>`);
+                    });
+                    if (currentValue && select.find('option[value="' + currentValue + '"]').length > 0) {
+                        select.val(currentValue);
+                    }
+                    select.trigger('change.select2');
                 }
             });
         }

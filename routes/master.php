@@ -14,6 +14,7 @@ use App\Http\Controllers\Master\{
     UnitOfMeasureController,
     ProductController,
     ProductSlabController,
+    ExportProductSlabController,
     SupplierController,
     BrokerController,
     ProductSlabTypeController,
@@ -115,6 +116,11 @@ Route::post('/get-product-slab', [ProductSlabController::class, 'getList'])->nam
 Route::post('/product-slab/store-multiple', [ProductSlabController::class, 'storeMultiple'])->name('product-slab.store-multiple');
 Route::delete('/product-slab/destroy-multiple/{productId}', [ProductSlabController::class, 'destroyMultiple'])->name('product-slab.destroy-multiple');
 Route::put('/product-slab/update-multiple/{productId}', [ProductSlabController::class, 'updateMultiple'])->name('product-slab.update-multiple');
+
+Route::resource('export-product-slab', ExportProductSlabController::class)->except(['show', 'store', 'update', 'destroy']);
+Route::post('/get-export-product-slab', [ExportProductSlabController::class, 'getList'])->name('get.export-product-slab');
+Route::post('/export-product-slab/store-multiple', [ExportProductSlabController::class, 'storeMultiple'])->name('export-product-slab.store-multiple');
+Route::put('/export-product-slab/update-multiple/{productId}', [ExportProductSlabController::class, 'updateMultiple'])->name('export-product-slab.update-multiple');
 
 Route::resource('company-location', CompanyLocationController::class);
 Route::post('/get-company-location', [CompanyLocationController::class, 'getList'])->name('get.company-location');

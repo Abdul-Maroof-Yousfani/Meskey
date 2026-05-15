@@ -36,7 +36,6 @@
                 $deductionType = $slabsForType->first() ? $slabsForType->first()->deduction_type : 'amount';
                 $isTiered = $slabsForType->first() ? $slabsForType->first()->is_tiered : false;
                 $isPurchaseField = $slabsForType->first() ? $slabsForType->first()->is_purchase_field : false;
-                $prefillSpecValue = $slabsForType->first() ? $slabsForType->first()->prefill_spec_value : null;
             @endphp
             <div class="slab-type-group mb-4 p-3 border rounded">
                 <div class="row align-items-center">
@@ -72,15 +71,6 @@
                             </div>
                             <div class="col-4">
                                 <div class="form-group">
-                                    <label>Spec Prefill Value:</label>
-                                    <input type="number" step="0.01" class="form-control"
-                                        name="slabs[{{ $slab_type->id }}][prefill_spec_value]"
-                                        placeholder="Optional prefill value" value="{{ $prefillSpecValue }}">
-                                    <small class="text-muted">Default will remain off; it will only be used in allowed modules.</small>
-                                </div>
-                            </div>
-                            <div class="col-2">
-                                <div class="form-group">
                                     <label>Is Tiered:</label>
                                     <div class="custom-control custom-switch">
                                         <input type="checkbox" class="custom-control-input tiered"
@@ -91,7 +81,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-2">
+                            <div class="col-4">
                                 <div class="form-group">
                                     <label>Is PO Field:</label>
                                     <div class="custom-control custom-switch">
