@@ -181,7 +181,7 @@
         samplingResults: [
             @foreach ($samplingRequestResults as $slab)
                 @if ($slab->applied_deduction)
-                                            {
+                                                    {
                         id: {{ $slab->id }},
                         applied_deduction: {{ $slab->applied_deduction ?? 0 }},
                         deduction_type: '{{ $slab->deduction_type ?? 'amount' }}',
@@ -195,10 +195,10 @@
         compulsoryResults: [
             @foreach ($samplingRequestCompulsuryResults as $slab)
                 @if ($slab->applied_deduction)
-                                {
+                                    {
                     id: {{ $slab->id }},
                     applied_deduction: {{ $slab->applied_deduction ?? 0 }}
-                                },
+                                    },
                 @endif
             @endforeach
         ],
@@ -919,6 +919,7 @@
                     console.log('Highest RM PO End:', highestRmPoEnd);
 
                     matchingSlabs.forEach(mSlab => {
+                        console.log(mSlab);
                         const from = parseFloat(mSlab.from);
                         const to = parseFloat(mSlab.to);
                         const isTiered = parseInt(mSlab.is_tiered);
@@ -1080,7 +1081,7 @@
                 const totalDeductionsForFormula = totalSamplingDeductions + bagWeightAmount +
                     loadingWeighbridgeAmount;
                 const totalAmount = grossAmount - totalDeductionsForFormula + bagRateAmount - parseInt(
-                                {{ $grossFreightAmount ?? 0 }}) + {{ $totalSupplierCommission }};
+                                    {{ $grossFreightAmount ?? 0 }}) + {{ $totalSupplierCommission }};
 
                 $('#total_amount').val(totalAmount);
                 $('#total_amount_display').val(totalAmount.toFixed(2));
