@@ -724,7 +724,7 @@
         //     return false;
         // }).addClass('disabled');
 
-        function calculateTotal() {
+        function calculateTotalndndndnd() {
             let total = 0;
             let totalKgs = 0;
 
@@ -778,6 +778,81 @@
             $('#lumpsum-kgs-value').val(totalKgs.toFixed(2));
         }
 
+
+
+
+        function calculateTotal() {
+    let total = 0;
+    let totalKgs = 0;
+
+    $('.deduction-field').each(function() {
+        let matchingSlabs = $(this).data('matching-slabs') || [];
+        let rmPoSlabs = $(this).data('rm-po-slabs') || [];
+        let calculatedOn = $(this).data('calculated-on');
+        let val = parseFloat($(this).val()) || 0;
+
+        if (calculatedOn == {{ SLAB_TYPE_PERCENTAGE }}) {
+            let deductionValue = 0;
+
+            let highestRmPoEnd = 0;
+            rmPoSlabs.forEach(rmPoSlab => {
+                let rmPoTo = rmPoSlab.to ? parseFloat(rmPoSlab.to) : 0;
+                if (rmPoTo > highestRmPoEnd) {
+                    highestRmPoEnd = rmPoTo;
+                }
+            });
+
+            matchingSlabs.forEach(slab => {
+                let from = parseFloat(slab.from);
+                let to = slab.to ? parseFloat(slab.to) : Infinity;
+                
+                // ✅ FIX: Handle is_tiered correctly (string "true"/"false" or boolean)
+                let isTiered;
+                if (typeof slab.is_tiered === 'string') {
+                    isTiered = slab.is_tiered.toLowerCase() === 'true' ? 1 : 0;
+                } else {
+                    isTiered = parseInt(slab.is_tiered) || 0;
+                }
+                
+                let deductionVal = parseFloat(slab.deduction_value);
+
+                console.log('Slab:', {
+                    from, to, 
+                    raw_is_tiered: slab.is_tiered,
+                    converted_is_tiered: isTiered,
+                    deductionVal
+                });
+
+                if (val < from) return;
+
+                let effectiveFrom = Math.max(from, highestRmPoEnd + 1);
+                let effectiveTo = Math.min(to, val);
+
+                if (effectiveFrom <= effectiveTo) {
+                    if (isTiered === 1) {
+                        let applicableAmount = effectiveTo - effectiveFrom + 1;
+                        let tieredAmount = deductionVal * applicableAmount;
+                        deductionValue += tieredAmount;
+                        console.log(`Tiered: ${deductionVal} x ${applicableAmount} = ${tieredAmount}`);
+                    } else {
+                        deductionValue += deductionVal;
+                        console.log(`Non-tiered: adding ${deductionVal}`);
+                    }
+                }
+            });
+
+            total += deductionValue;
+            console.log('Total after this slab:', total);
+        } else if (calculatedOn == {{ SLAB_TYPE_KG }}) {
+            totalKgs += val || 0;
+        } else {
+            total += val || 0;
+        }
+    });
+
+    $('#lumpsum-value').val(total.toFixed(2));
+    $('#lumpsum-kgs-value').val(totalKgs.toFixed(2));
+}
         calculateTotal();
 
         if ({{ $arrivalSamplingRequest->is_lumpsum_deduction == 1 ? 'true' : 'false' }}) {
