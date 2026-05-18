@@ -30,36 +30,6 @@ class PurchaseReturn extends Model
                     $product = Product::select("id", "account_id")->find($data->item_id);
                     $amount = $data->net_amount;
 
-                    if ($supplier && $supplier->account_id) {
-                         createTransaction(
-                            $amount,
-                            $supplier->account_id,
-                            6,
-                            $return->pr_no,
-                            'debit',
-                            'no',
-                            [
-                                'payment_against' => "Purchase Return",
-                                'remarks' => "Purchase Return"
-                            ] 
-                        );
-                    }
-
-                    if ($product && $product->account_id) {
-                        createTransaction(
-                            $amount,
-                            $product->account_id,
-                            6,
-                            $return->pr_no,
-                            'credit',
-                            'no',
-                            [
-                                'payment_against' => "Purchase Return",
-                                'remarks' => "Product is Returned"
-                            ] 
-                        );
-                    }
-
                     Stock::create([
                         'product_id' => $data->item_id,
                         'voucher_type' => 'purchase_return',
