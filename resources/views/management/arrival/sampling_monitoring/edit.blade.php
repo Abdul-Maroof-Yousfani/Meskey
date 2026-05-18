@@ -1346,8 +1346,6 @@
         }
 
 
-
-
         function calculateTotal() {
             let total = 0;
             let totalKgs = 0;
@@ -1357,26 +1355,21 @@
 
             $('.deduction-field').each(function (index) {
                 let matchingSlabs = $(this).data('matching-slabs') || [];
-                console.log('Full matching slabs data:', matchingSlabs);
-
                 let rmPoSlabs = $(this).data('rm-po-slabs') || [];
                 let calculatedOn = $(this).data('calculated-on');
                 let slabId = $(this).data('slab-id');
-                let checklistValue = $(this).data('checklist');
                 let val = parseFloat($(this).val()) || 0;
 
                 console.log(`\n--- Slab ${index + 1} (ID: ${slabId}) ---`);
-                console.log('Checklist value:', checklistValue);
                 console.log('Entered deduction value:', val);
                 console.log('Calculated on type:', calculatedOn);
 
                 if (calculatedOn == {{ SLAB_TYPE_PERCENTAGE }}) {
                     let deductionValue = 0;
 
-                    // Step 1: Calculate highest RM PO end
+                    // Calculate highest RM PO end
                     let highestRmPoEnd = 0;
                     if (rmPoSlabs && rmPoSlabs.length > 0) {
-                        console.log('RM PO Slabs count:', rmPoSlabs.length);
                         rmPoSlabs.forEach(rmPoSlab => {
                             let rmPoTo = rmPoSlab.to ? parseFloat(rmPoSlab.to) : 0;
                             if (rmPoTo > highestRmPoEnd) {
@@ -1386,7 +1379,6 @@
                         console.log('Highest RM PO End:', highestRmPoEnd);
                     }
 
-                    // Step 2: Process matching slabs
                     if (matchingSlabs && matchingSlabs.length > 0) {
                         console.log('Matching slabs count:', matchingSlabs.length);
 
@@ -1397,9 +1389,11 @@
                             let from = parseFloat(slab.from);
                             let to = slab.to ? parseFloat(slab.to) : Infinity;
 
-                            // ✅ Fix: Handle is_tiered correctly
+                            // ✅ FIX: Handle is_tiered for boolean, string, and number
                             let isTiered;
-                            if (typeof slab.is_tiered === 'string') {
+                            if (typeof slab.is_tiered === 'boolean') {
+                                isTiered = slab.is_tiered ? 1 : 0;
+                            } else if (typeof slab.is_tiered === 'string') {
                                 isTiered = slab.is_tiered.toLowerCase() === 'true' ? 1 : 0;
                             } else {
                                 isTiered = parseInt(slab.is_tiered) || 0;
@@ -1408,12 +1402,12 @@
                             let deductionVal = parseFloat(slab.deduction_value);
 
                             console.log(`\n  Processing slab: ${from} - ${to === Infinity ? '∞' : to}`);
-                            console.log(`    is_tiered: ${isTiered} (${isTiered === 1 ? 'Tiered' : 'Non-Tiered'})`);
-                            console.log(`    deduction value: ${deductionVal}`);
+                            console.log(`    Raw is_tiered:`, slab.is_tiered, `Type: ${typeof slab.is_tiered}`);
+                            console.log(`    Converted is_tiered: ${isTiered} ${isTiered === 1 ? '(Tiered ✅)' : '(Non-Tiered ❌)'}`);
+                            console.log(`    Deduction value: ${deductionVal}`);
                             console.log(`    Current val (${val}) >= from (${from})? ${val >= from}`);
 
                             if (val >= from) {
-                                // Calculate effective range (excluding RM PO ranges)
                                 let effectiveFrom = Math.max(from, highestRmPoEnd + 1);
                                 let effectiveTo = Math.min(to, val);
 
@@ -1427,19 +1421,17 @@
                                         deductionValue += tieredAmount;
                                         console.log(`    ✅ TIERED: ${deductionVal} × ${applicableAmount} = ${tieredAmount}`);
                                     } else {
-                                        // Non-tiered: single deduction for the entire range
+                                        // Non-tiered: single deduction for the range
                                         deductionValue += deductionVal;
                                         console.log(`    ✅ NON-TIERED: adding ${deductionVal}`);
                                     }
                                 } else {
-                                    console.log(`    ⏭️ No effective range (overlaps with RM PO)`);
+                                    console.log(`    ⏭️ No effective range`);
                                 }
                             } else {
                                 console.log(`    ⏭️ Skipped: val ${val} < from ${from}`);
                             }
                         }
-                    } else {
-                        console.log('  No matching slabs found');
                     }
 
                     console.log(`  💰 Total deduction for this slab: ${deductionValue}`);
@@ -1466,7 +1458,6 @@
 
             return { total, totalKgs };
         }
-
         if (
             {{ $arrivalSamplingRequest->arrivalTicket->is_lumpsum_deduction == 0 ? 'true' : 'false' }}
         ) {
