@@ -1357,6 +1357,8 @@
 
             $('.deduction-field').each(function (index) {
                 let matchingSlabs = $(this).data('matching-slabs') || [];
+                console.log('Full matching slabs data:', matchingSlabs);
+
                 let rmPoSlabs = $(this).data('rm-po-slabs') || [];
                 let calculatedOn = $(this).data('calculated-on');
                 let slabId = $(this).data('slab-id');
