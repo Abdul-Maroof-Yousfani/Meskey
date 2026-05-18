@@ -200,7 +200,9 @@ class PurchaseReturnController extends Controller
                     'tax_percent' => $request->tax_percent[$index] ?? 0,
                     'tax_amount' => $request->tax_amount[$index] ?? 0,
                     'discount_percent' => $billData->discount_percent ?? 0,
-                    'discount_amount' => $billData->discount_amount ?? 0,
+                    'discount_amount' => $request->discount_amount[$index] ?? 0,
+                    'deduction' => $request->deduction[$index] ?? 0,
+                    'deduction_per_piece' => $request->deduction_per_piece[$index] ?? 0,
                     'net_amount' => $request->net_amount[$index],
                     'description' => $request->description[$index],
                 ]);
@@ -269,7 +271,9 @@ class PurchaseReturnController extends Controller
                     'tax_percent' => $request->tax_percent[$index] ?? 0,
                     'tax_amount' => $request->tax_amount[$index] ?? 0,
                     'discount_percent' => $billData->discount_percent ?? 0,
-                    'discount_amount' => $billData->discount_amount ?? 0,
+                    'discount_amount' => $request->discount_amount[$index] ?? 0,
+                    'deduction' => $request->deduction[$index] ?? 0,
+                    'deduction_per_piece' => $request->deduction_per_piece[$index] ?? 0,
                     'net_amount' => $request->net_amount[$index],
                     'description' => $request->description[$index],
                 ]);

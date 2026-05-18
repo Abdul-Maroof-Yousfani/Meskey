@@ -228,4 +228,9 @@ class ExportOrder extends Model
     {
         return $this->hasMany(CommercialInvoice::class, 'export_order_id');
     }
+
+    public function packingLists()
+    {
+        return $this->hasMany(PackingList::class, 'export_order_id');
+    }
 }

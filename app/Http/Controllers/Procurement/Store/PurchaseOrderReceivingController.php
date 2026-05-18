@@ -388,38 +388,7 @@ class PurchaseOrderReceivingController extends Controller
 
                 $price = ($request->qty[$index] ?? 0) * ($requestData->purchase_order_data->rate ?? 0);
                 
-                Stock::create([
-                    'product_id' => $itemId,
-                    'voucher_type' => 'grn',
-                    'voucher_no' => $grn,
-                    'qty' => $request->qty[$index] ?? 0,
-                    'type' => 'stock-in',
-                    'narration' => 'Goods Received Note',
-                    'price' => $price,
-                    'avg_price_per_kg' => $price,
-                    'company_location_id' => $request->company_id,
-                    'parent_id' => $request->purchase_order_data_id[$index] ?? null
-                ]);
-
-                $product = Product::select("id", "account_id")->find($itemId);
-                if($product->account_id) {
-                    createTransaction(
-                        $price,
-                        $product->account_id,
-                        8,
-                        $grnNumber->unique_no,
-                        'debit',
-                        'no',
-                        [
-                            'grn_no' => $grnNumber->unique_no,
-                            'purpose' => 'goods-receiving-note',
-                            'against_reference_number' => $grnNumber->unique_no,
-                            'payment_against' => "Goods Received Note",
-                            'remarks' => "Goods Received Note"
-                        ]  
-                    );
-                }
-
+               
             }
 
             DB::commit();

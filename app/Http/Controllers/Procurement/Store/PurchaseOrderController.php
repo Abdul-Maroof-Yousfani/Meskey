@@ -508,12 +508,12 @@ class PurchaseOrderController extends Controller
         try {
             $PurchaseOrder = PurchaseOrder::findOrFail($id);
 
-            // if($PurchaseOrder->am_approval_status == "approved" || $PurchaseOrder->am_approval_status == "rejected") {
-            //     return response()->json([
-            //         'success' => false,
-            //         'message' => 'Purchase request is already approved or rejected.',
-            //     ], 422);
-            // }
+            if($PurchaseOrder->am_approval_status == "approved" || $PurchaseOrder->am_approval_status == "rejected") {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Purchase order is already approved or rejected.',
+                ], 422);
+            }
 
             $PurchaseOrder->update([
                 'purchase_quotation_id' => $request->quotation_no ?? null,
