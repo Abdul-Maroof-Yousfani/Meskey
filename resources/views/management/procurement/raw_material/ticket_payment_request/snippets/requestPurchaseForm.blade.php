@@ -940,6 +940,7 @@
                 } else {
                     deductionValue = appliedDeduction;
                 }
+                console.log(deductionValue+'sdd');
 
                 let calculatedValue = deductionValue * netWeight;
                 if (slabData.deduction_type !== 'amount') {
