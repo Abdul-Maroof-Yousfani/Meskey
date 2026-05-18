@@ -965,6 +965,7 @@
                 let totalSamplingAmount = 0;
 
                 window.samplingData.samplingResults.forEach(slabData => {
+                    console.log(netWeight+'nw');
                     const calculatedValue = calculateSlabDeduction(slabData, netWeight);
                     console.log(calculatedValue+'ddddjjj');
                     totalSamplingAmount += calculatedValue;
