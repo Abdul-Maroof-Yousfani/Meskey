@@ -781,32 +781,58 @@
 
 
 
-        function calculateTotal() {
+     function calculateTotal() {
     let total = 0;
     let totalKgs = 0;
+    let debugInfo = [];
 
-    $('.deduction-field').each(function() {
-        let matchingSlabs = $(this).data('matching-slabs') || [];
-        let rmPoSlabs = $(this).data('rm-po-slabs') || [];
-        let calculatedOn = $(this).data('calculated-on');
-        let val = parseFloat($(this).val()) || 0;
+    console.log('================== CALCULATE TOTAL START ==================');
+    console.log('SLAB_TYPE_PERCENTAGE value:', {{ SLAB_TYPE_PERCENTAGE }});
+    console.log('Number of deduction fields:', $('.deduction-field').length);
+    
+    $('.deduction-field').each(function(index) {
+        let $this = $(this);
+        let slabId = $this.data('slab-id');
+        let checklistValue = $this.data('checklist');
+        let matchingSlabs = $this.data('matching-slabs') || [];
+        let rmPoSlabs = $this.data('rm-po-slabs') || [];
+        let calculatedOn = $this.data('calculated-on');
+        let val = parseFloat($this.val()) || 0;
+        
+        console.log(`\n--- Slab ${index + 1} (ID: ${slabId}) ---`);
+        console.log('Checklist value:', checklistValue);
+        console.log('Entered deduction value:', val);
+        console.log('Calculated on type:', calculatedOn);
+        console.log('Is percentage type?', calculatedOn == {{ SLAB_TYPE_PERCENTAGE }});
+        console.log('Matching Slabs count:', matchingSlabs.length);
+        console.log('RM PO Slabs count:', rmPoSlabs.length);
+        
+        if (matchingSlabs.length > 0) {
+            console.log('Raw matching slabs data:', JSON.stringify(matchingSlabs, null, 2));
+        }
 
         if (calculatedOn == {{ SLAB_TYPE_PERCENTAGE }}) {
             let deductionValue = 0;
-
             let highestRmPoEnd = 0;
-            rmPoSlabs.forEach(rmPoSlab => {
+            
+            // Process RM PO Slabs
+            console.log('\n--- Processing RM PO Slabs ---');
+            rmPoSlabs.forEach((rmPoSlab, idx) => {
                 let rmPoTo = rmPoSlab.to ? parseFloat(rmPoSlab.to) : 0;
+                console.log(`RM PO Slab ${idx + 1}: to = ${rmPoTo}`);
                 if (rmPoTo > highestRmPoEnd) {
                     highestRmPoEnd = rmPoTo;
                 }
             });
-
-            matchingSlabs.forEach(slab => {
+            console.log('Highest RM PO End value:', highestRmPoEnd);
+            
+            // Process Matching Slabs
+            console.log('\n--- Processing Matching Slabs ---');
+            matchingSlabs.forEach((slab, idx) => {
                 let from = parseFloat(slab.from);
                 let to = slab.to ? parseFloat(slab.to) : Infinity;
                 
-                // ✅ FIX: Handle is_tiered correctly (string "true"/"false" or boolean)
+                // Handle is_tiered correctly
                 let isTiered;
                 if (typeof slab.is_tiered === 'string') {
                     isTiered = slab.is_tiered.toLowerCase() === 'true' ? 1 : 0;
@@ -815,43 +841,106 @@
                 }
                 
                 let deductionVal = parseFloat(slab.deduction_value);
-
-                console.log('Slab:', {
-                    from, to, 
-                    raw_is_tiered: slab.is_tiered,
-                    converted_is_tiered: isTiered,
-                    deductionVal
-                });
-
-                if (val < from) return;
-
+                
+                console.log(`\nMatching Slab ${idx + 1}:`);
+                console.log(`  From: ${from}, To: ${to === Infinity ? 'Infinity' : to}`);
+                console.log(`  Raw is_tiered: "${slab.is_tiered}" (${typeof slab.is_tiered})`);
+                console.log(`  Converted is_tiered: ${isTiered} ${isTiered === 1 ? '(Tiered ✅)' : '(Non-Tiered ❌)'}`);
+                console.log(`  Deduction value: ${deductionVal}`);
+                console.log(`  Current val (${val}) >= from (${from})? ${val >= from}`);
+                
+                if (val < from) {
+                    console.log(`  ⏭️ Skipping: val ${val} < from ${from}`);
+                    return;
+                }
+                
                 let effectiveFrom = Math.max(from, highestRmPoEnd + 1);
                 let effectiveTo = Math.min(to, val);
-
+                
+                console.log(`  Effective from: ${effectiveFrom}`);
+                console.log(`  Effective to: ${effectiveTo}`);
+                console.log(`  Effective from <= Effective to? ${effectiveFrom <= effectiveTo}`);
+                
                 if (effectiveFrom <= effectiveTo) {
                     if (isTiered === 1) {
                         let applicableAmount = effectiveTo - effectiveFrom + 1;
                         let tieredAmount = deductionVal * applicableAmount;
                         deductionValue += tieredAmount;
-                        console.log(`Tiered: ${deductionVal} x ${applicableAmount} = ${tieredAmount}`);
+                        console.log(`  ✅ TIERED CALCULATION:`);
+                        console.log(`     ${deductionVal} × ${applicableAmount} = ${tieredAmount}`);
+                        console.log(`     Running total: ${deductionValue}`);
                     } else {
                         deductionValue += deductionVal;
-                        console.log(`Non-tiered: adding ${deductionVal}`);
+                        console.log(`  ✅ NON-TIERED CALCULATION:`);
+                        console.log(`     Adding ${deductionVal}`);
+                        console.log(`     Running total: ${deductionValue}`);
                     }
+                } else {
+                    console.log(`  ⏭️ No overlap in range`);
                 }
             });
-
+            
+            console.log(`\n💰 Final deduction value for this slab: ${deductionValue}`);
             total += deductionValue;
-            console.log('Total after this slab:', total);
+            console.log(`📊 Running total (all slabs so far): ${total}`);
+            
+            // Store debug info
+            debugInfo.push({
+                slabId: slabId,
+                calculatedOn: 'percentage',
+                enteredValue: val,
+                finalDeduction: deductionValue,
+                matchingSlabsCount: matchingSlabs.length,
+                rmPoSlabsCount: rmPoSlabs.length,
+                highestRmPoEnd: highestRmPoEnd
+            });
+            
         } else if (calculatedOn == {{ SLAB_TYPE_KG }}) {
+            console.log(`💰 Adding ${val} to KG total`);
             totalKgs += val || 0;
+            debugInfo.push({
+                slabId: slabId,
+                calculatedOn: 'kg',
+                value: val
+            });
         } else {
+            console.log(`💰 Adding ${val} to amount total`);
             total += val || 0;
+            debugInfo.push({
+                slabId: slabId,
+                calculatedOn: 'amount',
+                value: val
+            });
         }
     });
-
+    
+    console.log('\n================== FINAL RESULTS ==================');
+    console.log('💰 Total Amount:', total.toFixed(2));
+    console.log('💰 Total KGs:', totalKgs.toFixed(2));
+    console.log('📋 Debug Info:', debugInfo);
+    console.log('================== CALCULATE TOTAL END ==================\n');
+    
+    // Update the input fields
     $('#lumpsum-value').val(total.toFixed(2));
     $('#lumpsum-kgs-value').val(totalKgs.toFixed(2));
+    
+    // Also log if there are any issues
+    if ($('.deduction-field').length === 0) {
+        console.warn('⚠️ No deduction fields found!');
+    }
+    
+    // Check for any NaN values
+    if (isNaN(total) || isNaN(totalKgs)) {
+        console.error('❌ NaN detected in calculation!');
+        console.error('Total:', total, 'Total KGs:', totalKgs);
+    }
+    
+    // Return values for potential external use
+    return {
+        total: total,
+        totalKgs: totalKgs,
+        debugInfo: debugInfo
+    };
 }
         calculateTotal();
 
