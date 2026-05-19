@@ -125,8 +125,8 @@
                                                 <i class="fa fa-plus"></i> Add Advance
                                             </button>
                                         </div>
-                                        <div class="table-responsive">
-                                            <table class="table table-bordered" id="referencesTable">
+                                        <div style="overflow: visible;">
+                                            <table class="table table-bordered" id="referencesTable" style="overflow: visible;">
                                                 <thead>
                                                     <tr>
                                                         <th width="5%"><input type="checkbox" id="select_all"></th>
@@ -146,33 +146,6 @@
                                                     <tr>
                                                         <td colspan="11" class="text-center text-muted">Select references to load details.</td>
                                                     </tr>
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div id="bank-details-section" class="row" style="display: none;">
-                                <div class="col-md-12">
-                                    <div class="form-group">
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <label class="mb-0">Line Items (Bank/Account Details)</label>
-                                            <button type="button" class="btn btn-sm btn-success" onclick="addBankDetailRow()">
-                                                <i class="fa fa-plus"></i> Add More
-                                            </button>
-                                        </div>
-                                        <div class="table-responsive">
-                                            <table class="table table-bordered" id="bankDetailsTable">
-                                                <thead>
-                                                    <tr>
-                                                        <th>Account</th>
-                                                        <th width="20%">Amount</th>
-                                                        <th width="25%">Cheque No</th>
-                                                        <th width="5%">Action</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody id="bank-details-data">
                                                 </tbody>
                                             </table>
                                         </div>
@@ -248,7 +221,7 @@
         const idx = `adv_${advanceCount}`;
 
         const rowHtml = `
-            <tr class="advance-row">
+            <tr class="advance-row reference-main-row" id="reference-row-${idx}">
                 <td class="text-center">
                     <input type="checkbox" class="row-select" checked data-row="${idx}">
                     <input type="hidden" name="items[${idx}][reference_id]" value="0">
@@ -261,7 +234,7 @@
                 <td>${date}</td>
                 <td>${customerName}</td>
                 <td>
-                    <input type="number" step="0.01" class="form-control amount-input" name="items[${idx}][amount_display]" value="0.00">
+                    <input type="number" step="0.01" readonly class="form-control amount-input" name="items[${idx}][amount_display]" value="0.00" data-balance="999999999">
                 </td>
                 <td>
                     <select class="form-control tax-select" name="items[${idx}][tax_id]">
@@ -280,10 +253,42 @@
                 <td>
                     <input type="text" class="form-control line-desc" name="items[${idx}][line_desc]" placeholder="Line description">
                 </td>
-                <td class="text-center">
-                    <button type="button" class="btn btn-sm btn-danger remove-advance-row">
+                <td class="text-center d-flex justify-content-center align-items-center">
+                    <button type="button" class="btn btn-xs btn-outline-info toggle-bank-subrow mr-1" data-row-idx="${idx}" title="Toggle Bank Details">
+                        <i class="fa fa-chevron-down"></i> Banks
+                    </button>
+                    <button type="button" class="btn btn-xs btn-danger remove-advance-row">
                         <i class="fa fa-trash"></i>
                     </button>
+                </td>
+            </tr>
+            <tr class="bank-details-subrow" id="bank-subrow-${idx}" style="display: none; background-color: #f9fbfd;">
+                <td></td>
+                <td colspan="10">
+                    <div class="card my-2 border-info shadow-sm" style="border: 1px solid #17a2b8 !important;">
+                        <div class="card-header py-2 d-flex justify-content-between align-items-center" style="background-color: #eef7fc; border-bottom: 1px solid #17a2b8;">
+                            <h6 class="mb-0 text-info font-weight-bold" style="font-size: 0.9rem;">
+                                <i class="fa fa-university mr-1"></i> Bank/Account Details for ${advNo}
+                            </h6>
+                            <button type="button" class="btn btn-xs btn-success add-nested-bank-btn" data-row-idx="${idx}" style="padding: .2rem .4rem; font-size: .75rem;">
+                                <i class="fa fa-plus"></i> Add Account
+                            </button>
+                        </div>
+                        <div class="card-body p-2" style="background-color: #ffffff;">
+                            <table class="table table-bordered table-sm mb-0">
+                                <thead>
+                                    <tr class="bg-light">
+                                        <th>Account</th>
+                                        <th width="20%">Amount</th>
+                                        <th width="30%">Cheque No</th>
+                                        <th width="8%">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="nested-bank-data" id="nested-bank-data-${idx}">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </td>
             </tr>
         `;
@@ -294,6 +299,13 @@
         }
         tbody.append(rowHtml);
         
+        // If a voucher type is already selected, automatically add a bank row
+        if ($('#voucher_type').val() !== '') {
+            $(`#bank-subrow-${idx}`).show();
+            $(`.toggle-bank-subrow[data-row-idx="${idx}"]`).find('i').removeClass('fa-chevron-down').addClass('fa-chevron-up');
+            addNestedBankDetailRow(idx);
+        }
+
         // Final check for UI update
         if (typeof updateSelectedDocsList === "function") {
             updateSelectedDocsList();
@@ -336,13 +348,11 @@
             emptyMessage.show();
             listContainer.hide();
             $('#selected-total-amount').hide();
-            $('#bank-details-section').hide();
             return;
         }
 
         emptyMessage.hide();
         listContainer.show();
-        $('#bank-details-section').show();
 
         selected.forEach(function (item) {
             listContainer.append(`
@@ -416,7 +426,7 @@
         return [];
     }
 
-    function addBankDetailRow() {
+    function addNestedBankDetailRow(rowIdx) {
         const filteredAccounts = getFilteredAccounts();
         if ($('#voucher_type').val() === '') {
             Swal.fire('Warning', 'Please select a Voucher Type first.', 'warning');
@@ -424,7 +434,7 @@
         }
 
         bankDetailCount++;
-        const idx = bankDetailCount;
+        const bankIdx = bankDetailCount;
         
         let accountOptions = '<option value="">Select Account</option>';
         filteredAccounts.forEach(function(acc) {
@@ -432,44 +442,90 @@
         });
 
         const rowHtml = `
-            <tr>
+            <tr class="nested-bank-row">
                 <td>
-                    <select name="bank_details[${idx}][account_id]" class="form-control select2-bank" required>
+                    <select name="bank_details[${bankIdx}][account_id]" class="form-control select2-nested-bank" required style="width: 100%;">
                         ${accountOptions}
                     </select>
                 </td>
                 <td>
-                    <input type="number" step="0.01" name="bank_details[${idx}][amount]" class="form-control bank-amount" required>
+                    <input type="number" step="0.01" name="bank_details[${bankIdx}][amount]" class="form-control bank-amount" required>
                 </td>
                 <td>
-                    <input type="text" name="bank_details[${idx}][cheque_no]" class="form-control">
+                    <input type="text" name="bank_details[${bankIdx}][cheque_no]" class="form-control">
                 </td>
                 <td class="text-center">
-                    <button type="button" class="btn btn-sm btn-danger remove-bank-row">
+                    <button type="button" class="btn btn-xs btn-danger remove-nested-bank-row" style="padding: .2rem .4rem; font-size: .75rem;">
                         <i class="fa fa-trash"></i>
                     </button>
                 </td>
             </tr>
         `;
         
-        $("#bank-details-data").append(rowHtml);
-        $('.select2-bank').last().select2({
-            dropdownParent: $('#bankDetailsTable')
+        const container = $(`#nested-bank-data-${rowIdx}`);
+        container.append(rowHtml);
+        
+        // Initialize select2 on the newly added select
+        container.find('.select2-nested-bank').last().select2({
+            width: '100%'
         });
     }
 
     $(document).ready(function () {
-        // ... existing code ...
-        
-        $(document).on('click', '.remove-bank-row', function() {
+        // Toggle subrow bank details
+        $(document).on('click', '.toggle-bank-subrow', function() {
+            const rowIdx = $(this).data('row-idx');
+            const subrow = $(`#bank-subrow-${rowIdx}`);
+            subrow.toggle();
+            
+            const icon = $(this).find('i');
+            if (subrow.is(':visible')) {
+                icon.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+                // If empty and voucher type is selected, auto-add a bank row
+                if ($(`#nested-bank-data-${rowIdx}`).children().length === 0 && $('#voucher_type').val() !== '') {
+                    addNestedBankDetailRow(rowIdx);
+                }
+            } else {
+                icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
+            }
+        });
+
+        // Add nested bank row click
+        $(document).on('click', '.add-nested-bank-btn', function() {
+            const rowIdx = $(this).data('row-idx');
+            addNestedBankDetailRow(rowIdx);
+        });
+
+        // Remove nested bank row click
+        $(document).on('click', '.remove-nested-bank-row', function() {
+            const subrow = $(this).closest('tr.bank-details-subrow');
             $(this).closest('tr').remove();
+            
+            // Re-calculate the sum for this subrow
+            const rowIdx = subrow.attr('id').replace('bank-subrow-', '');
+            let sum = 0;
+            subrow.find('.bank-amount').each(function() {
+                sum += parseFloat($(this).val()) || 0;
+            });
+            
+            const mainRow = $(`#reference-row-${rowIdx}`);
+            mainRow.find('.amount-input').val(sum.toFixed(2));
+            recalcRow(mainRow);
+            
+            validateBankTotal();
         });
 
         // Clear and add initial row when voucher type changes
         $('#voucher_type').on('change', function() {
-            $("#bank-details-data").empty();
+            $('.nested-bank-data').empty();
             if ($(this).val() !== '') {
-                addBankDetailRow();
+                const firstChecked = $('#referencesTable tbody').find('.row-select:checked').first();
+                if (firstChecked.length) {
+                    const rowIdx = firstChecked.data('row');
+                    $(`#bank-subrow-${rowIdx}`).show();
+                    $(`.toggle-bank-subrow[data-row-idx="${rowIdx}"]`).find('i').removeClass('fa-chevron-down').addClass('fa-chevron-up');
+                    addNestedBankDetailRow(rowIdx);
+                }
             }
         });
         const referenceSelect = $('#reference_ids');
@@ -596,6 +652,17 @@
                 success: function (response) {
                     $("#rv-data").html(response);
 
+                    // Automatically add bank row to first selected reference if voucher type is selected
+                    if ($('#voucher_type').val() !== '') {
+                        const firstChecked = $('#referencesTable tbody').find('.row-select:checked').first();
+                        if (firstChecked.length) {
+                            const rowIdx = firstChecked.data('row');
+                            $(`#bank-subrow-${rowIdx}`).show();
+                            $(`.toggle-bank-subrow[data-row-idx="${rowIdx}"]`).find('i').removeClass('fa-chevron-down').addClass('fa-chevron-up');
+                            addNestedBankDetailRow(rowIdx);
+                        }
+                    }
+
                     // Important: Re-bind events after injecting new HTML
                     bindRowEvents();
 
@@ -678,6 +745,8 @@
         // Remove advance row
         $(document).on('click', '.remove-advance-row', function() {
             const row = $(this).closest('tr');
+            const rowIdx = row.find('.row-select').data('row');
+            $(`#bank-subrow-${rowIdx}`).remove();
             row.remove();
             
             // If table empty, show message
@@ -686,6 +755,7 @@
             }
             
             updateSelectedDocsList();
+            validateBankTotal();
         });
 
         function getBankDetailsTotal() {
@@ -697,22 +767,76 @@
         }
 
         function validateBankTotal() {
-            const referencesTotal = parseFloat($('#total_amount').text()) || 0;
-            const bankDetailsTotal = getBankDetailsTotal();
-            const allowExcess = $('#allow_excess').is(':checked');
-            
-            if (!allowExcess && bankDetailsTotal > referencesTotal) {
-                $('.bank-amount').css('border-color', '#dc3545');
-                $('#bank-details-total-error').remove();
-                $('#bank-details-data').after(`<div id="bank-details-total-error" class="text-danger small mt-1 pl-2">Total amount (${bankDetailsTotal.toFixed(2)}) exceeds the references total (${referencesTotal.toFixed(2)}) and "Allow Excess Amount" is off.</div>`);
-            } else {
-                $('.bank-amount').css('border-color', '');
-                $('#bank-details-total-error').remove();
-            }
+            $('.nested-bank-row').each(function() {
+                const subrow = $(this).closest('tr.bank-details-subrow');
+                const rowIdx = subrow.attr('id').replace('bank-subrow-', '');
+                const mainRow = $(`#reference-row-${rowIdx}`);
+                const balanceVal = parseFloat(mainRow.find('.amount-input').attr('data-balance')) || 0;
+                
+                let sum = 0;
+                subrow.find('.bank-amount').each(function() {
+                    sum += parseFloat($(this).val()) || 0;
+                });
+                
+                const inputs = subrow.find('.bank-amount');
+                if (sum > balanceVal && !mainRow.hasClass('advance-row')) {
+                    inputs.css('border-color', '#dc3545');
+                } else {
+                    inputs.css('border-color', '');
+                }
+            });
+            $('#bank-details-total-error').remove();
         }
 
-        // Listen for bank amount changes
-        $(document).on('input', '.bank-amount', validateBankTotal);
+        // Listen for bank amount changes and update parent reference's amount reactively
+        $(document).on('input', '.bank-amount', function() {
+            // Find the parent subrow container to get its row index
+            const subrow = $(this).closest('tr.bank-details-subrow');
+            const rowIdx = subrow.attr('id').replace('bank-subrow-', '');
+            
+            // Find the main reference row
+            const mainRow = $(`#reference-row-${rowIdx}`);
+            
+            // Find outstanding balance for this row (stored in amount-input's data-balance)
+            const isAdvance = mainRow.hasClass('advance-row');
+            const balanceVal = parseFloat(mainRow.find('.amount-input').attr('data-balance')) || 0;
+            
+            // Sum all bank amounts in this subrow
+            let sum = 0;
+            subrow.find('.bank-amount').each(function() {
+                sum += parseFloat($(this).val()) || 0;
+            });
+            
+            // If not an advance and the sum exceeds the outstanding balance, auto-cap it
+            if (!isAdvance && sum > balanceVal) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Amount Exceeds Balance',
+                    text: `The total bank amount for this document cannot exceed its outstanding balance of ${balanceVal.toFixed(2)}.`,
+                    confirmButtonText: 'OK'
+                });
+                
+                // Adjust the current input to cap the sum at the balance value
+                const otherAmountsSum = sum - (parseFloat($(this).val()) || 0);
+                const allowedCurrentAmount = Math.max(0, balanceVal - otherAmountsSum);
+                $(this).val(allowedCurrentAmount.toFixed(2));
+                
+                // Recalculate sum with the capped amount
+                sum = 0;
+                subrow.find('.bank-amount').each(function() {
+                    sum += parseFloat($(this).val()) || 0;
+                });
+            }
+            
+            // Set the sum as the value of the main reference row's amount-display input
+            mainRow.find('.amount-input').val(sum.toFixed(2));
+            
+            // Re-trigger calculation for the main row
+            recalcRow(mainRow);
+            
+            // Validate bank details total
+            validateBankTotal();
+        });
 
         // Also re-validate when references change (which updates #total_receipt_amount)
         $(document).ajaxStop(function() {
@@ -744,12 +868,20 @@
             }
             // ------------------------
 
-            // Remove unselected rows from DOM before submit
-            referencesTableBody.find('tr').each(function () {
+            // Remove unselected rows and their subrows from DOM before submit
+            referencesTableBody.find('tr.reference-main-row').each(function () {
                 const checkbox = $(this).find('.row-select');
-                console.log($(this).find(".row-select").is(":checked"))
-            
                 if (checkbox.length && !checkbox.is(':checked')) {
+                    const rowIdx = checkbox.data('row');
+                    $(`#bank-subrow-${rowIdx}`).remove();
+                    $(this).remove();
+                }
+            });
+            // Also cleanup any orphan bank subrows
+            referencesTableBody.find('tr.bank-details-subrow').each(function () {
+                const rowIdx = $(this).attr('id').replace('bank-subrow-', '');
+                const mainRow = referencesTableBody.find(`[data-row="${rowIdx}"]`).closest('tr');
+                if (!mainRow.length || !mainRow.find('.row-select').is(':checked')) {
                     $(this).remove();
                 }
             });
