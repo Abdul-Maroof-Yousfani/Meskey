@@ -99,7 +99,7 @@
                     <div class="form-group">
                         <label class="form-label">Delivery Date:</label>
                         <input type="date" name="delivery_date" id="delivery_date"
-                            value="{{ $delivery_order->delivery_date }}" class="form-control">
+                            value="{{ $delivery_order->delivery_date }}" class="form-control" readonly style="background-color: #e9ecef; pointer-events: none;">
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -1108,7 +1108,7 @@
             updateLocations([]);
             soFactoryMap = {};
             soSectionMap = {};
-            $("#delivery_date").val('').prop("readonly", false);
+            $("#delivery_date").val('').prop("readonly", true);
             return;
         }
 
@@ -1151,7 +1151,7 @@
                     $("#remarks").val(res.remarks);
                 }
                 isInitialLoad = false;
-                $("#delivery_date").prop("readonly", false);
+                $("#delivery_date").prop("readonly", true);
                 // selectLocation(document.getElementById("locations"), true);
 
                 // $("#locations").val(res.locations).trigger("change");
