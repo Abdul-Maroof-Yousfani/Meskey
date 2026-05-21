@@ -107,9 +107,11 @@ function calculatePohaunchPayment($ticketId)
 
     $finalAmount = $supplierValue;
 
-    $finalAmount += ($loadingWeight * ($purchaseOrder->broker_one_commission ?? 0));
-    $finalAmount += ($loadingWeight * ($purchaseOrder->broker_two_commission ?? 0));
-    $finalAmount += ($loadingWeight * ($purchaseOrder->broker_three_commission ?? 0));
+    $brokeryamount = 0;
+    $brokeryamount += ($loadingWeight * ($purchaseOrder->broker_one_commission ?? 0));
+    $brokeryamount += ($loadingWeight * ($purchaseOrder->broker_two_commission ?? 0));
+    $brokeryamount += ($loadingWeight * ($purchaseOrder->broker_three_commission ?? 0));
+    $finalAmount += $brokeryamount;
 
     return [
         'ticket_type' => 'pohanch',
@@ -125,6 +127,7 @@ function calculatePohaunchPayment($ticketId)
             'total_deductions' => $deductions['total_deductions'],
             'net_amount' => $amounts['total_amount'],
             'inventory_amount' => $finalAmount,
+            'brokery_amount' => $brokeryamount,
             // 'supplier_net_amount' => $supplierValue - $grossFreightAmount,
             'supplier_net_amount' => $supplierValue,
             'freight_amount_afterdeduction' => $grossFreightAmount,
