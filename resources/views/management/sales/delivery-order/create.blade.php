@@ -95,7 +95,7 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Delivery Date:</label>
-                        <input type="date" name="delivery_date" id="delivery_date" class="form-control">
+                        <input type="date" name="delivery_date" id="delivery_date" class="form-control" readonly style="background-color: #e9ecef; pointer-events: none;">
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -832,7 +832,7 @@
             updateLocations([]);
             soFactoryMap = {};
             soSectionMap = {};
-            $("#delivery_date").val('').prop("readonly", false);
+            $("#delivery_date").val('').prop("readonly", true);
             return;
         }
 
@@ -859,7 +859,7 @@
                 so_amount = res.so_amount;
 
                 $("#delivery_date").val(res.delivery_date);
-                $("#delivery_date").prop("readonly", false);
+                $("#delivery_date").prop("readonly", true);
 
                 if (res.remarks !== null && res.remarks !== undefined) {
                     $("#remarks").val(res.remarks);
