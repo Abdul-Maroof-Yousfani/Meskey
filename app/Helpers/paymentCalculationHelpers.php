@@ -125,7 +125,8 @@ function calculatePohaunchPayment($ticketId)
             'total_deductions' => $deductions['total_deductions'],
             'net_amount' => $amounts['total_amount'],
             'inventory_amount' => $finalAmount,
-            'supplier_net_amount' => $supplierValue - $grossFreightAmount,
+            // 'supplier_net_amount' => $supplierValue - $grossFreightAmount,
+            'supplier_net_amount' => $supplierValue,
             'freight_amount_afterdeduction' => $grossFreightAmount,
 
             'remaining_amount' => $amounts['remaining_amount'],
