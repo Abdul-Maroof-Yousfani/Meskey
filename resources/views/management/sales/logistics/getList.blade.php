@@ -1,13 +1,14 @@
 <table class="table table-bordered">
     <thead>
         <tr>
+            <th>Type</th>
             <th>Date</th>
-            <th>SO #</th>
-            <th>SO qty</th>
+            <th>Document #</th>
+            <th>Order Qty</th>
             <th>Commodity</th>
             <th>Customer name</th>
-            <th>Sauda Type</th>
-            <th>Transporters</th>
+            <th>Trade Term</th>
+            <th>Logistics Partner</th>
             <th>Total Qty</th>
             <th>Status</th>
             <th>Action</th>
@@ -16,15 +17,14 @@
     <tbody>
         @forelse($logistics as $logistic)
             <tr>
+                <td>{{ str_replace('_', ' ', ucwords($logistic->type ?? 'sale_order', '_')) }}</td>
                 <td>{{ $logistic->date ?? '' }}</td>
                 <td>{{ $logistic->so_no ?? '' }}</td>
                 <td>{{ number_format($logistic->so_qty, 2) }}</td>
                 <td>{{ $logistic->commodity ?? '' }}</td>
                 <td>{{ $logistic->customer ?? '' }}</td>
-                <td>{{ ucfirst($logistic->sauda_type) }}</td>
-                <td>
-                    {{ $logistic->items->pluck('transporter_name')->unique()->implode(', ') }}
-                </td>
+                <td>{{ $logistic->sauda_type }}</td>
+                <td>{{ $logistic->items->map(fn($item) => $item->transporter_name ?: $item->transporter?->company_name ?: $item->transporter?->name)->filter()->unique()->implode(', ') }}</td>
                 <td>{{ number_format($logistic->items->sum('qty'), 2) }}</td>
                 <td class="text-center">
                     @php
@@ -50,7 +50,7 @@
             </tr>
         @empty
             <tr>
-                <td colspan="10" class="text-center">No records found.</td>
+                <td colspan="11" class="text-center">No records found.</td>
             </tr>
         @endforelse
     </tbody>

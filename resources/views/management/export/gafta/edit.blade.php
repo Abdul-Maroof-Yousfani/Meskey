@@ -1,0 +1,36 @@
+<form action="{{ route('gafta.update', $gafta->id) }}" method="POST" id="ajaxSubmit" autocomplete="off">
+    @csrf
+    @method('PUT')
+    <input type="hidden" id="listRefresh" value="{{ route('get.gafta') }}" />
+
+    <div class="row form-mar">
+        <div class="col-md-12">
+            <div class="form-group">
+                <label>Name</label>
+                <input type="text" name="name" value="{{ $gafta->name }}" placeholder="Name" class="form-control" />
+            </div>
+        </div>
+        <div class="col-md-12 d-none">
+            <div class="form-group">
+                <label>Description</label>
+                <textarea name="description" placeholder="Description" class="form-control" rows="3">{{ $gafta->description }}</textarea>
+            </div>
+        </div>
+        <div class="col-md-12">
+            <div class="form-group">
+                <label>Status</label>
+                <select name="status" class="form-control">
+                    <option value="active" {{ $gafta->status == 'active' ? 'selected' : '' }}>Active</option>
+                    <option value="inactive" {{ $gafta->status == 'inactive' ? 'selected' : '' }}>Inactive</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="row bottom-button-bar">
+        <div class="col-12">
+            <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
+            <button type="submit" class="btn btn-primary submitbutton">Update</button>
+        </div>
+    </div>
+</form>

@@ -23,6 +23,11 @@ class Logistics extends Model
         return $this->belongsTo(\App\Models\Sales\SalesOrder::class, 'sale_order_id');
     }
 
+    public function exportOrder()
+    {
+        return $this->belongsTo(\App\Models\Export\ExportOrder::class, 'export_order_id');
+    }
+
     protected function onApprovalComplete()
     {
         $module = $this->getApprovalModule();

@@ -1,6 +1,6 @@
 @extends('management.layouts.master')
 @section('title')
-    Export Order
+    Working Days
 @endsection
 @section('content')
     <div class="content-wrapper">
@@ -8,13 +8,15 @@
         <section id="extended">
             <div class="row w-100 mx-auto">
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-                    <h2 class="page-title">Export Order</h2>
+                    <h2 class="page-title">Working Days</h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
-                    <button onclick="openModal(this,'{{ route('export-order.create') }}','Add Export Order',false,'90%')"
-                        type="button" class="btn btn-primary position-relative ">
-                        Create Export Order
+                    @canAccess('workingday-create')
+                    <button onclick="openModal(this,'{{ route('working-days.create') }}','Add Working Day')" type="button"
+                        class="btn btn-primary position-relative ">
+                        Create Working Day
                     </button>
+                    @endcanAccess
                 </div>
             </div>
             <div class="row">
@@ -37,8 +39,6 @@
                                     </div>
                                 </div>
                             </form>
-
-                            {{-- <a href="{{ route('export-roles') }}" class="btn btn-warning">Export Roles</a> --}}
                         </div>
                         <div class="card-content">
                             <div class="card-body table-responsive" id="filteredData">
@@ -46,13 +46,10 @@
                                     <thead>
                                         <tr>
                                             <th class="col-sm-1">S no.</th>
-                                            <th class="col-sm-2">Export Order</th>
-                                            <th class="col-sm-2">Buyer</th>
-                                            <th class="col-sm-2">Voucher Date</th>
-                                            <th class="col-sm-2">Commodity/Product</th>
-                                            <th class="col-sm-1">Currency</th>
+                                            <th class="col-sm-3">Name</th>
+                                            <th class="col-sm-5">Description</th>
                                             <th class="col-sm-1">Status</th>
-                                            <th class="col-sm-1">Action</th>
+                                            <th class="col-sm-2">Action</th>
                                         </tr>
                                     </thead>
 
@@ -63,14 +60,12 @@
                 </div>
             </div>
         </section>
-
-
     </div>
 @endsection
 @section('script')
     <script>
         $(document).ready(function() {
-            filterationCommon(`{{ route('get.export-order') }}`)
+            filterationCommon(`{{ route('get.working-days') }}`)
         });
     </script>
 @endsection

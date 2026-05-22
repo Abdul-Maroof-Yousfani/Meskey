@@ -804,6 +804,46 @@
                                 </li>
                                 @endcanAccess
 
+                                @canAccess('shipmentcompany-list')
+                                <li data-menu="">
+                                    <a class="dropdown-item d-flex align-items-center" href="{{ route('shipment-company.index') }}"
+                                        onclick="loadPageContent('{{ route('shipment-company.index') }}')" data-toggle="dropdown"><i
+                                            class="ft-arrow-right submenu-icon"></i>
+                                        <span data-i18n="Task Board">Shipment Company</span>
+                                    </a>
+                                </li>
+                                @endcanAccess
+
+                                @canAccess('gafta-list')
+                                <li data-menu="">
+                                    <a class="dropdown-item d-flex align-items-center" href="{{ route('gafta.index') }}"
+                                        onclick="loadPageContent('{{ route('gafta.index') }}')" data-toggle="dropdown"><i
+                                            class="ft-arrow-right submenu-icon"></i>
+                                        <span data-i18n="Task Board">Gafta</span>
+                                    </a>
+                                </li>
+                                @endcanAccess
+
+                                @canAccess('shipmentcountry-list')
+                                <li data-menu="">
+                                    <a class="dropdown-item d-flex align-items-center" href="{{ route('shipment-country.index') }}"
+                                        onclick="loadPageContent('{{ route('shipment-country.index') }}')" data-toggle="dropdown"><i
+                                            class="ft-arrow-right submenu-icon"></i>
+                                        <span data-i18n="Task Board">Shipment Country</span>
+                                    </a>
+                                </li>
+                                @endcanAccess
+
+                                @canAccess('workingday-list')
+                                <li data-menu="">
+                                    <a class="dropdown-item d-flex align-items-center" href="{{ route('working-days.index') }}"
+                                        onclick="loadPageContent('{{ route('working-days.index') }}')" data-toggle="dropdown"><i
+                                            class="ft-arrow-right submenu-icon"></i>
+                                        <span data-i18n="Task Board">Working Days</span>
+                                    </a>
+                                </li>
+                                @endcanAccess
+
                             </ul>
                         </li>
                         @endcanAccess

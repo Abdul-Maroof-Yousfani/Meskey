@@ -10,6 +10,10 @@ use App\Http\Controllers\Export\ExportOrderController;
 use App\Http\Controllers\Export\ExportSodaFieldController;
 use App\Http\Controllers\Export\IncoTermController;
 use App\Http\Controllers\Export\ModeOfTermController;
+use App\Http\Controllers\Export\ShipmentCompanyController;
+use App\Http\Controllers\Export\GaftaController;
+use App\Http\Controllers\Export\ShipmentCountryController;
+use App\Http\Controllers\Export\WorkingDayController;
 use App\Http\Controllers\Export\ModeOfTransportController;
 use App\Http\Controllers\Export\ExportLoadingProgramController;
 use App\Http\Controllers\Export\ProformaController;
@@ -43,6 +47,22 @@ Route::post('/get-incoterm', [IncoTermController::class, 'getIncotermTable'])->n
 // bank
 Route::resource('bank', BankController::class);
 Route::post('/get-bank', [BankController::class, 'getBankTable'])->name('get.bank');
+
+// shipment company
+Route::resource('shipment-company', ShipmentCompanyController::class);
+Route::post('/get-shipment-company', [ShipmentCompanyController::class, 'getTable'])->name('get.shipment-company');
+
+// gafta
+Route::resource('gafta', GaftaController::class);
+Route::post('/get-gafta', [GaftaController::class, 'getTable'])->name('get.gafta');
+
+// shipment country
+Route::resource('shipment-country', ShipmentCountryController::class);
+Route::post('/get-shipment-country', [ShipmentCountryController::class, 'getTable'])->name('get.shipment-country');
+
+// working days
+Route::resource('working-days', WorkingDayController::class);
+Route::post('/get-working-days', [WorkingDayController::class, 'getTable'])->name('get.working-days');
 
 // export order
 Route::resource('export-order', ExportOrderController::class);

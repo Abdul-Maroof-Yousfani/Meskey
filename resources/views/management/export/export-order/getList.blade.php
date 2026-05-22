@@ -1,15 +1,14 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th width="5%">S no.</th>
-            <th width="15%">Export Order</th>
-            <th width="15%">Buyer</th>
-            <th width="15%">Voucher Date</th>
-            <th width="15%">Commodity/Product</th>
-            <!-- <th width="10%">Broker</th> -->
-            <th width="10%">Currency</th>
-            <th class="col-1">Status</th>
-            <th width="15%">Action</th>
+            <th class="col-sm-1">S no.</th>
+            <th class="col-sm-2">Export Order</th>
+            <th class="col-sm-2">Buyer</th>
+            <th class="col-sm-2">Voucher Date</th>
+            <th class="col-sm-2">Commodity/Product</th>
+            <th class="col-sm-1">Currency</th>
+            <th class="col-sm-1">Status</th>
+            <th class="col-sm-1">Action</th>
         </tr>
     </thead>
     <tbody>

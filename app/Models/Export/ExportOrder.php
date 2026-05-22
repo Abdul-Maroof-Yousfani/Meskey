@@ -32,6 +32,9 @@ class ExportOrder extends Model
         'voucher_date' => 'date',
         'shipment_delivery_date_from' => 'date',
         'shipment_delivery_date_to' => 'date',
+        'fumigation_by' => 'array',
+        'inspection_by' => 'array',
+        'shipment_country' => 'array'
     ];
 
     protected static function booted()
@@ -232,5 +235,15 @@ class ExportOrder extends Model
     public function packingLists()
     {
         return $this->hasMany(PackingList::class, 'export_order_id');
+    }
+
+    public function gafta()
+    {
+        return $this->belongsTo(\App\Models\Export\Gafta::class, 'gafta_id');
+    }
+
+    public function logistics()
+    {
+        return $this->hasMany(\App\Models\Sales\Logistics::class, 'export_order_id');
     }
 }
