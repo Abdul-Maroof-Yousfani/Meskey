@@ -116,8 +116,82 @@
                     </div>
                 </div>
 
+                <div class="">
+                    <h6 class="header-heading-sepration mt-3">Additional Details</h6>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Discharge Rate:</label>
+                                <input type="text" name="discharge_rate" class="form-control" value="{{ old('discharge_rate', $exportOrder->discharge_rate) }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>SHEX/EIU (Discharge):</label>
+                                <input type="text" name="discharge_shex_eiu" class="form-control" value="{{ old('discharge_shex_eiu', $exportOrder->discharge_shex_eiu) }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Minimum Daily Rate:</label>
+                                <input type="text" name="minimum_daily_rate" class="form-control" value="{{ old('minimum_daily_rate', $exportOrder->minimum_daily_rate) }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>SHEX/EIU (Min Daily):</label>
+                                <input type="text" name="minimum_daily_shex_eiu" class="form-control" value="{{ old('minimum_daily_shex_eiu', $exportOrder->minimum_daily_shex_eiu) }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Fumigation By:</label>
+                                <select name="fumigation_by[]" class="form-control select2" multiple required>
+                                    @foreach ($fumigationCompanies as $company)
+                                        <option value="{{ $company->id }}" {{ in_array($company->id, (array)old('fumigation_by', $exportOrder->fumigation_by ?? [])) ? 'selected' : '' }}>{{ $company->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Inspection By:</label>
+                                <select name="inspection_by[]" class="form-control select2" multiple required>
+                                    @foreach ($inspectionCompanies as $company)
+                                        <option value="{{ $company->id }}" {{ in_array($company->id, (array)old('inspection_by', $exportOrder->inspection_by ?? [])) ? 'selected' : '' }}>{{ $company->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Gafta:</label>
+                                <select name="gafta_id" class="form-control select2">
+                                    <option value="">Select Gafta</option>
+                                    @foreach ($gaftas as $gafta)
+                                        <option value="{{ $gafta->id }}" {{ old('gafta_id', $exportOrder->gafta_id) == $gafta->id ? 'selected' : '' }}>{{ $gafta->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Shipment Country</label>
+                                @php
+                                    $scArray = is_array($exportOrder->shipment_country) ? $exportOrder->shipment_country : [];
+                                @endphp
+                                <select class="form-control select2" name="shipment_country[]" multiple style="width: 100%;">
+                                    @foreach ($shipmentCountries as $country)
+                                        <option value="{{ $country->id }}" {{ in_array($country->id, $scArray) ? 'selected' : '' }}>{{ $country->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 {{-- Consignee Details --}}
-                <div class="row">
+                <div class="row mt-2">
                     <div class="col-12">
                         <h6 class="header-heading-sepration">Consignee Details</h6>
                     </div>
@@ -178,7 +252,10 @@
             </div>
 
             <!-- Product Selection -->
-            <div class="col-md-12">
+            <div class="col-md-12 mt-2">
+                <div class="">
+                    <h6 class="header-heading-sepration">Commodity/Product</h6>
+                </div>
                 <div class="form-group">
                     <label>Commodity/Product:</label>
                     <select name="product_id" class="form-control select2" id="productSelect">
@@ -405,25 +482,31 @@
             </div>
 
             <div class="row p-2">
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label>Other Condition:</label>
                         <textarea name="other_condition" id="other_condition" class="form-control"
                             rows="3">{{ old('other_condition', $exportOrder->other_condition) }}</textarea>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label>Force Majure:</label>
                         <textarea name="force_majure" id="force_majure" class="form-control"
                             rows="3">{{ old('force_majure', $exportOrder->force_majure) }}</textarea>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label>Application Law:</label>
                         <textarea name="application_law" id="application_law" class="form-control"
                             rows="3">{{ old('application_law', $exportOrder->application_law) }}</textarea>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Confidentiality:</label>
+                        <textarea name="confidentiality" id="confidentiality" class="form-control summernote" rows="3">{{ old('confidentiality', $exportOrder->confidentiality) }}</textarea>
                     </div>
                 </div>
                 <div class="col-md-12">
@@ -484,14 +567,29 @@
                     <tr>
                         <td style="width: 30%; font-weight: bold; vertical-align: middle;">INCOTERMS</td>
                         <td style="width: 70%;">
-                            <select name="incoterm_id" class="form-control select2">
+                            <select name="incoterm_id" id="incoterm_id" class="form-control select2">
                                 <option value="">Select</option>
                                 @foreach ($incoterms as $incoterm)
-                                    <option value="{{ $incoterm->id }}" {{ old('incoterm_id', $exportOrder->incoterm_id) == $incoterm->id ? 'selected' : '' }}>
+                                    <option value="{{ $incoterm->id }}" data-name="{{ $incoterm->name }}" {{ old('incoterm_id', $exportOrder->incoterm_id) == $incoterm->id ? 'selected' : '' }}>
                                         {{ $incoterm->name }}
                                     </option>
                                 @endforeach
                             </select>
+                        </td>
+                    </tr>
+                    <tr id="fob_account_tr" style="display: {{ (str_contains(strtoupper(optional($exportOrder->incoterm)->name), 'FOB')) ? 'table-row' : 'none' }};">
+                        <td style="width: 30%; font-weight: bold; vertical-align: middle;">FOB ACCOUNT</td>
+                        <td style="width: 70%;">
+                            <div class="d-flex">
+                                <div class="custom-control custom-radio mr-2">
+                                    <input type="radio" id="fob_buyer" name="fob_account" value="ON BUYER ACCOUNT" class="custom-control-input" {{ old('fob_account', $exportOrder->fob_account) == 'ON BUYER ACCOUNT' ? 'checked' : '' }}>
+                                    <label class="custom-control-label" for="fob_buyer">ON BUYER ACCOUNT</label>
+                                </div>
+                                <div class="custom-control custom-radio">
+                                    <input type="radio" id="fob_seller" name="fob_account" value="ON SELLER ACCOUNT" class="custom-control-input" {{ old('fob_account', $exportOrder->fob_account) == 'ON SELLER ACCOUNT' ? 'checked' : '' }}>
+                                    <label class="custom-control-label" for="fob_seller">ON SELLER ACCOUNT</label>
+                                </div>
+                            </div>
                         </td>
                     </tr>
                     <tr>
@@ -630,7 +728,7 @@
                                 <option value="Buyer" {{ old('insurance_covered_by', $exportOrder->insurance_covered_by) == 'Buyer' ? 'selected' : '' }}>
                                     BUYER</option>
                                 <option value="Supplier" {{ old('insurance_covered_by', $exportOrder->insurance_covered_by) == 'Supplier' ? 'selected' : '' }}>
-                                    SUPPLIER</option>
+                                    SELLER</option>
                             </select>
                         </td>
                     </tr>
@@ -866,30 +964,6 @@
                                                 value="{{ $item->min_weight_empty_bags ?? 0 }}">
                                         </div>
                                     </div>
-                                    <div class="col-md-4">
-                                        <div class="form-group">
-                                            <label>Fumigation By:</label>
-                                            <select name="packing_items[{{ $pIdx }}][fumigation_company_id][]"
-                                                class="form-control select2" multiple required>
-                                                @foreach ($fumigationCompanies as $company)
-                                                    <option value="{{ $company->id }}" {{ in_array($company->id, (array) ($item->fumigation_company_id ?? [])) ? 'selected' : '' }}>
-                                                        {{ $company->name }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="form-group">
-                                            <label>Inspection By:</label>
-                                            <select name="packing_items[{{ $pIdx }}][inspection_by][]"
-                                                class="form-control select2" multiple required>
-                                                @foreach ($inspectionCompanies as $company)
-                                                    <option value="{{ $company->id }}" {{ in_array($company->id, (array) ($item->inspection_by ?? [])) ? 'selected' : '' }}>
-                                                        {{ $company->name }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                    </div>
                                 </div>
                             <!-- Master Packing Section -->
                             <div class="mt-4">
@@ -1098,7 +1172,7 @@
             ]
         };
 
-        $('#shipping_instructions, #documents_to_be_provided, #other_condition, #force_majure, #application_law, #additional_info').summernote(summernoteOptions);
+        $('#shipping_instructions, #documents_to_be_provided, #other_condition, #force_majure, #application_law, #additional_info, #confidentiality').summernote(summernoteOptions);
 
         // Initialize Select2
         $('.select2').select2({ width: '100%' });
@@ -1240,12 +1314,6 @@
                 if (item.no_of_containers) row.find('input.containers').val(item.no_of_containers);
                 if (item.rate) row.find('input.rate-per-ton').val(item.rate);
                 if (item.min_weight_empty_bags) row.find('input[name*="[min_weight_empty_bags]"]').val(item.min_weight_empty_bags);
-                if (item.inspection_by && Array.isArray(item.inspection_by)) {
-                    row.find('select[name*="[inspection_by]"]').val(item.inspection_by).trigger('change.select2');
-                }
-                if (item.fumigation_company_id && Array.isArray(item.fumigation_company_id)) {
-                    row.find('select[name*="[fumigation_company_id]"]').val(item.fumigation_company_id).trigger('change.select2');
-                }
 
                 row.find('input.metric-tons, input.bag-size, input.no_of_bags, .extra-bags, .empty-bags, .extra-bags-percentage, .empty-bags-percentage').trigger('input');
             });
@@ -1662,6 +1730,25 @@
                 calculateMainRow($(this));
             });
         });
+
+        // Incoterm FOB handling
+        $('#incoterm_id').change(function() {
+            var selectedOption = $(this).find('option:selected');
+            var text = selectedOption.data('name') || '';
+            
+            if (text.toUpperCase().includes('FOB')) {
+                $('#fob_account_tr').show();
+                $('input[name="fob_account"]').prop('required', true);
+            } else {
+                $('#fob_account_tr').hide();
+                $('input[name="fob_account"]').prop('required', false).prop('checked', false);
+            }
+        });
+        
+        // Initial setup for Incoterm required property
+        if ($('#fob_account_tr').is(':visible')) {
+            $('input[name="fob_account"]').prop('required', true);
+        }
 
         // Bank Details
         function buildBankOption(bank, selectedValue = '', isBeneficiary = false) {

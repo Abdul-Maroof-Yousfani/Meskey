@@ -5,15 +5,18 @@ namespace App\Http\Controllers\Sales;
 use App\Http\Controllers\Controller;
 use App\Models\Sales\Logistics;
 use App\Models\Sales\LogisticsItem;
+use App\Models\Export\ExportOrder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Master\CompanyLocation;
+use App\Models\Master\Port;
+use Illuminate\Validation\ValidationException;
 
 class LogisticsController extends Controller
 {
     public function index()
     {
-        $logistics = LogisticsItem::with('logistics')
+        $logistics = Logistics::with(['items.transporter'])
             ->orderBy('id', 'desc')
             ->get();
             
@@ -22,7 +25,6 @@ class LogisticsController extends Controller
 
     public function create()
     {
-        // Fetch Sale Orders where transporter_used is 'yes' and they are approved
         $saleOrders = \App\Models\Sales\SalesOrder::with('logistics')
             ->where('transporter_used', 'yes')
             ->where('am_approval_status', 'approved')
@@ -37,47 +39,74 @@ class LogisticsController extends Controller
                 return !$hasApprovedLogistic;
             });
 
-        $transporters = \App\Models\Master\Transporter::where('status', 'active')->get();
-        
-        $locations = CompanyLocation::where('status', 'active')->get();
+        $exportOrders = ExportOrder::with('logistics')
+            ->where('am_approval_status', 'approved')
+            ->get()
+            ->filter(function ($eo) {
+                $hasApprovedLogistic = $eo->logistics
+                    ->where('am_approval_status', 'approved')
+                    ->isNotEmpty();
 
-        return view('management.sales.logistics.create', compact('saleOrders', 'transporters', 'locations'));
+                return !$hasApprovedLogistic;
+            });
+        
+        $companyLocations = CompanyLocation::where('status', 'active')->get();
+
+        return view('management.sales.logistics.create', compact('saleOrders', 'exportOrders', 'companyLocations'));
     }
 
-    public function getOrderDetails($id)
+    public function getOrderDetails(Request $request, $id)
+    {
+        $type = $request->get('type', 'sale_order');
+
+        if ($type === 'export_order') {
+            return $this->getExportOrderDetails($id);
+        }
+
+        return $this->getSaleOrderDetails($id);
+    }
+
+    protected function getSaleOrderDetails($id)
     {
         $order = \App\Models\Sales\SalesOrder::with([
-            'customer', 
-            'sales_order_data.item', 
-            'factories.factory', 
+            'customer',
+            'sales_order_data.item',
+            'factories.factory',
             'sections.section',
             'locations.companyLocation'
         ])->find($id);
-        
+
         if (!$order) {
             return response()->json(['error' => 'Order not found'], 404);
         }
 
-        // Aggregate data from sales_order_data
         $totalQty = $order->sales_order_data->sum('qty');
         $commodities = $order->sales_order_data->map(function($item) {
             return $item->item->name ?? 'N/A';
         })->unique()->implode(', ');
 
-        // Get Location, Factory, Section safer
-        $location = $order->locations->first();
-        $locationName = $location && $location->companyLocation ? $location->companyLocation->name : 'N/A';
-        $toLocationId = $order->arrival_location_id;
-        
-        $factory = $order->factories->first();
-        $factoryName = $factory && $factory->factory ? $factory->factory->name : 'N/A';
-        
-        $section = $order->sections->first();
-        $sectionName = $section && $section->section ? $section->section->name : 'N/A';
+        $fromLocationOptions = $order->locations
+            ->pluck('companyLocation')
+            ->filter()
+            ->map(fn ($location) => ['id' => $location->id, 'name' => $location->name])
+            ->unique('id')
+            ->values()
+            ->toArray();
+        $fromLocation = !empty($fromLocationOptions) ? $fromLocationOptions[0] : null;
 
-        $logistics = Logistics::with('items')->where('sale_order_id', $id)->first();
+        $toLocationOptions = CompanyLocation::where('status', 'active')
+            ->get(['id', 'name'])
+            ->map(fn ($location) => ['id' => $location->id, 'name' => $location->name])
+            ->values()
+            ->toArray();
+
+        $logistics = Logistics::with(['items.transporter'])
+            ->where('type', 'sale_order')
+            ->where('sale_order_id', $id)
+            ->first();
 
         return response()->json([
+            'type' => 'sale_order',
             'date' => $order->order_date ?? date('Y-m-d'),
             'so_no' => $order->reference_no,
             'so_qty' => $totalQty,
@@ -85,10 +114,59 @@ class LogisticsController extends Controller
             'sauda_type' => $order->sauda_type,
             'customer' => $order->customer->name ?? 'N/A',
             'delivery_address' => 'Static Delivery Address 123', 
-            'location' => $locationName,
-            'to_location_id' => $toLocationId ?: '',
-            'factory' => $factoryName,
-            'section' => $sectionName,
+            'from_location_id' => $fromLocation['id'] ?? '',
+            'from_location_options' => $fromLocationOptions,
+            'to_location_id' => '',
+            'to_location_options' => $toLocationOptions,
+            'logistics' => $logistics
+        ]);
+    }
+
+    protected function getExportOrderDetails($id)
+    {
+        $order = ExportOrder::with([
+            'buyer',
+            'product',
+            'incoterm',
+            'packingItems',
+            'portOfLoading'
+        ])->find($id);
+
+        if (!$order) {
+            return response()->json(['error' => 'Order not found'], 404);
+        }
+
+        $companyLocationIds = collect($order->company_location_ids ?? [])->filter()->map(fn($id) => (int) $id)->values();
+        $locationName = CompanyLocation::whereIn('id', $companyLocationIds)->pluck('name')->implode(', ');
+        $fromLocationOptions = CompanyLocation::where('status', 'active')
+            ->get(['id', 'name'])
+            ->map(fn ($location) => ['id' => $location->id, 'name' => $location->name])
+            ->values()
+            ->toArray();
+
+        $toLocationOptions = $order->portOfLoading
+            ? [['id' => $order->portOfLoading->id, 'name' => $order->portOfLoading->name]]
+            : [];
+
+        $logistics = Logistics::with(['items.transporter'])
+            ->where('type', 'export_order')
+            ->where('export_order_id', $id)
+            ->first();
+
+        return response()->json([
+            'type' => 'export_order',
+            'date' => optional($order->voucher_date)->format('Y-m-d') ?? date('Y-m-d'),
+            'so_no' => $order->voucher_no,
+            'so_qty' => (float) $order->packingItems->sum('metric_tons'),
+            'commodity' => $order->product->name ?? 'N/A',
+            'sauda_type' => $order->incoterm?->name ?? 'N/A',
+            'customer' => $order->buyer->name ?? 'N/A',
+            'delivery_address' => 'Static Delivery Address 123',
+            'location' => $locationName ?: 'N/A',
+            'from_location_id' => $companyLocationIds->first() ?: '',
+            'from_location_options' => $fromLocationOptions,
+            'to_location_id' => $order->port_of_loading_id ?: '',
+            'to_location_options' => $toLocationOptions,
             'logistics' => $logistics
         ]);
     }
@@ -97,24 +175,50 @@ class LogisticsController extends Controller
     {
         $request->validate([
             'date' => 'required|date',
-            'type' => 'required|string',
-            'sale_order_id' => 'required|exists:sales_orders,id',
+            'type' => 'required|in:sale_order,export_order',
+            'sale_order_id' => 'nullable|required_if:type,sale_order|exists:sales_orders,id',
+            'export_order_id' => 'nullable|required_if:type,export_order|exists:export_orders,id',
+            'location' => 'required',
             'items' => 'required|array|min:1',
             'items.*.rate_type' => 'required|string',
             'items.*.rate' => 'required|numeric',
             'items.*.transporter' => 'required|string',
             'items.*.qty' => 'required|numeric',
-            'to_location' => 'required|exists:company_locations,id',
+            'to_location' => 'required',
         ]);
+
+        if ($request->type === 'export_order') {
+            if (!CompanyLocation::whereKey($request->location)->exists()) {
+                throw ValidationException::withMessages(['location' => 'Selected from location is invalid.']);
+            }
+
+            if (!Port::whereKey($request->to_location)->exists()) {
+                throw ValidationException::withMessages(['to_location' => 'Selected port of loading is invalid.']);
+            }
+        } else {
+            if (!CompanyLocation::whereKey($request->location)->exists()) {
+                throw ValidationException::withMessages(['location' => 'Selected from location is invalid.']);
+            }
+
+            if (!CompanyLocation::whereKey($request->to_location)->exists()) {
+                throw ValidationException::withMessages(['to_location' => 'Selected to location is invalid.']);
+            }
+        }
 
         DB::beginTransaction();
         try {
-            $logistics = Logistics::firstOrNew(['sale_order_id' => $request->sale_order_id]);
+            $lookup = $request->type === 'export_order'
+                ? ['type' => 'export_order', 'export_order_id' => $request->export_order_id]
+                : ['type' => 'sale_order', 'sale_order_id' => $request->sale_order_id];
+
+            $logistics = Logistics::firstOrNew($lookup);
             
             if (!$logistics->exists) {
                 $logistics->created_by = auth()->user()->id;
             }
 
+            $logistics->sale_order_id = $request->type === 'sale_order' ? $request->sale_order_id : null;
+            $logistics->export_order_id = $request->type === 'export_order' ? $request->export_order_id : null;
             $logistics->to_location = $request->to_location;
             $logistics->am_approval_status = 'pending';
             $logistics->am_change_made = 1;
@@ -129,8 +233,6 @@ class LogisticsController extends Controller
                 'sauda_type' => $request->sauda_type,
                 'delivery_address' => $request->delivery_address,
                 'location' => $request->location,
-                'factory' => $request->factory,
-                'section' => $request->section,
                 'customer' => $request->customer,
             ]);
             $logistics->save();
@@ -143,12 +245,11 @@ class LogisticsController extends Controller
                 $transporterId = null;
                 $transporterName = $transporterRaw;
 
-                // Check if the submitted transporter is an existing ID
                 if (is_numeric($transporterRaw)) {
                     $existingTransporter = \App\Models\Master\Transporter::find($transporterRaw);
                     if ($existingTransporter) {
                         $transporterId = $existingTransporter->id;
-                        $transporterName = $existingTransporter->company_name;
+                        $transporterName = $existingTransporter->company_name ?: $existingTransporter->name;
                     }
                 }
 
@@ -174,7 +275,7 @@ class LogisticsController extends Controller
     {
         $search = $request->search;
         
-        $logistics = Logistics::with('items')
+        $logistics = Logistics::with(['items.transporter'])
             ->when($search, function($query) use ($search) {
                 $query->where('so_no', 'like', "%$search%")
                     ->orWhere('customer', 'like', "%$search%")
@@ -192,7 +293,7 @@ class LogisticsController extends Controller
 
     public function show($id)
     {
-        $logistics = Logistics::with('items')->find($id);
+        $logistics = Logistics::with(['items.transporter'])->find($id);
         if (!$logistics) {
             return response()->json(['error' => 'Logistics not found'], 404);
         }

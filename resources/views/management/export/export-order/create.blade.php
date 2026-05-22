@@ -118,8 +118,79 @@
                     </div>
                 </div>
                 
+                <div class="">
+                    <h6 class="header-heading-sepration mt-3">Additional Details</h6>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Discharge Rate:</label>
+                                <input type="text" name="discharge_rate" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>SHEX/EIU (Discharge):</label>
+                                <input type="text" name="discharge_shex_eiu" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Minimum Daily Rate:</label>
+                                <input type="text" name="minimum_daily_rate" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>SHEX/EIU (Min Daily):</label>
+                                <input type="text" name="minimum_daily_shex_eiu" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Fumigation By:</label>
+                                <select name="fumigation_by[]" class="form-control select2" multiple required>
+                                    @foreach ($fumigationCompanies as $company)
+                                        <option value="{{ $company->id }}">{{ $company->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Inspection By:</label>
+                                <select name="inspection_by[]" class="form-control select2" multiple required>
+                                    @foreach ($inspectionCompanies as $company)
+                                        <option value="{{ $company->id }}">{{ $company->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Gafta:</label>
+                                <select name="gafta_id" class="form-control select2">
+                                    <option value="">Select Gafta</option>
+                                    @foreach ($gaftas as $gafta)
+                                        <option value="{{ $gafta->id }}">{{ $gafta->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Shipment Country</label>
+                                <select class="form-control select2" name="shipment_country[]" multiple style="width: 100%;">
+                                    @foreach ($shipmentCountries as $country)
+                                        <option value="{{ $country->id }}">{{ $country->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 {{-- Consignee Details --}}
-                <div class="row">
+                <div class="row mt-2">
                     <div class="col-12">
                         <h6 class="header-heading-sepration">Consignee Details</h6>
                     </div>
@@ -159,9 +230,11 @@
             </div>
 
             <!-- Product Selection -->
-            <div class="col-md-12">
+            <div class="col-md-12 mt-2">
+                <div class="">
+                    <h6 class="header-heading-sepration">Commodity/Product</h6>
+                </div>
                 <div class="form-group">
-                    <label>Commodity/Product:</label>
                     <select name="product_id" class="form-control select2" id="productSelect">
                         <option value="">Select Product</option>
                         @foreach ($products as $product)
@@ -186,6 +259,8 @@
                     </div>
                 </div>
             </div>
+
+
 
             <div class="col-md-12">
                 <div class="form-group">
@@ -322,22 +397,28 @@
             </div>
 
             <div class="row p-2">
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label>Other Condition:</label>
                         <textarea name="other_condition" id="other_condition" class="form-control" rows="3">{{ old('other_condition', '<ol><li>PARTIAL - ALLOWED / TRANSSHIPMENT ALLOWED</li><li>ALL DISCHARGING COSTS INCLUDING TERMINAL HANDLING CHARGES, LEVIES, AND TAXES ON THE CARGO AT DISCHARGING PORT ARE FOR BUYER\'S ACCOUNT.</li><li>SELLER TO REMAIN OWNER OF THE GOODS UNTIL FULL PAYMENT IS AFFECTED. ALL BANKING CHARGES OUT SIDE CHINA FOR SELLER\'S ACCOUNT.</li><li>BUYER AND SELLER AGREE TO CONSIDER THE CONTRACT AS FULLY CONFIDENTIAL AND AGREE NOT TO DISCLOSE ANY OF ITS CONTENTS TO THIRD PARTY.</li><li>14 FREE DAYS DETENTION AT DESTINATION.</li><li>IF PAYMENT DELAYS, WE RESERVE THE RIGHT TO CHARGE INTEREST AND CLAIM PENALTY IMPOSED BY SBP (IF ANY)</li></ol>') }}</textarea>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label>Force Majure:</label>
                         <textarea name="force_majure" id="force_majure" class="form-control" rows="3"></textarea>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label>Application Law:</label>
                         <textarea name="application_law" id="application_law" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Confidentiality:</label>
+                        <textarea name="confidentiality" id="confidentiality" class="form-control summernote" rows="3"></textarea>
                     </div>
                 </div>
                 <div class="col-md-12">
@@ -390,12 +471,27 @@
                     <tr>
                         <td style="width: 30%; font-weight: bold; vertical-align: middle;">INCOTERMS</td>
                         <td style="width: 70%;">
-                            <select name="incoterm_id" class="form-control select2">
+                            <select name="incoterm_id" id="incoterm_id" class="form-control select2">
                                 <option value="">Select</option>
                                 @foreach ($incoterms as $incoterm)
-                                    <option value="{{ $incoterm->id }}">{{ $incoterm->name }}</option>
+                                    <option value="{{ $incoterm->id }}" data-name="{{ $incoterm->name }}">{{ $incoterm->name }}</option>
                                 @endforeach
                             </select>
+                        </td>
+                    </tr>
+                    <tr id="fob_account_tr" style="display: none;">
+                        <td style="width: 30%; font-weight: bold; vertical-align: middle;">FOB ACCOUNT</td>
+                        <td style="width: 70%;">
+                            <div class="d-flex">
+                                <div class="custom-control custom-radio mr-2">
+                                    <input type="radio" id="fob_buyer" name="fob_account" value="ON BUYER ACCOUNT" class="custom-control-input">
+                                    <label class="custom-control-label" for="fob_buyer">ON BUYER ACCOUNT</label>
+                                </div>
+                                <div class="custom-control custom-radio">
+                                    <input type="radio" id="fob_seller" name="fob_account" value="ON SELLER ACCOUNT" class="custom-control-input">
+                                    <label class="custom-control-label" for="fob_seller">ON SELLER ACCOUNT</label>
+                                </div>
+                            </div>
                         </td>
                     </tr>
                     <tr>
@@ -512,7 +608,7 @@
                             <select name="insurance_covered_by" class="form-control select2">
                                 <option value="">Select</option>
                                 <option value="Buyer">BUYER</option>
-                                <option value="Supplier">SUPPLIER</option>
+                                <option value="Supplier">SELLER</option>
                             </select>
                         </td>
                     </tr>
@@ -727,26 +823,6 @@
                                     <input type="number" name="packing_items[0][min_weight_empty_bags]" class="form-control" step="0.01" value="0" required>
                                 </div>
                             </div>
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label>Fumigation By:</label>
-                                    <select name="packing_items[0][fumigation_company_id][]" class="form-control select2" multiple required>
-                                        @foreach ($fumigationCompanies as $company)
-                                            <option value="{{ $company->id }}">{{ $company->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label>Inspection By:</label>
-                                    <select name="packing_items[0][inspection_by][]" class="form-control select2" multiple required>
-                                        @foreach ($inspectionCompanies as $company)
-                                            <option value="{{ $company->id }}">{{ $company->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
                         </div>
 
                         <!-- Master Packing Section -->
@@ -835,7 +911,7 @@
             ]
         };
         
-        $('#shipping_instructions, #documents_to_be_provided, #other_condition, #force_majure, #application_law, #additional_info').summernote(summernoteOptions);
+        $('#shipping_instructions, #documents_to_be_provided, #other_condition, #force_majure, #application_law, #additional_info, #confidentiality').summernote(summernoteOptions);
 
         // Initialize Select2
         $('.select2').select2({ width: '100%' });
@@ -1434,6 +1510,20 @@
             $('.packing-item').each(function() {
                 calculateMainRow($(this));
             });
+        });
+
+        // Incoterm FOB handling
+        $('#incoterm_id').change(function() {
+            var selectedOption = $(this).find('option:selected');
+            var text = selectedOption.data('name') || '';
+            
+            if (text.toUpperCase().includes('FOB')) {
+                $('#fob_account_tr').show();
+                $('input[name="fob_account"]').prop('required', true);
+            } else {
+                $('#fob_account_tr').hide();
+                $('input[name="fob_account"]').prop('required', false).prop('checked', false);
+            }
         });
 
         // Bank Details

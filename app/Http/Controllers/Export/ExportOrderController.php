@@ -87,6 +87,8 @@ class ExportOrderController extends Controller
         $threadColors = Color::where('status', 1)->get();
         $fumigationCompanies = FumigationCompany::where('status', 'active')->get();
         $inspectionCompanies = InspectionCompany::where('status', 'active')->get();
+        $gaftas = \App\Models\Export\Gafta::where('status', 1)->get();
+        $shipmentCountries = \App\Models\Export\ShipmentCountry::where('status', 1)->get();
 
         return view('management.export.export-order.create', compact(
             'products',
@@ -112,7 +114,9 @@ class ExportOrderController extends Controller
             'stitchings',
             'threadColors',
             'fumigationCompanies',
-            'inspectionCompanies'
+            'inspectionCompanies',
+            'gaftas',
+            'shipmentCountries'
         ));
     }
 
@@ -211,7 +215,6 @@ class ExportOrderController extends Controller
                     unset($item['sub_items']);
                     $item['extra_bags_percentage'] = $item['extra_bags_percentage'] ?? 0;
                     $item['empty_bags_percentage'] = $item['empty_bags_percentage'] ?? 0;
-                    $item['inspection_by'] = isset($item['inspection_by']) ? array_values((array) $item['inspection_by']) : null;
 
                     // Calculate totals from sub-items if they exist and have actual data
                     $hasValidSubItems = collect($subItems)->contains(function ($sub) {
@@ -286,6 +289,8 @@ class ExportOrderController extends Controller
         $threadColors = Color::where('status', 1)->get();
         $fumigationCompanies = FumigationCompany::where('status', 'active')->get();
         $inspectionCompanies = InspectionCompany::where('status', 'active')->get();
+        $gaftas = \App\Models\Export\Gafta::where('status', 1)->get();
+        $shipmentCountries = \App\Models\Export\ShipmentCountry::where('status', 1)->get();
 
         return view('management.export.export-order.show', compact(
             'exportOrder',
@@ -312,7 +317,9 @@ class ExportOrderController extends Controller
             'stitchings',
             'threadColors',
             'fumigationCompanies',
-            'inspectionCompanies'
+            'inspectionCompanies',
+            'gaftas',
+            'shipmentCountries'
         ));
     }
 
@@ -344,6 +351,8 @@ class ExportOrderController extends Controller
         $threadColors = Color::where('status', 1)->get();
         $fumigationCompanies = FumigationCompany::where('status', 'active')->get();
         $inspectionCompanies = InspectionCompany::where('status', 'active')->get();
+        $gaftas = \App\Models\Export\Gafta::where('status', 1)->get();
+        $shipmentCountries = \App\Models\Export\ShipmentCountry::where('status', 1)->get();
 
         return view('management.export.export-order.edit', compact(
             'exportOrder',
@@ -370,7 +379,9 @@ class ExportOrderController extends Controller
             'stitchings',
             'threadColors',
             'fumigationCompanies',
-            'inspectionCompanies'
+            'inspectionCompanies',
+            'gaftas',
+            'shipmentCountries'
         ));
     }
 
@@ -461,7 +472,6 @@ class ExportOrderController extends Controller
                     unset($item['sub_items']);
                     $item['extra_bags_percentage'] = $item['extra_bags_percentage'] ?? 0;
                     $item['empty_bags_percentage'] = $item['empty_bags_percentage'] ?? 0;
-                    $item['inspection_by'] = isset($item['inspection_by']) ? array_values((array) $item['inspection_by']) : null;
 
                     $hasValidSubItems = collect($subItems)->contains(function ($sub) {
                         return ($sub['no_of_bags'] ?? 0) > 0;

@@ -110,6 +110,78 @@
             </div>
         </div>
 
+        <div class="col-md-12 mt-2">
+            <h6 class="header-heading-sepration mt-3">Additional Details</h6>
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Discharge Rate:</label>
+                        <input type="text" class="form-control" value="{{ $exportOrder->discharge_rate ?? '-' }}" readonly>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>SHEX/EIU (Discharge):</label>
+                        <input type="text" class="form-control" value="{{ $exportOrder->discharge_shex_eiu ?? '-' }}" readonly>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Minimum Daily Rate:</label>
+                        <input type="text" class="form-control" value="{{ $exportOrder->minimum_daily_rate ?? '-' }}" readonly>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>SHEX/EIU (Min Daily):</label>
+                        <input type="text" class="form-control" value="{{ $exportOrder->minimum_daily_shex_eiu ?? '-' }}" readonly>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Fumigation By:</label>
+                        @php
+                            $fNames = [];
+                            if (is_array($exportOrder->fumigation_by)) {
+                                $fNames = $fumigationCompanies->whereIn('id', $exportOrder->fumigation_by)->pluck('name')->toArray();
+                            }
+                        @endphp
+                        <input type="text" class="form-control" value="{{ count($fNames) ? implode(', ', $fNames) : '-' }}" readonly>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Inspection By:</label>
+                        @php
+                            $iNames = [];
+                            if (is_array($exportOrder->inspection_by)) {
+                                $iNames = $inspectionCompanies->whereIn('id', $exportOrder->inspection_by)->pluck('name')->toArray();
+                            }
+                        @endphp
+                        <input type="text" class="form-control" value="{{ count($iNames) ? implode(', ', $iNames) : '-' }}" readonly>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Gafta:</label>
+                        <input type="text" class="form-control" value="{{ $exportOrder->gafta->name ?? '-' }}" readonly>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Shipment Country:</label>
+                        @php
+                            $scNames = [];
+                            if (is_array($exportOrder->shipment_country)) {
+                                $scNames = \App\Models\Export\ShipmentCountry::whereIn('id', $exportOrder->shipment_country)->pluck('name')->toArray();
+                            }
+                        @endphp
+                        <input type="text" class="form-control" value="{{ count($scNames) ? implode(', ', $scNames) : '-' }}" readonly>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         {{-- Consignee Details --}}
         @if ($exportOrder->consignee)
             <div class="col-md-12 mt-2">
@@ -150,6 +222,7 @@
 
         {{-- ====== PRODUCT & SPECS ====== --}}
         <div class="col-md-12 mt-2">
+            <h6 class="header-heading-sepration">Commodity/Product</h6>
             <div class="form-group">
                 <label>Commodity/Product:</label>
                 <select class="form-control select2" disabled>
@@ -209,6 +282,8 @@
                 <textarea class="form-control" rows="4" readonly>{{ $exportOrder->other_specifications }}</textarea>
             </div>
         </div>
+
+
 
         <div id="packingDetailsAnchor"></div>
 
@@ -338,22 +413,28 @@
 
         {{-- ====== OTHER CONDITIONS / FORCE MAJURE / APPLICATION LAW ====== --}}
         <div class="row p-2">
-            <div class="col-md-4">
+            <div class="col-md-6">
                 <div class="form-group">
                     <label>Other Condition:</label>
                     <div class="show-content-box">{!! $exportOrder->other_condition !!}</div>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-6">
                 <div class="form-group">
                     <label>Force Majure:</label>
                     <div class="show-content-box">{!! $exportOrder->force_majure !!}</div>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-6">
                 <div class="form-group">
                     <label>Application Law:</label>
                     <div class="show-content-box">{!! $exportOrder->application_law !!}</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label>Confidentiality:</label>
+                    <div class="show-content-box">{!! $exportOrder->confidentiality !!}</div>
                 </div>
             </div>
             <div class="col-md-12">
@@ -415,6 +496,14 @@
                         </select>
                     </td>
                 </tr>
+                @if(str_contains(strtoupper(optional($exportOrder->incoterm)->name), 'FOB'))
+                <tr>
+                    <td style="font-weight:bold;vertical-align:middle;">FOB ACCOUNT</td>
+                    <td>
+                        <input type="text" class="form-control" value="{{ $exportOrder->fob_account ?? '-' }}" readonly>
+                    </td>
+                </tr>
+                @endif
                 <tr>
                     <td style="font-weight:bold;vertical-align:middle;">PACKING TYPE</td>
                     <td>
@@ -531,7 +620,7 @@
                             <option value="">Select</option>
                             <option value="Buyer" {{ $exportOrder->insurance_covered_by == 'Buyer' ? 'selected' : '' }}>
                                 BUYER</option>
-                            <option value="Supplier" {{ $exportOrder->insurance_covered_by == 'Supplier' ? 'selected' : '' }}>SUPPLIER</option>
+                            <option value="Supplier" {{ $exportOrder->insurance_covered_by == 'Supplier' ? 'selected' : '' }}>SELLER</option>
                         </select>
                     </td>
                 </tr>
@@ -700,32 +789,6 @@
                             <label>Min Weight Empty Bags:</label>
                             <input type="text" class="form-control"
                                 value="{{ number_format($item->min_weight_empty_bags, 2) }}" readonly>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label>Fumigation By:</label>
-                            @php
-                                $fNames = [];
-                                if (is_array($item->fumigation_company_id)) {
-                                    $fNames = $fumigationCompanies->whereIn('id', $item->fumigation_company_id)->pluck('name')->toArray();
-                                }
-                            @endphp
-                            <input type="text" class="form-control"
-                                value="{{ count($fNames) ? implode(', ', $fNames) : '-' }}" readonly>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label>Inspection By:</label>
-                            @php
-                                $inspectionNames = [];
-                                if (is_array($item->inspection_by)) {
-                                    $inspectionNames = $inspectionCompanies->whereIn('id', $item->inspection_by)->pluck('name')->toArray();
-                                }
-                            @endphp
-                            <input type="text" class="form-control"
-                                value="{{ count($inspectionNames) ? implode(', ', $inspectionNames) : '-' }}" readonly>
                         </div>
                     </div>
                 </div>
