@@ -308,7 +308,13 @@ class FirstWeighBridgeController extends Controller
                 'message' => 'Company location not found to fetch weighbridge amount.'
             ]);
         }
-        dd($companyLocationId);
+
+
+        $trucktype = ArrivalTruckType::with('locationAmounts')->findOrFail($request->truck_type_id);
+        $weighbridgeAmount = $trucktype->locationAmounts
+            ->where('id', $companyLocationId)
+            ->first();
+        dd();
         $weighbridgeAmount = WeighbridgeAmount::where('truck_type_id', $request->truck_type_id)
             ->where('company_location_id', $companyLocationId)
             ->first();
