@@ -133,11 +133,18 @@ class FirstWeighBridgeController extends Controller
                 ->where('company_location_id', $companyLocationId)
                 ->first();
 
+                $trucktype = ArrivalTruckType::with('locationAmounts')->findOrFail($request->truck_type_id);
+                $weighbridgeAmount = $trucktype->locationAmounts
+                    ->where('id', $companyLocationId)
+                    ->first();
+
+
             if (!$weighbridgeAmount) {
                 return response()->json(['errors' => ['truck_type_id' => 'Weighbridge amount not found for selected truck type and arrival location.']], 422);
             }
 
-            $request['weighbridge_amount'] = $weighbridgeAmount->weighbridge_amount;
+            $request['weighbridge_amount'] = $weighbridgeAmount->pivot->amount;
+            // $request['weighbridge_amount'] = $weighbridgeAmount->weighbridge_amount;
         } else {
             return response()->json(['errors' => ['truck_type_id' => 'Company location not found to fetch weighbridge amount.']], 422);
         }
