@@ -314,7 +314,7 @@ class FirstWeighBridgeController extends Controller
         $weighbridgeAmount = $trucktype->locationAmounts
             ->where('id', $companyLocationId)
             ->first();
-        dd();
+        dd($weighbridgeAmount, $companyLocationId, $trucktype);
         $weighbridgeAmount = WeighbridgeAmount::where('truck_type_id', $request->truck_type_id)
             ->where('company_location_id', $companyLocationId)
             ->first();
