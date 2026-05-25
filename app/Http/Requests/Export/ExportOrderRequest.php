@@ -81,9 +81,27 @@ class ExportOrderRequest extends FormRequest
             'marking_labeling' => ['nullable', 'string'],
             'shipping_instructions' => ['nullable', 'string'],
             'documents_to_be_provided' => ['required', 'string'],
-            'other_condition' => ['nullable', 'string'],
-            'force_majure' => ['nullable', 'string'],
-            'application_law' => ['nullable', 'string'],
+            'other_condition' => ['required', 'string'],
+            'force_majure' => ['required', 'string'],
+            'application_law' => ['required', 'string'],
+            'confidentiality' => ['required', 'string'],
+
+            'discharge_rate' => ['required', 'string'],
+            'discharge_shex_eiu' => ['required', 'string'],
+            'minimum_daily_rate' => ['required', 'string'],
+            'minimum_daily_shex_eiu' => ['required', 'string'],
+            'fob_account' => [
+                \Illuminate\Validation\Rule::requiredIf(function () {
+                    $incoterm = \App\Models\Export\IncoTerm::find($this->incoterm_id);
+                    return $incoterm && stripos($incoterm->name, 'FOB') !== false;
+                }),
+                'nullable',
+                'string'
+            ],
+            'fumigation_by' => ['required', 'array', 'min:1'],
+            'fumigation_by.*' => ['required', 'exists:fumigation_companies,id'],
+            'inspection_by' => ['required', 'array', 'min:1'],
+            'inspection_by.*' => ['required', 'exists:inspection_companies,id'],
 
             /* ================= LOCATIONS ================= */
 
@@ -122,10 +140,6 @@ class ExportOrderRequest extends FormRequest
             'packing_items.*.amount_pkr' => ['nullable', 'numeric', 'min:0'],
             'packing_items.*.total_bags' => ['required', 'numeric', 'min:0'],
             'packing_items.*.total_kgs' => ['required', 'numeric', 'min:0'],
-            'packing_items.*.fumigation_company_id' => ['required', 'array', 'min:1'],
-            'packing_items.*.fumigation_company_id.*' => ['required', 'exists:fumigation_companies,id'],
-            'packing_items.*.inspection_by' => ['required', 'array', 'min:1'],
-            'packing_items.*.inspection_by.*' => ['required', 'exists:inspection_companies,id'],
             'packing_items.*.sub_items' => ['nullable', 'array'],
             'packing_items.*.sub_items.*.bag_type_id' => ['nullable', 'exists:bag_types,id'],
             'packing_items.*.sub_items.*.bag_size_id' => ['nullable', 'exists:bag_packings,id'],

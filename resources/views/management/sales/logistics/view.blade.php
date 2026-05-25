@@ -1,3 +1,17 @@
+@php
+    $isExport = ($logistics->type ?? 'sale_order') === 'export_order';
+    $documentLabel = $isExport ? 'EO #' : 'SO #';
+    $requestLabel = $isExport ? 'Loading Request (Export Order)' : 'Loading Request (Sale Order)';
+    $qtyLabel = $isExport ? 'Export Order Qty (MT)' : 'Sales Order Qty (kg)';
+    $tradeTermLabel = $isExport ? 'Inco Term EO' : 'Sauda Type';
+    $partnerLabel = 'Transporter';
+    $fromLocation = is_numeric($logistics->location ?? null)
+        ? \App\Models\Master\CompanyLocation::find($logistics->location)?->name
+        : $logistics->location;
+    $toLocation = $isExport
+        ? (\App\Models\Master\Port::find($logistics->to_location)?->name ?? $logistics->to_location)
+        : (\App\Models\Master\CompanyLocation::find($logistics->to_location)?->name ?? $logistics->to_location);
+@endphp
 <div class="row form-mar">
     <div class="col-md-12">
         <div class="row">
@@ -19,7 +33,7 @@
             
             <div class="col-md-4">
                 <div class="form-group">
-                    <label class="form-label text-uppercase">Loading Request (Sale Order)</label>
+                    <label class="form-label text-uppercase">{{ $requestLabel }}</label>
                     <input type="text" class="form-control" value="{{ $logistics->loading_request }}" readonly>
                 </div>
             </div>
@@ -33,14 +47,14 @@
 
             <div class="col-md-4">
                 <div class="form-group">
-                    <label class="form-label text-uppercase">SO #</label>
+                    <label class="form-label text-uppercase">{{ $documentLabel }}</label>
                     <input type="text" class="form-control" value="{{ $logistics->so_no }}" readonly>
                 </div>
             </div>
 
             <div class="col-md-4">
                 <div class="form-group">
-                    <label class="form-label text-uppercase">Sales Order Qty (kg)</label>
+                    <label class="form-label text-uppercase">{{ $qtyLabel }}</label>
                     <input type="text" class="form-control" value="{{ number_format($logistics->so_qty, 2) }}" readonly>
                 </div>
             </div>
@@ -54,43 +68,22 @@
 
             <div class="col-md-4">
                 <div class="form-group">
-                    <label class="form-label text-uppercase">Sauda Type</label>
-                    <input type="text" class="form-control" value="{{ ucfirst($logistics->sauda_type) }}" readonly>
-                </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="form-group">
-                    <label class="form-label text-uppercase">Delivery Address</label>
-                    <input type="text" class="form-control" value="{{ $logistics->delivery_address }}" readonly>
+                    <label class="form-label text-uppercase">{{ $tradeTermLabel }}</label>
+                    <input type="text" class="form-control" value="{{ $logistics->sauda_type }}" readonly>
                 </div>
             </div>
 
             <div class="col-md-4">
                 <div class="form-group">
                     <label class="form-label text-uppercase">From Location</label>
-                    <input type="text" class="form-control" value="{{ $logistics->location }}" readonly>
+                    <input type="text" class="form-control" value="{{ $fromLocation ?: 'N/A' }}" readonly>
                 </div>
             </div>
 
             <div class="col-md-4">
                 <div class="form-group">
-                    <label class="form-label text-uppercase">To Location</label>
-                    <input type="text" class="form-control" value="{{ optional(getLocation($logistics->to_location))->name ?? 'N/A' }}" readonly>
-                </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="form-group">
-                    <label class="form-label text-uppercase">Factory</label>
-                    <input type="text" class="form-control" value="{{ $logistics->factory }}" readonly>
-                </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="form-group">
-                    <label class="form-label text-uppercase">Section</label>
-                    <input type="text" class="form-control" value="{{ $logistics->section }}" readonly>
+                    <label class="form-label text-uppercase">{{ $isExport ? 'Port of Loading' : 'To Location' }}</label>
+                    <input type="text" class="form-control" value="{{ $toLocation ?: 'N/A' }}" readonly>
                 </div>
             </div>
 
@@ -111,7 +104,7 @@
                             <tr class="text-uppercase">
                                 <th>Rate Type</th>
                                 <th>Rate</th>
-                                <th>Transporter</th>
+                                <th>{{ $partnerLabel }}</th>
                                 <th>Qty</th>
                             </tr>
                         </thead>
@@ -120,7 +113,7 @@
                                 <tr>
                                     <td>{{ $item->rate_type }}</td>
                                     <td>{{ number_format($item->rate, 2) }}</td>
-                                    <td>{{ $item->transporter_name }}</td>
+                                    <td>{{ $item->transporter_name ?? $item->transporter?->company_name ?? $item->transporter?->name ?? 'N/A' }}</td>
                                     <td>{{ number_format($item->qty, 2) }}</td>
                                 </tr>
                             @endforeach

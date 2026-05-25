@@ -21,4 +21,9 @@ class LogisticsItem extends Model
     {
         return $this->belongsTo(\App\Models\Master\Transporter::class, 'transporter_id');
     }
+
+    public function shipmentCompany()
+    {
+        return $this->belongsTo(\App\Models\Export\ShipmentCompany::class, 'shipment_company_id');
+    }
 }
