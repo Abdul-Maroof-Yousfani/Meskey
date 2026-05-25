@@ -314,15 +314,15 @@ class FirstWeighBridgeController extends Controller
         $weighbridgeAmount = $trucktype->locationAmounts
             ->where('id', $companyLocationId)
             ->first();
-        dd($weighbridgeAmount, $companyLocationId, $trucktype);
-        $weighbridgeAmount = WeighbridgeAmount::where('truck_type_id', $request->truck_type_id)
-            ->where('company_location_id', $companyLocationId)
-            ->first();
+        // dd($weighbridgeAmount, $companyLocationId, $trucktype);
+        // $weighbridgeAmount = WeighbridgeAmount::where('truck_type_id', $request->truck_type_id)
+        //     ->where('company_location_id', $companyLocationId)
+        //     ->first();
 
         if ($weighbridgeAmount) {
             return response()->json([
                 'success' => true,
-                'weighbridge_amount' => $weighbridgeAmount->weighbridge_amount
+                'weighbridge_amount' => $weighbridgeAmount->pivot->amount
             ]);
         } else {
             return response()->json([
