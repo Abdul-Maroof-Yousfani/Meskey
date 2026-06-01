@@ -120,15 +120,21 @@
                 <select name="labour" id="labour" class="form-control select2" data-selected="{{ $delivery_challan->labour }}">
                     <option value="">Select Labours</option>
                 </select>
+                <input type="hidden" name="labour_rate" id="labour_rate" value="{{ $delivery_challan->labour_rate }}">
             </div>
         </div>
         <div class="col-md-6">
             <div class="form-group">
                 <label class="form-label">Transporter:</label>
-                <select id="transporter_display" class="form-control select2" disabled>
-                    <option value="">Select Transporter</option>
+                <select id="transporter_display" class="form-control select2" disabled multiple>
+                    @php
+                        $selectedTransporters = json_decode($delivery_challan->transporter, true) ?? [];
+                        if (!is_array($selectedTransporters)) {
+                            $selectedTransporters = [$delivery_challan->transporter];
+                        }
+                    @endphp
                     @foreach ($Transporters ?? [] as $transporter)
-                        <option value="{{ $transporter->id }}" @selected($delivery_challan->transporter == $transporter->id)>{{ $transporter->name }}</option>
+                        <option value="{{ $transporter->id }}" @selected(in_array($transporter->id, $selectedTransporters))>{{ $transporter->name }}</option>
                     @endforeach
                 </select>
                 <input type="hidden" name="transporter" id="transporter" value="{{ $delivery_challan->transporter }}">
@@ -325,10 +331,18 @@
                     $f('#do_no').empty().append(`<option value="${response.delivery_order.id}" selected>${response.delivery_order.reference_no}</option>`).trigger('change');
                     $f('#labour_status').val(response.loading_slip_labour || 'paid').trigger('change');
                     $f('#labour_status_hidden').val(response.loading_slip_labour || 'paid');
+                    $f('#labour_rate').val(response.rate || 0);
 
                     if (response.transporter_id && !$f('#transporter').val()) {
-                        $f('#transporter_display').val(response.transporter_id).trigger('change');
-                        $f('#transporter').val(response.transporter_id);
+                        let transporters = response.transporter_id;
+                        if (typeof transporters === 'string' && transporters.startsWith('[')) {
+                            try { transporters = JSON.parse(transporters); } catch(e) {}
+                        }
+                        if (!Array.isArray(transporters)) {
+                            transporters = [transporters];
+                        }
+                        $f('#transporter_display').val(transporters).trigger('change');
+                        $f('#transporter').val(JSON.stringify(transporters));
                     }
 
                     setReadonlyMultiSelect('#locations', response.locations.company_locations || []);

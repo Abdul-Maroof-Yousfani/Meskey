@@ -26,7 +26,7 @@ class DeliveryChallanRequest extends FormRequest
             "date" => ["required", "date"],
             "customer_id" => ["required", "numeric"],
             "reference_number" => ["required"],
-            "labour_rate" => ["required"],
+            "labour_rate" => ["nullable"],
         ];
 
         if (request()->type === 'sale_delivery_challan') {

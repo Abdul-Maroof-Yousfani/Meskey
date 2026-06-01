@@ -136,4 +136,28 @@ class ExportDeliveryOrder extends DeliveryOrder
     {
         return $this->hasMany(ExportDeliveryOrderLocation::class, 'delivery_order_id');
     }
+
+    public function getDoFactoriesStringAttribute()
+    {
+        $factories = [];
+        foreach ($this->locations as $loc) {
+            if ($loc->companyLocation) {
+                $factories[] = $loc->companyLocation->name;
+            }
+        }
+        return implode(', ', array_unique($factories));
+    }
+
+    public function getDoStationStringAttribute()
+    {
+        $stations = [];
+        foreach ($this->locations as $loc) {
+            if (!empty($loc->arrival_location_ids)) {
+                $ids = explode(',', $loc->arrival_location_ids);
+                $names = \App\Models\Master\ArrivalLocation::whereIn('id', $ids)->pluck('name')->toArray();
+                $stations = array_merge($stations, $names);
+            }
+        }
+        return implode(', ', array_unique($stations));
+    }
 }

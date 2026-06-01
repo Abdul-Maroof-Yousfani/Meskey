@@ -69,6 +69,16 @@ Route::resource('export-order', ExportOrderController::class);
 Route::post('/get-export-order', [ExportOrderController::class, 'getExportOrderTable'])->name('get.export-order');
 Route::get('/export-order/{id}/print', [ExportOrderController::class, 'print'])->name('export-order.print');
 
+// c freight
+Route::resource('c-freight', \App\Http\Controllers\Export\CFreightController::class);
+Route::post('/get-c-freight', [\App\Http\Controllers\Export\CFreightController::class, 'getList'])->name('get.c-freight');
+Route::get('/c-freight/get-export-order-details/{id}', [\App\Http\Controllers\Export\CFreightController::class, 'getExportOrderDetails'])->name('c-freight.get-export-order-details');
+Route::post('/c-freight/{id}/add-rate', [\App\Http\Controllers\Export\CFreightController::class, 'addRate'])->name('c-freight.add-rate');
+Route::post('/c-freight/{id}/approve-rate', [\App\Http\Controllers\Export\CFreightController::class, 'approveRate'])->name('c-freight.approve-rate');
+Route::post('/c-freight/delete-rate/{id}', [\App\Http\Controllers\Export\CFreightController::class, 'deleteRate'])->name('c-freight.delete-rate');
+Route::get('/c-freight/edit-request/{id}', [\App\Http\Controllers\Export\CFreightController::class, 'editRequest'])->name('c-freight.edit-request');
+Route::get('/c-freight/show-booking/{id}', [\App\Http\Controllers\Export\CFreightController::class, 'showBooking'])->name('c-freight.show-booking');
+
 // export delivery order
 Route::resource('export-delivery-order', ExportDeliveryOrderController::class);
 Route::post('/get-export-delivery-order', [ExportDeliveryOrderController::class, 'getExportDeliveryOrderTable'])->name('get.export-delivery-order');
@@ -128,6 +138,9 @@ Route::get('/get-delivery-orders-by-export-order-second', [ExportSecondWeighBrid
 Route::get('/get-export-delivery-order-balance-against-second-weighbridge', [ExportSecondWeighBridgeController::class, 'getBalanceAgainstSecondWeighbridge'])->name('export.balance-against-second-weighbridge');
 
 // export delivery challan
+Route::get('/export-delivery-challan/daily-dispatch', [ExportDeliveryChallanController::class, 'dailyDispatch'])->name('export-delivery-challan.daily-dispatch');
+Route::post('/export-delivery-challan/daily-dispatch/filters', [ExportDeliveryChallanController::class, 'getDailyDispatchFilters'])->name('export-delivery-challan.daily-dispatch.filters');
+Route::post('/export-delivery-challan/daily-dispatch/report', [ExportDeliveryChallanController::class, 'generateDailyDispatchReport'])->name('export-delivery-challan.daily-dispatch.report');
 Route::resource('export-delivery-challan', ExportDeliveryChallanController::class);
 Route::post('/get-export-delivery-challan', [ExportDeliveryChallanController::class, 'getList'])->name('get.export-delivery-challan.list');
 Route::get('/export-delivery-challan/{delivery_challan}/view', [ExportDeliveryChallanController::class, 'view'])->name('export-delivery-challan.view');

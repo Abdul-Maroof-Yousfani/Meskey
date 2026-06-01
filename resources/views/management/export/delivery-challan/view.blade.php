@@ -133,9 +133,15 @@
     <div class="col-md-6">
         <div class="form-group">
             <label class="form-label">Transporter:</label>
-            <select class="form-control select2" disabled>
+            <select class="form-control select2" disabled multiple>
+                @php
+                    $selectedTransporters = json_decode($delivery_challan->transporter, true) ?? [];
+                    if (!is_array($selectedTransporters)) {
+                        $selectedTransporters = [$delivery_challan->transporter];
+                    }
+                @endphp
                 @foreach ($Transporters ?? [] as $transporter)
-                    <option value="{{ $transporter->id }}" @selected($delivery_challan->transporter == $transporter->id)>{{ $transporter->name }}</option>
+                    <option value="{{ $transporter->id }}" @selected(in_array($transporter->id, $selectedTransporters))>{{ $transporter->name }}</option>
                 @endforeach
             </select>
         </div>

@@ -68,7 +68,10 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label>Job Order No:</label>
-                        <input type="text" name="job_order_no" id="job_order_no" class="form-control" readonly>
+                        <select name="job_order_no" id="job_order_no" class="form-control select2">
+                            <option value="">Select Job Order</option>
+                        </select>
+                        <div id="job_order_no_hidden_container"></div>
                     </div>
                 </div>
                 <div class="col-md-3">
@@ -547,57 +550,6 @@
                         </div>
                     </div>
 
-                    <!-- New Logistics Row per Packing Item -->
-                    <div class="col-md-12">
-                        <div class="row">
-
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label>Fumigation:</label>
-                                    <select name="packing_items[0][fumigation_company_id][]" class="form-control select2 fumigation-select" multiple disabled>
-                                        @foreach($fumigationCompanies as $fCompany)
-                                            <option value="{{ $fCompany->id }}">{{ $fCompany->name }}</option>
-                                        @endforeach
-                                    </select>
-                                    <input type="hidden" name="packing_items[0][fumigation_company_id_hidden]" class="fumigation-hidden-mirror" disabled>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label>Phyto Certificate:</label>
-                                    <select name="packing_items[0][phyto_certificate][]" class="form-control select2 phyto-select" multiple disabled>
-                                        @foreach($fumigationCompanies as $fCompany)
-                                            <option value="{{ $fCompany->id }}">{{ $fCompany->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label>Inspection Company:</label>
-                                    <input type="text" name="packing_items[0][inspection_company]" class="form-control inspection-company" readonly disabled>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label>Carton Supplier:</label>
-                                    <input type="text" name="packing_items[0][carton_supplier]" class="form-control carton-supplier" disabled>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label>Fumigation Tablets:</label>
-                                    <input type="text" name="packing_items[0][fumigation_tablets]" class="form-control fumigation-tablets" disabled>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label>Fumigation Ref No:</label>
-                                    <input type="text" name="packing_items[0][fumigation_ref_no]" class="form-control fumigation-ref-no" disabled>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
                     <!-- Master Packing Section -->
                     <div class="col-md-12 mt-4">
@@ -675,18 +627,15 @@
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Freight Amount: <span class="text-danger">*</span></label>
-                        <input type="number" name="freight_amount" id="freight_amount" class="form-control" value="0" step="0.01">
+                        <label>Freight Amount (Per Container): <span class="text-danger">*</span></label>
+                        <input type="text" name="freight_amount" id="freight_amount" class="form-control">
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
                         <label>Transporter: <span class="text-danger">*</span></label>
-                        <select name="transporter_id" id="transporter_id" class="form-control select2">
-                            <option value="">Select Transporter</option>
-                            @foreach ($transporters as $transporter)
-                                <option value="{{ $transporter->id }}">{{ $transporter->name }}</option>
-                            @endforeach
+                        <select name="transporter_id[]" id="transporter_id" class="form-control select2" multiple>
+                            <!-- Options will be populated via AJAX based on selected Export Order -->
                         </select>
                     </div>
                 </div>
@@ -711,6 +660,56 @@
                     <div class="form-group">
                         <label>Empty Container Pickup: <span class="text-danger">*</span></label>
                         <input type="text" name="empty_container_pickup" id="empty_container_pickup" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Fumigation By:</label>
+                        <select name="fumigation_by[]" id="fumigation_by" class="form-control select2" multiple disabled>
+                            @foreach ($fumigationCompanies as $fCompany)
+                                <option value="{{ $fCompany->id }}">{{ $fCompany->name }}</option>
+                            @endforeach
+                        </select>
+                        <input type="hidden" name="fumigation_by_hidden" id="fumigation_by_hidden">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Inspection By:</label>
+                        <select name="inspection_by[]" id="inspection_by" class="form-control select2" multiple disabled>
+                            @foreach ($inspectionCompanies as $iCompany)
+                                <option value="{{ $iCompany->id }}">{{ $iCompany->name }}</option>
+                            @endforeach
+                        </select>
+                        <input type="hidden" name="inspection_by_hidden" id="inspection_by_hidden">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Phyto Certificate:</label>
+                        <select name="phyto_certificate[]" id="phyto_certificate" class="form-control select2" multiple>
+                            @foreach ($fumigationCompanies as $fCompany)
+                                <option value="{{ $fCompany->id }}">{{ $fCompany->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Carton Supplier:</label>
+                        <input type="text" name="carton_supplier" id="carton_supplier" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Fumigation Tablets:</label>
+                        <input type="text" name="fumigation_tablets" id="fumigation_tablets" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Fumigation Ref No:</label>
+                        <input type="text" name="fumigation_ref_no" id="fumigation_ref_no" class="form-control">
                     </div>
                 </div>
             </div>
@@ -1073,9 +1072,71 @@
 
                         // Autofill new fields
                         if (response.data.autofill) {
-                            $('#job_order_no').val(response.data.autofill.job_order_no);
-                        }
+                            let joSelect = $('#job_order_no');
+                            joSelect.empty().append('<option value="">Select Job Order</option>');
+                            $('#job_order_no_hidden_container').empty();
+                            if (response.data.autofill.job_orders && response.data.autofill.job_orders.length > 0) {
+                                response.data.autofill.job_orders.forEach(function(jo) {
+                                    joSelect.append('<option value="'+jo+'">'+jo+'</option>');
+                                });
+                                if (response.data.autofill.job_orders.length === 1) {
+                                    joSelect.val(response.data.autofill.job_orders[0]).trigger('change');
+                                    joSelect.attr('disabled', true);
+                                    $('#job_order_no_hidden_container').html('<input type="hidden" name="job_order_no" value="'+response.data.autofill.job_orders[0]+'">');
+                                } else {
+                                    joSelect.removeAttr('disabled');
+                                }
+                            } else {
+                                joSelect.removeAttr('disabled');
+                            }
+                            
+                            if(response.data.autofill.vessel_name) $('#vessel_name').val(response.data.autofill.vessel_name);
+                            if(response.data.autofill.vessel_eta) $('#vessel_eta').val(response.data.autofill.vessel_eta);
+                            if(response.data.autofill.vessel_etd) $('#vessel_etd').val(response.data.autofill.vessel_etd);
+                            if(response.data.autofill.shipping_line) $('#shipping_line').val(response.data.autofill.shipping_line);
+                            if(response.data.autofill.estimated_payment_date) $('#estimated_payment_date').val(response.data.autofill.estimated_payment_date);
+                            if(response.data.autofill.freight_amount) $('#freight_amount').val(response.data.autofill.freight_amount);
 
+                            // Populate Logistics Transporters
+                            let transporterSelect = $('#transporter_id');
+                            transporterSelect.empty().attr('name', 'transporter_id[]').prop('multiple', true);
+                            if(response.data.autofill.logistics_transporters && response.data.autofill.logistics_transporters.length > 0) {
+                                response.data.autofill.logistics_transporters.forEach(function(transporter) {
+                                    transporterSelect.append(new Option(transporter.name, transporter.id, true, true));
+                                });
+                            }
+                            transporterSelect.trigger('change');
+                        }
+                            if(response.data.autofill.inspection_by && response.data.autofill.inspection_by.length > 0) {
+                                $('#inspection_by').val(response.data.autofill.inspection_by).trigger('change');
+                                $('#inspection_by_hidden').val(JSON.stringify(response.data.autofill.inspection_by));
+                            } else {
+                                $('#inspection_by').val([]).trigger('change');
+                                $('#inspection_by_hidden').val('');
+                            }
+
+                            if(response.data.autofill.fumigation_by && response.data.autofill.fumigation_by.length > 0) {
+                                $('#fumigation_by').val(response.data.autofill.fumigation_by).trigger('change');
+                                $('#fumigation_by_hidden').val(JSON.stringify(response.data.autofill.fumigation_by));
+                            } else {
+                                $('#fumigation_by').val([]).trigger('change');
+                                $('#fumigation_by_hidden').val('');
+                            }
+                            
+                            if(response.data.autofill.phyto_certificate && response.data.autofill.phyto_certificate.length > 0) {
+                                $('#phyto_certificate').val(response.data.autofill.phyto_certificate).trigger('change');
+                            } else {
+                                $('#phyto_certificate').val([]).trigger('change');
+                            }
+                            
+                            if(response.data.autofill.carton_supplier) $('#carton_supplier').val(response.data.autofill.carton_supplier);
+                            else $('#carton_supplier').val('');
+                            
+                            if(response.data.autofill.fumigation_tablets) $('#fumigation_tablets').val(response.data.autofill.fumigation_tablets);
+                            else $('#fumigation_tablets').val('');
+                            
+                            if(response.data.autofill.fumigation_ref_no) $('#fumigation_ref_no').val(response.data.autofill.fumigation_ref_no);
+                            else $('#fumigation_ref_no').val('');
                         // After packing rows are added, apply Form-E qty (overrides EO qty)
                         if (currentFormERemainingMt > 0) {
                             applyFormEQtyToPackingRows(currentFormERemainingMt);
@@ -1247,8 +1308,8 @@
                 });
                 
                 row.show();
-                row.find('.no-of-bags, .metric-tons, .stuffing, .containers, .phyto-select, .inspection-company, .carton-supplier, .fumigation-tablets, .fumigation-ref-no').removeAttr('disabled');
-                row.find('.hidden-mirror, .fumigation-hidden-mirror').removeAttr('disabled');
+                row.find('.no-of-bags, .metric-tons, .stuffing, .containers').removeAttr('disabled');
+                row.find('.hidden-mirror').removeAttr('disabled');
                 
                 // Helper to find bag product ID by name
                 function findOptionIdByName(name, selectElement) {
@@ -1297,18 +1358,7 @@
                 row.find(`input[name="packing_items[0][no_of_containers]"]`).val(item.no_of_containers);
                 row.find('.min-weight').val(item.min_weight_empty_bags || 0);
 
-                // Populate new logistics fields
-                // Fumigation is readonly (auto-filled from EO)
-                row.find('.fumigation-select').val(item.fumigation_company_id || []).trigger('change');
-                // Since fumigation-select is disabled, we need to pass values via hidden field for submission
-                row.find('.fumigation-hidden-mirror').val(JSON.stringify(item.fumigation_company_id || []));
 
-                // Phyto Certificate defaults to same as fumigation but is editable
-                row.find('.phyto-select').val(item.phyto_certificate || item.fumigation_company_id || []).trigger('change');
-                row.find('.inspection-company').val(item.inspection_company || '');
-                row.find('.carton-supplier').val('');
-                row.find('.fumigation-tablets').val('');
-                row.find('.fumigation-ref-no').val('');
                 
                 // Clear sub items container
                 let subContainer = row.find('.sub-packing-items-container');
