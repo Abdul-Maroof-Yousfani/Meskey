@@ -4,7 +4,7 @@
             <tr>
                 <th>Ticket No.</th>
                 <th>Truck No.</th>
-                <th>Customer</th>
+                <!-- <th>Customer</th> -->
                 <th>Commodity</th>
                 <th>Status</th>
                 <th>Created</th>
@@ -20,9 +20,9 @@
                     <td>
                         {{ $dispatchQc->loadingProgramItem->truck_number ?? 'N/A' }}
                     </td>
-                    <td>
-                        {{ $dispatchQc->customer ?? 'N/A' }}
-                    </td>
+                    <!-- <td>
+                                {{ $dispatchQc->customer ?? 'N/A' }}
+                            </td> -->
                     <td>
                         {{ $dispatchQc->commodity ?? 'N/A' }}
                     </td>

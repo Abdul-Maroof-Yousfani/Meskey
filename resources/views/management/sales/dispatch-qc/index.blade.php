@@ -40,7 +40,19 @@
                         </div>
                         <div class="card-content">
                             <div class="card-body table-responsive" id="filteredData">
-                                <!-- Table will be loaded here by AJAX -->
+                                <table class="table table-striped m-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Ticket No.</th>
+                                            <th>Truck No.</th>
+                                            <!-- <th>Customer</th> -->
+                                            <th>Commodity</th>
+                                            <th>Status</th>
+                                            <th>Created</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -53,7 +65,7 @@
 @endsection
 @section('script')
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             filterationCommon(`{{ route('sales.get.dispatch-qc') }}`)
         });
     </script>
