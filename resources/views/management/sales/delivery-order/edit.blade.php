@@ -99,7 +99,7 @@
                     <div class="form-group">
                         <label class="form-label">Delivery Date:</label>
                         <input type="date" name="delivery_date" id="delivery_date"
-                            value="{{ $delivery_order->delivery_date }}" class="form-control" readonly style="background-color: #e9ecef; pointer-events: none;">
+                            value="{{  $delivery_order->delivery_date ?? $delivery_order->salesOrder->delivery_date }}" class="form-control" readonly style="background-color: #e9ecef; pointer-events: none;">
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -319,8 +319,9 @@
 
                             <tr id="row_{{ $index }}">
                                 <td>
-                                    <select name="item_id[]" id="item_id_{{ $index }}"
-                                        class="form-control select2">
+                                    <input type="hidden" name="item_id[]" value="{{ $data->item_id }}">
+                                    <select name="item_id_display[]" id="item_id_{{ $index }}"
+                                        class="form-control select2" disabled>
                                         <option value="">Select Item</option>
                                         @foreach ($items as $item)
                                             <option value="{{ $item->id }}" @selected($item->id == $data->item_id)>
