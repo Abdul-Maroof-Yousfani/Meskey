@@ -86,8 +86,18 @@
                 <div class="col-md-3 mt-2">
                     <div class="form-group">
                         <label>Job Order No:</label>
-                        <input type="text" name="job_order_no" id="job_order_no"
-                            value="{{ $deliveryOrder->job_order_no }}" class="form-control" readonly>
+                        @php
+                            $jobOrders = \App\Models\Production\JobOrder\JobOrder::where('export_order_id', $deliveryOrder->export_order_id)->pluck('job_order_no')->filter()->values()->toArray();
+                        @endphp
+                        <select name="job_order_no" id="job_order_no" class="form-control select2" {{ count($jobOrders) <= 1 ? 'disabled' : '' }}>
+                            <option value="">Select Job Order</option>
+                            @foreach($jobOrders as $jo)
+                                <option value="{{ $jo }}" {{ $deliveryOrder->job_order_no == $jo ? 'selected' : '' }}>{{ $jo }}</option>
+                            @endforeach
+                        </select>
+                        @if(count($jobOrders) <= 1)
+                            <input type="hidden" name="job_order_no" value="{{ $deliveryOrder->job_order_no }}">
+                        @endif
                     </div>
                 </div>
                 <div class="col-md-3 mt-2">
@@ -585,64 +595,6 @@
                         </div>
                     </div>
 
-                    <!-- New Logistics Row per Packing Item -->
-                    <div class="col-md-12">
-                        <div class="row">
-
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label>Fumigation:</label>
-                                    <select name="packing_items[0][fumigation_company_id][]"
-                                        class="form-control select2 fumigation-select" multiple disabled>
-                                        @foreach($fumigationCompanies as $fCompany)
-                                            <option value="{{ $fCompany->id }}">{{ $fCompany->name }}</option>
-                                        @endforeach
-                                    </select>
-                                    <input type="hidden" name="packing_items[0][fumigation_company_id_hidden]"
-                                        class="fumigation-hidden-mirror" disabled>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label>Phyto Certificate:</label>
-                                    <select name="packing_items[0][phyto_certificate][]"
-                                        class="form-control select2 phyto-select" multiple disabled>
-                                        @foreach($fumigationCompanies as $fCompany)
-                                            <option value="{{ $fCompany->id }}">{{ $fCompany->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label>Inspection Company:</label>
-                                    <input type="text" name="packing_items[0][inspection_company]"
-                                        class="form-control inspection-company" readonly disabled>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label>Carton Supplier:</label>
-                                    <input type="text" name="packing_items[0][carton_supplier]"
-                                        class="form-control carton-supplier" disabled>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label>Fumigation Tablets:</label>
-                                    <input type="text" name="packing_items[0][fumigation_tablets]"
-                                        class="form-control fumigation-tablets" disabled>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label>Fumigation Ref No:</label>
-                                    <input type="text" name="packing_items[0][fumigation_ref_no]"
-                                        class="form-control fumigation-ref-no" disabled>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
                     <!-- Master Packing Section -->
                     <div class="col-md-12 mt-4">
@@ -813,18 +765,20 @@
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Freight Amount: <span class="text-danger">*</span></label>
-                        <input type="number" name="freight_amount" id="freight_amount" class="form-control"
-                            value="{{ $deliveryOrder->freight_amount }}" step="0.01">
+                        <label>Freight Amount (Per Container): <span class="text-danger">*</span></label>
+                        <input type="text" name="freight_amount" id="freight_amount" class="form-control"
+                            value="{{ $deliveryOrder->freight_amount }}">
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
                         <label>Transporter: <span class="text-danger">*</span></label>
-                        <select name="transporter_id" id="transporter_id" class="form-control select2">
-                            <option value="">Select Transporter</option>
-                            @foreach ($transporters as $transporter)
-                                <option value="{{ $transporter->id }}" {{ $deliveryOrder->transporter_id == $transporter->id ? 'selected' : '' }}>{{ $transporter->name }}</option>
+                        @php
+                            $selectedTransporters = json_decode($deliveryOrder->transporter_id, true) ?? (is_numeric($deliveryOrder->transporter_id) ? [$deliveryOrder->transporter_id] : []);
+                        @endphp
+                        <select name="transporter_id[]" id="transporter_id" class="form-control select2" multiple>
+                            @foreach ($logisticsTransporters as $transporter)
+                                <option value="{{ $transporter['id'] }}" {{ in_array($transporter['id'], $selectedTransporters) ? 'selected' : '' }}>{{ $transporter['name'] }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -852,6 +806,65 @@
                         <label>Empty Container Pickup: <span class="text-danger">*</span></label>
                         <input type="text" name="empty_container_pickup" id="empty_container_pickup"
                             class="form-control" value="{{ $deliveryOrder->empty_container_pickup }}">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Fumigation By:</label>
+                        @php
+                            $selectedFumigation = json_decode($deliveryOrder->fumigation_by, true) ?? [];
+                        @endphp
+                        <select name="fumigation_by[]" id="fumigation_by" class="form-control select2" multiple disabled>
+                            @foreach ($fumigationCompanies as $fCompany)
+                                <option value="{{ $fCompany->id }}" {{ in_array($fCompany->id, $selectedFumigation) ? 'selected' : '' }}>{{ $fCompany->name }}</option>
+                            @endforeach
+                        </select>
+                        <input type="hidden" name="fumigation_by_hidden" id="fumigation_by_hidden" value="{{ json_encode($selectedFumigation) }}">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Inspection By:</label>
+                        @php
+                            $selectedInspection = json_decode($deliveryOrder->inspection_by, true) ?? [];
+                        @endphp
+                        <select name="inspection_by[]" id="inspection_by" class="form-control select2" multiple disabled>
+                            @foreach ($inspectionCompanies as $iCompany)
+                                <option value="{{ $iCompany->id }}" {{ in_array($iCompany->id, $selectedInspection) ? 'selected' : '' }}>{{ $iCompany->name }}</option>
+                            @endforeach
+                        </select>
+                        <input type="hidden" name="inspection_by_hidden" id="inspection_by_hidden" value="{{ json_encode($selectedInspection) }}">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Phyto Certificate:</label>
+                        @php
+                            $selectedPhyto = json_decode($deliveryOrder->phyto_certificate, true) ?? [];
+                        @endphp
+                        <select name="phyto_certificate[]" id="phyto_certificate" class="form-control select2" multiple>
+                            @foreach ($fumigationCompanies as $fCompany)
+                                <option value="{{ $fCompany->id }}" {{ in_array($fCompany->id, $selectedPhyto) ? 'selected' : '' }}>{{ $fCompany->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Carton Supplier:</label>
+                        <input type="text" name="carton_supplier" id="carton_supplier" class="form-control" value="{{ $deliveryOrder->carton_supplier }}">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Fumigation Tablets:</label>
+                        <input type="text" name="fumigation_tablets" id="fumigation_tablets" class="form-control" value="{{ $deliveryOrder->fumigation_tablets }}">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Fumigation Ref No:</label>
+                        <input type="text" name="fumigation_ref_no" id="fumigation_ref_no" class="form-control" value="{{ $deliveryOrder->fumigation_ref_no }}">
                     </div>
                 </div>
             </div>
@@ -1238,8 +1251,8 @@
                 });
 
                 row.show();
-                row.find('.no-of-bags, .metric-tons, .stuffing, .containers, .phyto-select, .inspection-company, .carton-supplier, .fumigation-tablets, .fumigation-ref-no').removeAttr('disabled');
-                row.find('.hidden-mirror, .fumigation-hidden-mirror').removeAttr('disabled');
+                row.find('.no-of-bags, .metric-tons, .stuffing, .containers').removeAttr('disabled');
+                row.find('.hidden-mirror').removeAttr('disabled');
 
                 function setDisabledSelectValue(selector, varName) {
                     row.find(selector).val(varName);
@@ -1265,29 +1278,7 @@
                 row.find(`input[name="packing_items[0][no_of_containers]"]`).val(item.no_of_containers);
                 row.find(`input[name="packing_items[0][min_weight_empty_bags]"]`).val(item.min_weight_empty_bags);
 
-                // Populate new logistics fields
-                // Fumigation is readonly (auto-filled from EO, saved in DO)
-                row.find('.fumigation-select').val(item.fumigation_company_id || []).trigger('change');
-                // Since fumigation-select is disabled, pass values via hidden field
-                row.find('.fumigation-hidden-mirror').val(JSON.stringify(item.fumigation_company_id || []));
 
-                // Phyto Certificate is editable multi-select
-                row.find('.phyto-select').val(item.phyto_certificate || []).trigger('change');
-
-                // Resolve inspection company IDs to names if they are IDs
-                let inspectionMap = @json($inspectionCompanies->pluck('name', 'id'));
-                let inspectionVal = item.inspection_company || '';
-                if (inspectionVal) {
-                    let ids = inspectionVal.split(',').map(id => id.trim());
-                    let names = ids.map(id => inspectionMap[id] || id);
-                    row.find('.inspection-company').val(names.join(', '));
-                } else {
-                    row.find('.inspection-company').val('');
-                }
-
-                row.find('.carton-supplier').val(item.carton_supplier || '');
-                row.find('.fumigation-tablets').val(item.fumigation_tablets || '');
-                row.find('.fumigation-ref-no').val(item.fumigation_ref_no || '');
 
                 let subContainer = row.find('.sub-packing-items-container');
                 subContainer.attr('data-index', index);

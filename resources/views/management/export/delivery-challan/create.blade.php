@@ -117,13 +117,13 @@
                     <option value="1">Labour 1</option>
                     <option value="2">Labour 2</option>
                 </select>
+                <input type="hidden" name="labour_rate" id="labour_rate" value="0">
             </div>
         </div>
         <div class="col-md-6">
             <div class="form-group">
                 <label class="form-label">Transporter:</label>
-                <select id="transporter_display" class="form-control select2" disabled>
-                    <option value="">Select Transporter</option>
+                <select id="transporter_display" class="form-control select2" disabled multiple>
                     @foreach ($Transporters ?? [] as $transporter)
                         <option value="{{ $transporter->id }}">{{ $transporter->name }}</option>
                     @endforeach
@@ -319,12 +319,20 @@
                     $f('#delivery_order_id').val(response.delivery_order.id);
                     $f('#labour_status').val(response.loading_slip_labour || 'paid').trigger('change');
                     $f('#labour_status_hidden').val(response.loading_slip_labour || 'paid');
+                    $f('#labour_rate').val(response.rate || 0);
 
                     console.log('Rate => ' + response.rate);
 
                     if (response.transporter_id) {
-                        $f('#transporter_display').val(response.transporter_id).trigger('change');
-                        $f('#transporter').val(response.transporter_id);
+                        let transporters = response.transporter_id;
+                        if (typeof transporters === 'string' && transporters.startsWith('[')) {
+                            try { transporters = JSON.parse(transporters); } catch(e) {}
+                        }
+                        if (!Array.isArray(transporters)) {
+                            transporters = [transporters];
+                        }
+                        $f('#transporter_display').val(transporters).trigger('change');
+                        $f('#transporter').val(JSON.stringify(transporters));
                     }
 
                     $f('#do_no').empty().append(`<option value="${response.delivery_order.id}" selected>${response.delivery_order.reference_no}</option>`).trigger('change');
