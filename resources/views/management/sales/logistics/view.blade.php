@@ -82,17 +82,50 @@
 
             <div class="col-md-4">
                 <div class="form-group">
+                    <label class="form-label text-uppercase">Factory</label>
+                    <input type="text" class="form-control" value="{{ $logistics->factory ?: 'N/A' }}" readonly>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="form-group">
                     <label class="form-label text-uppercase">{{ $isExport ? 'Port of Loading' : 'To Location' }}</label>
                     <input type="text" class="form-control" value="{{ $toLocation ?: 'N/A' }}" readonly>
                 </div>
             </div>
-
             <div class="col-md-4">
                 <div class="form-group">
                     <label class="form-label text-uppercase">Customer</label>
                     <input type="text" class="form-control" value="{{ $logistics->customer }}" readonly>
                 </div>
             </div>
+
+            @if($isExport)
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label class="form-label text-uppercase">Job Order</label>
+                    <input type="text" class="form-control" value="{{ $logistics->job_order }}" readonly>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label class="form-label text-uppercase">Return Port</label>
+                    <input type="text" class="form-control" value="{{ $logistics->return_port }}" readonly>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label class="form-label text-uppercase">Booking No</label>
+                    <input type="text" class="form-control" value="{{ $logistics->booking_no }}" readonly>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label class="form-label text-uppercase">Shipping Line</label>
+                    <input type="text" class="form-control" value="{{ $logistics->shipping_line }}" readonly>
+                </div>
+            </div>
+            @endif
         </div>
 
         <div class="row mt-4">
@@ -105,7 +138,11 @@
                                 <th>Rate Type</th>
                                 <th>Rate</th>
                                 <th>{{ $partnerLabel }}</th>
-                                <th>Qty</th>
+                                <th>{{ $isExport ? 'No. of containers' : 'Qty' }}</th>
+                                @if($isExport)
+                                <th>Brand</th>
+                                <th>Packing Size</th>
+                                @endif
                             </tr>
                         </thead>
                         <tbody>
@@ -115,6 +152,10 @@
                                     <td>{{ number_format($item->rate, 2) }}</td>
                                     <td>{{ $item->transporter_name ?? $item->transporter?->company_name ?? $item->transporter?->name ?? 'N/A' }}</td>
                                     <td>{{ number_format($item->qty, 2) }}</td>
+                                    @if($isExport)
+                                    <td>{{ $item->brand }}</td>
+                                    <td>{{ $item->packing_size }}</td>
+                                    @endif
                                 </tr>
                             @endforeach
                         </tbody>

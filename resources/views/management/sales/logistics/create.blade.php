@@ -99,6 +99,14 @@
                         </div>
                     </div>
 
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="factory" class="text-uppercase">Factory</label>
+                            <select name="factory" id="factory" class="form-control select2" style="width: 100%;">
+                                <option value="">Select Factory</option>
+                            </select>
+                        </div>
+                    </div>
 
                     <div class="col-md-4">
                         <div class="form-group">
@@ -130,6 +138,33 @@
                     </div>
                 </div>
 
+                <div class="row export-only-fields" style="display: none;">
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="job_order" class="text-uppercase">Job Order</label>
+                            <input type="text" name="job_order" id="job_order" class="form-control" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="return_port" class="text-uppercase">Return Port</label>
+                            <input type="text" name="return_port" id="return_port" class="form-control" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="booking_no" class="text-uppercase">Booking No</label>
+                            <input type="text" name="booking_no" id="booking_no" class="form-control" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="shipping_line" class="text-uppercase">Shipping Line</label>
+                            <input type="text" name="shipping_line" id="shipping_line" class="form-control" readonly>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="row mt-4">
                     <div class="col-12">
                         <h6 class="header-heading-sepration text-uppercase">Logistics Items</h6>
@@ -140,7 +175,9 @@
                                     <th>Rate Type</th>
                                     <th>Rate</th>
                                     <th id="partner_column_label">Transporter</th>
-                                    <th>Qty</th>
+                                    <th id="qty_column_label">Qty</th>
+                                    <th class="export-only-fields" style="display: none;">Brand</th>
+                                    <th class="export-only-fields" style="display: none;">Packing Size</th>
                                     <th width="50">Action</th>
                                 </tr>
                             </thead>
@@ -167,6 +204,16 @@
                                         <input type="number" name="items[0][qty]" class="form-control"
                                             step="0.01" required>
                                     </td>
+                                    <td class="export-only-fields" style="display: none;">
+                                        <select name="items[0][brand]" class="form-control brand-select">
+                                            <option value="">Select Brand</option>
+                                        </select>
+                                    </td>
+                                    <td class="export-only-fields" style="display: none;">
+                                        <select name="items[0][packing_size]" class="form-control packing-size-select">
+                                            <option value="">Select Size</option>
+                                        </select>
+                                    </td>
                                     <td class="text-center">
                                         <button type="button" class="btn btn-sm btn-danger remove-row"
                                             disabled>
@@ -177,7 +224,7 @@
                             </tbody>
                             <tfoot>
                                 <tr>
-                                    <td colspan="5">
+                                    <td colspan="7">
                                         <button type="button" class="btn btn-sm btn-info" id="addRow">
                                             <i class="fa fa-plus"></i> Add row
                                         </button>
@@ -210,6 +257,20 @@
         }
 
         const saleToLocationOptions = @json($companyLocations->map(fn($location) => ['id' => $location->id, 'name' => $location->name])->values());
+        const arrivalLocationsList = @json($arrivalLocations->map(fn($a) => ['id' => $a->name, 'name' => $a->name, 'location_id' => $a->company_location_id])->values());
+
+        function updateFactoryDropdown(selectedValue = '') {
+            const locationId = $('#location').val();
+            const filteredLocations = arrivalLocationsList.filter(l => l.location_id == locationId);
+            populateSelectOptions($('#factory'), filteredLocations, selectedValue, 'Select Factory');
+        }
+
+        $('#location').on('change', function() {
+            // Only update if it wasn't triggered programmatically with a specific value we want to preserve
+            if (!$(this).data('setting-value')) {
+                updateFactoryDropdown();
+            }
+        });
 
         function initTransporterSelect(selector) {
             const config = {
@@ -239,6 +300,8 @@
         }
 
         let rowCount = 1;
+        let currentBrands = [];
+        let currentPackingSizes = [];
 
         function addRow(data = null) {
             let rateType = data ? data.rate_type : 'Per Truck';
@@ -248,9 +311,24 @@
                 ? (data.transporter_name || data.transporter?.company_name || data.transporter?.name)
                 : '';
             let qty = data ? data.qty : '';
+            let brand = data ? data.brand : '';
+            let packingSize = data ? data.packing_size : '';
 
             let selectValue = transporterId || transporterName;
             let selectText = transporterName || getPartnerPlaceholder();
+
+            let brandOptionsHtml = '<option value="">Select Brand</option>';
+            currentBrands.forEach(b => {
+                brandOptionsHtml += `<option value="${b}" ${brand === b ? 'selected' : ''}>${b}</option>`;
+            });
+
+            let packingSizeOptionsHtml = '<option value="">Select Size</option>';
+            currentPackingSizes.forEach(p => {
+                packingSizeOptionsHtml += `<option value="${p}" ${packingSize === p ? 'selected' : ''}>${p}</option>`;
+            });
+
+            let isExport = $('#type').val() === 'export_order';
+            let displayStyle = isExport ? '' : 'style="display: none;"';
 
             let newRow = `
                 <tr class="item-row">
@@ -272,6 +350,16 @@
                     </td>
                     <td>
                         <input type="number" name="items[${rowCount}][qty]" class="form-control" step="0.01" value="${qty}" required>
+                    </td>
+                    <td class="export-only-fields" ${displayStyle}>
+                        <select name="items[${rowCount}][brand]" class="form-control brand-select">
+                            ${brandOptionsHtml}
+                        </select>
+                    </td>
+                    <td class="export-only-fields" ${displayStyle}>
+                        <select name="items[${rowCount}][packing_size]" class="form-control packing-size-select">
+                            ${packingSizeOptionsHtml}
+                        </select>
                     </td>
                     <td class="text-center">
                         <button type="button" class="btn btn-sm btn-danger remove-row">
@@ -310,6 +398,7 @@
             const isExport = type === 'export_order';
             const savedFromLocation = selectedLogistics && selectedLogistics.location ? selectedLogistics.location : '';
             const savedToLocation = selectedLogistics && selectedLogistics.to_location ? selectedLogistics.to_location : '';
+            const savedFactory = selectedLogistics && selectedLogistics.factory ? selectedLogistics.factory : '';
             const fromLocationValue = /^\d+$/.test(String(savedFromLocation)) ? savedFromLocation : (data.from_location_id || '');
             const toLocationValue = /^\d+$/.test(String(savedToLocation)) ? savedToLocation : (data.to_location_id || '');
             const fromLocationOptions = isExport ? (data.from_location_options || []) : (data.from_location_options || []).filter(function(option) {
@@ -330,6 +419,9 @@
                 toLocationValue,
                 isExport ? 'Select Port of Loading' : 'Select To Location'
             );
+            $('#location').data('setting-value', true);
+            updateFactoryDropdown(savedFactory);
+            $('#location').data('setting-value', false);
         }
 
         function updateTypeUI(type) {
@@ -340,6 +432,13 @@
             $('#order_qty_label').text(isExport ? 'Export Order Qty (MT)' : 'Sales Order Qty (kg)');
             $('#trade_term_label').text(isExport ? 'Inco Term' : 'Sauda Type');
             $('#partner_column_label').text('Transporter');
+            $('#qty_column_label').text(isExport ? 'No. of containers' : 'Qty');
+
+            if (isExport) {
+                $('.export-only-fields').show();
+            } else {
+                $('.export-only-fields').hide();
+            }
 
             $('#sale_order_id').prop('required', !isExport).toggle(!isExport);
             $('#export_order_id').prop('required', isExport).toggle(isExport);
@@ -396,6 +495,19 @@
                         updateLocationFields(type, data);
                         $('#loading_request').val(loadingRequestText);
 
+                        if (type === 'export_order') {
+                            $('#job_order').val(data.job_order || '');
+                            $('#return_port').val(data.return_port || '');
+                            $('#booking_no').val(data.booking_no || '');
+                            $('#shipping_line').val(data.shipping_line || '');
+                            currentBrands = data.brands || [];
+                            currentPackingSizes = data.packing_sizes || [];
+                        } else {
+                            $('#job_order, #return_port, #booking_no, #shipping_line').val('');
+                            currentBrands = [];
+                            currentPackingSizes = [];
+                        }
+
                         // Handle existing logistics data
                         if (data.logistics) {
                             if (data.logistics.type) {
@@ -403,6 +515,12 @@
                             }
                             $('#date').val(data.logistics.date);
                             if(data.logistics.delivery_address) $('#delivery_address').val(data.logistics.delivery_address);
+                            if (data.logistics.type === 'export_order') {
+                                $('#job_order').val(data.logistics.job_order || data.job_order || '');
+                                $('#return_port').val(data.logistics.return_port || data.return_port || '');
+                                $('#booking_no').val(data.logistics.booking_no || data.booking_no || '');
+                                $('#shipping_line').val(data.logistics.shipping_line || data.shipping_line || '');
+                            }
                             updateLocationFields(type, data, data.logistics);
                             
                             $('#itemsBody').empty();
@@ -431,9 +549,13 @@
             } else {
                 // Clear fields if no order selected
                 $('#date, #so_no, #so_qty, #commodity, #sauda_type, #customer, #delivery_address, #loading_request').val('');
+                $('#job_order, #return_port, #booking_no, #shipping_line').val('');
+                currentBrands = [];
+                currentPackingSizes = [];
                 populateSelectOptions($('#location'), [], '', 'Select From Location');
                 $('#location').prop('disabled', $('#type').val() !== 'export_order');
                 populateSelectOptions($('#to_location'), $('#type').val() === 'export_order' ? [] : saleToLocationOptions, '', $('#type').val() === 'export_order' ? 'Select Port of Loading' : 'Select To Location');
+                populateSelectOptions($('#factory'), [], '', 'Select Factory');
                 $('#itemsBody').empty();
                 rowCount = 0;
                 addRow();

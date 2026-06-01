@@ -28,6 +28,7 @@ class LogisticsController extends Controller
         $saleOrders = \App\Models\Sales\SalesOrder::with('logistics')
             ->where('transporter_used', 'yes')
             ->where('am_approval_status', 'approved')
+            ->orderBy('id', 'desc')
             ->get()
             ->filter(function ($so) {
                 // If any associated logistic record is approved, skip this Sale Order
@@ -41,6 +42,7 @@ class LogisticsController extends Controller
 
         $exportOrders = ExportOrder::with('logistics')
             ->where('am_approval_status', 'approved')
+            ->orderBy('id', 'desc')
             ->get()
             ->filter(function ($eo) {
                 $hasApprovedLogistic = $eo->logistics
@@ -51,8 +53,9 @@ class LogisticsController extends Controller
             });
         
         $companyLocations = CompanyLocation::where('status', 'active')->get();
+        $arrivalLocations = \App\Models\Master\ArrivalLocation::where('status', 'active')->get();
 
-        return view('management.sales.logistics.create', compact('saleOrders', 'exportOrders', 'companyLocations'));
+        return view('management.sales.logistics.create', compact('saleOrders', 'exportOrders', 'companyLocations', 'arrivalLocations'));
     }
 
     public function getOrderDetails(Request $request, $id)
@@ -128,7 +131,8 @@ class LogisticsController extends Controller
             'buyer',
             'product',
             'incoterm',
-            'packingItems',
+            'packingItems.brand',
+            'packingItems.bagPacking',
             'portOfLoading'
         ])->find($id);
 
@@ -153,6 +157,15 @@ class LogisticsController extends Controller
             ->where('export_order_id', $id)
             ->first();
 
+        $cFreight = \App\Models\Export\CFreight::with('rates')->where('export_order_id', $id)->first();
+        $approvedRate = $cFreight ? $cFreight->rates->where('is_approved', 1)->first() : null;
+        $shippingLine = $approvedRate ? $approvedRate->shipping_line : ($cFreight->shipping_line ?? '');
+        
+        $jobOrder = \App\Models\Production\JobOrder\JobOrder::where('export_order_id', $id)->first();
+
+        $brands = $order->packingItems->map(fn($item) => $item->brand->name ?? null)->filter()->unique()->values()->toArray();
+        $packingSizes = $order->packingItems->map(fn($item) => $item->bagPacking->name ?? null)->filter()->unique()->values()->toArray();
+
         return response()->json([
             'type' => 'export_order',
             'date' => optional($order->voucher_date)->format('Y-m-d') ?? date('Y-m-d'),
@@ -167,7 +180,13 @@ class LogisticsController extends Controller
             'from_location_options' => $fromLocationOptions,
             'to_location_id' => $order->port_of_loading_id ?: '',
             'to_location_options' => $toLocationOptions,
-            'logistics' => $logistics
+            'logistics' => $logistics,
+            'job_order' => $jobOrder->job_order_no ?? '',
+            'return_port' => $cFreight->return_port ?? '',
+            'booking_no' => $cFreight->booking_no ?? '',
+            'shipping_line' => $shippingLine,
+            'brands' => $brands,
+            'packing_sizes' => $packingSizes,
         ]);
     }
 
@@ -184,7 +203,14 @@ class LogisticsController extends Controller
             'items.*.rate' => 'required|numeric',
             'items.*.transporter' => 'required|string',
             'items.*.qty' => 'required|numeric',
+            'items.*.brand' => 'nullable|string',
+            'items.*.packing_size' => 'nullable|string',
             'to_location' => 'required',
+            'job_order' => 'nullable|string',
+            'return_port' => 'nullable|string',
+            'booking_no' => 'nullable|string',
+            'shipping_line' => 'nullable|string',
+            'factory' => 'nullable|string',
         ]);
 
         if ($request->type === 'export_order') {
@@ -234,6 +260,11 @@ class LogisticsController extends Controller
                 'delivery_address' => $request->delivery_address,
                 'location' => $request->location,
                 'customer' => $request->customer,
+                'job_order' => $request->job_order,
+                'return_port' => $request->return_port,
+                'booking_no' => $request->booking_no,
+                'shipping_line' => $request->shipping_line,
+                'factory' => $request->factory,
             ]);
             $logistics->save();
 
@@ -260,6 +291,8 @@ class LogisticsController extends Controller
                     'transporter_id' => $transporterId,
                     'transporter_name' => $transporterName,
                     'qty' => $item['qty'],
+                    'brand' => $item['brand'] ?? null,
+                    'packing_size' => $item['packing_size'] ?? null,
                 ]);
             }
 

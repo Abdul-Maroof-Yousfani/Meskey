@@ -686,7 +686,7 @@ class ExportDeliveryChallanController extends Controller
         }
 
         $loadingSlipLabour = $ticket->exportLoadingSlip?->labour ?? null;
-        $transporterId = $ticket->transporter_id ?? $loadingProgram->transporter_id ?? null;
+        $transporterId = $deliveryOrder->transporter_id ?? $ticket->transporter_id ?? $loadingProgram->transporter_id ?? null;
 
         return response()->json([
             'success' => true,
@@ -933,5 +933,244 @@ class ExportDeliveryChallanController extends Controller
         }
 
         return response()->json($vendors);
+    }
+
+    public function dailyDispatch()
+    {
+        $delivery_orders = \App\Models\Export\ExportDeliveryOrder::whereHas('delivery_challans', function($q) {
+            $q->where('am_approval_status', 'approved');
+        })->get();
+        return view('management.export.delivery-challan.daily-dispatch', compact('delivery_orders'));
+    }
+
+    public function getDailyDispatchFilters(Request $request)
+    {
+        $do_id = $request->do_id;
+        
+        $dc_ids = \App\Models\Export\ExportDeliveryChallan::where('am_approval_status', 'approved')
+        ->whereHas('delivery_order', function($q) use ($do_id) {
+            $q->where('delivery_order.id', $do_id);
+        })->pluck('id');
+
+        $dates = \App\Models\Export\ExportDeliveryChallan::whereIn('id', $dc_ids)
+            ->selectRaw('MIN(dispatch_date) as min_date, MAX(dispatch_date) as max_date')
+            ->first();
+
+        $data = \App\Models\Export\ExportDeliveryChallanData::whereIn('delivery_challan_id', $dc_ids)
+            ->with(['loadingProgramItem.exportLoadingSlip'])
+            ->get();
+
+        $delivery_order = \App\Models\Export\ExportDeliveryOrder::find($do_id);
+
+        $containers = [];
+        $trucks = [];
+        $packings = [];
+        $locations = [];
+
+        if ($delivery_order && $delivery_order->arrival_location_id) {
+            $factory_ids = explode(',', $delivery_order->arrival_location_id);
+            $factory_names = \App\Models\Master\ArrivalLocation::whereIn('id', $factory_ids)->pluck('name')->toArray();
+            $locations = array_merge($locations, $factory_names);
+        }
+
+        foreach ($data as $item) {
+            $lpItem = $item->loadingProgramItem;
+            
+            $c = ($lpItem && $lpItem->container_number) ? $lpItem->container_number : '';
+            if ($c) $containers[] = $c;
+            
+            $t = ($lpItem && $lpItem->truck_number) ? $lpItem->truck_number : $item->truck_no;
+            if ($t) $trucks[] = $t;
+            
+            $p = ($lpItem && $lpItem->packing) ? $lpItem->packing : $item->bag_size;
+            if ($p) $packings[] = $p;
+            
+            if ($lpItem && $lpItem->exportLoadingSlip && $lpItem->exportLoadingSlip->factory) {
+                $item_factories = array_map('trim', explode(',', $lpItem->exportLoadingSlip->factory));
+                $locations = array_merge($locations, $item_factories);
+            }
+        }
+
+        return response()->json([
+            'containers' => array_values(array_unique(array_filter($containers))),
+            'trucks' => array_values(array_unique(array_filter($trucks))),
+            'packings' => array_values(array_unique(array_filter($packings))),
+            'locations' => array_values(array_unique(array_filter($locations))),
+            'min_date' => $dates->min_date ?? '',
+            'max_date' => $dates->max_date ?? '',
+        ]);
+    }
+
+    public function generateDailyDispatchReport(Request $request)
+    {
+        $do_id = $request->do_id;
+        $start_date = $request->start_date;
+        $end_date = $request->end_date;
+        $location = array_filter((array) ($request->location ?? []));
+        $container = array_filter((array) ($request->container ?? []));
+        $truck = array_filter((array) ($request->truck ?? []));
+        $packing = array_filter((array) ($request->packing ?? []));
+
+        $delivery_order = \App\Models\Export\ExportDeliveryOrder::with([
+            'customer', 
+            'exportOrder.jobOrders',
+            'exportFormE',
+            'exportPackingItems.brand'
+        ])->findOrFail($do_id);
+
+        // Fetch DO Factory name(s) (arrival_location_id)
+        $do_factories = [];
+        if ($delivery_order->arrival_location_id) {
+            $factory_ids = explode(',', $delivery_order->arrival_location_id);
+            $do_factories = \App\Models\Master\ArrivalLocation::whereIn('id', $factory_ids)->pluck('name')->toArray();
+        }
+        $delivery_order->do_factories_string = implode(', ', $do_factories);
+
+        // Fetch DO Station name (location_id)
+        $do_station = '';
+        if ($delivery_order->location_id) {
+            $stationModel = \App\Models\Master\CompanyLocation::find($delivery_order->location_id);
+            $do_station = $stationModel ? $stationModel->name : '';
+        }
+        $delivery_order->do_station_string = $do_station;
+
+        $dc_query = \App\Models\Export\ExportDeliveryChallan::with([
+            'delivery_challan_data.loadingProgramItem.exportLoadingSlip',
+            'delivery_challan_data.loadingProgramItem.outerItems'
+        ])
+            ->where('am_approval_status', 'approved')
+            ->whereHas('delivery_order', function($q) use ($do_id) {
+                $q->where('delivery_order.id', $do_id);
+            });
+
+        if ($start_date && $end_date) {
+            $dc_query->whereBetween('dispatch_date', [$start_date, $end_date]);
+        }
+
+        $delivery_challans = $dc_query->get();
+
+        $report_data = [];
+        $seq = 1;
+        $total_bags = 0;
+        $total_weight = 0;
+
+        foreach ($delivery_challans as $dc) {
+            $data_factory = [];
+            
+            // Collect factory from all items in this DC to see if it matches the filter
+            foreach ($dc->delivery_challan_data as $data) {
+                $lpItem = $data->loadingProgramItem;
+                if ($lpItem && $lpItem->exportLoadingSlip && $lpItem->exportLoadingSlip->factory) {
+                    $item_factories = array_map('trim', explode(',', $lpItem->exportLoadingSlip->factory));
+                    $data_factory = array_merge($data_factory, $item_factories);
+                }
+            }
+            $data_factory = array_unique($data_factory);
+
+            if (!empty($location) && empty(array_intersect($location, $data_factory))) {
+                continue; // Skip entire DC if none of its items have the selected factory
+            }
+
+            $dc_container = [];
+            $dc_truck = [];
+            $dc_packing = [];
+            $dc_bags = 0;
+            $dc_weight = 0;
+            $dc_dosage = 0;
+            $dc_dry_bags = 0;
+            $dc_craft_paper = 0;
+            $dc_empty_bags = 0;
+            $dc_seal = '';
+            $dc_galla = '';
+            
+            $include_dc = false;
+            $processed_tickets = [];
+
+            foreach ($dc->delivery_challan_data as $data) {
+                $lpItem = $data->loadingProgramItem;
+                $slip = $lpItem ? $lpItem->exportLoadingSlip : null;
+
+                $data_container = ($lpItem && $lpItem->container_number) ? $lpItem->container_number : '';
+                $data_truck = ($lpItem && $lpItem->truck_number) ? $lpItem->truck_number : $data->truck_no;
+                $data_packing = ($lpItem && $lpItem->packing) ? $lpItem->packing : $data->bag_size;
+
+                if (!empty($container) && !in_array($data_container, $container)) continue;
+                if (!empty($truck) && !in_array($data_truck, $truck)) continue;
+                if (!empty($packing) && !in_array($data_packing, $packing)) continue;
+
+                $include_dc = true;
+                $weight = $data->qty * 1000; // Qty is MT, we need KG
+                
+                if ($data_container) $dc_container[] = $data_container;
+                if ($data_truck) $dc_truck[] = $data_truck;
+                if ($data_packing) $dc_packing[] = $data_packing;
+                
+                $dc_bags += $data->no_of_bags;
+                $dc_weight += $weight;
+
+                if ($lpItem && !in_array($lpItem->id, $processed_tickets)) {
+                    $processed_tickets[] = $lpItem->id;
+                    
+                    if (!$dc_seal) $dc_seal = $lpItem->exportLoadingSlip->seal_no ?? '';
+                    if (!$dc_galla) {
+                        $gallaData = $lpItem->exportLoadingSlip->gala ?? '';
+                        if (!empty($gallaData)) {
+                            $decodedGalla = json_decode($gallaData, true);
+                            if (is_array($decodedGalla) && count($decodedGalla) > 0) {
+                                $dc_galla = $decodedGalla[0];
+                            } else {
+                                $dc_galla = $gallaData;
+                            }
+                        }
+                    }
+
+                    if ($lpItem->outerItems) {
+                        foreach ($lpItem->outerItems as $outerItem) {
+                            $name = strtolower($outerItem->item_name);
+                            if (str_contains($name, 'dosage')) $dc_dosage += $outerItem->qty;
+                            elseif (str_contains($name, 'craft')) $dc_craft_paper += $outerItem->qty;
+                            elseif (str_contains($name, 'dry')) $dc_dry_bags += $outerItem->qty;
+                            elseif (str_contains($name, 'empty') || str_contains($name, 'naubahar')) $dc_empty_bags += $outerItem->qty;
+                        }
+                    }
+                }
+            }
+
+            if ($include_dc) {
+                $report_data[] = [
+                    'seq' => $seq++,
+                    'container' => implode(', ', array_unique($dc_container)),
+                    'truck' => implode(', ', array_unique($dc_truck)),
+                    'packing' => implode('/', array_unique($dc_packing)),
+                    'bags' => $dc_bags,
+                    'weight' => $dc_weight,
+                    'seal' => $dc_seal,
+                    'galla' => $dc_galla,
+                    'dosage' => $dc_dosage ?: '',
+                    'dry_bags' => $dc_dry_bags ?: '',
+                    'craft_paper' => $dc_craft_paper ?: '',
+                    'empty_bags' => $dc_empty_bags ?: '',
+                    'gp' => $dc->gp_no,
+                ];
+                $total_bags += $dc_bags;
+                $total_weight += $dc_weight;
+            }
+        }
+
+        $iso_code = $request->iso_code ?? 'MFT/QR/037';
+        $issue_date = $request->issue_date ?? '18-07-14';
+        $issue_no = $request->issue_no ?? '1';
+
+        return view('management.export.delivery-challan.print-daily-dispatch', compact(
+            'delivery_order',
+            'report_data',
+            'total_bags',
+            'total_weight',
+            'start_date',
+            'end_date',
+            'iso_code',
+            'issue_date',
+            'issue_no'
+        ));
     }
 }

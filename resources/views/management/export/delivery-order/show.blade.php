@@ -440,48 +440,7 @@
                             </div>
                         </div>
 
-                        <!-- New Logistics Row per Packing Item (Read-only in Show) -->
-                        <div class="col-md-12">
-                            <div class="row">
 
-                                <div class="col-md-2">
-                                    <div class="form-group">
-                                        <label>Fumigation:</label>
-                                        <input type="text" class="form-control fumigation-display" readonly>
-                                    </div>
-                                </div>
-                                <div class="col-md-2">
-                                    <div class="form-group">
-                                        <label>Phyto Certificate:</label>
-                                        <input type="text" class="form-control phyto-display" readonly>
-                                    </div>
-                                </div>
-                                <div class="col-md-2">
-                                    <div class="form-group">
-                                        <label>Inspection Company:</label>
-                                        <input type="text" name="packing_items[0][inspection_company]" class="form-control inspection-company" readonly>
-                                    </div>
-                                </div>
-                                <div class="col-md-2">
-                                    <div class="form-group">
-                                        <label>Carton Supplier:</label>
-                                        <input type="text" name="packing_items[0][carton_supplier]" class="form-control carton-supplier" readonly>
-                                    </div>
-                                </div>
-                                <div class="col-md-2">
-                                    <div class="form-group">
-                                        <label>Fumigation Tablets:</label>
-                                        <input type="text" name="packing_items[0][fumigation_tablets]" class="form-control fumigation-tablets" readonly>
-                                    </div>
-                                </div>
-                                <div class="col-md-2">
-                                    <div class="form-group">
-                                        <label>Fumigation Ref No:</label>
-                                        <input type="text" name="packing_items[0][fumigation_ref_no]" class="form-control fumigation-ref-no" readonly>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                         
                         <!-- Master Packing Section -->
                         <div class="col-md-12 mt-4">
@@ -632,14 +591,20 @@
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label>Freight Amount:</label>
+                        <label>Freight Amount (Per Container):</label>
                         <input type="text" class="form-control" value="{{ $deliveryOrder->freight_amount }}" disabled>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
                         <label>Transporter:</label>
-                        <input type="text" class="form-control" value="{{ $deliveryOrder->transporter->name ?? '---' }}" disabled>
+                        @php
+                            $selectedTransporters = json_decode($deliveryOrder->transporter_id, true) ?? (is_numeric($deliveryOrder->transporter_id) ? [$deliveryOrder->transporter_id] : []);
+                            $transporterNames = collect($transporters)->filter(function($t) use ($selectedTransporters) {
+                                return in_array($t->id, $selectedTransporters);
+                            })->pluck('name')->implode(', ');
+                        @endphp
+                        <input type="text" class="form-control" value="{{ $transporterNames ?: '---' }}" disabled>
                     </div>
                 </div>
                 <div class="col-md-3">
@@ -658,6 +623,64 @@
                     <div class="form-group">
                         <label>Empty Container Pickup:</label>
                         <input type="text" class="form-control" value="{{ $deliveryOrder->empty_container_pickup }}" disabled>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Fumigation By:</label>
+                        @php
+                            $selectedFumigation = json_decode($deliveryOrder->fumigation_by, true) ?? [];
+                            $fumigationNames = collect($fumigationCompanies)->filter(function($f) use ($selectedFumigation) {
+                                return in_array($f->id, $selectedFumigation);
+                            })->pluck('name')->implode(', ');
+                        @endphp
+                        <input type="text" class="form-control" value="{{ $fumigationNames }}" disabled>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Inspection By:</label>
+                        @php
+                            $selectedInspection = json_decode($deliveryOrder->inspection_by, true) ?? [];
+                            $inspectionNames = collect($inspectionCompanies)->filter(function($i) use ($selectedInspection) {
+                                return in_array($i->id, $selectedInspection);
+                            })->pluck('name')->implode(', ');
+                        @endphp
+                        <input type="text" class="form-control" value="{{ $inspectionNames }}" disabled>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Phyto Certificate:</label>
+                        @php
+                            $selectedPhyto = json_decode($deliveryOrder->phyto_certificate, true) ?? [];
+                            $phytoNames = collect($fumigationCompanies)->filter(function($f) use ($selectedPhyto) {
+                                return in_array($f->id, $selectedPhyto);
+                            })->pluck('name')->implode(', ');
+                        @endphp
+                        <input type="text" class="form-control" value="{{ $phytoNames }}" disabled>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Carton Supplier:</label>
+                        <input type="text" class="form-control" value="{{ $deliveryOrder->carton_supplier }}" disabled>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Fumigation Tablets:</label>
+                        <input type="text" class="form-control" value="{{ $deliveryOrder->fumigation_tablets }}" disabled>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Fumigation Ref No:</label>
+                        <input type="text" class="form-control" value="{{ $deliveryOrder->fumigation_ref_no }}" disabled>
                     </div>
                 </div>
             </div>
@@ -880,39 +903,7 @@
                 row.find(`input[name="packing_items[0][no_of_containers]"]`).val(item.no_of_containers);
                 row.find(`input[name="packing_items[0][min_weight_empty_bags]"]`).val(item.min_weight_empty_bags);
 
-                // Populate logistics fields
-                let fumigationNames = [];
-                let allFumigationOpts = {};
-                $('.fumigation-display option, .fumigation-select option').each(function() {
-                    allFumigationOpts[$(this).val()] = $(this).text();
-                });
-                // Use the fumigationCompanies map from inline JSON
-                let fumigationMap = @json($fumigationCompanies->pluck('name','id'));
-                if (Array.isArray(item.fumigation_company_id)) {
-                    item.fumigation_company_id.forEach(id => { if(fumigationMap[id]) fumigationNames.push(fumigationMap[id]); });
-                }
-                row.find('.fumigation-display').val(fumigationNames.join(', '));
 
-                let phytoNames = [];
-                if (Array.isArray(item.phyto_certificate)) {
-                    item.phyto_certificate.forEach(id => { if(fumigationMap[id]) phytoNames.push(fumigationMap[id]); });
-                }
-                row.find('.phyto-display').val(phytoNames.join(', '));
-
-                // Resolve inspection company IDs to names if they are IDs
-                let inspectionMap = @json($inspectionCompanies->pluck('name', 'id'));
-                let inspectionVal = item.inspection_company || '';
-                if (inspectionVal) {
-                    let ids = inspectionVal.split(',').map(id => id.trim());
-                    let names = ids.map(id => inspectionMap[id] || id); // Fallback to original value if not found in map
-                    row.find('.inspection-company').val(names.join(', '));
-                } else {
-                    row.find('.inspection-company').val('');
-                }
-
-                row.find('.carton-supplier').val(item.carton_supplier || '');
-                row.find('.fumigation-tablets').val(item.fumigation_tablets || '');
-                row.find('.fumigation-ref-no').val(item.fumigation_ref_no || '');
                 
                 let subContainer = row.find('.sub-packing-items-container');
                 subContainer.attr('data-index', index);

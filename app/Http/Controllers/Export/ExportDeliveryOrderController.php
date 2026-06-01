@@ -145,14 +145,11 @@ class ExportDeliveryOrderController extends Controller
             'quotation.product'
         ])->findOrFail($id);
 
-        // Get the first Form-E for default values if exists
-        $firstFormE = ExportFormE::with('jobOrder')->where('export_order_id', $id)->first();
-        $jobOrderNo = $firstFormE?->jobOrder?->job_order_no ?? '';
+        // Get Job Orders directly from export_order_id
+        $jobOrders = \App\Models\Production\JobOrder\JobOrder::where('export_order_id', $id)->pluck('job_order_no')->filter()->values()->toArray();
 
-        // Get inspection company and fumigation from EO packing items
-        $firstPackingItem = $exportOrder->packingItems->first();
-        $inspectionCompany = $firstPackingItem?->inspection_by ?? '';
-        $fumigation = $firstPackingItem?->fumigation_company_id ? 'Yes' : 'No';
+        $fumigation_by = is_string($exportOrder->fumigation_by) ? json_decode($exportOrder->fumigation_by, true) : (is_array($exportOrder->fumigation_by) ? $exportOrder->fumigation_by : []);
+        $inspection_by = is_string($exportOrder->inspection_by) ? json_decode($exportOrder->inspection_by, true) : (is_array($exportOrder->inspection_by) ? $exportOrder->inspection_by : []);
 
         $deliveryOrders = DeliveryOrder::with('exportPackingItems')->where('export_order_id', $id)->get();
         $totalEoMt = $exportOrder->packingItems->sum('metric_tons');
@@ -226,6 +223,34 @@ class ExportDeliveryOrderController extends Controller
             ];
         })->values();
 
+        // Fetch Logistics Transporters
+        $logistics = \App\Models\Sales\Logistics::with('items.transporter')->where('export_order_id', $id)->get();
+        $logisticsTransporters = collect();
+        foreach ($logistics as $logistic) {
+            foreach ($logistic->items as $item) {
+                if ($item->transporter) {
+                    $logisticsTransporters->push([
+                        'id' => $item->transporter->id,
+                        'name' => $item->transporter->name ?? $item->transporter->company_name
+                    ]);
+                }
+            }
+        }
+        $logisticsTransporters = $logisticsTransporters->unique('id')->values();
+
+        // Fetch C-Freight details
+        $cFreight = \App\Models\Export\CFreight::with(['rates' => function($q) {
+            $q->where('is_approved', 1);
+        }])->where('export_order_id', $id)->first();
+
+        $cFreightAutofill = [
+            'vessel_name' => $cFreight ? $cFreight->vessel_name : '',
+            'vessel_eta' => $cFreight ? $cFreight->eta : '',
+            'vessel_etd' => $cFreight ? $cFreight->etd : '',
+            'shipping_line' => $cFreight ? $cFreight->shipping_line : '',
+            'freight_amount' => ($cFreight && $cFreight->rates->isNotEmpty()) ? $cFreight->rates->first()->price : '',
+        ];
+
         return response()->json([
             'success' => true,
             'data' => [
@@ -234,11 +259,16 @@ class ExportDeliveryOrderController extends Controller
                 'total_eo_mt' => round($totalEoMt, 3),
                 'consumed_mt' => round($consumedMt, 3),
                 'remaining_mt' => round($remainingMt, 3),
-                'autofill' => [
-                    'job_order_no' => $jobOrderNo,
-                    'inspection_company' => $inspectionCompany,
-                    'fumigation' => $fumigation,
-                ]
+                'autofill' => array_merge([
+                    'job_orders' => $jobOrders,
+                    'logistics_transporters' => $logisticsTransporters,
+                    'inspection_by' => $inspection_by,
+                    'fumigation_by' => $fumigation_by,
+                    'phyto_certificate' => $exportOrder->packingItems->pluck('phyto_certificate')->flatten()->unique()->values(),
+                    'carton_supplier' => $exportOrder->packingItems->pluck('carton_supplier')->filter()->first(),
+                    'fumigation_tablets' => $exportOrder->packingItems->pluck('fumigation_tablets')->filter()->first(),
+                    'fumigation_ref_no' => $exportOrder->packingItems->pluck('fumigation_ref_no')->filter()->first(),
+                ], $cFreightAutofill)
             ]
         ]);
     }
@@ -257,8 +287,8 @@ class ExportDeliveryOrderController extends Controller
             'vessel_eta' => 'required|date|after_or_equal:vessel_etd',
             'loading_date' => 'required|date',
             'estimated_payment_date' => 'required|date',
-            'freight_amount' => 'required|numeric|min:0',
-            'transporter_id' => 'required|exists:transporters,id',
+            'freight_amount' => 'required|string',
+            'transporter_id' => 'required|array',
             'c_agent' => 'required',
             'shipping_line' => 'required',
             'empty_container_pickup' => 'required',
@@ -361,11 +391,17 @@ class ExportDeliveryOrderController extends Controller
                 'vessel_eta' => $request->vessel_eta,
                 'loading_date' => $request->loading_date,
                 'estimated_payment_date' => $request->estimated_payment_date,
-                'freight_amount' => $request->freight_amount ?? 0,
-                'transporter_id' => $request->transporter_id,
+                'freight_amount' => $request->freight_amount ?? '',
+                'transporter_id' => $request->has('transporter_id') ? json_encode($request->transporter_id) : null,
                 'c_agent' => $request->c_agent,
                 'shipping_line' => $request->shipping_line,
                 'empty_container_pickup' => $request->empty_container_pickup,
+                'fumigation_by' => $request->has('fumigation_by_hidden') ? $request->fumigation_by_hidden : ($request->has('fumigation_by') ? json_encode($request->fumigation_by) : null),
+                'inspection_by' => $request->has('inspection_by_hidden') ? $request->inspection_by_hidden : ($request->has('inspection_by') ? json_encode($request->inspection_by) : null),
+                'phyto_certificate' => $request->has('phyto_certificate') ? json_encode($request->phyto_certificate) : null,
+                'carton_supplier' => $request->carton_supplier,
+                'fumigation_tablets' => $request->fumigation_tablets,
+                'fumigation_ref_no' => $request->fumigation_ref_no,
             ]);
 
             // Save multiple locations
@@ -407,12 +443,7 @@ class ExportDeliveryOrderController extends Controller
                 'thread_color_id' => $itemData['thread_color_id'] ?? null,
                 'stitching_id' => $itemData['stitching_id'] ?? null,
                 'min_weight_empty_bags' => $itemData['min_weight_empty_bags'] ?? 0,
-                'fumigation_company_id' => isset($itemData['fumigation_company_id']) ? (array) $itemData['fumigation_company_id'] : (isset($itemData['fumigation_company_id_hidden']) ? json_decode($itemData['fumigation_company_id_hidden'], true) : null),
-                'phyto_certificate' => isset($itemData['phyto_certificate']) ? (array) $itemData['phyto_certificate'] : null,
-                'carton_supplier' => $itemData['carton_supplier'] ?? null,
-                'fumigation_tablets' => $itemData['fumigation_tablets'] ?? null,
-                'fumigation_ref_no' => $itemData['fumigation_ref_no'] ?? null,
-                'inspection_company' => $itemData['inspection_company'] ?? null,
+
             ]);
 
             if (isset($itemData['sub_items']) && is_array($itemData['sub_items'])) {
@@ -496,6 +527,7 @@ class ExportDeliveryOrderController extends Controller
         $fumigationCompanies = FumigationCompany::where('status', 'active')->get();
         $bagTypes = BagType::where('status', 1)->get();
         $bagConditions = BagCondition::where('status', 1)->get();
+        $transporters = Transporter::all();
 
         return view('management.export.delivery-order.show', compact(
             'deliveryOrder',
@@ -511,7 +543,8 @@ class ExportDeliveryOrderController extends Controller
             'totalAllowedMt',
             'alreadyConsumedMt',
             'remainingMt',
-            'currentRequestMt'
+            'currentRequestMt',
+            'transporters'
         ));
     }
 
@@ -621,8 +654,8 @@ class ExportDeliveryOrderController extends Controller
             'vessel_eta' => 'required|date|after_or_equal:vessel_etd',
             'loading_date' => 'required|date',
             'estimated_payment_date' => 'required|date',
-            'freight_amount' => 'required|numeric|min:0',
-            'transporter_id' => 'required|exists:transporters,id',
+            'freight_amount' => 'required|string',
+            'transporter_id' => 'required|array',
             'c_agent' => 'required',
             'shipping_line' => 'required',
             'empty_container_pickup' => 'required',
@@ -727,11 +760,17 @@ class ExportDeliveryOrderController extends Controller
                 'vessel_eta' => $request->vessel_eta,
                 'loading_date' => $request->loading_date,
                 'estimated_payment_date' => $request->estimated_payment_date,
-                'freight_amount' => $request->freight_amount ?? 0,
+                'freight_amount' => $request->freight_amount ?? '',
                 'transporter_id' => $request->transporter_id,
                 'c_agent' => $request->c_agent,
                 'shipping_line' => $request->shipping_line,
                 'empty_container_pickup' => $request->empty_container_pickup,
+                'fumigation_by' => $request->has('fumigation_by_hidden') ? $request->fumigation_by_hidden : ($request->has('fumigation_by') ? json_encode($request->fumigation_by) : null),
+                'inspection_by' => $request->has('inspection_by_hidden') ? $request->inspection_by_hidden : ($request->has('inspection_by') ? json_encode($request->inspection_by) : null),
+                'phyto_certificate' => $request->has('phyto_certificate') ? json_encode($request->phyto_certificate) : null,
+                'carton_supplier' => $request->carton_supplier,
+                'fumigation_tablets' => $request->fumigation_tablets,
+                'fumigation_ref_no' => $request->fumigation_ref_no,
             ]);
 
             // Update multiple locations
@@ -778,12 +817,6 @@ class ExportDeliveryOrderController extends Controller
                         'thread_color_id' => $itemData['thread_color_id'] ?? null,
                         'stitching_id' => $itemData['stitching_id'] ?? null,
                         'min_weight_empty_bags' => $itemData['min_weight_empty_bags'] ?? 0,
-                        'fumigation_company_id' => isset($itemData['fumigation_company_id']) ? (array) $itemData['fumigation_company_id'] : (isset($itemData['fumigation_company_id_hidden']) ? json_decode($itemData['fumigation_company_id_hidden'], true) : null),
-                        'phyto_certificate' => isset($itemData['phyto_certificate']) ? (array) $itemData['phyto_certificate'] : null,
-                        'carton_supplier' => $itemData['carton_supplier'] ?? null,
-                        'fumigation_tablets' => $itemData['fumigation_tablets'] ?? null,
-                        'fumigation_ref_no' => $itemData['fumigation_ref_no'] ?? null,
-                        'inspection_company' => $itemData['inspection_company'] ?? null,
                     ]);
 
                     if (isset($itemData['sub_items']) && is_array($itemData['sub_items'])) {
