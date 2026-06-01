@@ -7,20 +7,21 @@
 {{-- Delivery Order Selection (only shown if loading slip doesn't have one) --}}
 @if(isset($needsDeliveryOrder) && $needsDeliveryOrder)
 
-<div class="col-xs-12 col-sm-12 col-md-12">
-    <div class="form-group">
-        <label>Delivery Order: <span class="text-danger">*</span></label>
-        <select class="form-control select2" onchange="get_balance(this)" name="delivery_order_id" id="delivery_order_id_second_wb" required style="width: 100%;">
-            <option value="">Select Delivery Order</option>
-            @foreach($deliveryOrders as $deliveryOrder)
-                <option value="{{ $deliveryOrder->id }}">
-                    {{ $deliveryOrder->reference_no }} - {{ $deliveryOrder->customer->name ?? 'N/A' }}
-                </option>
-            @endforeach
-        </select>
-        <small class="text-muted">This loading slip does not have a Delivery Order. Please select one.</small>
+    <div class="col-xs-12 col-sm-12 col-md-12">
+        <div class="form-group">
+            <label>Delivery Order: <span class="text-danger">*</span></label>
+            <select class="form-control select2" onchange="get_balance(this)" name="delivery_order_id"
+                id="delivery_order_id_second_wb" required style="width: 100%;">
+                <option value="">Select Delivery Order</option>
+                @foreach($deliveryOrders as $deliveryOrder)
+                    <option value="{{ $deliveryOrder->id }}">
+                        {{ $deliveryOrder->reference_no }} - {{ $deliveryOrder->customer->name ?? 'N/A' }}
+                    </option>
+                @endforeach
+            </select>
+            <small class="text-muted">This loading slip does not have a Delivery Order. Please select one.</small>
+        </div>
     </div>
-</div>
 @endif
 
 {{-- Loading Slip Details Section --}}
@@ -60,7 +61,9 @@
                 'number' => $do->reference_no,
                 'customer' => $do->customer->name ?? '',
                 'commodity' => $do->delivery_order_data->first()->item->name ?? '',
-                'so_qty' => $do->delivery_order_data->sum(function($d) { return $d->salesOrderData->qty ?? 0; }),
+                'so_qty' => $do->delivery_order_data->sum(function ($d) {
+                    return $d->salesOrderData->qty ?? 0;
+                }),
                 'do_qty' => $current_balance,
                 'balance' => $current_balance,
                 'total_qty' => $total_qty,
@@ -124,7 +127,10 @@
         <ul class="nav nav-tabs nav-justified" id="orderTabs-{{ $modalIdentifier }}" role="tablist">
             @foreach($orders as $index => $order)
                 <li class="nav-item">
-                    <a class="nav-link {{ $index === 0 ? 'active' : '' }}" id="wb-tab-{{ $modalIdentifier }}-{{ $index }}" data-toggle="tab" href="#wb-pane-{{ $modalIdentifier }}-{{ $index }}" role="tab" aria-controls="wb-pane-{{ $modalIdentifier }}-{{ $index }}" aria-selected="{{ $index === 0 ? 'true' : 'false' }}">
+                    <a class="nav-link {{ $index === 0 ? 'active' : '' }}" id="wb-tab-{{ $modalIdentifier }}-{{ $index }}"
+                        data-toggle="tab" href="#wb-pane-{{ $modalIdentifier }}-{{ $index }}" role="tab"
+                        aria-controls="wb-pane-{{ $modalIdentifier }}-{{ $index }}"
+                        aria-selected="{{ $index === 0 ? 'true' : 'false' }}">
                         {{ $order['type'] }}: {{ $order['number'] }}
                     </a>
                 </li>
@@ -132,33 +138,37 @@
         </ul>
         <div class="tab-content pt-1" id="orderContent-{{ $modalIdentifier }}">
             @foreach($orders as $index => $order)
-                <div class="tab-pane fade show {{ $index === 0 ? 'active' : '' }} p-2" id="wb-pane-{{ $modalIdentifier }}-{{ $index }}" role="tabpanel" aria-labelledby="wb-tab-{{ $modalIdentifier }}-{{ $index }}">
+                <div class="tab-pane fade show {{ $index === 0 ? 'active' : '' }} p-2"
+                    id="wb-pane-{{ $modalIdentifier }}-{{ $index }}" role="tabpanel"
+                    aria-labelledby="wb-tab-{{ $modalIdentifier }}-{{ $index }}">
                     <div class="row mt-1">
-                        <div class="col-xs-12 col-sm-6 col-md-3">
-                            <div class="form-group">
-                                <label>Customer:</label>
-                                <input type="text" value="{{ $order['customer'] }}" class="form-control" readonly disabled />
-                            </div>
-                        </div>
+                        <!-- <div class="col-xs-12 col-sm-6 col-md-3">
+                                                            <div class="form-group">
+                                                                <label>Customer:</label>
+                                                                <input type="text" value="{{ $order['customer'] }}" class="form-control" readonly disabled />
+                                                            </div>
+                                                        </div> -->
                         <div class="col-xs-12 col-sm-6 col-md-3">
                             <div class="form-group">
                                 <label>Commodity:</label>
                                 <input type="text" value="{{ $order['commodity'] }}" class="form-control" readonly disabled />
                             </div>
                         </div>
-                        <div class="col-xs-12 col-sm-6 col-md-2">
+                        <div class="col-xs-12 col-sm-6 col-md-3">
                             <div class="form-group">
                                 <label>SO Qty:</label>
                                 <input type="number" value="{{ $order['so_qty'] }}" class="form-control" readonly disabled />
                             </div>
                         </div>
-                        <div class="col-xs-12 col-sm-6 col-md-2">
+                        <div class="col-xs-12 col-sm-6 col-md-3">
                             <div class="form-group">
                                 <label>Total DO Qty:</label>
-                                <input type="number" value="{{ isset($order['total_qty']) ? $order['total_qty'] : $order['do_qty'] }}" class="form-control" readonly disabled />
+                                <input type="number"
+                                    value="{{ isset($order['total_qty']) ? $order['total_qty'] : $order['do_qty'] }}"
+                                    class="form-control" readonly disabled />
                             </div>
                         </div>
-                        <div class="col-xs-12 col-sm-6 col-md-2">
+                        <div class="col-xs-12 col-sm-6 col-md-3">
                             <div class="form-group">
                                 <label>Balance Qty:</label>
                                 <input type="number" value="{{ $order['balance'] }}" class="form-control" readonly disabled />
@@ -199,9 +209,8 @@
 <div class="col-xs-12 col-sm-4 col-md-4" style="display: none">
     <div class="form-group">
         <label>Loaded Weight:</label>
-        <input type="text" name="loaded_weight" id="loaded_weight"
-            value="{{ $LoadingSlip->kilogram }}"
-            readonly class="form-control" autocomplete="off" />
+        <input type="text" name="loaded_weight" id="loaded_weight" value="{{ $LoadingSlip->kilogram }}" readonly
+            class="form-control" autocomplete="off" />
         <input type="hidden" name="first_weight" value="{{ $LoadingSlip->kilogram }}" />
     </div>
 </div>
@@ -220,9 +229,10 @@
     <div class="form-group">
         <label>First Weight:</label>
         <input type="text" name="first_weight_display" id="first_weight_display"
-            value="{{ $LoadingSlip->loadingProgramItem->firstWeighbridge->first_weight ?? 'N/A' }}"
-            readonly class="form-control" autocomplete="off" />
-        <input type="hidden" name="first_weight" value="{{ $LoadingSlip->loadingProgramItem->firstWeighbridge->first_weight ?? 0 }}" />
+            value="{{ $LoadingSlip->loadingProgramItem->firstWeighbridge->first_weight ?? 'N/A' }}" readonly
+            class="form-control" autocomplete="off" />
+        <input type="hidden" name="first_weight"
+            value="{{ $LoadingSlip->loadingProgramItem->firstWeighbridge->first_weight ?? 0 }}" />
     </div>
 </div>
 
@@ -230,8 +240,8 @@
     <div class="form-group">
         <label>Second Weight:</label>
         <input type="number" name="second_weight" id="second_weight" placeholder="Enter Second Weight"
-            value="{{ isset($SecondWeighbridge) ? $SecondWeighbridge->second_weight : '' }}"
-            class="form-control" autocomplete="off" step="0.01" />
+            value="{{ isset($SecondWeighbridge) ? $SecondWeighbridge->second_weight : '' }}" class="form-control"
+            autocomplete="off" step="0.01" />
     </div>
 </div>
 
@@ -239,8 +249,8 @@
     <div class="form-group">
         <label>Net Weight:</label>
         <input type="text" name="net_weight" id="net_weight" placeholder="Net Weight"
-            value="{{ isset($SecondWeighbridge) ? $SecondWeighbridge->net_weight : '' }}"
-            readonly class="form-control" autocomplete="off" />
+            value="{{ isset($SecondWeighbridge) ? $SecondWeighbridge->net_weight : '' }}" readonly class="form-control"
+            autocomplete="off" />
     </div>
 </div>
 
@@ -252,11 +262,13 @@
                 <button class="btn btn-primary" type="button">Balance (KG)</button>
             </div>
             @php
-                $balance = (isset($SecondWeighbridge) && isset($SecondWeighbridge->balance_kg)) 
-                    ? $SecondWeighbridge->balance_kg 
+                $balance = (isset($SecondWeighbridge) && isset($SecondWeighbridge->balance_kg))
+                    ? $SecondWeighbridge->balance_kg
                     : get_second_weighbridge_balance($LoadingSlip);
             @endphp
-            <input type="text" id="weight_difference" value="{{ number_format($balance, 2, '.', '') }}" name="weight_difference" placeholder="Weight Difference" readonly="" class="form-control" autocomplete="off">
+            <input type="text" id="weight_difference" value="{{ number_format($balance, 2, '.', '') }}"
+                name="weight_difference" placeholder="Weight Difference" readonly="" class="form-control"
+                autocomplete="off">
         </div>
     </fieldset>
 </div>
@@ -264,7 +276,8 @@
 <div class="col-xs-12 col-sm-12 col-md-12">
     <div class="form-group">
         <label>Remark:</label>
-        <textarea name="remark" placeholder="Remarks" class="form-control">{{ isset($SecondWeighbridge) ? $SecondWeighbridge->remark : '' }}</textarea>
+        <textarea name="remark" placeholder="Remarks"
+            class="form-control">{{ isset($SecondWeighbridge) ? $SecondWeighbridge->remark : '' }}</textarea>
     </div>
 </div>
 
@@ -283,11 +296,11 @@
         });
     }
 
-    $(document).ready(function() {
+    $(document).ready(function () {
         $('.select2').select2();
 
         // Calculate net weight when second weight changes
-        $('#second_weight').on('input', function() {
+        $('#second_weight').on('input', function () {
             const firstWeight = parseFloat($('#first_weight_display').val()) || 0;
             const secondWeight = parseFloat($(this).val()) || 0;
             const balance = parseFloat($('#weight_difference').val()) || 0;
