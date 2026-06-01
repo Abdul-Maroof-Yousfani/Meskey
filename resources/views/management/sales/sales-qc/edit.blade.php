@@ -1,4 +1,5 @@
-<form action="{{ route('sales.sales-qc.update', $SalesQc->id) }}" method="POST" id="ajaxSubmit" autocomplete="off" enctype="multipart/form-data">
+<form action="{{ route('sales.sales-qc.update', $SalesQc->id) }}" method="POST" id="ajaxSubmit" autocomplete="off"
+    enctype="multipart/form-data">
     @csrf
     @method('PUT')
     <input type="hidden" id="listRefresh" value="{{ route('sales.get.sales-qc') }}" />
@@ -41,13 +42,15 @@
                         'number' => $do->reference_no,
                         'customer' => $do->customer->name ?? '',
                         'commodity' => $do->delivery_order_data->first()->item->name ?? '',
-                        'so_qty' => $do->delivery_order_data->sum(function($d) { return $d->salesOrderData->qty ?? 0; }),
+                        'so_qty' => $do->delivery_order_data->sum(function ($d) {
+                            return $d->salesOrderData->qty ?? 0;
+                        }),
                         'do_qty' => $do->delivery_order_data->sum('qty'),
                         'factory_names' => $factoryNames,
                         'gala_names' => $galaNames
                     ];
                 }
-            } 
+            }
             // Fallback to single delivery order if exists
             elseif ($item->loadingProgram && $item->loadingProgram->deliveryOrder) {
                 $do = $item->loadingProgram->deliveryOrder;
@@ -65,7 +68,9 @@
                     'number' => $do->reference_no,
                     'customer' => $do->customer->name ?? '',
                     'commodity' => $do->delivery_order_data->first()->item->name ?? '',
-                    'so_qty' => $do->delivery_order_data->sum(function($d) { return $d->salesOrderData->qty ?? 0; }),
+                    'so_qty' => $do->delivery_order_data->sum(function ($d) {
+                        return $d->salesOrderData->qty ?? 0;
+                    }),
                     'do_qty' => $do->delivery_order_data->sum('qty'),
                     'factory_names' => $factoryNames,
                     'gala_names' => $galaNames
@@ -107,7 +112,9 @@
             <ul class="nav nav-tabs nav-justified w-100" id="orderTabs" role="tablist">
                 @foreach($orders as $index => $order)
                     <li class="nav-item">
-                        <a class="nav-link {{ $index === 0 ? 'active' : '' }}" id="order-tab-{{ $index }}" data-toggle="tab" href="#order-content-{{ $index }}" role="tab" aria-controls="order-content-{{ $index }}" aria-selected="{{ $index === 0 ? 'true' : 'false' }}">
+                        <a class="nav-link {{ $index === 0 ? 'active' : '' }}" id="order-tab-{{ $index }}" data-toggle="tab"
+                            href="#order-content-{{ $index }}" role="tab" aria-controls="order-content-{{ $index }}"
+                            aria-selected="{{ $index === 0 ? 'true' : 'false' }}">
                             {{ $order['type'] }}: {{ $order['number'] }}
                         </a>
                     </li>
@@ -115,30 +122,33 @@
             </ul>
             <div class="tab-content pt-1 w-100" id="orderTabsContent">
                 @foreach($orders as $index => $order)
-                    <div class="tab-pane fade show {{ $index === 0 ? 'active' : '' }}" id="order-content-{{ $index }}" role="tabpanel" aria-labelledby="order-tab-{{ $index }}">
+                    <div class="tab-pane fade show {{ $index === 0 ? 'active' : '' }}" id="order-content-{{ $index }}"
+                        role="tabpanel" aria-labelledby="order-tab-{{ $index }}">
                         <div class="row">
-                            <div class="col-xs-12 col-sm-6 col-md-3">
-                                <div class="form-group">
-                                    <label>Customer:</label>
-                                    <input type="text" value="{{ $order['customer'] }}" class="form-control" readonly />
-                                </div>
-                            </div>
-                            <div class="col-xs-12 col-sm-6 col-md-3">
+                            <!-- <div class="col-xs-12 col-sm-6 col-md-3">
+                                                                        <div class="form-group">
+                                                                            <label>Customer:</label>
+                                                                            <input type="text" value="{{ $order['customer'] }}" class="form-control" readonly />
+                                                                        </div>
+                                                                    </div> -->
+                            <div class="col-xs-12 col-sm-6 col-md-4">
                                 <div class="form-group">
                                     <label>Commodity:</label>
                                     <input type="text" value="{{ $order['commodity'] }}" class="form-control" readonly />
                                 </div>
                             </div>
-                            <div class="col-xs-12 col-sm-6 col-md-3">
+                            <div class="col-xs-12 col-sm-6 col-md-4">
                                 <div class="form-group">
                                     <label>SO Qty:</label>
-                                    <input type="number" value="{{ $order['so_qty'] }}" class="form-control" readonly step="0.01" />
+                                    <input type="number" value="{{ $order['so_qty'] }}" class="form-control" readonly
+                                        step="0.01" />
                                 </div>
                             </div>
-                            <div class="col-xs-12 col-sm-6 col-md-3">
+                            <div class="col-xs-12 col-sm-6 col-md-4">
                                 <div class="form-group">
                                     <label>DO Qty:</label>
-                                    <input type="number" value="{{ $order['do_qty'] }}" class="form-control" readonly step="0.01" />
+                                    <input type="number" value="{{ $order['do_qty'] }}" class="form-control" readonly
+                                        step="0.01" />
                                 </div>
                             </div>
                         </div>
@@ -146,7 +156,8 @@
                             <div class="col-xs-12 col-sm-6 col-md-6">
                                 <div class="form-group">
                                     <label>Factory:</label>
-                                    <select class="form-control select2 w-100" multiple disabled style="width: 100% !important;">
+                                    <select class="form-control select2 w-100" multiple disabled
+                                        style="width: 100% !important;">
                                         @foreach($order['factory_names'] as $name)
                                             <option selected>{{ $name }}</option>
                                         @endforeach
@@ -156,7 +167,8 @@
                             <div class="col-xs-12 col-sm-6 col-md-6">
                                 <div class="form-group">
                                     <label>Gala:</label>
-                                    <select class="form-control select2 w-100" multiple disabled style="width: 100% !important;">
+                                    <select class="form-control select2 w-100" multiple disabled
+                                        style="width: 100% !important;">
                                         @foreach($order['gala_names'] as $name)
                                             <option selected>{{ $name }}</option>
                                         @endforeach
@@ -167,7 +179,7 @@
                     </div>
                 @endforeach
             </div>
-            
+
             {{-- Hidden inputs for backward compatibility --}}
             <input type="hidden" name="customer" value="{{ $SalesQc->customer }}" />
             <input type="hidden" name="commodity" value="{{ $SalesQc->commodity }}" />
@@ -184,7 +196,8 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>QC Remarks:</label>
-                <textarea name="qc_remarks" placeholder="Enter QC remarks" class="form-control" rows="3">{{ $SalesQc->qc_remarks }}</textarea>
+                <textarea name="qc_remarks" placeholder="Enter QC remarks" class="form-control"
+                    rows="3">{{ $SalesQc->qc_remarks }}</textarea>
             </div>
         </div>
     </div>
@@ -203,30 +216,33 @@
         <div class="col-xs-12 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Attachments:</label>
-                <input type="file" name="attachments[]" class="form-control" multiple accept="image/*,application/pdf,.doc,.docx">
+                <input type="file" name="attachments[]" class="form-control" multiple
+                    accept="image/*,application/pdf,.doc,.docx">
                 <small class="text-muted">Allowed: Images, PDF, DOC, DOCX (Max 10MB each)</small>
 
                 @if($SalesQc->attachments->count() > 0)
-                <div class="mt-2">
-                    <label>Current Attachments:</label>
-                    <div class="row">
-                        @foreach($SalesQc->attachments as $attachment)
-                            <div class="col-md-4 mb-2">
-                                <div class="card">
-                                    <div class="card-body text-center p-2">
-                                        @if(Str::contains($attachment->file_type, ['image']))
-                                            <img src="{{ asset($attachment->file_path) }}" alt="{{ $attachment->file_name }}" class="img-fluid rounded" style="max-height: 50px;">
-                                        @else
-                                            <i class="ft-file-text font-medium-2"></i>
-                                        @endif
-                                        <p class="mt-1 mb-1 small">{{ Str::limit($attachment->file_name, 15) }}</p>
-                                        <a href="{{ asset($attachment->file_path) }}" target="_blank" class="btn btn-xs btn-primary">View</a>
+                    <div class="mt-2">
+                        <label>Current Attachments:</label>
+                        <div class="row">
+                            @foreach($SalesQc->attachments as $attachment)
+                                <div class="col-md-4 mb-2">
+                                    <div class="card">
+                                        <div class="card-body text-center p-2">
+                                            @if(Str::contains($attachment->file_type, ['image']))
+                                                <img src="{{ asset($attachment->file_path) }}" alt="{{ $attachment->file_name }}"
+                                                    class="img-fluid rounded" style="max-height: 50px;">
+                                            @else
+                                                <i class="ft-file-text font-medium-2"></i>
+                                            @endif
+                                            <p class="mt-1 mb-1 small">{{ Str::limit($attachment->file_name, 15) }}</p>
+                                            <a href="{{ asset($attachment->file_path) }}" target="_blank"
+                                                class="btn btn-xs btn-primary">View</a>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        @endforeach
+                            @endforeach
+                        </div>
                     </div>
-                </div>
                 @endif
             </div>
         </div>
@@ -241,13 +257,13 @@
 </form>
 
 <script>
-    $(document).ready(function() {
+    $(document).ready(function () {
         $('.select2').select2();
     });
 
-    $(document).ready(function() {
+    $(document).ready(function () {
         // Handle ticket selection
-        $('#loading_program_item_id').change(function() {
+        $('#loading_program_item_id').change(function () {
             var loading_program_item_id = $(this).val();
 
             if (loading_program_item_id) {
@@ -258,7 +274,7 @@
                         loading_program_item_id: loading_program_item_id
                     },
                     dataType: 'json',
-                    beforeSend: function() {
+                    beforeSend: function () {
                         Swal.fire({
                             title: "Processing...",
                             text: "Please wait while fetching ticket details.",
@@ -268,7 +284,7 @@
                             }
                         });
                     },
-                    success: function(response) {
+                    success: function (response) {
                         Swal.close();
                         if (response.success) {
                             // Populate the form with ticket data
@@ -278,7 +294,7 @@
                                 "info");
                         }
                     },
-                    error: function() {
+                    error: function () {
                         Swal.close();
                         Swal.fire("Error", "Something went wrong. Please try again.",
                             "error");

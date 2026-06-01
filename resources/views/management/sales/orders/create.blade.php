@@ -45,7 +45,8 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Entry Date:</label>
-                        <input type="date" name="order_date" id="order_date" class="form-control" value="{{ date('Y-m-d') }}">
+                        <input type="date" name="order_date" id="order_date" class="form-control"
+                            value="{{ date('Y-m-d') }}">
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -57,7 +58,8 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Inquiry No:</label>
-                        <select name="inquiry_id" id="inquiry_id" onchange="get_inquiry_data()" class="form-control select2">
+                        <select name="inquiry_id" id="inquiry_id" onchange="get_inquiry_data()"
+                            class="form-control select2">
                             <option value="">Select Inquiry (Optional)</option>
                             @foreach ($inquiries ?? [] as $inquiry)
                                 <option value="{{ $inquiry->id }}">{{ $inquiry->inquiry_no }}</option>
@@ -108,7 +110,9 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Sell By:</label>
-                        <input type="text" class="form-control" value="{{ auth()->user()->parent?->name ?? 'N/A' }}" readonly>
+                        <input type="text" class="form-control"
+                            value="{{ auth()->user()->parent ? auth()->user()->parent->name : auth()->user()->name }}"
+                            readonly>
                     </div>
                 </div>
                 <div class="col-md-3">
@@ -125,7 +129,15 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Comission RS per KG:</label>
-                        <input type="number" name="commission_per_kg" id="commission_per_kg" class="form-control" step="0.01" min="0" value="0">
+                        <input type="number" name="commission_per_kg" id="commission_per_kg" class="form-control"
+                            step="0.01" min="0" value="0">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="form-label">Comission in % per KG:</label>
+                        <input type="number" name="commission_percent_per_kg" id="commission_percent_per_kg"
+                            class="form-control" step="0.01" min="0" value="0">
                     </div>
                 </div>
                 <div class="col-md-3">
@@ -137,7 +149,8 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Token Money:</label>
-                        <input type="number" name="token_money" id="token_money" class="form-control" step="0.01" min="0">
+                        <input type="number" name="token_money" id="token_money" class="form-control" step="0.01"
+                            min="0">
                     </div>
                 </div>
 
@@ -147,7 +160,8 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Pay Type:</label>
-                        <select name="pay_type_id" id="pay_type_id" class="form-control select2" onchange="is_type_credit(this)">
+                        <select name="pay_type_id" id="pay_type_id" class="form-control select2"
+                            onchange="is_type_credit(this)">
                             <option value="">Select Pay Type</option>
                             @foreach ($pay_types as $pay_type)
                                 <option value="{{ $pay_type->id }}">{{ $pay_type->name }}</option>
@@ -158,7 +172,8 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Payment Terms:</label>
-                        <select name="payment_term_id" id="payment_term_id" class="form-control select2 credit" disabled>
+                        <select name="payment_term_id" id="payment_term_id" class="form-control select2 credit"
+                            disabled>
                             <option value="">Select Payment Term</option>
                             @foreach ($payment_terms as $payment_term)
                                 <option value="{{ $payment_term->id }}">{{ $payment_term->desc }}</option>
@@ -170,7 +185,8 @@
                 <div class="col-md-6 d-none" id="unallocated_rv_container">
                     <div class="form-group">
                         <label class="form-label d-block">Unallocated Receipt Vouchers:</label>
-                        <select name="receipt_voucher_item_ids[]" id="receipt_voucher_item_ids" class="form-control select2" multiple style="width: 100%">
+                        <select name="receipt_voucher_item_ids[]" id="receipt_voucher_item_ids"
+                            class="form-control select2" multiple style="width: 100%">
                         </select>
                     </div>
                 </div>
@@ -192,9 +208,11 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Factory:</label>
-                        <select name="arrival_location_id[]" id="arrival_location_id" class="form-control select2" multiple>
+                        <select name="arrival_location_id[]" id="arrival_location_id" class="form-control select2"
+                            multiple>
                             @foreach ($arrivalLocations as $factory)
-                                <option value="{{ $factory->id }}" data-company="{{ $factory->company_location_id }}" @selected(in_array($factory->id, $selectedFactories))>{{ $factory->name }}</option>
+                                <option value="{{ $factory->id }}" data-company="{{ $factory->company_location_id }}"
+                                    @selected(in_array($factory->id, $selectedFactories))>{{ $factory->name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -202,9 +220,11 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Section:</label>
-                        <select name="arrival_sub_location_id[]" id="arrival_sub_location_id" class="form-control select2" multiple>
+                        <select name="arrival_sub_location_id[]" id="arrival_sub_location_id"
+                            class="form-control select2" multiple>
                             @foreach ($arrivalSubLocations as $section)
-                                <option value="{{ $section->id }}" data-factory="{{ $section->arrival_location_id }}" @selected(in_array($section->id, $selectedSections))>{{ $section->name }}</option>
+                                <option value="{{ $section->id }}" data-factory="{{ $section->arrival_location_id }}"
+                                    @selected(in_array($section->id, $selectedSections))>{{ $section->name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -224,8 +244,7 @@
 
     <div class="row form-mar">
         {{-- <div class="col-12 text-right mb-2">
-            <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()" id="addRowBtn"
-            >
+            <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()" id="addRowBtn">
                 <i class="fa fa-plus"></i>&nbsp; Add New Item
             </button>
         </div> --}}
@@ -263,36 +282,42 @@
                                 <select name="bag_type[]" id="bag_type_0" class="form-control select2">
                                     <option value="">Select Bag Type</option>
                                     @foreach ($bag_types ?? [] as $bag_type)
-                                        <option value="{{ $bag_type->id }}" @selected($bag_type->id == $item->bag_type)>{{ $bag_type->name }}</option>
+                                        <option value="{{ $bag_type->id }}" @selected($bag_type->id == $item->bag_type)>
+                                            {{ $bag_type->name }}
+                                        </option>
                                     @endforeach
                                 </select>
                             </td>
                             <td>
-                                <select name="bag_size[]" id="bag_size_0" class="form-control bag_size select2" onchange="calcBagTypes(this)">
+                                <select name="bag_size[]" id="bag_size_0" class="form-control bag_size select2"
+                                    onchange="calcBagTypes(this)">
                                     <option value="">Select Packing</option>
                                     @foreach ($packings as $packing)
                                         <option value="{{ $packing }}">{{ $packing }}</option>
                                     @endforeach
                                 </select>
 
-                                <input type="hidden" name="sales_inquiry_id[]" id="sales_inquiry_id_0" value="{{ $item->id }}" class="form-control sales_inquiry_id" onkeyup="calc(this)" step="0.01"
-                                    min="0">
+                                <input type="hidden" name="sales_inquiry_id[]" id="sales_inquiry_id_0"
+                                    value="{{ $item->id }}" class="form-control sales_inquiry_id" onkeyup="calc(this)"
+                                    step="0.01" min="0">
                             </td>
                             <td>
-                                <input type="text" name="no_of_bags[]" id="no_of_bags_0" value="{{ $item->no_of_bags }}" class="form-control no_of_bags" readonly>
+                                <input type="text" name="no_of_bags[]" id="no_of_bags_0" value="{{ $item->no_of_bags }}"
+                                    class="form-control no_of_bags" readonly>
                             </td>
 
                             <td>
-                                <input type="number" name="qty[]" id="qty_0"
-                                    class="form-control qty" step="0.01" min="0" onkeyup="calcBagTypes(this)" onchange="calcBagTypes(this)">
+                                <input type="number" name="qty[]" id="qty_0" class="form-control qty" step="0.01"
+                                    min="0" onkeyup="calcBagTypes(this)" onchange="calcBagTypes(this)">
                             </td>
                             <td>
                                 <input type="number" name="rate[]" id="rate_0" onkeyup="calculateRates(this)"
                                     class="form-control rate rate_per_kg" step="0.01" min="0">
                             </td>
                             <td>
-                                <input type="number" name="rate_per_mond[]" id="rate_per_mond_0" onkeyup="calculateRates(this)"
-                                    class="form-control rate_per_mond" step="0.01" min="0">
+                                <input type="number" name="rate_per_mond[]" id="rate_per_mond_0"
+                                    onkeyup="calculateRates(this)" class="form-control rate_per_mond" step="0.01"
+                                    min="0">
                             </td>
                             <td>
 
@@ -308,13 +333,12 @@
                                     class="form-control pack_size" step="0.01" min="0">
                             </td>
                             <td>
-                                <input type="text" name="amount[]" id="amount_0" class="form-control amount"
-                                    readonly>
+                                <input type="text" name="amount[]" id="amount_0" class="form-control amount" readonly>
                             </td>
 
                             <td>
-                                <input type="text" name="description[]" id="description_0" class="form-control description"
-                                    >
+                                <input type="text" name="description[]" id="description_0"
+                                    class="form-control description">
                             </td>
                             <td>
                                 <button type="button" disabled class="btn btn-danger btn-sm removeRowBtn"
@@ -352,12 +376,12 @@
     }
 
     function calculateRates(el) {
-        if(!$(el).val()) {
+        if (!$(el).val()) {
             return;
         }
 
         const tr = $(el).closest("tr");
-        if($(el).hasClass("rate_per_kg")) {
+        if ($(el).hasClass("rate_per_kg")) {
             tr.find(".rate_per_mond").val(calculateForRatePerMond($(el).val()));
         } else {
             tr.find(".rate_per_kg").val(calculateForRatePerKg($(el).val()));
@@ -367,14 +391,14 @@
     }
     function is_type_credit(el) {
         const type = $(el).val();
-        
-        if(type == 8) {
+
+        if (type == 8) {
             $(".credit").prop('disabled', false);
         } else {
             $(".credit").prop("disabled", true);
         }
 
-        if(type == 10) { // Advanced
+        if (type == 10) { // Advanced
             $("#unallocated_rv_container").removeClass("d-none");
             get_unallocated_rvs();
         } else {
@@ -386,8 +410,8 @@
     function get_unallocated_rvs() {
         const customer_id = $("#customer_id").val();
         const pay_type_id = $("#pay_type_id").val();
-        
-        
+
+
         if (!customer_id || pay_type_id != 10) {
             return;
         }
@@ -396,14 +420,14 @@
             url: "{{ route('sales.get-unallocated-receipt-vouchers') }}",
             method: "GET",
             data: { customer_id: customer_id },
-            success: function(res) {
+            success: function (res) {
                 let options = '<option value="">Select Unallocated Receipt Voucher</option>';
                 res.forEach(item => {
                     options += `<option value="${item.id}">RV Item #${item.id} - Amount: ${item.net_amount} (Ref: ${item.line_desc || 'No Description'})</option>`;
                 });
                 $("#receipt_voucher_item_ids").html(options).trigger('change');
             },
-            error: function(err) {
+            error: function (err) {
                 console.error("Error fetching unallocated RVs:", err);
             }
         });
@@ -433,7 +457,7 @@
     }
 
     // Attach listeners with debouncing or on blur to prevent typing issues
-    $(document).on('change blur', '#order_date', function() {
+    $(document).on('change blur', '#order_date', function () {
         const val = this.value;
         if (val && val.length === 10) {
             const year = parseInt(val.split('-')[0]);
@@ -444,7 +468,7 @@
         }
     });
 
-    $(document).on('change blur', '#delivery_date', function() {
+    $(document).on('change blur', '#delivery_date', function () {
         const val = this.value;
         if (val && val.length === 10) {
             const year = parseInt(val.split('-')[0]);
@@ -453,12 +477,12 @@
             }
         }
     });
-    
+
     allLocations = @json(get_locations());
     factories = @json($arrivalLocations);
     sections = @json($arrivalSubLocations);
 
-    $(document).ready(function() {
+    $(document).ready(function () {
         $('.select2').select2();
 
         const initialFactories = @json($selectedFactories ?? []);
@@ -502,19 +526,19 @@
             $('#arrival_sub_location_id').val(currentSections).trigger('change.select2');
         }
 
-        $('#locations').on('change', function() {
+        $('#locations').on('change', function () {
             populateFactories();
             populateSections();
         });
 
-        $('#arrival_location_id').on('change', function() {
+        $('#arrival_location_id').on('change', function () {
             populateSections();
         });
 
         window.populateFactories = populateFactories;
         window.populateSections = populateSections;
 
-        $('#customer_id').on('change', function() {
+        $('#customer_id').on('change', function () {
             get_customer_related_data();
         });
 
@@ -550,7 +574,7 @@
         const qty = parseFloat($(element).find(".qty").val()) || 0;
 
         const amount = $(element).find(".amount");
-      
+
         amount.val((rate * qty).toFixed(0));
     }
 
@@ -621,7 +645,7 @@
         $(`#bag_type_${index}`).select2();
         $(`#bag_size_${index}`).select2();
         $(`#brand_id_${index}`).select2();
-        
+
         // Enable remove buttons if more than one row
         if ($('#salesInquiryBody tr').length > 1) {
             $('.removeRowBtn').prop('disabled', false);
@@ -656,17 +680,17 @@
                 customer_id: customer_id
             },
             dataType: "json",
-            success: function(res) {
+            success: function (res) {
                 $("#inquiry_id").select2({
                     data: res
                 });
             },
-            error: function(error) {
+            error: function (error) {
                 console.error("Error fetching inquiries:", error);
             }
         });
     }
-    
+
 
     function getCustomerLocations() {
         const customer_id = $("#customer_id").val();
@@ -685,7 +709,7 @@
                 customer_id: customer_id
             },
             dataType: "json",
-            success: function(res) {
+            success: function (res) {
                 $("#locations").empty();
                 if (res && res.length > 0) {
                     res.forEach(loc => {
@@ -695,7 +719,7 @@
                 $("#locations").prop('disabled', false).trigger('change');
                 $("#arrival_location_id, #arrival_sub_location_id").prop('disabled', false);
             },
-            error: function(error) {
+            error: function (error) {
                 console.error("Error fetching customer locations:", error);
                 $("#locations, #arrival_location_id, #arrival_sub_location_id").prop('disabled', false);
             }
@@ -703,7 +727,7 @@
     }
 
     function get_inquiry_data() {
-        
+
         const inquiry_id = $("#inquiry_id").val();
 
         if (!inquiry_id) {
@@ -721,7 +745,7 @@
                 get_details: true
             },
             dataType: "json",
-            success: function(res) {
+            success: function (res) {
                 // Fill delivery date with required_date
                 if (res.required_date) {
                     $("#delivery_date").val(res.required_date);
@@ -758,7 +782,7 @@
                 // notify select2
                 $('#arrival_location_id').trigger('change');
 
-                 // clear old options
+                // clear old options
                 $('#locations').empty();
 
                 // append + select all
@@ -770,7 +794,7 @@
                 // notify select2
                 $('#locations').trigger('change');
 
-               
+
                 $('#arrival_sub_location_id').empty();
 
                 // append + select all
@@ -794,7 +818,7 @@
                 // Make fields readonly
                 disableInquiryFields();
             },
-            error: function(error) {
+            error: function (error) {
                 console.log(error);
             }
         });
@@ -807,14 +831,14 @@
                 inquiry_id: inquiry_id
             },
             dataType: "html",
-            success: function(res) {
+            success: function (res) {
                 $("#salesInquiryBody").html(res);
                 $('#salesInquiryBody').find('.select2').select2();
                 if ($("#inquiry_id").val()) {
                     disableTableFields();
                 }
             },
-            error: function(error) {
+            error: function (error) {
                 console.log(error);
             }
         });
@@ -853,7 +877,7 @@
         $('.locations_hidden').remove(); // Remove existing hidden inputs first
         var selectedLocations = $("#locations").val();
         if (selectedLocations && selectedLocations.length > 0) {
-            selectedLocations.forEach(function(loc) {
+            selectedLocations.forEach(function (loc) {
                 $('<input>').attr({
                     type: 'hidden',
                     name: 'locations[]',
@@ -866,7 +890,7 @@
         // Add hidden for arrival_location_id (multiple)
         $('.arrival_location_hidden').remove();
         const selectedFactories = $("#arrival_location_id").val() || [];
-        selectedFactories.forEach(function(id) {
+        selectedFactories.forEach(function (id) {
             $('<input>').attr({
                 type: 'hidden',
                 name: 'arrival_location_id[]',
@@ -878,7 +902,7 @@
         // Add hidden for arrival_sub_location_id (multiple)
         $('.arrival_sub_location_hidden').remove();
         const selectedSections = $("#arrival_sub_location_id").val() || [];
-        selectedSections.forEach(function(id) {
+        selectedSections.forEach(function (id) {
             $('<input>').attr({
                 type: 'hidden',
                 name: 'arrival_sub_location_id[]',
@@ -897,7 +921,7 @@
 
     function disableTableFields() {
         // Disable UI controls
-        $('#salesInquiryTable').find('input, select, textarea, button').each(function() {
+        $('#salesInquiryTable').find('input, select, textarea, button').each(function () {
             const $el = $(this);
             if ($el.is('select')) {
                 $el.prop('disabled', true);
@@ -909,7 +933,7 @@
         });
 
         // Ensure disabled values for item_id, brand_id, and bag_type are posted
-        $('#salesInquiryTable tbody tr').each(function() {
+        $('#salesInquiryTable tbody tr').each(function () {
             const $row = $(this);
             const itemVal = $row.find('select[name="item_id[]"], input[name="item_id[]"]').val() || '';
             const brandVal = $row.find('select[name="brand_id[]"], input[name="brand_id[]"]').val() || '';
@@ -960,7 +984,7 @@
     }
 
     function enableTableFields() {
-        $('#salesInquiryTable').find('input, select, textarea, button').each(function() {
+        $('#salesInquiryTable').find('input, select, textarea, button').each(function () {
             const $el = $(this);
             if ($el.is('select')) {
                 $el.prop('disabled', false);
@@ -971,7 +995,7 @@
             }
         });
 
-        $('#salesInquiryTable tbody tr').each(function() {
+        $('#salesInquiryTable tbody tr').each(function () {
             const $row = $(this);
             $row.find('.hidden_item_id').remove();
             $row.find('.hidden_brand_id').remove();
@@ -997,8 +1021,8 @@
         $("#order_date").val("{{ date('Y-m-d') }}");
         getNumber();
 
-        if(window.populateFactories) window.populateFactories();
-        if(window.populateSections) window.populateSections();
+        if (window.populateFactories) window.populateFactories();
+        if (window.populateSections) window.populateSections();
 
         // Restore name attributes and remove hidden inputs
         $("#customer_id").attr('name', 'customer_id');
@@ -1006,13 +1030,13 @@
         $("#locations").attr('name', 'locations[]');
         $("#arrival_location_id").attr('name', 'arrival_location_id[]');
         $("#arrival_sub_location_id").attr('name', 'arrival_sub_location_id[]');
-        
+
         $('#customer_id_hidden').remove();
         $('#sauda_type_hidden').remove();
         $('.locations_hidden').remove();
         $('.arrival_location_hidden').remove();
         $('.arrival_sub_location_hidden').remove();
-        
+
         // Refresh line items
         $("#salesInquiryBody").empty();
         salesInquiryRowIndex = 0;
@@ -1031,14 +1055,98 @@
                 contract_date: $("#order_date").val()
             },
             dataType: "json",
-            success: function(res) {
+            success: function (res) {
                 $("#reference_no").val(res.so_no)
             },
-            error: function(error) {
+            error: function (error) {
                 // Handle errors here
                 $('.loader-container').hide();
                 console.error("Error:", error);
             }
         });
     }
+
+
+
+
+
+
+    // Commission conversion functions
+    function calculateCommissionFromPercent() {
+        const percent = parseFloat($('#commission_percent_per_kg').val()) || 0;
+        const ratePerKg = getFirstItemRate();
+
+        if (ratePerKg > 0) {
+            const commissionInRs = (percent / 100) * ratePerKg;
+            $('#commission_per_kg').val(commissionInRs.toFixed(2));
+        } else {
+            $('#commission_per_kg').val('0');
+        }
+    }
+
+    function calculateCommissionFromRs() {
+        const commissionInRs = parseFloat($('#commission_per_kg').val()) || 0;
+        const ratePerKg = getFirstItemRate();
+
+        if (ratePerKg > 0) {
+            const percent = (commissionInRs / ratePerKg) * 100;
+            $('#commission_percent_per_kg').val(percent.toFixed(2));
+        } else {
+            $('#commission_percent_per_kg').val('0');
+        }
+    }
+
+    function getFirstItemRate() {
+        const rate = $('#salesInquiryBody tr:first .rate_per_kg').val();
+        return parseFloat(rate) || 0;
+    }
+
+    // Update commission when rate changes
+    function updateCommissionFromRate() {
+        if ($('#commission_percent_per_kg').val() && $('#commission_percent_per_kg').val() != '0') {
+            calculateCommissionFromPercent();
+        } else if ($('#commission_per_kg').val() && $('#commission_per_kg').val() != '0') {
+            calculateCommissionFromRs();
+        }
+    }
+
+
+
+    // Function to handle transporter based on contract type
+    function handleTransporterByContractType() {
+        const contractType = $('#sauda_type').val();
+
+        if (contractType === 'pohanch') {
+            $('#transporter_used').val('yes').trigger('change.select2');
+        } else if (contractType === 'x-mill') {
+            $('#transporter_used').val('no').trigger('change.select2');
+        }
+        // If no contract type selected, don't change anything
+    }
+
+
+
+
+    // Attach event listeners
+    $(document).ready(function () {
+
+
+        $('#sauda_type').on('change', function () {
+            handleTransporterByContractType();
+        });
+        // When percentage field changes, calculate RS
+        $('#commission_percent_per_kg').on('keyup change', function () {
+            calculateCommissionFromPercent();
+        });
+
+        // When RS field changes, calculate percentage
+        $('#commission_per_kg').on('keyup change', function () {
+            calculateCommissionFromRs();
+        });
+
+        // When rate changes in any row, update commission
+        $(document).on('keyup change', '.rate_per_kg', function () {
+            calculateCommissionFromRs();
+        });
+    });
 </script>
