@@ -4,7 +4,7 @@
             <tr>
                 <th>Ticket No.</th>
                 <th>Truck No.</th>
-                <th>Customer</th>
+                <!-- <th>Customer</th> -->
                 <th>Commodity</th>
                 <th>Status</th>
                 <th>Created</th>
@@ -20,14 +20,15 @@
                     <td>
                         {{ $salesQc->loadingProgramItem->truck_number ?? 'N/A' }}
                     </td>
-                    <td>
-                        {{ $salesQc->customer ?? 'N/A' }}
-                    </td>
+                    <!-- <td>
+                                {{ $salesQc->customer ?? 'N/A' }}
+                            </td> -->
                     <td>
                         {{ $salesQc->commodity ?? 'N/A' }}
                     </td>
                     <td>
-                        <span class="badge badge-{{ $salesQc->status == 'accept' || $salesQc->am_approval_status === 'approved' ? 'success' : 'danger' }}">
+                        <span
+                            class="badge badge-{{ $salesQc->status == 'accept' || $salesQc->am_approval_status === 'approved' ? 'success' : 'danger' }}">
                             {{ $salesQc->status === 'accept' || $salesQc->am_approval_status === 'approved' ? 'Approved' : 'Rejected' }}
                         </span>
 
@@ -37,7 +38,8 @@
                     </td>
                     <td>
                         @if(!optional($salesQc->loadingProgramItem)->loadingSlip && $salesQc->status === 'accept')
-                            {{-- <a onclick="openModal(this,'{{ route('sales.sales-qc.edit', $salesQc->id) }}','Edit Sales QC', false)"
+                            {{-- <a
+                                onclick="openModal(this,'{{ route('sales.sales-qc.edit', $salesQc->id) }}','Edit Sales QC', false)"
                                 class="warning p-1 text-center mr-2 position-relative">
                                 <i class="ft-edit font-medium-3"></i>
                             </a>
@@ -50,7 +52,7 @@
                             class="info p-1 text-center mr-2 position-relative">
                             <i class="ft-eye font-medium-3"></i>
                         </a>
-                         
+
                     </td>
                 </tr>
             @endforeach
