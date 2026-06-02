@@ -1,6 +1,6 @@
 @extends('management.layouts.master')
 @section('title')
-   Create Payment Voucher
+    Create Payment Voucher
 @endsection
 @section('content')
     <div class="container-fluid">
@@ -120,7 +120,7 @@
                                             <option value="">Select Account</option>
                                             @foreach ($accounts as $account)
                                                 <option value="{{ $account->id }}">{{ $account->name }}
-                                                    ({{ $account->unique_no }})
+                                                    ({{ $account->hierarchy_path }})
                                                 </option>
                                             @endforeach
                                         </select>
@@ -308,10 +308,10 @@
 
                 const $container = $(
                     `<div class="bank-account-option">
-                                                <strong>${type} - ${title}</strong>
-                                                <div class="text-muted small">${accountTitle} - (${accountNo})</div>
-                                                <div class="text-muted small">${bankName} - ${branchName}</div>
-                                            </div>`
+                                                        <strong>${type} - ${title}</strong>
+                                                        <div class="text-muted small">${accountTitle} - (${accountNo})</div>
+                                                        <div class="text-muted small">${bankName} - ${branchName}</div>
+                                                    </div>`
                 );
                 return $container;
             }
@@ -338,15 +338,15 @@
 
                 if (accountId) {
                     tbody.html(`
-                                                    <tr>
-                                                        <td colspan="12" class="text-center">
-                                                            <div class="d-flex justify-content-center align-items-center">
-                                                                <div class="spinner-border spinner-border-sm mr-2" role="status"></div>
-                                                                Loading payment requests...
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                `);
+                                                            <tr>
+                                                                <td colspan="12" class="text-center">
+                                                                    <div class="d-flex justify-content-center align-items-center">
+                                                                        <div class="spinner-border spinner-border-sm mr-2" role="status"></div>
+                                                                        Loading payment requests...
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        `);
 
                     $.ajax({
                         url: `/finance/payment-voucher/account-payment-requests/${accountId}`,
@@ -362,54 +362,54 @@
                                 if (response.payment_requests.length > 0) {
                                     $.each(response.payment_requests, function (index, request) {
                                         tbody.append(`
-                                                    <tr>
-                                                        <td>
-                                                            <input type="checkbox" class="request-checkbox" 
-                                                                value="${request.id}" 
-                                                                data-supplier-id="${request.supplier_id || ''}" 
-                                                                data-amount="${request.amount}" 
-                                                                data-purpose="${request.purpose}" 
-                                                                data-request-no="${request.contract_no}" 
-                                                                data-truck-no="${request.truck_no}"
-                                                                data-bilty-no="${request.bilty_no}"
-                                                                data-module-type="${request.module_type == 'purchase_order' ? 'Contract' : (request.module_type == 'freight_payment' ? 'Advance Freight' : 'Ticket')} "
-                                                                data-loading-date="${request.loading_date}"
-                                                                data-loading-weight="${request.loading_weight}">
-                                                        </td>
-                                                        <td>${request.contract_no}</td>
-                                                        <td>${request.purpose}</td> 
-                                                        <td>${request.saudaType}</td> 
-                                                        <td>${request.request_date}</td>
-                                                        <td>
-                                                            <span class="badge" style="display: inline-flex; padding: 0; overflow: hidden;">
-                                                                <span
-                                                                class="badge badge-${request.module_type == 'purchase_order' ? 'primary' : 'info'}"
-                                                                    style="border-radius: 3px 0 0 3px;">
-                                                                    ${request.module_type == 'purchase_order' ? 'Contract' : (request.module_type == 'freight_payment' ? 'Advance Freight' : 'Ticket')} 
-                                                                </span>
-                                                                <span class="badge badge-${request.type == 'payment' ? 'success' : 'warning'}"
-                                                                    style="border-radius: 0 3px 3px 0;">
-                                                                    ${request.type == 'payment' ? 'Payment' : 'Freight Payment'}
-                                                                </span>
-                                                            </span>
-                                                            </td>
-                                                            <td>${request.truck_no}</td>
-                                                            <td>${request.bilty_no}</td>
-                                                            <td>${request.loading_date}</td>
-                                                            <td>${request.loading_weight}</td>
-                                                            <td>${request.amount}</td>
-                                                            <td>
-                        ${request.file
+                                                            <tr>
+                                                                <td>
+                                                                    <input type="checkbox" class="request-checkbox" 
+                                                                        value="${request.id}" 
+                                                                        data-supplier-id="${request.supplier_id || ''}" 
+                                                                        data-amount="${request.amount}" 
+                                                                        data-purpose="${request.purpose}" 
+                                                                        data-request-no="${request.contract_no}" 
+                                                                        data-truck-no="${request.truck_no}"
+                                                                        data-bilty-no="${request.bilty_no}"
+                                                                        data-module-type="${request.module_type == 'purchase_order' ? 'Contract' : (request.module_type == 'freight_payment' ? 'Advance Freight' : 'Ticket')} "
+                                                                        data-loading-date="${request.loading_date}"
+                                                                        data-loading-weight="${request.loading_weight}">
+                                                                </td>
+                                                                <td>${request.contract_no}</td>
+                                                                <td>${request.purpose}</td> 
+                                                                <td>${request.saudaType}</td> 
+                                                                <td>${request.request_date}</td>
+                                                                <td>
+                                                                    <span class="badge" style="display: inline-flex; padding: 0; overflow: hidden;">
+                                                                        <span
+                                                                        class="badge badge-${request.module_type == 'purchase_order' ? 'primary' : 'info'}"
+                                                                            style="border-radius: 3px 0 0 3px;">
+                                                                            ${request.module_type == 'purchase_order' ? 'Contract' : (request.module_type == 'freight_payment' ? 'Advance Freight' : 'Ticket')} 
+                                                                        </span>
+                                                                        <span class="badge badge-${request.type == 'payment' ? 'success' : 'warning'}"
+                                                                            style="border-radius: 0 3px 3px 0;">
+                                                                            ${request.type == 'payment' ? 'Payment' : 'Freight Payment'}
+                                                                        </span>
+                                                                    </span>
+                                                                    </td>
+                                                                    <td>${request.truck_no}</td>
+                                                                    <td>${request.bilty_no}</td>
+                                                                    <td>${request.loading_date}</td>
+                                                                    <td>${request.loading_weight}</td>
+                                                                    <td>${request.amount}</td>
+                                                                    <td>
+                                ${request.file
                                                 ? `<a href="/${request.file}" target="_blank" class="btn btn-sm btn-outline-primary mt-1">
-                                    <i class="fa fa-download"></i> Download File
-                               </a>`
+                                            <i class="fa fa-download"></i> Download File
+                                       </a>`
                                                 : `<button class="btn btn-sm btn-outline-secondary mt-1" disabled>
-                                    <i class="fa fa-ban mr-1"></i> No File
-                               </button>`
+                                            <i class="fa fa-ban mr-1"></i> No File
+                                       </button>`
                                             }
-                    </td>
-                                                    </tr>
-                                                `);
+                            </td>
+                                                            </tr>
+                                                        `);
                                     });
                                 } else {
                                     tbody.append(
@@ -454,21 +454,21 @@
                         },
                         error: function (xhr) {
                             tbody.html(`
-                                        <tr>
-                                            <td colspan="12" class="text-center text-danger">
-                                                Error loading payment requests. Please try again.
-                                            </td>
-                                        </tr>
-                                    `);
+                                                <tr>
+                                                    <td colspan="12" class="text-center text-danger">
+                                                        Error loading payment requests. Please try again.
+                                                    </td>
+                                                </tr>
+                                            `);
                             console.error('Error:', xhr.responseText);
                         }
                     });
                 } else {
                     tbody.html(`
-                                <tr>
-                                    <td colspan="12" class="text-center">Please select an account first.</td>
-                                </tr>
-                            `);
+                                        <tr>
+                                            <td colspan="12" class="text-center">Please select an account first.</td>
+                                        </tr>
+                                    `);
                 }
             });
 
@@ -630,21 +630,21 @@
                                         } = purchaseOrder;
 
                                         tbody.append(`
-                                                                    <tr>
-                                                                        <td>
-                                                                            <input type="checkbox" class="request-checkbox" value="${id}" data-supplier-id="${supplier_id || ''}" data-amount="${amount}" data-purpose="${purpose}" data-request-no="${request_no}" data-truck-no="${truck_no}">
-                                                                        </td>
-                                                                        <td>${request_no}</td>
-                                                                        <td>${request_date}</td>
-                                                                        <td>${amount}</td>
-                                                                        <td>${purpose}</td>
-                                                                        <td>
-                                                                            <span class="badge badge-${type === 'Payment' ? 'success' : 'warning'}">
-                                                                                ${type}
-                                                                            </span>
-                                                                        </td>
-                                                                    </tr>
-                                                                `);
+                                                                            <tr>
+                                                                                <td>
+                                                                                    <input type="checkbox" class="request-checkbox" value="${id}" data-supplier-id="${supplier_id || ''}" data-amount="${amount}" data-purpose="${purpose}" data-request-no="${request_no}" data-truck-no="${truck_no}">
+                                                                                </td>
+                                                                                <td>${request_no}</td>
+                                                                                <td>${request_date}</td>
+                                                                                <td>${amount}</td>
+                                                                                <td>${purpose}</td>
+                                                                                <td>
+                                                                                    <span class="badge badge-${type === 'Payment' ? 'success' : 'warning'}">
+                                                                                        ${type}
+                                                                                    </span>
+                                                                                </td>
+                                                                            </tr>
+                                                                        `);
                                     });
                                 } else {
                                     tbody.append(
@@ -718,25 +718,25 @@
                         $('#supplier_id').val(request.supplierId);
 
                         listContainer.append(`
-                                        <li class="list-group-item">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <span>#${request.requestNo}</span>
-                                                <span class="badge badge-primary badge-pill">${request.amount}</span>
-                                            </div>
-                                            <div class="small text-muted">
-                                                Truck: ${request.truckNo} | Bilty: ${request.biltyNo} | Type: ${request.moduleType}
-                                            </div>
-                                            <input type="hidden" name="payment_requests[]" value="${request.id}">
-                                        </li>
-                                    `);
+                                                <li class="list-group-item">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <span>#${request.requestNo}</span>
+                                                        <span class="badge badge-primary badge-pill">${request.amount}</span>
+                                                    </div>
+                                                    <div class="small text-muted">
+                                                        Truck: ${request.truckNo} | Bilty: ${request.biltyNo} | Type: ${request.moduleType}
+                                                    </div>
+                                                    <input type="hidden" name="payment_requests[]" value="${request.id}">
+                                                </li>
+                                            `);
                     });
 
                     listContainer.append(`
-                                    <li class="list-group-item list-group-item-primary d-flex justify-content-between align-items-center">
-                                        <strong>Total Amount</strong>
-                                        <strong>${totalAmount.toFixed(2)}</strong>
-                                    </li>
-                                `);
+                                            <li class="list-group-item list-group-item-primary d-flex justify-content-between align-items-center">
+                                                <strong>Total Amount</strong>
+                                                <strong>${totalAmount.toFixed(2)}</strong>
+                                            </li>
+                                        `);
 
                     listContainer.show();
                 } else {
