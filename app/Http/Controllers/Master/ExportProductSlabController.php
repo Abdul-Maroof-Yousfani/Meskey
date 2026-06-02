@@ -103,26 +103,32 @@ class ExportProductSlabController extends Controller
 
     private function syncExportSlabs(Request $request): void
     {
+        $companyId = $request->company_id ?? auth()->user()->current_company_id;
+
         foreach ($request->slabs as $slabTypeId => $slabData) {
             $isExportEnabled = isset($slabData['is_export_enable']) && (int) $slabData['is_export_enable'] === 1;
             $prefillSpecValue = $slabData['prefill_spec_value'] ?? null;
 
-            $rows = ProductSlab::withTrashed()
-                ->where('product_id', $request->product_id)
+            $exists = ProductSlab::where('product_id', $request->product_id)
                 ->where('product_slab_type_id', $slabTypeId)
-                ->orderBy('id')
-                ->get();
+                ->exists();
 
-            $rows->each(function ($row) use ($isExportEnabled, $prefillSpecValue) {
-                if ($row->trashed()) {
-                    $row->restore();
-                }
-
-                $row->update([
+            if ($exists) {
+                ProductSlab::where('product_id', $request->product_id)
+                    ->where('product_slab_type_id', $slabTypeId)
+                    ->update([
+                        'prefill_spec_value' => $prefillSpecValue,
+                        'is_export_enable' => $isExportEnabled,
+                    ]);
+            } elseif ($isExportEnabled || !is_null($prefillSpecValue)) {
+                ProductSlab::create([
+                    'company_id' => $companyId,
+                    'product_id' => $request->product_id,
+                    'product_slab_type_id' => $slabTypeId,
                     'prefill_spec_value' => $prefillSpecValue,
                     'is_export_enable' => $isExportEnabled,
                 ]);
-            });
+            }
         }
     }
 }
