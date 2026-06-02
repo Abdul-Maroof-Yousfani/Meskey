@@ -26,6 +26,7 @@ use App\Models\Procurement\Store\PurchaseReturnData;
 use App\Models\Procurement\Store\QCItems;
 use App\Models\Product;
 use App\Models\Production\JobOrder\JobOrder;
+use App\Models\PurchaseTicket;
 use App\Models\ReceiptVoucher;
 use App\Models\Sales\DeliveryChallan;
 
@@ -61,7 +62,13 @@ use Spatie\Permission\Models\Permission;
 
 Route::get('testledgercalculation', function (Request $request) {
     $arrivalTicket = ArrivalTicket::where('unique_no', $request->unique_no)->first();
-    $paymentDetails = calculatePaymentDetails($arrivalTicket->id, 1);
+    if ($request->sauda_type == 1) {
+        $arrivalTicket = ArrivalTicket::where('unique_no', $request->unique_no)->first();
+    } else {
+        $arrivalTicket = PurchaseTicket::where('unique_no', $request->unique_no)->first();
+
+    }
+    $paymentDetails = calculatePaymentDetails($arrivalTicket->id, $request->sauda_type);
     dd($paymentDetails);
 });
 Route::get('update_ticket_ledgercalculation', function (Request $request) {
