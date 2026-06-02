@@ -32,32 +32,34 @@ class PaymentVoucherController extends Controller
         return view('management.finance.payment_voucher.index');
     }
 
-    public function billPaymentVoucher() {
+    public function billPaymentVoucher()
+    {
         $accounts = Account::where("hierarchy_path", "like", "2-2%")->get();
         $bank_accounts = Account::where("hierarchy_path", "like", "1-1%")
-                                ->whereNot("hierarchy_path", "1-1")
-                                ->get();
+            ->whereNot("hierarchy_path", "1-1")
+            ->get();
 
         $suppliers = Supplier::where("status", "active")->get();
 
-        
+
         return view('management.finance.payment_voucher.billPaymentVoucher', compact('accounts', 'bank_accounts', 'suppliers'));
     }
-     public function editPaymentVoucher(int $id) {
+    public function editPaymentVoucher(int $id)
+    {
         $payment_voucher = PaymentVoucher::find($id);
 
-        if($payment_voucher->module_type != 'bill_payment_voucher') {
+        if ($payment_voucher->module_type != 'bill_payment_voucher') {
             return back();
         }
 
         $accounts = Account::where("hierarchy_path", "like", "2-2%")->get();
         $bank_accounts = Account::where("hierarchy_path", "like", "1-1%")
-                                ->whereNot("hierarchy_path", "1-1")
-                                ->get();
-        
+            ->whereNot("hierarchy_path", "1-1")
+            ->get();
+
         $suppliers = Supplier::where("status", "active")->get();
 
-      
+
 
         $payment_voucher_data = BillPaymentVoucherData::where("payment_voucher_id", $payment_voucher->id)->get();
         return view("management.finance.payment_voucher.editBillPayment", compact("payment_voucher", "payment_voucher_data", "accounts", "bank_accounts", "suppliers"));
@@ -70,7 +72,7 @@ class PaymentVoucherController extends Controller
     {
         $paymentVouchers = PaymentVoucher::with(['account'])
             ->when($request->filled('search'), function ($q) use ($request) {
-                $searchTerm = '%'.$request->search.'%';
+                $searchTerm = '%' . $request->search . '%';
 
                 return $q->where(function ($sq) use ($searchTerm) {
                     $sq->where('unique_no', 'like', $searchTerm)
@@ -145,7 +147,7 @@ class PaymentVoucherController extends Controller
         DB::beginTransaction();
         try {
             $prefix = $request->voucher_type === 'bank_payment_voucher' ? 'BPV' : 'CPV';
-            $datePrefix = $prefix.'-'.date('m-d-Y', strtotime($request->pv_date)).'-';
+            $datePrefix = $prefix . '-' . date('m-d-Y', strtotime($request->pv_date)) . '-';
             $uniqueNo = generateUniqueNumberByDate('payment_vouchers', $datePrefix, null, 'unique_no', false);
 
             $paymentVoucher = PaymentVoucher::create([
@@ -247,82 +249,82 @@ class PaymentVoucherController extends Controller
     }
 
     public function update_direct(Request $request, PaymentVoucher $payment_voucher)
-{
-    if (!$payment_voucher->is_direct) {
-        abort(404);
-    }
-
-    $request->validate([
-        'voucher_type'     => 'required|in:bank_payment_voucher,cash_payment_voucher',
-        'pv_date'          => 'required|date',
-        'account_id'       => 'required|exists:accounts,id',
-        'ref_bill_no'      => 'nullable|string',
-        'bill_date'        => 'nullable|date',
-        'cheque_no'        => 'nullable|required_if:voucher_type,bank_payment_voucher|string|max:255',
-        'cheque_date'      => 'nullable|required_if:voucher_type,bank_payment_voucher|date',
-
-        'account.*'        => 'required|exists:accounts,id',
-        'amount.*'         => 'required|numeric|min:0.01',
-        'tax_id.*'         => 'nullable|exists:taxes,id',
-        'description.*'    => 'nullable|string',
-    ]);
-
-    DB::beginTransaction();
-    try {
-        $payment_voucher->update([
-            'pv_date'      => $request->pv_date,
-            'voucher_type' => $request->voucher_type,
-            'account_id'   => $request->account_id,
-            'ref_bill_no'  => $request->ref_bill_no,
-            'bill_date'    => $request->bill_date,
-            'cheque_no'    => $request->cheque_no,
-            'cheque_date'  => $request->cheque_date,
-            'remarks'      => $request->remarks ?? null,
-        ]);
-
-        // Delete old items
-        $payment_voucher->paymentVoucherData()->delete();
-
-        $totalAmount = 0;
-
-        foreach ($request->account as $index => $accountId) {
-            $amount     = $request->amount[$index];
-            $taxId      = $request->tax_id[$index] ?? null;
-            $taxAmount  = $request->tax_amount[$index] ?? 0;
-            $netAmount  = $request->net_amount[$index] ?? $amount + $taxAmount;
-            $desc       = $request->description[$index] ?? '';
-
-            PaymentVoucherData::create([
-                'payment_voucher_id' => $payment_voucher->id,
-                'account_id'         => $accountId,
-                'amount'             => $amount,
-                'tax_id'             => $taxId,
-                'tax_amount'         => $taxAmount,
-                'net_amount'         => $netAmount,
-                'description'        => $desc,
-                'reference_type'     => 'direct',
-                'reference_id'       => null,
-            ]);
-
-            $totalAmount += $netAmount;
+    {
+        if (!$payment_voucher->is_direct) {
+            abort(404);
         }
 
-        $payment_voucher->update(['total_amount' => $totalAmount]);
+        $request->validate([
+            'voucher_type' => 'required|in:bank_payment_voucher,cash_payment_voucher',
+            'pv_date' => 'required|date',
+            'account_id' => 'required|exists:accounts,id',
+            'ref_bill_no' => 'nullable|string',
+            'bill_date' => 'nullable|date',
+            'cheque_no' => 'nullable|required_if:voucher_type,bank_payment_voucher|string|max:255',
+            'cheque_date' => 'nullable|required_if:voucher_type,bank_payment_voucher|date',
 
-        // Note: Transactions are not reversed/updated here for simplicity.
-        // In production, you may want to reverse old transactions and create new ones.
-
-        DB::commit();
-
-        return response()->json([
-            'success'  => 'Direct Payment Voucher updated successfully!',
-            'redirect' => route('payment-voucher.index')
+            'account.*' => 'required|exists:accounts,id',
+            'amount.*' => 'required|numeric|min:0.01',
+            'tax_id.*' => 'nullable|exists:taxes,id',
+            'description.*' => 'nullable|string',
         ]);
-    } catch (Exception $e) {
-        DB::rollBack();
-        return response()->json(['message' => $e->getMessage()], 500);
+
+        DB::beginTransaction();
+        try {
+            $payment_voucher->update([
+                'pv_date' => $request->pv_date,
+                'voucher_type' => $request->voucher_type,
+                'account_id' => $request->account_id,
+                'ref_bill_no' => $request->ref_bill_no,
+                'bill_date' => $request->bill_date,
+                'cheque_no' => $request->cheque_no,
+                'cheque_date' => $request->cheque_date,
+                'remarks' => $request->remarks ?? null,
+            ]);
+
+            // Delete old items
+            $payment_voucher->paymentVoucherData()->delete();
+
+            $totalAmount = 0;
+
+            foreach ($request->account as $index => $accountId) {
+                $amount = $request->amount[$index];
+                $taxId = $request->tax_id[$index] ?? null;
+                $taxAmount = $request->tax_amount[$index] ?? 0;
+                $netAmount = $request->net_amount[$index] ?? $amount + $taxAmount;
+                $desc = $request->description[$index] ?? '';
+
+                PaymentVoucherData::create([
+                    'payment_voucher_id' => $payment_voucher->id,
+                    'account_id' => $accountId,
+                    'amount' => $amount,
+                    'tax_id' => $taxId,
+                    'tax_amount' => $taxAmount,
+                    'net_amount' => $netAmount,
+                    'description' => $desc,
+                    'reference_type' => 'direct',
+                    'reference_id' => null,
+                ]);
+
+                $totalAmount += $netAmount;
+            }
+
+            $payment_voucher->update(['total_amount' => $totalAmount]);
+
+            // Note: Transactions are not reversed/updated here for simplicity.
+            // In production, you may want to reverse old transactions and create new ones.
+
+            DB::commit();
+
+            return response()->json([
+                'success' => 'Direct Payment Voucher updated successfully!',
+                'redirect' => route('payment-voucher.index')
+            ]);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
     }
-}
 
     /**
      * Show the specified payment voucher.
@@ -335,7 +337,7 @@ class PaymentVoucherController extends Controller
             'account',
             'supplier',
         ])->findOrFail($id);
-        
+
 
         $transactions = Transaction::where('transaction_voucher_type_id', 1)->where('voucher_no', $paymentVoucher->unique_no)
             ->get();
@@ -346,7 +348,7 @@ class PaymentVoucherController extends Controller
         } elseif ($paymentVoucher->bank_account_type === 'owner') {
             $bankAccount = SupplierOwnerBankDetail::find($paymentVoucher->bank_account_id);
         }
-     
+
         return view('management.finance.payment_voucher.show', [
             'paymentVoucher' => $paymentVoucher,
             'transactions' => $transactions,
@@ -399,7 +401,7 @@ class PaymentVoucherController extends Controller
         })->get();
 
         $pvDate = $request->pv_date ? date('m-d-Y', strtotime($request->pv_date)) : date('m-d-Y');
-        $datePrefix = $prefix.'-'.$pvDate.'-';
+        $datePrefix = $prefix . '-' . $pvDate . '-';
         $uniqueNo = generateUniqueNumberByDate('payment_vouchers', $datePrefix, null, 'unique_no', false);
 
         return response()->json([
@@ -412,9 +414,9 @@ class PaymentVoucherController extends Controller
     public function getPurchaseBills(string $supplierId)
     {
         $purchase_bill = PurchaseBill::with("grn", "bill_data")
-                                        ->where("supplier_id", $supplierId)
-                                        ->where("am_approval_status", "approved")
-                                        ->get();
+            ->where("supplier_id", $supplierId)
+            ->where("am_approval_status", "approved")
+            ->get();
 
         $purchase_bill->each(function ($bill) {
             $remaining_qty = getPaymentVoucherBillBalance($bill);
@@ -424,8 +426,8 @@ class PaymentVoucherController extends Controller
             $bill->total_bill = totalBill($bill);
             $bill->spent_bill = spentBill($bill);
         });
-      
-      
+
+
         return view('management.finance.payment_voucher.purchaseBills', [
             'purchase_bills' => $purchase_bill,
         ]);
@@ -717,8 +719,8 @@ class PaymentVoucherController extends Controller
                             'id' => $request->id,
                             'supplier_id' => $request->paymentRequestData->purchaseOrder->supplier_id ?? '',
                             'purchaseOrder' => $request->paymentRequestData->purchaseOrder,
-                            'truck_no' => $request->paymentRequestData->truck_no ?? '-',
-                            'bilty_no' => $request->paymentRequestData->bilty_no ?? '-',
+                            'truck_no' => $request->paymentRequestData->truck_no ?? $request->paymentRequestData->arrivalTicket->truck_no ?? '-',
+                            'bilty_no' => $request->paymentRequestData->bilty_no ?? $request->paymentRequestData->arrivalTicket->bilty_no ?? '-',
                             'loading_date' => $request->paymentRequestData && $request->paymentRequestData->loading_date
                                 ? $request->paymentRequestData->loading_date->format('Y-m-d')
                                 : '-',
@@ -774,7 +776,7 @@ class PaymentVoucherController extends Controller
         DB::transaction(function () use ($request) {
             $prefix = $request->voucher_type === 'bank_payment_voucher' ? 'BPV' : 'CPV';
 
-            $datePrefix = $prefix.'-'.date('m-d-Y').'-';
+            $datePrefix = $prefix . '-' . date('m-d-Y') . '-';
             $uniqueNo = generateUniqueNumberByDate('payment_vouchers', $datePrefix, null, 'unique_no', false);
             // dd($request->all());
             $firstRequest = PaymentRequest::with('paymentRequestData.purchaseOrder')
@@ -891,8 +893,9 @@ class PaymentVoucherController extends Controller
         ]);
     }
 
-    
-    public function updateBillPaymentVoucher(Request $request, int $id) {
+
+    public function updateBillPaymentVoucher(Request $request, int $id)
+    {
         $request->validate([
             'unique_no' => 'required',
             'pv_date' => 'required|date',
@@ -910,10 +913,10 @@ class PaymentVoucherController extends Controller
         DB::transaction(function () use ($request, $id) {
             $prefix = $request->voucher_type === 'bank_payment_voucher' ? 'BPV' : 'CPV';
 
-            $datePrefix = $prefix.'-'.date('m-d-Y').'-';
+            $datePrefix = $prefix . '-' . date('m-d-Y') . '-';
             $uniqueNo = generateUniqueNumberByDate('payment_vouchers', $datePrefix, null, 'unique_no', false);
             // dd($request->all());
-         
+
             $bankAccount = null;
             $bankName = '';
             $accountNumber = '';
@@ -951,14 +954,14 @@ class PaymentVoucherController extends Controller
             $totalAmount = 0;
             $paymentVoucher->billPaymentVoucherData()->delete();
 
-            foreach($request->bill as $index => $bill) {
+            foreach ($request->bill as $index => $bill) {
 
                 $paymentVoucher->billPaymentVoucherData()->create([
                     "payment_voucher_id" => $id,
                     "purchase_bill_id" => $request->purchase_bill_id[$index],
                     "amount" => $request->amounts[$index]
                 ]);
-                
+
                 $totalAmount += $request->amounts[$index];
             }
 
@@ -971,7 +974,7 @@ class PaymentVoucherController extends Controller
         ]);
     }
 
-     public function storeBill(Request $request)
+    public function storeBill(Request $request)
     {
         $request->validate([
             'unique_no' => 'required',
@@ -990,10 +993,10 @@ class PaymentVoucherController extends Controller
         DB::transaction(function () use ($request) {
             $prefix = $request->voucher_type === 'bank_payment_voucher' ? 'BPV' : 'CPV';
 
-            $datePrefix = $prefix.'-'.date('m-d-Y').'-';
+            $datePrefix = $prefix . '-' . date('m-d-Y') . '-';
             $uniqueNo = generateUniqueNumberByDate('payment_vouchers', $datePrefix, null, 'unique_no', false);
             // dd($request->all());
-         
+
             $bankAccount = null;
             $bankName = '';
             $accountNumber = '';
@@ -1028,8 +1031,8 @@ class PaymentVoucherController extends Controller
             ]);
 
             $totalAmount = 0;
-            
-            foreach($request->bill as $index => $bill) {
+
+            foreach ($request->bill as $index => $bill) {
                 $ref_no = $request->purchase_bill_id[$index];
 
                 $amount = number_format($request->amounts[$index], 2);
@@ -1081,7 +1084,7 @@ class PaymentVoucherController extends Controller
 
                 $purchase_bill = PurchaseBill::find($request->purchase_bill_id[$index]);
                 $remaining_balance = getPaymentVoucherBillBalance($purchase_bill);
-                if($request->amounts[$index] > $remaining_balance) {
+                if ($request->amounts[$index] > $remaining_balance) {
                     DB::rollBack();
                     throw \Illuminate\Validation\ValidationException::withMessages([
                         "amounts.$index" => ["Your balance is $remaining_balance, you cannot exceed that balance."]
@@ -1097,7 +1100,7 @@ class PaymentVoucherController extends Controller
                 $totalAmount += $request->amounts[$index];
             }
 
-           
+
             $paymentVoucher->update(['total_amount' => $totalAmount]);
         });
 
@@ -1130,7 +1133,7 @@ class PaymentVoucherController extends Controller
         DB::transaction(function () use ($request) {
             $prefix = $request->voucher_type === 'bank_payment_voucher' ? 'BPV' : 'CPV';
 
-            $datePrefix = $prefix.'-'.date('m-d-Y').'-';
+            $datePrefix = $prefix . '-' . date('m-d-Y') . '-';
             $uniqueNo = generateUniqueNumberByDate('payment_vouchers', $datePrefix, null, 'unique_no', false);
 
             $paymentVoucher = PaymentVoucher::create([
@@ -1181,7 +1184,7 @@ class PaymentVoucherController extends Controller
     public function edit($id)
     {
         $paymentVoucher = PaymentVoucher::with(['paymentVoucherData.paymentRequest.paymentRequestData'])->findOrFail($id);
-    
+
         $data = [
             'paymentVoucher' => $paymentVoucher,
             'accounts' => Account::all(),
