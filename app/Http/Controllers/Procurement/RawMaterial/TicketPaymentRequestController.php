@@ -167,6 +167,9 @@ class TicketPaymentRequestController extends Controller
                         }
                     } else {
                         if ($pRequest->request_type == 'freight_payment') {
+                            if ($pRequest->request_type == 'freight_payment') {
+
+                            }
                             $totalFreightSum += $pRequest->total_amount;
                             if ($pRequest->status == 'approved') {
                                 $approvedFreightSum += $pRequest->total_amount;
@@ -741,6 +744,8 @@ class TicketPaymentRequestController extends Controller
 
             $otherDeduction = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($arrivalTicket) {
                 $query->where('ticket_id', $arrivalTicket->id);
+                $query->where('module_type', 'ticket');
+
                 $query->where('purchase_order_id', $arrivalTicket->arrival_purchase_order_id);
             })->select('other_deduction_kg', 'other_deduction_value')
                 ->latest()
