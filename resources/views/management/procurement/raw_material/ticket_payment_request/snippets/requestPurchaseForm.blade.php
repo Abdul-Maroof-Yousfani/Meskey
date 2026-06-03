@@ -181,7 +181,7 @@
         samplingResults: [
             @foreach ($samplingRequestResults as $slab)
                 @if ($slab->applied_deduction)
-                                                                    {
+                                                                                    {
                         id: {{ $slab->id }},
                         applied_deduction: {{ $slab->applied_deduction ?? 0 }},
                         deduction_type: '{{ $slab->deduction_type ?? 'amount' }}',
@@ -195,10 +195,10 @@
         compulsoryResults: [
             @foreach ($samplingRequestCompulsuryResults as $slab)
                 @if ($slab->applied_deduction)
-                                            {
+                                                    {
                     id: {{ $slab->id }},
                     applied_deduction: {{ $slab->applied_deduction ?? 0 }}
-                                            },
+                                                    },
                 @endif
             @endforeach
         ],
@@ -641,6 +641,7 @@
                                     </td>
                                     <td>
                                         <div class="input-group mb-0">
+                                            <!-- {{ $existingOtherDeductionAmount }} -->
                                             <input type="text" class="form-control" name="other_deduction[kg_amount]"
                                                 id="other_deduction_amount_display"
                                                 value="{{ number_format($existingOtherDeductionAmount, 2) }}" readonly>
@@ -1084,7 +1085,7 @@
                 const totalDeductionsForFormula = totalSamplingDeductions + bagWeightAmount +
                     loadingWeighbridgeAmount;
                 const totalAmount = grossAmount - totalDeductionsForFormula + bagRateAmount - parseInt(
-                                            {{ $grossFreightAmount ?? 0 }}) + {{ $totalSupplierCommission }};
+                                                    {{ $grossFreightAmount ?? 0 }}) + {{ $totalSupplierCommission }};
 
                 $('#total_amount').val(totalAmount);
                 $('#total_amount_display').val(totalAmount.toFixed(2));
