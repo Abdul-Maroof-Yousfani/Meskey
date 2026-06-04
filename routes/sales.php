@@ -10,6 +10,7 @@ use App\Http\Controllers\Sales\SaleOrderController;
 use App\Http\Controllers\Sales\SalesInquiryController;
 use App\Http\Controllers\Sales\SalesInvoiceController;
 use App\Http\Controllers\Sales\SalesReturnController;
+use App\Http\Controllers\Sales\PaymentIntimationController;
 
 
 Route::name("sales.")->group(function () {
@@ -26,6 +27,11 @@ Route::name("sales.")->group(function () {
     Route::post("get-sale-orders", [SaleOrderController::class, "getList"])->name("get.sales-order.list");
     Route::get("/get/so-no", [SaleOrderController::class, "getNumber"])->name("get.sales-order.getnumber");
     Route::get("/get-unallocated-receipt-vouchers", [SaleOrderController::class, "getUnallocatedReceiptVouchers"])->name("get-unallocated-receipt-vouchers");
+
+    Route::resource("payment-intimation", PaymentIntimationController::class);
+    Route::post("get-payment-intimations", [PaymentIntimationController::class, "getList"])->name("get.payment-intimation.list");
+    Route::get("get-customer-sale-orders", [PaymentIntimationController::class, "getSaleOrders"])->name("get-customer-sale-orders");
+
 
     Route::resource("delivery-order", DeliveryOrderController::class);
     Route::post("get-delivery-order", [DeliveryOrderController::class, "getList"])->name("get.delivery-order.list");

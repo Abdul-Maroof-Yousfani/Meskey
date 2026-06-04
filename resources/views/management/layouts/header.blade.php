@@ -200,177 +200,17 @@
                         </li>
 
                         @if (getCurrentCompany())
-                            <li class="dropdown nav-item"><a
+                            <li class="nav-item mr-3 position-relative"><a
                                     class="nav-link dropdown-toggle dropdown-notification p-0 mt-2"
-                                    id="dropdownBasic1" href="javascript:;" data-toggle="dropdown"><i
+                                    id="dropdownBasic1" href="javascript:;"><i
                                         class="ft-bell font-medium-3"></i><span
-                                        class="notification badge badge-pill badge-danger">4</span></a>
+                                        class="notification badge badge-pill badge-danger" id="notification-badge-count" style="display: none;">0</span></a>
                                 <ul
-                                    class="notification-dropdown dropdown-menu dropdown-menu-media dropdown-menu-right m-0 overflow-hidden">
-
-
-
+                                    class="notification-dropdown dropdown-menu dropdown-menu-media dropdown-menu-right m-0 overflow-hidden" id="notification-dropdown-menu">
                                     <li class="dropdown-menu-header">
-                                        <div
-                                            class="dropdown-header d-flex justify-content-between m-0 px-3 py-2 white bg-primary">
-                                            <div class="d-flex"><i
-                                                    class="ft-bell font-medium-3 d-flex align-items-center mr-2"></i><span
-                                                    class="noti-title">7 New Notification</span></div><span
-                                                class="text-bold-400 cursor-pointer">Mark all as read</span>
+                                        <div class="dropdown-header d-flex justify-content-center m-0 px-3 py-2 white bg-primary">
+                                            <span>Loading notifications...</span>
                                         </div>
-                                    </li>
-                                    <li class="scrollable-container"><a class="d-flex justify-content-between"
-                                            href="javascript:void(0)">
-                                            <div class="media d-flex align-items-center">
-                                                <div class="media-left">
-                                                    <div class="mr-3"><img class="avatar"
-                                                            src="../../../app-assets/img/portrait/small/avatar-s-20.png"
-                                                            alt="avatar" height="45" width="45"></div>
-                                                </div>
-                                                <div class="media-body">
-                                                    <h6 class="m-0"><span>Kate Young</span><small
-                                                            class="grey lighten-1 font-italic float-right">5 mins
-                                                            ago</small></h6><small class="noti-text">Commented on your
-                                                        photo</small>
-                                                    <h6 class="noti-text font-small-3 m-0">Great Shot John! Really
-                                                        enjoying
-                                                        the composition on this piece.</h6>
-                                                </div>
-                                            </div>
-                                        </a><a class="d-flex justify-content-between" href="javascript:void(0)">
-                                            <div class="media d-flex align-items-center">
-                                                <div class="media-left">
-                                                    <div class="mr-3"><img class="avatar"
-                                                            src="../../../app-assets/img/portrait/small/avatar-s-11.png"
-                                                            alt="avatar" height="45" width="45"></div>
-                                                </div>
-                                                <div class="media-body">
-                                                    <h6 class="m-0"><span>Andrew Watts</span><small
-                                                            class="grey lighten-1 font-italic float-right">49 mins
-                                                            ago</small></h6><small class="noti-text">Liked your album:
-                                                        UI/UX Inspo</small>
-                                                </div>
-                                            </div>
-                                        </a><a class="d-flex justify-content-between read-notification"
-                                            href="javascript:void(0)">
-                                            <div class="media d-flex align-items-center py-0 pr-0">
-                                                <div class="media-left">
-                                                    <div class="mr-3"><img
-                                                            src="../../../app-assets/img/icons/sketch-mac-icon.png"
-                                                            alt="avatar" height="45" width="45"></div>
-                                                </div>
-                                                <div class="media-body">
-                                                    <h6 class="m-0">Update</h6><small class="noti-text">MyBook
-                                                        v2.0.7</small>
-                                                </div>
-                                                <div class="media-right">
-                                                    <div class="border-left">
-                                                        <div class="px-4 py-2 border-bottom">
-                                                            <h6 class="m-0 text-bold-600">Update</h6>
-                                                        </div>
-                                                        <div class="px-4 py-2 text-center">
-                                                            <h6 class="m-0">Close</h6>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </a><a class="d-flex justify-content-between read-notification"
-                                            href="javascript:void(0)">
-                                            <div class="media d-flex align-items-center">
-                                                <div class="media-left">
-                                                    <div class="avatar bg-primary bg-lighten-3 mr-3 p-1"><span
-                                                            class="avatar-content font-medium-2">LD</span></div>
-                                                </div>
-                                                <div class="media-body">
-                                                    <h6 class="m-0"><span>Registration done</span><small
-                                                            class="grey lighten-1 font-italic float-right">6 hrs
-                                                            ago</small></h6>
-                                                </div>
-                                            </div>
-                                        </a>
-                                        <div class="cursor-pointer">
-                                            <div class="media d-flex align-items-center justify-content-between">
-                                                <div class="media-left">
-                                                    <div class="media-body">
-                                                        <h6 class="m-0">New Offers</h6>
-                                                    </div>
-                                                </div>
-                                                <div class="media-right">
-                                                    <div class="custom-control custom-switch">
-                                                        <input class="switchery" type="checkbox" checked
-                                                            id="notificationSwtich" data-size="sm">
-                                                        <label for="notificationSwtich"></label>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="d-flex justify-content-between cursor-pointer read-notification">
-                                            <div class="media d-flex align-items-center">
-                                                <div class="media-left">
-                                                    <div class="avatar bg-danger bg-lighten-4 mr-3 p-1"><span
-                                                            class="avatar-content font-medium-2"><i
-                                                                class="ft-heart text-danger"></i></span></div>
-                                                </div>
-                                                <div class="media-body">
-                                                    <h6 class="m-0"><span>Application approved</span><small
-                                                            class="grey lighten-1 font-italic float-right">18 hrs
-                                                            ago</small></h6>
-                                                </div>
-                                            </div>
-                                        </div><a class="d-flex justify-content-between read-notification"
-                                            href="javascript:void(0)">
-                                            <div class="media d-flex align-items-center">
-                                                <div class="media-left">
-                                                    <div class="mr-3"><img class="avatar"
-                                                            src="{{ asset('management/app-assets/img/portrait/small/avatar-s-6.png') }}"
-                                                            alt="avatar" height="45" width="45"></div>
-                                                </div>
-                                                <div class="media-body">
-                                                    <h6 class="m-0"><span>Anna Lee</span><small
-                                                            class="grey lighten-1 font-italic float-right">27 hrs
-                                                            ago</small></h6><small class="noti-text">Commented on your
-                                                        photo</small>
-                                                    <h6 class="noti-text font-small-3 text-bold-500 m-0">Woah!Loving
-                                                        these
-                                                        colors! Keep it up</h6>
-                                                </div>
-                                            </div>
-                                        </a>
-                                        <div class="d-flex justify-content-between cursor-pointer read-notification">
-                                            <div class="media d-flex align-items-center">
-                                                <div class="media-left">
-                                                    <div class="avatar bg-info bg-lighten-4 mr-3 p-1">
-                                                        <div class="avatar-content font-medium-2"><i
-                                                                class="ft-align-left text-info"></i></div>
-                                                    </div>
-                                                </div>
-                                                <div class="media-body">
-                                                    <h6 class="m-0"><span>Report generated</span><small
-                                                            class="grey lighten-1 font-italic float-right">35 hrs
-                                                            ago</small></h6>
-                                                </div>
-                                            </div>
-                                        </div><a class="d-flex justify-content-between read-notification"
-                                            href="javascript:void(0)">
-                                            <div class="media d-flex align-items-center">
-                                                <div class="media-left">
-                                                    <div class="mr-3"><img class="avatar"
-                                                            src="../../../app-assets/img/portrait/small/avatar-s-7.png"
-                                                            alt="avatar" height="45" width="45"></div>
-                                                </div>
-                                                <div class="media-body">
-                                                    <h6 class="m-0"><span>Oliver Wright</span><small
-                                                            class="grey lighten-1 font-italic float-right">2 days
-                                                            ago</small></h6><small class="noti-text">Liked your album:
-                                                        UI/UX Inspo</small>
-                                                </div>
-                                            </div>
-                                        </a>
-                                    </li>
-                                    <li class="dropdown-menu-footer">
-                                        <div
-                                            class="noti-footer text-center cursor-pointer primary border-top text-bold-400 py-1">
-                                            Read All Notifications</div>
                                     </li>
                                 </ul>
                             </li>
@@ -416,3 +256,128 @@
             </div>
         </div>
     </nav>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        
+        // Request desktop notification permission on page load
+        if ("Notification" in window) {
+            if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+                Notification.requestPermission();
+            }
+        }
+
+        let previousLatestId = localStorage.getItem('previousLatestId');
+
+        // 1. Fetch unread count every 1 minute
+        function fetchUnreadCount() {
+            $.ajax({
+                url: "{{ route('notifications.count') }}",
+                type: "GET",
+                success: function(res) {
+                    $('#notification-badge-count').text(res.count);
+                    
+                    if (res.count > 0) {
+                        $('#notification-badge-count').show();
+                        
+                        // Check if we have a new notification to show on Desktop
+                        if (res.latest && res.latest.id !== previousLatestId) {
+                            if ("Notification" in window && Notification.permission === "granted") {
+                                let desktopNoti = new Notification("Meskey", {
+                                    body: res.latest.message
+                                });
+                                
+                                desktopNoti.onclick = function() {
+                                    window.focus();
+                                    this.close();
+                                };
+                            }
+                            previousLatestId = res.latest.id;
+                            localStorage.setItem('previousLatestId', previousLatestId);
+                        }
+                    } else {
+                        $('#notification-badge-count').hide();
+                    }
+                }
+            });
+        }
+
+        
+        // Use setTimeout so that it runs after jQuery is loaded
+        setTimeout(function() {
+            fetchUnreadCount();
+            setInterval(fetchUnreadCount, 6000);
+
+            // 2. Fetch dropdown items on click
+            $('#dropdownBasic1').on('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                let menu = $('#notification-dropdown-menu');
+                
+                // Toggle visibility manually
+                if (menu.hasClass('show')) {
+                    menu.removeClass('show');
+                    return;
+                } else {
+                    menu.addClass('show');
+                }
+                
+                menu.html('<li class="dropdown-menu-header"><div class="dropdown-header d-flex justify-content-center m-0 px-3 py-2 white bg-primary"><span>Loading notifications...</span></div></li>');
+                
+                $.ajax({
+                    url: "{{ route('notifications.dropdown') }}",
+                    type: "GET",
+                    success: function(res) {
+                        menu.html(res.html);
+                    }
+                });
+            });
+
+            // Close dropdown when clicking outside
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('#dropdownBasic1, #notification-dropdown-menu').length) {
+                    $('#notification-dropdown-menu').removeClass('show');
+                }
+            });
+
+            // 3. Mark all as read
+            $(document).on('click', '.mark-all-read-btn', function() {
+                $.ajax({
+                    url: "{{ route('notifications.markAllRead') }}",
+                    type: "POST",
+                    data: {
+                        _token: "{{ csrf_token() }}"
+                    },
+                    success: function(res) {
+                        if (res.success) {
+                            fetchUnreadCount();
+                            // Keep dropdown open but reload its contents
+                            $.ajax({
+                                url: "{{ route('notifications.dropdown') }}",
+                                type: "GET",
+                                success: function(res2) {
+                                    $('#notification-dropdown-menu').html(res2.html);
+                                }
+                            });
+                        }
+                    }
+                });
+            });
+
+            /*
+            // ============================================
+            // PUSHER REAL-TIME BROADCAST SETUP
+            // Uncomment the code below when Pusher is configured
+            // ============================================
+            if (typeof window.Echo !== 'undefined') {
+                window.Echo.private('App.Models.User.' + "{{ auth()->id() }}")
+                    .notification((notification) => {
+                        let countElement = $('#notification-badge-count');
+                        let currentCount = parseInt(countElement.text()) || 0;
+                        countElement.text(currentCount + 1).show();
+                    });
+            }
+            */
+        }, 1000);
+    });
+</script>
