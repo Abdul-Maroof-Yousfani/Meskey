@@ -18,7 +18,15 @@ use Illuminate\Http\Request;
 class SalesInquiryController extends Controller
 {
     public function index() {
-        return view("management.sales.inquiry.index");
+        // Only get customers that have sales inquiry records
+        $customerIds = SalesInquiry::distinct()->pluck('customer')->filter();
+        $customers = Customer::whereIn('id', $customerIds)->get();
+
+        // Only get items that have sales inquiry data records
+        $itemIds = \App\Models\Sales\SalesInquiryData::distinct()->pluck('item_id')->filter();
+        $items = Product::whereIn('id', $itemIds)->get();
+
+        return view("management.sales.inquiry.index", compact("customers", "items"));
     }
 
     public function create() {
@@ -48,8 +56,36 @@ class SalesInquiryController extends Controller
                 $searchTerm = '%' . strtolower($request->search) . '%';
                 return $q->where(function ($sq) use ($searchTerm) {
                     $sq->whereRaw('LOWER(`inquiry_no`) LIKE ?', [$searchTerm])
-                        ->orWhereRaw('LOWER(`reference_number`) LIKE ?', [$searchTerm]);
+                        ->orWhereRaw('LOWER(`reference_number`) LIKE ?', [$searchTerm])
+                        ->orWhereHas('sales_inquiry_data', function ($q) use ($searchTerm) {
+                            $q->whereRaw('CAST(`qty` AS CHAR) LIKE ?', [$searchTerm]);
+                        });
                 });
+            })
+            // Filter by Inquiry No
+            ->when($request->filled('inquiry_no'), function ($q) use ($request) {
+                $q->where('inquiry_no', 'like', '%' . $request->inquiry_no . '%');
+            })
+            // Filter by Customer
+            ->when($request->filled('customer_id') && $request->customer_id != 'all', function ($q) use ($request) {
+                $q->where('customer', $request->customer_id);
+            })
+            // Filter by Item (through sales_inquiry_data relationship)
+            ->when($request->filled('item_id') && $request->item_id != 'all', function ($q) use ($request) {
+                $q->whereHas('sales_inquiry_data', function ($sq) use ($request) {
+                    $sq->where('item_id', $request->item_id);
+                });
+            })
+            // Filter by Date Range
+            ->when($request->filled('date_range'), function ($q) use ($request) {
+                $dates = explode(' - ', $request->date_range);
+                if (count($dates) == 2) {
+                    $q->whereBetween('date', [trim($dates[0]), trim($dates[1])]);
+                }
+            })
+            // Filter by Status
+            ->when($request->filled('status') && $request->status != 'all', function ($q) use ($request) {
+                $q->where('am_approval_status', $request->status);
             })
             ->orderBy('inquiry_no', 'desc')
             ->paginate($perPage);

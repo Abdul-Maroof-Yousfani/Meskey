@@ -28,12 +28,34 @@
 
 <div class="row form-mar">
     <div class="col-md-12">
-        <!-- Row 1: Customer, Invoice Address, SI No -->
+        <!-- Row 1: Customer, DC Numbers, Sauda Type -->
         <div class="row" style="margin-top: 10px">
             <div class="col-md-4">
                 <div class="form-group">
                     <label class="form-label">Customer:</label>
                     <input type="text" class="form-control" value="{{ $sales_invoice->customer->name ?? 'N/A' }}" readonly>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label class="form-label">DC Numbers:</label>
+                    <input type="text" class="form-control" value="{{ $sales_invoice->delivery_challans->pluck('dc_no')->implode(', ') ?: 'N/A' }}" readonly>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label class="form-label">Sauda Type:</label>
+                    <input type="text" class="form-control" value="{{ ucfirst($sales_invoice->sauda_type) }}" readonly>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 2: SI No, Invoice Address, Invoice Date -->
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label class="form-label">SI No:</label>
+                    <input type="text" class="form-control" value="{{ $sales_invoice->si_no }}" readonly>
                 </div>
             </div>
             <div class="col-md-4">
@@ -44,13 +66,13 @@
             </div>
             <div class="col-md-4">
                 <div class="form-group">
-                    <label class="form-label">SI No:</label>
-                    <input type="text" class="form-control" value="{{ $sales_invoice->si_no }}" readonly>
+                    <label class="form-label">Invoice Date:</label>
+                    <input type="text" class="form-control" value="{{ \Carbon\Carbon::parse($sales_invoice->invoice_date)->format('d M Y') }}" readonly>
                 </div>
             </div>
         </div>
 
-        <!-- Row 2: Company Location, Arrival Location, Date -->
+        <!-- Row 3: Company Location, Factory, Reference Number -->
         <div class="row">
             <div class="col-md-4">
                 <div class="form-group">
@@ -60,38 +82,16 @@
             </div>
             <div class="col-md-4">
                 <div class="form-group">
-                    <label class="form-label">Arrival Location:</label>
+                    <label class="form-label">Factory:</label>
                     <input type="text" class="form-control" value="{{ $sales_invoice->arrival_location->name ?? 'N/A' }}" readonly>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="form-group">
-                    <label class="form-label">Invoice Date:</label>
-                    <input type="text" class="form-control" value="{{ \Carbon\Carbon::parse($sales_invoice->invoice_date)->format('d M Y') }}" readonly>
-                </div>
-            </div>
-        </div>
-
-        <!-- Row 3: Reference Number, Sauda Type, DO Numbers -->
-        <div class="row">
             <div class="col-md-4">
                 <div class="form-group">
                     <label class="form-label">Reference Number:</label>
                     <input type="text" class="form-control" value="{{ $sales_invoice->reference_number ?? '' }}" readonly>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="form-group">
-                    <label class="form-label">Sauda Type:</label>
-                    <input type="text" class="form-control" value="{{ ucfirst($sales_invoice->sauda_type) }}" readonly>
-                </div>
-            </div>
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label class="form-label">DC Numbers:</label>
-                        <input type="text" class="form-control" value="{{ $sales_invoice->delivery_challans->pluck('dc_no')->implode(', ') ?: 'N/A' }}" readonly>
-                    </div>
-                </div>
         </div>
 
         <!-- Row 4: Remarks, Status -->
@@ -105,20 +105,7 @@
             <div class="col-md-4">
                 <div class="form-group">
                     <label class="form-label">Status:</label>
-                    @php
-                        $status = $sales_invoice->am_approval_status;
-                        $badge = match(strtolower($status)) {
-                            'approved' => 'badge-success',
-                            'rejected' => 'badge-danger',
-                            'pending'  => 'badge-warning',
-                            default    => 'badge-secondary',
-                        };
-                    @endphp
-                    <div class="form-control" style="background-color: #e9ecef;">
-                        <span class="badge {{ $badge }} px-3 py-2">
-                            {{ ucfirst($status) }}
-                        </span>
-                    </div>
+                    <input type="text" class="form-control" value="{{ ucfirst($sales_invoice->am_approval_status) }}" readonly>
                 </div>
             </div>
         </div>
