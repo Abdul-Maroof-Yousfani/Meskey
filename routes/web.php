@@ -415,6 +415,7 @@ Route::get('/clear-all-cache', function () {
         'config:clear',
         'route:clear',
         'view:clear',
+        'permission:cache-reset',
     ];
 
     $output = [];
