@@ -33,13 +33,13 @@
 
     <div class="row form-mar">
         <div class="col-md-12">
-            <!-- Row 1: Customer, Invoice Address, SI No -->
+            <!-- Row 1: Customer, DC Number, Sauda Type -->
             <div class="row" style="margin-top: 10px">
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Customer:<span class="text-danger">*</span></label>
                         <select name="customer_id" id="customer_id" onchange="get_delivery_challans()"
-                            class="form-control select2">
+                            class="form-control select2" style="width: 100%">
                             <option value="">Select Customer</option>
                             @foreach ($customers ?? [] as $customer)
                                 <option value="{{ $customer->id }}">{{ $customer->name }}</option>
@@ -49,43 +49,40 @@
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
-                        <label class="form-label">Invoice Address:</label>
-                        <textarea name="invoice_address" id="invoice_address" class="form-control" rows="1"
-                            placeholder="Enter invoice address"></textarea>
+                        <label class="form-label">DC Numbers:</label>
+                        <select name="dc_no[]" id="dc_no" onchange="get_items(this); autofillFromDc(this);" class="form-control select2"
+                            multiple style="width: 100%">
+                            <option value="">Select Delivery Challans</option>
+                        </select>
                     </div>
                 </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Sauda Type:<span class="text-danger">*</span></label>
+                        <select name="sauda_type" id="sauda_type" class="form-control select2" style="width: 100%">
+                            <option value="">Select Sauda Type</option>
+                            <option value="pohanch">Pohanch</option>
+                            <option value="x-mill">X-mill</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 2: SI No, Invoice Address, Invoice Date -->
+            <div class="row">
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">SI No:<span class="text-danger">*</span></label>
                         <input type="text" name="si_no" id="si_no" class="form-control" readonly>
                     </div>
                 </div>
-            </div>
-
-            <!-- Row 2: Company Location, Arrival Location, Date -->
-            <div class="row">
                 <div class="col-md-4">
                     <div class="form-group">
-                        <label class="form-label">Company Location:<span class="text-danger">*</span></label>
-                        <select name="locations" id="locations" onchange="selectLocation(this);"
-                            class="form-control select2">
-                            <option value="">Select Company Location</option>
-                            @foreach (get_locations() ?? [] as $location)
-                                <option value="{{ $location->id }}">{{ $location->name }}</option>
-                            @endforeach
-                        </select>
+                        <label class="form-label">Invoice Address:</label>
+                        <textarea name="invoice_address" id="invoice_address" class="form-control" rows="1"
+                            placeholder="Enter invoice address"></textarea>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label class="form-label">Factory:<span class="text-danger">*</span></label>
-                        <select name="arrival_locations" id="arrivals" onchange="selectStorage(this);"
-                            class="form-control select2">
-                            <option value="">Select Factory</option>
-                        </select>
-                    </div>
-                </div>
-              
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Invoice Date:<span class="text-danger">*</span></label>
@@ -102,32 +99,34 @@
                 </div>
             </div>
 
-            <!-- Row 3: Reference Number, Sauda Type, DC Numbers -->
+            <!-- Row 3: Company Location, Factory, Reference Number -->
             <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Company Location:<span class="text-danger">*</span></label>
+                        <select name="locations" id="locations" onchange="selectLocation(this);"
+                            class="form-control select2" style="width: 100%">
+                            <option value="">Select Company Location</option>
+                            @foreach (get_locations() ?? [] as $location)
+                                <option value="{{ $location->id }}">{{ $location->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Factory:<span class="text-danger">*</span></label>
+                        <select name="arrival_locations" id="arrivals" onchange="selectStorage(this);"
+                            class="form-control select2" style="width: 100%">
+                            <option value="">Select Factory</option>
+                        </select>
+                    </div>
+                </div>
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Reference Number:</label>
                         <input type="text" name="reference_number" id="reference_number" class="form-control"
                             placeholder="Enter reference number">
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label class="form-label">Sauda Type:<span class="text-danger">*</span></label>
-                        <select name="sauda_type" id="sauda_type" class="form-control select2" onchange="get_delivery_challans()">
-                            <option value="">Select Sauda Type</option>
-                            <option value="pohanch">Pohanch</option>
-                            <option value="x-mill">X-mill</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label class="form-label">DC Numbers:</label>
-                        <select name="dc_no[]" id="dc_no" onchange="get_items(this)" class="form-control select2"
-                            multiple>
-                            <option value="">Select Delivery Challans</option>
-                        </select>
                     </div>
                 </div>
             </div>
@@ -196,7 +195,7 @@
     salesInvoiceRowIndex = 1;
 
     $(document).ready(function() {
-        $('.select2').select2();
+        $('.select2').select2({ width: '100%' });
 
         getNumber();
     });
@@ -230,7 +229,7 @@
                     `);
                     });
 
-                    $("#sections").select2();
+                    $("#sections").select2({ width: '100%' });
                 },
                 error: function(error) {
 
@@ -267,7 +266,7 @@
                         `);
                     });
 
-                    $("#arrivals").select2();
+                    $("#arrivals").select2({ width: '100%' });
                 },
                 error: function(error) {
                     console.error("Error:", error);
@@ -294,7 +293,7 @@
             success: function(res) {
                 $("#siTableBody").empty();
                 $("#siTableBody").html(res);
-                $(".select2").select2();
+                $(".select2").select2({ width: '100%' });
             },
             error: function(error) {
                 console.error("Error:", error);
@@ -304,39 +303,83 @@
 
     function get_delivery_challans() {
         const customer_id = $("#customer_id").val();
-        const location_id = $("#locations").val();
-        const arrival_location_id = $("#arrivals").val();
 
-        // if (!customer_id || !location_id || !arrival_location_id) return;
+        if (!customer_id) {
+            $("#dc_no").empty();
+            $("#dc_no").append(`<option value=''>Select Delivery Challan</option>`);
+            $("#dc_no").select2();
+            return;
+        }
 
         $.ajax({
             url: "{{ route('sales.get.sales-invoice.get-dc') }}",
             method: "GET",
             data: {
-                customer_id: $("#customer_id").val(),
-                company_location_id: $("#locations").val(),
-                arrival_location_id: $("#arrivals").val(),
-                sauda_type: $("#sauda_type").val()
+                customer_id: customer_id
             },
             dataType: "json",
             success: function(res) {
                 $("#dc_no").empty();
-                $("#dc_no").append(`<option value=''>Select Delivery Challan</option>`)
+                // We keep an empty option if we want, but since it's multiple, we might not need it.
+                // However, the original code had it.
+                // $("#dc_no").append(`<option value=''>Select Delivery Challan</option>`)
 
                 res.forEach(delivery_challan => {
                     $("#dc_no").append(`
-                        <option value="${delivery_challan.id}">
+                        <option value="${delivery_challan.id}" data-location="${delivery_challan.location_id}" data-arrival="${delivery_challan.arrival_id}" data-sauda="${delivery_challan.sauda_type}">
                             ${delivery_challan.text}
                         </option>
                     `);
                 });
 
-                $("#dc_no").select2();
+                $("#dc_no").select2({ width: '100%' });
             },
             error: function(error) {
                 console.error("Error:", error);
             }
         });
+    }
+
+    function autofillFromDc(el) {
+        const selectedOptions = $(el).find('option:selected');
+        if (selectedOptions.length > 0) {
+            // Use the first selected DC to populate the fields
+            const firstSelected = selectedOptions.first();
+            const locationId = firstSelected.data('location');
+            const arrivalId = firstSelected.data('arrival');
+            const saudaType = firstSelected.data('sauda');
+
+            if (locationId && $("#locations").val() != locationId) {
+                $("#locations").val(locationId).trigger('change');
+            }
+            
+            // Factory (Arrival Location) will be loaded automatically via the trigger('change') on location.
+            // We need to wait for it to load, then set the value.
+            // A simple approach is to use a timeout or let the user do it if it's complex, 
+            // but we can forcefully append the option if it doesn't exist to make it immediate.
+            if (arrivalId) {
+                setTimeout(() => {
+                    if ($("#arrivals").find("option[value='" + arrivalId + "']").length) {
+                        $("#arrivals").val(arrivalId).trigger('change');
+                    } else {
+                        // Assuming we can just fetch it normally, wait a bit for selectLocation to finish.
+                        // For a robust implementation:
+                        const checkExist = setInterval(function() {
+                            if ($("#arrivals").find("option[value='" + arrivalId + "']").length) {
+                                $("#arrivals").val(arrivalId).trigger('change');
+                                clearInterval(checkExist);
+                            }
+                        }, 100);
+                        // Stop checking after 2 seconds
+                        setTimeout(() => clearInterval(checkExist), 2000);
+                    }
+                }, 100);
+            }
+
+            if (saudaType && $("#sauda_type").val() != saudaType) {
+                $("#sauda_type").val(saudaType).trigger('change');
+            }
+        }
     }
 
     function addRow() {
@@ -399,7 +442,7 @@
         </tr>
     `;
         $('#siTableBody').append(row);
-        $(`#item_id_${index}`).select2();
+        $(`#item_id_${index}`).select2({ width: '100%' });
     }
 
     function removeRow(index) {

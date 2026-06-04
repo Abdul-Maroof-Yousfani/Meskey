@@ -32,7 +32,24 @@ class LoadingProgramController extends Controller
      */
     public function index()
     {
-        return view('management.sales.loading-program.index');
+        // Get customers linked to these loading programs via sale orders
+        $lpIds = LoadingProgram::pluck('id');
+        $soIds = DB::table('loading_program_sale_order')->whereIn('loading_program_id', $lpIds)->pluck('sale_order_id');
+        $customerIds = SalesOrder::whereIn('id', $soIds)->distinct()->pluck('customer_id');
+        $customers = \App\Models\Master\Customer::whereIn('id', $customerIds)->get();
+
+        // Get items linked via sale orders data
+        $itemIds = \App\Models\Sales\SalesOrderData::whereIn('sale_order_id', $soIds)->distinct()->pluck('item_id');
+        $items = \App\Models\Product::whereIn('id', $itemIds)->get();
+
+        // Get arrival and sub arrival locations from loading program items
+        $arrivalLocationIds = LoadingProgramItem::whereIn('loading_program_id', $lpIds)->distinct()->pluck('arrival_location_id');
+        $factories = ArrivalLocation::whereIn('id', $arrivalLocationIds)->get();
+
+        $subArrivalLocationIds = LoadingProgramItem::whereIn('loading_program_id', $lpIds)->distinct()->pluck('sub_arrival_location_id');
+        $galas = ArrivalSubLocation::whereIn('id', $subArrivalLocationIds)->get();
+
+        return view('management.sales.loading-program.index', compact('customers', 'items', 'factories', 'galas'));
     }
 
     /**
@@ -68,6 +85,75 @@ class LoadingProgramController extends Controller
                               ->orWhere('truck_number', 'like', $searchTerm);
                     })->orWhere('id', 'like', $searchTerm);
                 });
+            })
+            // SO No filter
+            ->when($request->filled('so_no'), function ($q) use ($request) {
+                $q->whereHas('saleOrders', function ($sq) use ($request) {
+                    $sq->where('reference_no', 'like', '%' . $request->so_no . '%');
+                })->orWhereHas('saleOrder', function ($sq) use ($request) {
+                    $sq->where('reference_no', 'like', '%' . $request->so_no . '%');
+                });
+            })
+            // DO No filter
+            ->when($request->filled('do_no'), function ($q) use ($request) {
+                $q->whereHas('deliveryOrders', function ($sq) use ($request) {
+                    $sq->where('reference_no', 'like', '%' . $request->do_no . '%');
+                })->orWhereHas('deliveryOrder', function ($sq) use ($request) {
+                    $sq->where('reference_no', 'like', '%' . $request->do_no . '%');
+                });
+            })
+            // Customer filter
+            ->when($request->filled('customer_id') && $request->customer_id != 'all', function ($q) use ($request) {
+                $q->whereHas('saleOrders', function ($sq) use ($request) {
+                    $sq->where('customer_id', $request->customer_id);
+                })->orWhereHas('saleOrder', function ($sq) use ($request) {
+                    $sq->where('customer_id', $request->customer_id);
+                });
+            })
+            // Commodity / Item filter
+            ->when($request->filled('item_id') && $request->item_id != 'all', function ($q) use ($request) {
+                $q->whereHas('saleOrders.sales_order_data', function ($sq) use ($request) {
+                    $sq->where('item_id', $request->item_id);
+                })->orWhereHas('saleOrder.sales_order_data', function ($sq) use ($request) {
+                    $sq->where('item_id', $request->item_id);
+                });
+            })
+            // Ticket No filter
+            ->when($request->filled('ticket_no'), function ($q) use ($request) {
+                $q->whereHas('loadingProgramItems', function ($sq) use ($request) {
+                    $sq->where('transaction_number', 'like', '%' . $request->ticket_no . '%');
+                });
+            })
+            // Truck No filter
+            ->when($request->filled('truck_no'), function ($q) use ($request) {
+                $q->whereHas('loadingProgramItems', function ($sq) use ($request) {
+                    $sq->where('truck_number', 'like', '%' . $request->truck_no . '%');
+                });
+            })
+            // Container No filter
+            ->when($request->filled('container_no'), function ($q) use ($request) {
+                $q->whereHas('loadingProgramItems', function ($sq) use ($request) {
+                    $sq->where('container_number', 'like', '%' . $request->container_no . '%');
+                });
+            })
+            // Factory filter
+            ->when($request->filled('factory_id') && $request->factory_id != 'all', function ($q) use ($request) {
+                $q->whereHas('loadingProgramItems', function ($sq) use ($request) {
+                    $sq->where('arrival_location_id', $request->factory_id);
+                });
+            })
+            // Gala filter
+            ->when($request->filled('gala_id') && $request->gala_id != 'all', function ($q) use ($request) {
+                $q->whereHas('loadingProgramItems', function ($sq) use ($request) {
+                    $sq->where('sub_arrival_location_id', $request->gala_id);
+                });
+            })
+            // Date filter
+            ->when($request->filled('date_range'), function ($q) use ($request) {
+                $dates = explode(' - ', $request->date_range);
+                if (count($dates) == 2) {
+                    $q->whereBetween('created_at', [trim($dates[0]) . ' 00:00:00', trim($dates[1]) . ' 23:59:59']);
+                }
             })
             ->latest()
             ->paginate($request->get('per_page', 25));

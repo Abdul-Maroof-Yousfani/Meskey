@@ -34,18 +34,49 @@
 
     <div class="row form-mar">
         <div class="col-md-12">
-            <!-- Row 1: Customer, Invoice Address, SI No -->
+            <!-- Row 1: Customer, DC Number, Sauda Type -->
             <div class="row" style="margin-top: 10px">
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Customer:<span class="text-danger">*</span></label>
                         <select name="customer_id" id="customer_id" onchange="get_delivery_challans()"
-                            class="form-control select2">
+                            class="form-control select2" style="width: 100%">
                             <option value="">Select Customer</option>
                             @foreach ($customers ?? [] as $customer)
                                 <option value="{{ $customer->id }}" {{ $sales_invoice->customer_id == $customer->id ? 'selected' : '' }}>{{ $customer->name }}</option>
                             @endforeach
                         </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">DC Numbers:</label>
+                        <select name="dc_no[]" id="dc_no" onchange="get_items(this); autofillFromDc(this);" class="form-control select2" multiple style="width: 100%">
+                            <option value="">Select Delivery Challans</option>
+                            @foreach ($delivery_challans ?? [] as $dc)
+                                <option value="{{ $dc->id }}" data-location="{{ $dc->location_id }}" data-arrival="{{ $dc->arrival_id }}" data-sauda="{{ $dc->sauda_type }}" {{ $sales_invoice->delivery_challans->contains($dc->id) ? 'selected' : '' }}>{{ $dc->dc_no }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Sauda Type:<span class="text-danger">*</span></label>
+                        <select name="sauda_type" id="sauda_type" class="form-control select2" style="width: 100%">
+                            <option value="">Select Sauda Type</option>
+                            <option value="pohanch" {{ $sales_invoice->sauda_type == 'pohanch' ? 'selected' : '' }}>Pohanch</option>
+                            <option value="x-mill" {{ $sales_invoice->sauda_type == 'x-mill' ? 'selected' : '' }}>X-mill</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 2: SI No, Invoice Address, Invoice Date -->
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">SI No:<span class="text-danger">*</span></label>
+                        <input type="text" name="si_no" id="si_no" class="form-control" value="{{ $sales_invoice->si_no }}" readonly>
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -56,19 +87,19 @@
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
-                        <label class="form-label">SI No:<span class="text-danger">*</span></label>
-                        <input type="text" name="si_no" id="si_no" class="form-control" value="{{ $sales_invoice->si_no }}" readonly>
+                        <label class="form-label">Invoice Date:<span class="text-danger">*</span></label>
+                        <input type="date" name="invoice_date" onchange="getNumber()" id="invoice_date" class="form-control" value="{{ $sales_invoice->invoice_date }}" readonly>
                     </div>
                 </div>
             </div>
 
-            <!-- Row 2: Company Location, Arrival Location, Date -->
+            <!-- Row 3: Company Location, Factory, Reference Number -->
             <div class="row">
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Company Location:<span class="text-danger">*</span></label>
                         <select name="locations" id="locations" onchange="selectLocation(this); get_delivery_challans()"
-                            class="form-control select2">
+                            class="form-control select2" style="width: 100%">
                             <option value="">Select Company Location</option>
                             @foreach (get_locations() ?? [] as $location)
                                 <option value="{{ $location->id }}" {{ $sales_invoice->location_id == $location->id ? 'selected' : '' }}>{{ $location->name }}</option>
@@ -78,9 +109,9 @@
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
-                        <label class="form-label">Arrival Location:<span class="text-danger">*</span></label>
+                        <label class="form-label">Factory:<span class="text-danger">*</span></label>
                         <select name="arrival_locations" id="arrivals" onchange="get_delivery_challans()"
-                            class="form-control select2">
+                            class="form-control select2" style="width: 100%">
                             <option value="">Select Arrival Location</option>
                             @foreach (get_arrival_locations() ?? [] as $arrival)
                                 <option value="{{ $arrival->id }}" {{ $sales_invoice->arrival_id == $arrival->id ? 'selected' : '' }}>{{ $arrival->name }}</option>
@@ -90,39 +121,8 @@
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
-                        <label class="form-label">Invoice Date:<span class="text-danger">*</span></label>
-                        <input type="date" name="invoice_date" onchange="getNumber()" id="invoice_date" class="form-control" value="{{ $sales_invoice->invoice_date }}" readonly>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Row 3: Reference Number, Sauda Type, DC Numbers -->
-            <div class="row">
-                <div class="col-md-4">
-                    <div class="form-group">
                         <label class="form-label">Reference Number:</label>
                         <input type="text" name="reference_number" id="reference_number" class="form-control" placeholder="Enter reference number" value="{{ $sales_invoice->reference_number }}">
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label class="form-label">Sauda Type:<span class="text-danger">*</span></label>
-                        <select name="sauda_type" id="sauda_type" class="form-control select2">
-                            <option value="">Select Sauda Type</option>
-                            <option value="pohanch" {{ $sales_invoice->sauda_type == 'pohanch' ? 'selected' : '' }}>Pohanch</option>
-                            <option value="x-mill" {{ $sales_invoice->sauda_type == 'x-mill' ? 'selected' : '' }}>X-mill</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label class="form-label">DC Numbers:</label>
-                        <select name="dc_no[]" id="dc_no" onchange="get_items(this)" class="form-control select2" multiple>
-                            <option value="">Select Delivery Challans</option>
-                            @foreach ($delivery_challans ?? [] as $dc)
-                                <option value="{{ $dc->id }}" {{ $sales_invoice->delivery_challans->contains($dc->id) ? 'selected' : '' }}>{{ $dc->dc_no }}</option>
-                            @endforeach
-                        </select>
                     </div>
                 </div>
             </div>
@@ -266,7 +266,7 @@
     salesInvoiceRowIndex = {{ count($sales_invoice->sales_invoice_data) }};
 
     $(document).ready(function() {
-        $('.select2').select2();
+        $('.select2').select2({ width: '100%' });
     });
 
     function check_balance(el, target) {
@@ -314,7 +314,7 @@
                         `);
                     });
 
-                    $("#arrivals").select2();
+                    $("#arrivals").select2({ width: '100%' });
                 },
                 error: function(error) {
                     console.error("Error:", error);
@@ -342,7 +342,7 @@
             success: function(res) {
                 $("#siTableBody").empty();
                 $("#siTableBody").html(res);
-                $(".select2").select2();
+                $(".select2").select2({ width: '100%' });
             },
             error: function(error) {
                 console.error("Error:", error);
@@ -352,39 +352,80 @@
 
     function get_delivery_challans() {
         const customer_id = $("#customer_id").val();
-        const location_id = $("#locations").val();
-        const arrival_location_id = $("#arrivals").val();
 
-        if (!customer_id || !location_id || !arrival_location_id) return;
+        if (!customer_id) {
+            $("#dc_no").empty();
+            $("#dc_no").append(`<option value=''>Select Delivery Challan</option>`);
+            $("#dc_no").select2({ width: '100%' });
+            return;
+        }
 
         $.ajax({
             url: "{{ route('sales.get.sales-invoice.get-dc') }}",
             method: "GET",
             data: {
-                customer_id: $("#customer_id").val(),
-                company_location_id: $("#locations").val(),
-                arrival_location_id: $("#arrivals").val(),
+                customer_id: customer_id,
                 exclude_sales_invoice_id: {{ $sales_invoice->id }}
             },
             dataType: "json",
             success: function(res) {
+                // Keep currently selected options if they are not in the new list?
+                // For edit, it's safer to rebuild but keep selected.
+                const selected = $("#dc_no").val() || [];
+                
                 $("#dc_no").empty();
-                $("#dc_no").append(`<option value=''>Select Delivery Challan</option>`)
+                // $("#dc_no").append(`<option value=''>Select Delivery Challan</option>`)
 
                 res.forEach(delivery_challan => {
+                    const isSelected = selected.includes(delivery_challan.id.toString()) ? 'selected' : '';
                     $("#dc_no").append(`
-                        <option value="${delivery_challan.id}">
+                        <option value="${delivery_challan.id}" data-location="${delivery_challan.location_id}" data-arrival="${delivery_challan.arrival_id}" data-sauda="${delivery_challan.sauda_type}" ${isSelected}>
                             ${delivery_challan.text}
                         </option>
                     `);
                 });
 
-                $("#dc_no").select2();
+                $("#dc_no").select2({ width: '100%' });
             },
             error: function(error) {
                 console.error("Error:", error);
             }
         });
+    }
+
+    function autofillFromDc(el) {
+        const selectedOptions = $(el).find('option:selected');
+        if (selectedOptions.length > 0) {
+            // Use the first selected DC to populate the fields
+            const firstSelected = selectedOptions.first();
+            const locationId = firstSelected.data('location');
+            const arrivalId = firstSelected.data('arrival');
+            const saudaType = firstSelected.data('sauda');
+
+            if (locationId && $("#locations").val() != locationId) {
+                $("#locations").val(locationId).trigger('change');
+            }
+            
+            if (arrivalId) {
+                setTimeout(() => {
+                    if ($("#arrivals").find("option[value='" + arrivalId + "']").length) {
+                        $("#arrivals").val(arrivalId).trigger('change');
+                    } else {
+                        const checkExist = setInterval(function() {
+                            if ($("#arrivals").find("option[value='" + arrivalId + "']").length) {
+                                $("#arrivals").val(arrivalId).trigger('change');
+                                clearInterval(checkExist);
+                            }
+                        }, 100);
+                        setTimeout(() => clearInterval(checkExist), 2000);
+                    }
+                }, 100);
+            }
+
+            if (saudaType && $("#sauda_type").val() != saudaType) {
+                $("#sauda_type").val(saudaType).trigger('change');
+            }
+        }
     }
 
     function addRow() {
@@ -447,7 +488,7 @@
         </tr>
     `;
         $('#siTableBody').append(row);
-        $(`#item_id_${index}`).select2();
+        $(`#item_id_${index}`).select2({ width: '100%' });
     }
 
     function removeRow(index) {

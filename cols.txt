@@ -1,0 +1,1 @@
+["id","transaction_number","loading_program_id","truck_number","container_number","packing","brand_id","arrival_location_id","sub_arrival_location_id","driver_name","contact_details","transporter_id","berth_no","s_bill_no","qty","created_at","updated_at","delivery_order_id"]
