@@ -50,6 +50,7 @@ use App\Models\Production\JobOrder\JobOrderPackingItem;
 use App\Http\Controllers\Acl\{CompanyController, MenuController, UserController, RoleController};
 use App\Http\Controllers\ApprovalsModule\ApprovalController;
 use App\Http\Controllers\Arrival\ArrivalCustomSamplingController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Procurement\RawMaterial\PaymentRequestController;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Reports\{
@@ -382,6 +383,16 @@ Route::group(['middleware' => ['auth', 'check.company']], function () {
     Route::get('getSlabsByPaymentRequestParams', [PaymentRequestController::class, 'getSlabsByPaymentRequestParams'])->name('getSlabsByPaymentRequestParams');
     Route::get('getInitialSamplingResultByTicketId', [ArrivalLocationController::class, 'getInitialSamplingResultByTicketId'])->name('getInitialSamplingResultByTicketId');
     Route::get('getTicketDataForArrival', [ArrivalSlipController::class, 'getTicketDataForArrival'])->name('getTicketDataForArrival');
+
+    // Notifications
+    Route::prefix('notifications')->name('notifications.')->group(function () {
+        Route::get('/count', [NotificationController::class, 'getUnreadCount'])->name('count');
+        Route::get('/dropdown', [NotificationController::class, 'fetchDropdown'])->name('dropdown');
+        Route::post('/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('markAllRead');
+        Route::get('/read/{id}', [NotificationController::class, 'readAndRedirect'])->name('readAndRedirect');
+        Route::get('/all', [NotificationController::class, 'index'])->name('all');
+        Route::post('/get-list', [NotificationController::class, 'getList'])->name('getList');
+    });
 });
 
 Route::group(['middleware' => ['auth']], function () {
