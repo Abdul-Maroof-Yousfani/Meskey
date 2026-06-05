@@ -8,7 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class SalesQc extends Model
 {
-    use HasFactory, HasApproval;
+    use HasFactory;
+    use HasApproval {
+        onApprovalComplete as traitOnApprovalComplete;
+        onApprovalRejected as traitOnApprovalRejected;
+    }
 
     protected $table = 'sales_qc';
 
@@ -34,6 +38,7 @@ class SalesQc extends Model
         return $this->belongsTo(LoadingProgramItem::class);
     }
 
+
     public function createdBy()
     {
         return $this->belongsTo(\App\Models\User::class, 'created_by');
@@ -42,5 +47,25 @@ class SalesQc extends Model
     public function attachments()
     {
         return $this->hasMany(SalesQcAttachment::class);
+    }
+
+    protected function onApprovalComplete()
+    {
+        $this->traitOnApprovalComplete();
+
+        if ($this->loadingProgramItem) {
+            $status = ($this->status == 'reject') ? 'Sales QC Rejection Approved' : 'Sales QC Accepted';
+            $this->loadingProgramItem->update(['process_status' => $status]);
+        }
+    }
+
+    protected function onApprovalRejected()
+    {
+        $this->traitOnApprovalRejected();
+
+        if ($this->loadingProgramItem) {
+            $status = ($this->status == 'reject') ? 'Sales QC Rejection Rejected' : 'Sales QC Rejected';
+            $this->loadingProgramItem->update(['process_status' => $status]);
+        }
     }
 }

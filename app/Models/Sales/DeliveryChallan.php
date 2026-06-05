@@ -10,7 +10,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class DeliveryChallan extends Model
 {
-    use HasFactory, HasApproval;
+    use HasFactory;
+    use HasApproval {
+        onApprovalComplete as traitOnApprovalComplete;
+        onApprovalRejected as traitOnApprovalRejected;
+    }
 
     protected $table = 'delivery_challans';
 
@@ -60,7 +64,6 @@ class DeliveryChallan extends Model
         return $this->hasMany(DeliveryChallanData::class, "delivery_challan_id", "id");
     }
 
-
     public function delivery_order() {
         return $this->belongsToMany(DeliveryOrder::class, "delivery_challan_delivery_order", "delivery_challan_id", "delivery_order_id");
     }
@@ -76,6 +79,34 @@ class DeliveryChallan extends Model
 
     public function sections() {
         return $this->morphMany(SectionLocation::class, 'sectionable');
+    }
+
+    protected function onApprovalComplete()
+    {
+        $this->traitOnApprovalComplete();
+
+        foreach ($this->delivery_challan_data as $data) {
+            if ($data->ticket_id) {
+                $ticket = \App\Models\Sales\LoadingProgramItem::find($data->ticket_id);
+                if ($ticket) {
+                    $ticket->update(['process_status' => 'DC Generated']);
+                }
+            }
+        }
+    }
+
+    protected function onApprovalRejected()
+    {
+        $this->traitOnApprovalRejected();
+
+        foreach ($this->delivery_challan_data as $data) {
+            if ($data->ticket_id) {
+                $ticket = \App\Models\Sales\LoadingProgramItem::find($data->ticket_id);
+                if ($ticket) {
+                    $ticket->update(['process_status' => 'DC Rejected']);
+                }
+            }
+        }
     }
     
 }

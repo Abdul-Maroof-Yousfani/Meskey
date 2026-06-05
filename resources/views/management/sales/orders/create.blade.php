@@ -258,7 +258,8 @@
                             <th>Bag Type</th>
                             <th>Packing</th>
                             <th>No of Bags</th>
-                            <th>Quantity (kg)</th>
+                            <th>Maximum Qty (kg)</th>
+                            <th>Minimum Qty (kg)</th>
                             <th>Rate per Kg</th>
                             <th>Rate per Mond</th>
                             <th>Brand</th>
@@ -309,6 +310,10 @@
                             <td>
                                 <input type="number" name="qty[]" id="qty_0" class="form-control qty" step="0.01"
                                     min="0" onkeyup="calcBagTypes(this)" onchange="calcBagTypes(this)">
+                            </td>
+                            <td>
+                                <input type="number" name="minimum_qty[]" id="minimum_qty_0"
+                                    class="form-control minimum_qty" step="0.01" min="0">
                             </td>
                             <td>
                                 <input type="number" name="rate[]" id="rate_0" onkeyup="calculateRates(this)"
@@ -612,6 +617,9 @@
             </td>
             <td>
                 <input type="number" name="qty[]" id="qty_${index}" onkeyup="calcBagTypes(this)" onchange="calcBagTypes(this)" class="form-control qty" step="0.01" min="0">
+            </td>
+            <td>
+                <input type="number" name="minimum_qty[]" id="minimum_qty_${index}" class="form-control minimum_qty" step="0.01" min="0">
             </td>
             <td>
                 <input onkeyup="calculateRates(this)" type="number" name="rate[]" id="rate_${index}" class="form-control rate rate_per_kg" step="0.01" min="0">
