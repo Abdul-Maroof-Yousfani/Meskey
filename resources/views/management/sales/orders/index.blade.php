@@ -109,7 +109,7 @@
                                             <th class="col-3">SO NO</th>
                                             {{-- <th class="col-2">Location</th> --}}
                                             <th class="col-4">Customer</th>
-                                            <th class="col-2 text-right">Qty</th>
+                                            <th class="col-2 text-right">Max Qty</th>
                                             {{-- <th class="col-1 text-right">Approved Qty</th> --}}
                                             <th class="col-1">Contract Type</th>
                                             <th class="col-1">Status</th>

@@ -168,6 +168,13 @@ class SalesQcController extends Controller
             }
         }
 
+        // Update process status on LP Item
+        if ($salesQc->status == 'accept') {
+            $LoadingProgramItem->update(['process_status' => 'Sales QC Accepted']);
+        } elseif ($salesQc->status == 'reject') {
+            $LoadingProgramItem->update(['process_status' => 'Sales QC Rejected']);
+        }
+
         return response()->json(['success' => 'Sales QC created successfully.', 'data' => $salesQc], 201);
     }
 
@@ -336,6 +343,13 @@ class SalesQcController extends Controller
                     'uploaded_by' => auth()->user()->id
                 ]);
             }
+        }
+
+        // Update process status on LP Item
+        if ($salesQc->status == 'accept') {
+            $LoadingProgramItem->update(['process_status' => 'Sales QC Accepted']);
+        } elseif ($salesQc->status == 'reject') {
+            $LoadingProgramItem->update(['process_status' => 'Sales QC Rejected']);
         }
 
         return response()->json(['success' => 'Sales QC updated successfully.', 'data' => $salesQc], 200);

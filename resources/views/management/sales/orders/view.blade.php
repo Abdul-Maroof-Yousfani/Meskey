@@ -241,7 +241,8 @@
                             <th>Bag Type</th>
                             <th>Packing</th>
                             <th>No of Bags</th>
-                            <th>Quantity (kg)</th>
+                            <th>Maximum Qty (kg)</th>
+                            <th>Minimum Qty (kg)</th>
                             <th>Rate per Kg</th>
                             <th>Rate per Mond</th>
                             <th>Amount</th>
@@ -275,6 +276,10 @@
                                 </td>
                                 <td>
                                     <input type="number" name="qty[]" id="qty_{{ $index }}" value="{{ $data->qty }}" class="form-control qty" step="0.01"
+                                        min="0" readonly>
+                                </td>
+                                <td>
+                                    <input type="number" name="minimum_qty[]" id="minimum_qty_{{ $index }}" value="{{ $data->minimum_qty }}" class="form-control minimum_qty" step="0.01"
                                         min="0" readonly>
                                 </td>
                                 <td>
@@ -354,6 +359,9 @@
             </td>
             <td>
                 <input type="number" name="qty[]" id="qty_${index}" onkeyup="calc(this)" class="form-control qty" step="0.01" min="0">
+            </td>
+            <td>
+                <input type="number" name="minimum_qty[]" id="minimum_qty_${index}" class="form-control minimum_qty" step="0.01" min="0">
             </td>
             <td>
                 <input type="number" name="rate[]" id="rate_${index}" onkeyup="calc(this)" class="form-control rate" step="0.01" min="0">

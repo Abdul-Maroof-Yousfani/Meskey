@@ -225,6 +225,13 @@ class DispatchQCController extends Controller
                 }
             }
             DB::commit();
+
+            // Update process status on LP Item
+            if ($dispatchQc->status == 'accept') {
+                $LoadingProgramItem->update(['process_status' => 'Dispatch QC Accepted']);
+            } elseif ($dispatchQc->status == 'reject') {
+                $LoadingProgramItem->update(['process_status' => 'Dispatch QC Rejected']);
+            }
         } catch(Exception $e) {
             DB::rollBack();
             return response()->json($e->getMessage(), 500);
@@ -396,6 +403,13 @@ class DispatchQCController extends Controller
                     'uploaded_by' => auth()->user()->id
                 ]);
             }
+        }
+
+        // Update process status on LP Item
+        if ($dispatchQc->status == 'accept') {
+            $LoadingProgramItem->update(['process_status' => 'Dispatch QC Accepted']);
+        } elseif ($dispatchQc->status == 'reject') {
+            $LoadingProgramItem->update(['process_status' => 'Dispatch QC Rejected']);
         }
 
         return response()->json(['success' => 'Sales QC updated successfully.', 'data' => $dispatchQc], 200);

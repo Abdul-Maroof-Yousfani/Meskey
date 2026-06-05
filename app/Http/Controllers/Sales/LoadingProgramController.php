@@ -334,19 +334,18 @@ class LoadingProgramController extends Controller
                     if (!empty($selected_do_ids)) {
                         $loadingProgramItem->deliveryOrders()->sync($selected_do_ids);
                         
-                        // Enforce balance check
+                        // Enforce SO balance check
                         $totalBalance = 0;
-                        foreach ($selected_do_ids as $do_id) {
-                            $lpBalance = getLoadingProgramBalance($do_id, $loadingProgramItem->id);
-                            $swbBalance = get_second_weighbridge_balance_by_delivery_order($do_id);
-                            $totalBalance += min($lpBalance, $swbBalance);
+                        $selected_so_ids = $itemData['sale_order_id'] ?? [];
+                        foreach ($selected_so_ids as $so_id) {
+                            $totalBalance += getSaleOrderBalanceAgainstDC($so_id, $loadingProgramItem->id);
                         }
 
                         $qty = $itemData['qty'] ?? 0;
                         if ($qty > $totalBalance) {
                             DB::rollBack();
                             return response()->json([
-                                "errors" => ["loading_program_items.$index.qty" => ["Suggested quantity ($qty) exceeds the total available balance ($totalBalance) of the selected delivery orders."]]
+                                "errors" => ["loading_program_items.$index.qty" => ["Suggested quantity ($qty) exceeds the total available Sales Order balance ($totalBalance)."]]
                             ], 422);
                         }
                     }
@@ -719,19 +718,18 @@ class LoadingProgramController extends Controller
                     if (!empty($selected_do_ids)) {
                         $loadingProgramItem->deliveryOrders()->sync($selected_do_ids);
 
-                        // Enforce balance check
+                        // Enforce SO balance check
                         $totalBalance = 0;
-                        foreach ($selected_do_ids as $do_id) {
-                            $lpBalance = getLoadingProgramBalance($do_id, $loadingProgramItem->id);
-                            $swbBalance = get_second_weighbridge_balance_by_delivery_order($do_id);
-                            $totalBalance += min($lpBalance, $swbBalance);
+                        $selected_so_ids = $itemData['sale_order_id'] ?? [];
+                        foreach ($selected_so_ids as $so_id) {
+                            $totalBalance += getSaleOrderBalanceAgainstDC($so_id, $loadingProgramItem->id);
                         }
 
                         $qty = $itemData['qty'] ?? 0;
                         if ($qty > $totalBalance) {
                             DB::rollBack();
                             return response()->json([
-                                "errors" => ["loading_program_items.$index.qty" => ["Suggested quantity ($qty) exceeds the total available balance ($totalBalance) of the selected delivery orders."]]
+                                "errors" => ["loading_program_items.$index.qty" => ["Suggested quantity ($qty) exceeds the total available Sales Order balance ($totalBalance)."]]
                             ], 422);
                         }
                     }

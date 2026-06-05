@@ -6,6 +6,7 @@
         <div class="card-header p-0 pt-1">
             <ul class="nav nav-tabs horizontal-scrollable-tabs" id="so-details-tabs" role="tablist" style="overflow-x: auto; white-space: nowrap; display: flex; flex-wrap: nowrap;">
                 @foreach($SalesOrders as $index => $so)
+
                     <li class="nav-item" style="flex: 0 0 auto;">
                         <a class="nav-link {{ $index == 0 ? 'active' : '' }}" id="so-tab-{{ $so->id }}" data-toggle="pill" href="#so-content-{{ $so->id }}" role="tab" aria-controls="so-content-{{ $so->id }}" aria-selected="{{ $index == 0 ? 'true' : 'false' }}">
                             {{ $so->reference_no }}
@@ -31,16 +32,22 @@
                                     <input type="text" value="{{ $so->sales_order_data->first()->item->name ?? 'N/A' }}" disabled class="form-control" readonly />
                                 </div>
                             </div>
-                            <div class="col-xs-12 col-sm-6 col-md-3">
+                            <div class="col-xs-12 col-sm-6 col-md-2">
                                 <div class="form-group">
                                     <label>SO Date:</label>
                                     <input type="text" value="{{ $so->order_date ? $so->order_date : 'N/A' }}" disabled class="form-control" readonly />
                                 </div>
                             </div>
-                            <div class="col-xs-12 col-sm-6 col-md-3">
+                            <div class="col-xs-12 col-sm-6 col-md-2">
                                 <div class="form-group">
                                     <label>SO Qty:</label>
                                     <input type="text" value="{{ $so->sales_order_data->first()->qty ?? 'N/A' }}" disabled class="form-control" readonly />
+                                </div>
+                            </div>
+                            <div class="col-xs-12 col-sm-6 col-md-2">
+                                <div class="form-group">
+                                    <label>SO Balance Qty:</label>
+                                    <input type="text" value="{{ getSaleOrderBalanceAgainstDC($so->id) }}" disabled class="form-control" readonly />
                                 </div>
                             </div>
                         </div>
