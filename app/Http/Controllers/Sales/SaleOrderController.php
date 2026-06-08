@@ -35,7 +35,7 @@ class SaleOrderController extends Controller
         $payment_terms = PaymentTerm::all();
         $customers = Customer::where("type", "local")->get();
         $inquiries = SalesInquiry::where('am_approval_status', 'approved')
-            ->whereDoesntHave('sale_order', function($query) {
+            ->whereDoesntHave('sale_order', function ($query) {
                 $query->whereNot("am_approval_status", "rejected");
             })
             ->select('id', 'inquiry_no', 'contact_person')
@@ -54,8 +54,8 @@ class SaleOrderController extends Controller
         })->unique()->sort()->values();
 
         $brokers = Broker::where('status', 'active')
-                            ->where('is_for_sales', 1)
-                            ->get();
+            ->where('is_for_sales', 1)
+            ->get();
         return view('management.sales.orders.create', compact('payment_terms', 'customers', 'inquiries', 'items', 'pay_types', 'bag_types', 'arrivalLocations', 'arrivalSubLocations', 'packings', 'brokers'));
     }
 
@@ -80,8 +80,8 @@ class SaleOrderController extends Controller
 
         $latestLog = $sale_order->approvalLogs()->with(['user', 'role'])->latest()->first();
         $brokers = Broker::where('status', 'active')
-                        ->where('is_for_sales', 1)
-                        ->get();
+            ->where('is_for_sales', 1)
+            ->get();
         return view('management.sales.orders.edit', compact('payment_terms', 'customers', 'inquiries', 'items', 'sale_order', 'pay_types', 'bag_types', 'arrivalLocations', 'arrivalSubLocations', 'packings', 'brokers', 'latestLog'));
     }
 
@@ -103,8 +103,8 @@ class SaleOrderController extends Controller
         })->unique()->sort()->values();
 
         $brokers = Broker::where('status', 'active')
-                        ->where('is_for_sales', 1)
-                        ->get();
+            ->where('is_for_sales', 1)
+            ->get();
         $latestLog = $sale_order->approvalLogs()->with(['user', 'role'])->latest()->first();
 
         return view('management.sales.orders.view', compact('payment_terms', 'customers', 'inquiries', 'items', 'sale_order', 'arrivalLocations', 'arrivalSubLocations', 'packings', 'brokers', 'latestLog'));
@@ -122,16 +122,16 @@ class SaleOrderController extends Controller
         $payload['parent_user_id'] = auth()->user()->parent_user_id;
         $payload["remarks"] = !$request->remarks ? '' : $request->remarks;
         $payload["reference_no"] = self::getNumber($request, null, $request->order_date);
-        $payload["contact_person"]  =  !$request->contact_person ? '' : $request->contact_person;
-        $payload["so_reference_no"]  =  !$request->so_reference_no ? '' : $request->so_reference_no;
-        $payload["transporter_used"]  =  !$request->transporter_used ? 'no' : $request->transporter_used;
-        $payload["payment_term_id"]  =  !$request->payment_term_id ? PaymentTerm::first()->id : $request->payment_term_id;
+        $payload["contact_person"] = !$request->contact_person ? '' : $request->contact_person;
+        $payload["so_reference_no"] = !$request->so_reference_no ? '' : $request->so_reference_no;
+        $payload["transporter_used"] = !$request->transporter_used ? 'no' : $request->transporter_used;
+        $payload["payment_term_id"] = !$request->payment_term_id ? PaymentTerm::first()->id : $request->payment_term_id;
         $payload["commission_per_kg"] = $request->commission_per_kg ?? 0;
         $payload["receipt_voucher_item_ids"] = $request->receipt_voucher_item_ids ?? null;
-       
+
         $soTotal = array_sum($request->amount ?? []);
-        if($request->pay_type_id == 10 && $request->receipt_voucher_item_ids) { // Advanced
-            
+        if ($request->pay_type_id == 10 && $request->receipt_voucher_item_ids) { // Advanced
+
             $rvTotal = ReceiptVoucherItem::whereIn('id', $request->receipt_voucher_item_ids)->sum('amount');
             if ($soTotal > $rvTotal) {
                 return response()->json(['error' => "The total Sale Order amount ($soTotal) exceeds the selected Receipt Voucher total ($rvTotal)."], 400);
@@ -198,7 +198,7 @@ class SaleOrderController extends Controller
 
     public function generateRvNumber($voucher_type, $rv_date)
     {
-    
+
 
         $prefix = $voucher_type === 'bank_payment_voucher' ? 'BRV' : 'CRV';
         $prefixForAccounts = $voucher_type === 'bank_payment_voucher' ? '1-1' : '1-4';
@@ -218,26 +218,27 @@ class SaleOrderController extends Controller
         ]);
     }
 
-    public function getUnallocatedReceiptVouchers(Request $request) {
+    public function getUnallocatedReceiptVouchers(Request $request)
+    {
         $customer_id = $request->customer_id;
         $sale_order_id = $request->sale_order_id;
 
-        if(!$customer_id) {
+        if (!$customer_id) {
             return response()->json([]);
         }
 
         $receiptVoucherItems = ReceiptVoucherItem::where("customer_id", $customer_id)
-            ->where(function($query) use ($sale_order_id) {
+            ->where(function ($query) use ($sale_order_id) {
                 $query->where("reference_type", "not-allocated");
                 if ($sale_order_id) {
-                    $query->orWhere(function($q) use ($sale_order_id) {
+                    $query->orWhere(function ($q) use ($sale_order_id) {
                         $q->where("reference_type", "sale_order")
-                          ->where("reference_id", $sale_order_id);
+                            ->where("reference_id", $sale_order_id);
                     });
                 }
             })
             ->get();
-        
+
         return response()->json($receiptVoucherItems);
     }
 
@@ -246,16 +247,16 @@ class SaleOrderController extends Controller
         DB::beginTransaction();
         try {
             $sales_order = SalesOrder::find($id);
-            
-            if($sales_order->am_approval_status == "approved" || $sales_order->am_approval_status == 'rejected') {
+
+            if ($sales_order->am_approval_status == "approved" || $sales_order->am_approval_status == 'rejected') {
                 return response()->json("Sales Order has been approved/rejected and cannot be updated.", 400);
             }
 
 
 
             $soTotal = array_sum($request->amount ?? []);
-            if($request->pay_type_id == 10) { // Advanced
-                if(!is_null($request->receipt_voucher_item_ids)) {
+            if ($request->pay_type_id == 10) { // Advanced
+                if (!is_null($request->receipt_voucher_item_ids)) {
                     $rvTotal = ReceiptVoucherItem::whereIn('id', $request->receipt_voucher_item_ids)->sum('amount');
                     if ($soTotal > $rvTotal) {
                         return response()->json(['error' => "The total Sale Order amount ($soTotal) exceeds the selected Receipt Voucher total ($rvTotal)."], 400);
@@ -273,10 +274,10 @@ class SaleOrderController extends Controller
             $payload['am_change_made'] = 1;
             $payload['parent_user_id'] = auth()->user()->parent_user_id;
             $payload["remarks"] = !$request->remarks ? '' : $request->remarks;
-            $payload["contact_person"]  =  !$request->contact_person ? '' : $request->contact_person;
-            $payload["so_reference_no"]  =  !$request->so_reference_no ? '' : $request->so_reference_no;
-            $payload["transporter_used"]  =  !$request->transporter_used ? 'no' : $request->transporter_used;
-            $payload["payment_term_id"]  =  !$request->payment_term_id ? PaymentTerm::first()->id : $request->payment_term_id;
+            $payload["contact_person"] = !$request->contact_person ? '' : $request->contact_person;
+            $payload["so_reference_no"] = !$request->so_reference_no ? '' : $request->so_reference_no;
+            $payload["transporter_used"] = !$request->transporter_used ? 'no' : $request->transporter_used;
+            $payload["payment_term_id"] = !$request->payment_term_id ? PaymentTerm::first()->id : $request->payment_term_id;
             $payload["commission_per_kg"] = $request->commission_per_kg ?? 0;
             $payload["receipt_voucher_item_ids"] = $request->receipt_voucher_item_ids;
 
@@ -350,7 +351,7 @@ class SaleOrderController extends Controller
                 ]);
 
                 // Update associated transactions to have the SO reference no
-      
+
                 Transaction::whereIn('receipt_voucher_item_id', $request->receipt_voucher_item_ids)
                     ->update([
                         'voucher_no' => DB::raw('payment_against')
@@ -369,7 +370,7 @@ class SaleOrderController extends Controller
     public function destroy(int $id)
     {
         $sales_order = SalesOrder::find($id);
-        if($sales_order->am_approval_status == "approved" || $sales_order->am_approval_status == 'rejected') {
+        if ($sales_order->am_approval_status == "approved" || $sales_order->am_approval_status == 'rejected') {
             return response()->json("Sales Order has been approved/rejected and cannot be updated.", 400);
         }
         $sales_order->sales_order_data()->delete();
@@ -394,7 +395,7 @@ class SaleOrderController extends Controller
             ->orderBy("reference_no", "desc")
             ->latest()
             ->paginate($perPage);
-       
+
         $groupedData = [];
 
         foreach ($SalesOrders as $SaleOrder) {
@@ -404,13 +405,13 @@ class SaleOrderController extends Controller
             $itemRows = [];
             if ($items->isEmpty()) {
                 $itemRows[] = [
-                    'item_data' => (object)['item_id' => null, 'qty' => 0, 'rate' => 0, 'description' => 'No items'],
-                    'item' => (object)['name' => 'N/A', 'unitOfMeasure' => (object)['name' => '']],
+                    'item_data' => (object) ['item_id' => null, 'qty' => 0, 'rate' => 0, 'description' => 'No items'],
+                    'item' => (object) ['name' => 'N/A', 'unitOfMeasure' => (object) ['name' => '']],
                 ];
             } else {
                 foreach ($items as $itemData) {
                     $itemRows[] = [
-                    'item_data' => $itemData,
+                        'item_data' => $itemData,
                         'item' => $itemData->item,
                     ];
                 }
@@ -443,7 +444,7 @@ class SaleOrderController extends Controller
         $customer_id = $request->customer_id;
 
         $sale_inquiries = SalesInquiry::where('am_approval_status', 'approved')
-            ->whereDoesntHave('sale_order', function($query) {
+            ->whereDoesntHave('sale_order', function ($query) {
                 $query->whereNot("am_approval_status", "rejected");
             })
             ->where('customer', $customer_id)
@@ -472,7 +473,7 @@ class SaleOrderController extends Controller
 
 
         $company_locations = [];
-        foreach($inquiry->locations as $location) {
+        foreach ($inquiry->locations as $location) {
             $location = CompanyLocation::select("id", 'name')->where("status", "active")->find($location->location_id);
             $company_locations[] = [
                 "text" => $location->name,
@@ -482,7 +483,7 @@ class SaleOrderController extends Controller
 
         $factory_locations = [];
 
-        foreach($inquiry->factories as $factory) {
+        foreach ($inquiry->factories as $factory) {
             $arrival = ArrivalLocation::select("id", "name")->where("status", "active")->find($factory->arrival_location_id);
             $factory_locations[] = [
                 "text" => $arrival->name,
@@ -491,7 +492,7 @@ class SaleOrderController extends Controller
         }
 
         $section_locations = [];
-        foreach($inquiry->sections as $section) {
+        foreach ($inquiry->sections as $section) {
             $section = ArrivalSubLocation::select("id", "name")->where("status", "active")->find($section->arrival_sub_location_id);
             $section_locations[] = [
                 "text" => $section->name,
@@ -530,7 +531,7 @@ class SaleOrderController extends Controller
 
         $date = Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
 
-        $prefix = 'SO-'.Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
+        $prefix = 'SO-' . Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
 
         $latestContract = SalesOrder::where('reference_no', 'like', "$prefix-%")
             ->latest()
@@ -546,9 +547,9 @@ class SaleOrderController extends Controller
             $newNumber = 1;
         }
 
-        $so_no = 'SO-'.$datePart.'-'.str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+        $so_no = 'SO-' . $datePart . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
 
-        if (! $locationId && ! $contractDate) {
+        if (!$locationId && !$contractDate) {
             return response()->json([
                 'success' => true,
                 'so_no' => $so_no,
