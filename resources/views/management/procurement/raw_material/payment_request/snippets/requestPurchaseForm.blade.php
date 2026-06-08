@@ -168,7 +168,7 @@
         samplingResults: [
             @foreach ($samplingRequestResults as $slab)
                 @if ($slab->applied_deduction)
-                                                    {
+                                                                    {
                         id: {{ $slab->id }},
                         applied_deduction: {{ $slab->applied_deduction ?? 0 }},
                         deduction_type: '{{ $slab->deduction_type ?? 'amount' }}',
@@ -182,10 +182,10 @@
         compulsoryResults: [
             @foreach ($samplingRequestCompulsuryResults as $slab)
                 @if ($slab->applied_deduction)
-                                    {
+                                            {
                     id: {{ $slab->id }},
                     applied_deduction: {{ $slab->applied_deduction ?? 0 }}
-                                    },
+                                            },
                 @endif
             @endforeach
         ],
@@ -766,7 +766,8 @@
                 <div class="form-group">
                     <label>Requested Amount</label>
                     <input type="number" step="0.01" readonly class="form-control" name="requested_amount"
-                        id="modal_requested_amount" data-val="{{ $requestedAmount }}" value="{{ $requestedAmount }}" placeholder="Enter requested amount">
+                        id="modal_requested_amount" data-val="{{ $requestedAmount }}" value="{{ $requestedAmount }}"
+                        placeholder="Enter requested amount">
                 </div>
             </div>
             <div class="col-md-3">
@@ -913,7 +914,7 @@
                 return totalLumpsumAmount;
             }
 
-            function calculateSlabDeduction(slabData, netWeight) {
+            function calculateSlabDeductionbkk(slabData, netWeight) {
                 const dValCalculatedOn = slabData.calculation_base_type;
                 const appliedDeduction = slabData.applied_deduction;
                 const matchingSlabs = slabData.matching_slabs || [];
@@ -958,6 +959,99 @@
                 if (slabData.deduction_type !== 'amount') {
                     calculatedValue = (calculatedValue / 100) * ratePerKg;
                 }
+                return calculatedValue;
+            }
+
+
+
+            function calculateSlabDeduction(slabData, netWeight) {
+                const dValCalculatedOn = slabData.calculation_base_type;
+                const appliedDeduction = slabData.applied_deduction;
+                const matchingSlabs = slabData.matching_slabs || [];
+                const rmPoSlabs = slabData.rm_po_slabs || [];
+                const val = slabData.applied_deduction;
+                let deductionValue = 0;
+
+                console.log('=== calculateSlabDeduction Debug ===');
+                console.log('Slab ID:', slabData.id);
+                console.log('Applied deduction:', appliedDeduction);
+                console.log('dValCalculatedOn:', dValCalculatedOn);
+                console.log('SLAB_TYPE_PERCENTAGE:', window.samplingData.SLAB_TYPE_PERCENTAGE);
+
+                if (dValCalculatedOn === window.samplingData.SLAB_TYPE_PERCENTAGE && matchingSlabs.length > 0) {
+                    console.log('Processing percentage type with matching slabs:', matchingSlabs.length);
+
+                    matchingSlabs.sort((a, b) => parseFloat(a.from) - parseFloat(b.from));
+
+                    let highestRmPoEnd = 0;
+                    rmPoSlabs.forEach(rmPoSlab => {
+                        const rmPoTo = rmPoSlab.to ? parseFloat(rmPoSlab.to) : 0;
+                        if (rmPoTo > highestRmPoEnd) {
+                            highestRmPoEnd = rmPoTo;
+                        }
+                    });
+                    console.log('Highest RM PO End:', highestRmPoEnd);
+
+                    matchingSlabs.forEach(mSlab => {
+                        const from = parseFloat(mSlab.from);
+                        const to = parseFloat(mSlab.to);
+
+                        // ✅ FIX: Handle is_tiered for boolean, string, and number
+                        let isTiered;
+                        if (typeof mSlab.is_tiered === 'boolean') {
+                            isTiered = mSlab.is_tiered ? 1 : 0;
+                        } else if (typeof mSlab.is_tiered === 'string') {
+                            isTiered = mSlab.is_tiered.toLowerCase() === 'true' ? 1 : 0;
+                        } else {
+                            isTiered = parseInt(mSlab.is_tiered) || 0;
+                        }
+
+                        const deductionVal = parseFloat(mSlab.deduction_value || 0);
+
+                        console.log(`\n  Matching Slab ${from}-${to}:`);
+                        console.log(`    Raw is_tiered:`, mSlab.is_tiered, `Type: ${typeof mSlab.is_tiered}`);
+                        console.log(`    Converted is_tiered: ${isTiered} ${isTiered === 1 ? '(Tiered ✅)' : '(Non-Tiered ❌)'}`);
+                        console.log(`    Deduction value: ${deductionVal}`);
+
+                        if (val >= from) {
+                            const effectiveFrom = Math.max(from, highestRmPoEnd + 1);
+                            const effectiveTo = Math.min(to, val);
+
+                            console.log(`    Effective from: ${effectiveFrom}, Effective to: ${effectiveTo}`);
+
+                            if (effectiveFrom <= effectiveTo) {
+                                if (isTiered === 1) {
+                                    const applicableAmount = effectiveTo - effectiveFrom + 1;
+                                    const tieredAmount = deductionVal * applicableAmount;
+                                    deductionValue += tieredAmount;
+                                    console.log(`    ✅ TIERED: ${deductionVal} × ${applicableAmount} = ${tieredAmount}`);
+                                } else {
+                                    deductionValue += deductionVal;
+                                    console.log(`    ✅ NON-TIERED: adding ${deductionVal}`);
+                                }
+                            } else {
+                                console.log(`    ⏭️ No overlap in range`);
+                            }
+                        } else {
+                            console.log(`    ⏭️ Skipped: val ${val} < from ${from}`);
+                        }
+                    });
+                } else {
+                    deductionValue = appliedDeduction;
+                    console.log('Using direct deduction value:', deductionValue);
+                }
+
+                let calculatedValue = deductionValue * netWeight;
+                console.log('After multiplication with netWeight:', calculatedValue);
+
+                if (slabData.deduction_type !== 'amount') {
+                    calculatedValue = (calculatedValue / 100) * ratePerKg;
+                    console.log('After percentage conversion:', calculatedValue);
+                }
+
+                console.log('Final calculated value:', calculatedValue);
+                console.log('=== End calculateSlabDeduction ===\n');
+
                 return calculatedValue;
             }
 
@@ -1076,7 +1170,7 @@
                 const totalDeductionsForFormula = totalSamplingDeductions + bagWeightAmount +
                     loadingWeighbridgeAmount;
                 const totalAmount = grossAmount - totalDeductionsForFormula + bagRateAmount +
-                                    {{ $totalSupplierCommission }};
+                                            {{ $totalSupplierCommission }};
 
                 $('#modal_total_amount').val(totalAmount);
                 $('#modal_total_amount_display').val(totalAmount.toFixed(2));

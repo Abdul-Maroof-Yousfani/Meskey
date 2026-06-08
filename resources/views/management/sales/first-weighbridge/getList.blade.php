@@ -4,7 +4,7 @@
             <tr>
                 <th class="col-sm-1">Ticket No.</th>
                 <th class="col-sm-1">Truck No.</th>
-                <th class="col-sm-2">Customer</th>
+                <!-- <th class="col-sm-2">Customer</th> -->
                 <th class="col-sm-2">Commodity</th>
                 <th class="col-sm-1">Weight</th>
                 <th class="col-sm-2">Created</th>
@@ -25,9 +25,9 @@
                     <td>
                         {{ $loadingProgramItem?->truck_number ?? 'N/A' }}
                     </td>
-                    <td>
-                        {{ $deliveryOrder?->customer?->name ?? $saleOrder?->customer?->name ?? 'N/A' }}
-                    </td>
+                    <!-- <td>
+                                {{ $deliveryOrder?->customer?->name ?? $saleOrder?->customer?->name ?? 'N/A' }}
+                            </td> -->
                     <td>
                         {{ $deliveryOrder?->delivery_order_data?->first()?->item?->name ?? $saleOrder?->sales_order_data?->first()?->item?->name ?? 'N/A' }}
                     </td>

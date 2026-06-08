@@ -52,38 +52,42 @@ class PurchaseRequestData extends Model
 
     protected static function booted()
     {
-        static::updating(
-            function ($model) {
-                if (
-                    $model->am_approval_status === 'approved' &&
-                    $model->isDirty()
-                ) {
-                    return response()->json([
-                        'success' => 'This item has already been approved and cannot be modified.',
-                        'data' => $model,
-                    ], 403);
-                }
+        static::updating(function ($model) {
+            $original = $model->getOriginal();
+            $oldStatus = strtolower($original['am_approval_status'] ?? 'pending');
 
+            if ($oldStatus === 'approved' || $oldStatus === 'rejected') {
+                $dirty = $model->getDirty();
+                // Allow only approval-related columns to change (e.g. for revert/neglect workflow)
+                $allowedColumns = ['am_approval_status', 'updated_at', 'am_approval_log', 'am_change_made'];
+                
+                foreach ($dirty as $column => $value) {
+                    if (!in_array($column, $allowedColumns)) {
+                        return false; // Cancels the update operation
+                    }
+                }
+            } else {
+                // Change tracking for pending items
                 $changes = $model->getDirty();
-                $changedColumns = [];
-
+                $hasRealChanges = false;
                 foreach ($changes as $key => $newValue) {
-                    if ($key !== "am_change_made") {
-                        $oldValue = $model->getOriginal($key);
-                        $changedColumns[$key] = [
-                            'old' => $oldValue,
-                            'new' => $newValue,
-                        ];
+                    if ($key !== "am_change_made" && $key !== "updated_at") {
+                        $hasRealChanges = true;
+                        break;
                     }
                 }
-
-                if (!empty($changedColumns)) {
-                    if ($model->getAttribute('am_change_made') !== null) {
-                        $model->am_change_made = 1;
-                    }
+                if ($hasRealChanges && $model->getAttribute('am_change_made') !== null) {
+                    $model->am_change_made = 1;
                 }
             }
-        );
+        });
+
+        static::deleting(function ($model) {
+            $status = strtolower($model->am_approval_status ?? 'pending');
+            if ($status === 'approved' || $status === 'rejected') {
+                return false; // Cancels the deletion
+            }
+        });
     }
 
     public function JobOrder()

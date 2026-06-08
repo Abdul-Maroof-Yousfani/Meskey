@@ -523,6 +523,7 @@ class DeliveryOrderController extends Controller
 
         // 1. Fetch Advances for the customer
         $advances = \App\Models\ReceiptVoucherAdvance::where('customer_id', $customer_id)
+            ->whereHas('receiptVoucher')
             ->get()
             ->map(function ($adv) {
                 // Calculate spent amount for this specific advance
@@ -539,7 +540,9 @@ class DeliveryOrderController extends Controller
                 'id' => "adv_{$adv->id}",
                 'text' => "advance ({$adv->net_amount})",
                 'amount' => $adv->remaining_amount,
-                'date' => $adv->receiptVoucher->rv_date->format('Y-m-d'),
+                'date' => $adv->receiptVoucher && $adv->receiptVoucher->rv_date 
+                    ? $adv->receiptVoucher->rv_date->format('Y-m-d') 
+                    : null,
             ];
         }
 
@@ -634,6 +637,7 @@ class DeliveryOrderController extends Controller
 
         // 1. Fetch Advances for the customer
         $advancesList = \App\Models\ReceiptVoucherAdvance::where('customer_id', $delivery_order->customer_id)
+            ->whereHas('receiptVoucher')
             ->get()
             ->map(function ($adv) use ($delivery_order) {
                 $spent = DB::table('delivery_order_receipt_voucher')
@@ -643,7 +647,9 @@ class DeliveryOrderController extends Controller
                 $adv->remaining_amount = doubleval($adv->net_amount) - doubleval($spent);
                 $adv->unified_id = "adv_{$adv->id}";
                 $adv->unified_text = "advance ({$adv->net_amount})";
-                $adv->date = $adv->receiptVoucher->rv_date->format('Y-m-d');
+                $adv->date = $adv->receiptVoucher && $adv->receiptVoucher->rv_date 
+                    ? $adv->receiptVoucher->rv_date->format('Y-m-d') 
+                    : null;
                 return $adv;
             })
             ->filter(function ($adv) use ($delivery_order) {

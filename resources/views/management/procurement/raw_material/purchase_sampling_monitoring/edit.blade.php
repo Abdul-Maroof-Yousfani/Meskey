@@ -11,8 +11,8 @@
         isset($arrivalSamplingRequest, $arrivalSamplingRequest->purchaseOrder) &&
         $arrivalSamplingRequest->purchaseOrder->decision_making == 0 &&
         $arrivalSamplingRequest->purchaseOrder->decision_making_time
-            ? true
-            : false;
+        ? true
+        : false;
 
     $valuesOfInitialSlabs = [];
     $suggestedValueForInner = 0;
@@ -75,17 +75,16 @@
         </div>
         <ul class="nav nav-tabs" id="qcChecklistTabs" role="tablist">
             {{-- @if ($initialRequestForInnerReq)
-                <li class="nav-item">
-                    <a class="nav-link" id="initial-tab" data-toggle="tab" href="#initial" role="tab"
-                        aria-controls="initial" aria-selected="false">Initial Checklist</a>
-                </li>
+            <li class="nav-item">
+                <a class="nav-link" id="initial-tab" data-toggle="tab" href="#initial" role="tab"
+                    aria-controls="initial" aria-selected="false">Initial Checklist</a>
+            </li>
             @endif --}}
 
             @foreach ($innerRequestsData as $index => $innerData)
                 <li class="nav-item">
-                    <a class="nav-link" id="inner-{{ $index }}-tab" data-toggle="tab"
-                        href="#inner-{{ $index }}" role="tab" aria-controls="inner-{{ $index }}"
-                        aria-selected="false">
+                    <a class="nav-link" id="inner-{{ $index }}-tab" data-toggle="tab" href="#inner-{{ $index }}" role="tab"
+                        aria-controls="inner-{{ $index }}" aria-selected="false">
                         Initial #{{ $loop->iteration }} ({{ $innerData['request']->created_at->format('M d, Y') }})
                     </a>
                 </li>
@@ -102,8 +101,7 @@
 
         <div class="tab-content" id="qcChecklistTabsContent">
             @foreach ($innerRequestsData as $index => $innerData)
-                <div class="tab-pane fade" id="inner-{{ $index }}" role="tabpanel"
-                    aria-labelledby="inner-{{ $index }}-tab">
+                <div class="tab-pane fade" id="inner-{{ $index }}" role="tabpanel" aria-labelledby="inner-{{ $index }}-tab">
                     <div class="row w-100 mx-auto">
                         <div class="col-md-4"></div>
                         <div class="col-md-3 py-2 QcResult">
@@ -158,15 +156,13 @@
                                     }
                                 @endphp
                                 <div class="form-group row checklist-box">
-                                    <label
-                                        class="col-md-4 label-control font-weight-bold">{{ $slab->slabType->name }}</label>
+                                    <label class="col-md-4 label-control font-weight-bold">{{ $slab->slabType->name }}</label>
                                     <div class="col-md-3 QcResult">
                                         <div class="input-group mb-0">
                                             <input type="text" readonly class="form-control {{ $comparisonClass }}"
                                                 value="{{ $slab->checklist_value }}">
                                             <div class="input-group-append">
-                                                <span
-                                                    class="input-group-text text-sm">{{ $slab->slabType->qc_symbol }}</span>
+                                                <span class="input-group-text text-sm">{{ $slab->slabType->qc_symbol }}</span>
                                             </div>
                                         </div>
                                         @if ($previousChecklistValue !== null)
@@ -231,19 +227,18 @@
                                 <div class="form-group row">
                                     <label class="label-control font-weight-bold col-md-4"
                                         data-default-value="{{ $defaultValue }}">{{ $slab->qcParam->name }}</label>
-                                    <div
-                                        class="QcResult {{ checkIfNameExists($slab->qcParam->name) ? 'col-md-8' : 'col-md-6' }}">
+                                    <div class="QcResult {{ checkIfNameExists($slab->qcParam->name) ? 'col-md-8' : 'col-md-6' }}">
                                         @if ($slab->qcParam->type == 'dropdown')
                                             <input type="text" class="form-control {{ $compulsaryClass }}"
                                                 value="{{ $slab->compulsory_checklist_value }}" readonly>
                                         @else
-                                            <textarea class="form-control {{ $compulsaryClass }}" readonly>{{ $slab->compulsory_checklist_value }}</textarea>
+                                            <textarea class="form-control {{ $compulsaryClass }}"
+                                                readonly>{{ $slab->compulsory_checklist_value }}</textarea>
                                         @endif
                                     </div>
                                     @if (!checkIfNameExists($slab->qcParam->name))
                                         <div class="col-md-2 QcResult">
-                                            <input type="text" class="form-control" readonly
-                                                value="{{ $slab->applied_deduction }}">
+                                            <input type="text" class="form-control" readonly value="{{ $slab->applied_deduction }}">
                                         </div>
                                     @endif
                                 </div>
@@ -335,8 +330,8 @@
                                 $getDeductionSuggestion = getDeductionSuggestion(
                                     $slab->slabType->id,
                                     $arrivalSamplingRequest->purchaseOrder->qc_product ??
-                                        ($arrivalSamplingRequest->qc_product_id ??
-                                            $arrivalSamplingRequest->arrival_product_id),
+                                    ($arrivalSamplingRequest->qc_product_id ??
+                                        $arrivalSamplingRequest->arrival_product_id),
                                     $displayValue,
                                     $arrivalSamplingRequest->purchaseOrder->id ?? null,
                                 );
@@ -356,7 +351,7 @@
                                 $innerDeductionValue = $latestIsLumpsum
                                     ? 0
                                     : $previousDeduction ??
-                                        ($slab->applied_deduction ?? ($valuesOfInitialSlabs[$slab->slabType->id] ?? 0));
+                                    ($slab->applied_deduction ?? ($valuesOfInitialSlabs[$slab->slabType->id] ?? 0));
 
                                 $suggestedDeductionType = $getDeductionSuggestion->deduction_type ?? 'amount';
 
@@ -405,18 +400,14 @@
                                 }
                             @endphp
                             <div class="form-group row checklist-box">
-                                <input type="hidden" name="product_slab_type_id[]"
-                                    value="{{ $slab->slabType->id }}">
-                                <label
-                                    class="col-md-4 label-control font-weight-bold">{{ $slab->slabType->name }}</label>
+                                <input type="hidden" name="product_slab_type_id[]" value="{{ $slab->slabType->id }}">
+                                <label class="col-md-4 label-control font-weight-bold">{{ $slab->slabType->name }}</label>
                                 <div class="col-md-3 QcResult">
                                     <div class="input-group mb-0">
-                                        <input type="text" class="form-control {{ $comparisonClass }}"
-                                            name="checklist_value[]" value="{{ $displayValue }}" placeholder="%"
-                                            readonly>
+                                        <input type="text" class="form-control {{ $comparisonClass }}" name="checklist_value[]"
+                                            value="{{ $displayValue }}" placeholder="%" readonly>
                                         <div class="input-group-append">
-                                            <span
-                                                class="input-group-text text-sm">{{ $slab->slabType->qc_symbol }}</span>
+                                            <span class="input-group-text text-sm">{{ $slab->slabType->qc_symbol }}</span>
                                         </div>
                                     </div>
                                     @if ($previousChecklistValue !== null)
@@ -446,8 +437,7 @@
                                             data-calculated-on="{{ $slab->slabType->calculation_base_type }}"
                                             data-slab-id="{{ $slab->slabType->id }}"
                                             data-product-id="{{ $arrivalSamplingRequest->purchaseOrder->product->id ?? ($arrivalSamplingRequest->product->id ?? null) }}"
-                                            data-checklist="{{ $displayValue }}"
-                                            {{ $latestIsLumpsum ? 'readonly' : '' }}>
+                                            data-checklist="{{ $displayValue }}" {{ $latestIsLumpsum ? 'readonly' : '' }}>
                                         <div class="input-group-append">
                                             <span
                                                 class="input-group-text text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->slabType->calculation_base_type ?? 1] }}</span>
@@ -505,29 +495,26 @@
 
                             <div class="form-group row">
                                 <input type="hidden" name="compulsory_param_id[]" value="{{ $slab->qcParam->id }}">
-                                <label
-                                    class="label-control font-weight-bold col-md-4">{{ $slab->qcParam->name }}</label>
-                                <div
-                                    class="QcResult {{ checkIfNameExists($slab->qcParam->name) ? 'col-md-8' : 'col-md-6' }}">
+                                <label class="label-control font-weight-bold col-md-4">{{ $slab->qcParam->name }}</label>
+                                <div class="QcResult {{ checkIfNameExists($slab->qcParam->name) ? 'col-md-8' : 'col-md-6' }}">
                                     @if ($slab->qcParam->type == 'dropdown')
                                         <input type="text" class="form-control {{ $compulsaryClass }}"
                                             name="compulsory_checklist_value[]" value="{{ $displayCompValue }}"
                                             data-default-value="{{ $defaultValue }}" readonly>
                                     @else
-                                        <textarea class="form-control {{ $compulsaryClass }}" name="compulsory_checklist_value[]" readonly>{{ $displayCompValue }}</textarea>
+                                        <textarea class="form-control {{ $compulsaryClass }}" name="compulsory_checklist_value[]"
+                                            readonly>{{ $displayCompValue }}</textarea>
                                     @endif
                                 </div>
                                 @if (!checkIfNameExists($slab->qcParam->name))
                                     <div class="col-md-2 QcResult">
                                         <div class="input-group mb-0">
                                             <input type="text" id="inp-{{ $slab->qcParam->id }}"
-                                                class="form-control bg-white deduction-field"
-                                                name="compulsory_aapplied_deduction[]"
+                                                class="form-control bg-white deduction-field" name="compulsory_aapplied_deduction[]"
                                                 value="{{ $compDeductionValue }}" placeholder="Deduction"
                                                 data-slab-id="{{ $slab->qcParam->id }}"
                                                 data-calculated-on="{{ $slab->qcParam->calculation_base_type }}"
-                                                data-checklist="{{ $displayCompValue }}"
-                                                {{ $latestIsLumpsum ? 'readonly' : '' }}>
+                                                data-checklist="{{ $displayCompValue }}" {{ $latestIsLumpsum ? 'readonly' : '' }}>
                                             <div class="input-group-append">
                                                 <span
                                                     class="input-group-text text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->qcParam->calculation_base_type ?? 1] }}</span>
@@ -561,17 +548,15 @@
                         </div>
                         <div class="col">
                             <div class="input-group mb-2">
-                                <input type="text" id="suggessions-sum" class="form-control"
-                                    name="suggessions_sum" disabled value="{{ $suggestedValue }}"
-                                    placeholder="Suggested Sum">
+                                <input type="text" id="suggessions-sum" class="form-control" name="suggessions_sum"
+                                    disabled value="{{ $suggestedValue }}" placeholder="Suggested Sum">
                                 <div class="input-group-append">
                                     <span class="input-group-text text-sm">Rs.</span>
                                 </div>
                             </div>
                             <div class="input-group mb-0">
-                                <input type="text" id="suggessions-sum" class="form-control"
-                                    name="suggessions_sum" disabled value="{{ $suggestedValueKgs }}"
-                                    placeholder="Suggested Sum">
+                                <input type="text" id="suggessions-sum" class="form-control" name="suggessions_sum"
+                                    disabled value="{{ $suggestedValueKgs }}" placeholder="Suggested Sum">
                                 <div class="input-group-append">
                                     <span class="input-group-text text-sm">Kgs.</span>
                                 </div>
@@ -579,19 +564,18 @@
                         </div>
                         <div class="col">
                             <div class="input-group mb-2">
-                                <input type="text" id="lumpsum-value" class="form-control"
-                                    name="lumpsum_deduction" {{ $latestIsLumpsum ? '' : 'readonly' }}
-                                    {{-- value="{{ $arrivalSamplingRequest->lumpsum_deduction ?? ($rupeeLumpSum ?? 0) }}" --}} value="{{ $rupeeLumpSum ?? 0 }}"
-                                    placeholder="Lumpsum Deduction">
+                                <input type="text" id="lumpsum-value" class="form-control" name="lumpsum_deduction" {{ $latestIsLumpsum ? '' : 'readonly' }} {{--
+                                    value="{{ $arrivalSamplingRequest->lumpsum_deduction ?? ($rupeeLumpSum ?? 0) }}"
+                                    --}} value="{{ $rupeeLumpSum ?? 0 }}" placeholder="Lumpsum Deduction">
                                 <div class="input-group-append">
                                     <span class="input-group-text text-sm">Rs.</span>
                                 </div>
                             </div>
                             <div class="input-group mb-0">
                                 <input type="text" id="lumpsum-kgs-value" class="form-control"
-                                    name="lumpsum_deduction_kgs" {{ $latestIsLumpsum ? '' : 'readonly' }}
-                                    {{-- value="{{ $arrivalSamplingRequest->lumpsum_deduction_kgs ?? ($kgLumpSum ?? 0) }}" --}} value="{{ $kgLumpSum ?? 0 }}"
-                                    placeholder="Lumpsum Deduction">
+                                    name="lumpsum_deduction_kgs" {{ $latestIsLumpsum ? '' : 'readonly' }} {{--
+                                    value="{{ $arrivalSamplingRequest->lumpsum_deduction_kgs ?? ($kgLumpSum ?? 0) }}"
+                                    --}} value="{{ $kgLumpSum ?? 0 }}" placeholder="Lumpsum Deduction">
                                 <div class="input-group-append">
                                     <span class="input-group-text text-sm">KG's</span>
                                 </div>
@@ -605,7 +589,8 @@
                         <div class="col-md-3">
                             <div class="custom-control custom-switch">
                                 <input type="checkbox" name="decision_making" class="custom-control-input"
-                                    id="decision_making" @checked($isDecisionMaking) @disabled($isDecisionMakingDisabled)>
+                                    id="decision_making" @checked($isDecisionMaking)
+                                    @disabled($isDecisionMakingDisabled)>
                                 <label class="custom-control-label" for="decision_making"></label>
                             </div>
                         </div>
@@ -625,8 +610,10 @@
                     <select name="sample_taken_by" id="sample_taken_by" class="form-control select2" disabled>
                         <option value="">Sample Taken By</option>
                         @foreach ($sampleTakenByUsers as $sampleTakenUser)
-                            <option @selected($arrivalSamplingRequest->sample_taken_by == $sampleTakenUser->id) value="{{ $sampleTakenUser->id }}">
-                                {{ $sampleTakenUser->name }}</option>
+                            <option @selected($arrivalSamplingRequest->sample_taken_by == $sampleTakenUser->id)
+                                value="{{ $sampleTakenUser->id }}">
+                                {{ $sampleTakenUser->name }}
+                            </option>
                         @endforeach
                     </select>
                 </div>
@@ -634,9 +621,8 @@
             <div class="col-12 px-3">
                 <div class="form-group ">
                     <label>Sample Analysis By: </label>
-                    <input type="text" readonly disabled name="sample_analysis_by"
-                        placeholder="Sample Analysis By" class="form-control" autocomplete="off"
-                        value="{{ auth()->user()->name ?? '' }}" />
+                    <input type="text" readonly disabled name="sample_analysis_by" placeholder="Sample Analysis By"
+                        class="form-control" autocomplete="off" value="{{ auth()->user()->name ?? '' }}" />
                 </div>
             </div>
             <div class="col-12 px-3">
@@ -644,7 +630,8 @@
                     <label>Party Ref. No: </label>
                     <select name="party_ref_no" id="party_ref_no" class="form-control select2" disabled>
                         <option value="{{ $arrivalSamplingRequest->party_ref_no }}">
-                            {{ $arrivalSamplingRequest->party_ref_no }}</option>
+                            {{ $arrivalSamplingRequest->party_ref_no }}
+                        </option>
                     </select>
                 </div>
             </div>
@@ -664,27 +651,28 @@
                         <input type="hidden" name="sauda_type_id"
                             value="{{ optional($arrivalSamplingRequest->purchaseOrder)->sauda_type_id ?? '' }}">
                         <select disabled class="form-control w-100 select2">
-                        @else
+                    @else
                             <select name="sauda_type_id" id="sauda_type_id" class="form-control w-100 select2">
-                    @endif
-                    <option value="">Select Sauda Type</option>
-                    @foreach ($saudaTypes as $saudaType)
-                        <option @selected((optional($arrivalSamplingRequest->purchaseOrder)->sauda_type_id ?? null) == $saudaType->id) value="{{ $saudaType->id }}">
-                            {{ $saudaType->name }}</option>
-                    @endforeach
-                    </select>
+                        @endif
+                            <option value="">Select Sauda Type</option>
+                            @foreach ($saudaTypes as $saudaType)
+                                <option @selected((optional($arrivalSamplingRequest->purchaseOrder)->sauda_type_id ?? null) == $saudaType->id) value="{{ $saudaType->id }}">
+                                    {{ $saudaType->name }}
+                                </option>
+                            @endforeach
+                        </select>
                 </div>
             </div>
             <div class="col-xs-6 col-sm-6 col-md-6 full">
                 <div class="form-group ">
                     <label>Status:</label>
                     @if (in_array($arrivalSamplingRequest->approved_status, ['approved', 'resampling', 'rejected']))
-                        <input type="hidden" name="stage_status"
-                            value="{{ $arrivalSamplingRequest->approved_status }}">
+                        <input type="hidden" name="stage_status" value="{{ $arrivalSamplingRequest->approved_status }}">
                     @endif
                     <select
                         name="{{ in_array($arrivalSamplingRequest->approved_status, ['approved', 'resampling', 'rejected']) ? 'stage_status_display' : 'stage_status' }}"
-                        id="stage_status" class="form-control select2" @disabled(in_array($arrivalSamplingRequest->approved_status, ['approved', 'resampling', 'rejected']))>
+                        id="stage_status" class="form-control select2"
+                        @disabled(in_array($arrivalSamplingRequest->approved_status, ['approved', 'resampling', 'rejected']))>
                         <option value="" hidden>Choose Status</option>
                         <option {{ $arrivalSamplingRequest->approved_status == 'approved' ? 'selected' : '' }}
                             value="approved">
@@ -702,7 +690,8 @@
             <div class="col-xs-12 col-sm-12 col-md-12">
                 <div class="form-group ">
                     <label>Your Remarks (Optional):</label>
-                    <textarea name="remarks" row="4" class="form-control" placeholder="Description">{{ $arrivalSamplingRequest->remark }}</textarea>
+                    <textarea name="remarks" row="4" class="form-control"
+                        placeholder="Description">{{ $arrivalSamplingRequest->remark }}</textarea>
                 </div>
             </div>
         </div>
@@ -718,17 +707,17 @@
 </form>
 
 <script>
-    $(document).ready(function() {
+    $(document).ready(function () {
         // $('#qcChecklistTabs .nav-link').not('#current-inner-tab').on('click', function(e) {
         //     e.preventDefault();
         //     return false;
         // }).addClass('disabled');
 
-        function calculateTotal() {
+        function calculateTotalndndndnd() {
             let total = 0;
             let totalKgs = 0;
 
-            $('.deduction-field').each(function() {
+            $('.deduction-field').each(function () {
                 let matchingSlabs = $(this).data('matching-slabs') || [];
                 let rmPoSlabs = $(this).data('rm-po-slabs') || [];
                 let calculatedOn = $(this).data('calculated-on');
@@ -778,6 +767,335 @@
             $('#lumpsum-kgs-value').val(totalKgs.toFixed(2));
         }
 
+
+
+
+        function calculateTotalbk() {
+            let total = 0;
+            let totalKgs = 0;
+            let debugInfo = [];
+
+            console.log('================== CALCULATE TOTAL START ==================');
+            console.log('SLAB_TYPE_PERCENTAGE value:', {{ SLAB_TYPE_PERCENTAGE }});
+            console.log('Number of deduction fields:', $('.deduction-field').length);
+
+            $('.deduction-field').each(function (index) {
+                let $this = $(this);
+                let slabId = $this.data('slab-id');
+                let checklistValue = $this.data('checklist');
+                let matchingSlabs = $this.data('matching-slabs') || [];
+                let rmPoSlabs = $this.data('rm-po-slabs') || [];
+                let calculatedOn = $this.data('calculated-on');
+                let val = parseFloat($this.val()) || 0;
+
+                console.log(`\n--- Slab ${index + 1} (ID: ${slabId}) ---`);
+                console.log('Checklist value:', checklistValue);
+                console.log('Entered deduction value:', val);
+                console.log('Calculated on type:', calculatedOn);
+                console.log('Is percentage type?', calculatedOn == {{ SLAB_TYPE_PERCENTAGE }});
+                console.log('Matching Slabs count:', matchingSlabs.length);
+                console.log('RM PO Slabs count:', rmPoSlabs.length);
+
+                if (matchingSlabs.length > 0) {
+                    console.log('Raw matching slabs data:', JSON.stringify(matchingSlabs, null, 2));
+                }
+
+                if (calculatedOn == {{ SLAB_TYPE_PERCENTAGE }}) {
+                    let deductionValue = 0;
+                    let highestRmPoEnd = 0;
+
+                    // Process RM PO Slabs
+                    console.log('\n--- Processing RM PO Slabs ---');
+                    rmPoSlabs.forEach((rmPoSlab, idx) => {
+                        let rmPoTo = rmPoSlab.to ? parseFloat(rmPoSlab.to) : 0;
+                        console.log(`RM PO Slab ${idx + 1}: to = ${rmPoTo}`);
+                        if (rmPoTo > highestRmPoEnd) {
+                            highestRmPoEnd = rmPoTo;
+                        }
+                    });
+                    console.log('Highest RM PO End value:', highestRmPoEnd);
+
+                    // Process Matching Slabs
+                    console.log('\n--- Processing Matching Slabs ---');
+                    matchingSlabs.forEach((slab, idx) => {
+                        let from = parseFloat(slab.from);
+                        let to = slab.to ? parseFloat(slab.to) : Infinity;
+
+                        // Handle is_tiered correctly
+                        let isTiered;
+                        if (typeof slab.is_tiered === 'string') {
+                            isTiered = slab.is_tiered.toLowerCase() === 'true' ? 1 : 0;
+                        } else {
+                            isTiered = parseInt(slab.is_tiered) || 0;
+                        }
+
+                        let deductionVal = parseFloat(slab.deduction_value);
+
+                        console.log(`\nMatching Slab ${idx + 1}:`);
+                        console.log(`  From: ${from}, To: ${to === Infinity ? 'Infinity' : to}`);
+                        console.log(`  Raw is_tiered: "${slab.is_tiered}" (${typeof slab.is_tiered})`);
+                        console.log(`  Converted is_tiered: ${isTiered} ${isTiered === 1 ? '(Tiered ✅)' : '(Non-Tiered ❌)'}`);
+                        console.log(`  Deduction value: ${deductionVal}`);
+                        console.log(`  Current val (${val}) >= from (${from})? ${val >= from}`);
+
+                        if (val < from) {
+                            console.log(`  ⏭️ Skipping: val ${val} < from ${from}`);
+                            return;
+                        }
+
+                        let effectiveFrom = Math.max(from, highestRmPoEnd + 1);
+                        let effectiveTo = Math.min(to, val);
+
+                        console.log(`  Effective from: ${effectiveFrom}`);
+                        console.log(`  Effective to: ${effectiveTo}`);
+                        console.log(`  Effective from <= Effective to? ${effectiveFrom <= effectiveTo}`);
+
+                        if (effectiveFrom <= effectiveTo) {
+                            if (isTiered === 1) {
+                                let applicableAmount = effectiveTo - effectiveFrom + 1;
+                                let tieredAmount = deductionVal * applicableAmount;
+                                deductionValue += tieredAmount;
+                                console.log(`  ✅ TIERED CALCULATION:`);
+                                console.log(`     ${deductionVal} × ${applicableAmount} = ${tieredAmount}`);
+                                console.log(`     Running total: ${deductionValue}`);
+                            } else {
+                                deductionValue += deductionVal;
+                                console.log(`  ✅ NON-TIERED CALCULATION:`);
+                                console.log(`     Adding ${deductionVal}`);
+                                console.log(`     Running total: ${deductionValue}`);
+                            }
+                        } else {
+                            console.log(`  ⏭️ No overlap in range`);
+                        }
+                    });
+
+                    console.log(`\n💰 Final deduction value for this slab: ${deductionValue}`);
+                    total += deductionValue;
+                    console.log(`📊 Running total (all slabs so far): ${total}`);
+
+                    // Store debug info
+                    debugInfo.push({
+                        slabId: slabId,
+                        calculatedOn: 'percentage',
+                        enteredValue: val,
+                        finalDeduction: deductionValue,
+                        matchingSlabsCount: matchingSlabs.length,
+                        rmPoSlabsCount: rmPoSlabs.length,
+                        highestRmPoEnd: highestRmPoEnd
+                    });
+
+                } else if (calculatedOn == {{ SLAB_TYPE_KG }}) {
+                    console.log(`💰 Adding ${val} to KG total`);
+                    totalKgs += val || 0;
+                    debugInfo.push({
+                        slabId: slabId,
+                        calculatedOn: 'kg',
+                        value: val
+                    });
+                } else {
+                    console.log(`💰 Adding ${val} to amount total`);
+                    total += val || 0;
+                    debugInfo.push({
+                        slabId: slabId,
+                        calculatedOn: 'amount',
+                        value: val
+                    });
+                }
+            });
+
+            console.log('\n================== FINAL RESULTS ==================');
+            console.log('💰 Total Amount:', total.toFixed(2));
+            console.log('💰 Total KGs:', totalKgs.toFixed(2));
+            console.log('📋 Debug Info:', debugInfo);
+            console.log('================== CALCULATE TOTAL END ==================\n');
+
+            // Update the input fields
+            $('#lumpsum-value').val(total.toFixed(2));
+            $('#lumpsum-kgs-value').val(totalKgs.toFixed(2));
+
+            // Also log if there are any issues
+            if ($('.deduction-field').length === 0) {
+                console.warn('⚠️ No deduction fields found!');
+            }
+
+            // Check for any NaN values
+            if (isNaN(total) || isNaN(totalKgs)) {
+                console.error('❌ NaN detected in calculation!');
+                console.error('Total:', total, 'Total KGs:', totalKgs);
+            }
+
+            // Return values for potential external use
+            return {
+                total: total,
+                totalKgs: totalKgs,
+                debugInfo: debugInfo
+            };
+        }
+
+
+        function calculateTotal() {
+            let total = 0;
+            let totalKgs = 0;
+            let debugInfo = [];
+
+            console.log('================== CALCULATE TOTAL START ==================');
+            console.log('SLAB_TYPE_PERCENTAGE value:', {{ SLAB_TYPE_PERCENTAGE }});
+            console.log('Number of deduction fields:', $('.deduction-field').length);
+
+            $('.deduction-field').each(function (index) {
+                let $this = $(this);
+                let slabId = $this.data('slab-id');
+                let checklistValue = $this.data('checklist');
+                let matchingSlabs = $this.data('matching-slabs') || [];
+                let rmPoSlabs = $this.data('rm-po-slabs') || [];
+                let calculatedOn = $this.data('calculated-on');
+                let val = parseFloat($this.val()) || 0;
+
+                console.log(`\n--- Slab ${index + 1} (ID: ${slabId}) ---`);
+                console.log('Checklist value:', checklistValue);
+                console.log('Entered deduction value:', val);
+                console.log('Calculated on type:', calculatedOn);
+                console.log('Is percentage type?', calculatedOn == {{ SLAB_TYPE_PERCENTAGE }});
+                console.log('Matching Slabs count:', matchingSlabs.length);
+                console.log('RM PO Slabs count:', rmPoSlabs.length);
+
+                if (matchingSlabs.length > 0) {
+                    console.log('Raw matching slabs data:', JSON.stringify(matchingSlabs, null, 2));
+                }
+
+                if (calculatedOn == {{ SLAB_TYPE_PERCENTAGE }}) {
+                    let deductionValue = 0;
+                    let highestRmPoEnd = 0;
+
+                    // Process RM PO Slabs
+                    console.log('\n--- Processing RM PO Slabs ---');
+                    rmPoSlabs.forEach((rmPoSlab, idx) => {
+                        let rmPoTo = rmPoSlab.to ? parseFloat(rmPoSlab.to) : 0;
+                        console.log(`RM PO Slab ${idx + 1}: to = ${rmPoTo}`);
+                        if (rmPoTo > highestRmPoEnd) {
+                            highestRmPoEnd = rmPoTo;
+                        }
+                    });
+                    console.log('Highest RM PO End value:', highestRmPoEnd);
+
+                    // Process Matching Slabs
+                    console.log('\n--- Processing Matching Slabs ---');
+                    matchingSlabs.forEach((slab, idx) => {
+                        let from = parseFloat(slab.from);
+                        let to = slab.to ? parseFloat(slab.to) : Infinity;
+
+                        // ✅ FIX: Handle is_tiered for boolean, string, and number
+                        let isTiered;
+                        if (typeof slab.is_tiered === 'boolean') {
+                            isTiered = slab.is_tiered ? 1 : 0;
+                        } else if (typeof slab.is_tiered === 'string') {
+                            isTiered = slab.is_tiered.toLowerCase() === 'true' ? 1 : 0;
+                        } else {
+                            isTiered = parseInt(slab.is_tiered) || 0;
+                        }
+
+                        let deductionVal = parseFloat(slab.deduction_value);
+
+                        console.log(`\nMatching Slab ${idx + 1}:`);
+                        console.log(`  From: ${from}, To: ${to === Infinity ? 'Infinity' : to}`);
+                        console.log(`  Raw is_tiered: "${slab.is_tiered}" (${typeof slab.is_tiered})`);
+                        console.log(`  Converted is_tiered: ${isTiered} ${isTiered === 1 ? '(Tiered ✅)' : '(Non-Tiered ❌)'}`);
+                        console.log(`  Deduction value: ${deductionVal}`);
+                        console.log(`  Current val (${val}) >= from (${from})? ${val >= from}`);
+
+                        if (val < from) {
+                            console.log(`  ⏭️ Skipping: val ${val} < from ${from}`);
+                            return;
+                        }
+
+                        let effectiveFrom = Math.max(from, highestRmPoEnd + 1);
+                        let effectiveTo = Math.min(to, val);
+
+                        console.log(`  Effective from: ${effectiveFrom}`);
+                        console.log(`  Effective to: ${effectiveTo}`);
+                        console.log(`  Effective from <= Effective to? ${effectiveFrom <= effectiveTo}`);
+
+                        if (effectiveFrom <= effectiveTo) {
+                            if (isTiered === 1) {
+                                let applicableAmount = effectiveTo - effectiveFrom + 1;
+                                let tieredAmount = deductionVal * applicableAmount;
+                                deductionValue += tieredAmount;
+                                console.log(`  ✅ TIERED CALCULATION:`);
+                                console.log(`     ${deductionVal} × ${applicableAmount} = ${tieredAmount}`);
+                                console.log(`     Running total: ${deductionValue}`);
+                            } else {
+                                deductionValue += deductionVal;
+                                console.log(`  ✅ NON-TIERED CALCULATION:`);
+                                console.log(`     Adding ${deductionVal}`);
+                                console.log(`     Running total: ${deductionValue}`);
+                            }
+                        } else {
+                            console.log(`  ⏭️ No overlap in range`);
+                        }
+                    });
+
+                    console.log(`\n💰 Final deduction value for this slab: ${deductionValue}`);
+                    total += deductionValue;
+                    console.log(`📊 Running total (all slabs so far): ${total}`);
+
+                    // Store debug info
+                    debugInfo.push({
+                        slabId: slabId,
+                        calculatedOn: 'percentage',
+                        enteredValue: val,
+                        finalDeduction: deductionValue,
+                        matchingSlabsCount: matchingSlabs.length,
+                        rmPoSlabsCount: rmPoSlabs.length,
+                        highestRmPoEnd: highestRmPoEnd
+                    });
+
+                } else if (calculatedOn == {{ SLAB_TYPE_KG }}) {
+                    console.log(`💰 Adding ${val} to KG total`);
+                    totalKgs += val || 0;
+                    debugInfo.push({
+                        slabId: slabId,
+                        calculatedOn: 'kg',
+                        value: val
+                    });
+                } else {
+                    console.log(`💰 Adding ${val} to amount total`);
+                    total += val || 0;
+                    debugInfo.push({
+                        slabId: slabId,
+                        calculatedOn: 'amount',
+                        value: val
+                    });
+                }
+            });
+
+            console.log('\n================== FINAL RESULTS ==================');
+            console.log('💰 Total Amount:', total.toFixed(2));
+            console.log('💰 Total KGs:', totalKgs.toFixed(2));
+            console.log('📋 Debug Info:', debugInfo);
+            console.log('================== CALCULATE TOTAL END ==================\n');
+
+            // Update the input fields
+            $('#lumpsum-value').val(total.toFixed(2));
+            $('#lumpsum-kgs-value').val(totalKgs.toFixed(2));
+
+            // Also log if there are any issues
+            if ($('.deduction-field').length === 0) {
+                console.warn('⚠️ No deduction fields found!');
+            }
+
+            // Check for any NaN values
+            if (isNaN(total) || isNaN(totalKgs)) {
+                console.error('❌ NaN detected in calculation!');
+                console.error('Total:', total, 'Total KGs:', totalKgs);
+            }
+
+            // Return values for potential external use
+            return {
+                total: total,
+                totalKgs: totalKgs,
+                debugInfo: debugInfo
+            };
+        }
         calculateTotal();
 
         if ({{ $arrivalSamplingRequest->is_lumpsum_deduction == 1 ? 'true' : 'false' }}) {
@@ -787,7 +1105,7 @@
 
         $('.deduction-field').on('input', calculateTotal);
 
-        $('#lumpsum-toggle').change(function() {
+        $('#lumpsum-toggle').change(function () {
             if ($(this).is(':checked')) {
                 Swal.fire({
                     title: 'Are you sure?',
@@ -815,7 +1133,7 @@
             }
         });
 
-        $('#arrival_sampling_request_id').change(function() {
+        $('#arrival_sampling_request_id').change(function () {
             var samplingRequestId = $(this).val();
 
             if (samplingRequestId) {
@@ -826,7 +1144,7 @@
                         sampling_request_id: samplingRequestId
                     },
                     dataType: 'json',
-                    beforeSend: function() {
+                    beforeSend: function () {
                         Swal.fire({
                             title: "Processing...",
                             text: "Please wait while fetching slabs.",
@@ -836,7 +1154,7 @@
                             }
                         });
                     },
-                    success: function(response) {
+                    success: function (response) {
                         Swal.close();
                         if (response.success) {
                             // Append the rendered HTML to a container element
@@ -846,7 +1164,7 @@
                                 "info");
                         }
                     },
-                    error: function() {
+                    error: function () {
                         Swal.close();
                         Swal.fire("Error", "Something went wrong. Please try again.",
                             "error");
@@ -857,7 +1175,7 @@
 
         $('.select2').select2();
 
-        $(document).on('change', '[name="arrival_purchase_order_id"]', function() {
+        $(document).on('change', '[name="arrival_purchase_order_id"]', function () {
             let saudaTypeId = $(this).find(':selected').data('saudatypeid');
 
             let $saudaTypeSelect = $('#sauda_type_id');

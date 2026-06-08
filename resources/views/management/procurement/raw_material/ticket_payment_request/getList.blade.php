@@ -42,7 +42,11 @@
                                     <strong>Approved Payment:</strong>
                                     {{ $ticket->calculated_values['approved_payment_sum'] ?? 0 }}<br>
                                     <strong>Approved Freight:</strong>
-                                    {{ $ticket->calculated_values['approved_freight_sum'] ?? 0 }}<br>
+                                    @if ($ticket->freight_paid_by_supplier == 1)
+                                        Paid By Supplier
+                                    @else
+                                        {{ $ticket->calculated_values['approved_freight_sum'] ?? 0 }}<br>
+                                    @endif
                                     <strong>Remaining Amount:</strong>
                                     {{ $ticket->calculated_values['remaining_amount'] ?? 0 }}<br>
                                 </small>
@@ -59,9 +63,14 @@
                                 </span><br>
                             @endif
                             @if ($ticket->calculated_values['total_freight_sum'] > 0)
-                                <span class="badge badge-warning">
-                                    Freight: {{ number_format($ticket->calculated_values['total_freight_sum'], 2) }}
-                                </span>
+                                @if ($ticket->freight_paid_by_supplier == 1)
+                                    <span class="badge badge-warning mb-1">Freight: Paid By Supplier</span>
+                                @else
+                                    <span class="badge badge-warning">
+                                        Freight: {{ number_format($ticket->calculated_values['total_freight_sum'], 2) }}
+                                    </span>
+                                @endif
+
                             @endif
                         @endif
                     </td>

@@ -92,8 +92,8 @@ class VendorsController extends Controller
             if ($request->account_id) {
                 $requestData['account_id'] = $request->account_id;
             } else {
-             //   $account = Account::create(getParamsForAccountCreation($request->company_id, $request->company_name, 'Supplier'));
-                                $account = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-4', 'vendors'));
+                //   $account = Account::create(getParamsForAccountCreation($request->company_id, $request->company_name, 'Supplier'));
+                $account = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-4', 'vendors'));
 
                 $requestData['account_id'] = $account->id;
             }
@@ -102,7 +102,8 @@ class VendorsController extends Controller
 
             if (!empty($request->company_bank_name)) {
                 foreach ($request->company_bank_name as $key => $bankName) {
-                    if (empty($bankName)) continue;
+                    if (empty($bankName))
+                        continue;
 
                     VendorCompanyBankDetail::create([
                         'bank_name' => $bankName,
@@ -117,7 +118,8 @@ class VendorsController extends Controller
 
             if (!empty($request->owner_bank_name)) {
                 foreach ($request->owner_bank_name as $key => $bankName) {
-                    if (empty($bankName)) continue;
+                    if (empty($bankName))
+                        continue;
 
                     VendorOwnerBankDetail::create([
                         'bank_name' => $bankName,
@@ -163,7 +165,7 @@ class VendorsController extends Controller
 
         $arrivalLocations = [];
         if (!empty($supplier->company_location_ids)) {
-            $arrivalLocations = \App\Models\Master\ArrivalLocation::whereIn('company_location_id', (array)$supplier->company_location_ids)->get();
+            $arrivalLocations = \App\Models\Master\ArrivalLocation::whereIn('company_location_id', (array) $supplier->company_location_ids)->get();
         }
 
         return view('management.master.vendors.edit', [
@@ -187,14 +189,22 @@ class VendorsController extends Controller
             $data = $request->validated();
             $requestData = $request->all();
 
-            if ($request->account_id) {
-                $requestData['account_id'] = $request->account_id;
-            } elseif (empty($supplier->account_id)) {
-              
+            if (empty($supplier->account_id)) {
+
                 $account = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-4', 'vendors'));
 
                 $requestData['account_id'] = $account->id;
             }
+
+
+            // if ($request->account_id) {
+            //     $requestData['account_id'] = $request->account_id;
+            // } elseif (empty($supplier->account_id)) {
+
+            //     $account = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-4', 'vendors'));
+
+            //     $requestData['account_id'] = $account->id;
+            // }
 
             $supplier->update($requestData);
 
@@ -239,7 +249,8 @@ class VendorsController extends Controller
         $updatedIds = [];
 
         foreach ($bankNames as $index => $bankName) {
-            if (empty($bankName)) continue;
+            if (empty($bankName))
+                continue;
 
             $bankData = [
                 'vendor_id' => $supplier->id,
@@ -289,11 +300,11 @@ class VendorsController extends Controller
             $arrivalLocationIds = [$arrivalLocationIds];
         }
 
-        $vendors = Vendor::where(function($query) use ($arrivalLocationIds) {
+        $vendors = Vendor::where(function ($query) use ($arrivalLocationIds) {
             foreach ($arrivalLocationIds as $id) {
                 if ($id) {
-                    $query->orWhereJsonContains('arrival_location_ids', (string)$id)
-                          ->orWhereJsonContains('arrival_location_ids', (int)$id);
+                    $query->orWhereJsonContains('arrival_location_ids', (string) $id)
+                        ->orWhereJsonContains('arrival_location_ids', (int) $id);
                 }
             }
         })->get(['id', 'name']);
