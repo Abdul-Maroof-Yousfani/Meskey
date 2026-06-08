@@ -404,8 +404,8 @@ class SaleOrderController extends Controller
 
         // Eager load the inquiry + all its items + related product
         $SalesOrders = SalesOrder::with(['sale_inquiry', 'sales_order_data.item.unitOfMeasure', 'locations.companyLocation', 'broker'])
-            ->when($request->filled('search'), function ($q) use ($request) {
-                $searchTerm = '%' . strtolower($request->search) . '%';
+            ->when($request->filled('search_for_filter'), function ($q) use ($request) {
+                $searchTerm = '%' . strtolower($request->search_for_filter) . '%';
                 return $q->where(function ($sq) use ($searchTerm) {
                     $sq->whereRaw('LOWER(`reference_no`) LIKE ?', [$searchTerm])
                         ->orWhereHas('sales_order_data', function ($q) use ($searchTerm) {
@@ -416,39 +416,39 @@ class SaleOrderController extends Controller
                 });
             })
             // Filter by SO No
-            ->when($request->filled('so_no'), function ($q) use ($request) {
-                $q->where('reference_no', 'like', '%' . $request->so_no . '%');
+            ->when($request->filled('so_no_for_filter'), function ($q) use ($request) {
+                $q->where('reference_no', 'like', '%' . $request->so_no_for_filter . '%');
             })
             // Filter by Sale Inquiry No
-            ->when($request->filled('inquiry_id') && $request->inquiry_id != 'all', function ($q) use ($request) {
-                $q->where('inquiry_id', $request->inquiry_id);
+            ->when($request->filled('inquiry_id_for_filter') && $request->inquiry_id_for_filter != 'all', function ($q) use ($request) {
+                $q->where('inquiry_id', $request->inquiry_id_for_filter);
             })
             // Filter by Customer
-            ->when($request->filled('customer_id') && $request->customer_id != 'all', function ($q) use ($request) {
-                $q->where('customer_id', $request->customer_id);
+            ->when($request->filled('customer_id_for_filter') && $request->customer_id_for_filter != 'all', function ($q) use ($request) {
+                $q->where('customer_id', $request->customer_id_for_filter);
             })
             // Filter by Location (via morph relationship)
-            ->when($request->filled('location_id') && $request->location_id != 'all', function ($q) use ($request) {
+            ->when($request->filled('location_id_for_filter') && $request->location_id_for_filter != 'all', function ($q) use ($request) {
                 $q->whereHas('locations', function ($sq) use ($request) {
-                    $sq->where('location_id', $request->location_id);
+                    $sq->where('location_id', $request->location_id_for_filter);
                 });
             })
             // Filter by Item (through sales_order_data relationship)
-            ->when($request->filled('item_id') && $request->item_id != 'all', function ($q) use ($request) {
+            ->when($request->filled('item_id_for_filter') && $request->item_id_for_filter != 'all', function ($q) use ($request) {
                 $q->whereHas('sales_order_data', function ($sq) use ($request) {
-                    $sq->where('item_id', $request->item_id);
+                    $sq->where('item_id', $request->item_id_for_filter);
                 });
             })
             // Filter by Date Range (order_date)
-            ->when($request->filled('date_range'), function ($q) use ($request) {
-                $dates = explode(' - ', $request->date_range);
+            ->when($request->filled('date_range_for_filter'), function ($q) use ($request) {
+                $dates = explode(' - ', $request->date_range_for_filter);
                 if (count($dates) == 2) {
                     $q->whereBetween('order_date', [trim($dates[0]), trim($dates[1])]);
                 }
             })
             // Filter by Status
-            ->when($request->filled('status') && $request->status != 'all', function ($q) use ($request) {
-                $q->where('am_approval_status', $request->status);
+            ->when($request->filled('status_for_filter') && $request->status_for_filter != 'all', function ($q) use ($request) {
+                $q->where('am_approval_status', $request->status_for_filter);
             })
             ->orderBy("reference_no", "desc")
             ->latest()
