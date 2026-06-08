@@ -60,16 +60,22 @@
                                             <input type="text" value="{{ $so->sales_order_data->first()->item->name ?? 'N/A' }}" disabled class="form-control" />
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-6 col-md-3">
+                                    <div class="col-xs-12 col-sm-6 col-md-2">
                                         <div class="form-group">
                                             <label>SO Date:</label>
                                             <input type="text" value="{{ $so->order_date ? $so->order_date : 'N/A' }}" disabled class="form-control" />
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-6 col-md-3">
+                                    <div class="col-xs-12 col-sm-6 col-md-2">
                                         <div class="form-group">
                                             <label>SO Qty:</label>
                                             <input type="text" value="{{ $so->sales_order_data->first()->qty ?? 'N/A' }}" disabled class="form-control" />
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-12 col-sm-6 col-md-2">
+                                        <div class="form-group">
+                                            <label>SO Balance Qty:</label>
+                                            <input type="text" value="{{ getSaleOrderBalanceAgainstDC($so->id) }}" disabled class="form-control" />
                                         </div>
                                     </div>
                                 </div>

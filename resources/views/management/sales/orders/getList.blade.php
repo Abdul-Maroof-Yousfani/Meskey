@@ -8,7 +8,8 @@
                         <th width="12%">Customer</th>
                         <th width="12%">Location</th>
                         <th width="15%">Item Description</th>
-                        <th width="8%" class="text-right">Qty</th>
+                        <th width="8%" class="text-right">Max Qty</th>
+                        <th width="8%" class="text-right">Min Qty</th>
                         <th width="8%" class="text-right">Rate (kg)</th>
                         <th width="8%" class="text-right">Rate (mond)</th>
                         <th width="8%" class="text-right">Amount</th>
@@ -57,6 +58,11 @@
 
                                 <td class="text-right align-middle">
                                     {{ number_format($itemRow['item_data']->qty ?? 0, 2) }}
+                                    <small class="text-muted">{{ $itemRow['item']->unitOfMeasure->name ?? '' }}</small>
+                                </td>
+
+                                <td class="text-right align-middle">
+                                    {{ number_format($itemRow['item_data']->minimum_qty ?? 0, 2) }}
                                     <small class="text-muted">{{ $itemRow['item']->unitOfMeasure->name ?? '' }}</small>
                                 </td>
 

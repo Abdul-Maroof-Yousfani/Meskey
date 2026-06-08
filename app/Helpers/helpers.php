@@ -312,6 +312,22 @@ if (!function_exists("numberToOrdinalWord")) {
     }
 }
 
+if (!function_exists("getSaleOrderBalanceAgainstDC")) {
+    function getSaleOrderBalanceAgainstDC($sale_order_id, $excludeLoadingProgramItemId = null) {
+        $so = SalesOrder::with('sales_order_data')->find($sale_order_id);
+        if (!$so) return 0;
+
+        $totalSoQty = $so->sales_order_data->sum('qty');
+
+        $swbQty = \App\Models\Sales\SecondWeighbridge::whereHas('loadingProgramItem.saleOrders', function ($query) use ($sale_order_id) {
+            $query->where('sale_order_id', $sale_order_id);
+        })->sum('net_weight');
+
+        $balance = $totalSoQty - $swbQty;
+        return max(0, $balance);
+    }
+}
+
 if (!function_exists("getLoadingProgramBalance")) {
     function getLoadingProgramBalance($delivery_order_id, $excludeItemIds = null)
     {

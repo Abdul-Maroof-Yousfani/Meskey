@@ -49,6 +49,9 @@ class SalesOrderRequest extends FormRequest
 
             "qty" => "required",
             "qty.*" => "required",
+            
+            "minimum_qty" => "nullable|array",
+            "minimum_qty.*" => "nullable|numeric|gt:0",
 
             "rate" => "required",
             "rate.*" => "required",

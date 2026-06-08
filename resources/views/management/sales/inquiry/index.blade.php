@@ -22,18 +22,58 @@
                     <div class="card">
                         <div class="card-header">
                             <form id="filterForm" class="form">
-                                <div class="row ">
-                                    <div class="col-md-12 my-1 ">
-                                        <div class="row justify-content-end text-right">
-                                            <div class="col-md-2">
-                                                <label for="customers" class="form-label">Search</label>
-                                                <input type="hidden" name="page" value="{{ request('page', 1) }}">
-                                                <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
-                                                <input type="text" class="form-control" id="search"
-                                                    placeholder="Search here" name="search"
-                                                    value="{{ request('search', '') }}">
-                                            </div>
-                                        </div>
+                                <input type="hidden" name="page" value="{{ request('page', 1) }}">
+                                <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
+                                <div class="row mx-0">
+                                    <div class="px-1 text-left" style="width: 13%;">
+                                        <label for="inquiry_no" class="form-label">Inquiry No</label>
+                                        <input type="text" class="form-control" id="inquiry_no"
+                                            placeholder="Inquiry No" name="inquiry_no"
+                                            value="{{ request('inquiry_no', '') }}">
+                                    </div>
+                                    <div class="px-1 text-left" style="width: 18%;">
+                                        <label for="customer_id" class="form-label">Customer</label>
+                                        <select name="customer_id" id="customer_id" class="form-control select2">
+                                            <option value="all">All Customers</option>
+                                            @foreach ($customers as $customer)
+                                                <option value="{{ $customer->id }}" {{ request('customer_id') == $customer->id ? 'selected' : '' }}>
+                                                    {{ $customer->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="px-1 text-left" style="width: 20%;">
+                                        <label for="item_id" class="form-label">Item</label>
+                                        <select name="item_id" id="item_id" class="form-control select2">
+                                            <option value="all">All Items</option>
+                                            @foreach ($items as $item)
+                                                <option value="{{ $item->id }}" {{ request('item_id') == $item->id ? 'selected' : '' }}>
+                                                    {{ $item->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="px-1 text-left" style="width: 16%;">
+                                        <label for="date_range" class="form-label">Date</label>
+                                        <input type="text" class="form-control" name="date_range" id="date_range"
+                                            placeholder="Select Date Range"
+                                            value="{{ request('date_range', '') }}">
+                                    </div>
+                                    <div class="px-1 text-left" style="width: 13%;">
+                                        <label for="status" class="form-label">Status</label>
+                                        <select name="status" id="status" class="form-control select2">
+                                            <option value="all" {{ request('status') == 'all' ? 'selected' : '' }}>All Status</option>
+                                            <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                                            <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>
+                                            <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
+                                            <option value="reverted" {{ request('status') == 'reverted' ? 'selected' : '' }}>Reverted</option>
+                                        </select>
+                                    </div>
+                                    <div class="px-1 text-left" style="width: 20%;">
+                                        <label for="search" class="form-label">Search</label>
+                                        <input type="text" class="form-control" id="search"
+                                            placeholder="Search" name="search"
+                                            value="{{ request('search', '') }}">
                                     </div>
                                 </div>
                             </form>
@@ -69,6 +109,11 @@
     <script>
         $(document).ready(function () {
             filterationCommon(`{{ route('sales.get.sales-inquiry.list') }}`)
+            
+            // Re-initialize select2 after any AJAX update to preserve selected value in visual UI
+            $(document).on('ajaxSuccess', function() {
+                $('#customer_id, #item_id, #status').select2();
+            });
         });
     </script>
 @endsection

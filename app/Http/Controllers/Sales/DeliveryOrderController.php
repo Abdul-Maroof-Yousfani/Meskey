@@ -23,7 +23,19 @@ class DeliveryOrderController extends Controller
 {
     public function index()
     {
-        return view('management.sales.delivery-order.index');
+        // Only get customers that have delivery order records
+        $customerIds = DeliveryOrder::distinct()->pluck('customer_id')->filter();
+        $customers = Customer::whereIn('id', $customerIds)->get();
+
+        // Only get items that have delivery order data records
+        $itemIds = \App\Models\Sales\DeliveryOrderData::distinct()->pluck('item_id')->filter();
+        $items = Product::whereIn('id', $itemIds)->get();
+
+        // Only get sale orders that are linked to delivery orders
+        $soIds = DeliveryOrder::distinct()->pluck('so_id')->filter();
+        $saleOrders = SalesOrder::whereIn('id', $soIds)->select('id', 'reference_no')->get();
+
+        return view('management.sales.delivery-order.index', compact('customers', 'items', 'saleOrders'));
     }
 
     public function view(int $id)
@@ -245,6 +257,46 @@ class DeliveryOrderController extends Controller
 
         // Eager load the inquiry + all its items + related product
         $delivery_orders = DeliveryOrder::with('salesOrder', 'delivery_order_data', 'customer')->latest()
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $searchTerm = '%' . strtolower($request->search) . '%';
+                return $q->where(function ($sq) use ($searchTerm) {
+                    $sq->whereRaw('LOWER(`reference_no`) LIKE ?', [$searchTerm])
+                        ->orWhereHas('delivery_order_data', function ($q) use ($searchTerm) {
+                            $q->whereRaw('CAST(`qty` AS CHAR) LIKE ?', [$searchTerm])
+                                ->orWhereRaw('CAST(`rate` AS CHAR) LIKE ?', [$searchTerm])
+                                ->orWhereRaw('CAST(`qty` * `rate` AS CHAR) LIKE ?', [$searchTerm]);
+                        });
+                });
+            })
+            // Filter by DO No
+            ->when($request->filled('do_no'), function ($q) use ($request) {
+                $q->where('reference_no', 'like', '%' . $request->do_no . '%');
+            })
+            // Filter by SO No
+            ->when($request->filled('so_id') && $request->so_id != 'all', function ($q) use ($request) {
+                $q->where('so_id', $request->so_id);
+            })
+            // Filter by Customer
+            ->when($request->filled('customer_id') && $request->customer_id != 'all', function ($q) use ($request) {
+                $q->where('customer_id', $request->customer_id);
+            })
+            // Filter by Item (through delivery_order_data relationship)
+            ->when($request->filled('item_id') && $request->item_id != 'all', function ($q) use ($request) {
+                $q->whereHas('delivery_order_data', function ($sq) use ($request) {
+                    $sq->where('item_id', $request->item_id);
+                });
+            })
+            // Filter by Date Range (dispatch_date)
+            ->when($request->filled('date_range'), function ($q) use ($request) {
+                $dates = explode(' - ', $request->date_range);
+                if (count($dates) == 2) {
+                    $q->whereBetween('dispatch_date', [trim($dates[0]), trim($dates[1])]);
+                }
+            })
+            // Filter by Status
+            ->when($request->filled('status') && $request->status != 'all', function ($q) use ($request) {
+                $q->where('am_approval_status', $request->status);
+            })
             ->orderBy("reference_no", "desc")
             ->paginate($perPage);
 

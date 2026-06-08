@@ -427,15 +427,11 @@ class SalesInvoiceController extends Controller
     {
         $customer_id = $request->customer_id;
         $exclude_sales_invoice_id = $request->exclude_sales_invoice_id;
-        $sauda_type = $request->sauda_type;
     
         $delivery_challans = DeliveryChallan::whereHas("receivingRequest", function($query) {
                 $query->where("am_approval_status", "approved");
             })->with("delivery_challan_data")
             ->where("customer_id", $customer_id)
-            ->where("sauda_type", $sauda_type)
-            // ->where("location_id", $location_id)
-            // ->where("arrival_id", $arrival_location_id)
             ->where("am_approval_status", "approved")
             ->get();
 
@@ -456,7 +452,10 @@ class SalesInvoiceController extends Controller
             if ($hasAvailableItems) {
                 $data[] = [
                     "id" => $delivery_challan->id,
-                    "text" => $delivery_challan->dc_no
+                    "text" => $delivery_challan->dc_no,
+                    "location_id" => $delivery_challan->location_id,
+                    "arrival_id" => $delivery_challan->arrival_id,
+                    "sauda_type" => $delivery_challan->sauda_type,
                 ];
             }
         }

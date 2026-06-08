@@ -27,7 +27,24 @@ class SaleOrderController extends Controller
 {
     public function index()
     {
-        return view('management.sales.orders.index');
+        // Only get customers that have sale order records
+        $customerIds = SalesOrder::distinct()->pluck('customer_id')->filter();
+        $customers = Customer::whereIn('id', $customerIds)->get();
+
+        // Only get items that have sale order data records
+        $itemIds = \App\Models\Sales\SalesOrderData::distinct()->pluck('item_id')->filter();
+        $items = Product::whereIn('id', $itemIds)->get();
+
+        // Only get locations that have sale order records (via morph relationship)
+        $locationIds = \App\Models\Procurement\Store\Location::where('locationable_type', SalesOrder::class)
+            ->distinct()->pluck('location_id')->filter();
+        $companyLocations = CompanyLocation::whereIn('id', $locationIds)->get();
+
+        // Only get sale inquiries that are linked to sale orders
+        $inquiryIds = SalesOrder::distinct()->pluck('inquiry_id')->filter();
+        $saleInquiries = SalesInquiry::whereIn('id', $inquiryIds)->select('id', 'inquiry_no')->get();
+
+        return view('management.sales.orders.index', compact('customers', 'items', 'companyLocations', 'saleInquiries'));
     }
 
     public function create()
@@ -162,6 +179,7 @@ class SaleOrderController extends Controller
                 $sales_order->sales_order_data()->create([
                     'item_id' => $request->item_id[$index],
                     'qty' => $request->qty[$index],
+                    'minimum_qty' => $request->minimum_qty[$index] ?? null,
                     'rate' => $request->rate[$index],
                     'pack_size' => $request->pack_size[$index],
                     'brand_id' => $request->brand_id[$index],
@@ -316,6 +334,7 @@ class SaleOrderController extends Controller
                 $sales_order->sales_order_data()->create([
                     'item_id' => $request->item_id[$index],
                     'qty' => $request->qty[$index],
+                    'minimum_qty' => $request->minimum_qty[$index] ?? null,
                     'rate' => $request->rate[$index],
                     'pack_size' => $request->pack_size[$index] ?? 0,
                     'brand_id' => $request->brand_id[$index],
@@ -389,8 +408,48 @@ class SaleOrderController extends Controller
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . strtolower($request->search) . '%';
                 return $q->where(function ($sq) use ($searchTerm) {
-                    $sq->whereRaw('LOWER(`reference_no`) LIKE ?', [$searchTerm]);
+                    $sq->whereRaw('LOWER(`reference_no`) LIKE ?', [$searchTerm])
+                        ->orWhereHas('sales_order_data', function ($q) use ($searchTerm) {
+                            $q->whereRaw('CAST(`qty` AS CHAR) LIKE ?', [$searchTerm])
+                                ->orWhereRaw('CAST(`rate` AS CHAR) LIKE ?', [$searchTerm])
+                                ->orWhereRaw('CAST(`qty` * `rate` AS CHAR) LIKE ?', [$searchTerm]);
+                        });
                 });
+            })
+            // Filter by SO No
+            ->when($request->filled('so_no'), function ($q) use ($request) {
+                $q->where('reference_no', 'like', '%' . $request->so_no . '%');
+            })
+            // Filter by Sale Inquiry No
+            ->when($request->filled('inquiry_id') && $request->inquiry_id != 'all', function ($q) use ($request) {
+                $q->where('inquiry_id', $request->inquiry_id);
+            })
+            // Filter by Customer
+            ->when($request->filled('customer_id') && $request->customer_id != 'all', function ($q) use ($request) {
+                $q->where('customer_id', $request->customer_id);
+            })
+            // Filter by Location (via morph relationship)
+            ->when($request->filled('location_id') && $request->location_id != 'all', function ($q) use ($request) {
+                $q->whereHas('locations', function ($sq) use ($request) {
+                    $sq->where('location_id', $request->location_id);
+                });
+            })
+            // Filter by Item (through sales_order_data relationship)
+            ->when($request->filled('item_id') && $request->item_id != 'all', function ($q) use ($request) {
+                $q->whereHas('sales_order_data', function ($sq) use ($request) {
+                    $sq->where('item_id', $request->item_id);
+                });
+            })
+            // Filter by Date Range (order_date)
+            ->when($request->filled('date_range'), function ($q) use ($request) {
+                $dates = explode(' - ', $request->date_range);
+                if (count($dates) == 2) {
+                    $q->whereBetween('order_date', [trim($dates[0]), trim($dates[1])]);
+                }
+            })
+            // Filter by Status
+            ->when($request->filled('status') && $request->status != 'all', function ($q) use ($request) {
+                $q->where('am_approval_status', $request->status);
             })
             ->orderBy("reference_no", "desc")
             ->latest()
