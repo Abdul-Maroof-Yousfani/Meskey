@@ -27,75 +27,75 @@
                                 <div class="row mx-0">
                                     <div class="px-1 text-left" style="width: 11%;">
                                         <label for="so_no" class="form-label">SO No</label>
-                                        <input type="text" class="form-control" id="so_no"
-                                            placeholder="SO No" name="so_no"
-                                            value="{{ request('so_no', '') }}">
+                                        <input type="text" class="form-control" id="so_no_for_filter"
+                                            placeholder="SO No" name="so_no_for_filter"
+                                            value="{{ request('so_no_for_filter', '') }}">
                                     </div>
                                     <div class="px-1 text-left" style="width: 14%;">
-                                        <label for="inquiry_id" class="form-label">Sale Inquiry No</label>
-                                        <select name="inquiry_id" id="inquiry_id" class="form-control select2">
+                                        <label for="inquiry_id_for_filter" class="form-label">Sale Inquiry No</label>
+                                        <select name="inquiry_id_for_filter" id="inquiry_id_for_filter" class="form-control select2">
                                             <option value="all">All Inquiries</option>
                                             @foreach ($saleInquiries as $inquiry)
-                                                <option value="{{ $inquiry->id }}" {{ request('inquiry_id') == $inquiry->id ? 'selected' : '' }}>
+                                                <option value="{{ $inquiry->id }}" {{ request('inquiry_id_for_filter') == $inquiry->id ? 'selected' : '' }}>
                                                     {{ $inquiry->inquiry_no }}
                                                 </option>
                                             @endforeach
                                         </select>
                                     </div>
                                     <div class="px-1 text-left" style="width: 15%;">
-                                        <label for="customer_id" class="form-label">Customer</label>
-                                        <select name="customer_id" id="customer_id" class="form-control select2">
+                                        <label for="customer_id_for_filter" class="form-label">Customer</label>
+                                        <select name="customer_id_for_filter" id="customer_id_for_filter" class="form-control select2">
                                             <option value="all">All Customers</option>
                                             @foreach ($customers as $customer)
-                                                <option value="{{ $customer->id }}" {{ request('customer_id') == $customer->id ? 'selected' : '' }}>
+                                                <option value="{{ $customer->id }}" {{ request('customer_id_for_filter') == $customer->id ? 'selected' : '' }}>
                                                     {{ $customer->name }}
                                                 </option>
                                             @endforeach
                                         </select>
                                     </div>
                                     <div class="px-1 text-left" style="width: 13%;">
-                                        <label for="location_id" class="form-label">Location</label>
-                                        <select name="location_id" id="location_id" class="form-control select2">
+                                        <label for="location_id_for_filter" class="form-label">Location</label>
+                                        <select name="location_id_for_filter" id="location_id_for_filter" class="form-control select2">
                                             <option value="all">All Locations</option>
                                             @foreach ($companyLocations as $location)
-                                                <option value="{{ $location->id }}" {{ request('location_id') == $location->id ? 'selected' : '' }}>
+                                                <option value="{{ $location->id }}" {{ request('location_id_for_filter') == $location->id ? 'selected' : '' }}>
                                                     {{ $location->name }}
                                                 </option>
                                             @endforeach
                                         </select>
                                     </div>
                                     <div class="px-1 text-left" style="width: 14%;">
-                                        <label for="item_id" class="form-label">Item</label>
-                                        <select name="item_id" id="item_id" class="form-control select2">
+                                        <label for="item_id_for_filter" class="form-label">Item</label>
+                                        <select name="item_id_for_filter" id="item_id_for_filter" class="form-control select2">
                                             <option value="all">All Items</option>
                                             @foreach ($items as $item)
-                                                <option value="{{ $item->id }}" {{ request('item_id') == $item->id ? 'selected' : '' }}>
+                                                <option value="{{ $item->id }}" {{ request('item_id_for_filter') == $item->id ? 'selected' : '' }}>
                                                     {{ $item->name }}
                                                 </option>
                                             @endforeach
                                         </select>
                                     </div>
                                     <div class="px-1 text-left" style="width: 13%;">
-                                        <label for="date_range" class="form-label">Date</label>
-                                        <input type="text" class="form-control" name="date_range" id="date_range"
+                                        <label for="date_range_for_filter" class="form-label">Date</label>
+                                        <input type="text" class="form-control" name="date_range_for_filter" id="date_range_for_filter"
                                             placeholder="Select Date Range"
-                                            value="{{ request('date_range', '') }}">
+                                            value="{{ request('date_range_for_filter', '') }}">
                                     </div>
                                     <div class="px-1 text-left" style="width: 10%;">
-                                        <label for="status" class="form-label">Status</label>
-                                        <select name="status" id="status" class="form-control select2">
-                                            <option value="all" {{ request('status') == 'all' ? 'selected' : '' }}>All Status</option>
-                                            <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                                            <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>
-                                            <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
-                                            <option value="reverted" {{ request('status') == 'reverted' ? 'selected' : '' }}>Reverted</option>
+                                        <label for="status_for_filter" class="form-label">Status</label>
+                                        <select name="status_for_filter" id="status_for_filter" class="form-control select2">
+                                            <option value="all" {{ request('status_for_filter') == 'all' ? 'selected' : '' }}>All Status</option>
+                                            <option value="pending" {{ request('status_for_filter') == 'pending' ? 'selected' : '' }}>Pending</option>
+                                            <option value="approved" {{ request('status_for_filter') == 'approved' ? 'selected' : '' }}>Approved</option>
+                                            <option value="rejected" {{ request('status_for_filter') == 'rejected' ? 'selected' : '' }}>Rejected</option>
+                                            <option value="reverted" {{ request('status_for_filter') == 'reverted' ? 'selected' : '' }}>Reverted</option>
                                         </select>
                                     </div>
                                     <div class="px-1 text-left" style="width: 10%;">
-                                        <label for="search" class="form-label">Search</label>
-                                        <input type="text" class="form-control" id="search"
-                                            placeholder="Search" name="search"
-                                            value="{{ request('search', '') }}">
+                                        <label for="search_for_filter" class="form-label">Search</label>
+                                        <input type="text" class="form-control" id="search_for_filter"
+                                            placeholder="Search" name="search_for_filter"
+                                            value="{{ request('search_for_filter', '') }}">
                                     </div>
                                 </div>
                             </form>
@@ -134,7 +134,7 @@
             
             // Re-initialize select2 after any AJAX update to preserve selected value in visual UI
             $(document).on('ajaxSuccess', function() {
-                $('#inquiry_id, #customer_id, #location_id, #item_id, #status').select2();
+                $('#inquiry_id_for_filter, #customer_id_for_filter, #location_id_for_filter, #item_id_for_filter, #status_for_filter').select2();
             });
         });
     </script>
