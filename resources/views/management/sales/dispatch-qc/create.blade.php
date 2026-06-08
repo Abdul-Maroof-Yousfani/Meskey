@@ -1,4 +1,5 @@
-<form action="{{ route('sales.dispatch-qc.store') }}" method="POST" id="ajaxSubmit" autocomplete="off" enctype="multipart/form-data">
+<form action="{{ route('sales.dispatch-qc.store') }}" method="POST" id="ajaxSubmit" autocomplete="off"
+    enctype="multipart/form-data">
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('sales.get.dispatch-qc') }}" />
 
@@ -45,7 +46,8 @@
         <div class="col-xs-12 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Attachments:</label>
-                <input type="file" name="attachments[]" class="form-control" multiple accept="image/*,application/pdf,.doc,.docx">
+                <input type="file" name="attachments[]" class="form-control" multiple
+                    accept="image/*,application/pdf,.doc,.docx">
                 <small class="text-muted">Allowed: Images, PDF, DOC, DOCX (Max 10MB each)</small>
             </div>
         </div>
@@ -60,13 +62,13 @@
 </form>
 
 <script>
-    $(document).ready(function() {
+    $(document).ready(function () {
         $('.select2').select2();
     });
 
-    $(document).ready(function() {
+    $(document).ready(function () {
         // Handle ticket selection
-        $('#loading_program_item_id').change(function() {
+        $('#loading_program_item_id').change(function () {
             var loading_program_item_id = $(this).val();
 
             if (loading_program_item_id) {
@@ -77,7 +79,7 @@
                         loading_program_item_id: loading_program_item_id
                     },
                     dataType: 'json',
-                    beforeSend: function() {
+                    beforeSend: function () {
                         Swal.fire({
                             title: "Processing...",
                             text: "Please wait while fetching ticket details.",
@@ -87,7 +89,7 @@
                             }
                         });
                     },
-                    success: function(response) {
+                    success: function (response) {
                         Swal.close();
                         if (response.success) {
                             // Populate the form with ticket data
@@ -97,7 +99,7 @@
                                 "info");
                         }
                     },
-                    error: function() {
+                    error: function () {
                         Swal.close();
                         Swal.fire("Error", "Something went wrong. Please try again.",
                             "error");
@@ -141,25 +143,20 @@
             contentHtml += `
                 <div class="tab-pane fade show ${activeClass}" id="${contentId}" role="tabpanel" aria-labelledby="${tabId}">
                     <div class="row">
-                        <div class="col-xs-12 col-sm-6 col-md-3">
-                            <div class="form-group">
-                                <label>Customer:</label>
-                                <input type="text" value="${order.customer}" class="form-control" readonly />
-                            </div>
-                        </div>
-                        <div class="col-xs-12 col-sm-6 col-md-3">
+                       
+                        <div class="col-xs-12 col-sm-6 col-md-4">
                             <div class="form-group">
                                 <label>Commodity:</label>
                                 <input type="text" value="${order.commodity}" class="form-control" readonly />
                             </div>
                         </div>
-                        <div class="col-xs-12 col-sm-6 col-md-3">
+                        <div class="col-xs-12 col-sm-6 col-md-4">
                             <div class="form-group">
                                 <label>SO Qty:</label>
                                 <input type="number" value="${order.so_qty}" class="form-control" readonly step="0.01" />
                             </div>
                         </div>
-                        <div class="col-xs-12 col-sm-6 col-md-3">
+                        <div class="col-xs-12 col-sm-6 col-md-4">
                             <div class="form-group">
                                 <label>DO Qty:</label>
                                 <input type="number" value="${order.do_qty}" class="form-control" readonly step="0.01" />

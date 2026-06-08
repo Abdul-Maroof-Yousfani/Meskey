@@ -145,9 +145,9 @@
                                     <div class="form-group">
                                         <div class="d-flex justify-content-between align-items-center mb-2">
                                             <label class="mb-0">Selected References</label>
-                                            <button type="button" class="btn btn-sm btn-info" id="add-advance-btn" onclick="addAdvanceRow()">
+                                            <!-- <button type="button" class="btn btn-sm btn-info" id="add-advance-btn" onclick="addAdvanceRow()">
                                                 <i class="fa fa-plus"></i> Add Advance
-                                            </button>
+                                            </button> -->
                                         </div>
                                         <div class="table-responsive">
                                             <table class="table table-bordered" id="referencesTable">

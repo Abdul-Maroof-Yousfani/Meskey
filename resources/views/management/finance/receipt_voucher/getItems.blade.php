@@ -4,7 +4,7 @@
         $balance = receipt_voucher_balance($item->reference_id, $item->reference_type);
         if(!$balance) continue;
     @endphp
-    <tr>
+    <tr class="reference-main-row" id="reference-row-{{ $idx }}">
         <td class="text-center">
             <input type="checkbox" class="row-select" data-row="{{ $idx }}">
             <input type="hidden" name="items[{{ $idx }}][reference_id]" value="{{ $item->reference_id }}">
@@ -17,8 +17,8 @@
         <td>{{ $item->date }}</td>
         <td>{{ $item->customer_name }}</td>
         <td>
-            <input type="number" step="0.01" class="form-control amount-input" name="items[{{ $idx }}][amount_display]"
-                value="{{ $balance }}">
+            <input type="number" step="0.01" readonly class="form-control amount-input" name="items[{{ $idx }}][amount_display]"
+                value="0.00" data-balance="{{ $balance }}">
             Balance: {{ $balance }}
         </td>
         <td>
@@ -41,7 +41,40 @@
             <input type="text" class="form-control line-desc" name="items[{{ $idx }}][line_desc]"
                 placeholder="Line description">
         </td>
-        <td class="text-center"></td>
+        <td class="text-center">
+            <button type="button" class="btn btn-xs btn-outline-info toggle-bank-subrow" data-row-idx="{{ $idx }}" title="Toggle Bank Details">
+                <i class="fa fa-chevron-down"></i> Banks
+            </button>
+        </td>
+    </tr>
+    <tr class="bank-details-subrow" id="bank-subrow-{{ $idx }}" style="display: none; background-color: #f9fbfd;">
+        <td></td>
+        <td colspan="10">
+            <div class="card my-2 border-info shadow-sm" style="border: 1px solid #17a2b8 !important;">
+                <div class="card-header py-2 d-flex justify-content-between align-items-center" style="background-color: #eef7fc; border-bottom: 1px solid #17a2b8;">
+                    <h6 class="mb-0 text-info font-weight-bold" style="font-size: 0.9rem;">
+                        <i class="fa fa-university mr-1"></i> Bank/Account Details for {{ $item->number }}
+                    </h6>
+                    <button type="button" class="btn btn-xs btn-success add-nested-bank-btn" data-row-idx="{{ $idx }}" style="padding: .2rem .4rem; font-size: .75rem;">
+                        <i class="fa fa-plus"></i> Add Account
+                    </button>
+                </div>
+                <div class="card-body p-2" style="background-color: #ffffff;">
+                    <table class="table table-bordered table-sm mb-0">
+                        <thead>
+                            <tr class="bg-light">
+                                <th>Account</th>
+                                <th width="20%">Amount</th>
+                                <th width="30%">Cheque No</th>
+                                <th width="8%">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="nested-bank-data" id="nested-bank-data-{{ $idx }}">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </td>
     </tr>
 @endforeach
 

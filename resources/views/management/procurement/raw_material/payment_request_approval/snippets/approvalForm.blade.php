@@ -56,8 +56,7 @@
         <div class="col-md-6">
             <div class="form-group">
                 <label>Status:</label>
-                <select name="status" id="approvalStatus" class="form-control select2"
-                    {{ $isUpdated ? 'disabled' : '' }}>
+                <select name="status" id="approvalStatus" class="form-control select2" {{ $isUpdated ? 'disabled' : '' }}>
                     <option value="">Select Status</option>
                     <option value="approved" {{ $approval && $approval->status == 'approved' ? 'selected' : '' }}>
                         Approved</option>
@@ -104,10 +103,10 @@
 </form>
 
 <script>
-    $(document).ready(function() {
+    $(document).ready(function () {
         $('#approvalStatus').select2();
 
-        $('#ajaxSubmit').on('submit', function(e) {
+        $('#ajaxSubmit').on('submit', function (e) {
             const status = $('#approvalStatus').val();
             // if (!status) {
             //     e.preventDefault();

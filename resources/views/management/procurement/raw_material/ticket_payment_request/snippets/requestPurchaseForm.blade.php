@@ -48,7 +48,7 @@
     $kantaCharges = $arrivalTicket->freight->karachi_kanta_charges ?? 0;
     $arrivalFreightAmount = $arrivalTicket->freight->gross_freight_amount ?? 0;
     $grossFreightAmount = $freightPaymentRequestgrossAmount == 0 ? $arrivalTicket->freight->net_freight : $freightPaymentRequestgrossAmount;
-    
+
     // dd($grossFreightAmount);
     $netWeight = $loadingWeight - $bagWeight * $noOfBags;
 
@@ -107,12 +107,14 @@
 @endphp
 
 <style>
-    .togglehistorytable{
-    display:none;
-}
-.togglehistory{
-    cursor:pointer;
-}
+    .togglehistorytable {
+        display: none;
+    }
+
+    .togglehistory {
+        cursor: pointer;
+    }
+
     .tooltip-container {
         position: relative;
         cursor: pointer;
@@ -179,7 +181,7 @@
         samplingResults: [
             @foreach ($samplingRequestResults as $slab)
                 @if ($slab->applied_deduction)
-                    {
+                                                                                    {
                         id: {{ $slab->id }},
                         applied_deduction: {{ $slab->applied_deduction ?? 0 }},
                         deduction_type: '{{ $slab->deduction_type ?? 'amount' }}',
@@ -193,10 +195,10 @@
         compulsoryResults: [
             @foreach ($samplingRequestCompulsuryResults as $slab)
                 @if ($slab->applied_deduction)
-                    {
-                        id: {{ $slab->id }},
-                        applied_deduction: {{ $slab->applied_deduction ?? 0 }}
-                    },
+                                                    {
+                    id: {{ $slab->id }},
+                    applied_deduction: {{ $slab->applied_deduction ?? 0 }}
+                                                    },
                 @endif
             @endforeach
         ],
@@ -231,8 +233,8 @@
     <div class="col-md-6">
         <div class="form-group">
             <label>Contract Rate</label>
-            <input type="text" class="form-control" name="contract_rate"
-                value="{{ $purchaseOrder->rate_per_kg ?? 0 }}" readonly>
+            <input type="text" class="form-control" name="contract_rate" value="{{ $purchaseOrder->rate_per_kg ?? 0 }}"
+                readonly>
         </div>
     </div>
     <div class="col-md-6 contract-range-field">
@@ -254,14 +256,12 @@
     </div>
     <div class="col-md-12 mb-3 d-none">
         <div class="form-check form-check-inline">
-            <input class="form-check-input" type="radio" name="loading_type" id="loading" value="loading"
-                {{ $hasLoadingWeight ? 'checked' : '' }} {{ $hasLoadingWeight ? '' : 'disabled' }}>
+            <input class="form-check-input" type="radio" name="loading_type" id="loading" value="loading" {{ $hasLoadingWeight ? 'checked' : '' }} {{ $hasLoadingWeight ? '' : 'disabled' }}>
             <label class="form-check-label" for="loading">Loading</label>
         </div>
         <div class="form-check form-check-inline">
             <input class="form-check-input" type="radio" name="loading_type" id="without_loading"
-                value="without_loading" {{ !$hasLoadingWeight ? 'checked' : '' }}
-                {{ $hasLoadingWeight ? '' : 'disabled' }}>
+                value="without_loading" {{ !$hasLoadingWeight ? 'checked' : '' }} {{ $hasLoadingWeight ? '' : 'disabled' }}>
             <label class="form-check-label" for="without_loading">Without Loading</label>
         </div>
         <input type="hidden" name="{{ $hasLoadingWeight ? '' : 'loading_type' }}"
@@ -273,8 +273,8 @@
             <div class="col-md-3">
                 <div class="form-group">
                     <label>Truck #</label>
-                    <input type="text" class="form-control" name="truck_no"
-                        value="{{ $arrivalTicket->truck_no ?? 'N/A' }}" readonly>
+                    <input type="text" class="form-control" name="truck_no" value="{{ $arrivalTicket->truck_no ?? 'N/A' }}"
+                        readonly>
                 </div>
             </div>
             <div class="col-md-3">
@@ -289,8 +289,8 @@
             <div class="col-md-3">
                 <div class="form-group">
                     <label>Bilty #</label>
-                    <input type="text" class="form-control" name="bilty_no"
-                        value="{{ $arrivalTicket->bilty_no ?? 'N/A' }}" readonly>
+                    <input type="text" class="form-control" name="bilty_no" value="{{ $arrivalTicket->bilty_no ?? 'N/A' }}"
+                        readonly>
                 </div>
             </div>
             <div class="col-md-3">
@@ -303,127 +303,129 @@
             <div class="col-md-3">
                 <div class="form-group">
                     <label>No of Bags</label>
-                    <input type="text" class="form-control" name="no_of_bags" value="{{ $noOfBags }}"
-                        readonly>
+                    <input type="text" class="form-control" name="no_of_bags" value="{{ $noOfBags }}" readonly>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="form-group">
                     <label>Arrival Weight</label>
-                    <input type="text" class="form-control" name="loading_weight" value="{{ $loadingWeight }}"
-                        readonly>
+                    <input type="text" class="form-control" name="loading_weight" value="{{ $loadingWeight }}" readonly>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="form-group">
                     <label>Average Bag Weight</label>
-                    <input type="text" class="form-control" name="avg_rate" value="{{ round($avgRate, 2) }}"
-                        readonly>
+                    <input type="text" class="form-control" name="avg_rate" value="{{ round($avgRate, 2) }}" readonly>
                 </div>
             </div>
 
-@if(isset($paymentRequests) && count($paymentRequests) != 0)
-            <div class="col-md-12">
-            <h6 class="header-heading-sepration togglehistory">
-            Request History ({{ count($paymentRequests) }})
-        </h6>
-            <table class="table m-0 togglehistorytable">
-                     <thead>
-                        <tr>
-                            <th>
-                                Request Date
-                            </th>
-                            <th>
-                                Amount
-                            </th>
-                            <th>
-                                Remarks
-                            </th>
-                            <th>
-                                Status
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($paymentRequests as $paymentRequest)
-                        <tr>
-                            <td>
-                                {{$paymentRequest->created_at}}
-                            </td>
-                            <td>
-                                {{$paymentRequest->amount}}
-                            </td>
-                            <td>
-                                {{$paymentRequest->approval->remarks ?? 'N/A'}}
-                            </td>
-                            <td>
-                                @if($paymentRequest->status == 'pending')
-                                <label class="badge badge-warning">Pending</label>
-                                @elseif($paymentRequest->status == 'approved')
-                                <label class="badge badge-success">Approved</label>
-                                @elseif($paymentRequest->status == 'rejected')
-                                <label class="badge badge-danger">Rejected</label>
-                                @endif
-                            </td>
-                           
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-            @endif
-
-            @if ($showLumpSum && !$isSlabs && !$isCompulsury)
-            <div class="col-12">
-                <div class="table-responsive">
-                    <table class="table table-sm table-bordered table-hover">
-                        <thead class="thead-light">
+            @if(isset($paymentRequests) && count($paymentRequests) != 0)
+                <div class="col-md-12">
+                    <h6 class="header-heading-sepration togglehistory">
+                        Request History ({{ count($paymentRequests) }})
+                    </h6>
+                    <table class="table m-0 togglehistorytable">
+                        <thead>
                             <tr>
-                                <th width="20%">Lump Sum Deduction</th>
-                                <th width="20%">Tabaar Deduction</th>
-                                <th width="20%">Deduction Amount</th>
+                                <th>
+                                    Request Date
+                                </th>
+                                <th>
+                                    Amount
+                                </th>
+                                <th>
+                                    Remarks
+                                </th>
+                                <th>
+                                    Status
+                                </th>
                             </tr>
                         </thead>
-                        <tbody id="sampling-results-tbody">
-                        <tr data-lumpsum-amount="{{ number_format($Deductionfromhelperfunction['lumpsum']['amount_deduction'] ?? 0, 2) }}">
-                                <td>Lumpsum Deduction Rupees</td>
-                                <td>{{ number_format($samplingRequest->lumpsum_deduction, 2) }} Rs./KG </td>
-                                <td >
-                                {{ number_format($Deductionfromhelperfunction['lumpsum']['amount_deduction'] ?? 0, 2) }} Rs.</td>
-                            </tr>
-                            <tr data-lumpsum-kgamount="{{ number_format($Deductionfromhelperfunction['lumpsum']['kgs_deduction'] ?? 0, 2) }}">
-                                <td>Lumpsum Deduction KG's</td>
-                                <td>{{ number_format($samplingRequest->lumpsum_deduction_kgs, 2) }} KG's </td>
-                                <td>{{ number_format($Deductionfromhelperfunction['lumpsum']['kgs_deduction'] ?? 0, 2) }} Rs.</td>
-                            </tr>
-                            <tr class="other-deduction-row" data-other-deduction="true">
-                                <td>Other Deduction (if any)
-                                    <input type="hidden" name="other_deduction[slab_name]" value="Other Deduction">
-                                </td>
-                                <td>
-                                    <div class="input-group mb-0">
-                                        <input type="number" step="any" class="form-control editable-field"
-                                            name="other_deduction[kg_value]" id="other_deduction_kg"
-                                            value="{{ $existingOtherDeductionKg }}" placeholder="Enter Rs./KG">
-                                        <div class="input-group-append">
-                                            <span class="input-group-text text-sm">Rs./KG</span>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="input-group mb-0">
-                                        <input type="text" class="form-control" name="other_deduction[kg_amount]"
-                                            id="other_deduction_amount_display"
-                                            value="{{ number_format($existingOtherDeductionAmount, 2) }}" readonly>
-                                        <input type="hidden" class="form-control" name="other_deduction[deduction_amount]"
-                                            id="other_deduction_amount" value="{{ $existingOtherDeductionAmount }}">
-                                    </div>
-                                </td>
-                            </tr>
+                        <tbody>
+                            @foreach ($paymentRequests as $paymentRequest)
+                                <tr>
+                                    <td>
+                                        {{$paymentRequest->created_at}}
+                                    </td>
+                                    <td>
+                                        {{$paymentRequest->amount}}
+                                    </td>
+                                    <td>
+                                        {{$paymentRequest->approval->remarks ?? 'N/A'}}
+                                    </td>
+                                    <td>
+                                        @if($paymentRequest->status == 'pending')
+                                            <label class="badge badge-warning">Pending</label>
+                                        @elseif($paymentRequest->status == 'approved')
+                                            <label class="badge badge-success">Approved</label>
+                                        @elseif($paymentRequest->status == 'rejected')
+                                            <label class="badge badge-danger">Rejected</label>
+                                        @endif
+                                    </td>
+
+                                </tr>
+                            @endforeach
                         </tbody>
                     </table>
                 </div>
-            </div>
+            @endif
+
+            @if ($showLumpSum && !$isSlabs && !$isCompulsury)
+                <div class="col-12">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered table-hover">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th width="20%">Lump Sum Deduction</th>
+                                    <th width="20%">Tabaar Deduction</th>
+                                    <th width="20%">Deduction Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sampling-results-tbody">
+                                <tr
+                                    data-lumpsum-amount="{{ number_format($Deductionfromhelperfunction['lumpsum']['amount_deduction'] ?? 0, 2) }}">
+                                    <td>Lumpsum Deduction Rupees</td>
+                                    <td>{{ number_format($samplingRequest->lumpsum_deduction, 2) }} Rs./KG </td>
+                                    <td>
+                                        {{ number_format($Deductionfromhelperfunction['lumpsum']['amount_deduction'] ?? 0, 2) }}
+                                        Rs.
+                                    </td>
+                                </tr>
+                                <tr
+                                    data-lumpsum-kgamount="{{ number_format($Deductionfromhelperfunction['lumpsum']['kgs_deduction'] ?? 0, 2) }}">
+                                    <td>Lumpsum Deduction KG's</td>
+                                    <td>{{ number_format($samplingRequest->lumpsum_deduction_kgs, 2) }} KG's </td>
+                                    <td>{{ number_format($Deductionfromhelperfunction['lumpsum']['kgs_deduction'] ?? 0, 2) }}
+                                        Rs.</td>
+                                </tr>
+                                <tr class="other-deduction-row" data-other-deduction="true">
+                                    <td>Other Deduction (if any)
+                                        <input type="hidden" name="other_deduction[slab_name]" value="Other Deduction">
+                                    </td>
+                                    <td>
+                                        <div class="input-group mb-0">
+                                            <input type="number" step="any" class="form-control editable-field"
+                                                name="other_deduction[kg_value]" id="other_deduction_kg"
+                                                value="{{ $existingOtherDeductionKg }}" placeholder="Enter Rs./KG">
+                                            <div class="input-group-append">
+                                                <span class="input-group-text text-sm">Rs./KG</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="input-group mb-0">
+                                            <input type="text" class="form-control" name="other_deduction[kg_amount]"
+                                                id="other_deduction_amount_display"
+                                                value="{{ number_format($existingOtherDeductionAmount, 2) }}" readonly>
+                                            <input type="hidden" class="form-control" name="other_deduction[deduction_amount]"
+                                                id="other_deduction_amount" value="{{ $existingOtherDeductionAmount }}">
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             @else
                 <div class="col-12" bis_skin_checked="1">
                     <h6 class="header-heading-sepration">
@@ -520,11 +522,9 @@
 
                                         <tr data-slab-id="{{ $slab->id }}">
                                             <td>{{ $slab->slabType->name }}
-                                                <input type="hidden"
-                                                    name="sampling_results[{{ $slab->id }}][slab_type_id]"
+                                                <input type="hidden" name="sampling_results[{{ $slab->id }}][slab_type_id]"
                                                     value="{{ $slab->slabType->id }}">
-                                                <input type="hidden"
-                                                    name="sampling_results[{{ $slab->id }}][slab_name]"
+                                                <input type="hidden" name="sampling_results[{{ $slab->id }}][slab_name]"
                                                     value="{{ $slab->slabType->name }}">
                                             </td>
                                             <td>
@@ -536,8 +536,8 @@
                                                 <div class="input-group mb-0">
                                                     <input type="text" class="form-control"
                                                         name="sampling_results[{{ $slab->id }}][suggested_deduction]"
-                                                        value="{{ $slab->suggested_deduction ?? 0 }}"
-                                                        placeholder="Suggested Deduction" readonly>
+                                                        value="{{ $slab->suggested_deduction ?? 0 }}" placeholder="Suggested Deduction"
+                                                        readonly>
                                                     <div class="input-group-append">
                                                         <span
                                                             class="input-group-text text-sm">{{ ($slab->deduction_type ?? 'amount') == 'amount' ? 'Rs.' : "KG's" }}</span>
@@ -548,14 +548,14 @@
                                                 <div class="input-group mb-0">
                                                     <input type="text" class="form-control applied-deduction-input"
                                                         name="sampling_results[{{ $slab->id }}][applied_deduction]"
-                                                        value="{{ $deductionValue }}"
-                                                        placeholder="Suggested Deduction" {{-- {{ $isApprovalPage ? '' : 'readonly' }} --}}
-                                                        readonly data-slab-id="{{ $slab->id }}"
+                                                        value="{{ $deductionValue }}" placeholder="Suggested Deduction" {{-- {{
+                                                        $isApprovalPage ? '' : 'readonly' }} --}} readonly
+                                                        data-slab-id="{{ $slab->id }}"
                                                         data-deduction-type="{{ $slab->deduction_type ?? 'amount' }}"
                                                         data-applied-deduction="{{ $slab->applied_deduction ?? 0 }}">
                                                     <div class="input-group-append">
-                                                        {{-- <span
-                                                            class="input-group-text text-sm">{{ $slab->slabType->qc_symbol }}</span> --}}
+                                                        {{-- <span class="input-group-text text-sm">{{ $slab->slabType->qc_symbol
+                                                            }}</span> --}}
                                                         <span
                                                             class="input-group-text text-sm">{{ ($slab->deduction_type ?? 'amount') == 'amount' ? 'Rs.' : "KG's" }}</span>
                                                     </div>
@@ -563,16 +563,14 @@
                                             </td>
                                             <td>
                                                 <div class="input-group mb-0">
-                                                    <input type="text"
-                                                        class="form-control deduction-amount-display"
+                                                    <input type="text" class="form-control deduction-amount-display"
                                                         name="sampling_results[{{ $slab->id }}][deduction_amount_display]"
-                                                        value="{{ number_format($calculatedValue, 2) }}"
-                                                        placeholder="deduction_amount" readonly
-                                                        data-slab-id="{{ $slab->id }}">
+                                                        value="{{ number_format($calculatedValue, 2) }}" placeholder="deduction_amount"
+                                                        readonly data-slab-id="{{ $slab->id }}">
                                                     <input type="hidden" class="form-control deduction-amount-hidden"
                                                         name="sampling_results[{{ $slab->id }}][deduction_amount]"
-                                                        value="{{ $calculatedValue }}" placeholder="deduction_amount"
-                                                        readonly data-slab-id="{{ $slab->id }}">
+                                                        value="{{ $calculatedValue }}" placeholder="deduction_amount" readonly
+                                                        data-slab-id="{{ $slab->id }}">
                                                 </div>
                                             </td>
                                         </tr>
@@ -591,23 +589,20 @@
 
                                         <tr data-compulsory-id="{{ $slab->id }}">
                                             <td>{{ $slab->qcParam->name ?? 'Compulsory' }}
-                                                <input type="hidden"
-                                                    name="compulsory_results[{{ $slab->id }}][qc_name]"
+                                                <input type="hidden" name="compulsory_results[{{ $slab->id }}][qc_name]"
                                                     value="{{ $slab->qcParam->name ?? null }}">
-                                                <input type="hidden"
-                                                    name="compulsory_results[{{ $slab->id }}][qc_param_id]"
+                                                <input type="hidden" name="compulsory_results[{{ $slab->id }}][qc_param_id]"
                                                     value="{{ $slab->qcParam->id ?? null }}">
                                             </td>
                                             <td></td>
                                             <td></td>
                                             <td>
                                                 <div class="input-group mb-0">
-                                                    <input type="text"
-                                                        class="form-control compulsory-applied-deduction"
+                                                    <input type="text" class="form-control compulsory-applied-deduction"
                                                         name="compulsory_results[{{ $slab->id }}][applied_deduction]"
-                                                        value="{{ $slab->applied_deduction }}"
-                                                        placeholder="Suggested Deduction" {{-- {{ $isApprovalPage ? '' : 'readonly' }} --}}
-                                                        readonly data-compulsory-id="{{ $slab->id }}"
+                                                        value="{{ $slab->applied_deduction }}" placeholder="Suggested Deduction" {{-- {{
+                                                        $isApprovalPage ? '' : 'readonly' }} --}} readonly
+                                                        data-compulsory-id="{{ $slab->id }}"
                                                         data-applied-deduction="{{ $slab->applied_deduction ?? 0 }}">
                                                     <div class="input-group-append">
                                                         <span
@@ -617,12 +612,10 @@
                                             </td>
                                             <td>
                                                 <div class="input-group mb-0">
-                                                    <input type="text"
-                                                        class="form-control compulsory-deduction-amount"
+                                                    <input type="text" class="form-control compulsory-deduction-amount"
                                                         name="compulsory_results[{{ $slab->id }}][deduction_amount]"
                                                         value="{{ number_format($compulsoryCalculatedValue, 2) }}"
-                                                        placeholder="deduction_amount" readonly
-                                                        data-compulsory-id="{{ $slab->id }}">
+                                                        placeholder="deduction_amount" readonly data-compulsory-id="{{ $slab->id }}">
                                                 </div>
                                             </td>
                                         </tr>
@@ -632,8 +625,7 @@
                                 <!-- Other Deduction Row -->
                                 <tr class="other-deduction-row" data-other-deduction="true">
                                     <td><strong>Other Deduction (if any)</strong>
-                                        <input type="hidden" name="other_deduction[slab_name]"
-                                            value="Other Deduction">
+                                        <input type="hidden" name="other_deduction[slab_name]" value="Other Deduction">
                                     </td>
                                     <td>N/A</td>
                                     <td>N/A</td>
@@ -649,13 +641,12 @@
                                     </td>
                                     <td>
                                         <div class="input-group mb-0">
-                                            <input type="text" class="form-control"
-                                                name="other_deduction[kg_amount]" id="other_deduction_amount_display"
-                                                value="{{ number_format($existingOtherDeductionAmount, 2) }}"
-                                                readonly>
-                                            <input type="hidden" class="form-control"
-                                                name="other_deduction[deduction_amount]" id="other_deduction_amount"
-                                                value="{{ $existingOtherDeductionAmount }}">
+                                            <!-- {{ $existingOtherDeductionAmount }} -->
+                                            <input type="text" class="form-control" name="other_deduction[kg_amount]"
+                                                id="other_deduction_amount_display"
+                                                value="{{ number_format($existingOtherDeductionAmount, 2) }}" readonly>
+                                            <input type="hidden" class="form-control" name="other_deduction[deduction_amount]"
+                                                id="other_deduction_amount" value="{{ $existingOtherDeductionAmount }}">
                                         </div>
                                     </td>
                                 </tr>
@@ -671,12 +662,12 @@
                         <tr>
                             <td><strong>Bags weight in Kg</strong></td>
                             <td>
-                                <input type="number" step="0.01" class="form-control editable-field"
-                                    name="bag_weight" id="bag_weight_input" value="{{ $bagWeight }}">
+                                <input type="number" step="0.01" class="form-control editable-field" name="bag_weight"
+                                    id="bag_weight_input" value="{{ $bagWeight }}">
                             </td>
                             <td>
-                                <input type="text" class="form-control" name="bag_weight_total"
-                                    id="bag_weight_total" value="{{ $bagWeight * $noOfBags }}" readonly>
+                                <input type="text" class="form-control" name="bag_weight_total" id="bag_weight_total"
+                                    value="{{ $bagWeight * $noOfBags }}" readonly>
                             </td>
                             <td>
                                 <input type="number" step="0.01" class="form-control editable-field"
@@ -694,10 +685,9 @@
                             <td>N/A</td>
                             <td>
                                 <input type="text" class="form-control" name="bag_rate_amount_display"
-                                    id="bag_rate_amount_display" value="{{ number_format($bagsRateSum, 2) }}"
-                                    readonly>
-                                <input type="hidden" class="form-control" name="bag_rate_amount"
-                                    id="bag_rate_amount" value="{{ $bagsRateSum }}" readonly>
+                                    id="bag_rate_amount_display" value="{{ number_format($bagsRateSum, 2) }}" readonly>
+                                <input type="hidden" class="form-control" name="bag_rate_amount" id="bag_rate_amount"
+                                    value="{{ $bagsRateSum }}" readonly>
                             </td>
                         </tr>
                         <tr class="d-none">
@@ -730,8 +720,8 @@
                             <td>
                                 <div class="input-group mb-0" bis_skin_checked="1">
                                     <input type="text" class="form-control" name=""
-                                        value="{{ $purchaseOrder->supplier_commission }}"
-                                        placeholder="Suggested Deduction" readonly="">
+                                        value="{{ $purchaseOrder->supplier_commission }}" placeholder="Suggested Deduction"
+                                        readonly="">
                                     <div class="input-group-append" bis_skin_checked="1">
                                         <span class="input-group-text text-sm">Rs/KG's</span>
                                     </div>
@@ -763,7 +753,8 @@
                                             </option>
                                             @foreach ($brokers as $broker)
                                                 <option value="{{ $broker->id }}" @selected($broker->id == $selectedBrokerId)>
-                                                    {{ $broker->name }}</option>
+                                                    {{ $broker->name }}
+                                                </option>
                                             @endforeach
                                         </select>
                                         @if ($isBrokerDisabled)
@@ -776,8 +767,7 @@
                                         id="brokery_amount_display"
                                         value="{{ number_format($purchaseOrder->supplier_commission * $loadingWeight, 2) }}"
                                         readonly>
-                                    <input type="hidden" class="form-control" name="brokery_amount"
-                                        id="brokery_amount"
+                                    <input type="hidden" class="form-control" name="brokery_amount" id="brokery_amount"
                                         value="{{ $purchaseOrder->supplier_commission * $loadingWeight }}" readonly>
                                 </td>
                             </tr>
@@ -792,7 +782,7 @@
         $totalSupplierCommission = $purchaseOrder->supplier_commission * $loadingWeight;
         $totalAmount = $ratePerKg * $loadingWeight - ($totalAmount ?? 0) + ($bagsRateSum ?? 0);
         $totalwithCommisio = $totalAmount + $totalSupplierCommission;
-       $totalwithCommision =  $paymentDetails['calculations']['supplier_net_amount'] ?? $totalwithCommisio
+        $totalwithCommision = $paymentDetails['calculations']['supplier_net_amount'] ?? $totalwithCommisio
     @endphp
     {{-- @if (!$isApprovalPage) --}}
     <div class="col mb-3 px-0">
@@ -816,8 +806,8 @@
             <div class="col-md-3">
                 <div class="form-group">
                     <label>Paid Amount</label>
-                    <input type="number" step="0.01" readonly class="form-control" name="paid_amount"
-                        id="paid_amount" value="{{ $paidAmount }}" placeholder="Enter paid amount">
+                    <input type="number" step="0.01" readonly class="form-control" name="paid_amount" id="paid_amount"
+                        value="{{ $paidAmount }}" placeholder="Enter paid amount">
                 </div>
             </div>
             <div class="col-md-6">
@@ -831,16 +821,16 @@
                 <div class="col">
                     <div class="form-group">
                         <label>Percentage</label>
-                        <input type="number" min="0" max="100" step="0.01"
-                            class="form-control percentage-input" value="0" placeholder="Enter percentage">
+                        <input type="number" min="0" max="100" step="0.01" class="form-control percentage-input" value="0"
+                            placeholder="Enter percentage">
                     </div>
                 </div>
                 <div class="col">
                     <div class="form-group">
                         <label>Payment Request</label>
                         <input type="number" step="0.01" class="form-control payment-request-input"
-                            name="{{ $isApprovalPage ? '' : 'payment_request_amount' }}"
-                            value="{{ $currentPaymentAmount }}" placeholder="Enter payment request">
+                            name="{{ $isApprovalPage ? '' : 'payment_request_amount' }}" value="{{ $currentPaymentAmount }}"
+                            placeholder="Enter payment request">
                     </div>
                 </div>
             @endif
@@ -848,7 +838,7 @@
 
 
 
-     
+
     </div>
     {{-- @endif --}}
 
@@ -856,17 +846,17 @@
 
 @if ($hasLoadingWeight)
     <script>
-         var showLumpSum = <?= $showLumpSum ? 'true' : 'false' ?>;
-    var isSlabs = <?= $isSlabs ? 'true' : 'false' ?>;
-    var isCompulsury = <?= $isCompulsury ? 'true' : 'false' ?>;
-    
-    if(showLumpSum && !isSlabs && !isCompulsury) {
-        console.log('true');
-    }
-        $(document).ready(function() {
+        var showLumpSum = <?= $showLumpSum ? 'true' : 'false' ?>;
+        var isSlabs = <?= $isSlabs ? 'true' : 'false' ?>;
+        var isCompulsury = <?= $isCompulsury ? 'true' : 'false' ?>;
+
+        if (showLumpSum && !isSlabs && !isCompulsury) {
+            console.log('true');
+        }
+        $(document).ready(function () {
             $('[data-toggle="tooltip"]').tooltip();
             $('.select_b').select2();
-            
+
 
             const $loadingRadio = $('#loading');
             const $withoutLoadingRadio = $('#without_loading');
@@ -903,10 +893,20 @@
                 const matchingSlabs = slabData.matching_slabs || [];
                 const rmPoSlabs = slabData.rm_po_slabs || [];
                 const val = slabData.applied_deduction;
+                const deductionType = slabData.deduction_type || 'amount';
                 let deductionValue = 0;
 
-                if (dValCalculatedOn === window.samplingData.SLAB_TYPE_PERCENTAGE && matchingSlabs.length > 0) {
+                console.log('Slab calculation:', {
+                    id: slabData.id,
+                    dValCalculatedOn: dValCalculatedOn,
+                    SLAB_TYPE_PERCENTAGE: window.samplingData.SLAB_TYPE_PERCENTAGE,
+                    appliedDeduction: appliedDeduction,
+                    val: val,
+                    matchingSlabsCount: matchingSlabs.length
+                });
 
+                if (dValCalculatedOn === window.samplingData.SLAB_TYPE_PERCENTAGE && matchingSlabs.length > 0) {
+                    // Sort matching slabs
                     matchingSlabs.sort((a, b) => parseFloat(a.from) - parseFloat(b.from));
 
                     let highestRmPoEnd = 0;
@@ -917,10 +917,17 @@
                         }
                     });
 
+                    console.log('Highest RM PO End:', highestRmPoEnd);
+
                     matchingSlabs.forEach(mSlab => {
+                        console.log(mSlab);
                         const from = parseFloat(mSlab.from);
                         const to = parseFloat(mSlab.to);
-                        const isTiered = parseInt(mSlab.is_tiered);
+
+                        // Fix: Properly handle is_tiered value (can be string "true"/"false" or boolean)
+                        const isTiered = (mSlab.is_tiered === true || mSlab.is_tiered === 'true' || mSlab.is_tiered === 1) ? 1 : 0;
+
+                        console.log(isTiered + ' is_tiered value (1=tiered, 0=not tiered)');
                         const deductionVal = parseFloat(mSlab.deduction_value || 0);
 
                         if (val >= from) {
@@ -931,24 +938,32 @@
                                 if (isTiered === 1) {
                                     const applicableAmount = effectiveTo - effectiveFrom + 1;
                                     deductionValue += deductionVal * applicableAmount;
+                                    console.log(`Tiered: ${deductionVal} x ${applicableAmount} = ${deductionVal * applicableAmount}`);
                                 } else {
                                     deductionValue += deductionVal;
+                                    console.log(`Non-tiered: adding ${deductionVal}`);
                                 }
                             }
                         }
                     });
                 } else {
                     deductionValue = appliedDeduction;
+                    console.log('Using direct deduction value:', deductionValue);
                 }
 
+                console.log('Final deductionValue before multiplication:', deductionValue);
+
                 let calculatedValue = deductionValue * netWeight;
-                if (slabData.deduction_type !== 'amount') {
+                console.log('After multiplication with netWeight:', calculatedValue);
+
+                // Handle percentage-based deductions correctly
+                if (deductionType !== 'amount') {
                     calculatedValue = (calculatedValue / 100) * ratePerKg;
+                    console.log('After percentage conversion:', calculatedValue);
                 }
 
                 return calculatedValue;
             }
-
             function updateOtherDeduction() {
                 const otherDeductionKg = parseFloat($('#other_deduction_kg').val()) || 0;
                 const bagWeightTotal = parseFloat($('#bag_weight_total').val()) || 0;
@@ -965,15 +980,16 @@
                 let totalSamplingAmount = 0;
 
                 window.samplingData.samplingResults.forEach(slabData => {
+                    console.log(netWeight + 'nw');
                     const calculatedValue = calculateSlabDeduction(slabData, netWeight);
-                    console.log(calculatedValue+'ddddjjj');
+                    console.log(calculatedValue + 'ddddjjj');
                     totalSamplingAmount += calculatedValue;
 
                     $(`.deduction-amount-display[data-slab-id="${slabData.id}"]`).val(calculatedValue
                         .toFixed(2));
                     $(`.deduction-amount-hidden[data-slab-id="${slabData.id}"]`).val(calculatedValue);
                 });
-                
+
 
                 window.samplingData.compulsoryResults.forEach(slabData => {
                     const calculatedValue = slabData.applied_deduction * netWeight;
@@ -984,16 +1000,16 @@
                 });
 
 
-        
-                if(showLumpSum && !isSlabs && !isCompulsury) {
-                    var lumpsumAmount = $('tr[data-lumpsum-amount]').data('lumpsum-amount')|| 0;
-                    var lumpsumKgAmount = $('tr[data-lumpsum-kgamount]').data('lumpsum-kgamount')|| 0;
+
+                if (showLumpSum && !isSlabs && !isCompulsury) {
+                    var lumpsumAmount = $('tr[data-lumpsum-amount]').data('lumpsum-amount') || 0;
+                    var lumpsumKgAmount = $('tr[data-lumpsum-kgamount]').data('lumpsum-kgamount') || 0;
                     console.log(lumpsumAmount)
 
                     totalSamplingAmount += parseFloat(lumpsumAmount.replace(/,/g, '')) || 0;
                     totalSamplingAmount += parseFloat(lumpsumKgAmount.replace(/,/g, '')) || 0;
-// console.log(totalSamplingAmount+'Wow');
-                    
+                    // console.log(totalSamplingAmount+'Wow');
+
                 }
                 const otherDeductionAmount = updateOtherDeduction();
                 totalSamplingAmount += otherDeductionAmount;
@@ -1026,7 +1042,7 @@
                 const requested_amount = parseFloat($('#requested_amount').val()) || 0;
                 const paymentRequestInput = $('.payment-request-input');
                 const percentageInput = $('.percentage-input');
-                
+
                 const currentPaymentRequest = parseFloat(paymentRequestInput.val()) || 0;
                 const remainingAmount = totalAmount - requested_amount;
 
@@ -1069,7 +1085,7 @@
                 const totalDeductionsForFormula = totalSamplingDeductions + bagWeightAmount +
                     loadingWeighbridgeAmount;
                 const totalAmount = grossAmount - totalDeductionsForFormula + bagRateAmount - parseInt(
-                    {{ $grossFreightAmount ?? 0 }}) + {{ $totalSupplierCommission }};
+                                                    {{ $grossFreightAmount ?? 0 }}) + {{ $totalSupplierCommission }};
 
                 $('#total_amount').val(totalAmount);
                 $('#total_amount_display').val(totalAmount.toFixed(2));
@@ -1081,23 +1097,23 @@
             }
 
             // These three fields will trigger payment request calculations
-            $('#other_deduction_kg').on('input', function() {
+            $('#other_deduction_kg').on('input', function () {
                 updateAllCalculations();
             });
 
-            $('#bag_weight_input').on('input', function() {
+            $('#bag_weight_input').on('input', function () {
                 const currentBagWeight = parseFloat($(this).val()) || 0;
                 const bagWeightAmount = ratePerKg * currentBagWeight * noOfBags;
                 $('#bag_weight_amount').val(bagWeightAmount.toFixed(2));
                 updateAllCalculations();
             });
 
-            $('#bag_weight_amount').on('input', function() {
+            $('#bag_weight_amount').on('input', function () {
                 updateAllCalculations();
             });
 
             // Payment request input handler
-            $('.payment-request-input').on('input', function() {
+            $('.payment-request-input').on('input', function () {
                 const totalAmount = parseFloat($('#total_amount').val()) || 0;
                 const paidAmount = parseFloat($('#paid_amount').val()) || 0;
                 const requested_amount = parseFloat($('#requested_amount').val()) || 0;
@@ -1122,7 +1138,7 @@
             });
 
             // Percentage input handler
-            $('.percentage-input').on('input', function() {
+            $('.percentage-input').on('input', function () {
                 let percentage = parseFloat($(this).val()) || 0;
                 if (percentage > 100) {
                     percentage = 100;
@@ -1137,15 +1153,15 @@
                 const remainingAmount = totalAmount - requested_amount;
 
                 const amount = (remainingAmount * percentage) / 100;
-                
+
                 $('.payment-request-input').val(amount.toFixed(2));
-                
+
                 // Update remaining amount
                 const finalRemaining = totalAmount - (requested_amount + amount);
                 $('#remaining_amount').val(finalRemaining.toFixed(2));
             });
 
-            $('input[name="freight_pay_request_amount"]').on('input', function() {
+            $('input[name="freight_pay_request_amount"]').on('input', function () {
                 const amount = parseFloat({{ $advanceFreight }});
                 const paidAmount = parseFloat({{ $pRsSumForFreight }});
                 const paymentRequest = parseFloat($(this).val()) || 0;
@@ -1158,7 +1174,7 @@
             const percentageInputF = $('.percentage-input-freight');
             const paymentRequestInputF = $('.payment-request-freifht');
 
-            percentageInputF.on('input', function() {
+            percentageInputF.on('input', function () {
                 let percentage = parseFloat($(this).val()) || 0;
                 if (percentage > 100) {
                     percentage = 100;
@@ -1169,7 +1185,7 @@
                 paymentRequestInputF.val(amount.toFixed(2));
             });
 
-            paymentRequestInputF.on('input', function() {
+            paymentRequestInputF.on('input', function () {
                 let amount = parseFloat($(this).val()) || 0;
 
                 if (amount > remainingAmountF) {
@@ -1188,10 +1204,10 @@
             $withoutLoadingRadio.on('change', toggleSections);
 
 
-            $(".togglehistory").click(function(){
-    $(".togglehistorytable").slideToggle(400);
-    $(this).toggleClass("active");
-});
+            $(".togglehistory").click(function () {
+                $(".togglehistorytable").slideToggle(400);
+                $(this).toggleClass("active");
+            });
         });
     </script>
 @endif

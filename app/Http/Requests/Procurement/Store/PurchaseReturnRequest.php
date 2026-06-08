@@ -48,6 +48,12 @@ class PurchaseReturnRequest extends FormRequest
             'packing.*' => 'nullable|string',
             'no_of_bags' => 'nullable|array',
             'no_of_bags.*' => 'nullable|integer|min:0',
+            'deduction' => 'nullable|array',
+            'deduction.*' => 'nullable|numeric|min:0',
+            'deduction_per_piece' => 'nullable|array',
+            'deduction_per_piece.*' => 'nullable|numeric|min:0',
+            'discount_amount' => 'nullable|array',
+            'discount_amount.*' => 'nullable|numeric|min:0',
         ];
     }
 }

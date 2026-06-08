@@ -32,12 +32,12 @@
                     @foreach($DeliveryOrders as $index => $do)
                         <div class="tab-pane fade {{ $index === 0 ? 'show active' : '' }}" id="do-content-{{ $do->id }}" role="tabpanel" aria-labelledby="do-tab-{{ $do->id }}">
                             <div class="row">
-                                <div class="col-xs-12 col-sm-6 col-md-4">
+                                <!-- <div class="col-xs-12 col-sm-6 col-md-4">
                                     <div class="form-group">
                                         <label>Customer:</label>
                                         <input type="text" value="{{ $do->customer->name ?? 'N/A' }}" disabled class="form-control" readonly />
                                     </div>
-                                </div>
+                                </div> -->
                                 <div class="col-xs-12 col-sm-6 col-md-4">
                                     <div class="form-group">
                                         <label>Commodity:</label>
@@ -75,12 +75,12 @@
                     @foreach($SalesOrders as $index => $so)
                         <div class="tab-pane fade {{ $index === 0 ? 'show active' : '' }}" id="so-content-{{ $so->id }}" role="tabpanel" aria-labelledby="so-tab-{{ $so->id }}">
                             <div class="row">
-                                <div class="col-xs-12 col-sm-6 col-md-6">
+                                <!-- <div class="col-xs-12 col-sm-6 col-md-6">
                                     <div class="form-group">
                                         <label>Customer:</label>
                                         <input type="text" value="{{ $so->customer->name ?? 'N/A' }}" disabled class="form-control" readonly />
                                     </div>
-                                </div>
+                                </div> -->
                                 <div class="col-xs-12 col-sm-6 col-md-6">
                                     <div class="form-group">
                                         <label>Commodity:</label>

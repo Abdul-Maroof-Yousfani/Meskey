@@ -2,8 +2,8 @@
     <table class="table table-striped">
         <thead>
             <tr>
-                <th class="col-sm-1">Ticket No.</th>
-                <th class="col-sm-2">Customer</th>
+                <th class="col-sm-2">Ticket No.</th>
+                <!-- <th class="col-sm-2">Customer</th> -->
                 <th class="col-sm-2">Commodity</th>
                 <th class="col-sm-1">Net Weight</th>
                 <th class="col-sm-2">Created</th>
@@ -16,9 +16,9 @@
                     <td>
                         {{ $secondWeighbridge->loadingSlip->loadingProgramItem->transaction_number ?? 'N/A' }}
                     </td>
-                    <td>
-                        {{ $secondWeighbridge->loadingSlip->customer ?? 'N/A' }}
-                    </td>
+                    <!-- <td>
+                                                {{ $secondWeighbridge->loadingSlip->customer ?? 'N/A' }}
+                                            </td> -->
                     <td>
                         {{ $secondWeighbridge->loadingSlip->commodity ?? 'N/A' }}
                     </td>

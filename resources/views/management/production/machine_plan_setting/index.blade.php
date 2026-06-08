@@ -1,6 +1,6 @@
 @extends('management.layouts.master')
 @section('title')
-    Sales QC
+    Plant Breakdown
 @endsection
 @section('content')
     <div class="content-wrapper">
@@ -8,12 +8,13 @@
         <section id="extended">
             <div class="row w-100 mx-auto">
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-                    <h2 class="page-title"> Dispatch QC</h2>
+                    <h2 class="page-title"> Machine Plan Setting List</h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
-                    <button onclick="openModal(this,'{{ route('sales.dispatch-qc.create') }}','Add Dispatch QC')"
+                    <button
+                        onclick="openModal(this,'{{ route('machine-plan-setting.create') }}','Add Machine Plan Setting',false,'85%')"
                         type="button" class="btn btn-primary position-relative ">
-                        Create Dispatch QC
+                        Create Machine Plan Setting
                     </button>
                 </div>
             </div>
@@ -26,7 +27,7 @@
                                     <div class="col-md-12 my-1 ">
                                         <div class="row justify-content-end text-right">
                                             <div class="col-md-2">
-                                                <label for="customers" class="form-label">Search</label>
+                                                <label for="search" class="form-label">Search</label>
                                                 <input type="hidden" name="page" value="{{ request('page', 1) }}">
                                                 <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
                                                 <input type="text" class="form-control" id="search"
@@ -40,18 +41,18 @@
                         </div>
                         <div class="card-content">
                             <div class="card-body table-responsive" id="filteredData">
-                                <table class="table table-striped m-0">
+                                <table class="table m-0">
                                     <thead>
                                         <tr>
-                                            <th>Ticket No.</th>
-                                            <th>Truck No.</th>
-                                            <!-- <th>Customer</th> -->
-                                            <th>Commodity</th>
-                                            <th>Status</th>
-                                            <th>Created</th>
+                                            <th>Date</th>
+                                            <th>Plant</th>
+                                            <th>Production Voucher</th>
+                                            <th>User</th>
+                                            <th>Breakdown Items</th>
                                             <th>Action</th>
                                         </tr>
                                     </thead>
+
                                 </table>
                             </div>
                         </div>
@@ -66,7 +67,7 @@
 @section('script')
     <script>
         $(document).ready(function () {
-            filterationCommon(`{{ route('sales.get.dispatch-qc') }}`)
+            filterationCommon(`{{ route('get.machine-plan-setting') }}`)
         });
     </script>
 @endsection

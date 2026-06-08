@@ -3,6 +3,7 @@
 use App\Http\Controllers\Arrival\ArrivalSlipController;
 use App\Http\Controllers\Master\ArrivalLocationController;
 use App\Http\Controllers\Master\ProductSlabController;
+use App\Models\Arrival\ArrivalTicket;
 use App\Models\Category;
 use App\Models\JournalVoucher;
 use App\Models\Master\Account\Account;
@@ -25,6 +26,7 @@ use App\Models\Procurement\Store\PurchaseReturnData;
 use App\Models\Procurement\Store\QCItems;
 use App\Models\Product;
 use App\Models\Production\JobOrder\JobOrder;
+use App\Models\PurchaseTicket;
 use App\Models\ReceiptVoucher;
 use App\Models\Sales\DeliveryChallan;
 
@@ -58,24 +60,46 @@ use App\Http\Controllers\Reports\{
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
 
-Route::get("/receipt-vouchers/delete", function() {
+
+Route::get('testledgercalculation', function (Request $request) {
+    $arrivalTicket = ArrivalTicket::where('unique_no', $request->unique_no)->first();
+    if ($request->sauda_type == 1) {
+        $arrivalTicket = ArrivalTicket::where('unique_no', $request->unique_no)->first();
+    } else {
+        $arrivalTicket = PurchaseTicket::where('unique_no', $request->unique_no)->first();
+
+    }
+    $paymentDetails = calculatePaymentDetails($arrivalTicket->id, $request->sauda_type);
+    dd($paymentDetails);
+});
+Route::get('update_ticket_ledgercalculation', function (Request $request) {
+
+    return updatetransactionofticket($request->unique_no);
+    // return "Updateed";
+
+
+
+
+});
+
+Route::get("/receipt-vouchers/delete", function () {
     $receipt_voucher = ReceiptVoucher::query()->delete();
 });
 
-Route::get("testing-endpoint", function() {
+Route::get("testing-endpoint", function () {
     $job_order = JobOrderPackingItem::query()->where("id", 48)->first();
     dd($job_order);
 });
 
-Route::get("get-all-vouchers", function() {
+Route::get("get-all-vouchers", function () {
     dd(TransactionVoucherType::all());
 });
 
-Route::get("/teste", function() {
+Route::get("/teste", function () {
     $sales_order = SalesOrder::query()->where("reference_no", "SO-2026-04-16-002")->get();
 });
 
-Route::get("voucher-types", function() {
+Route::get("voucher-types", function () {
 
     $transaction = TransactionVoucherType::create([
         "name" => "Purchase Return",
@@ -117,16 +141,16 @@ Route::get("voucher-types", function() {
     $transaction->save();
 });
 
-Route::get("create-accounts", function() {
+Route::get("create-accounts", function () {
     $products = Product::whereNull("account_id")->get();
-    foreach($products as $product) {
+    foreach ($products as $product) {
         $account = Account::create(getParamsForAccountCreationByPath(1, $product->name, '1-2', 'Inventory'));
         $product->account_id = $account->id;
         $product->save();
     }
 });
 
-Route::get("change-type", function() {
+Route::get("change-type", function () {
     $category = Category::where("name", "Bags")->first();
     $category->update([
         "category_type" => "general_items",
@@ -141,38 +165,38 @@ Route::get("change-type", function() {
 
 });
 
-Route::get("/procurement/delete-data", function() {
-    
-Schema::disableForeignKeyConstraints();
+Route::get("/procurement/delete-data", function () {
+
+    Schema::disableForeignKeyConstraints();
     PurchaseRequest::query()->delete();
     PurchaseRequestData::query()->delete();
 
     PurchaseQuotation::query()->delete();
     PurchaseQuotationData::query()->delete();
-    
+
     PurchaseOrder::query()->delete();
     PurchaseOrderData::query()->delete();
-    
+
     PurchaseOrderReceiving::query()->delete();
     PurchaseOrderReceivingData::query()->delete();
-    
+
     PurchaseBagQC::query()->delete();
-    
+
     PurchaseBillData::query()->delete();
     PurchaseBill::query()->delete();
-    
+
     PurchaseReturnData::query()->delete();
     PurchaseReturn::query()->delete();
     Schema::enableForeignKeyConstraints();
 });
 
-Route::get("uom-fill", function() {
+Route::get("uom-fill", function () {
     $products = Product::whereNull("unit_of_measure_id")->update([
         "unit_of_measure_id" => 1
     ]);
 });
 
-Route::get("update-customer", function() {
+Route::get("update-customer", function () {
     Customer::where("name", "Meskey")->update([
         'account_id' => 111
     ]);
@@ -184,7 +208,7 @@ Route::get("update-customer", function() {
 });
 
 
-Route::get("checking-data", function() {
+Route::get("checking-data", function () {
     SalesInquiry::query()->delete();
     SalesOrder::query()->delete();
     DeliveryOrder::query()->delete();
@@ -203,24 +227,24 @@ Route::get("checking-data", function() {
 });
 
 
-Route::get("add-permission", function() {
+Route::get("add-permission", function () {
     Permission::create([
-        "parent_id" =>  78,
+        "parent_id" => 78,
         'name' => 'procurement-gate-buying',
         'guard_name' => 'web'
     ]);
     Permission::create([
-        "parent_id" =>  78,
+        "parent_id" => 78,
         'name' => 'procurement-purchase-sampling',
         'guard_name' => 'web'
     ]);
 });
 
-Route::get("testing-purchase-bill", function() {
-    $purchase_bills = PurchaseBill::where("bill_no", "LIKE", "%" . 'BILL-2026-04-13-001' . "%" )->get();
+Route::get("testing-purchase-bill", function () {
+    $purchase_bills = PurchaseBill::where("bill_no", "LIKE", "%" . 'BILL-2026-04-13-001' . "%")->get();
     $i = 1;
 
-    foreach($purchase_bills as $purchase_bill) {
+    foreach ($purchase_bills as $purchase_bill) {
         $purchase_bill->update([
             "bill_no" => str_replace("001", "00" . $i, $purchase_bill->bill_no)
         ]);
@@ -229,9 +253,9 @@ Route::get("testing-purchase-bill", function() {
 
 });
 
-Route::get("testing-data", function() {
+Route::get("testing-data", function () {
     $suppliers = \App\Models\Master\Supplier::where("owner_mobile_no", "LIKE", "%-%")->get();
-    foreach($suppliers as $supplier) {
+    foreach ($suppliers as $supplier) {
         $cleaned = str_replace("-", "", $supplier->owner_mobile_no);
         $supplier->update([
             "owner_mobile_no" => str_replace("-", "", $supplier->owner_mobile_no)
@@ -245,7 +269,7 @@ Route::get('/delete-migration/{filename}', function ($filename) {
         ->where('migration', 'like', "%{$filename}%")
         ->first();
 
-    if (! $record) {
+    if (!$record) {
         return [
             'status' => 'not_found',
             'message' => 'No matching migration found. It has NOT been executed yet.',
@@ -265,13 +289,13 @@ Route::get('/delete-migration/{filename}', function ($filename) {
 });
 
 
-Route::get("/table-names", function() {
-   $tables = DB::select('SHOW TABLES');
+Route::get("/table-names", function () {
+    $tables = DB::select('SHOW TABLES');
 
-dd($tables);
+    dd($tables);
 });
 
-Route::get("/restore-db", function() {
+Route::get("/restore-db", function () {
 
     DB::statement('SET FOREIGN_KEY_CHECKS=0;');
     $purchase_request = PurchaseRequest::query()->delete();
@@ -426,15 +450,15 @@ Route::get('/clear-all-cache', function () {
     }
 
     return response()->json([
-        'status'  => 'success',
+        'status' => 'success',
         'message' => 'Multiple caches cleared successfully.',
         'details' => $output
     ]);
 });
 
-Route::get("arrival-po", function() {
+Route::get("arrival-po", function () {
     $purchase_orders = ArrivalPurchaseOrder::all();
-    foreach($purchase_orders as $purchase_order) {
+    foreach ($purchase_orders as $purchase_order) {
         $purchase_order->am_approval_status = "approved";
         $purchase_order->save();
     }
