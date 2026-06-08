@@ -191,6 +191,7 @@ class SalesInquiryController extends Controller
             foreach($request->item_id as $index => $item) {
                 $sales_inquiry->sales_inquiry_data()->create([
                     "item_id" => $request->item_id[$index],
+                    "minimum_qty" => $request->minimum_qty[$index],
                     "qty" => $request->qty[$index],
                     "rate" => $request->rate[$index],
                     "description" => $request->desc[$index] ?? "",
@@ -278,6 +279,7 @@ class SalesInquiryController extends Controller
             foreach($request->item_id as $index => $item) {
                 $sales_inquiry->sales_inquiry_data()->create([
                     "item_id" => $request->item_id[$index],
+                    "minimum_qty" => $request->minimum_qty[$index],
                     "qty" => $request->qty[$index],
                     "rate" => $request->rate[$index],
                     "description" => $request->desc[$index] ?? "",
