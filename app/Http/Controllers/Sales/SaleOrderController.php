@@ -27,20 +27,16 @@ class SaleOrderController extends Controller
 {
     public function index()
     {
-        // Only get customers that have sale order records
         $customerIds = SalesOrder::distinct()->pluck('customer_id')->filter();
         $customers = Customer::whereIn('id', $customerIds)->get();
 
-        // Only get items that have sale order data records
         $itemIds = \App\Models\Sales\SalesOrderData::distinct()->pluck('item_id')->filter();
         $items = Product::whereIn('id', $itemIds)->get();
 
-        // Only get locations that have sale order records (via morph relationship)
         $locationIds = \App\Models\Procurement\Store\Location::where('locationable_type', SalesOrder::class)
             ->distinct()->pluck('location_id')->filter();
         $companyLocations = CompanyLocation::whereIn('id', $locationIds)->get();
 
-        // Only get sale inquiries that are linked to sale orders
         $inquiryIds = SalesOrder::distinct()->pluck('inquiry_id')->filter();
         $saleInquiries = SalesInquiry::whereIn('id', $inquiryIds)->select('id', 'inquiry_no')->get();
 
