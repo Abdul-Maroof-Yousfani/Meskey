@@ -27,7 +27,20 @@ class SaleOrderController extends Controller
 {
     public function index()
     {
-        return view('management.sales.orders.index');
+        $customerIds = SalesOrder::distinct()->pluck('customer_id')->filter();
+        $customers = Customer::whereIn('id', $customerIds)->get();
+
+        $itemIds = \App\Models\Sales\SalesOrderData::distinct()->pluck('item_id')->filter();
+        $items = Product::whereIn('id', $itemIds)->get();
+
+        $locationIds = \App\Models\Procurement\Store\Location::where('locationable_type', SalesOrder::class)
+            ->distinct()->pluck('location_id')->filter();
+        $companyLocations = CompanyLocation::whereIn('id', $locationIds)->get();
+
+        $inquiryIds = SalesOrder::distinct()->pluck('inquiry_id')->filter();
+        $saleInquiries = SalesInquiry::whereIn('id', $inquiryIds)->select('id', 'inquiry_no')->get();
+
+        return view('management.sales.orders.index', compact('customers', 'items', 'companyLocations', 'saleInquiries'));
     }
 
     public function create()
@@ -386,11 +399,51 @@ class SaleOrderController extends Controller
 
         // Eager load the inquiry + all its items + related product
         $SalesOrders = SalesOrder::with(['sale_inquiry', 'sales_order_data.item.unitOfMeasure', 'locations.companyLocation', 'broker'])
-            ->when($request->filled('search'), function ($q) use ($request) {
-                $searchTerm = '%' . strtolower($request->search) . '%';
+            ->when($request->filled('search_for_filter'), function ($q) use ($request) {
+                $searchTerm = '%' . strtolower($request->search_for_filter) . '%';
                 return $q->where(function ($sq) use ($searchTerm) {
-                    $sq->whereRaw('LOWER(`reference_no`) LIKE ?', [$searchTerm]);
+                    $sq->whereRaw('LOWER(`reference_no`) LIKE ?', [$searchTerm])
+                        ->orWhereHas('sales_order_data', function ($q) use ($searchTerm) {
+                            $q->whereRaw('CAST(`qty` AS CHAR) LIKE ?', [$searchTerm])
+                                ->orWhereRaw('CAST(`rate` AS CHAR) LIKE ?', [$searchTerm])
+                                ->orWhereRaw('CAST(`qty` * `rate` AS CHAR) LIKE ?', [$searchTerm]);
+                        });
                 });
+            })
+            // Filter by SO No
+            ->when($request->filled('so_no_for_filter'), function ($q) use ($request) {
+                $q->where('reference_no', 'like', '%' . $request->so_no_for_filter . '%');
+            })
+            // Filter by Sale Inquiry No
+            ->when($request->filled('inquiry_id_for_filter') && $request->inquiry_id_for_filter != 'all', function ($q) use ($request) {
+                $q->where('inquiry_id', $request->inquiry_id_for_filter);
+            })
+            // Filter by Customer
+            ->when($request->filled('customer_id_for_filter') && $request->customer_id_for_filter != 'all', function ($q) use ($request) {
+                $q->where('customer_id', $request->customer_id_for_filter);
+            })
+            // Filter by Location (via morph relationship)
+            ->when($request->filled('location_id_for_filter') && $request->location_id_for_filter != 'all', function ($q) use ($request) {
+                $q->whereHas('locations', function ($sq) use ($request) {
+                    $sq->where('location_id', $request->location_id_for_filter);
+                });
+            })
+            // Filter by Item (through sales_order_data relationship)
+            ->when($request->filled('item_id_for_filter') && $request->item_id_for_filter != 'all', function ($q) use ($request) {
+                $q->whereHas('sales_order_data', function ($sq) use ($request) {
+                    $sq->where('item_id', $request->item_id_for_filter);
+                });
+            })
+            // Filter by Date Range (order_date)
+            ->when($request->filled('date_range_for_filter'), function ($q) use ($request) {
+                $dates = explode(' - ', $request->date_range_for_filter);
+                if (count($dates) == 2) {
+                    $q->whereBetween('order_date', [trim($dates[0]), trim($dates[1])]);
+                }
+            })
+            // Filter by Status
+            ->when($request->filled('status_for_filter') && $request->status_for_filter != 'all', function ($q) use ($request) {
+                $q->where('am_approval_status', $request->status_for_filter);
             })
             ->orderBy("reference_no", "desc")
             ->latest()
