@@ -1179,12 +1179,12 @@
     }
 
     function getFirstItemRate() {
-        const rate = $('#salesInquiryBody tr:first .rate_per_kg').val();
+        const rate = $('#salesInquiryBody tr:first input[name="rate[]"]').val();
         return parseFloat(rate) || 0;
     }
 
     function getFirstItemQty() {
-        const qty = $('#salesInquiryBody tr:first .qty').val();
+        const qty = $('#salesInquiryBody tr:first input[name="qty[]"]').val();
         return parseFloat(qty) || 0;
     }
 
