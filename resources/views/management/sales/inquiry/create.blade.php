@@ -165,7 +165,8 @@
                             <th class="required">Bag Type</th>
                             <th class="required">Packing</th>
                             <th class="required">No of Bags</th>
-                            <th class="required">Quantity (Kg)</th>
+                            <th class="required">Minimum Qty (kg)</th>
+                            <th class="required">Maximum Qty (kg)</th>
                             <th class="required">Rate per Kg</th>
                             <th class="required">Rate per Mond</th>
                             <th class="required">Brands</th>
@@ -203,6 +204,10 @@
                             <td>
                             <input type="text" name="no_of_bags[]" id="no_of_bags_0"
                                     class="form-control no_of_bags" readonly>
+                            </td>
+                            <td>
+                                <input type="number" name="minimum_qty[]" id="minimum_qty_0"
+                                    class="form-control minimum_qty" step="0.01" min="0">
                             </td>
                             <td>
                                 <input type="number" name="qty[]" id="qty_0" class="form-control qty"
@@ -457,6 +462,9 @@
                             <td>
                                 <input type="text" name="no_of_bags[]" id="no_of_bags_${index}"
                                     class="form-control no_of_bags" readonly>
+                            </td>
+                            <td>
+                                <input type="number" name="minimum_qty[]" id="minimum_qty_${index}" class="form-control minimum_qty" step="0.01" min="0">
                             </td>
                             <td>
                                 <input type="number" name="qty[]" id="qty_${index}" class="form-control qty"

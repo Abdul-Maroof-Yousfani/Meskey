@@ -258,8 +258,8 @@
                             <th>Bag Type</th>
                             <th>Packing</th>
                             <th>No of Bags</th>
-                            <th>Maximum Qty (kg)</th>
                             <th>Minimum Qty (kg)</th>
+                            <th>Maximum Qty (kg)</th>
                             <th>Rate per Kg</th>
                             <th>Rate per Mond</th>
                             <th>Brand</th>
@@ -308,12 +308,12 @@
                             </td>
 
                             <td>
-                                <input type="number" name="qty[]" id="qty_0" class="form-control qty" step="0.01"
-                                    min="0" onkeyup="calcBagTypes(this)" onchange="calcBagTypes(this)">
-                            </td>
-                            <td>
                                 <input type="number" name="minimum_qty[]" id="minimum_qty_0"
                                     class="form-control minimum_qty" step="0.01" min="0">
+                            </td>
+                            <td>
+                                <input type="number" name="qty[]" id="qty_0" class="form-control qty" step="0.01"
+                                    min="0" onkeyup="calcBagTypes(this)" onchange="calcBagTypes(this)">
                             </td>
                             <td>
                                 <input type="number" name="rate[]" id="rate_0" onkeyup="calculateRates(this)"
@@ -616,10 +616,10 @@
                 <input type="text" name="no_of_bags[]" id="no_of_bags_${index}" class="form-control no_of_bags" readonly>
             </td>
             <td>
-                <input type="number" name="qty[]" id="qty_${index}" onkeyup="calcBagTypes(this)" onchange="calcBagTypes(this)" class="form-control qty" step="0.01" min="0">
+                <input type="number" name="minimum_qty[]" id="minimum_qty_${index}" class="form-control minimum_qty" step="0.01" min="0">
             </td>
             <td>
-                <input type="number" name="minimum_qty[]" id="minimum_qty_${index}" class="form-control minimum_qty" step="0.01" min="0">
+                <input type="number" name="qty[]" id="qty_${index}" onkeyup="calcBagTypes(this)" onchange="calcBagTypes(this)" class="form-control qty" step="0.01" min="0">
             </td>
             <td>
                 <input onkeyup="calculateRates(this)" type="number" name="rate[]" id="rate_${index}" class="form-control rate rate_per_kg" step="0.01" min="0">
@@ -845,6 +845,8 @@
                 if ($("#inquiry_id").val()) {
                     disableTableFields();
                 }
+                // Recalculate commission based on newly loaded rate/qty
+                updateCommissionFromRate();
             },
             error: function (error) {
                 console.log(error);
@@ -1083,9 +1085,10 @@
     function calculateCommissionFromPercent() {
         const percent = parseFloat($('#commission_percent_per_kg').val()) || 0;
         const ratePerKg = getFirstItemRate();
+        const qty = getFirstItemQty();
 
-        if (ratePerKg > 0) {
-            const commissionInRs = (percent / 100) * ratePerKg;
+        if (ratePerKg > 0 && qty > 0) {
+            const commissionInRs = (percent / 100) * (ratePerKg * qty);
             $('#commission_per_kg').val(commissionInRs.toFixed(2));
         } else {
             $('#commission_per_kg').val('0');
@@ -1095,9 +1098,10 @@
     function calculateCommissionFromRs() {
         const commissionInRs = parseFloat($('#commission_per_kg').val()) || 0;
         const ratePerKg = getFirstItemRate();
+        const qty = getFirstItemQty();
 
-        if (ratePerKg > 0) {
-            const percent = (commissionInRs / ratePerKg) * 100;
+        if (ratePerKg > 0 && qty > 0) {
+            const percent = (commissionInRs / (ratePerKg * qty)) * 100;
             $('#commission_percent_per_kg').val(percent.toFixed(2));
         } else {
             $('#commission_percent_per_kg').val('0');
@@ -1105,8 +1109,13 @@
     }
 
     function getFirstItemRate() {
-        const rate = $('#salesInquiryBody tr:first .rate_per_kg').val();
+        const rate = $('#salesInquiryBody tr:first input[name="rate[]"]').val();
         return parseFloat(rate) || 0;
+    }
+
+    function getFirstItemQty() {
+        const qty = $('#salesInquiryBody tr:first input[name="qty[]"]').val();
+        return parseFloat(qty) || 0;
     }
 
     // Update commission when rate changes
@@ -1137,24 +1146,26 @@
 
     // Attach event listeners
     $(document).ready(function () {
-
+        window.lastCommissionInputType = 'percent';
 
         $('#sauda_type').on('change', function () {
             handleTransporterByContractType();
         });
         // When percentage field changes, calculate RS
         $('#commission_percent_per_kg').on('keyup change', function () {
+            window.lastCommissionInputType = 'percent';
             calculateCommissionFromPercent();
         });
 
         // When RS field changes, calculate percentage
         $('#commission_per_kg').on('keyup change', function () {
+            window.lastCommissionInputType = 'rs';
             calculateCommissionFromRs();
         });
 
-        // When rate changes in any row, update commission
-        $(document).on('keyup change', '.rate_per_kg', function () {
-            calculateCommissionFromRs();
+        // When rate or qty changes in any row, update commission
+        $(document).on('keyup change', '.rate_per_kg, .qty', function () {
+            updateCommissionFromRate();
         });
     });
 </script>

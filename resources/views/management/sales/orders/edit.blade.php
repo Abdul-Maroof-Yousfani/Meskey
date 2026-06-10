@@ -138,6 +138,13 @@
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
+                        <label class="form-label">Comission in % per KG:</label>
+                        <input type="number" name="commission_percent_per_kg" id="commission_percent_per_kg"
+                            class="form-control" step="0.01" min="0" value="0">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
                         <label class="form-label">Contact Person:</label>
                         <input type="text" name="contact_person" id="contact_person" value="{{ $sale_order->contact_person }}" class="form-control" @if($sale_order->inquiry_id) readonly @endif>
                     </div>
@@ -281,8 +288,8 @@
                             <th>Bag Type</th>
                             <th>Packing</th>
                             <th>No of Bags</th>
-                            <th>Maximum Qty (kg)</th>
                             <th>Minimum Qty (kg)</th>
+                            <th>Maximum Qty (kg)</th>
                             <th>Rate per Kg</th>
                             <th>Rate per Mond</th>
                             <th>Amount</th>
@@ -331,13 +338,13 @@
                                         value="{{ $data->no_of_bags }}" class="form-control no_of_bags" readonly>
                                 </td>
                                 <td>
+                                    <input type="number" name="minimum_qty[]" id="minimum_qty_{{ $index }}"
+                                        value="{{ $data->minimum_qty }}" class="form-control minimum_qty" step="0.01" min="0">
+                                </td>
+                                <td>
                                     <input type="number" name="qty[]" id="qty_{{ $index }}"
                                         value="{{ $data->qty ?? ($data->no_of_bags * $data->bag_size) }}" class="form-control qty"
                                         step="0.01" min="0" onkeyup="calcBagTypes(this)" onchange="calcBagTypes(this)">
-                                </td>
-                                <td>
-                                    <input type="number" name="minimum_qty[]" id="minimum_qty_{{ $index }}"
-                                        value="{{ $data->minimum_qty }}" class="form-control minimum_qty" step="0.01" min="0">
                                 </td>
                                 <td>
                                     <input type="number" name="rate[]" id="rate_{{ $index }}"
@@ -854,10 +861,10 @@
                 <input type="text" name="no_of_bags[]" id="no_of_bags_${index}" class="form-control no_of_bags" readonly>
             </td>
             <td>
-                <input type="number" name="qty[]" id="qty_${index}" class="form-control qty" step="0.01" min="0" onkeyup="calcBagTypes(this)" onchange="calcBagTypes(this)">
+                <input type="number" name="minimum_qty[]" id="minimum_qty_${index}" class="form-control minimum_qty" step="0.01" min="0">
             </td>
             <td>
-                <input type="number" name="minimum_qty[]" id="minimum_qty_${index}" class="form-control minimum_qty" step="0.01" min="0">
+                <input type="number" name="qty[]" id="qty_${index}" class="form-control qty" step="0.01" min="0" onkeyup="calcBagTypes(this)" onchange="calcBagTypes(this)">
             </td>
             <td>
                 <input onkeyup="calculateRates(this)" type="number" name="rate[]" id="rate_${index}" class="form-control rate rate_per_kg" step="0.01" min="0">
@@ -1144,4 +1151,76 @@
             }
         });
     }
+    // Commission conversion functions
+    function calculateCommissionFromPercent() {
+        const percent = parseFloat($('#commission_percent_per_kg').val()) || 0;
+        const ratePerKg = getFirstItemRate();
+        const qty = getFirstItemQty();
+
+        if (ratePerKg > 0 && qty > 0) {
+            const commissionInRs = (percent / 100) * (ratePerKg * qty);
+            $('#commission_per_kg').val(commissionInRs.toFixed(2));
+        } else {
+            $('#commission_per_kg').val('0');
+        }
+    }
+
+    function calculateCommissionFromRs() {
+        const commissionInRs = parseFloat($('#commission_per_kg').val()) || 0;
+        const ratePerKg = getFirstItemRate();
+        const qty = getFirstItemQty();
+
+        if (ratePerKg > 0 && qty > 0) {
+            const percent = (commissionInRs / (ratePerKg * qty)) * 100;
+            $('#commission_percent_per_kg').val(percent.toFixed(2));
+        } else {
+            $('#commission_percent_per_kg').val('0');
+        }
+    }
+
+    function getFirstItemRate() {
+        const rate = $('#salesInquiryBody tr:first input[name="rate[]"]').val();
+        return parseFloat(rate) || 0;
+    }
+
+    function getFirstItemQty() {
+        const qty = $('#salesInquiryBody tr:first input[name="qty[]"]').val();
+        return parseFloat(qty) || 0;
+    }
+
+    // Update commission when rate changes
+    function updateCommissionFromRate() {
+        if (window.lastCommissionInputType === 'percent') {
+            calculateCommissionFromPercent();
+        } else {
+            calculateCommissionFromRs();
+        }
+    }
+
+    $(document).ready(function () {
+        // Calculate initial % if RS is present
+        if ($('#commission_per_kg').val() && parseFloat($('#commission_per_kg').val()) > 0) {
+            window.lastCommissionInputType = 'rs';
+            calculateCommissionFromRs();
+        } else {
+            window.lastCommissionInputType = 'percent';
+        }
+
+        // When percentage field changes, calculate RS
+        $('#commission_percent_per_kg').on('keyup change', function () {
+            window.lastCommissionInputType = 'percent';
+            calculateCommissionFromPercent();
+        });
+
+        // When RS field changes, calculate percentage
+        $('#commission_per_kg').on('keyup change', function () {
+            window.lastCommissionInputType = 'rs';
+            calculateCommissionFromRs();
+        });
+
+        // When rate or qty changes in any row, update commission
+        $(document).on('keyup change', '.rate_per_kg, .qty', function () {
+            updateCommissionFromRate();
+        });
+    });
 </script>

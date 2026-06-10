@@ -56,15 +56,15 @@
         </td>
 
         <td>
+            <input type="number" name="minimum_qty[]" id="minimum_qty_{{ $i }}" value="{{ $data->minimum_qty }}" class="form-control minimum_qty" step="0.01" min="0">
+        </td>
+        <td>
             <input type="number" name="qty[]" id="qty_{{ $i }}" onkeyup="calc(this)"
                 value="{{ $data->qty }}" class="form-control qty" step="0.01" min="0" readonly>
         </td>
         <td>
-            <input type="number" name="minimum_qty[]" id="minimum_qty_{{ $i }}" class="form-control minimum_qty" step="0.01" min="0">
-        </td>
-        <td>
             <input type="number" name="rate[]" id="rate_{{ $i }}" onkeyup="calc(this)"
-                value="{{ $data->rate }}" class="form-control rate" step="0.01" min="0" readonly>
+                value="{{ $data->rate }}" class="form-control rate rate_per_kg" step="0.01" min="0" readonly>
         </td>
         <td>
             <input type="number" name="rate_per_mond[]" id="rate_per_mond_{{ $i }}" onkeyup="calc(this)"

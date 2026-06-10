@@ -475,26 +475,43 @@
             $(el).val(0);
         }
 
-        const advance = parseFloat($("#advance_amount").val()) || 0;
-        const withhold = (advance * (percentage / 100)).toFixed(0);
+        // const advance = parseFloat($("#advance_amount").val()) || 0;
+        // const withhold = (advance * (percentage / 100)).toFixed(0);
+
+        const totalAmount = parseFloat(so_amount) || 0;
+        const withhold = (totalAmount * (percentage / 100)).toFixed(0);
         $("#withhold_amount").val(withhold);
         change_withhold_amount();
     }
 
     function calculate_percentage_by_withhold(el) {
         let withhold = parseFloat($(el).val()) || 0;
-        const advance = parseFloat($("#advance_amount").val()) || 0;
+        // const advance = parseFloat($("#advance_amount").val()) || 0;
+        // if (advance > 0) {
+        //     if (withhold > advance) {
+        //         withhold = advance;
+        //         $(el).val(advance);
+        //     }
+        //     if (withhold < 0) {
+        //         withhold = 0;
+        //         $(el).val(0);
+        //     }
+        //     const percentage = (withhold / advance) * 100;
+        //     $("#withhold_percentage").val(percentage.toFixed(2));
+        // }
 
-        if (advance > 0) {
-            if (withhold > advance) {
-                withhold = advance;
-                $(el).val(advance);
+        const totalAmount = parseFloat(so_amount) || 0;
+
+        if (totalAmount > 0) {
+            if (withhold > totalAmount) {
+                withhold = totalAmount;
+                $(el).val(totalAmount);
             }
             if (withhold < 0) {
                 withhold = 0;
                 $(el).val(0);
             }
-            const percentage = (withhold / advance) * 100;
+            const percentage = (withhold / totalAmount) * 100;
             $("#withhold_percentage").val(percentage.toFixed(2));
         }
         change_withhold_amount();
