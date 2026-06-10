@@ -82,6 +82,17 @@ Route::get('update_ticket_ledgercalculation', function (Request $request) {
 
 });
 
+
+Route::get('update_ticket_ledgercalculation_thadda', function (Request $request) {
+
+    return updatetransactionofpurchaseticket($request->unique_no);
+    // return "Updateed";
+
+
+
+
+});
+
 Route::get("/receipt-vouchers/delete", function () {
     $receipt_voucher = ReceiptVoucher::query()->delete();
 });

@@ -1082,16 +1082,18 @@ class FreightRequestController extends Controller
                 } else {
                     createTransaction(
                         $request->gross_amount,
-                        $purchaseOrder->supplier->account_id,
+                        $qcAccountId,
+                        // $purchaseOrder->supplier->account_id,
                         1,
                         $purchaseOrder->contract_no,
                         'debit',
                         'no',
                         [
                             'grn_no' => $grnNo,
-                            'counter_account_id' => $qcAccountId,
+                            'counter_account_id' => $vendorAccId,
+                            // 'counter_account_id' => $qcAccountId,
                             'purpose' => "{$saudaType}-freight-paid-to-vendor",
-                            'payment_against' => "pohouch-freight",
+                            'payment_against' => "thadda-freight",
                             'against_reference_no' => "$truckNo/$biltyNo",
                             'remarks' => "Updated Inventory with remaining freight amount ({$request->gross_amount}) for the purchased goods against GRN #{$grnNo}."
                         ]
