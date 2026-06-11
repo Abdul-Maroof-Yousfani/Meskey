@@ -15,7 +15,8 @@ class ReceivingRequestController extends Controller
      */
     public function index()
     {
-        return view('management.sales.receiving-request.index');
+        $deliveryChallans = ReceivingRequest::select('id', 'dc_no')->distinct()->get();
+        return view('management.sales.receiving-request.index', compact('deliveryChallans'));
     }
 
     /**
@@ -26,8 +27,26 @@ class ReceivingRequestController extends Controller
         $perPage = $request->get('per_page', 25);
 
         $receivingRequests = ReceivingRequest::with(['deliveryChallan', 'items.product'])
-            ->when($request->filled('search'), function ($q) use ($request) {
-                $searchTerm = '%' . strtolower($request->search) . '%';
+            ->when($request->filled('dc_id_for_filter') && $request->dc_id_for_filter != 'all', function ($q) use ($request) {
+                $q->where('id', $request->dc_id_for_filter);
+            })
+            ->when($request->filled('dc_date_for_filter'), function ($q) use ($request) {
+                $dates = explode(' - ', $request->dc_date_for_filter);
+                if (count($dates) == 2) {
+                    $q->whereBetween('dc_date', [trim($dates[0]) . ' 00:00:00', trim($dates[1]) . ' 23:59:59']);
+                }
+            })
+            ->when($request->filled('created_at_for_filter'), function ($q) use ($request) {
+                $dates = explode(' - ', $request->created_at_for_filter);
+                if (count($dates) == 2) {
+                    $q->whereBetween('created_at', [trim($dates[0]) . ' 00:00:00', trim($dates[1]) . ' 23:59:59']);
+                }
+            })
+            ->when($request->filled('status_for_filter') && $request->status_for_filter != 'all', function ($q) use ($request) {
+                $q->where('am_approval_status', $request->status_for_filter);
+            })
+            ->when($request->filled('search_for_filter'), function ($q) use ($request) {
+                $searchTerm = '%' . strtolower($request->search_for_filter) . '%';
                 return $q->where(function ($sq) use ($searchTerm) {
                     $sq->whereRaw('LOWER(`dc_no`) LIKE ?', [$searchTerm])
                       ->orWhereRaw('LOWER(`truck_number`) LIKE ?', [$searchTerm]);

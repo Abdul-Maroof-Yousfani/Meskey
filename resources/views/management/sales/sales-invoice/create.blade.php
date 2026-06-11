@@ -24,6 +24,16 @@
         font-weight: 600;
         font-size: 13px;
     }
+
+    .readonly-select + .select2-container {
+        pointer-events: none;
+        touch-action: none;
+        background-color: #e9ecef;
+        opacity: 1;
+    }
+    .readonly-select + .select2-container .select2-selection {
+        background-color: #e9ecef;
+    }
 </style>
 
 <form action="{{ route('sales.sales-invoice.store') }}" method="POST" id="ajaxSubmit" autocomplete="off">
@@ -59,7 +69,7 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Sauda Type:<span class="text-danger">*</span></label>
-                        <select name="sauda_type" id="sauda_type" class="form-control select2" style="width: 100%">
+                        <select name="sauda_type" id="sauda_type" class="form-control select2 readonly-select" style="width: 100%; pointer-events: none;" tabindex="-1">
                             <option value="">Select Sauda Type</option>
                             <option value="pohanch">Pohanch</option>
                             <option value="x-mill">X-mill</option>
@@ -105,7 +115,7 @@
                     <div class="form-group">
                         <label class="form-label">Company Location:<span class="text-danger">*</span></label>
                         <select name="locations" id="locations" onchange="selectLocation(this);"
-                            class="form-control select2" style="width: 100%">
+                            class="form-control select2 readonly-select" style="width: 100%; pointer-events: none;" tabindex="-1">
                             <option value="">Select Company Location</option>
                             @foreach (get_locations() ?? [] as $location)
                                 <option value="{{ $location->id }}">{{ $location->name }}</option>
@@ -117,7 +127,7 @@
                     <div class="form-group">
                         <label class="form-label">Factory:<span class="text-danger">*</span></label>
                         <select name="arrival_locations" id="arrivals" onchange="selectStorage(this);"
-                            class="form-control select2" style="width: 100%">
+                            class="form-control select2 readonly-select" style="width: 100%; pointer-events: none;" tabindex="-1">
                             <option value="">Select Factory</option>
                         </select>
                     </div>
@@ -145,7 +155,7 @@
 
     <div class="row form-mar">
         <div class="col-12 text-right mb-2">
-            <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()"
+            <button type="button" style="float: right; display: none;" class="btn btn-sm btn-primary" onclick="addRow()"
                 id="addRowBtn" disabled>
                 <i class="fa fa-plus"></i>&nbsp; Add New Item
             </button>
