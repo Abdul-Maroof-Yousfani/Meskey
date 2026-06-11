@@ -24,6 +24,16 @@
         font-weight: 600;
         font-size: 13px;
     }
+
+    .readonly-select + .select2-container {
+        pointer-events: none;
+        touch-action: none;
+        background-color: #e9ecef;
+        opacity: 1;
+    }
+    .readonly-select + .select2-container .select2-selection {
+        background-color: #e9ecef;
+    }
 </style>
 
 <form action="{{ route('sales.sales-invoice.update', $sales_invoice->id) }}" method="POST" id="ajaxSubmit" autocomplete="off">
@@ -40,7 +50,7 @@
                     <div class="form-group">
                         <label class="form-label">Customer:<span class="text-danger">*</span></label>
                         <select name="customer_id" id="customer_id" onchange="get_delivery_challans()"
-                            class="form-control select2" style="width: 100%">
+                            class="form-control select2 readonly-select" style="width: 100%; pointer-events: none;" tabindex="-1">
                             <option value="">Select Customer</option>
                             @foreach ($customers ?? [] as $customer)
                                 <option value="{{ $customer->id }}" {{ $sales_invoice->customer_id == $customer->id ? 'selected' : '' }}>{{ $customer->name }}</option>
@@ -51,7 +61,7 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">DC Numbers:</label>
-                        <select name="dc_no[]" id="dc_no" onchange="get_items(this); autofillFromDc(this);" class="form-control select2" multiple style="width: 100%">
+                        <select name="dc_no[]" id="dc_no" onchange="get_items(this); autofillFromDc(this);" class="form-control select2 readonly-select" multiple style="width: 100%; pointer-events: none;" tabindex="-1">
                             <option value="">Select Delivery Challans</option>
                             @foreach ($delivery_challans ?? [] as $dc)
                                 <option value="{{ $dc->id }}" data-location="{{ $dc->location_id }}" data-arrival="{{ $dc->arrival_id }}" data-sauda="{{ $dc->sauda_type }}" {{ $sales_invoice->delivery_challans->contains($dc->id) ? 'selected' : '' }}>{{ $dc->dc_no }}</option>
@@ -62,7 +72,7 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Sauda Type:<span class="text-danger">*</span></label>
-                        <select name="sauda_type" id="sauda_type" class="form-control select2" style="width: 100%">
+                        <select name="sauda_type" id="sauda_type" class="form-control select2 readonly-select" style="width: 100%; pointer-events: none;" tabindex="-1">
                             <option value="">Select Sauda Type</option>
                             <option value="pohanch" {{ $sales_invoice->sauda_type == 'pohanch' ? 'selected' : '' }}>Pohanch</option>
                             <option value="x-mill" {{ $sales_invoice->sauda_type == 'x-mill' ? 'selected' : '' }}>X-mill</option>
@@ -99,7 +109,7 @@
                     <div class="form-group">
                         <label class="form-label">Company Location:<span class="text-danger">*</span></label>
                         <select name="locations" id="locations" onchange="selectLocation(this); get_delivery_challans()"
-                            class="form-control select2" style="width: 100%">
+                            class="form-control select2 readonly-select" style="width: 100%; pointer-events: none;" tabindex="-1">
                             <option value="">Select Company Location</option>
                             @foreach (get_locations() ?? [] as $location)
                                 <option value="{{ $location->id }}" {{ $sales_invoice->location_id == $location->id ? 'selected' : '' }}>{{ $location->name }}</option>
@@ -111,7 +121,7 @@
                     <div class="form-group">
                         <label class="form-label">Factory:<span class="text-danger">*</span></label>
                         <select name="arrival_locations" id="arrivals" onchange="get_delivery_challans()"
-                            class="form-control select2" style="width: 100%">
+                            class="form-control select2 readonly-select" style="width: 100%; pointer-events: none;" tabindex="-1">
                             <option value="">Select Arrival Location</option>
                             @foreach (get_arrival_locations() ?? [] as $arrival)
                                 <option value="{{ $arrival->id }}" {{ $sales_invoice->arrival_id == $arrival->id ? 'selected' : '' }}>{{ $arrival->name }}</option>
@@ -141,7 +151,7 @@
 
     <div class="row form-mar">
         <div class="col-12 text-right mb-2">
-            <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()"
+            <button type="button" style="float: right; display: none;" class="btn btn-sm btn-primary" onclick="addRow()"
                 id="addRowBtn">
                 <i class="fa fa-plus"></i>&nbsp; Add New Item
             </button>
@@ -176,7 +186,7 @@
                         @endphp
                         <tr id="row_{{ $index }}">
                             <td style="min-width: 200px;">
-                                <select name="item_id[]" id="item_id_{{ $index }}" class="form-control select2">
+                                <select name="item_id[]" id="item_id_{{ $index }}" class="form-control select2 readonly-select" style="pointer-events: none;" tabindex="-1">
                                     <option value="">Select Item</option>
                                     @foreach ($items ?? [] as $item)
                                         <option value="{{ $item->id }}" {{ $data->item_id == $item->id ? 'selected' : '' }}>{{ $item->name }}</option>
@@ -206,16 +216,16 @@
                                         $qty = $data->no_of_bags * $data->packing;
                                     }
                                 @endphp
-                                <input type="number" name="qty[]" data-balance="{{ sales_invoice_balance($data->dc_data_id) + $data->no_of_bags }}" id="qty_{{ $index }}" class="form-control qty" step="0.01" min="0" value="{{ $qty }}" onkeyup="calculateRow(this); check_balance(this, 'no_of_bags_{{ $index }}')">
+                                <input type="number" name="qty[]" data-balance="{{ sales_invoice_balance($data->dc_data_id) + $data->no_of_bags }}" id="qty_{{ $index }}" class="form-control qty" step="0.01" min="0" value="{{ $qty }}" onkeyup="calculateRow(this); check_balance(this, 'no_of_bags_{{ $index }}')" readonly>
                             </td>
                             <td style="min-width: 100px;">
-                                <input type="number" name="rate[]" id="rate_{{ $index }}" onkeyup="calculateRow(this)" class="form-control rate" step="0.01" min="0" value="{{ $data->rate }}">
+                                <input type="number" name="rate[]" id="rate_{{ $index }}" onkeyup="calculateRow(this)" class="form-control rate" step="0.01" min="0" value="{{ $data->rate }}" readonly>
                             </td>
                             <td style="min-width: 120px;">
                                 <input type="number" name="gross_amount[]" id="gross_amount_{{ $index }}" class="form-control gross_amount" readonly value="{{ $data->gross_amount }}">
                             </td>
                             <td style="min-width: 100px;">
-                                <input type="number" name="discount_percent[]" id="discount_percent_{{ $index }}" onkeyup="calculateRow(this)" class="form-control discount_percent" step="0.01" min="0" max="100" value="{{ $data->discount_percent }}">
+                                <input type="number" name="discount_percent[]" id="discount_percent_{{ $index }}" onkeyup="calculateRow(this)" class="form-control discount_percent" step="0.01" min="0" max="100" value="{{ $data->discount_percent }}" readonly>
                             </td>
                             <td style="min-width: 120px;">
                                 <input type="number" name="discount_amount[]" id="discount_amount_{{ $index }}" class="form-control discount_amount" readonly value="{{ $data->discount_amount }}">
@@ -224,7 +234,7 @@
                                 <input type="number" name="amount[]" id="amount_{{ $index }}" class="form-control amount" readonly value="{{ $data->amount }}">
                             </td>
                             <td style="min-width: 100px;">
-                                <input type="number" name="gst_percent[]" id="gst_percent_{{ $index }}" onkeyup="calculateRow(this)" class="form-control gst_percent" step="0.01" min="0" value="{{ $data->gst_percent }}">
+                                <input type="number" name="gst_percent[]" id="gst_percent_{{ $index }}" onkeyup="calculateRow(this)" class="form-control gst_percent" step="0.01" min="0" value="{{ $data->gst_percent }}" readonly>
                             </td>
                             <td style="min-width: 120px;">
                                 <input type="number" name="gst_amount[]" id="gst_amount_{{ $index }}" class="form-control gst_amount" readonly value="{{ $data->gst_amount }}">
@@ -233,13 +243,13 @@
                                 <input type="number" name="net_amount[]" id="net_amount_{{ $index }}" class="form-control net_amount" readonly value="{{ $data->net_amount }}">
                             </td>
                             <td style="min-width: 150px;">
-                                <input type="text" name="line_desc[]" id="line_desc_{{ $index }}" class="form-control line_desc" value="{{ $data->line_desc }}">
+                                <input type="text" name="line_desc[]" id="line_desc_{{ $index }}" class="form-control line_desc" value="{{ $data->line_desc }}" readonly>
                             </td>
                             <td style="min-width: 120px;">
-                                <input type="text" name="truck_no[]" id="truck_no_{{ $index }}" class="form-control truck_no" value="{{ $data->truck_no }}">
+                                <input type="text" name="truck_no[]" id="truck_no_{{ $index }}" class="form-control truck_no" value="{{ $data->truck_no }}" readonly>
                             </td>
                             <td style="min-width: 80px;">
-                                <button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="removeRow({{ $index }})" style="width:60px;">
+                                <button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="removeRow({{ $index }})" style="width:60px; pointer-events: none; opacity: 0.5;">
                                     <i class="fa fa-trash"></i>
                                 </button>
                             </td>

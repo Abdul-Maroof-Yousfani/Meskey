@@ -18,7 +18,11 @@ class SalesInvoiceController extends Controller
 {
     public function index()
     {
-        return view('management.sales.sales-invoice.index');
+        $customers = Customer::whereIn('id', SalesInvoice::distinct()->pluck('customer_id'))->get();
+        $items = Product::whereIn('id', SalesInvoiceData::distinct()->pluck('item_id'))->get();
+        $salesInvoices = SalesInvoice::select('id', 'si_no')->distinct()->get();
+
+        return view('management.sales.sales-invoice.index', compact('customers', 'items', 'salesInvoices'));
     }
 
     public function create()
@@ -269,11 +273,36 @@ class SalesInvoiceController extends Controller
         $perPage = $request->get('per_page', 25);
 
         $sales_invoices = SalesInvoice::with(['customer', 'sales_invoice_data'])
-            ->when($request->filled('search'), function ($q) use ($request) {
-                $searchTerm = '%' . strtolower($request->search) . '%';
+            ->when($request->filled('si_id_for_filter') && $request->si_id_for_filter != 'all', function ($q) use ($request) {
+                $q->where('id', $request->si_id_for_filter);
+            })
+            ->when($request->filled('customer_id_for_filter') && $request->customer_id_for_filter != 'all', function ($q) use ($request) {
+                $q->where('customer_id', $request->customer_id_for_filter);
+            })
+            ->when($request->filled('item_id_for_filter') && $request->item_id_for_filter != 'all', function ($q) use ($request) {
+                $q->whereHas('sales_invoice_data', function ($sq) use ($request) {
+                    $sq->where('item_id', $request->item_id_for_filter);
+                });
+            })
+            ->when($request->filled('invoice_date_for_filter'), function ($q) use ($request) {
+                $dates = explode(' - ', $request->invoice_date_for_filter);
+                if (count($dates) == 2) {
+                    $q->whereBetween('invoice_date', [trim($dates[0]), trim($dates[1])]);
+                }
+            })
+            ->when($request->filled('status_for_filter') && $request->status_for_filter != 'all', function ($q) use ($request) {
+                $q->where('am_approval_status', $request->status_for_filter);
+            })
+            ->when($request->filled('search_for_filter'), function ($q) use ($request) {
+                $searchTerm = '%' . strtolower($request->search_for_filter) . '%';
                 return $q->where(function ($sq) use ($searchTerm) {
                     $sq->whereRaw('LOWER(`si_no`) LIKE ?', [$searchTerm])
-                        ->orWhereRaw('LOWER(`reference_number`) LIKE ?', [$searchTerm]);
+                        ->orWhereRaw('LOWER(`reference_number`) LIKE ?', [$searchTerm])
+                        ->orWhereHas('sales_invoice_data', function ($q) use ($searchTerm) {
+                            $q->whereRaw('CAST(`qty` AS CHAR) LIKE ?', [$searchTerm])
+                                ->orWhereRaw('CAST(`rate` AS CHAR) LIKE ?', [$searchTerm])
+                                ->orWhereRaw('CAST(`net_amount` AS CHAR) LIKE ?', [$searchTerm]);
+                        });
                 });
             })
             ->latest()
