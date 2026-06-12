@@ -25,7 +25,30 @@ use App\Models\Master\Vendor;
 class DeliveryChallanController extends Controller
 {
     public function index() {
-        return view('management.sales.delivery-challan.index');
+        // Only get customers that have delivery challan records
+        $customerIds = DeliveryChallan::distinct()->pluck('customer_id')->filter();
+        $customers = Customer::whereIn('id', $customerIds)->get();
+
+        // Only get items that have delivery challan data records attached to an existing DC
+        $itemIds = \App\Models\Sales\DeliveryChallanData::whereIn('delivery_challan_id', function($query) {
+                $query->select('id')->from('delivery_challans');
+            })
+            ->distinct()
+            ->pluck('item_id')
+            ->filter();
+        $items = Product::whereIn('id', $itemIds)->get();
+
+        // Only get delivery orders that are linked to existing delivery challans
+        $doIds = DB::table('delivery_challan_delivery_order')
+            ->whereIn('delivery_challan_id', function($query) {
+                $query->select('id')->from('delivery_challans');
+            })
+            ->distinct()
+            ->pluck('delivery_order_id')
+            ->filter();
+        $deliveryOrders = DeliveryOrder::whereIn('id', $doIds)->select('id', 'reference_no')->get();
+
+        return view('management.sales.delivery-challan.index', compact('customers', 'items', 'deliveryOrders'));
     }
 
     public function create() {
@@ -378,6 +401,45 @@ class DeliveryChallanController extends Controller
 
         // Eager load the inquiry + all its items + related product
         $delivery_challans = DeliveryChallan::with(['delivery_challan_data.loadingProgramItem.acceptedDispatchQc'])
+            // Filter by DO No
+            ->when($request->filled('do_id_for_filter') && $request->do_id_for_filter != 'all', function ($q) use ($request) {
+                $q->whereHas('delivery_order', function ($sq) use ($request) {
+                    $sq->where('delivery_order_id', $request->do_id_for_filter);
+                });
+            })
+            // Filter by Customer
+            ->when($request->filled('customer_id_for_filter') && $request->customer_id_for_filter != 'all', function ($q) use ($request) {
+                $q->where('customer_id', $request->customer_id_for_filter);
+            })
+            // Filter by Item (through delivery_challan_data relationship)
+            ->when($request->filled('item_id_for_filter') && $request->item_id_for_filter != 'all', function ($q) use ($request) {
+                $q->whereHas('delivery_challan_data', function ($sq) use ($request) {
+                    $sq->where('item_id', $request->item_id_for_filter);
+                });
+            })
+            // Filter by Date Range
+            ->when($request->filled('date_range_for_filter'), function ($q) use ($request) {
+                $dates = explode(' - ', $request->date_range_for_filter);
+                if (count($dates) == 2) {
+                    $q->whereBetween('dispatch_date', [trim($dates[0]), trim($dates[1])]);
+                }
+            })
+            // Filter by Status
+            ->when($request->filled('status_for_filter') && $request->status_for_filter != 'all', function ($q) use ($request) {
+                $q->where('am_approval_status', $request->status_for_filter);
+            })
+            // Custom Search
+            ->when($request->filled('search_for_filter'), function ($q) use ($request) {
+                $searchTerm = '%' . strtolower($request->search_for_filter) . '%';
+                return $q->where(function ($sq) use ($searchTerm) {
+                    $sq->whereRaw('LOWER(`dc_no`) LIKE ?', [$searchTerm])
+                       ->orWhereHas('delivery_challan_data', function ($q) use ($searchTerm) {
+                            $q->whereRaw('CAST(`qty` AS CHAR) LIKE ?', [$searchTerm])
+                                ->orWhereRaw('CAST(`rate` AS CHAR) LIKE ?', [$searchTerm])
+                                ->orWhereRaw('CAST(`qty` * `rate` AS CHAR) LIKE ?', [$searchTerm]);
+                        });
+                });
+            })
             ->latest()
             ->paginate($perPage);
 
