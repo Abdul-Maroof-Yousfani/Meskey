@@ -19,6 +19,10 @@ class SalesOrderRequest extends FormRequest
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
+
+
+
+
     public function rules(): array
     {
 
@@ -49,7 +53,7 @@ class SalesOrderRequest extends FormRequest
 
             "qty" => "required",
             "qty.*" => "required",
-            
+
             "minimum_qty" => "nullable|array",
             "minimum_qty.*" => "nullable|numeric|gt:0",
 
@@ -82,17 +86,38 @@ class SalesOrderRequest extends FormRequest
             "amount.*" => 'required',
         ];
 
-        if(request()->pay_type_id == 8) {
+        if (request()->pay_type_id == 8) {
             $rules = array_merge($rules, [
                 "payment_term_id" => "required|numeric",
-           
+
             ]);
         }
 
         return $rules;
     }
 
-    public function messages() {
+
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            $qtys = $this->input('qty', []);
+            $minimumQtys = $this->input('minimum_qty', []);
+
+            foreach ($minimumQtys as $index => $minimumQty) {
+                $qty = $qtys[$index] ?? null;
+
+                if ($minimumQty !== null && $minimumQty >= $qty) {
+                    $validator->errors()->add(
+                        "minimum_qty.$index",
+                        "The minimum_qty.$index must be less than quantity."
+                    );
+                }
+            }
+        });
+    }
+
+    public function messages()
+    {
         return [
             "item_id.required" => "Each item is required",
             "qty.required" => "Each quantity is required",
