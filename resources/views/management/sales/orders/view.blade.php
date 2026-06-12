@@ -39,22 +39,27 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">SO No:</label>
-                        <input type="text" name="reference_no" id="reference_no" value="{{ $sale_order->reference_no }}" class="form-control" readonly>
+                        <input type="text" name="reference_no" id="reference_no" value="{{ $sale_order->reference_no }}"
+                            class="form-control" readonly>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Date:</label>
-                        <input type="date" name="order_date" id="order_date" value="{{ $sale_order->order_date }}" class="form-control" readonly>
+                        <input type="date" name="order_date" id="order_date" value="{{ $sale_order->order_date }}"
+                            class="form-control" readonly>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Inquiry No:</label>
-                        <select name="inquiry_id" id="inquiry_id" onchange="get_inquiry_data()" class="form-control select2" disabled>
+                        <select name="inquiry_id" id="inquiry_id" onchange="get_inquiry_data()"
+                            class="form-control select2" disabled>
                             <option value="">Select Inquiry</option>
                             @foreach ($inquiries ?? [] as $inquiry)
-                                <option value="{{ $inquiry->id }}" @selected($inquiry->id == $sale_order->inquiry_id)>{{ $inquiry->inquiry_no }}</option>
+                                <option value="{{ $inquiry->id }}" @selected($inquiry->id == $sale_order->inquiry_id)>
+                                    {{ $inquiry->inquiry_no }}
+                                </option>
                             @endforeach
                         </select>
                     </div>
@@ -64,27 +69,32 @@
                         <label class="form-label">Contract Type:</label>
                         <select name="sauda_type" id="sauda_type" class="form-control select2" disabled>
                             <option value="">Select Contract Type</option>
-                            <option value="pohanch" @selected(strtolower($sale_order->sauda_type) == 'pohanch')>Pohanch</option>
-                            <option value="x-mill" @selected(strtolower($sale_order->sauda_type) == 'x-mill')>X-mill</option>
+                            <option value="pohanch" @selected(strtolower($sale_order->sauda_type) == 'pohanch')>Pohanch
+                            </option>
+                            <option value="x-mill" @selected(strtolower($sale_order->sauda_type) == 'x-mill')>X-mill
+                            </option>
                         </select>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Delivery Date:</label>
-                        <input type="date" name="delivery_date" value="{{ $sale_order->delivery_date }}" id="delivery_date" class="form-control" readonly>
+                        <input type="date" name="delivery_date" value="{{ $sale_order->delivery_date }}"
+                            id="delivery_date" class="form-control" readonly>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Reference Number:</label>
-                        <input type="text" name="so_reference_no" id="so_reference_no" value="{{ $sale_order->so_reference_no }}" class="form-control" readonly>
+                        <input type="text" name="so_reference_no" id="so_reference_no"
+                            value="{{ $sale_order->so_reference_no }}" class="form-control" readonly>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Transporter used:</label>
-                        <input type="text" name="transporter_used" id="transporter_used" value="{{ ucfirst($sale_order->transporter_used) }}" class="form-control" readonly>
+                        <input type="text" name="transporter_used" id="transporter_used"
+                            value="{{ ucfirst($sale_order->transporter_used) }}" class="form-control" readonly>
                     </div>
                 </div>
 
@@ -94,37 +104,43 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Customer:</label>
-                        <input type="text" value="{{ get_customer_name($sale_order->customer_id) }}" class="form-control" readonly>
+                        <input type="text" value="{{ get_customer_name($sale_order->customer_id) }}"
+                            class="form-control" readonly>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Sell By:</label>
-                        <input type="text" class="form-control" value="{{ $sale_order->parent_user->name ?? 'N/A' }}" readonly>
+                        <input type="text" class="form-control" value="{{ $sale_order->parent_user->name ?? 'N/A' }}"
+                            readonly>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Broker:</label>
-                        <input type="text" value="{{ $sale_order->broker->name ?? 'N/A' }}" class="form-control" readonly>
+                        <input type="text" value="{{ $sale_order->broker->name ?? 'N/A' }}" class="form-control"
+                            readonly>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Comission RS per KG:</label>
-                        <input type="text" value="{{ $sale_order->commission_per_kg ?? 0 }}" class="form-control" readonly>
+                        <input type="text" value="{{ $sale_order->commission_per_kg ?? 0 }}" class="form-control"
+                            readonly>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Contact Person:</label>
-                        <input type="text" name="contact_person" id="contact_person" value="{{ $sale_order->contact_person }}" class="form-control" readonly>
+                        <input type="text" name="contact_person" id="contact_person"
+                            value="{{ $sale_order->contact_person }}" class="form-control" readonly>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Token Money:</label>
-                        <input type="number" name="token_money" id="token_money" value="{{ $sale_order->token_money }}" class="form-control" step="0.01" min="0" readonly>
+                        <input type="number" name="token_money" id="token_money" value="{{ $sale_order->token_money }}"
+                            class="form-control" step="0.01" min="0" readonly>
                     </div>
                 </div>
 
@@ -134,14 +150,16 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Pay Type:</label>
-                        <input type="text" value="{{ $sale_order->pay_type?->name ?? 'N/A' }}" class="form-control" readonly>
+                        <input type="text" value="{{ $sale_order->pay_type?->name ?? 'N/A' }}" class="form-control"
+                            readonly>
                     </div>
                 </div>
                 @if($sale_order->payment_term_id)
                     <div class="col-md-6">
                         <div class="form-group">
                             <label class="form-label">Payment Terms:</label>
-                            <input type="text" value="{{ get_payment_term($sale_order->payment_term_id)?->desc ?? '' }}" class="form-control" readonly>
+                            <input type="text" value="{{ get_payment_term($sale_order->payment_term_id)?->desc ?? '' }}"
+                                class="form-control" readonly>
                         </div>
                     </div>
                 @endif
@@ -172,9 +190,12 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Factory:</label>
-                        <select name="arrival_location_id[]" id="arrival_location_id" class="form-control select2" multiple disabled>
+                        <select name="arrival_location_id[]" id="arrival_location_id" class="form-control select2"
+                            multiple disabled>
                             @foreach($arrivalLocations as $factory)
-                                <option value="{{ $factory->id }}" data-company="{{ $factory->company_location_id ?? '' }}" @selected(in_array($factory->id, $selectedFactories))>{{ $factory->name }} ({{ $factory->companyLocation->name }})</option>
+                                <option value="{{ $factory->id }}" data-company="{{ $factory->company_location_id ?? '' }}"
+                                    @selected(in_array($factory->id, $selectedFactories))>{{ $factory->name }}
+                                    ({{ $factory->companyLocation->name }})</option>
                             @endforeach
                         </select>
                     </div>
@@ -189,9 +210,12 @@
                             $factoryNamesString = !empty($selectedFactoryNames) ? ' (' . implode(', ', $selectedFactoryNames) . ')' : '';
                         @endphp
                         <label class="form-label">Section{{ $factoryNamesString }}:</label>
-                        <select name="arrival_sub_location_id[]" id="arrival_sub_location_id" class="form-control select2" multiple disabled>
+                        <select name="arrival_sub_location_id[]" id="arrival_sub_location_id"
+                            class="form-control select2" multiple disabled>
                             @foreach($arrivalSubLocations as $section)
-                                <option value="{{ $section->id }}" data-factory="{{ $section->arrival_location_id }}" @selected(in_array($section->id, $selectedSections))>{{ $section->name }} ({{ $section->arrivalLocation->name }})</option>
+                                <option value="{{ $section->id }}" data-factory="{{ $section->arrival_location_id }}"
+                                    @selected(in_array($section->id, $selectedSections))>{{ $section->name }}
+                                    ({{ $section->arrivalLocation->name }})</option>
                             @endforeach
                         </select>
                     </div>
@@ -202,7 +226,8 @@
                 </div>
                 <div class="col-12">
                     <div class="form-group">
-                        <textarea name="remarks" id="remarks" class="form-control" rows="3" readonly>{{ $sale_order->remarks }}</textarea>
+                        <textarea name="remarks" id="remarks" class="form-control" rows="3"
+                            readonly>{{ $sale_order->remarks }}</textarea>
                     </div>
                 </div>
             </div>
@@ -219,7 +244,8 @@
         <div class="col-md-8">
             <div class="form-group">
                 <label class="form-label">Remarks:</label>
-                <textarea name="remarks" id="remarks" class="form-control" rows="2" readonly>{{ $sale_order->remarks }}</textarea>
+                <textarea name="remarks" id="remarks" class="form-control" rows="2"
+                    readonly>{{ $sale_order->remarks }}</textarea>
             </div>
         </div>
     </div>
@@ -241,8 +267,8 @@
                             <th>Bag Type</th>
                             <th>Packing</th>
                             <th>No of Bags</th>
-                            <th>Maximum Qty (kg)</th>
                             <th>Minimum Qty (kg)</th>
+                            <th>Maximum Qty (kg)</th>
                             <th>Rate per Kg</th>
                             <th>Rate per Mond</th>
                             <th>Amount</th>
@@ -256,54 +282,67 @@
                         @foreach($sale_order->sales_order_data as $index => $data)
                             <tr id="row_{{ $index }}">
                                 <td>
-                                    <select name="item_id[]" id="item_id_{{ $index }}" class="form-control select2" readonly>
+                                    <select name="item_id[]" id="item_id_{{ $index }}" class="form-control select2"
+                                        readonly>
                                         <option value="">Select Item</option>
                                         @foreach ($items ?? [] as $item)
-                                            <option value="{{ $item->id }}" @selected($data->item_id == $item->id)>{{ $item->name }}</option>
+                                            <option value="{{ $item->id }}" @selected($data->item_id == $item->id)>
+                                                {{ $item->name }}
+                                            </option>
                                         @endforeach
                                     </select>
                                 </td>
                                 <td>
-                                    <input type="text" name="bag_type[]" id="bag_type_{{ $index }}" value="{{ bag_type_name($data->bag_type) }}" onkeyup="calc(this)" class="form-control qty" step="0.01"
-                                        min="0" readonly>
-                                </td>
-                                  <td>
-                                    <input type="text" name="bag_size[]" id="bag_type_{{ $index }}" value="{{ $data->bag_size }}" onkeyup="calc(this)" class="form-control qty" step="0.01"
-                                        min="0" readonly>
+                                    <input type="text" name="bag_type[]" id="bag_type_{{ $index }}"
+                                        value="{{ bag_type_name($data->bag_type) }}" onkeyup="calc(this)"
+                                        class="form-control qty" step="0.01" min="0" readonly>
                                 </td>
                                 <td>
-                                    <input type="text" name="no_of_bags[]" id="no_of_bags_{{ $index }}" value="{{ $data->no_of_bags }}" class="form-control no_of_bags" readonly>
+                                    <input type="text" name="bag_size[]" id="bag_type_{{ $index }}"
+                                        value="{{ $data->bag_size }}" onkeyup="calc(this)" class="form-control qty"
+                                        step="0.01" min="0" readonly>
                                 </td>
                                 <td>
-                                    <input type="number" name="qty[]" id="qty_{{ $index }}" value="{{ $data->qty }}" class="form-control qty" step="0.01"
-                                        min="0" readonly>
+                                    <input type="text" name="no_of_bags[]" id="no_of_bags_{{ $index }}"
+                                        value="{{ $data->no_of_bags }}" class="form-control no_of_bags" readonly>
                                 </td>
                                 <td>
-                                    <input type="number" name="minimum_qty[]" id="minimum_qty_{{ $index }}" value="{{ $data->minimum_qty }}" class="form-control minimum_qty" step="0.01"
-                                        min="0" readonly>
-                                </td>
-                                <td>
-                                    <input type="number" name="rate[]" id="rate_{{ $index }}" value="{{ $data->rate }}" onkeyup="calc(this)" class="form-control rate" step="0.01"
+                                    <input type="number" name="minimum_qty[]" id="minimum_qty_{{ $index }}"
+                                        value="{{ $data->minimum_qty }}" class="form-control minimum_qty" step="0.01"
                                         min="0" readonly>
                                 </td>
                                 <td>
-                                    <input type="number" name="rate[]" id="rate_{{ $index }}" value="{{ $data->rate_per_mond }}" onkeyup="calc(this)" class="form-control rate" step="0.01"
-                                        min="0" readonly>
+                                    <input type="number" name="qty[]" id="qty_{{ $index }}" value="{{ $data->qty }}"
+                                        class="form-control qty" step="0.01" min="0" readonly>
                                 </td>
                                 <td>
-                                    <input type="text" name="amount[]" id="amount_{{ $index }}" value="{{ round($data->rate * $data->qty) }}" class="form-control amount" readonly>
+                                    <input type="number" name="rate[]" id="rate_{{ $index }}" value="{{ $data->rate }}"
+                                        onkeyup="calc(this)" class="form-control rate" step="0.01" min="0" readonly>
+                                </td>
+                                <td>
+                                    <input type="number" name="rate[]" id="rate_{{ $index }}"
+                                        value="{{ $data->rate_per_mond }}" onkeyup="calc(this)" class="form-control rate"
+                                        step="0.01" min="0" readonly>
+                                </td>
+                                <td>
+                                    <input type="text" name="amount[]" id="amount_{{ $index }}"
+                                        value="{{ round($data->rate * $data->qty) }}" class="form-control amount" readonly>
                                 </td>
 
                                 <td>
-                                    <input type="text" name="brand_id[]" id="brand_id{{ $index }}" value="{{ getBrandById($data->brand_id)?->name }}" class="form-control brand_id" readonly>
+                                    <input type="text" name="brand_id[]" id="brand_id{{ $index }}"
+                                        value="{{ getBrandById($data->brand_id)?->name }}" class="form-control brand_id"
+                                        readonly>
                                 </td>
 
                                 <td style="display: none;">
-                                    <input type="text" name="pack_size[]" value="0" id="pack_size{{ $index }}" value="{{ $data->pack_size }}" class="form-control pack_size" readonly>
+                                    <input type="text" name="pack_size[]" value="0" id="pack_size{{ $index }}"
+                                        value="{{ $data->pack_size }}" class="form-control pack_size" readonly>
                                 </td>
 
                                 <td>
-                                    <input type="text" name="description[]" id="description{{ $index }}" value="{{ $data->description }}" class="form-control description" readonly>
+                                    <input type="text" name="description[]" id="description{{ $index }}"
+                                        value="{{ $data->description }}" class="form-control description" readonly>
                                 </td>
 
                                 <td>
@@ -320,14 +359,14 @@
         </div>
     </div>
 
-    
+
     <input type="hidden" id="rowCount" value="0">
 
-    
+
     <div class="row bottom-button-bar">
         <div class="col-12 text-end">
             <a type="button"
-            class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton me-2">Close</a>
+                class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton me-2">Close</a>
             {{-- <button type="submit" class="btn btn-primary submitbutton">Save</button> --}}
         </div>
     </div>
@@ -341,7 +380,7 @@
 <script>
     salesInquiryRowIndex = 1;
 
-    $(document).ready(function() {
+    $(document).ready(function () {
         $('.select2').select2();
     });
 
@@ -389,62 +428,62 @@
         }
     }
 
-function calc(el) {
-    const element = $(el).closest("tr");
+    function calc(el) {
+        const element = $(el).closest("tr");
 
-    const rate = parseFloat($(element).find(".rate").val()) || 0;
-    const qty = parseFloat($(element).find(".qty").val()) || 0;
+        const rate = parseFloat($(element).find(".rate").val()) || 0;
+        const qty = parseFloat($(element).find(".qty").val()) || 0;
 
-    const amount = $(element).find(".amount");
+        const amount = $(element).find(".amount");
 
-    amount.val(rate * qty);
-}
+        amount.val(rate * qty);
+    }
 
-function get_inquiries() {
-    const customer_id = $("#customer_id").val();
-    // get-sale-inquiries-against-customer
+    function get_inquiries() {
+        const customer_id = $("#customer_id").val();
+        // get-sale-inquiries-against-customer
 
-    $.ajax({
-        url: "{{ route('sales.get-sale-inquiries-against-customer') }}",
-        method: "GET",
-        data: {
-            customer_id: customer_id
-        },
-        dataType: "json",
-        success: function(res) {
-            $("#inquiry_id").select2({
-                data: res
-            });
-        },
-        error: function(error) {
-        
-        }
-    });
+        $.ajax({
+            url: "{{ route('sales.get-sale-inquiries-against-customer') }}",
+            method: "GET",
+            data: {
+                customer_id: customer_id
+            },
+            dataType: "json",
+            success: function (res) {
+                $("#inquiry_id").select2({
+                    data: res
+                });
+            },
+            error: function (error) {
 
-    // get-sale-inquiry-data
-}
+            }
+        });
 
-function get_inquiry_data() {
-    const inquiry_id = $("#inquiry_id").val();
+        // get-sale-inquiry-data
+    }
 
-    $.ajax({
-        url: "{{ route('sales.get-sale-inquiry-data') }}",
-        method: "GET",
-        data: {
-            inquiry_id: inquiry_id
-        },
-        dataType: "html",
-        success: function(res) {
-            console.log("success");
-            $("#alesInquiryBody").empty();
-            $("#salesInquiryBody").html(res);
-        },
-        error: function(error) {
-            console.log(error);
-        }
-    });
+    function get_inquiry_data() {
+        const inquiry_id = $("#inquiry_id").val();
 
-}
+        $.ajax({
+            url: "{{ route('sales.get-sale-inquiry-data') }}",
+            method: "GET",
+            data: {
+                inquiry_id: inquiry_id
+            },
+            dataType: "html",
+            success: function (res) {
+                console.log("success");
+                $("#alesInquiryBody").empty();
+                $("#salesInquiryBody").html(res);
+            },
+            error: function (error) {
+                console.log(error);
+            }
+        });
+
+    }
 
     function getNumber() {
         $.ajax({
@@ -454,10 +493,10 @@ function get_inquiry_data() {
                 contract_date: $("#delivery_date").val()
             },
             dataType: "json",
-            success: function(res) {
+            success: function (res) {
                 $("#reference_no").val(res.so_no)
             },
-            error: function(error) {
+            error: function (error) {
                 // Handle errors here
                 $('.loader-container').hide();
                 console.error("Error:", error);

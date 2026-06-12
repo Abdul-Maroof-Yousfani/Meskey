@@ -175,6 +175,7 @@ class SaleOrderController extends Controller
                 $sales_order->sales_order_data()->create([
                     'item_id' => $request->item_id[$index],
                     'qty' => $request->qty[$index],
+                    'minimum_qty' => $request->minimum_qty[$index],
                     'rate' => $request->rate[$index],
                     'pack_size' => $request->pack_size[$index],
                     'brand_id' => $request->brand_id[$index],
@@ -329,6 +330,7 @@ class SaleOrderController extends Controller
                 $sales_order->sales_order_data()->create([
                     'item_id' => $request->item_id[$index],
                     'qty' => $request->qty[$index],
+                    'minimum_qty' => $request->minimum_qty[$index],
                     'rate' => $request->rate[$index],
                     'pack_size' => $request->pack_size[$index] ?? 0,
                     'brand_id' => $request->brand_id[$index],
