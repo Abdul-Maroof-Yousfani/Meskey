@@ -40,7 +40,12 @@ class PaymentRequest extends Model
         'amount',
         'am_approval_status',
         'am_change_made',
-        'is_without_contract'
+        'is_without_contract',
+        'rerate_on_access_weight_kg',
+        'rerate_on_access_weight_rate',
+        'rerate_on_access_weight_amount',
+        // 'deduction_on_weight_difference_kg',
+        // 'deduction_on_weight_difference_amount'
     ];
     protected $casts = [
         'is_without_contract' => 'boolean'
