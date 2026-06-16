@@ -69,7 +69,7 @@
                                     <div class="col-xs-12 col-sm-6 col-md-2">
                                         <div class="form-group">
                                             <label>SO Qty:</label>
-                                            <input type="text" value="{{ $so->sales_order_data->first()->qty ?? 'N/A' }}" disabled class="form-control" />
+                                            <input type="text" value="{{ round($so->sales_order_data->first()->qty ?? 'N/A' ) }}" disabled class="form-control" />
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-6 col-md-2">
@@ -118,7 +118,7 @@
                                     <div class="col-xs-12 col-sm-6 col-md-4">
                                         <div class="form-group">
                                             <label>Total Qty:</label>
-                                            <input type="text" value="{{ $do->delivery_order_data->sum('qty') }}" disabled class="form-control" />
+                                            <input type="text" value="{{ round($do->delivery_order_data->sum('qty'))  }}" disabled class="form-control" />
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-6 col-md-4">
@@ -127,7 +127,7 @@
                                             @php
                                                 $used_qty = \App\Models\Sales\SecondWeighbridge::where('delivery_order_id', $do->id)->sum('net_weight');
                                             @endphp
-                                            <input type="text" value="{{ $do->delivery_order_data->sum('qty') - $used_qty }}" disabled class="form-control" />
+                                            <input type="text" value="{{ round($do->delivery_order_data->sum('qty') - $used_qty) }}" disabled class="form-control" />
                                         </div>
                                     </div>
                                 </div>
@@ -284,7 +284,7 @@
                                      <option selected>{{ $item->transporter->name ?? '-' }}</option>
                                  </select>
                              </td>
-                             <td><input type="text" value="{{ number_format($item->qty, 2) }}" class="form-control form-control-sm" disabled></td>
+                             <td><input type="text" value="{{ round($item->qty) }}" class="form-control form-control-sm" disabled></td>
                         </tr>
                         @endforeach
                     </tbody>

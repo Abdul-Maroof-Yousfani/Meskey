@@ -161,13 +161,13 @@
                             <div class="col-xs-12 col-sm-6 col-md-3">
                                 <div class="form-group">
                                     <label>SO Qty:</label>
-                                    <input type="number" value="{{ $order['so_qty'] }}" class="form-control" readonly step="0.01" />
+                                    <input type="number" value="{{ round($order['so_qty']) }}" class="form-control" readonly step="0.01" />
                                 </div>
                             </div>
                             <div class="col-xs-12 col-sm-6 col-md-3">
                                 <div class="form-group">
                                     <label>DO Qty:</label>
-                                    <input type="number" value="{{ $order['do_qty'] }}" class="form-control" readonly step="0.01" />
+                                    <input type="number" value="{{ round($order['do_qty']) }}" class="form-control" readonly step="0.01" />
                                 </div>
                             </div>
                         </div>
@@ -213,8 +213,8 @@
             <input type="hidden" name="customer" value="{{ $loadingSlip->customer }}" />
             <input type="hidden" name="commodity" value="{{ $loadingSlip->commodity }}" />
             <input type="hidden" name="brand" value="{{ $loadingSlip->brand ?? $loadingSlip->loadingProgramItem->brand->name ?? '' }}" />
-            <input type="hidden" name="so_qty" value="{{ $loadingSlip->so_qty }}" />
-            <input type="hidden" name="do_qty" value="{{ $loadingSlip->do_qty }}" />
+            <input type="hidden" name="so_qty" value="{{ round($loadingSlip->so_qty) }}" />
+            <input type="hidden" name="do_qty" value="{{ round($loadingSlip->do_qty) }}" />
             <input type="hidden" name="factory" value="{{ $loadingSlip->factory }}" />
             <input type="hidden" name="gala" value="{{ $loadingSlip->gala }}" />
             <input type="hidden" name="bag_size" value="{{ $loadingSlip->bag_size }}" />

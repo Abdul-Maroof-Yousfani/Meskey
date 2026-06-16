@@ -355,7 +355,7 @@
                                     <input type="text" name="no_of_bags[]" id="no_of_bags_{{ $index }}" value="{{ $data->loadingProgramItem->loadingSlip->no_of_bags ?? 0 }}" class="form-control no_of_bags" readonly>
                                 </td>
                                 <td>
-                                    <input type="text" name="qty[]" id="qty_{{ $index }}" value="{{ $data->qty }}" class="form-control qty" oninput="calc(this)" readonly>
+                                    <input type="text" name="qty[]" id="qty_{{ $index }}" value="{{ round($data->qty) }}" class="form-control qty" oninput="calc(this)" readonly>
                                 </td>
                                 <td>
                                     <input type="text" name="rate[]" id="rate_{{ $index }}" value="{{ $data->rate }}" class="form-control rate" readonly>
@@ -365,7 +365,7 @@
                                         value="{{ $data->deliveryOrderData->salesOrderData->rate_per_mond ?? '' }}" class="form-control rate" readonly>
                                 </td>
                                 <td>
-                                    <input type="text" name="amount[]" id="amount_{{ $index }}" value="{{ $data->rate * ($data->qty ?? 0) }}" class="form-control amount" readonly>
+                                    <input type="text" name="amount[]" id="amount_{{ $index }}" value="{{ round($data->rate * ($data->qty ?? 0) ) }}" class="form-control amount" readonly>
                                 </td>
                                 <td>
                                     <input type="text" name="" id="brand_id_display_{{ $index }}"

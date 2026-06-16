@@ -280,7 +280,7 @@
                             <input type="text" value="{{ $data->no_of_bags }}" class="form-control" readonly>
                         </td>
                         <td>
-                            <input type="text" value="{{ $data->qty }}" class="form-control" readonly>
+                            <input type="text" value="{{ round($data->qty) }}" class="form-control" readonly>
                         </td>
                         <td>
                             <input type="text" value="{{ $data->rate }}" class="form-control" readonly>
@@ -289,7 +289,7 @@
                             <input type="text" value="{{ $data->deliveryOrderData->salesOrderData->rate_per_mond }}" class="form-control" readonly>
                         </td>
                         <td>
-                            <input type="text" value="{{ $data->rate * ($data->qty ?? 0) }}" class="form-control" readonly>
+                            <input type="text" value="{{ round($data->rate * ($data->qty ?? 0) ) }}" class="form-control" readonly>
                         </td>
                         <td>
                             <input type="text" value="{{ getBrandById($data->brand_id)?->name }}" class="form-control" readonly>

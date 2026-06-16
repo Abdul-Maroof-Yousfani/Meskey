@@ -436,11 +436,18 @@ class SaleOrderController extends Controller
                     $sq->where('item_id', $request->item_id_for_filter);
                 });
             })
-            // Filter by Date Range (order_date)
-            ->when($request->filled('date_range_for_filter'), function ($q) use ($request) {
-                $dates = explode(' - ', $request->date_range_for_filter);
+            // Filter by Created At Date Range
+            ->when($request->filled('created_at_for_filter'), function ($q) use ($request) {
+                $dates = explode(' - ', $request->created_at_for_filter);
                 if (count($dates) == 2) {
-                    $q->whereBetween('order_date', [trim($dates[0]), trim($dates[1])]);
+                    $q->whereBetween('created_at', [trim($dates[0]) . ' 00:00:00', trim($dates[1]) . ' 23:59:59']);
+                }
+            })
+            // Filter by Delivery Date Range (delivery_date)
+            ->when($request->filled('delivery_date_for_filter'), function ($q) use ($request) {
+                $dates = explode(' - ', $request->delivery_date_for_filter);
+                if (count($dates) == 2) {
+                    $q->whereBetween('delivery_date', [trim($dates[0]), trim($dates[1])]);
                 }
             })
             // Filter by Status

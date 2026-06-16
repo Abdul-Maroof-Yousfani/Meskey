@@ -339,11 +339,11 @@
                                 </td>
                                 <td>
                                     <input type="number" name="minimum_qty[]" id="minimum_qty_{{ $index }}"
-                                        value="{{ $data->minimum_qty }}" class="form-control minimum_qty" step="0.01" min="0">
+                                        value="{{ round($data->minimum_qty) }}" class="form-control minimum_qty" step="0.01" min="0">
                                 </td>
                                 <td>
                                     <input type="number" name="qty[]" id="qty_{{ $index }}"
-                                        value="{{ $data->qty ?? ($data->no_of_bags * $data->bag_size) }}" class="form-control qty"
+                                        value="{{ round($data->qty ?? ($data->no_of_bags * $data->bag_size) ) }}" class="form-control qty"
                                         step="0.01" min="0" onkeyup="calcBagTypes(this)" onchange="calcBagTypes(this)">
                                 </td>
                                 <td>

@@ -55,7 +55,7 @@
             <div class="col-md-4">
                 <div class="form-group">
                     <label class="form-label text-uppercase">{{ $qtyLabel }}</label>
-                    <input type="text" class="form-control" value="{{ number_format($logistics->so_qty, 2) }}" readonly>
+                    <input type="text" class="form-control" value="{{ round($logistics->so_qty) }}" readonly>
                 </div>
             </div>
 
@@ -151,7 +151,7 @@
                                     <td>{{ $item->rate_type }}</td>
                                     <td>{{ number_format($item->rate, 2) }}</td>
                                     <td>{{ $item->transporter_name ?? $item->transporter?->company_name ?? $item->transporter?->name ?? 'N/A' }}</td>
-                                    <td>{{ number_format($item->qty, 2) }}</td>
+                                    <td>{{ round($item->qty) }}</td>
                                     @if($isExport)
                                     <td>{{ $item->brand }}</td>
                                     <td>{{ $item->packing_size }}</td>

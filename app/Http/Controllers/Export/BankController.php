@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Export;
 use App\Http\Controllers\Controller;
 use App\Models\Acl\Company;
 use App\Models\Export\Bank;
+use App\Models\Master\Account\Account;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class BankController extends Controller
@@ -41,7 +43,15 @@ class BankController extends Controller
         $rules = [
             'company' => 'required|exists:companies,id',
             'account_title' => 'required|string|max:255',
-            'bank_name' => 'required|string|max:255',
+            'bank_name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('banks')->where(function ($query) use ($request) {
+                    return $query->where('branch', $request->input('branch'));
+                })
+            ],
+            'branch' => 'required|string|max:255',
             'iban' => 'required|string|max:34', // IBAN max length
             'account_no' => 'required|string|max:20', // Account No max length
             'swift_code' => 'nullable|string|max:20',
@@ -59,22 +69,42 @@ class BankController extends Controller
             ], 422);
         }
 
-        $bank = Bank::create([
-            'company_id' => $request->input('company'),
-            'account_title' => $request->input('account_title'),
-            'bank_name' => $request->input('bank_name'),
-            'iban' => strtoupper($request->input('iban')),
-            'account_no' => $request->input('account_no'),
-            'swift_code' => $request->input('swift_code'),
-            'bank_address' => $request->input('bank_address'),
-            'description' => $request->input('description'),
-            'status' => $request->input('status'),
-        ]);
+        DB::beginTransaction();
 
-        return response()->json([
-            'success' => 'Bank account successfully saved.',
-            'data' => $bank,
-        ], 200);
+        try {
+            // Create Chart of Account
+            $accountName = trim($request->input('bank_name') . ' ' . $request->input('branch'));
+            $accountParams = getParamsForAccountCreationByPath($request->input('company'), $accountName, '1-1', 'banks');
+            $account = Account::create($accountParams);
+
+            $bank = Bank::create([
+                'company_id' => $request->input('company'),
+                'account_id' => $account->id,
+                'account_title' => $request->input('account_title'),
+                'bank_name' => $request->input('bank_name'),
+                'branch' => $request->input('branch'),
+                'iban' => strtoupper($request->input('iban')),
+                'account_no' => $request->input('account_no'),
+                'swift_code' => $request->input('swift_code'),
+                'bank_address' => $request->input('bank_address'),
+                'description' => $request->input('description'),
+                'status' => $request->input('status'),
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => 'Bank account successfully saved.',
+                'data' => $bank,
+            ], 200);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'error' => 'Something went wrong: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function show(int $id)
@@ -101,7 +131,15 @@ class BankController extends Controller
         $rules = [
             'company' => 'required|exists:companies,id',
             'account_title' => 'required|string|max:255',
-            'bank_name' => 'required|string|max:255',
+            'bank_name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('banks')->where(function ($query) use ($request) {
+                    return $query->where('branch', $request->input('branch'));
+                })->ignore($bank->id)
+            ],
+            'branch' => 'required|string|max:255',
             'iban' => 'required|string|max:34',
             'account_no' => 'required|string|max:20',
             'swift_code' => 'nullable|string|max:20',
@@ -119,22 +157,54 @@ class BankController extends Controller
             ], 422);
         }
 
-        $bank->update([
-            'company_id' => $request->input('company'),
-            'account_title' => $request->input('account_title'),
-            'bank_name' => $request->input('bank_name'),
-            'iban' => strtoupper($request->input('iban')),
-            'account_no' => $request->input('account_no'),
-            'swift_code' => $request->input('swift_code'),
-            'bank_address' => $request->input('bank_address'),
-            'description' => $request->input('description'),
-            'status' => $request->input('status'),
-        ]);
+        DB::beginTransaction();
 
-        return response()->json([
-            'success' => 'Bank account successfully updated.',
-            'data' => $bank,
-        ], 200);
+        try {
+            $accountName = trim($request->input('bank_name') . ' ' . $request->input('branch'));
+            
+            if ($bank->account_id) {
+                $account = Account::find($bank->account_id);
+                if ($account) {
+                    $account->update(['name' => $accountName]);
+                } else {
+                    // Account ID exists but account missing, recreate
+                    $accountParams = getParamsForAccountCreationByPath($request->input('company'), $accountName, '1-1', 'banks');
+                    $account = Account::create($accountParams);
+                    $bank->account_id = $account->id;
+                }
+            } else {
+                $accountParams = getParamsForAccountCreationByPath($request->input('company'), $accountName, '1-1', 'banks');
+                $account = Account::create($accountParams);
+                $bank->account_id = $account->id;
+            }
+
+            $bank->update([
+                'company_id' => $request->input('company'),
+                'account_title' => $request->input('account_title'),
+                'bank_name' => $request->input('bank_name'),
+                'branch' => $request->input('branch'),
+                'iban' => strtoupper($request->input('iban')),
+                'account_no' => $request->input('account_no'),
+                'swift_code' => $request->input('swift_code'),
+                'bank_address' => $request->input('bank_address'),
+                'description' => $request->input('description'),
+                'status' => $request->input('status'),
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => 'Bank account successfully updated.',
+                'data' => $bank,
+            ], 200);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'error' => 'Something went wrong: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function destroy(int $id): JsonResponse

@@ -20,8 +20,13 @@
         </div>
 
         <div class="col-md-12 mt-3">
-            <label>Bank Name:</label>
-            <input type="text" name="bank_name" class="form-control" placeholder="Bank Name" maxlength="255" />
+            <label>Bank Name <span class="text-danger">*</span>:</label>
+            <input type="text" name="bank_name" class="form-control" placeholder="Bank Name" maxlength="255" required />
+        </div>
+
+        <div class="col-md-12 mt-3">
+            <label>Branch <span class="text-danger">*</span>:</label>
+            <input type="text" name="branch" class="form-control" placeholder="Branch Name (e.g. Saudabad)" maxlength="255" required />
         </div>
 
         <div class="col-md-12 mt-3">

@@ -11,8 +11,10 @@ class Bank extends Model
 
      protected $fillable = [
         'company_id',
+        'account_id',
         'account_title',
         'bank_name',
+        'branch',
         'iban',
         'account_no',
         'swift_code',

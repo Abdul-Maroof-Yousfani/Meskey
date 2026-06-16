@@ -107,7 +107,7 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Withhold %:</label>
-                        <input type="number" step="any" name="so_withhold_percentage" id="so_withhold_percentage" value="10" class="form-control" onkeyup="calculate_so_withhold()" onchange="calculate_so_withhold()">
+                        <input type="number" step="any" min="0" max="100" name="so_withhold_percentage" id="so_withhold_percentage" value="10" class="form-control" onkeyup="calculate_so_withhold()" onchange="calculate_so_withhold()">
                     </div>
                 </div>
                 <div class="col-md-3">
@@ -676,6 +676,8 @@
         const qtyVal = parseFloat(qty.val()) || 0;
         const rateVal = parseFloat(rate.val()) || 0;
         amount.val((qtyVal * rateVal).toFixed(0));
+        
+        calculate_so_withhold();
     }
 
     function validateBagsBeforeSubmit() {
@@ -874,6 +876,7 @@
                 // $("#payment_term_id").trigger("change");
 
                 so_amount = res.so_amount;
+                setTimeout(calculate_so_withhold, 500);
 
                 $("#delivery_date").val(res.delivery_date);
                 $("#delivery_date").prop("readonly", true);
@@ -984,9 +987,9 @@
                 console.log(res);
                 $('#soTableBody').html(res);
                 $("#locations").val("");
-                $("#locations").trigger();
+                $("#locations").trigger("change");
                 
-
+                setTimeout(calculate_so_withhold, 500);
             },
             error: function(error) {
                 // Handle errors here
@@ -997,9 +1000,23 @@
     }
 
     function calculate_so_withhold() {
-        const percentage = parseFloat($("#so_withhold_percentage").val()) || 0;
-        const totalAmount = parseFloat(so_amount) || 0; // so_amount is set in get_so_detail
-        const heldAmount = (totalAmount * (percentage / 100)).toFixed(2);
+        let percentage = parseFloat($("#so_withhold_percentage").val());
+        if (isNaN(percentage)) percentage = 0;
+
+        if (percentage < 0) {
+            percentage = 0;
+            $("#so_withhold_percentage").val(0);
+        } else if (percentage > 100) {
+            percentage = 100;
+            $("#so_withhold_percentage").val(100);
+        }
+
+        let do_amount = 0;
+        $(".amount").each(function() {
+            do_amount += parseFloat($(this).val()) || 0;
+        });
+
+        const heldAmount = (do_amount * (percentage / 100)).toFixed(2);
         $("#so_held_amount").val(heldAmount);
     }
 

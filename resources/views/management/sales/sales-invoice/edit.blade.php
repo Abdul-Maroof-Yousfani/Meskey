@@ -216,7 +216,7 @@
                                         $qty = $data->no_of_bags * $data->packing;
                                     }
                                 @endphp
-                                <input type="number" name="qty[]" data-balance="{{ sales_invoice_balance($data->dc_data_id) + $data->no_of_bags }}" id="qty_{{ $index }}" class="form-control qty" step="0.01" min="0" value="{{ $qty }}" onkeyup="calculateRow(this); check_balance(this, 'no_of_bags_{{ $index }}')" readonly>
+                                <input type="number" name="qty[]" data-balance="{{ sales_invoice_balance($data->dc_data_id) + $data->no_of_bags }}" id="qty_{{ $index }}" class="form-control qty" step="0.01" min="0" value="{{ round($qty) }}" onkeyup="calculateRow(this); check_balance(this, 'no_of_bags_{{ $index }}')" readonly>
                             </td>
                             <td style="min-width: 100px;">
                                 <input type="number" name="rate[]" id="rate_{{ $index }}" onkeyup="calculateRow(this)" class="form-control rate" step="0.01" min="0" value="{{ $data->rate }}" readonly>
