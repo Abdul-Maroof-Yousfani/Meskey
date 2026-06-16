@@ -22,6 +22,11 @@
     </div>
 
     <div class="col-md-12 mt-3">
+        <label>Branch:</label>
+        <input type="text" class="form-control" value="{{ $bank->branch }}" disabled>
+    </div>
+
+    <div class="col-md-12 mt-3">
         <label>IBAN:</label>
         <input type="text" class="form-control" value="{{ $bank->iban }}" disabled>
     </div>

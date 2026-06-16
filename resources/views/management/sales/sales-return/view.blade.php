@@ -239,7 +239,7 @@
                                 <td style="min-width: 100px;">
                                     <input type="number" name="qty[]" id="qty_{{ $rowIndex }}"
                                         class="form-control qty" step="0.01" min="0"
-                                        value="{{ $qty }}" readonly>
+                                        value="{{ round($qty) }}" readonly>
                                 </td>
                                 <td style="min-width: 100px;">
                                     <input readonly type="number" name="rate[]" id="rate_{{ $rowIndex }}"

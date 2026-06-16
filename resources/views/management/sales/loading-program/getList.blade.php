@@ -99,7 +99,7 @@
                                 {{ $ticket->subArrivalLocation->name ?? 'N/A' }}
                             </td>
                             <td class="text-right">
-                                {{ number_format($ticket->qty ?? 0, 2) }}
+                                {{ round($ticket->qty ?? 0) }}
                             </td>
 
                             {{-- Parent columns with rowspan (only on first row) --}}

@@ -56,7 +56,7 @@
                     min="0"  
                     data-balance="{{ sale_return_balance($data->id) }}"
                     onkeyup="calc(this); check_balance(this, 'no_of_bags_{{ $rowIndex }}')" 
-                    value="{{ $qty }}">
+                    value="{{ round($qty) }}">
             </td>
             <td style="min-width: 100px;">
                 <input readonly type="number" name="rate[]" id="rate_{{ $rowIndex }}" onkeyup="" class="form-control rate" step="0.01" min="0" value="{{ $rate }}">

@@ -55,13 +55,13 @@
                     {{ sales_invoice_balance($data->id) }}</span>
             </td>
             <td style="min-width: 100px;">
-                <input type="number" name="qty[]" id="qty_{{ $rowIndex }}" data-balance="{{ sales_invoice_balance($data->id) }}" class="form-control qty" onkeyup="calculateRow(this); check_balance(this, 'no_of_bags_{{ $rowIndex }}')" step="0.01" min="0" value="{{ $qty }}" readonly>
+                <input type="number" name="qty[]" id="qty_{{ $rowIndex }}" data-balance="{{ sales_invoice_balance($data->id) }}" class="form-control qty" onkeyup="calculateRow(this); check_balance(this, 'no_of_bags_{{ $rowIndex }}')" step="0.01" min="0" value="{{ round($qty) }}" readonly>
             </td>
             <td style="min-width: 100px;">
                 <input type="number" name="rate[]" id="rate_{{ $rowIndex }}" onkeyup="calculateRow(this)" class="form-control rate" step="0.01" min="0" value="{{ $rate }}" readonly>
             </td>
             <td style="min-width: 120px;">
-                <input type="number" name="gross_amount[]" id="gross_amount_{{ $rowIndex }}" class="form-control gross_amount" readonly value="{{ $qty * $rate }}">
+                <input type="number" name="gross_amount[]" id="gross_amount_{{ $rowIndex }}" class="form-control gross_amount" readonly value="{{ round($qty * $rate) }}">
             </td>
             <td style="min-width: 100px;">
                 <input type="number" name="discount_percent[]" id="discount_percent_{{ $rowIndex }}" onkeyup="calculateRow(this)" class="form-control discount_percent" step="0.01" min="0" max="100" value="{{ $discountPercent }}" readonly>

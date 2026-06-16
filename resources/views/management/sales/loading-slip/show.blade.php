@@ -130,13 +130,13 @@
                             <div class="col-xs-12 col-sm-6 col-md-3">
                                 <div class="form-group">
                                     <label>SO Qty:</label>
-                                    <input type="number" value="{{ $order['so_qty'] }}" class="form-control" readonly disabled />
+                                    <input type="number" value="{{ round($order['so_qty']) }}" class="form-control" readonly disabled />
                                 </div>
                             </div>
                             <div class="col-xs-12 col-sm-6 col-md-3">
                                 <div class="form-group">
                                     <label>DO Qty:</label>
-                                    <input type="number" value="{{ $order['do_qty'] }}" class="form-control" readonly disabled />
+                                    <input type="number" value="{{ round($order['do_qty']) }}" class="form-control" readonly disabled />
                                 </div>
                             </div>
                         </div>

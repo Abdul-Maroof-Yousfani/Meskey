@@ -233,11 +233,11 @@
                                 </td>
                                 <td>
                                     <input type="number" name="minimum_qty[]" id="minimum_qty_{{ $i }}"
-                                        value="{{ $data->minimum_qty }}" class="form-control minimum_qty" step="0.01" min="0">
+                                        value="{{ round($data->minimum_qty) }}" class="form-control minimum_qty" step="0.01" min="0">
                                 </td>
                                 <td>
                                     <input type="number" name="qty[]" id="qty_{{ $i }}"
-                                        value="{{ $data->qty ?? ($data->bag_size * $data->no_of_bags) }}" class="form-control qty" step="0.01"
+                                        value="{{ round($data->qty ?? ($data->bag_size * $data->no_of_bags) ) }}" class="form-control qty" step="0.01"
                                         min="0" onkeyup="calc(this)" onchange="calc(this)">
                                 </td>
                                 <td>

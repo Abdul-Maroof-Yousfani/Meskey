@@ -15,7 +15,7 @@
                 <tr>
                     <td>{{ $key + 1 }}</td>
                     <td>{{ $bank->account_title }}</td>
-                    <td>{{ $bank->bank_name }}</td>
+                    <td>{{ $bank->bank_name }} {!! $bank->branch ? '<br><small class="text-muted">('.$bank->branch.')</small>' : '' !!}</td>
                     <td>{{ $bank->iban }}</td>
                     <td>
                         <label class="badge bg-light-{{ $bank->status == 'inactive' ? 'primary' : 'danger' }}">

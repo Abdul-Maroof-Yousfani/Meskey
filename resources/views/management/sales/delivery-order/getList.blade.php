@@ -10,7 +10,7 @@
                         <th width="8%" class="text-right">Qty</th>
                         <th width="8%" class="text-right">Rate</th>
                         <th width="10%" class="text-right">Amount</th>
-                        <th width="10%">Date</th>
+                        <th width="10%">Delivery Date</th>
                         <th width="8%">Status</th>
                         <th width="6%">Action</th>
                     </tr>
@@ -53,7 +53,7 @@
                                 </td>
 
                                 <td class="text-right align-middle">
-                                    {{ number_format($itemRow['item_data']->qty, 2) }}
+                                    {{ round($itemRow['item_data']->qty) }}
                                     <small class="text-muted">{{ $itemRow['item']->unitOfMeasure->name ?? '' }}</small>
                                 </td>
 

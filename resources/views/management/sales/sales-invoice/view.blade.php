@@ -159,7 +159,7 @@
                                     $qty = $data->no_of_bags * $data->packing;
                                 }
                             @endphp
-                            <input type="number" class="form-control" value="{{ $qty }}" readonly>
+                            <input type="number" class="form-control" value="{{ round($qty) }}" readonly>
                         </td>
                         <td style="min-width: 100px;">
                             <input type="number" class="form-control" value="{{ $data->rate }}" readonly>
@@ -203,7 +203,7 @@
                     <tr>
                         <th colspan="3" class="text-right">Totals:</th>
                         <th>
-                            <input type="number" class="form-control" value="{{ $sales_invoice->sales_invoice_data->sum('qty') }}" readonly>
+                            <input type="number" class="form-control" value="{{ round($sales_invoice->sales_invoice_data->sum('qty'))  }}" readonly>
                         </th>
                         <th></th>
                         <th>

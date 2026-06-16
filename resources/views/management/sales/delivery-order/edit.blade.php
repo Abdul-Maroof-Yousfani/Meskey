@@ -62,6 +62,10 @@
                                 <option value="{{ $sale_order->id }}" data-type="{{ $sale_order->pay_type_id }}" @selected($delivery_order->so_id == $sale_order->id)>
                                     {{ $sale_order->reference_no }}</option>
                             @endforeach
+                            @if($sale_order_of_delivery_order && !$sale_orders->contains('id', $sale_order_of_delivery_order->id))
+                                <option value="{{ $sale_order_of_delivery_order->id }}" data-type="{{ $sale_order_of_delivery_order->pay_type_id }}" selected>
+                                    {{ $sale_order_of_delivery_order->reference_no }}</option>
+                            @endif
                         </select>
                     </div>
                 </div>
@@ -112,7 +116,7 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Withhold %:</label>
-                        <input type="number" step="any" name="so_withhold_percentage" id="so_withhold_percentage" 
+                        <input type="number" step="any" min="0" max="100" name="so_withhold_percentage" id="so_withhold_percentage" 
                             value="{{ $delivery_order->so_withhold_percentage }}"
                             class="form-control" onkeyup="calculate_so_withhold()" onchange="calculate_so_withhold()">
                     </div>
@@ -356,16 +360,17 @@
                                 </td>
                                 <td>
                                     <input type="text" name="qty[]" id="qty_{{ $index }}"
-                                        value="{{ $data->qty }}" class="form-control qty" step="0.01" data-balance="{{ delivery_order_balance($data->so_data_id) + $data->no_of_bags }}"
-                                        min="0" onchange="check_balance(this, 'no_of_bags_{{ $index }}')" onkeyup="check_balance(this, 'no_of_bags_{{ $index }}')" oninput="calc(this)" @readonly($delivery_order->salesOrder->pay_type_id == 10)>
+                                        value="{{ round($data->qty) }}" class="form-control qty" step="0.01" data-balance="{{ delivery_order_balance($data->so_data_id) + $data->no_of_bags }}"
+                                        min="0" onkeyup="check_balance(this, 'no_of_bags_{{ $index }}')"
+                                        onchange="check_balance(this, 'no_of_bags_{{ $index }}')" oninput="calc(this)" @readonly($delivery_order->salesOrder->pay_type_id == 10)>
                                      
-                                    <input type="hidden" name="current_qty[]" id="current_qty_{{ $index }}" value="{{ $data->qty }}">
-
+                                    <input type="hidden" name="current_qty[]" id="current_qty_{{ $index }}" value="{{ round($data->qty) }}">
+ 
                                     <span style="font-size: 14px;;">Used Quantity:
-                                        {{ delivery_order_qty_used($data->so_data_id) }}</span>
+                                        <span class="used-qty">{{ round(delivery_order_qty_used($data->so_data_id))  }}</span></span>
                                     <br />
                                     <span style="font-size: 14px;">Balance:
-                                        {{ delivery_order_qty_balance($data->so_data_id) }}</span>
+                                        {{ round(delivery_order_qty_balance($data->so_data_id))  }}</span>
                                      
                                     </td>
                                 <td>
@@ -380,7 +385,7 @@
                                 </td>
                                 <td>
                                     <input type="text" name="amount[]" id="amount_{{ $index }}"
-                                        value="{{ round($data->rate * ($data->qty ?? 0)) }}" class="form-control amount"
+                                        value="{{ round($data->rate * ($data->qty ?? 0))  }}" class="form-control amount"
                                         readonly>
                                 </td>
                                 <td>
@@ -805,7 +810,7 @@
             rate = $("#rate_0").val() || 0;
             
             if (rate > 0) {
-                const qtyVal = ((remaining_amount / rate)).toFixed(2);
+                const qtyVal = Math.round(remaining_amount / rate);
                 $("#qty_0").val(qtyVal);
                 $("#qty_0").prop("readonly", true);
                 $("#amount_0").val((parseFloat(rate) * parseFloat(qtyVal)).toFixed(0));
@@ -955,6 +960,8 @@
         const qtyVal = parseFloat(qty.val()) || 0;
         const rateVal = parseFloat(rate.val()) || 0;
         amount.val((qtyVal * rateVal).toFixed(0));
+        
+        calculate_so_withhold();
     }
 
     function validateBagsBeforeSubmit() {
@@ -1154,7 +1161,7 @@
 
                 so_amount = res.so_amount;
                 
-                calculate_so_withhold();
+                setTimeout(calculate_so_withhold, 500);
 
                 // Re-apply saved location/arrival/section after refreshing maps
                 $("#locations").val(String(initialLocationId || ''));
@@ -1270,7 +1277,8 @@
                 $('#soTableBody').empty();
 
                 $('#soTableBody').html(res);
-
+                
+                setTimeout(calculate_so_withhold, 500);
             },
             error: function(error) {
                 // Handle errors here
@@ -1281,9 +1289,23 @@
     }
 
      function calculate_so_withhold() {
-        const percentage = parseFloat($("#so_withhold_percentage").val()) || 0;
-        const totalAmount = parseFloat(so_amount) || 0;
-        const heldAmount = (totalAmount * (percentage / 100)).toFixed(2);
+        let percentage = parseFloat($("#so_withhold_percentage").val());
+        if (isNaN(percentage)) percentage = 0;
+
+        if (percentage < 0) {
+            percentage = 0;
+            $("#so_withhold_percentage").val(0);
+        } else if (percentage > 100) {
+            percentage = 100;
+            $("#so_withhold_percentage").val(100);
+        }
+
+        let do_amount = 0;
+        $(".amount").each(function() {
+            do_amount += parseFloat($(this).val()) || 0;
+        });
+
+        const heldAmount = (do_amount * (percentage / 100)).toFixed(2);
         $("#so_held_amount").val(heldAmount);
     }
 

@@ -140,14 +140,14 @@
                             <div class="col-xs-12 col-sm-6 col-md-4">
                                 <div class="form-group">
                                     <label>SO Qty:</label>
-                                    <input type="number" value="{{ $order['so_qty'] }}" class="form-control" readonly
+                                    <input type="number" value="{{ round($order['so_qty']) }}" class="form-control" readonly
                                         step="0.01" />
                                 </div>
                             </div>
                             <div class="col-xs-12 col-sm-6 col-md-4">
                                 <div class="form-group">
                                     <label>DO Qty:</label>
-                                    <input type="number" value="{{ $order['do_qty'] }}" class="form-control" readonly
+                                    <input type="number" value="{{ round($order['do_qty']) }}" class="form-control" readonly
                                         step="0.01" />
                                 </div>
                             </div>
@@ -183,8 +183,8 @@
             {{-- Hidden inputs for backward compatibility --}}
             <input type="hidden" name="customer" value="{{ $SalesQc->customer }}" />
             <input type="hidden" name="commodity" value="{{ $SalesQc->commodity }}" />
-            <input type="hidden" name="so_qty" value="{{ $SalesQc->so_qty }}" />
-            <input type="hidden" name="do_qty" value="{{ $SalesQc->do_qty }}" />
+            <input type="hidden" name="so_qty" value="{{ round($SalesQc->so_qty) }}" />
+            <input type="hidden" name="do_qty" value="{{ round($SalesQc->do_qty) }}" />
             <input type="hidden" name="factory" value="{{ $SalesQc->factory }}" />
             <input type="hidden" name="gala" value="{{ $SalesQc->gala }}" />
         @else

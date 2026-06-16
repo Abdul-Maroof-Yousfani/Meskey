@@ -121,6 +121,10 @@
                                 <option value="{{ $sale_order->id }}" @selected($delivery_order->so_id == $sale_order->id)>
                                     {{ $sale_order->reference_no }}</option>
                             @endforeach
+                            @if($sale_order_of_delivery_order && !$sales_orders->contains('id', $sale_order_of_delivery_order->id))
+                                <option value="{{ $sale_order_of_delivery_order->id }}" selected>
+                                    {{ $sale_order_of_delivery_order->reference_no }}</option>
+                            @endif
                         </select>
                     </div>
                 </div>
@@ -270,12 +274,12 @@
                                         readonly>
                                 </td>
                                 <td>
-                                    <input type="number" class="form-control" value="{{ $data->qty }}" readonly>
+                                    <input type="number" class="form-control" value="{{ round($data->qty) }}" readonly>
                                     <span style="font-size: 14px;;">Used Quantity:
-                                        {{ delivery_order_qty_used($data->so_data_id) }}</span>
+                                        {{ round(delivery_order_qty_used($data->so_data_id))  }}</span>
                                     <br />
                                     <span style="font-size: 14px;">Balance:
-                                        {{ delivery_order_qty_balance($data->so_data_id) }}</span>
+                                        {{ round(delivery_order_qty_balance($data->so_data_id))  }}</span>
                                 </td>
                                 <td>
                                     <input type="number" class="form-control" value="{{ $data->rate }}" readonly>
@@ -286,7 +290,7 @@
                                 </td>
                                 <td>
                                     <input type="number" class="form-control"
-                                        value="{{ round($data->rate * ($data->qty ?? 0)) }}" readonly>
+                                        value="{{ round($data->rate * ($data->qty ?? 0))  }}" readonly>
                                 </td>
                                 <td>
                                     <input type="text" class="form-control"

@@ -53,7 +53,7 @@
                         </td>
 
                         <td class="text-right align-middle">
-                            {{ number_format($itemRow['item_data']->qty, 2) }}
+                            {{ round($itemRow['item_data']->qty) }}
                             <small class="text-muted">{{ $itemRow['item']->unitOfMeasure->name ?? '' }}</small>
                         </td>
 

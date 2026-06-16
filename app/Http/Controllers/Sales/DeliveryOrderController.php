@@ -53,8 +53,8 @@ class DeliveryOrderController extends Controller
                 }
                 return true;
             });
-        
-        $receipt_vouchers = $delivery_order->receipt_vouchers->map(function($rv) {
+
+        $receipt_vouchers = $delivery_order->receipt_vouchers->map(function ($rv) {
             if ($rv->pivot->receipt_voucher_advance_id) {
                 $adv = \App\Models\ReceiptVoucherAdvance::find($rv->pivot->receipt_voucher_advance_id);
                 $rv->unified_id = "adv_{$rv->pivot->receipt_voucher_advance_id}";
@@ -66,7 +66,7 @@ class DeliveryOrderController extends Controller
             $rv->remaining_amount = $rv->pivot->amount;
             return $rv;
         });
-        
+
         $sale_order_of_delivery_order = SalesOrder::find($delivery_order->so_id);
         $latestLog = $delivery_order->approvalLogs()->with(['user', 'role'])->latest()->first();
 
@@ -78,13 +78,13 @@ class DeliveryOrderController extends Controller
         $sale_orders = SalesOrder::select('reference_no', 'id', 'transporter_used')
             ->where('am_approval_status', 'approved')
             ->get();
-            
-            // ->filter(function ($so) {
-            //     if ($so->transporter_used == 'yes') {
-            //         return $so->logistics()->where('am_approval_status', 'approved')->exists();
-            //     }
-            //     return true;
-            // });
+
+        // ->filter(function ($so) {
+        //     if ($so->transporter_used == 'yes') {
+        //         return $so->logistics()->where('am_approval_status', 'approved')->exists();
+        //     }
+        //     return true;
+        // });
         $payment_terms = PaymentTerm::all();
         $customers = Customer::where("type", "local")->get();
         $items = Product::all();
@@ -138,7 +138,7 @@ class DeliveryOrderController extends Controller
 
             $raw_vouchers = $request->receipt_vouchers ?? [];
             $salesOrder = SalesOrder::find($request->sale_order_id);
-            
+
             if ($salesOrder && $salesOrder->pay_type_id == 10) {
                 foreach ($raw_vouchers as $rv_val) {
                     if (str_starts_with($rv_val, 'adv_')) {
@@ -149,7 +149,7 @@ class DeliveryOrderController extends Controller
                                 ->where('receipt_voucher_advance_id', $adv->id)
                                 ->sum('amount');
                             $remaining = doubleval($adv->net_amount) - doubleval($spent);
-                            
+
                             $withhold_amount = ($rv_val == $request->withhold_for_rv) ? ($request->withhold_amount ?? 0) : 0;
 
                             DB::table('delivery_order_receipt_voucher')->insert([
@@ -168,9 +168,9 @@ class DeliveryOrderController extends Controller
                         $rv = ReceiptVoucher::with('items')->find($rv_id);
                         if ($rv) {
                             $linked_amount = $rv->items->where("reference_type", "sale_order")
-                                                      ->where("reference_id", $request->sale_order_id)
-                                                      ->sum("net_amount");
-                            
+                                ->where("reference_id", $request->sale_order_id)
+                                ->sum("net_amount");
+
                             $spent = DB::table('delivery_order_receipt_voucher')
                                 ->join('delivery_order', 'delivery_order.id', '=', 'delivery_order_receipt_voucher.delivery_order_id')
                                 ->where('delivery_order_receipt_voucher.receipt_voucher_id', $rv->id)
@@ -178,17 +178,17 @@ class DeliveryOrderController extends Controller
                                 ->whereNull('delivery_order_receipt_voucher.receipt_voucher_advance_id')
                                 ->sum('delivery_order_receipt_voucher.amount');
 
-                                
-                            
+
+
                             $jv_spent = DB::table('journal_voucher_details')
                                 ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
                                 ->whereNull('journal_vouchers.deleted_at')
                                 ->whereNull('journal_voucher_details.deleted_at')
                                 ->where('receipt_voucher_id', $rv->id)
                                 ->sum('debit_amount');
-                            
+
                             $spent += $jv_spent;
-                            
+
                             $remaining = doubleval($linked_amount) - doubleval($spent);
                             $withhold_amount = ($rv_val == $request->withhold_for_rv) ? ($request->withhold_amount ?? 0) : 0;
 
@@ -211,7 +211,7 @@ class DeliveryOrderController extends Controller
             $spent_qty = $salesOrder->delivery_orders->where("am_approval_status", "!=", "rejected")->flatMap->delivery_order_data->sum("qty");
             $total_qty = $salesOrder?->sales_order_data?->first()->qty;
             $remaining_qty = $total_qty - $spent_qty;
-            
+
 
             foreach ($request->item_id as $key => $item) {
                 // $balance = delivery_order_balance($request->so_data_id[$key]);
@@ -220,7 +220,7 @@ class DeliveryOrderController extends Controller
                 //     return response()->json("Total balance is $balance. you can not exceed this balance", 422);
                 // }
 
-                if($remaining_qty < (int)$request->qty[$key]) {
+                if ($remaining_qty < (int) $request->qty[$key]) {
                     return response()->json("Total remaining qty(kg): $remaining_qty. you can not exceed this balance", 422);
                 }
 
@@ -286,9 +286,16 @@ class DeliveryOrderController extends Controller
                     $sq->where('item_id', $request->item_id_for_filter);
                 });
             })
-            // Filter by Date Range (dispatch_date)
-            ->when($request->filled('date_range_for_filter'), function ($q) use ($request) {
-                $dates = explode(' - ', $request->date_range_for_filter);
+            // Filter by Created At Date Range
+            ->when($request->filled('created_at_for_filter'), function ($q) use ($request) {
+                $dates = explode(' - ', $request->created_at_for_filter);
+                if (count($dates) == 2) {
+                    $q->whereBetween('created_at', [trim($dates[0]) . ' 00:00:00', trim($dates[1]) . ' 23:59:59']);
+                }
+            })
+            // Filter by Delivery Date Range (dispatch_date)
+            ->when($request->filled('delivery_date_for_filter'), function ($q) use ($request) {
+                $dates = explode(' - ', $request->delivery_date_for_filter);
                 if (count($dates) == 2) {
                     $q->whereBetween('dispatch_date', [trim($dates[0]), trim($dates[1])]);
                 }
@@ -321,7 +328,7 @@ class DeliveryOrderController extends Controller
                 'sale_order' => $delivery_order,
                 'so_no' => $so_no,
                 'created_by_id' => $delivery_order->created_by,
-                'delivery_date' => $delivery_order->delivery_date,
+                'delivery_date' => $delivery_order->dispatch_date,
                 'id' => $delivery_order->id,
                 'customer_id' => $delivery_order->customer_id,
                 'status' => $delivery_order->am_approval_status,
@@ -343,7 +350,7 @@ class DeliveryOrderController extends Controller
 
         $date = Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
 
-        $prefix = 'DO-'.Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
+        $prefix = 'DO-' . Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
 
         $latestContract = DeliveryOrder::withoutGlobalScopes()->where('reference_no', 'like', "$prefix-%")
             ->latest()
@@ -359,9 +366,9 @@ class DeliveryOrderController extends Controller
             $newNumber = 1;
         }
 
-        $so_no = 'DO-'.$datePart.'-'.str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+        $so_no = 'DO-' . $datePart . '-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
 
-        if (! $locationId && ! $contractDate) {
+        if (!$locationId && !$contractDate) {
             return response()->json([
                 'success' => true,
                 'so_no' => $so_no,
@@ -385,12 +392,12 @@ class DeliveryOrderController extends Controller
                 //     $hasApprovedLogistics = $saleOrder->logistics()
                 //         ->where('am_approval_status', 'approved')
                 //         ->exists();
-
+    
                 //     if (!$hasApprovedLogistics) {
                 //         return false;
                 //     }
                 // }
-
+    
                 foreach ($saleOrder->sales_order_data as $data) {
                     $balance = delivery_order_balance($data->id);
                     if ($balance > 0) {
@@ -403,7 +410,7 @@ class DeliveryOrderController extends Controller
 
 
         $data = [];
-     
+
         foreach ($saleOrders as $saleOrder) {
             $data[] = [
                 'text' => $saleOrder->reference_no,
@@ -418,7 +425,7 @@ class DeliveryOrderController extends Controller
             "rawData" => $saleOrders,
             "processedData" => $data
         ];
-        
+
     }
 
     public function getDetails(Request $request)
@@ -450,14 +457,14 @@ class DeliveryOrderController extends Controller
         $factoryMap = [];
         foreach ($sale_order->factories as $factoryPivot) {
             $factory = $factoryPivot->factory;
-            if (! $factory) {
+            if (!$factory) {
                 continue;
             }
             $companyLocationId = $factory->company_location_id;
             $factoryMap[$companyLocationId][] = [
                 'id' => $factory->id,
                 'text' => $factory->name,
-                
+
             ];
         }
 
@@ -465,13 +472,13 @@ class DeliveryOrderController extends Controller
         $sectionMap = [];
         foreach ($sale_order->sections as $sectionPivot) {
             $section = $sectionPivot->section;
-            if (! $section) {
+            if (!$section) {
                 continue;
             }
             $factoryId = $section->arrival_location_id;
             $sectionMap[$factoryId][] = [
                 'id' => $section->id,
-                'text' => $section->name . " (" . $section?->arrivalLocation?->name  . ")",
+                'text' => $section->name . " (" . $section?->arrivalLocation?->name . ")",
             ];
         }
 
@@ -503,14 +510,14 @@ class DeliveryOrderController extends Controller
             ->where("am_approval_status", "!=", "rejected")
             ->flatMap->delivery_order_data
             ->sum('qty');
-       
+
         $spent_qty = $sale_order->delivery_orders->where("am_approval_status", "!=", "rejected")->flatMap->delivery_order_data->sum("qty");
         $total_qty = $sale_order?->sales_order_data?->first()->qty;
         $remaining_qty = $total_qty - $spent_qty;
 
         $bag_types = BagType::select('id', 'name')->get();
 
-        
+
 
         return view('management.sales.delivery-order.getItem', compact('sale_order', 'items', 'bag_types', 'spent', 'remaining_qty'));
     }
@@ -540,18 +547,21 @@ class DeliveryOrderController extends Controller
                 'id' => "adv_{$adv->id}",
                 'text' => "advance ({$adv->net_amount})",
                 'amount' => $adv->remaining_amount,
-                'date' => $adv->receiptVoucher && $adv->receiptVoucher->rv_date 
-                    ? $adv->receiptVoucher->rv_date->format('Y-m-d') 
+                'date' => $adv->receiptVoucher && $adv->receiptVoucher->rv_date
+                    ? $adv->receiptVoucher->rv_date->format('Y-m-d')
                     : null,
             ];
         }
 
         // 2. Fetch Regular RVs linked to the Sale Order
         if ($sale_order_id) {
-            $receipt_vouchers = ReceiptVoucher::with(['delivery_orders', 'items' => function($query) use ($sale_order_id) {
-                $query->where("reference_type", "sale_order")
-                      ->where("reference_id", $sale_order_id);
-            }])
+            $receipt_vouchers = ReceiptVoucher::with([
+                'delivery_orders',
+                'items' => function ($query) use ($sale_order_id) {
+                    $query->where("reference_type", "sale_order")
+                        ->where("reference_id", $sale_order_id);
+                }
+            ])
                 ->where("customer_id", $customer_id)
                 ->get();
 
@@ -559,8 +569,8 @@ class DeliveryOrderController extends Controller
 
             foreach ($receipt_vouchers as $rv) {
                 $linked_amount = $rv->items->where("reference_type", "sale_order")
-                                          ->where("reference_id", $sale_order_id)
-                                          ->sum("net_amount");
+                    ->where("reference_id", $sale_order_id)
+                    ->sum("net_amount");
 
 
                 $spent = DB::table('delivery_order_receipt_voucher')
@@ -571,18 +581,18 @@ class DeliveryOrderController extends Controller
                     ->sum('delivery_order_receipt_voucher.amount');
 
 
-                
+
                 $jv_spent = DB::table('journal_voucher_details')
                     ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
                     ->whereNull('journal_vouchers.deleted_at')
                     ->whereNull('journal_voucher_details.deleted_at')
                     ->where('receipt_voucher_id', $rv->id)
                     ->sum('debit_amount');
-                
+
                 $spent += $jv_spent;
-                
+
                 $remaining = doubleval($linked_amount) - doubleval($spent);
-                
+
 
                 if ($remaining > 0) {
                     $data[] = [
@@ -600,11 +610,11 @@ class DeliveryOrderController extends Controller
 
     public function destroy(DeliveryOrder $delivery_order)
     {
-        if($delivery_order->am_approval_status == "approved" || $delivery_order->am_approval_status == 'rejected') {
+        if ($delivery_order->am_approval_status == "approved" || $delivery_order->am_approval_status == 'rejected') {
             throw new Exception("Delivery Order has been approved/rejected and cannot be updated.");
         }
-        
-        if($delivery_order) {
+
+        if ($delivery_order) {
             $delivery_order->delivery_order_data()->delete();
         }
 
@@ -621,17 +631,17 @@ class DeliveryOrderController extends Controller
             ->select('reference_no', 'id', 'pay_type_id', 'transporter_used')
             ->where('am_approval_status', 'approved')
             ->get();
-            // ->filter(function ($so) {
-            //     if ($so->transporter_used == 'yes') {
-            //         return $so->logistics()->where('am_approval_status', 'approved')->exists();
-            //     }
-            //     return true;
-            // });
+        // ->filter(function ($so) {
+        //     if ($so->transporter_used == 'yes') {
+        //         return $so->logistics()->where('am_approval_status', 'approved')->exists();
+        //     }
+        //     return true;
+        // });
         $payment_terms = PaymentTerm::all();
         $customers = Customer::where("type", "local")->get();
         $items = Product::all();
         $bag_types = BagType::select('id', 'name')->get();
-           
+
         $sale_order_of_delivery_order = SalesOrder::find($delivery_order->so_id);
 
 
@@ -647,8 +657,8 @@ class DeliveryOrderController extends Controller
                 $adv->remaining_amount = doubleval($adv->net_amount) - doubleval($spent);
                 $adv->unified_id = "adv_{$adv->id}";
                 $adv->unified_text = "advance ({$adv->net_amount})";
-                $adv->date = $adv->receiptVoucher && $adv->receiptVoucher->rv_date 
-                    ? $adv->receiptVoucher->rv_date->format('Y-m-d') 
+                $adv->date = $adv->receiptVoucher && $adv->receiptVoucher->rv_date
+                    ? $adv->receiptVoucher->rv_date->format('Y-m-d')
                     : null;
                 return $adv;
             })
@@ -660,17 +670,17 @@ class DeliveryOrderController extends Controller
         $rvsList = collect();
         if ($delivery_order->so_id) {
             $rvsList = ReceiptVoucher::with(['delivery_orders', 'items'])
-                ->whereHas("items", function($query) use ($delivery_order) {
+                ->whereHas("items", function ($query) use ($delivery_order) {
                     $query->where("reference_type", "sale_order")
-                          ->where("reference_id", $delivery_order->so_id);
+                        ->where("reference_id", $delivery_order->so_id);
                 })
                 ->where("customer_id", $delivery_order->customer_id)
                 ->get()
                 ->map(function ($rv) use ($delivery_order) {
                     $linked_amount = $rv->items->where("reference_type", "sale_order")
-                                              ->where("reference_id", $delivery_order->so_id)
-                                              ->sum("net_amount");
-                    
+                        ->where("reference_id", $delivery_order->so_id)
+                        ->sum("net_amount");
+
                     $spent = DB::table('delivery_order_receipt_voucher')
                         ->join('delivery_order', 'delivery_order.id', '=', 'delivery_order_receipt_voucher.delivery_order_id')
                         ->where('delivery_order_receipt_voucher.receipt_voucher_id', $rv->id)
@@ -678,16 +688,16 @@ class DeliveryOrderController extends Controller
                         ->whereNull('delivery_order_receipt_voucher.receipt_voucher_advance_id')
                         ->where('delivery_order_receipt_voucher.delivery_order_id', '!=', $delivery_order->id)
                         ->sum('delivery_order_receipt_voucher.amount');
-                    
+
                     $jv_spent = DB::table('journal_voucher_details')
                         ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
                         ->whereNull('journal_vouchers.deleted_at')
                         ->whereNull('journal_voucher_details.deleted_at')
                         ->where('receipt_voucher_id', $rv->id)
                         ->sum('debit_amount');
-                    
+
                     $spent += $jv_spent;
-                    
+
                     $rv->remaining_amount = doubleval($linked_amount) - doubleval($spent);
                     $rv->unified_id = "rv_{$rv->id}";
                     $rv->unified_text = "{$rv->unique_no} ({$rv->ref_bill_no})";
@@ -712,7 +722,7 @@ class DeliveryOrderController extends Controller
         $withhold_rv_id = null;
 
 
-        if($delivery_order->am_approval_status == "approved" || $delivery_order->am_approval_status == 'rejected') {
+        if ($delivery_order->am_approval_status == "approved" || $delivery_order->am_approval_status == 'rejected') {
             return response()->json("Delivery Order has been approved/rejected and cannot be updated.", 400);
         }
 
@@ -766,7 +776,7 @@ class DeliveryOrderController extends Controller
                                 ->where('delivery_order_id', '!=', $delivery_order->id)
                                 ->sum('amount');
                             $remaining = doubleval($adv->net_amount) - doubleval($spent);
-                            
+
                             $withhold_amount = ($rv_val == $request->withhold_for_rv) ? ($request->withhold_amount ?? 0) : 0;
 
                             DB::table('delivery_order_receipt_voucher')->insert([
@@ -785,9 +795,9 @@ class DeliveryOrderController extends Controller
                         $rv = ReceiptVoucher::with('items')->find($rv_id);
                         if ($rv) {
                             $linked_amount = $rv->items->where("reference_type", "sale_order")
-                                                      ->where("reference_id", $request->sale_order_id)
-                                                      ->sum("net_amount");
-                            
+                                ->where("reference_id", $request->sale_order_id)
+                                ->sum("net_amount");
+
                             $spent = DB::table('delivery_order_receipt_voucher')
                                 ->join('delivery_order', 'delivery_order.id', '=', 'delivery_order_receipt_voucher.delivery_order_id')
                                 ->where('delivery_order_receipt_voucher.receipt_voucher_id', $rv->id)
@@ -795,16 +805,16 @@ class DeliveryOrderController extends Controller
                                 ->whereNull('delivery_order_receipt_voucher.receipt_voucher_advance_id')
                                 ->where('delivery_order_receipt_voucher.delivery_order_id', '!=', $delivery_order->id)
                                 ->sum('delivery_order_receipt_voucher.amount');
-                            
+
                             $jv_spent = DB::table('journal_voucher_details')
                                 ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
                                 ->whereNull('journal_vouchers.deleted_at')
                                 ->whereNull('journal_voucher_details.deleted_at')
                                 ->where('receipt_voucher_id', $rv->id)
                                 ->sum('debit_amount');
-                            
+
                             $spent += $jv_spent;
-                            
+
                             $remaining = doubleval($linked_amount) - doubleval($spent);
                             $withhold_amount = ($rv_val == $request->withhold_for_rv) ? ($request->withhold_amount ?? 0) : 0;
 
@@ -831,12 +841,12 @@ class DeliveryOrderController extends Controller
                 ->flatMap->delivery_order_data
                 ->whereIn('so_data_id', $salesOrder->sales_order_data->pluck('id'))
                 ->sum("qty");
-            
+
             $total_qty = $salesOrder->sales_order_data->sum('qty');
             $remaining_qty = $total_qty - $spent_qty;
 
             // Rebuild line items
-            
+
             $delivery_order->delivery_order_data()->delete();
             foreach ($request->item_id as $key => $item) {
                 // $balance =  delivery_order_balance($request->so_data_id[$key]);
@@ -845,7 +855,7 @@ class DeliveryOrderController extends Controller
                 // }
 
                 $current_qty = $request->current_qty[$key] ?? 0;
-                if((int)$request->qty[$key] > (int)($remaining_qty + $current_qty)) {
+                if ((int) $request->qty[$key] > (int) ($remaining_qty + $current_qty)) {
                     return response()->json("Total KG is: $remaining_qty, you can not exceed this balance", 422);
                 }
 
@@ -900,13 +910,14 @@ class DeliveryOrderController extends Controller
         foreach ($subarrival_locations as $subarrival_location) {
             $data[] = [
                 'id' => $subarrival_location->id,
-                'text' => $subarrival_location->name . " (" . $subarrival_location?->arrivalLocation?->name  . ")",
+                'text' => $subarrival_location->name . " (" . $subarrival_location?->arrivalLocation?->name . ")",
             ];
         }
 
         return $data;
     }
-    public function get_balance_against_second_weighbridge(Request $request) {
+    public function get_balance_against_second_weighbridge(Request $request)
+    {
         $delivery_order_id = $request->delivery_order_id;
 
         $balance = get_second_weighbridge_balance_by_delivery_order($delivery_order_id);
