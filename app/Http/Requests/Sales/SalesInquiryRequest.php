@@ -43,8 +43,15 @@ class SalesInquiryRequest extends FormRequest
             "item_id.*" => "required",
 
 
-            "qty" => "nullable|array",
+            // "qty" => "nullable|array",
+            // "qty.*" => "required",
+
+
+            "qty" => "required",
             "qty.*" => "required",
+
+            "minimum_qty" => "nullable|array",
+            "minimum_qty.*" => "nullable|numeric|gt:0",
 
             "rate" => "nullable|array",
             "rate.*" => "required",
@@ -75,7 +82,28 @@ class SalesInquiryRequest extends FormRequest
         ];
     }
 
-    public function messages() {
+
+
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            $qtys = $this->input('qty', []);
+            $minimumQtys = $this->input('minimum_qty', []);
+
+            foreach ($minimumQtys as $index => $minimumQty) {
+                $qty = $qtys[$index] ?? null;
+
+                if ($minimumQty !== null && $minimumQty >= $qty) {
+                    $validator->errors()->add(
+                        "minimum_qty.$index",
+                        "The minimum_qty.$index must be less than quantity."
+                    );
+                }
+            }
+        });
+    }
+    public function messages()
+    {
         return [
             "qty.*" => "Each Quantity is required",
             "rate.*" => "Each rate is required",

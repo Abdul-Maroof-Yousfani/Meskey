@@ -14,6 +14,7 @@ class SalesOrderData extends Model
         "item_id",
         "qty",
         "rate",
+        'minimum_qty',
         "sale_order_id",
         "pack_size",
         "brand_id",
@@ -25,18 +26,22 @@ class SalesOrderData extends Model
         "rate_per_mond"
     ];
 
-    public function sales_order() {
+    public function sales_order()
+    {
         return $this->belongsTo(SalesOrder::class, "sale_order_id");
     }
 
-    public function sale_inquiry_data() {
+    public function sale_inquiry_data()
+    {
         return $this->belongsTo(SalesInquiryData::class, "sales_inquiry_id");
     }
 
-    public function item() {
+    public function item()
+    {
         return $this->belongsTo(Product::class, "item_id");
     }
-    public function brand() {
+    public function brand()
+    {
         return $this->belongsTo(Brands::class);
     }
 }

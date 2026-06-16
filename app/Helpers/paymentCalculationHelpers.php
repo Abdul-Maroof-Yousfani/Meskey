@@ -5,8 +5,10 @@ use App\Models\Arrival\ArrivalSamplingRequest;
 use App\Models\Arrival\ArrivalSamplingResult;
 use App\Models\Arrival\ArrivalSamplingResultForCompulsury;
 use App\Models\ArrivalPurchaseOrder;
+use App\Models\Master\Account\Account;
 use App\Models\Master\Account\Transaction;
 use App\Models\Procurement\PaymentRequestData;
+use App\Models\Procurement\PurchaseFreight;
 use App\Models\PurchaseTicket;
 use App\Models\PurchaseSamplingRequest;
 use App\Models\Arrival\PurchaseSamplingResult;
@@ -266,6 +268,7 @@ function calculateThaddaPayment($ticketId)
         'ticket_id' => $ticketId,
         'basic_info' => $basicInfo,
         'loading_info' => $loadingInfo,
+        'advanceFreight' => $advanceFreight,
         // 'sampling_data' => $samplingData,
         'deductions' => $deductions,
         // 'amounts' => $amounts,
@@ -986,5 +989,174 @@ function updatetransactionofticket($ticketno)
             ]
         );
     }
+    return "Updateed Successfully";
+}
+
+
+
+
+
+
+
+
+
+
+
+function updatetransactionofpurchaseticket($ticketno)
+{
+    $arrivalTicket = ArrivalTicket::where('unique_no', $ticketno)->first();
+
+
+
+    if ($arrivalTicket == null) {
+        return "Ticket: " . $ticketno . " Not Found";
+    }
+    if ($arrivalTicket->arrival_purchase_order_id == null) {
+        return "Ticket: " . $arrivalTicket->unique_no . " don't have purchase order linked";
+    }
+
+
+    $purchaseFreight = PurchaseFreight::where('arrival_ticket_id', $arrivalTicket->id)->first();
+
+    if ($purchaseFreight == null) {
+        return "Ticket: " . $arrivalTicket->unique_no . " don't have Thadda - builty linked";
+
+    }
+    $purchaseTicket = $purchaseFreight->purchaseTicket;
+
+    $purchaseOrder = ArrivalPurchaseOrder::findOrFail($arrivalTicket->arrival_purchase_order_id);
+
+    $grnNo = $arrivalTicket->arrivalSlip->unique_no;
+    $truckNo = $arrivalTicket->truck_no ?? 'N/A';
+    $biltyNo = $arrivalTicket->bilty_no ?? 'N/A';
+    $referenceNo = "$truckNo/$biltyNo";
+
+
+
+    $purchaseTicket = $purchaseFreight->purchaseTicket;
+    $loadingWeight = $purchaseFreight->loading_weight ?? 0;
+    $purchasePaymentDetail = calculatePaymentDetails($purchaseTicket->id, 2);
+    $contractNo = $arrivalTicket->purchaseOrder->contract_no ?? 'N/A';
+
+    $amount = $purchasePaymentDetail['calculations']['supplier_net_amount'] ?? 0;
+    $inventoryAmount = $purchasePaymentDetail['calculations']['inventory_amount'] ?? 0;
+    $advance_freight = $purchasePaymentDetail['freight_info']['advance_freight'] ?? 0;
+    $productName = $purchaseOrder->qcProduct->name ?? $purchaseOrder->product->name;
+    $qcAccountId = $purchaseOrder->qcProduct->account_id;
+    $stockInTransitAccount = Account::where('name', 'Stock in Transit')->first();
+    $rate = $purchaseOrder->rate_per_kg;
+    $totalAmount = $inventoryAmount;
+    $type = $arrivalTicket->saudaType->name == 'Pohanch' ? 'pohanch' : 'thadda';
+
+    $stockTrx = Transaction::where('grn_no', $grnNo)
+        //where('voucher_no', $contractNo)
+        ->where('purpose', 'stock-in-transit')
+        ->where('type', 'credit')
+        //  ->where('against_reference_no', "$freightTruckMatches/$freightBiltyMatches")
+        ->first();
+
+    if ($stockTrx) {
+        $stockTrx->update([
+            'amount' => $inventoryAmount + $advance_freight,
+            'account_id' => $stockInTransitAccount->id,
+            'counter_account_id' => $qcAccountId,
+            'voucher_no' => $purchaseOrder->contract_no,
+            'grn_no' => $grnNo,
+            'remarks' => "Stock-in-transit recorded for arrival of " . $productName . " under contract ($contractNo) via Bilty: $biltyNo - Truck No: $truckNo. Weight: {$loadingWeight} kg at rate {$purchaseTicket->purchaseOrder->rate_per_kg}/kg. Inventory value includes advance freight of Rs. {$advance_freight}."
+        ]);
+    } else {
+        createTransaction(
+            $inventoryAmount + $advance_freight,
+            $stockInTransitAccount->id,
+            1,
+            $contractNo,
+            'credit',
+            'no',
+            [
+                'purpose' => "stock-in-transit",
+                'counter_account_id' => $qcAccountId,
+                'payment_against' => "thadda-purchase",
+                'against_reference_no' => "$truckNo/$biltyNo",
+                'grn_no' => $grnNo,
+                'remarks' => "Stock-in-transit recorded for arrival of " . $productName . " under contract ($contractNo) via Bilty: $biltyNo - Truck No: $truckNo. Weight: {$loadingWeight} kg at rate {$purchaseTicket->purchaseOrder->rate_per_kg}/kg. Inventory value includes advance freight of Rs. {$advance_freight}."
+            ]
+        );
+    }
+
+    $txnInv = Transaction::where('grn_no', $grnNo)
+        //where('voucher_no', $contractNo)
+        ->where('purpose', 'arrival-slip')
+        ->where('type', 'debit')
+        //->where('against_reference_no', $referenceNo)
+        ->first();
+
+    if ($txnInv) {
+        $txnInv->update([
+            'amount' => $inventoryAmount + $advance_freight,
+            'account_id' => $qcAccountId,
+            'counter_account_id' => $purchaseOrder->supplier->account_id,
+            'grn_no' => $grnNo,
+            'voucher_no' => $purchaseOrder->contract_no,
+            'type' => 'debit',
+            'remarks' => "Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: $loadingWeight kg) at rate $rate/kg. Total inventory amount includes advance freight of Rs. $advance_freight. Total amount: $totalAmount to be paid to supplier."
+        ]);
+    } else {
+        createTransaction(
+            $inventoryAmount + $advance_freight,
+            $qcAccountId,
+            1,
+            $contractNo,
+            'debit',
+            'no',
+            [
+                'purpose' => "arrival-slip",
+                'counter_account_id' => $purchaseOrder->supplier->account_id,
+                'grn_no' => $grnNo,
+                'payment_against' => $type . "-purchase",
+                'against_reference_no' => $referenceNo,
+                'remarks' => "Inventory ledger update for raw material arrival. Recording purchase of raw material (weight: $loadingWeight kg) at rate $rate/kg. Total inventory amount includes advance freight of Rs. $advance_freight. Total amount: $totalAmount to be paid to supplier."
+            ]
+        );
+    }
+
+    $supplierTxn = Transaction::where('voucher_no', $contractNo)
+        // ->where('grn_no', $grnNo)
+        ->where('purpose', 'supplier-payable')
+        // ->where('against_reference_no', "$freightTruckMatches/$freightBiltyMatches")
+        ->first();
+
+    if ($supplierTxn) {
+        $supplierTxn->update([
+            'amount' => $purchasePaymentDetail['calculations']['supplier_net_amount'] ?? 0,
+            'account_id' => $purchaseOrder->supplier->account_id,
+            'counter_account_id' => $qcAccountId,
+            'voucher_no' => $purchaseOrder->contract_no,
+            'grn_no' => $grnNo,
+            'type' => 'credit',
+            'remarks' => "Accounts payable recorded against the contract ($contractNo) for Bilty: $biltyNo - Truck No: $truckNo. Amount payable to the supplier.",
+        ]);
+    } else {
+        createTransaction(
+            $purchasePaymentDetail['calculations']['supplier_net_amount'] ?? 0,
+            $purchaseOrder->supplier->account_id,
+            1,
+            $contractNo,
+            'credit',
+            'no',
+            [
+                'purpose' => "supplier-payable",
+                'counter_account_id' => $qcAccountId,
+                'grn_no' => $grnNo,
+                'payment_against' => "thadda-purchase",
+                'against_reference_no' => "$truckNo/$biltyNo",
+                'remarks' => "Accounts payable recorded against the contract ($contractNo) for Bilty: $biltyNo - Truck No: $truckNo. Amount payable to the supplier.",
+            ]
+        );
+    }
+
+    $BrokerLedgerDelete = Transaction::where('grn_no', $grnNo)
+        ->where('purpose', 'broker')
+        ->where('payment_against', $type . '-purchase')
+        ->delete();
     return "Updateed Successfully";
 }

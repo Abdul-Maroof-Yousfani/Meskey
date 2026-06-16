@@ -47,12 +47,23 @@ class Account extends Model
 
     public static function getTree()
     {
-        $accounts = Account::with('children')
-            ->whereNull('parent_id')
+        // $accounts = Account::with('children')
+        //     ->whereNull('parent_id')
+        //     ->where('status', 'active')
+        //     ->orderBy('name')
+        //     ->get();
+
+
+        $accounts = Account::whereNull('parent_id')
             ->where('status', 'active')
+            ->with([
+                'children' => function ($query) {
+                    $query->where('status', 'active')
+                        ->orderBy('name');
+                }
+            ])
             ->orderBy('name')
             ->get();
-
         return self::buildTree($accounts);
     }
 
@@ -61,13 +72,15 @@ class Account extends Model
         $tree = collect();
 
         foreach ($accounts as $account) {
-            $account->name = $prefix . $account->name;
-            $tree->push($account);
+            if ($account->status == 'active') {
+                $account->name = $prefix . $account->name;
+                $tree->push($account);
 
-            if ($account->children->isNotEmpty()) {
-                $tree = $tree->merge(
-                    self::buildTree($account->children, $prefix . '--')
-                );
+                if ($account->children->isNotEmpty()) {
+                    $tree = $tree->merge(
+                        self::buildTree($account->children, $prefix . '--')
+                    );
+                }
             }
         }
 

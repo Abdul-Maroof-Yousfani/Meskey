@@ -105,6 +105,7 @@ class PaymentVoucherController extends Controller
         })->where('is_operational', 'no')->get()->pluck('name');
 
         $data['accounts'] = Account::where('is_operational', 'yes')
+            ->where('status', 'active')
             ->whereHas('parent', function ($q) {
                 $q->where('hierarchy_path', '2')
                     ->orWhereHas('parent', function ($q2) {

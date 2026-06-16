@@ -132,7 +132,7 @@ class SaleOrderController extends Controller
         $payload['arrival_location_id'] = $factoryIds[0] ?? null;
         $payload['arrival_sub_location_id'] = $sectionIds[0] ?? null;
         $payload['created_by'] = auth()->user()->id;
-        $payload['parent_user_id'] = auth()->user()->parent_user_id;
+        $payload['parent_user_id'] = auth()->user()->parent_user_id ?? auth()->user()->id;
         $payload["remarks"] = !$request->remarks ? '' : $request->remarks;
         $payload["reference_no"] = self::getNumber($request, null, $request->order_date);
         $payload["contact_person"] = !$request->contact_person ? '' : $request->contact_person;
@@ -175,6 +175,7 @@ class SaleOrderController extends Controller
                 $sales_order->sales_order_data()->create([
                     'item_id' => $request->item_id[$index],
                     'qty' => $request->qty[$index],
+                    'minimum_qty' => $request->minimum_qty[$index],
                     'rate' => $request->rate[$index],
                     'pack_size' => $request->pack_size[$index],
                     'brand_id' => $request->brand_id[$index],
@@ -329,6 +330,7 @@ class SaleOrderController extends Controller
                 $sales_order->sales_order_data()->create([
                     'item_id' => $request->item_id[$index],
                     'qty' => $request->qty[$index],
+                    'minimum_qty' => $request->minimum_qty[$index],
                     'rate' => $request->rate[$index],
                     'pack_size' => $request->pack_size[$index] ?? 0,
                     'brand_id' => $request->brand_id[$index],
