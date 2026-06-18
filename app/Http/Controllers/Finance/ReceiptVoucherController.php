@@ -545,7 +545,7 @@ class ReceiptVoucherController extends Controller
                         $notAllocatedItem = ReceiptVoucherItem::create([
                             'receipt_voucher_id' => $receiptVoucher->id,
                             'reference_type' => 'not-allocated',
-                            'reference_id' => null,
+                            'reference_id' => 0,
                             'amount' => $excessAmount,
                             'tax_id' => $item['tax_id'] ?? null,
                             'account_id' => null,
