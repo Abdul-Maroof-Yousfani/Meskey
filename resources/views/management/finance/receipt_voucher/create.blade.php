@@ -767,6 +767,7 @@
         }
 
         function validateBankTotal() {
+            const allowExcess = $('#allow_excess').is(':checked');
             $('.nested-bank-row').each(function() {
                 const subrow = $(this).closest('tr.bank-details-subrow');
                 const rowIdx = subrow.attr('id').replace('bank-subrow-', '');
@@ -779,7 +780,7 @@
                 });
                 
                 const inputs = subrow.find('.bank-amount');
-                if (sum > balanceVal && !mainRow.hasClass('advance-row')) {
+                if (!allowExcess && sum > balanceVal && !mainRow.hasClass('advance-row')) {
                     inputs.css('border-color', '#dc3545');
                 } else {
                     inputs.css('border-color', '');
@@ -800,6 +801,7 @@
             // Find outstanding balance for this row (stored in amount-input's data-balance)
             const isAdvance = mainRow.hasClass('advance-row');
             const balanceVal = parseFloat(mainRow.find('.amount-input').attr('data-balance')) || 0;
+            const allowExcess = $('#allow_excess').is(':checked');
             
             // Sum all bank amounts in this subrow
             let sum = 0;
@@ -807,8 +809,8 @@
                 sum += parseFloat($(this).val()) || 0;
             });
             
-            // If not an advance and the sum exceeds the outstanding balance, auto-cap it
-            if (!isAdvance && sum > balanceVal) {
+            // If not an advance, allow_excess is not checked, and the sum exceeds the outstanding balance, auto-cap it
+            if (!isAdvance && !allowExcess && sum > balanceVal) {
                 Swal.fire({
                     icon: 'warning',
                     title: 'Amount Exceeds Balance',
