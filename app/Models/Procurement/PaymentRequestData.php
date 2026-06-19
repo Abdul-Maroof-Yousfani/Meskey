@@ -74,6 +74,11 @@ class PaymentRequestData extends Model
         'labour_vendor_id',
         'gross_amount',
         'is_paid_by_supplier',
+
+
+        'access_weight',
+        'exempted_weight',
+        'billing_weight',
     ];
 
     protected $casts = [
