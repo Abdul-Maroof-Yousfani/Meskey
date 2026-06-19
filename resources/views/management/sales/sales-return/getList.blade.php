@@ -55,7 +55,7 @@
                                 </td>
 
                                 <td class="text-right align-middle">
-                                    {{ isset($itemRow["si_data"]) ? number_format($itemRow["si_data"]->rate * $itemRow["si_data"]->qty, 2) : '' }}
+                                    {{ isset($itemRow["si_data"]) ? round($itemRow["si_data"]->rate * $itemRow["si_data"]->qty) : '' }}
                                 </td>
 
                                 {{-- Date & Status - Show only on first row --}}

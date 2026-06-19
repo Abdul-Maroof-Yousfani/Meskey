@@ -41,7 +41,7 @@
                             <div class="col-xs-12 col-sm-6 col-md-2">
                                 <div class="form-group">
                                     <label>SO Qty:</label>
-                                    <input type="text" value="{{ $so->sales_order_data->first()->qty ?? 'N/A' }}" disabled class="form-control" readonly />
+                                    <input type="text" value="{{ round($so->sales_order_data->first()->qty ?? 'N/A' ) }}" disabled class="form-control" readonly />
                                 </div>
                             </div>
                             <div class="col-xs-12 col-sm-6 col-md-2">
@@ -91,7 +91,7 @@
                             <div class="col-xs-12 col-sm-6 col-md-4">
                                 <div class="form-group">
                                     <label>Total Qty:</label>
-                                    <input type="text" value="{{ $do->delivery_order_data_sum_qty }}" disabled class="form-control" readonly />
+                                    <input type="text" value="{{ round($do->delivery_order_data_sum_qty) }}" disabled class="form-control" readonly />
                                 </div>
                             </div>
                             <div class="col-xs-12 col-sm-6 col-md-4">

@@ -366,7 +366,7 @@
                                     >
                                         <input type="number" name="loading_program_items[{{ $index }}][qty]"
                                             class="form-control form-control-sm qty-input" step="0.01"
-                                            value="{{ $item->qty }}" @disabled($item->firstWeighbridge)>
+                                            value="{{ round($item->qty) }}" @disabled($item->firstWeighbridge)>
                                     </div>
                                 </td>
                                 <td class="text-center">

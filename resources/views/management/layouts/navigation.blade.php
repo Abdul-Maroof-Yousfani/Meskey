@@ -808,15 +808,7 @@
                                 </li>
                                 @endcanAccess
 
-                                @canAccess('bank')
-                                <li data-menu="">
-                                    <a class="dropdown-item d-flex align-items-center" href="{{ route('bank.index') }}"
-                                        onclick="loadPageContent('{{ route('bank.index') }}')" data-toggle="dropdown"><i
-                                            class="ft-arrow-right submenu-icon"></i>
-                                        <span data-i18n="Task Board">Bank</span>
-                                    </a>
-                                </li>
-                                @endcanAccess
+                                
 
                                 @canAccess('shipmentcompany-list')
                                 <li data-menu="">
@@ -1402,6 +1394,16 @@
                             <span data-i18n="Task Board">Manage Pay Types</span>
                         </a>
                     </li>
+
+                    @canAccess('bank')
+                        <li data-menu="">
+                            <a class="dropdown-item d-flex align-items-center" href="{{ route('bank.index') }}"
+                                onclick="loadPageContent('{{ route('bank.index') }}')" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i>
+                                <span data-i18n="Task Board">Manage Banks</span>
+                            </a>
+                        </li>
+                    @endcanAccess
 
                     @canAccess('raw-material-broker')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"

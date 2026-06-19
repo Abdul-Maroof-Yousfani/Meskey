@@ -20,12 +20,12 @@
                 <td>{{ str_replace('_', ' ', ucwords($logistic->type ?? 'sale_order', '_')) }}</td>
                 <td>{{ $logistic->date ?? '' }}</td>
                 <td>{{ $logistic->so_no ?? '' }}</td>
-                <td>{{ number_format($logistic->so_qty, 2) }}</td>
+                <td>{{ round($logistic->so_qty) }}</td>
                 <td>{{ $logistic->commodity ?? '' }}</td>
                 <td>{{ $logistic->customer ?? '' }}</td>
                 <td>{{ $logistic->sauda_type }}</td>
                 <td>{{ $logistic->items->map(fn($item) => $item->transporter_name ?: $item->transporter?->company_name ?: $item->transporter?->name)->filter()->unique()->implode(', ') }}</td>
-                <td>{{ number_format($logistic->items->sum('qty'), 2) }}</td>
+                <td>{{ round($logistic->items->sum('qty'))  }}</td>
                 <td class="text-center">
                     @php
                         $status = $logistic->am_approval_status ?? 'pending';

@@ -13,7 +13,7 @@
                         <th width="8%" class="text-right">Rate (kg)</th>
                         <th width="8%" class="text-right">Rate (mond)</th>
                         <th width="8%" class="text-right">Amount</th>
-                        <th width="8%">Date</th>
+                        <th width="8%">Delivery Date</th>
                         <th width="8%">Status</th>
                         <th width="7%">Action</th>
                     </tr>
@@ -57,12 +57,12 @@
                                 </td>
 
                                 <td class="text-right align-middle">
-                                    {{ number_format($itemRow['item_data']->qty ?? 0, 2) }}
+                                    {{ round($itemRow['item_data']->qty ?? 0) }}
                                     <small class="text-muted">{{ $itemRow['item']->unitOfMeasure->name ?? '' }}</small>
                                 </td>
 
                                 <td class="text-right align-middle">
-                                    {{ number_format($itemRow['item_data']->minimum_qty ?? 0, 2) }}
+                                    {{ round($itemRow['item_data']->minimum_qty ?? 0) }}
                                     <small class="text-muted">{{ $itemRow['item']->unitOfMeasure->name ?? '' }}</small>
                                 </td>
 
@@ -75,7 +75,7 @@
                                 </td>
 
                                 <td class="text-right align-middle">
-                                    {{ number_format($itemRow["item_data"]->rate * $itemRow["item_data"]->qty, 2) }}
+                                    {{ round($itemRow["item_data"]->rate * $itemRow["item_data"]->qty) }}
                                 </td>
 
                                 {{-- Date & Status - Show only on first row --}}

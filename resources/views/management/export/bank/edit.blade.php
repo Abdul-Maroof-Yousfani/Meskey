@@ -23,9 +23,15 @@
         </div>
 
         <div class="col-md-12 mt-3">
-            <label>Bank Name:</label>
+            <label>Bank Name <span class="text-danger">*</span>:</label>
             <input type="text" name="bank_name" class="form-control" value="{{ $bank->bank_name }}"
-                maxlength="255" />
+                maxlength="255" required />
+        </div>
+
+        <div class="col-md-12 mt-3">
+            <label>Branch <span class="text-danger">*</span>:</label>
+            <input type="text" name="branch" class="form-control" value="{{ $bank->branch }}"
+                placeholder="Branch Name (e.g. Saudabad)" maxlength="255" required />
         </div>
 
         <div class="col-md-12 mt-3">
