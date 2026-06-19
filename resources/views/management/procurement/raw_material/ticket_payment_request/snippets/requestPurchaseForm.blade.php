@@ -42,7 +42,15 @@
     $bagRate = 0;
 
     $totalDeductions = 0;
-    $loadingWeight = $arrivalTicket->freight->arrived_weight ?? 0;
+    $arrivedWeight = $arrivalTicket->freight->arrived_weight ?? 0;
+    // $arrivedWeight = 44402 ?? 0;
+    $loadingWeight = $arrivalTicket->net_weight ?? 0;
+    $accessWeight = $arrivedWeight > $loadingWeight ? $arrivedWeight - $loadingWeight : 0;
+    $exemptedWeight = $accessWeight > 100 ? 100 : $accessWeight;
+
+
+    $exemptedWeight = $paymentRequestData->exempted_weight ?? $exemptedWeight;
+    $billingWeight = $arrivedWeight > $loadingWeight ? ($loadingWeight + $exemptedWeight) : $arrivedWeight;
     $noOfBags = $arrivalTicket->approvals->total_bags ?? 0;
     $ratePerKg = $purchaseOrder->rate_per_kg ?? 0;
     $kantaCharges = $arrivalTicket->freight->karachi_kanta_charges ?? 0;
@@ -90,6 +98,11 @@
     $grossAmount = $ratePerKg * $loadingWeight;
     $existingOtherDeductionKg = $otherDeduction->other_deduction_kg ?? 0;
     $existingOtherDeductionAmount = $otherDeduction->other_deduction_value ?? 0;
+    $existingRerateOnAccessWeightKg = $otherDeduction->rerate_on_access_weight_kg ?? 0;
+    $existingRerateOnAccessWeightRate = $otherDeduction->rerate_on_access_weight_rate ?? 0;
+    $existingRerateOnAccessWeightAmount = $otherDeduction->rerate_on_access_weight_amount ?? 0;
+    $deduction_on_weight_difference_kg = $otherDeduction->deduction_on_weight_difference_kg ?? 0;
+    $deduction_on_weight_difference_amount = $otherDeduction->deduction_on_weight_difference_amount ?? 0;
     $isApprovalPage = isset($isRequestApprovalPage) && $isRequestApprovalPage;
     $currentPaymentAmount = 0;
     $currentFreightAmount = 0;
@@ -168,7 +181,7 @@
 <input type="hidden" name="purchase_order_id" value="{{ $purchaseOrder->id }}">
 <input type="hidden" name="ticket_id" value="{{ $arrivalTicket->id ?? '' }}">
 <input type="hidden" id="original_bag_weight" value="{{ $bagWeight }}">
-<input type="hidden" id="loading_weight" value="{{ $loadingWeight }}">
+<input type="hidden" id="loading_weight" value="{{ $billingWeight }}">
 <input type="hidden" id="no_of_bags" value="{{ $noOfBags }}">
 <input type="hidden" id="rate_per_kg" value="{{ $ratePerKg }}">
 <input type="hidden" id="bag_rate" value="{{ $bagRate }}">
@@ -181,7 +194,7 @@
         samplingResults: [
             @foreach ($samplingRequestResults as $slab)
                 @if ($slab->applied_deduction)
-                                                                                    {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    {
                         id: {{ $slab->id }},
                         applied_deduction: {{ $slab->applied_deduction ?? 0 }},
                         deduction_type: '{{ $slab->deduction_type ?? 'amount' }}',
@@ -195,10 +208,10 @@
         compulsoryResults: [
             @foreach ($samplingRequestCompulsuryResults as $slab)
                 @if ($slab->applied_deduction)
-                                                    {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            {
                     id: {{ $slab->id }},
                     applied_deduction: {{ $slab->applied_deduction ?? 0 }}
-                                                    },
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            },
                 @endif
             @endforeach
         ],
@@ -308,10 +321,38 @@
             </div>
             <div class="col-md-3">
                 <div class="form-group">
-                    <label>Arrival Weight</label>
+                    <label>Loading Weight</label>
                     <input type="text" class="form-control" name="loading_weight" value="{{ $loadingWeight }}" readonly>
                 </div>
             </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label>Arrival Weight</label>
+                    <input type="text" class="form-control" name="arrived_weight" value="{{ $arrivedWeight }}" readonly>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label>Access Weight</label>
+                    <input type="text" class="form-control" name="access_weight" value="{{ $accessWeight }}" readonly>
+                </div>
+            </div>
+
+
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label>Exempted Weight</label>
+                    <input type="number" class="form-control" name="exempted_weight" value="{{ $exemptedWeight }}" {{ $exemptedWeight == 0 ? 'readonly' : ''}} max="{{ $exemptedWeight != 0 ? $accessWeight : ''}}">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label>Billing Weight</label>
+                    <input type="number" class="form-control" name="billing_weight" value="{{ $billingWeight }}" readonly>
+                </div>
+            </div>
+
             <div class="col-md-3">
                 <div class="form-group">
                     <label>Average Bag Weight</label>
@@ -650,6 +691,46 @@
                                         </div>
                                     </td>
                                 </tr>
+
+
+
+                                <!-- Other Deduction Row -->
+                                <tr class="other-deduction-row" data-other-deduction="true">
+                                    <td><strong>Re-rate on Access weight</strong>
+                                        <input type="hidden" name="other_deduct ion[slab_name]" value="Other Deduction">
+                                    </td>
+                                    <td>N/A</td>
+                                    <td>
+                                        <div class="input-group mb-0">
+                                            <input type="number" step="any" class="form-control editable-field"
+                                                name="rerate_on_access_weight_kg" id="rerate_on_access_weight_kg"
+                                                value="{{ $existingRerateOnAccessWeightKg }}" placeholder="Enter KG value">
+                                            <div class="input-group-append">
+                                                <span class="input-group-text text-sm">Kg</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="input-group mb-0">
+                                            <input type="number" step="any" class="form-control editable-field"
+                                                name="rerate_on_access_weight_rate" id="rerate_on_access_weight_rate"
+                                                value="{{ $existingRerateOnAccessWeightRate }}" placeholder="Enter KG value">
+                                            <div class="input-group-append">
+                                                <span class="input-group-text text-sm">Rs</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="input-group mb-0">
+                                            <input type="text" class="form-control" name="rerate_on_access_weight_amount"
+                                                readonly id="rerate_on_access_weight_amount"
+                                                value="{{ $existingRerateOnAccessWeightAmount }}">
+                                        </div>
+                                    </td>
+                                </tr>
+
+
+
                             </tbody>
                         </table>
                     </div>
@@ -864,7 +945,8 @@
             const $contractRangeField = $('.contract-range-field');
 
             const originalBagWeight = parseFloat($('#original_bag_weight').val()) || 0;
-            const loadingWeight = parseFloat($('#loading_weight').val()) || 0;
+            const loadingWeight = parseFloat($('input[name="billing_weight"]').val()) || 0;
+            // const loadingWeight = parseFloat($('#loading_weight').val()) || 0;
             const noOfBags = parseFloat($('#no_of_bags').val()) || 0;
             const ratePerKg = parseFloat($('#rate_per_kg').val()) || 0;
             const bagRate = parseFloat($('#bag_rate').val()) || 0;
@@ -883,6 +965,8 @@
             }
 
             function calculateNetWeight() {
+                const loadingWeight = parseFloat($('input[name="billing_weight"]').val()) || 0;
+
                 const currentBagWeight = parseFloat($('#bag_weight_input').val()) || 0;
                 return loadingWeight - (currentBagWeight * noOfBags);
             }
@@ -977,6 +1061,7 @@
 
             function updateSamplingResultsDeductions() {
                 const netWeight = calculateNetWeight();
+                console.log(netWeight + 'TEst Test');
                 let totalSamplingAmount = 0;
 
                 window.samplingData.samplingResults.forEach(slabData => {
@@ -1081,11 +1166,24 @@
 
                 const totalSamplingDeductions = updateSamplingResultsDeductions();
 
+                // const deduction_on_weight_difference_kg = parseFloat($('#deduction_on_weight_difference_kg').val()) || 0;
+                // // const deduction_on_weight_difference_rate = parseFloat($('#deduction_on_weight_difference_rate').val()) || 0;
+                // const deduction_on_weight_difference_amount = ratePerKg * deduction_on_weight_difference_kg;
+                // $('#deduction_on_weight_difference_amount').val(deduction_on_weight_difference_amount.toFixed(2));
+
+
+
+                const deduction_on_access_weight_kg = parseFloat($('#rerate_on_access_weight_kg').val()) || 0;
+                const deduction_on_access_weight_rate = parseFloat($('#rerate_on_access_weight_rate').val()) || 0;
+                const deduction_on_access_weight_amount = deduction_on_access_weight_rate * deduction_on_access_weight_kg;
+                $('#rerate_on_access_weight_amount').val(deduction_on_access_weight_amount.toFixed(2) || 0);
+
+
+
                 const grossAmount = ratePerKg * loadingWeight;
                 const totalDeductionsForFormula = totalSamplingDeductions + bagWeightAmount +
-                    loadingWeighbridgeAmount;
-                const totalAmount = grossAmount - totalDeductionsForFormula + bagRateAmount - parseInt(
-                                                    {{ $grossFreightAmount ?? 0 }}) + {{ $totalSupplierCommission }};
+                    loadingWeighbridgeAmount + deduction_on_access_weight_amount;
+                const totalAmount = grossAmount - totalDeductionsForFormula + bagRateAmount - parseInt({{ $grossFreightAmount ?? 0 }}) + {{ $totalSupplierCommission }};
 
                 $('#total_amount').val(totalAmount);
                 $('#total_amount_display').val(totalAmount.toFixed(2));
@@ -1208,6 +1306,52 @@
                 $(".togglehistorytable").slideToggle(400);
                 $(this).toggleClass("active");
             });
+
+
+            // function deduction_on_weight_difference() {
+            $(document).on('input', '#deduction_on_weight_difference_kg', function () {
+                updateAllCalculations();
+            });
+            $(document).on('input', '#rerate_on_access_weight_kg, #rerate_on_access_weight_rate', function () {
+                updateAllCalculations();
+            });
+
+
+
+
+            $(document).on('input', 'input[name="exempted_weight"]', function () {
+                const loadingweight = parseFloat($('input[name="loading_weight"]').val()) || 0;
+                const access_weight = parseFloat($('input[name="access_weight"]').val()) || 0;
+                const exemptedWeight = parseFloat($(this).val()) || 0;
+
+                // Remove old error
+                $(this).next('.error-message').remove();
+
+                if (exemptedWeight > access_weight) {
+                    $(this).after('<small class="error-message text-danger">Exempted weight cannot be greater than access weight.</small>');
+                    $('input[name="billing_weight"]').val(loadingweight);
+                    return;
+                }
+
+                const billingweight = loadingweight + exemptedWeight;
+
+                $('input[name="billing_weight"]').val(billingweight);
+                updateSamplingResultsDeductions();
+                updateAllCalculations();
+            });
+
+
         });
+
+
+
+
+
+
+
+
+
+        // }
+
     </script>
 @endif

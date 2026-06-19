@@ -78,6 +78,9 @@
     $grossAmount = $ratePerKg * $loadingWeight;
     $existingOtherDeductionKg = $otherDeduction->other_deduction_kg ?? 0;
     $existingOtherDeductionAmount = $otherDeduction->other_deduction_value ?? 0;
+    $existingRerateOnAccessWeightKg = $otherDeduction->rerate_on_access_weight_kg ?? 0;
+    $existingRerateOnAccessWeightRate = $otherDeduction->rerate_on_access_weight_rate ?? 0;
+    $existingRerateOnAccessWeightAmount = $otherDeduction->rerate_on_access_weight_amount ?? 0;
     $isApprovalPage = isset($isRequestApprovalPage) && $isRequestApprovalPage;
     $currentPaymentAmount = 0;
     $currentFreightAmount = 0;
@@ -168,7 +171,7 @@
         samplingResults: [
             @foreach ($samplingRequestResults as $slab)
                 @if ($slab->applied_deduction)
-                                                                    {
+                                                                                                                                                                    {
                         id: {{ $slab->id }},
                         applied_deduction: {{ $slab->applied_deduction ?? 0 }},
                         deduction_type: '{{ $slab->deduction_type ?? 'amount' }}',
@@ -182,10 +185,10 @@
         compulsoryResults: [
             @foreach ($samplingRequestCompulsuryResults as $slab)
                 @if ($slab->applied_deduction)
-                                            {
+                                                                                            {
                     id: {{ $slab->id }},
                     applied_deduction: {{ $slab->applied_deduction ?? 0 }}
-                                            },
+                                                                                            },
                 @endif
             @endforeach
         ],
@@ -419,6 +422,43 @@
                                         </div>
                                     </td>
                                 </tr>
+
+
+
+                                <!-- Other Deduction Row -->
+                                <tr class="other-deduction-row" data-other-deduction="true">
+                                    <td><strong>Re-rate on Access weight</strong>
+                                        <input type="hidden" name="other_deduct ion[slab_name]" value="Other Deduction">
+                                    </td>
+                                    <td>N/A</td>
+                                    <td>
+                                        <div class="input-group mb-0">
+                                            <input type="number" step="any" class="form-control editable-field"
+                                                name="rerate_on_access_weight_kg" id="rerate_on_access_weight_kg"
+                                                value="{{ $existingRerateOnAccessWeightKg }}" placeholder="Enter KG value">
+                                            <div class="input-group-append">
+                                                <span class="input-group-text text-sm">Kg</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="input-group mb-0">
+                                            <input type="number" step="any" class="form-control editable-field"
+                                                name="rerate_on_access_weight_rate" id="rerate_on_access_weight_rate"
+                                                value="{{ $existingRerateOnAccessWeightRate }}" placeholder="Enter KG value">
+                                            <div class="input-group-append">
+                                                <span class="input-group-text text-sm">Rs</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="input-group mb-0">
+                                            <input type="text" class="form-control" name="rerate_on_access_weight_amount"
+                                                readonly id="rerate_on_access_weight_amount"
+                                                value="{{ $existingRerateOnAccessWeightAmount }}">
+                                        </div>
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -629,6 +669,43 @@
                                         </div>
                                     </td>
                                 </tr>
+
+                                <!-- Other Deduction Row -->
+                                <tr class="other-deduction-row" data-other-deduction="true">
+                                    <td><strong>Re-rate on Access weight</strong>
+                                        <input type="hidden" name="other_deduct ion[slab_name]" value="Other Deduction">
+                                    </td>
+                                    <td>N/A</td>
+                                    <td>
+                                        <div class="input-group mb-0">
+                                            <input type="number" step="any" class="form-control editable-field"
+                                                name="rerate_on_access_weight_kg" id="rerate_on_access_weight_kg"
+                                                value="{{ $existingRerateOnAccessWeightKg }}" placeholder="Enter KG value">
+                                            <div class="input-group-append">
+                                                <span class="input-group-text text-sm">Kg</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="input-group mb-0">
+                                            <input type="number" step="any" class="form-control editable-field"
+                                                name="rerate_on_access_weight_rate" id="rerate_on_access_weight_rate"
+                                                value="{{ $existingRerateOnAccessWeightRate }}" placeholder="Enter KG value">
+                                            <div class="input-group-append">
+                                                <span class="input-group-text text-sm">Rs</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="input-group mb-0">
+                                            <input type="text" class="form-control" name="rerate_on_access_weight_amount"
+                                                readonly id="rerate_on_access_weight_amount"
+                                                value="{{ $existingRerateOnAccessWeightAmount }}">
+                                        </div>
+                                    </td>
+                                </tr>
+
+
                             </tbody>
                         </table>
                     </div>
@@ -1166,11 +1243,22 @@
                 $('#loading_weighbridge_amount_display').val(loadingWeighbridgeAmount.toFixed(2));
 
                 const totalSamplingDeductions = updateSamplingResultsDeductions();
+
+
+                const deduction_on_access_weight_kg = parseFloat($('#rerate_on_access_weight_kg').val()) || 0;
+                const deduction_on_access_weight_rate = parseFloat($('#rerate_on_access_weight_rate').val()) || 0;
+                const deduction_on_access_weight_amount = deduction_on_access_weight_rate * deduction_on_access_weight_kg;
+                $('#rerate_on_access_weight_amount').val(deduction_on_access_weight_amount.toFixed(2) || 0);
+
+
+
+
+
                 const grossAmount = ratePerKg * loadingWeight;
                 const totalDeductionsForFormula = totalSamplingDeductions + bagWeightAmount +
-                    loadingWeighbridgeAmount;
+                    loadingWeighbridgeAmount + deduction_on_access_weight_amount;
                 const totalAmount = grossAmount - totalDeductionsForFormula + bagRateAmount +
-                                            {{ $totalSupplierCommission }};
+                                                                                            {{ $totalSupplierCommission }};
 
                 $('#modal_total_amount').val(totalAmount);
                 $('#modal_total_amount_display').val(totalAmount.toFixed(2));
@@ -1300,6 +1388,13 @@
             updateAllCalculations();
             $loadingRadio.on('change', toggleSections);
             $withoutLoadingRadio.on('change', toggleSections);
+
+
+
+            $(document).on('input', '#rerate_on_access_weight_kg, #rerate_on_access_weight_rate', function () {
+                updateAllCalculations();
+            });
+
         });
     </script>
 @endif

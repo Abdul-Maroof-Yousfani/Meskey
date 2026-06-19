@@ -648,6 +648,9 @@ class PaymentRequestController extends Controller
                 'account_id' => $accountId,
                 'other_deduction_kg' => $request->other_deduction['kg_value'] ?? 0,
                 'other_deduction_value' => $request->other_deduction['kg_amount'] ?? 0,
+                'rerate_on_access_weight_kg' => $request->rerate_on_access_weight_kg ?? 0,
+                'rerate_on_access_weight_rate' => $request->rerate_on_access_weight_rate ?? 0,
+                'rerate_on_access_weight_amount' => $request->rerate_on_access_weight_amount ?? 0,
                 'request_type' => 'payment',
                 'module_type' => 'purchase_order',
                 'amount' => $request->payment_request_amount ?? 0
@@ -662,6 +665,9 @@ class PaymentRequestController extends Controller
                 'module_type' => 'purchase_order',
                 'other_deduction_kg' => $request->other_deduction['kg_value'] ?? 0,
                 'other_deduction_value' => $request->other_deduction['kg_amount'] ?? 0,
+                'rerate_on_access_weight_kg' => $request->rerate_on_access_weight_kg ?? 0,
+                'rerate_on_access_weight_rate' => $request->rerate_on_access_weight_rate ?? 0,
+                'rerate_on_access_weight_amount' => $request->rerate_on_access_weight_amount ?? 0,
                 'amount' => $request->freight_pay_request_amount
             ]);
         }
@@ -766,7 +772,7 @@ class PaymentRequestController extends Controller
 
             $otherDeduction = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($ticket) {
                 $query->where('ticket_id', $ticket->id);
-            })->select('other_deduction_kg', 'other_deduction_value')
+            })->select('other_deduction_kg', 'other_deduction_value', 'rerate_on_access_weight_kg', 'rerate_on_access_weight_rate', 'rerate_on_access_weight_amount')
                 ->latest()
                 ->first();
         }
