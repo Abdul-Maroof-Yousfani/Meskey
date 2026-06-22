@@ -307,19 +307,17 @@
                                         value="{{ $data->no_of_bags }}" class="form-control no_of_bags" readonly>
                                 </td>
                                 {{-- <td>
-                                    <input type="number" name="qty[]" id="qty_{{ $index }}" value="{{ round($data->qty) }}" class="form-control qty" step="0.01"
-                                        min="0" readonly>
+                                    <input type="number" name="qty[]" id="qty_{{ $index }}" value="{{ round($data->qty) }}"
+                                        class="form-control qty" step="0.01" min="0" readonly>
                                 </td> --}}
                                 <td>
-                                    <input type="number" name="minimum_qty[]" id="minimum_qty_{{ $index }}" value="{{ round($data->minimum_qty) }}" class="form-control minimum_qty" step="0.01"
-                                        min="0" readonly>
                                     <input type="number" name="minimum_qty[]" id="minimum_qty_{{ $index }}"
-                                        value="{{ $data->minimum_qty }}" class="form-control minimum_qty" step="0.01"
-                                        min="0" readonly>
+                                        value="{{ round($data->minimum_qty) }}" class="form-control minimum_qty"
+                                        step="0.01" min="0" readonly>
                                 </td>
                                 <td>
-                                    <input type="number" name="qty[]" id="qty_{{ $index }}" value="{{ $data->qty }}"
-                                        class="form-control qty" step="0.01" min="0" readonly>
+                                    <input type="number" name="qty[]" id="qty_{{ $index }}"
+                                        value="{{ $data->qty }}" class="form-control qty" step="0.01" min="0" readonly>
                                 </td>
                                 <td>
                                     <input type="number" name="rate[]" id="rate_{{ $index }}" value="{{ $data->rate }}"
