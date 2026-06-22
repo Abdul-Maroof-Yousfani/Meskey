@@ -49,7 +49,9 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Inquiry Date: <span class="text-danger">*</span></label>
-                        <input type="date" name="inquiry_date" onchange="getNumber(); validateExpiry()" id="inquiry_date" class="form-control" value="{{ date('Y-m-d') }}" min="{{ date('Y-m-d') }}">
+                        <input type="date" name="inquiry_date" onchange="getNumber(); validateExpiry()"
+                            id="inquiry_date" class="form-control" value="{{ date('Y-m-d') }}"
+                            min="{{ date('Y-m-d') }}">
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -65,7 +67,8 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Delivery Date: <span class="text-danger">*</span></label>
-                        <input type="date" name="required_date" id="required_date" onchange="validateExpiry()" class="form-control" min="{{ date('Y-m-d') }}">
+                        <input type="date" name="required_date" id="required_date" onchange="validateExpiry()"
+                            class="form-control" min="{{ date('Y-m-d') }}">
                     </div>
                 </div>
 
@@ -98,7 +101,8 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Token Money:</label>
-                        <input type="number" name="token_money" id="token_money" class="form-control" step="0.01" min="0">
+                        <input type="number" name="token_money" id="token_money" class="form-control" step="0.01"
+                            min="0">
                     </div>
                 </div>
 
@@ -118,9 +122,11 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Factory:</label>
-                        <select name="arrival_location_id[]" id="arrival_location_id" class="form-control select2" multiple>
+                        <select name="arrival_location_id[]" id="arrival_location_id" class="form-control select2"
+                            multiple>
                             @foreach ($arrivalLocations as $factory)
-                                <option value="{{ $factory->id }}" data-company="{{ $factory->company_location_id }}" @selected(in_array($factory->id, $selectedFactories))>{{ $factory->name }}</option>
+                                <option value="{{ $factory->id }}" data-company="{{ $factory->company_location_id }}"
+                                    @selected(in_array($factory->id, $selectedFactories))>{{ $factory->name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -128,9 +134,11 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Section:</label>
-                        <select name="arrival_sub_location_id[]" id="arrival_sub_location_id" class="form-control select2" multiple>
+                        <select name="arrival_sub_location_id[]" id="arrival_sub_location_id"
+                            class="form-control select2" multiple>
                             @foreach ($arrivalSubLocations as $section)
-                                <option value="{{ $section->id }}" data-factory="{{ $section->arrival_location_id }}" @selected(in_array($section->id, $selectedSections))>{{ $section->name }}</option>
+                                <option value="{{ $section->id }}" data-factory="{{ $section->arrival_location_id }}"
+                                    @selected(in_array($section->id, $selectedSections))>{{ $section->name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -150,8 +158,7 @@
 
     <div class="row form-mar">
         {{-- <div class="col-12 text-right mb-2">
-            <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()"
-                id="addRowBtn">
+            <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()" id="addRowBtn">
                 <i class="fa fa-plus"></i>&nbsp; Add New Item
             </button>
         </div> --}}
@@ -161,15 +168,15 @@
                 <table class="table table-bordered" id="salesInquiryTable" style="min-width: 1500px;">
                     <thead>
                         <tr>
-                            <th class="required">Item</th>
-                            <th class="required">Bag Type</th>
-                            <th class="required">Packing</th>
-                            <th class="required">No of Bags</th>
-                            <th class="required">Minimum Qty (kg)</th>
-                            <th class="required">Maximum Qty (kg)</th>
-                            <th class="required">Rate per Kg</th>
-                            <th class="required">Rate per Mond</th>
-                            <th class="required">Brands</th>
+                            <th class="required col-3">Items</th>
+                            <th class="required col-1">Bag Type</th>
+                            <th class="required col-1">Packing</th>
+                            <th class="required col-1">No of Bags</th>
+                            <th class="required col-1">Minimum Qty (kg)</th>
+                            <th class="required col-1">Maximum Qty (kg)</th>
+                            <th class="required col-1">Rate per Kg</th>
+                            <th class="required col-1">Rate per Mond</th>
+                            <th class="required col-1">Brands</th>
                             <th style="display: none">Pack Size</th>
                             <th>Description</th>
                         </tr>
@@ -193,8 +200,8 @@
                                 </select>
                             </td>
                             <td>
-                                <select name="bag_size[]" id="bag_size_0"
-                                    class="form-control bag_size select2" onchange="calc(this)">
+                                <select name="bag_size[]" id="bag_size_0" class="form-control bag_size select2"
+                                    onchange="calc(this)">
                                     <option value="">Select Packing</option>
                                     @foreach ($packings as $packing)
                                         <option value="{{ $packing }}">{{ $packing }}</option>
@@ -202,24 +209,24 @@
                                 </select>
                             </td>
                             <td>
-                            <input type="text" name="no_of_bags[]" id="no_of_bags_0"
-                                    class="form-control no_of_bags" readonly>
+                                <input type="text" name="no_of_bags[]" id="no_of_bags_0" class="form-control no_of_bags"
+                                    readonly>
                             </td>
                             <td>
                                 <input type="number" name="minimum_qty[]" id="minimum_qty_0"
                                     class="form-control minimum_qty" step="0.01" min="0">
                             </td>
                             <td>
-                                <input type="number" name="qty[]" id="qty_0" class="form-control qty"
-                                    step="0.01" min="0" onkeyup="calc(this)" onchange="calc(this)">
+                                <input type="number" name="qty[]" id="qty_0" class="form-control qty" step="0.01"
+                                    min="0" onkeyup="calc(this)" onchange="calc(this)">
                             </td>
                             <td>
-                                <input onkeyup="calculateRates(this)" type="number" name="rate[]" id="rate_0" class="form-control rate_per_kg"
-                                    step="0.01" min="0">
+                                <input onkeyup="calculateRates(this)" type="number" name="rate[]" id="rate_0"
+                                    class="form-control rate_per_kg" step="0.01" min="0">
                             </td>
                             <td>
-                                <input onkeyup="calculateRates(this)" type="number" name="rate_per_mond[]" id="rate_per_mond_0" class="form-control rate_per_mond"
-                                    step="0.01" min="0">
+                                <input onkeyup="calculateRates(this)" type="number" name="rate_per_mond[]"
+                                    id="rate_per_mond_0" class="form-control rate_per_mond" step="0.01" min="0">
                             </td>
                             <td>
                                 <select name="brand_id[]" id="brand_id_0" class="form-control select2">
@@ -230,8 +237,8 @@
                                 </select>
                             </td>
                             <td style="display: none;">
-                                <input type="text" value="0" name="pack_size[]" id="pack_size_0"
-                                    class="form-control" step="0.01" min="0">
+                                <input type="text" value="0" name="pack_size[]" id="pack_size_0" class="form-control"
+                                    step="0.01" min="0">
                             </td>
                             <td>
                                 <input type="text" name="desc[]" id="desc_0" class="form-control">
@@ -266,18 +273,18 @@
     }
 
     function calculateRates(el) {
-        if(!$(el).val()) {
+        if (!$(el).val()) {
             return;
         }
 
-        if($(el).hasClass("rate_per_kg")) {
+        if ($(el).hasClass("rate_per_kg")) {
             $(el).closest("tr").find(".rate_per_mond").val(calculateForRatePerMond($(el).val()));
         } else {
             $(el).closest("tr").find(".rate_per_kg").val(calculateForRatePerKg($(el).val()));
         }
     }
 
-    $(document).ready(function() {
+    $(document).ready(function () {
         $('.select2').select2();
 
         const factories = @json($arrivalLocations);
@@ -316,14 +323,14 @@
             $('#arrival_sub_location_id').val(currentSections).trigger('change.select2');
         }
 
-        $('#locations').on('change', function() {
+        $('#locations').on('change', function () {
             populateFactories();
             populateSections();
         });
 
         let isInitialLoad = true;
 
-        $('#customer').on('change', function() {
+        $('#customer').on('change', function () {
             const customerId = $(this).val();
             let selectedLocations = $('#locations').val() || [];
 
@@ -350,7 +357,7 @@
                     url: "{{ route('sales.get-customer-locations') }}",
                     method: "GET",
                     data: { customer_id: customerId },
-                    success: function(res) {
+                    success: function (res) {
                         $('#locations').empty();
                         res.forEach(loc => {
                             const isSelected = selectedLocations.includes(String(loc.id));
@@ -364,7 +371,7 @@
                             Swal.close();
                         }
                     },
-                    complete: function() {
+                    complete: function () {
                         $('#locations, #arrival_location_id, #arrival_sub_location_id').prop('disabled', false).trigger('change.select2');
                         if (Swal.isVisible()) {
                             Swal.close();
@@ -382,7 +389,7 @@
             }
         });
 
-        $('#arrival_location_id').on('change', function() {
+        $('#arrival_location_id').on('change', function () {
             populateSections();
         });
 
@@ -527,10 +534,10 @@
                 contract_date: $("#inquiry_date").val()
             },
             dataType: "json",
-            success: function(res) {
+            success: function (res) {
                 $("#reference_no").val(res.inquiry_no)
             },
-            error: function(error) {
+            error: function (error) {
                 // Handle errors here
                 $('.loader-container').hide();
                 console.error("Error:", error);
