@@ -1158,7 +1158,7 @@
         const qty = getFirstItemQty();
 
         if (ratePerKg > 0 && qty > 0) {
-            const commissionInRs = (percent / 100) * (ratePerKg * qty);
+            const commissionInRs = (percent / 100) * (ratePerKg);
             $('#commission_per_kg').val(commissionInRs.toFixed(2));
         } else {
             $('#commission_per_kg').val('0');
@@ -1171,7 +1171,7 @@
         const qty = getFirstItemQty();
 
         if (ratePerKg > 0 && qty > 0) {
-            const percent = (commissionInRs / (ratePerKg * qty)) * 100;
+            const percent = (commissionInRs / (ratePerKg)) * 100;
             $('#commission_percent_per_kg').val(percent.toFixed(2));
         } else {
             $('#commission_percent_per_kg').val('0');
