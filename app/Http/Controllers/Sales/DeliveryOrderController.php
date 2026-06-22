@@ -630,6 +630,7 @@ class DeliveryOrderController extends Controller
         $sale_orders = SalesOrder::with("locations")
             ->select('reference_no', 'id', 'pay_type_id', 'transporter_used')
             ->where('am_approval_status', 'approved')
+            ->where('customer_id', $delivery_order->customer_id)
             ->get();
         // ->filter(function ($so) {
         //     if ($so->transporter_used == 'yes') {
