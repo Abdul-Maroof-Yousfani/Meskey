@@ -1087,7 +1087,7 @@
         const ratePerKg = getFirstItemRate();
         const qty = getFirstItemQty();
 
-        if (ratePerKg > 0 && qty > 0) {
+        if (ratePerKg > 0) {
             const commissionInRs = (percent / 100) * (ratePerKg);
             $('#commission_per_kg').val(commissionInRs.toFixed(2));
         } else {
@@ -1100,7 +1100,7 @@
         const ratePerKg = getFirstItemRate();
         const qty = getFirstItemQty();
 
-        if (ratePerKg > 0 && qty > 0) {
+        if (ratePerKg > 0) {
             const percent = (commissionInRs / (ratePerKg)) * 100;
             $('#commission_percent_per_kg').val(percent.toFixed(2));
         } else {
