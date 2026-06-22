@@ -1123,7 +1123,7 @@
         if ($('#commission_percent_per_kg').val() && $('#commission_percent_per_kg').val() != '0') {
             calculateCommissionFromPercent();
         } else if ($('#commission_per_kg').val() && $('#commission_per_kg').val() != '0') {
-            calculateCommissionFromRs();
+            // calculateCommissionFromRs();
         }
     }
 
