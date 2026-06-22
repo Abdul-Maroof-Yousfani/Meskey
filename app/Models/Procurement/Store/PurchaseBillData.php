@@ -26,7 +26,7 @@ class PurchaseBillData extends Model
             $bill = $model->purchase_bill;
             $supplier = Supplier::find($bill->supplier_id);
             $item = Product::find($model->item_id);
-
+            $grnNo = $bill->grn->purchase_order_receiving_no;
             if ($supplier && $supplier->account_id) {
                 createTransaction(
                     $model->final_amount,
@@ -36,7 +36,9 @@ class PurchaseBillData extends Model
                     'credit',
                     'no',
                     [
-                        'payment_against' => "Purchase Bill",
+                        'purpose' => "supplier-payable",
+                        'grn_no' => $grnNo,
+                        'payment_against' => "store-purchase",
                         'remarks' => $model->description ?? "Amount payable to supplier for purchase of goods"
                     ]
                 );
@@ -51,7 +53,9 @@ class PurchaseBillData extends Model
                     'credit',
                     'no',
                     [
-                        'payment_against' => "Purchase Bill",
+                        'purpose' => "purchase-discount",
+                        'grn_no' => $grnNo,
+                        'payment_against' => "store-purchase",
                         'remarks' => $model->description ?? "Discount received from supplier on purchase (Early payment/Bulk order/Trade discount)"
                     ]
                 );
@@ -66,7 +70,9 @@ class PurchaseBillData extends Model
                     'credit',
                     'no',
                     [
-                        'payment_against' => "Purchase Bill",
+                        'purpose' => "purchase-deduction",
+                        'grn_no' => $grnNo,
+                        'payment_against' => "store-purchase",
                         'remarks' => $model->description ?? "Deduction applied due to quality issues/late delivery/quantity shortage/damaged goods"
                     ]
                 );
@@ -82,7 +88,9 @@ class PurchaseBillData extends Model
                     'debit',
                     'no',
                     [
-                        'payment_against' => "Purchase Bill",
+                        'purpose' => "cost-of-store-purchase",
+                        'grn_no' => $grnNo,
+                        'payment_against' => "store-purchase",
                         'remarks' => $model->description ?? "Cost of goods purchased (Gross amount including all direct costs and before deductions)"
                     ]
                 );
@@ -98,7 +106,9 @@ class PurchaseBillData extends Model
                     'debit',
                     'no',
                     [
-                        'payment_against' => "Purchase Bill",
+                        'purpose' => "purchase-tax",
+                        'grn_no' => $grnNo,
+                        'payment_against' => "store-purchase",
                         'remarks' => $model->description ?? "Input tax (VAT/GST/Sales Tax) paid on purchase - Recoverable tax asset"
                     ]
                 );
