@@ -42,7 +42,7 @@
                             @if ($row->is_for_sales == 1)
                                 <span class="badge badge-success">Sales</span>
                             @else
-                                <span class="badge badge-info text-dark">Purchase</span>
+                                <span class="badge badge-info text-white">Purchase</span>
                             @endif
                         </p>
                     </td>
