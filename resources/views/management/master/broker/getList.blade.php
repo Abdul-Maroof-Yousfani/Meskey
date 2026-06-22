@@ -22,8 +22,8 @@
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ $row->name }} <br>
-                            <small>{{ $row->email ?? '--' }}</small> <br>
+                            {{ $row->company_name }} <br>
+                            <!-- <small>{{ $row->email ?? '--' }}</small> <br> -->
                         </p>
                     </td>
                     <td>
