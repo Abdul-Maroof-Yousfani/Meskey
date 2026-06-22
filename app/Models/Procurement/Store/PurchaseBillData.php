@@ -39,7 +39,7 @@ class PurchaseBillData extends Model
                         'purpose' => "supplier-payable",
                         'grn_no' => $grnNo,
                         'payment_against' => "store-purchase",
-                        'remarks' => $model->description ?? "Amount payable to supplier for purchase of goods"
+                        'remarks' => "Amount payable to supplier for purchase of goods"
                     ]
                 );
             }
@@ -56,7 +56,7 @@ class PurchaseBillData extends Model
                         'purpose' => "purchase-discount",
                         'grn_no' => $grnNo,
                         'payment_against' => "store-purchase",
-                        'remarks' => $model->description ?? "Discount received from supplier on purchase (Early payment/Bulk order/Trade discount)"
+                        'remarks' => "Discount received from supplier on purchase (Early payment/Bulk order/Trade discount)"
                     ]
                 );
             }
@@ -73,7 +73,7 @@ class PurchaseBillData extends Model
                         'purpose' => "purchase-deduction",
                         'grn_no' => $grnNo,
                         'payment_against' => "store-purchase",
-                        'remarks' => $model->description ?? "Deduction applied due to quality issues/late delivery/quantity shortage/damaged goods"
+                        'remarks' => "Deduction applied due to quality issues/late delivery/quantity shortage/damaged goods"
                     ]
                 );
             }
@@ -91,7 +91,7 @@ class PurchaseBillData extends Model
                         'purpose' => "cost-of-store-purchase",
                         'grn_no' => $grnNo,
                         'payment_against' => "store-purchase",
-                        'remarks' => $model->description ?? "Cost of goods purchased (Gross amount including all direct costs and before deductions)"
+                        'remarks' => "Cost of goods purchased (Gross amount including all direct costs and before deductions)"
                     ]
                 );
             }
@@ -109,7 +109,7 @@ class PurchaseBillData extends Model
                         'purpose' => "purchase-tax",
                         'grn_no' => $grnNo,
                         'payment_against' => "store-purchase",
-                        'remarks' => $model->description ?? "Input tax (VAT/GST/Sales Tax) paid on purchase - Recoverable tax asset"
+                        'remarks' => "Input tax (VAT/GST/Sales Tax) paid on purchase - Recoverable tax asset"
                     ]
                 );
             }
