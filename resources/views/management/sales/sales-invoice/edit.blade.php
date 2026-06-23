@@ -225,19 +225,19 @@
                                 <input type="number" name="gross_amount[]" id="gross_amount_{{ $index }}" class="form-control gross_amount" readonly value="{{ $data->gross_amount }}">
                             </td>
                             <td style="min-width: 100px;">
-                                <input type="number" name="discount_percent[]" id="discount_percent_{{ $index }}" onkeyup="calculateRow(this)" class="form-control discount_percent" step="0.01" min="0" max="100" value="{{ $data->discount_percent }}" readonly>
+                                <input type="number" name="discount_percent[]" id="discount_percent_{{ $index }}" onkeyup="calculateRow(this)" class="form-control discount_percent" step="0.01" min="0" max="100" value="{{ $data->discount_percent }}">
                             </td>
                             <td style="min-width: 120px;">
-                                <input type="number" name="discount_amount[]" id="discount_amount_{{ $index }}" class="form-control discount_amount" readonly value="{{ $data->discount_amount }}">
+                                <input type="number" name="discount_amount[]" id="discount_amount_{{ $index }}" class="form-control discount_amount" value="{{ $data->discount_amount }}">
                             </td>
                             <td style="min-width: 120px;">
                                 <input type="number" name="amount[]" id="amount_{{ $index }}" class="form-control amount" readonly value="{{ $data->amount }}">
                             </td>
                             <td style="min-width: 100px;">
-                                <input type="number" name="gst_percent[]" id="gst_percent_{{ $index }}" onkeyup="calculateRow(this)" class="form-control gst_percent" step="0.01" min="0" value="{{ $data->gst_percent }}" readonly>
+                                <input type="number" name="gst_percent[]" id="gst_percent_{{ $index }}" onkeyup="calculateRow(this)" class="form-control gst_percent" step="0.01" min="0" value="{{ $data->gst_percent }}">
                             </td>
                             <td style="min-width: 120px;">
-                                <input type="number" name="gst_amount[]" id="gst_amount_{{ $index }}" class="form-control gst_amount" readonly value="{{ $data->gst_amount }}">
+                                <input type="number" name="gst_amount[]" id="gst_amount_{{ $index }}" class="form-control gst_amount" value="{{ $data->gst_amount }}">
                             </td>
                             <td style="min-width: 120px;">
                                 <input type="number" name="net_amount[]" id="net_amount_{{ $index }}" class="form-control net_amount" readonly value="{{ $data->net_amount }}">
@@ -470,7 +470,7 @@
                 <input type="number" name="discount_percent[]" id="discount_percent_${index}" onkeyup="calculateRow(this)" class="form-control discount_percent" step="0.01" min="0" max="100" value="0">
             </td>
             <td style="min-width: 120px;">
-                <input type="number" name="discount_amount[]" id="discount_amount_${index}" class="form-control discount_amount" readonly>
+                <input type="number" name="discount_amount[]" id="discount_amount_${index}" class="form-control discount_amount">
             </td>
             <td style="min-width: 120px;">
                 <input type="number" name="amount[]" id="amount_${index}" class="form-control amount" readonly>
@@ -479,7 +479,7 @@
                 <input type="number" name="gst_percent[]" id="gst_percent_${index}" onkeyup="calculateRow(this)" class="form-control gst_percent" step="0.01" min="0" value="0">
             </td>
             <td style="min-width: 120px;">
-                <input type="number" name="gst_amount[]" id="gst_amount_${index}" class="form-control gst_amount" readonly>
+                <input type="number" name="gst_amount[]" id="gst_amount_${index}" class="form-control gst_amount">
             </td>
             <td style="min-width: 120px;">
                 <input type="number" name="net_amount[]" id="net_amount_${index}" class="form-control net_amount" readonly>
