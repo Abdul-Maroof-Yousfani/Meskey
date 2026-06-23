@@ -43,9 +43,9 @@ class SalesOrderRequest extends FormRequest
             "remarks" => "nullable",
             "contact_person" => "nullable|string|max:255",
             "commission_per_kg" => "nullable|numeric|min:0",
-            "arrival_location_id" => "nullable|array",
+            "arrival_location_id" => "required|array",
             "arrival_location_id.*" => "integer|exists:arrival_locations,id",
-            "arrival_sub_location_id" => "nullable|array",
+            "arrival_sub_location_id" => "required|array",
             "arrival_sub_location_id.*" => "integer|exists:arrival_sub_locations,id",
 
             "item_id" => "required",
