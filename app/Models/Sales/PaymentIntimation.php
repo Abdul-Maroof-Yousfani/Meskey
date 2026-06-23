@@ -19,6 +19,7 @@ class PaymentIntimation extends Model
         'payment_deposit',
         'company_id',
         'created_by',
+        'attachment',
     ];
 
     public function customer()
