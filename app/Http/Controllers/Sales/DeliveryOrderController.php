@@ -310,6 +310,7 @@ class DeliveryOrderController extends Controller
         $groupedData = [];
 
         foreach ($delivery_orders as $delivery_order) {
+            // dd();
             $so_no = $delivery_order->reference_no;
             $items = $delivery_order->delivery_order_data;
 
@@ -326,9 +327,10 @@ class DeliveryOrderController extends Controller
 
             $groupedData[] = [
                 'sale_order' => $delivery_order,
+
                 'so_no' => $so_no,
                 'created_by_id' => $delivery_order->created_by,
-                'delivery_date' => $delivery_order->dispatch_date,
+                'delivery_date' => $delivery_order->salesOrder->delivery_date,
                 'id' => $delivery_order->id,
                 'customer_id' => $delivery_order->customer_id,
                 'status' => $delivery_order->am_approval_status,
@@ -337,8 +339,11 @@ class DeliveryOrderController extends Controller
                 'rowspan' => count($itemRows),
                 'items' => $itemRows,
             ];
-        }
 
+
+
+        }
+        // dd($groupedData);
         return view('management.sales.delivery-order.getList', [
             'DeliveryOrders' => $delivery_orders,           // for pagination
             'groupedDeliveryOrders' => $groupedData,  // our grouped data
