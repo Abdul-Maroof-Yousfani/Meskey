@@ -658,6 +658,12 @@
                 // Fill contract type (sauda_type)
                 if (res.contract_type) {
                     $("#sauda_type").val(res.contract_type).trigger('change.select2');
+                    if (res.contract_type == 'x-mill') {
+                        $('#transporter_used').val('no').trigger('change.select2');
+                    }
+                    else {
+                        $('#transporter_used').val('yes').trigger('change.select2');
+                    }
                 }
 
                 if (res.contact_person) {
