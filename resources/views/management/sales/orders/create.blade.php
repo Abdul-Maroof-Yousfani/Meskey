@@ -450,7 +450,7 @@
 
         if (isOrderDateComplete && isDeliveryDateComplete) {
             if (orderDate > deliveryDate) {
-                $('#delivery_date').val('');
+                // $('#delivery_date').val('');
                 Swal.fire({
                     icon: 'error',
                     title: 'Invalid Date!',
