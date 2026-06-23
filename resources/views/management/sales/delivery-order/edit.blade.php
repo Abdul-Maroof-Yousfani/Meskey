@@ -390,7 +390,7 @@
                                 </td>
                                 <td>
                                     <input type="text" 
-                                        value="{{ getBrandById($data->brand_id)?->name ?? 'N/A' }}" class="form-control amount"
+                                        value="{{ getBrandById($data->brand_id)?->name ?? 'N/A' }}" class="form-control "
                                         readonly>
 
                                     <input type="hidden" 
