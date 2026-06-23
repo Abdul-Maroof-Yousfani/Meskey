@@ -254,7 +254,7 @@
                 <table class="table table-bordered" id="salesInquiryTable" style="min-width:2000px;">
                     <thead>
                         <tr>
-                            <th>Item</th>
+                            <th class="col-3">Item</th>
                             <th>Bag Type</th>
                             <th>Packing</th>
                             <th>No of Bags</th>
