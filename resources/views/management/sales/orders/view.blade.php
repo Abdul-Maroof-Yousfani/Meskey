@@ -115,20 +115,7 @@
                             readonly>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label class="form-label">Broker:</label>
-                        <input type="text" value="{{ $sale_order->broker->name ?? 'N/A' }}" class="form-control"
-                            readonly>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label class="form-label">Comission RS per KG:</label>
-                        <input type="text" value="{{ $sale_order->commission_per_kg ?? 0 }}" class="form-control"
-                            readonly>
-                    </div>
-                </div>
+
                 <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Contact Person:</label>
@@ -361,6 +348,28 @@
                 </table>
             </div>
         </div>
+
+
+
+
+
+         <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Broker Details</h6>
+                </div>
+                        <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="form-label">Broker:</label>
+                        <input type="text" value="{{ $sale_order->broker->name ?? 'N/A' }}" class="form-control"
+                            readonly>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="form-label">Comission RS per KG:</label>
+                        <input type="text" value="{{ $sale_order->commission_per_kg ?? 0 }}" class="form-control"
+                            readonly>
+                    </div>
+                </div>
     </div>
 
 
