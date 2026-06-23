@@ -98,6 +98,8 @@
                     </div>
                 </div>
 
+
+
                 <div class="col-12 mt-3">
                     <h6 class="header-heading-sepration">Customer Details</h6>
                 </div>
@@ -119,30 +121,7 @@
                         <input type="text" class="form-control" value="{{ $sale_order->parent_user->name ?? 'N/A' }}" readonly>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label class="form-label">Broker:</label>
-                        <select name="broker_id" id="broker_id" class="form-control select2">
-                            <option value="">Select Broker</option>
-                            @foreach ($brokers ?? [] as $broker)
-                                <option value="{{ $broker->id }}" @selected($broker->id == $sale_order->broker_id)>{{ $broker->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label class="form-label">Comission RS per KG:</label>
-                        <input type="number" name="commission_per_kg" id="commission_per_kg" class="form-control" step="0.01" min="0" value="{{ $sale_order->commission_per_kg ?? 0 }}">
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label class="form-label">Comission in % per KG:</label>
-                        <input type="number" name="commission_percent_per_kg" id="commission_percent_per_kg"
-                            class="form-control" step="0.01" min="0" value="0">
-                    </div>
-                </div>
+               
                 <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Contact Person:</label>
@@ -392,6 +371,37 @@
                 </table>
             </div>
         </div>
+
+
+
+        
+       <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Broker Details</h6>
+                </div>
+                 <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="form-label">Broker:</label>
+                        <select name="broker_id" id="broker_id" class="form-control select2">
+                            <option value="">Select Broker</option>
+                            @foreach ($brokers ?? [] as $broker)
+                                <option value="{{ $broker->id }}" @selected($broker->id == $sale_order->broker_id)>{{ $broker->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="form-label">Comission RS per KG:</label>
+                        <input type="number" name="commission_per_kg" id="commission_per_kg" class="form-control" step="0.01" min="0" value="{{ $sale_order->commission_per_kg ?? 0 }}">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="form-label">Comission in % per KG:</label>
+                        <input type="number" name="commission_percent_per_kg" id="commission_percent_per_kg"
+                            class="form-control" step="0.01" min="0" value="0">
+                    </div>
+                </div>
     </div>
 
     <input type="hidden" id="rowCount" value="0">
