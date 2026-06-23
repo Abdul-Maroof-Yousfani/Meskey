@@ -333,6 +333,10 @@ class PurchaseOrderController extends Controller
             ], 400);
         }
 
+
+
+
+
         $data = $request->validated();
         $data = $request->all();
         // dd($data);
@@ -371,6 +375,7 @@ class PurchaseOrderController extends Controller
                 "am_approval_status" => "pending",
                 "am_change_made" => 1,
                 'remarks' => $data['remarks'] ?? null,
+                'defaulter' => $data['defaulter'] ?? 0,
             ];
 
             if ($data['calculation_type'] == 'trucks') {
@@ -391,6 +396,19 @@ class PurchaseOrderController extends Controller
             $arrivalPurchaseOrder->update($updateData);
 
             ProductSlabForRmPo::where('arrival_purchase_order_id', $arrivalPurchaseOrder->id)->delete();
+            $defaulter = ArrivalPurchaseOrder::where('supplier_id', $data['supplier_id'])->where('defaulter', 1)->get();
+
+            if (count($defaulter) > 0) {
+                Supplier::findOrFail($data['supplier_id'])->update([
+                    'defaulter' => 1,
+                ]);
+            } else {
+                Supplier::findOrFail($data['supplier_id'])->update([
+                    'defaulter' => 0,
+                ]);
+            }
+
+
 
             if (isset($data['slabs']) && count($data['slabs']) > 0) {
                 foreach ($data['slabs'] as $slabId => $range) {

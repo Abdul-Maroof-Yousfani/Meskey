@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Master;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Master\SupplierRequest;
+use App\Models\ArrivalPurchaseOrder;
 use App\Models\Master\Account\Account;
 use App\Models\Master\Broker;
 use App\Models\Master\CompanyLocation;
@@ -34,11 +35,11 @@ class SupplierController extends Controller
     public function getList(Request $request)
     {
         $Suppliers = Supplier::when($request->filled('search'), function ($q) use ($request) {
-            $searchTerm = '%'.$request->search.'%';
+            $searchTerm = '%' . $request->search . '%';
 
             return $q->where(function ($sq) use ($searchTerm) {
                 $sq->where('name', 'like', $searchTerm)
-                ->orWhere('company_name','like', $searchTerm);
+                    ->orWhere('company_name', 'like', $searchTerm);
             })->orWhere("owner_name", "like", $searchTerm);
         })
             ->where('company_id', $request->company_id)
@@ -100,7 +101,7 @@ class SupplierController extends Controller
 
             $supplier = Supplier::create($requestData);
 
-            if (! empty($request->company_bank_name)) {
+            if (!empty($request->company_bank_name)) {
                 foreach ($request->company_bank_name as $key => $bankName) {
                     if (empty($bankName)) {
                         continue;
@@ -117,7 +118,7 @@ class SupplierController extends Controller
                 }
             }
 
-            if (! empty($request->owner_bank_name)) {
+            if (!empty($request->owner_bank_name)) {
                 foreach ($request->owner_bank_name as $key => $bankName) {
                     if (empty($bankName)) {
                         continue;
@@ -206,6 +207,7 @@ class SupplierController extends Controller
             $data = $request->validated();
             $requestData = $request->all();
             $requestData['is_gate_buying_supplier'] = $request->is_gate_buying_supplier ?? 'No';
+            $requestData['defaulter'] = $request->defaulter ?? 0;
 
             if ($supplier->account) {
                 // Existing account update
@@ -220,7 +222,12 @@ class SupplierController extends Controller
                 $requestData['account_id'] = $account->id;
             }
 
+            if ($supplier->defaulter == 1 && $request->defaulter != 1) {
+                ArrivalPurchaseOrder::where('supplier_id', $supplier->id)->update(['defaulter' => 0]);
+            }
+
             $supplier->update($requestData);
+
 
             $this->updateBankDetails(
                 $supplier,
@@ -313,7 +320,7 @@ class SupplierController extends Controller
         }
 
         $toDelete = array_diff($existingIds, $updatedIds);
-        if (! empty($toDelete)) {
+        if (!empty($toDelete)) {
             $supplier->{$relation}()->whereIn('id', $toDelete)->delete();
         }
     }
@@ -341,7 +348,7 @@ class SupplierController extends Controller
                 foreach ($allLocations as $loc) {
                     $locationMap[strtolower($loc->name)] = $loc->id;
                 }
-                
+
                 $locationIds = [];
                 foreach ($locationNames as $name) {
                     $lowerName = strtolower($name);
@@ -349,9 +356,9 @@ class SupplierController extends Controller
                         $locationIds[] = $locationMap[$lowerName];
                     }
                 }
-                
+
                 $locationIds = array_values(array_unique($locationIds));
-                
+
                 // If names are provided but none matched, you might want to throw an error or fallback
                 if (empty($locationIds)) {
                     $locationIds = getUserCurrentCompanyLocations();
@@ -380,10 +387,11 @@ class SupplierController extends Controller
             // Type & Status Normalization
             $rawType = trim($rowData[4] ?? '');
             $type = !empty($rawType) ? strtolower(str_replace([' ', '-'], '_', $rawType)) : 'raw_material';
-            
+
             $rawStatus = trim($rowData[5] ?? '');
             $status = !empty($rawStatus) ? strtolower($rawStatus) : 'active';
-            if ($status === 'in_active') $status = 'inactive';
+            if ($status === 'in_active')
+                $status = 'inactive';
 
             // Mapping
             $data = [
@@ -421,7 +429,7 @@ class SupplierController extends Controller
             $supplier = Supplier::where('company_id', $meskeyCompanyId)
                 ->where(function ($q) use ($companyName, $ownerName) {
                     $q->where('company_name', $companyName)
-                      ->orWhere('owner_name', $ownerName);
+                        ->orWhere('owner_name', $ownerName);
                 })
                 ->first();
 
@@ -503,7 +511,6 @@ class SupplierController extends Controller
     }
 
     public function show($id)
-
     {
         $supplier = Supplier::with([
             'companyBankDetails',

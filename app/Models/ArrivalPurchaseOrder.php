@@ -26,6 +26,7 @@ class ArrivalPurchaseOrder extends Model
         'company_id',
         'contract_no',
         'contract_date',
+        'defaulter',
         'decision_of_id',
         'company_location_id',
         'sauda_type_id',
