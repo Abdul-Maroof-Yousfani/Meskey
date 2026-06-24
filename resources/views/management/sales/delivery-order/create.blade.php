@@ -475,10 +475,12 @@
             $(el).val(0);
         }
 
-        // const advance = parseFloat($("#advance_amount").val()) || 0;
-        // const withhold = (advance * (percentage / 100)).toFixed(0);
+        let do_amount = 0;
+        $(".amount").each(function() {
+            do_amount += parseFloat($(this).val()) || 0;
+        });
 
-        const totalAmount = parseFloat(so_amount) || 0;
+        const totalAmount = parseFloat(do_amount) || 0;
         const withhold = (totalAmount * (percentage / 100)).toFixed(0);
         $("#withhold_amount").val(withhold);
         change_withhold_amount();
@@ -486,21 +488,13 @@
 
     function calculate_percentage_by_withhold(el) {
         let withhold = parseFloat($(el).val()) || 0;
-        // const advance = parseFloat($("#advance_amount").val()) || 0;
-        // if (advance > 0) {
-        //     if (withhold > advance) {
-        //         withhold = advance;
-        //         $(el).val(advance);
-        //     }
-        //     if (withhold < 0) {
-        //         withhold = 0;
-        //         $(el).val(0);
-        //     }
-        //     const percentage = (withhold / advance) * 100;
-        //     $("#withhold_percentage").val(percentage.toFixed(2));
-        // }
 
-        const totalAmount = parseFloat(so_amount) || 0;
+        let do_amount = 0;
+        $(".amount").each(function() {
+            do_amount += parseFloat($(this).val()) || 0;
+        });
+
+        const totalAmount = parseFloat(do_amount) || 0;
 
         if (totalAmount > 0) {
             if (withhold > totalAmount) {
@@ -513,6 +507,9 @@
             }
             const percentage = (withhold / totalAmount) * 100;
             $("#withhold_percentage").val(percentage.toFixed(2));
+        } else {
+            $(el).val(0);
+            $("#withhold_percentage").val(0);
         }
         change_withhold_amount();
     }
@@ -545,25 +542,6 @@
     function change_withhold_amount() {
         const withhold = parseFloat($("#withhold_amount").val()) || 0;
         const advance = parseFloat($("#advance_amount").val()) || 0;
-        
-        // Basic calculation for first row
-        if (advance > 0 || withhold > 0) {
-            remaining_amount = advance - withhold;
-            bag_size = $("#bag_size_0").val() || 0;
-            rate = $("#rate_0").val() || 0;
-            
-            if (rate > 0) {
-                const qtyVal = ((remaining_amount / rate)).toFixed(2);
-                $("#qty_0").val(qtyVal);
-                $("#qty_0").prop("readonly", true);
-                $("#amount_0").val((parseFloat(rate) * parseFloat(qtyVal)).toFixed(0));
-                
-                if (bag_size > 0) {
-                    const no_of_bags = Math.round(parseFloat(qtyVal) / parseFloat(bag_size));
-                    $("#no_of_bags_0").val(isNaN(no_of_bags) ? 0 : no_of_bags);
-                }
-            }
-        }
 
         const receipt_vouchers = $("#receipt_vouchers");
         let withholdSelect = $("#withhold_for_rv");
@@ -1018,6 +996,31 @@
 
         const heldAmount = (do_amount * (percentage / 100)).toFixed(2);
         $("#so_held_amount").val(heldAmount);
+    }
+
+    function calculate_so_percentage() {
+        let held = parseFloat($("#so_held_amount").val()) || 0;
+
+        let do_amount = 0;
+        $(".amount").each(function() {
+            do_amount += parseFloat($(this).val()) || 0;
+        });
+
+        if (do_amount > 0) {
+            if (held > do_amount) {
+                held = do_amount;
+                $("#so_held_amount").val(do_amount);
+            }
+            if (held < 0) {
+                held = 0;
+                $("#so_held_amount").val(0);
+            }
+            const percentage = (held / do_amount) * 100;
+            $("#so_withhold_percentage").val(percentage.toFixed(2));
+        } else {
+            $("#so_held_amount").val(0);
+            $("#so_withhold_percentage").val(0);
+        }
     }
 
     $('.select2').on('select2:open', function (e) {
