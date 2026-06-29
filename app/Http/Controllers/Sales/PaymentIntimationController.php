@@ -58,6 +58,14 @@ class PaymentIntimationController extends Controller
         ]);
 
         $payload = $request->except('_token');
+
+        if ($request->hasFile('attachment')) {
+            $file = $request->file('attachment');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $path = 'uploads/payment-intimations';
+            $file->move(public_path($path), $filename);
+            $payload['attachment'] = $path . '/' . $filename;
+        }
         $payload['created_by'] = auth()->user()->id ?? null;
         $payload['company_id'] = auth()->user()->company_id ?? null;
 
@@ -89,6 +97,12 @@ class PaymentIntimationController extends Controller
         return view('management.sales.payment-intimation.edit', compact('payment_intimation', 'customers', 'banks'));
     }
 
+    public function show($id)
+    {
+        $payment_intimation = PaymentIntimation::with(['customer', 'sale_order', 'bank'])->findOrFail($id);
+        return view('management.sales.payment-intimation.show', compact('payment_intimation'));
+    }
+
     public function update(Request $request, $id)
     {
         $request->validate([
@@ -100,6 +114,14 @@ class PaymentIntimationController extends Controller
 
         $payment_intimation = PaymentIntimation::findOrFail($id);
         $payload = $request->except('_token', '_method');
+
+        if ($request->hasFile('attachment')) {
+            $file = $request->file('attachment');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $path = 'uploads/payment-intimations';
+            $file->move(public_path($path), $filename);
+            $payload['attachment'] = $path . '/' . $filename;
+        }
 
         $payment_intimation->update($payload);
 

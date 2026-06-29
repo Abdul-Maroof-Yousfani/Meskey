@@ -623,13 +623,6 @@
                             <span data-i18n="Task Board">Sale Orders</span>
                         </a>
                     </li>
-                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                            href="{{ route('sales.payment-intimation.index') }}"
-                            onclick="loadPageContent('{{ route('sales.payment-intimation.index') }}')" data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i>
-                            <span data-i18n="Task Board">Payment Intimation</span>
-                        </a>
-                    </li>
 
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('sales.delivery-order.index') }}"
@@ -716,6 +709,14 @@
                             onclick="loadPageContent('{{ route('sales.sales-return.index') }}')"
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
                             <span data-i18n="Task Board">Sales Return</span>
+                        </a>
+                    </li>
+
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('sales.payment-intimation.index') }}"
+                            onclick="loadPageContent('{{ route('sales.payment-intimation.index') }}')" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Task Board">Payment Intimation</span>
                         </a>
                     </li>
 

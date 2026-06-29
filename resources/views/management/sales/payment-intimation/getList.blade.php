@@ -31,6 +31,10 @@
                             <i class="ft-edit"></i>
                         </button> --}}
                         
+                        <button onclick="openModal(this,'{{ route('sales.payment-intimation.show', $payment_intimation->id) }}','View Payment Intimation', false, '60%')" type="button"
+                                class="btn btn-sm btn-info" title="View" style="margin-right: 5px;">
+                            <i class="ft-eye"></i>
+                        </button>
                         <button onclick="deletemodal('{{ route('sales.payment-intimation.destroy', $payment_intimation->id) }}', '{{ route('sales.get.payment-intimation.list') }}')" type="button"
                                 class="btn btn-sm btn-danger" title="Delete">
                             <i class="ft-trash-2"></i>

@@ -1,4 +1,4 @@
-<form id="ajaxSubmit" class="form" method="POST" action="{{ route('sales.payment-intimation.store') }}" autocomplete="off">
+<form id="ajaxSubmit" class="form" method="POST" action="{{ route('sales.payment-intimation.store') }}" autocomplete="off" enctype="multipart/form-data">
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('sales.get.payment-intimation.list') }}" />
     <div class="row form-mar">
@@ -38,6 +38,12 @@
                     <div class="form-group">
                         <label class="form-label" for="payment_deposit">Payment Deposit <span class="text-danger">*</span></label>
                         <input type="number" step="0.01" class="form-control" id="payment_deposit" name="payment_deposit" required placeholder="Enter amount">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label" for="attachment">Attachment</label>
+                        <input type="file" class="form-control" id="attachment" name="attachment">
                     </div>
                 </div>
             </div>
