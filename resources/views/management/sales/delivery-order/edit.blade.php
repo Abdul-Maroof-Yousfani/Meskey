@@ -274,21 +274,10 @@
             </div>
         </div>
 
-
-
         <!-- Row 3: Customer, Contract Terms, Locations -->
-
-
-
-
-
-
-
-
     </div>
 
     <div class="row form-mar">
-
         <div class="col-12 text-right mb-2">
             <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()"
                 id="addRowBtn" disabled>
@@ -452,6 +441,8 @@
     salesInquiryRowIndex = 1;
 
     var isInitialLoad = true;
+    var so_amount = 0; // Global variable for sale order amount
+    
     $(document).ready(function() {
         $('.select2').select2();
         applySaudaType(`{{ strtolower($delivery_order->sauda_type) }}`);
@@ -459,13 +450,13 @@
         get_so_detail();
         update_delivery_date_min();
 
-        // Calculate initial percentage
-        calculate_percentage_by_withhold(document.getElementById('withhold_amount'));
+        // Calculate initial percentage after a small delay to ensure so_amount is loaded
+        setTimeout(function() {
+            calculate_percentage_by_withhold(document.getElementById('withhold_amount'));
+        }, 500);
     });
 
-
     function validate_expiry(el) {
-
         // const do_date = $("#dispatch_date").val();
         // const delivery_date = $("#delivery_date").val();
      
@@ -532,13 +523,13 @@
             select.val(desired ? String(desired) : '');
         }
 
-        select.prop('disabled', false); // no change trigger on load
+        select.prop('disabled', false);
         select.select2();
 
-        // Reset dependent dropdowns; will be rehydrated by selectLocation when data exists
-        $("#arrivals").empty().append('<option value=\"\">Select Factory</option>').prop('disabled', true).trigger(
+        // Reset dependent dropdowns
+        $("#arrivals").empty().append('<option value="">Select Factory</option>').prop('disabled', true).trigger(
             'change.select2');
-        $("#storages").empty().append('<option value=\"\">Select Section</option>').prop('disabled', true).trigger(
+        $("#storages").empty().append('<option value="">Select Section</option>').prop('disabled', true).trigger(
             'change.select2');
     }
 
@@ -560,8 +551,6 @@
         const company = $(el).val();
         const allowedFactories = soFactoryMap[String(company)] || [];
 
-   
-
         if (allowedFactories.length > 0) {
             $("#arrivals").empty();
             allowedFactories.forEach(loc => {
@@ -570,23 +559,15 @@
                 $("#arrivals").append(option);
             });
 
-            // Apply initial arrival/section if present (for edit mode initialization)
             if (!initialArrivalApplied && initialArrivalId) {
-                // Parse comma-separated IDs for multiple selection
                 const initialArrivalIds = initialArrivalId.split(',').map(id => id.trim());
-                // $("#arrivals").val(initialArrivalIds).trigger('change.select2');
                 initialArrivalApplied = true;
                 selectStorage(document.getElementById("arrivals"), true);
             } else if (!isInit) {
-                // Auto-select ALL factories when user manually changes location
                 const allFactoryIds = allowedFactories.map(loc => String(loc.id));
-                // $("#arrivals").val(allFactoryIds).trigger('change.select2');
-                // Populate and select all sections for all selected factories
-                
                 selectAllStorages(allFactoryIds);
             }
         } else {
-            // get.arrival-locations; send request to this url
             $("#arrivals").prop("disabled", false);
             $.ajax({
                 url: "{{ route('sales.get.arrival-locations') }}",
@@ -609,17 +590,11 @@
                     $("#arrivals").select2();
 
                     if (!initialArrivalApplied && initialArrivalId) {
-                        // Parse comma-separated IDs for multiple selection
                         const initialArrivalIds = initialArrivalId.split(',').map(id => id.trim());
-                        // $("#arrivals").val(initialArrivalIds).trigger('change.select2');
                         initialArrivalApplied = true;
                         selectStorage(document.getElementById("arrivals"), true);
                     } else if (!isInit) {
-                        // Auto-select ALL factories
                         const allFactoryIds = res.map(loc => String(loc.id));
-                        // $("#arrivals")   .val(allFactoryIds).trigger('change.select2');
-                        
-                        // Clear sections as no mapping exists
                         $("#storages").empty().prop("disabled", true).trigger('change.select2');
                     }
                 },
@@ -631,17 +606,14 @@
     }
 
     function selectStorage(el, isInit = false) {
-        const arrivals = $(el).val(); // This is now an array since it's multiple select
+        const arrivals = $(el).val();
         if (!arrivals || arrivals.length === 0) {
             $("#storages").prop("disabled", true);
             $("#storages").empty();
             return;
         }
 
-        // Convert to array if single value
         const factoryIds = Array.isArray(arrivals) ? arrivals : [arrivals];
-        
-        // We strictly use mapping data, no server fallback
         selectAllStorages(factoryIds, isInit);
     }
 
@@ -652,7 +624,6 @@
         factoryIds.forEach(factoryId => {
             const sections = soSectionMap[String(factoryId)] || [];
             sections.forEach(section => {
-                // Avoid duplicates
                 if (!allSections.find(s => s.id === section.id)) {
                     allSections.push(section);
                 }
@@ -664,28 +635,21 @@
                 $("#storages").append(`<option value="${section.id}">${section.text}</option>`);
             });
             
-            // Apply initial storage if present (for edit mode initialization)
             if (!initialStorageApplied && initialStorageId && isInit) {
-                // Parse comma-separated IDs for multiple selection
                 const initialStorageIds = initialStorageId.split(',').map(id => id.trim());
-            $("#storages").val($("#storages option").map((_,o) => o.value).get()).trigger('change.select2');
-
+                $("#storages").val($("#storages option").map((_,o) => o.value).get()).trigger('change.select2');
                 initialStorageApplied = true;
             } else if (!isInit) {
-                // Auto-select ALL sections when user manually changes
                 const allSectionIds = allSections.map(s => String(s.id));
                 $("#storages").val($("#storages option").map((_,o) => o.value).get()).trigger('change.select2');
-
             }
         } else {
-            // No sections in mapping, clear list and disable
             $("#storages").empty().prop("disabled", true).trigger('change.select2');
         }
     }
 
     isEdit = true;
     sum = 0;
-    so_amount = 0;
     remaining_amount = 0;
     soFactoryMap = {};
     soSectionMap = {};
@@ -701,13 +665,10 @@
                 return $(this).data("amount");
             }).get();
 
-
         sum = 0;
         selectedAmounts.forEach(selectedAmount => {
             sum += parseFloat(selectedAmount);
         });
-
-
 
         if (sum > 0) {
             $("#advance_amount").val(sum.toFixed(0));
@@ -732,13 +693,18 @@
             $(el).val(0);
         }
 
-        let do_amount = 0;
-        $(".amount").each(function() {
-            do_amount += parseFloat($(this).val()) || 0;
-        });
-        const so_held_amount = parseFloat($("#so_held_amount").val()) || 0;
-        // const totalAmount = parseFloat(do_amount) || 0;
-        const totalAmount = parseFloat(so_amount);
+        // Use the global so_amount, fallback to calculated amount from table
+        let totalAmount = parseFloat(so_amount) || 0;
+        
+        // If so_amount is still 0, calculate from table
+        if (totalAmount === 0) {
+            let do_amount = 0;
+            $(".amount").each(function() {
+                do_amount += parseFloat($(this).val()) || 0;
+            });
+            totalAmount = do_amount;
+        }
+
         const withhold = (totalAmount * (percentage / 100)).toFixed(0);
         $("#withhold_amount").val(withhold);
         change_withhold_amount();
@@ -747,12 +713,17 @@
     function calculate_percentage_by_withhold(el) {
         let withhold = parseFloat($(el).val()) || 0;
 
-        let do_amount = 0;
-        $(".amount").each(function() {
-            do_amount += parseFloat($(this).val()) || 0;
-        });
-
-        const totalAmount = parseFloat(so_amount) || 0;
+        // Use the global so_amount, fallback to calculated amount from table
+        let totalAmount = parseFloat(so_amount) || 0;
+        
+        // If so_amount is still 0, calculate from table
+        if (totalAmount === 0) {
+            let do_amount = 0;
+            $(".amount").each(function() {
+                do_amount += parseFloat($(this).val()) || 0;
+            });
+            totalAmount = do_amount;
+        }
 
         if (totalAmount > 0) {
             if (withhold > totalAmount) {
@@ -801,14 +772,23 @@
         const withhold = parseFloat($("#withhold_amount").val()) || 0;
         const advance = parseFloat($("#advance_amount").val()) || 0;
 
+        // Get total amount from table or use so_amount
+        let totalAmount = parseFloat(so_amount) || 0;
+        if (totalAmount === 0) {
+            let do_amount = 0;
+            $(".amount").each(function() {
+                do_amount += parseFloat($(this).val()) || 0;
+            });
+            totalAmount = do_amount;
+        }
 
         // Basic calculation for first row
         if (advance > 0 || withhold > 0) {
-            remaining_amount = advance - withhold;
+            remaining_amount = totalAmount - withhold;
             bag_size = $("#bag_size_0").val() || 0;
             rate = $("#rate_0").val() || 0;
             
-            if (rate > 0) {
+            if (rate > 0 && totalAmount > 0) {
                 const qtyVal = Math.round(remaining_amount / rate);
                 $("#qty_0").val(qtyVal);
                 $("#qty_0").prop("readonly", true);
@@ -821,7 +801,6 @@
             }
         }
 
-        
         const receipt_vouchers = $("#receipt_vouchers");
         let withholdSelect = $("#withhold_for_rv");
         let currentWithholdVal = withholdSelect.val();
@@ -933,7 +912,6 @@
         const rate = $(element).find(".rate");
         const amount = $(element).find(".amount");
 
-        // Calculate no_of_bags from bag_size * qty
         const balance = parseFloat(no_of_bags.data("balance")) || parseFloat($(element).find(".allowed_value").val()) ||
             null;
 
@@ -946,9 +924,6 @@
                 //     title: 'Limit Exceeded',
                 //     text: 'No of bags cannot exceed available balance (' + balance + ').',
                 // });
-                // bagsResult = balance;
-                // const limitedQty = parseFloat(bagsResult) / parseFloat(bag_size.val() || 1);
-                // qty.val(limitedQty.toFixed(2));
             }
 
             no_of_bags.val(bagsResult);
@@ -956,12 +931,17 @@
             no_of_bags.val('');
         }
 
-        // Calculate amount from qty * rate
         const qtyVal = parseFloat(qty.val()) || 0;
         const rateVal = parseFloat(rate.val()) || 0;
         amount.val((qtyVal * rateVal).toFixed(0));
         
         calculate_so_withhold();
+        
+        // Update withhold calculations when amount changes
+        const withholdAmount = parseFloat($("#withhold_amount").val()) || 0;
+        if (withholdAmount > 0) {
+            calculate_percentage_by_withhold(document.getElementById('withhold_amount'));
+        }
     }
 
     function validateBagsBeforeSubmit() {
@@ -1071,13 +1051,11 @@
                 $("#reference_no").val(res.so_no)
             },
             error: function(error) {
-                // Handle errors here
                 $('.loader-container').hide();
                 console.error("Error:", error);
             }
         });
     }
-
 
     function calculate_percentage(el) {
         const percentage = parseFloat($(el).val()) || 0;
@@ -1090,7 +1068,6 @@
             return;
         }
         const so_amount = parseFloat($("#so_amount").val()) || 0;
-
 
         const result = (so_amount * percentage) / 100;
 
@@ -1125,7 +1102,6 @@
         }
     }
 
-
     function get_so_detail() {
         const soId = $("#sale_order").val();
         if (!soId) {
@@ -1145,10 +1121,6 @@
             },
             dataType: "json",
             success: function(res) {
-                // $("#amount_received").val(res.amount_received)
-                // $("#so_amount").val(res.so_amount)
-                // $("#unused_amount").val(res.unused_amount)
-
                 applySaudaType(res.sauda_type);
                 if (!isEdit) {
                     updateLocations(res.locations || []);
@@ -1156,40 +1128,42 @@
                 soFactoryMap = res.factory_map || {};
                 soSectionMap = res.section_map || {};
 
-                // $("#payment_term_id").val(res.payment_term_id);
-                // $("#payment_term_id").trigger("change");
-
-                so_amount = res.so_amount;
+                // Set the global so_amount
+                so_amount = res.so_amount || 0;
                 
-                setTimeout(calculate_so_withhold, 500);
+                // Update SO withhold calculation
+                setTimeout(calculate_so_withhold, 100);
+                
+                // Update withhold percentage calculation with new so_amount
+                setTimeout(function() {
+                    const withholdAmount = parseFloat($("#withhold_amount").val()) || 0;
+                    if (withholdAmount > 0) {
+                        calculate_percentage_by_withhold(document.getElementById('withhold_amount'));
+                    } else {
+                        // If no withhold amount, set percentage to 0
+                        $("#withhold_percentage").val(0);
+                    }
+                }, 200);
 
                 // Re-apply saved location/arrival/section after refreshing maps
                 $("#locations").val(String(initialLocationId || ''));
 
-
                 if (!isInitialLoad) {
                     $("#delivery_date").val(res.delivery_date);
                 }
-
 
                 if (res.remarks !== null && res.remarks !== undefined) {
                     $("#remarks").val(res.remarks);
                 }
                 isInitialLoad = false;
                 $("#delivery_date").prop("readonly", true);
-                // selectLocation(document.getElementById("locations"), true);
-
-                // $("#locations").val(res.locations).trigger("change");
             },
             error: function(error) {
-                // Handle errors here
                 $('.loader-container').hide();
                 console.error("Error:", error);
             }
         });
     }
-
-    // get.delivery-order.getRvAgainstSo
 
     function get_receipt_vouchers() {
         const customer_id = $("#customer_id").val();
@@ -1215,7 +1189,6 @@
             },
             dataType: "json",
             success: function(res) {
-                // Populate receipt_vouchers dropdown
                 let select = $("#receipt_vouchers");
                 let selectedValues = select.val() || [];
                 select.empty();
@@ -1239,7 +1212,6 @@
                     // $(".advanced").show();
                 }
 
-                // Reset withhold_for_rv - it will be populated when receipt vouchers are selected
                 let withholdSelect = $("#withhold_for_rv");
                 let selectedWithhold = withholdSelect.val();
                 withholdSelect.empty();
@@ -1247,12 +1219,9 @@
                     `<option value='' data-amount="0">Select Receipt Voucher</option>`
                 );
                 
-                // We'll re-populate withholdSelect in change_withhold_amount() call from trigger('change.select2') above 
-                // but let's be explicit if needed.
                 change_withhold_amount();
             },
             error: function(error) {
-                // Handle errors here
                 $('.loader-container').hide();
                 console.error("Error:", error);
             }
@@ -1275,21 +1244,25 @@
             dataType: "html",
             success: function(res) {
                 $('#soTableBody').empty();
-
                 $('#soTableBody').html(res);
                 
-                setTimeout(calculate_so_withhold, 500);
+                setTimeout(function() {
+                    calculate_so_withhold();
+                    // Update withhold calculations
+                    const withholdAmount = parseFloat($("#withhold_amount").val()) || 0;
+                    if (withholdAmount > 0) {
+                        calculate_percentage_by_withhold(document.getElementById('withhold_amount'));
+                    }
+                }, 300);
             },
             error: function(error) {
-                // Handle errors here
                 $('.loader-container').hide();
                 console.error("Error:", error);
             }
         });
     }
 
-     function calculate_so_withhold() {
-        
+    function calculate_so_withhold() {
         let percentage = parseFloat($("#so_withhold_percentage").val());
         if (isNaN(percentage)) percentage = 0;
 
@@ -1301,11 +1274,7 @@
             $("#so_withhold_percentage").val(100);
         }
 
-        let do_amount = 0;
-        $(".amount").each(function() {
-            do_amount += parseFloat($(this).val()) || 0;
-        });
-
+        // Use global so_amount
         const heldAmount = (so_amount * (percentage / 100)).toFixed(2);
         $("#so_held_amount").val(heldAmount);
     }
@@ -1313,21 +1282,16 @@
     function calculate_so_percentage() {
         let held = parseFloat($("#so_held_amount").val()) || 0;
 
-        let do_amount = 0;
-        $(".amount").each(function() {
-            do_amount += parseFloat($(this).val()) || 0;
-        });
-
-        if (do_amount > 0) {
-            if (held > do_amount) {
-                held = do_amount;
-                $("#so_held_amount").val(do_amount);
+        if (so_amount > 0) {
+            if (held > so_amount) {
+                held = so_amount;
+                $("#so_held_amount").val(so_amount);
             }
             if (held < 0) {
                 held = 0;
                 $("#so_held_amount").val(0);
             }
-            const percentage = (held / do_amount) * 100;
+            const percentage = (held / so_amount) * 100;
             $("#so_withhold_percentage").val(percentage.toFixed(2));
         } else {
             $("#so_held_amount").val(0);
@@ -1335,10 +1299,9 @@
         }
     }
 
-     $('.select2').on('select2:open', function (e) {
-        // Remove all Select2 scroll blockers from window & parents
+    $('.select2').on('select2:open', function (e) {
         $(document).off('scroll.select2');
         $(window).off('scroll.select2');
-        $('*').off('scroll.select2');           // aggressive but often works
+        $('*').off('scroll.select2');
     });
 </script>
