@@ -752,7 +752,7 @@
             do_amount += parseFloat($(this).val()) || 0;
         });
 
-        const totalAmount = parseFloat(so_amount) || 0;
+        const totalAmount = parseFloat(do_amount) || 0;
 
         if (totalAmount > 0) {
             if (withhold > totalAmount) {
@@ -1327,7 +1327,7 @@
                 held = 0;
                 $("#so_held_amount").val(0);
             }
-            const percentage = (held / so_amount) * 100;
+            const percentage = (held / do_amount) * 100;
             $("#so_withhold_percentage").val(percentage.toFixed(2));
         } else {
             $("#so_held_amount").val(0);
