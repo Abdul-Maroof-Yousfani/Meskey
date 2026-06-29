@@ -752,7 +752,7 @@
             do_amount += parseFloat($(this).val()) || 0;
         });
 
-        const totalAmount = parseFloat(do_amount) || 0;
+        const totalAmount = parseFloat(so_amount) || 0;
 
         if (totalAmount > 0) {
             if (withhold > totalAmount) {
