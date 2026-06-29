@@ -736,8 +736,9 @@
         $(".amount").each(function() {
             do_amount += parseFloat($(this).val()) || 0;
         });
-
-        const totalAmount = parseFloat(do_amount) || 0;
+        const so_held_amount = parseFloat($("#so_held_amount").val()) || 0;
+        // const totalAmount = parseFloat(do_amount) || 0;
+        const totalAmount = parseFloat(so_amount);
         const withhold = (totalAmount * (percentage / 100)).toFixed(0);
         $("#withhold_amount").val(withhold);
         change_withhold_amount();
@@ -800,6 +801,27 @@
         const withhold = parseFloat($("#withhold_amount").val()) || 0;
         const advance = parseFloat($("#advance_amount").val()) || 0;
 
+
+        // Basic calculation for first row
+        if (advance > 0 || withhold > 0) {
+            remaining_amount = advance - withhold;
+            bag_size = $("#bag_size_0").val() || 0;
+            rate = $("#rate_0").val() || 0;
+            
+            if (rate > 0) {
+                const qtyVal = Math.round(remaining_amount / rate);
+                $("#qty_0").val(qtyVal);
+                $("#qty_0").prop("readonly", true);
+                $("#amount_0").val((parseFloat(rate) * parseFloat(qtyVal)).toFixed(0));
+                
+                if (bag_size > 0) {
+                    const no_of_bags = Math.round(parseFloat(qtyVal) / parseFloat(bag_size));
+                    $("#no_of_bags_0").val(isNaN(no_of_bags) ? 0 : no_of_bags);
+                }
+            }
+        }
+
+        
         const receipt_vouchers = $("#receipt_vouchers");
         let withholdSelect = $("#withhold_for_rv");
         let currentWithholdVal = withholdSelect.val();
@@ -1267,6 +1289,7 @@
     }
 
      function calculate_so_withhold() {
+        
         let percentage = parseFloat($("#so_withhold_percentage").val());
         if (isNaN(percentage)) percentage = 0;
 
@@ -1283,7 +1306,7 @@
             do_amount += parseFloat($(this).val()) || 0;
         });
 
-        const heldAmount = (do_amount * (percentage / 100)).toFixed(2);
+        const heldAmount = (so_amount * (percentage / 100)).toFixed(2);
         $("#so_held_amount").val(heldAmount);
     }
 
