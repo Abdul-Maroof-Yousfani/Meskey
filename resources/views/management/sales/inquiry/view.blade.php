@@ -170,15 +170,15 @@
                 <table class="table table-bordered" id="salesInquiryTable" style="min-width: 1500px;">
                     <thead>
                         <tr>
-                            <th>Item</th>
-                            <th>Bag Type</th>
-                            <th>Packing</th>
-                            <th>No of Bags</th>
-                            <th>Minimum Qty (kg)</th>
-                            <th>Maximum Qty (kg)</th>
-                            <th>Rate per Kg</th>
-                            <th>Rate per Mond</th>
-                            <th>Brands</th>
+                            <th class="col-3">Item</th>
+                            <th class="col-1">Bag Type</th>
+                            <th class="col-1">Packing</th>
+                            <th class="col-1">No of Bags</th>
+                            <th class="col-1">Minimum Qty (kg)</th>
+                            <th class="col-1">Maximum Qty (kg)</th>
+                            <th class="col-1">Rate per Kg</th>
+                            <th class="col-1">Rate per Mond</th>
+                            <th class="col-1">Brands</th>
                             <th style="display: none;">Pack Size</th>
                             <th>Description</th>
                         </tr>
