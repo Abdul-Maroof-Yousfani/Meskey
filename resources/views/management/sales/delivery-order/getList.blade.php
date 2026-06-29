@@ -24,20 +24,20 @@
                     @if($isFirstRow)
                         <td rowspan="{{ $group['rowspan'] }}" class="align-middle text-center font-weight-bold"
                             style="background-color: #e3f2fd;">
-                            <div class="p-2">
-                                #{{ $group['so_no'] }}
-                                <br>
-                                <small class="text-muted">
-                                    {{ \Carbon\Carbon::parse($group['created_at'])->format('d M Y') }}
-                                </small>
-                            </div>
+                            <!-- <div class="p-2"> -->
+                            {{ $group['so_no'] }}
+                            <br>
+                            <small class="text-muted">
+                                {{ \Carbon\Carbon::parse($group['created_at'])->format('d M Y') }}
+                            </small>
+                            <!-- </div> -->
                         </td>
 
                         <td rowspan="{{ $group['rowspan'] }}" class="align-middle text-center font-weight-bold"
                             style="background-color: #fce4ec;">
-                            <div class="p-2">
-                                {{ $group['sale_order']->salesOrder->reference_no ?? 'N/A' }}
-                            </div>
+                            <!-- <div class="p-2"> -->
+                            {{ $group['sale_order']->salesOrder->reference_no ?? 'N/A' }}
+                            <!-- </div> -->
                         </td>
 
                         <td rowspan="{{ $group['rowspan'] }}" class="align-middle" style="background-color: #e3f2fd;">
