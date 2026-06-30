@@ -137,7 +137,7 @@
                     <div class="form-group">
                         <label class="form-label">Receipt Vouchers:</label>
                         <select name="receipt_vouchers[]" id="receipt_vouchers"
-                            onchange="add_advance_amount(); change_withhold_amount()" class="form-control select2"
+                            onchange="add_advance_amount();" class="form-control select2"
                             multiple>
                             <option value="">Select Receipt Vouchers</option>
 
@@ -165,7 +165,7 @@
                 <div class="col-md-2 advanced" style="display: {{ $sale_order_of_delivery_order->pay_type_id == 10 ? 'block' : 'none' }}">
                     <div class="form-group">
                         <label class="form-label">Advance Amount:</label>
-                        <input type="number" step="any" name="advance_amount" onchange=""
+                        <input type="number" step="any" name="advance_amount" 
                             value="{{ $delivery_order->advance_amount }}" id="advance_amount" class="form-control"
                             readonly>
                     </div>
@@ -273,8 +273,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Row 3: Customer, Contract Terms, Locations -->
     </div>
 
     <div class="row form-mar">
@@ -437,871 +435,921 @@
     </div>
 </form>
 
+
 <script>
     salesInquiryRowIndex = 1;
 
-    var isInitialLoad = true;
-    var so_amount = 0; // Global variable for sale order amount
-    
-    $(document).ready(function() {
-        $('.select2').select2();
-        applySaudaType(`{{ strtolower($delivery_order->sauda_type) }}`);
-        // Initialize location options based on current sale order locations
-        get_so_detail();
-        update_delivery_date_min();
+var isInitialLoad = true;
+var so_amount = 0; // Global variable for sale order amount
+var isAdvancedPayment = false; // Track if current SO has advance payment
 
-        // Calculate initial percentage after a small delay to ensure so_amount is loaded
-        setTimeout(function() {
+$(document).ready(function() {
+    $('.select2').select2();
+    applySaudaType(`{{ strtolower($delivery_order->sauda_type) }}`);
+    // Initialize location options based on current sale order locations
+    get_so_detail();
+    update_delivery_date_min();
+
+    // Calculate initial percentage after a small delay to ensure so_amount is loaded
+    setTimeout(function() {
+        if (isAdvancedPayment) {
             calculate_percentage_by_withhold(document.getElementById('withhold_amount'));
-        }, 500);
-    });
-
-    function validate_expiry(el) {
-        // const do_date = $("#dispatch_date").val();
-        // const delivery_date = $("#delivery_date").val();
-     
-        // const dispatchDate = new Date(do_date);
-        // const deliveryDate = new Date(delivery_date);
-
-        // if(dispatchDate > deliveryDate) {
-        //     Swal.fire({
-        //         icon: 'error',
-        //         title: 'Expired!',
-        //         text: 'Dispatch date cannot be greater than delivery date.',
-        //         confirmButtonText: 'OK'
-        //     });
-        // }
-    }
-
-    function check_so_type() {
-        const type = $("#sale_order").find("option:selected").data("type");
-        if (type == 10) {
-            $(".advanced").show();
-        } else {
-            $(".advanced").hide();
         }
-    }
+    }, 500);
+});
 
-    function check_balance(el, target) {
-        // const balance = $(el).data("balance");
-        // const value = $("#" + target).val();
+function validate_expiry(el) {
+    // Validation code
+}
 
-        // if (value > balance) {
-        //     Swal.fire({
-        //         icon: 'warning',
-        //         title: 'Limit Exceeded',
-        //         text: 'Cannot proceed more than ' + balance,
-        //     });
-
-        //     $("#" + target).addClass("is-invalid");
-        // } else {
-        //     $("#" + target).removeClass("is-invalid");
-        // }
-    }
-
-    function applySaudaType(saudaType) {
-        const normalized = (saudaType || '').toLowerCase();
-        $('#sauda_type').val(normalized).trigger('change');
-        $('#sauda_type_hidden').val(normalized);
-        $('#sauda_type').prop('disabled', true);
-    }
-
-    function updateLocations(locations) {
-        const select = $("#locations");
-        const current = select.val();
-        select.empty();
-        select.append('<option value="">Select Locations</option>');
-
-        (locations || []).forEach(loc => {
-            select.append(`<option value="${loc.id}">${loc.text}</option>`);
-        });
-
-        const desired = current || initialLocationId || '';
-        if (desired && (locations || []).find?.(l => String(l.id) === String(desired))) {
-            select.val(String(desired));
-        } else {
-            select.val(desired ? String(desired) : '');
-        }
-
-        select.prop('disabled', false);
-        select.select2();
-
-        // Reset dependent dropdowns
-        $("#arrivals").empty().append('<option value="">Select Factory</option>').prop('disabled', true).trigger(
-            'change.select2');
-        $("#storages").empty().append('<option value="">Select Section</option>').prop('disabled', true).trigger(
-            'change.select2');
-    }
-
-    function is_allowed(el) {
-        const allowed_value = $(el).closest("tr").find(".allowed_value").val();
-        const written_value = $(el).val();
-        if (parseFloat(written_value) > parseFloat(allowed_value)) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Limit Exceeded',
-                text: 'Cannot proceed more than ' + allowed_value,
-            });
-
-            $(el).val(allowed_value);
-        }
-    }
-
-    function selectLocation(el, isInit = false) {
-        const company = $(el).val();
-        const allowedFactories = soFactoryMap[String(company)] || [];
-
-        if (allowedFactories.length > 0) {
-            $("#arrivals").empty();
-            allowedFactories.forEach(loc => {
-                const option = new Option(loc.text, loc.id);
-                $(option).attr("selected", "selected")
-                $("#arrivals").append(option);
-            });
-
-            if (!initialArrivalApplied && initialArrivalId) {
-                const initialArrivalIds = initialArrivalId.split(',').map(id => id.trim());
-                initialArrivalApplied = true;
-                selectStorage(document.getElementById("arrivals"), true);
-            } else if (!isInit) {
-                const allFactoryIds = allowedFactories.map(loc => String(loc.id));
-                selectAllStorages(allFactoryIds);
-            }
-        } else {
-            $("#arrivals").prop("disabled", false);
-            $.ajax({
-                url: "{{ route('sales.get.arrival-locations') }}",
-                method: "GET",
-                data: {
-                    location_id: company
-                },
-                dataType: "json",
-                success: function(res) {
-                    $("#arrivals").empty();
-
-                    res.forEach(loc => {
-                        $("#arrivals").append(`
-                        <option value="${loc.id}" selected>
-                            ${loc.text}
-                        </option>
-                    `);
-                    });
-
-                    $("#arrivals").select2();
-
-                    if (!initialArrivalApplied && initialArrivalId) {
-                        const initialArrivalIds = initialArrivalId.split(',').map(id => id.trim());
-                        initialArrivalApplied = true;
-                        selectStorage(document.getElementById("arrivals"), true);
-                    } else if (!isInit) {
-                        const allFactoryIds = res.map(loc => String(loc.id));
-                        $("#storages").empty().prop("disabled", true).trigger('change.select2');
-                    }
-                },
-                error: function(error) {
-
-                }
-            });
-        }
-    }
-
-    function selectStorage(el, isInit = false) {
-        const arrivals = $(el).val();
-        if (!arrivals || arrivals.length === 0) {
-            $("#storages").prop("disabled", true);
-            $("#storages").empty();
-            return;
-        }
-
-        const factoryIds = Array.isArray(arrivals) ? arrivals : [arrivals];
-        selectAllStorages(factoryIds, isInit);
-    }
-
-    function selectAllStorages(factoryIds, isInit = false) {
-        $("#storages").prop("disabled", false).empty();
-        
-        let allSections = [];
-        factoryIds.forEach(factoryId => {
-            const sections = soSectionMap[String(factoryId)] || [];
-            sections.forEach(section => {
-                if (!allSections.find(s => s.id === section.id)) {
-                    allSections.push(section);
-                }
-            });
-        });
-
-        if (allSections.length > 0) {
-            allSections.forEach(section => {
-                $("#storages").append(`<option value="${section.id}">${section.text}</option>`);
-            });
-            
-            if (!initialStorageApplied && initialStorageId && isInit) {
-                const initialStorageIds = initialStorageId.split(',').map(id => id.trim());
-                $("#storages").val($("#storages option").map((_,o) => o.value).get()).trigger('change.select2');
-                initialStorageApplied = true;
-            } else if (!isInit) {
-                const allSectionIds = allSections.map(s => String(s.id));
-                $("#storages").val($("#storages option").map((_,o) => o.value).get()).trigger('change.select2');
-            }
-        } else {
-            $("#storages").empty().prop("disabled", true).trigger('change.select2');
-        }
-    }
-
-    isEdit = true;
-    sum = 0;
-    remaining_amount = 0;
-    soFactoryMap = {};
-    soSectionMap = {};
-    initialLocationId = "{{ $delivery_order->location_id }}";
-    initialArrivalId = "{{ $delivery_order->arrival_location_id }}";
-    initialStorageId = "{{ $delivery_order->sub_arrival_location_id }}";
-    initialArrivalApplied = false;
-    initialStorageApplied = false;
-
-    function add_advance_amount() {
-        let selectedAmounts = $("#receipt_vouchers option:selected")
-            .map(function() {
-                return $(this).data("amount");
-            }).get();
-
-        sum = 0;
-        selectedAmounts.forEach(selectedAmount => {
-            sum += parseFloat(selectedAmount);
-        });
-
-        if (sum > 0) {
-            $("#advance_amount").val(sum.toFixed(0));
-            calculate_withhold_by_percentage(document.getElementById('withhold_percentage'));
-        } else {
-            $("#advance_amount").val("");
-            $("#withhold_amount").val("0");
-            $("#withhold_percentage").val("10");
-        }
-
-        update_delivery_date_min();
-    }
-
-    function calculate_withhold_by_percentage(el) {
-        let percentage = parseFloat($(el).val()) || 0;
-        if (percentage > 100) {
-            percentage = 100;
-            $(el).val(100);
-        }
-        if (percentage < 0) {
-            percentage = 0;
-            $(el).val(0);
-        }
-
-        // Use the global so_amount, fallback to calculated amount from table
-        let totalAmount = parseFloat(so_amount) || 0;
-        
-        // If so_amount is still 0, calculate from table
-        if (totalAmount === 0) {
-            let do_amount = 0;
-            $(".amount").each(function() {
-                do_amount += parseFloat($(this).val()) || 0;
-            });
-            totalAmount = do_amount;
-        }
-
-        const withhold = (totalAmount * (percentage / 100)).toFixed(0);
-        $("#withhold_amount").val(withhold);
-        change_withhold_amount();
-    }
-
-    function calculate_percentage_by_withhold(el) {
-        let withhold = parseFloat($(el).val()) || 0;
-
-        // Use the global so_amount, fallback to calculated amount from table
-        let totalAmount = parseFloat(so_amount) || 0;
-        
-        // If so_amount is still 0, calculate from table
-        if (totalAmount === 0) {
-            let do_amount = 0;
-            $(".amount").each(function() {
-                do_amount += parseFloat($(this).val()) || 0;
-            });
-            totalAmount = do_amount;
-        }
-
-        if (totalAmount > 0) {
-            if (withhold > totalAmount) {
-                withhold = totalAmount;
-                $(el).val(totalAmount);
-            }
-            if (withhold < 0) {
-                withhold = 0;
-                $(el).val(0);
-            }
-            const percentage = (withhold / totalAmount) * 100;
-            $("#withhold_percentage").val(percentage.toFixed(2));
-        } else {
-            $(el).val(0);
-            $("#withhold_percentage").val(0);
-        }
-        change_withhold_amount();
-    }
-
-    function update_delivery_date_min() {
-        let maxDate = "";
-        $("#receipt_vouchers option:selected").each(function() {
-            let date = $(this).data("date");
-            if (date && (!maxDate || date > maxDate)) {
-                maxDate = date;
-            }
-        });
-        
-        if (maxDate) {
-            $("#delivery_date").attr("min", maxDate);
-            if ($("#delivery_date").val() && $("#delivery_date").val() < maxDate) {
-                $("#delivery_date").val(maxDate);
-                Swal.fire({
-                    icon: 'info',
-                    title: 'Delivery Date Adjusted',
-                    text: 'Delivery date cannot be before the latest receipt voucher date (' + maxDate + ').',
-                    confirmButtonText: 'OK'
-                });
-            }
-        } else {
-            // $("#delivery_date").removeAttr("min");
-        }
-    }
-
-    function change_withhold_amount() {
-        const withhold = parseFloat($("#withhold_amount").val()) || 0;
-        const advance = parseFloat($("#advance_amount").val()) || 0;
-
-        // Get total amount from table or use so_amount
-        let totalAmount = parseFloat(so_amount) || 0;
-        if (totalAmount === 0) {
-            let do_amount = 0;
-            $(".amount").each(function() {
-                do_amount += parseFloat($(this).val()) || 0;
-            });
-            totalAmount = do_amount;
-        }
-
-        // Basic calculation for first row
-        if (advance > 0 || withhold > 0) {
-            remaining_amount = totalAmount - withhold;
-            bag_size = $("#bag_size_0").val() || 0;
-            rate = $("#rate_0").val() || 0;
-            
-            if (rate > 0 && totalAmount > 0) {
-                const qtyVal = Math.round(remaining_amount / rate);
-                $("#qty_0").val(qtyVal);
-                $("#qty_0").prop("readonly", true);
-                $("#amount_0").val((parseFloat(rate) * parseFloat(qtyVal)).toFixed(0));
-                
-                if (bag_size > 0) {
-                    const no_of_bags = Math.round(parseFloat(qtyVal) / parseFloat(bag_size));
-                    $("#no_of_bags_0").val(isNaN(no_of_bags) ? 0 : no_of_bags);
-                }
-            }
-        }
-
-        const receipt_vouchers = $("#receipt_vouchers");
+function check_so_type() {
+    const type = $("#sale_order").find("option:selected").data("type");
+    if (type == 10) {
+        $(".advanced").show();
+        isAdvancedPayment = true;
+    } else {
+        $(".advanced").hide();
+        isAdvancedPayment = false;
+        // Reset advance related fields when non-advance SO is selected
+        $("#advance_amount").val(0);
+        $("#withhold_amount").val(0);
+        $("#withhold_percentage").val(10);
+        $("#receipt_vouchers").val(null).trigger('change.select2');
+        // Reset withhold_for_rv
         let withholdSelect = $("#withhold_for_rv");
-        let currentWithholdVal = withholdSelect.val();
-        
         withholdSelect.empty();
         withholdSelect.append(`<option value='' data-amount="0">Select Receipt Voucher</option>`);
-        
-        // Get selected receipt vouchers and add them to withhold_for_rv
-        $("#receipt_vouchers option:selected").each(function() {
-            const val = $(this).val();
-            const text = $(this).text();
-            const amount = $(this).data('amount');
-            
-            if (val) {
-                withholdSelect.append(
-                    `<option value="${val}" data-amount="${amount}">${text}</option>`
-                );
-            }
-        });
-
-        // Re-select previous value if still exists
-        if (currentWithholdVal && withholdSelect.find(`option[value="${currentWithholdVal}"]`).length > 0) {
-            withholdSelect.val(currentWithholdVal);
-        }
-
-        if (withhold > 0 && receipt_vouchers.val() && receipt_vouchers.val().length > 0) {
-            withholdSelect.prop("disabled", false);
-        } else {
-            withholdSelect.prop("disabled", true);
-            withholdSelect.val("").trigger("change");
-        }
-        
+        withholdSelect.prop("disabled", true);
         withholdSelect.trigger('change.select2');
     }
+}
 
-    function addRow() {
-        let index = salesInquiryRowIndex++;
-        let row = `
-        <tr id="row_${index}">
-            <td>
-                <select name="item_id[]" id="item_id_${index}" class="form-control select2">
-                    <option value="">Select Item</option>
-                    @foreach ($items ?? [] as $item)
-                        <option value="{{ $item->id }}">{{ $item->name }}</option>
-                    @endforeach
-                </select>
-            </td>
-            <td>
-                <select name="bag_type[]" id="bag_type_${index}" class="form-control select2">
-                    <option value="">Select Bag Type</option>
-                    @foreach ($bag_types ?? [] as $bag_type)
-                        <option value="{{ $bag_type->id }}">{{ $bag_type->name }}</option>
-                    @endforeach
-                </select>
-                <input type="hidden" name="so_data_id[]" value="">
-            </td>
-            <td>
-                <input type="text" name="bag_size[]" id="bag_size_${index}" class="form-control bag_size" onkeyup="calc(this)" step="0.01" min="0">
-            </td>
-            <td>
-                <input type="text" name="no_of_bags[]" id="no_of_bags_${index}" class="form-control no_of_bags" step="0.01" min="0" readonly>
-            </td>
-            <td>
-                <input type="text" name="qty[]" id="qty_${index}" class="form-control qty" step="0.01" min="0" oninput="calc(this)">
-                <input type="hidden" name="current_qty[]" value="0">
-            </td>
-            <td>
-                <input type="text" name="rate[]" id="rate_${index}" onkeyup="calc(this)" class="form-control rate" step="0.01" min="0">
-            </td>
-            <td>
-                <input type="text" name="amount[]" id="amount_${index}" class="form-control amount" readonly>
-            </td>
-            <td>
-                <select name="brand_id[]" id="brand_id_${index}" class="form-control select2">
-                    <option value="">Select Brand</option>
-                    @foreach (getAllBrands() ?? [] as $brand)
-                        <option value="{{ $brand->id }}">{{ $brand->name }}</option>
-                    @endforeach
-                </select>
-            </td>
-            <td>
-                <input type="text" name="desc[]" id="desc_${index}" class="form-control">
-            </td>
-            <td style="display: none;">
-                <input type="text" name="pack_size[]" id="pack_size_${index}" value="0" class="form-control pack_size" readonly>
-            </td>
-            <td>
-                <button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="removeRow(${index})" style="width:60px;">
-                    <i class="fa fa-trash"></i>
-                </button>
-            </td>
-        </tr>
-    `;
-        $('#soTableBody').append(row);
-        $(`#item_id_${index}`).select2();
-        $(`#bag_type_${index}`).select2();
-        $(`#brand_id_${index}`).select2();
+function applySaudaType(saudaType) {
+    const normalized = (saudaType || '').toLowerCase();
+    $('#sauda_type').val(normalized).trigger('change');
+    $('#sauda_type_hidden').val(normalized);
+    $('#sauda_type').prop('disabled', true);
+}
+
+function updateLocations(locations) {
+    const select = $("#locations");
+    const current = select.val();
+    select.empty();
+    select.append('<option value="">Select Locations</option>');
+
+    (locations || []).forEach(loc => {
+        select.append(`<option value="${loc.id}">${loc.text}</option>`);
+    });
+
+    const desired = current || initialLocationId || '';
+    if (desired && (locations || []).find?.(l => String(l.id) === String(desired))) {
+        select.val(String(desired));
+    } else {
+        select.val(desired ? String(desired) : '');
     }
 
-    function removeRow(index) {
-        $('#row_' + index).remove();
+    select.prop('disabled', false);
+    select.select2();
+
+    // Reset dependent dropdowns
+    $("#arrivals").empty().append('<option value="">Select Factory</option>').prop('disabled', true).trigger(
+        'change.select2');
+    $("#storages").empty().append('<option value="">Select Section</option>').prop('disabled', true).trigger(
+        'change.select2');
+}
+
+function is_allowed(el) {
+    const allowed_value = $(el).closest("tr").find(".allowed_value").val();
+    const written_value = $(el).val();
+    if (parseFloat(written_value) > parseFloat(allowed_value)) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Limit Exceeded',
+            text: 'Cannot proceed more than ' + allowed_value,
+        });
+
+        $(el).val(allowed_value);
     }
+}
 
-    function calc(el) {
-        const element = $(el).closest("tr");
-        const bag_size = $(element).find(".bag_size");
-        const no_of_bags = $(element).find(".no_of_bags");
-        const qty = $(element).find(".qty");
-        const rate = $(element).find(".rate");
-        const amount = $(element).find(".amount");
+function selectLocation(el, isInit = false) {
+    const company = $(el).val();
+    const allowedFactories = soFactoryMap[String(company)] || [];
 
-        const balance = parseFloat(no_of_bags.data("balance")) || parseFloat($(element).find(".allowed_value").val()) ||
-            null;
+    if (allowedFactories.length > 0) {
+        $("#arrivals").empty();
+        allowedFactories.forEach(loc => {
+            const option = new Option(loc.text, loc.id);
+            $(option).attr("selected", "selected")
+            $("#arrivals").append(option);
+        });
 
-        if (bag_size.val() && qty.val()) {
-            let bagsResult = Math.round(parseFloat(parseFloat(qty.val() / bag_size.val())));
+        if (!initialArrivalApplied && initialArrivalId) {
+            const initialArrivalIds = initialArrivalId.split(',').map(id => id.trim());
+            initialArrivalApplied = true;
+            selectStorage(document.getElementById("arrivals"), true);
+        } else if (!isInit) {
+            const allFactoryIds = allowedFactories.map(loc => String(loc.id));
+            selectAllStorages(allFactoryIds);
+        }
+    } else {
+        $("#arrivals").prop("disabled", false);
+        $.ajax({
+            url: "{{ route('sales.get.arrival-locations') }}",
+            method: "GET",
+            data: {
+                location_id: company
+            },
+            dataType: "json",
+            success: function(res) {
+                $("#arrivals").empty();
 
-            if (balance && bagsResult > balance) {
-                // Swal.fire({
-                //     icon: 'warning',
-                //     title: 'Limit Exceeded',
-                //     text: 'No of bags cannot exceed available balance (' + balance + ').',
-                // });
+                res.forEach(loc => {
+                    $("#arrivals").append(`
+                    <option value="${loc.id}" selected>
+                        ${loc.text}
+                    </option>
+                `);
+                });
+
+                $("#arrivals").select2();
+
+                if (!initialArrivalApplied && initialArrivalId) {
+                    const initialArrivalIds = initialArrivalId.split(',').map(id => id.trim());
+                    initialArrivalApplied = true;
+                    selectStorage(document.getElementById("arrivals"), true);
+                } else if (!isInit) {
+                    const allFactoryIds = res.map(loc => String(loc.id));
+                    $("#storages").empty().prop("disabled", true).trigger('change.select2');
+                }
+            },
+            error: function(error) {
+
             }
+        });
+    }
+}
 
-            no_of_bags.val(bagsResult);
-        } else {
-            no_of_bags.val('');
+function selectStorage(el, isInit = false) {
+    const arrivals = $(el).val();
+    if (!arrivals || arrivals.length === 0) {
+        $("#storages").prop("disabled", true);
+        $("#storages").empty();
+        return;
+    }
+
+    const factoryIds = Array.isArray(arrivals) ? arrivals : [arrivals];
+    selectAllStorages(factoryIds, isInit);
+}
+
+function selectAllStorages(factoryIds, isInit = false) {
+    $("#storages").prop("disabled", false).empty();
+    
+    let allSections = [];
+    factoryIds.forEach(factoryId => {
+        const sections = soSectionMap[String(factoryId)] || [];
+        sections.forEach(section => {
+            if (!allSections.find(s => s.id === section.id)) {
+                allSections.push(section);
+            }
+        });
+    });
+
+    if (allSections.length > 0) {
+        allSections.forEach(section => {
+            $("#storages").append(`<option value="${section.id}">${section.text}</option>`);
+        });
+        
+        if (!initialStorageApplied && initialStorageId && isInit) {
+            const initialStorageIds = initialStorageId.split(',').map(id => id.trim());
+            $("#storages").val($("#storages option").map((_,o) => o.value).get()).trigger('change.select2');
+            initialStorageApplied = true;
+        } else if (!isInit) {
+            const allSectionIds = allSections.map(s => String(s.id));
+            $("#storages").val($("#storages option").map((_,o) => o.value).get()).trigger('change.select2');
+        }
+    } else {
+        $("#storages").empty().prop("disabled", true).trigger('change.select2');
+    }
+}
+
+isEdit = true;
+sum = 0;
+remaining_amount = 0;
+soFactoryMap = {};
+soSectionMap = {};
+initialLocationId = "{{ $delivery_order->location_id }}";
+initialArrivalId = "{{ $delivery_order->arrival_location_id }}";
+initialStorageId = "{{ $delivery_order->sub_arrival_location_id }}";
+initialArrivalApplied = false;
+initialStorageApplied = false;
+
+function add_advance_amount() {
+    // ✅ Only proceed if advanced payment is enabled
+    if (!isAdvancedPayment) {
+        return;
+    }
+
+    let selectedAmounts = $("#receipt_vouchers option:selected")
+        .map(function() {
+            return $(this).data("amount");
+        }).get();
+
+    let sum = 0;
+    selectedAmounts.forEach(selectedAmount => {
+        sum += parseFloat(selectedAmount);
+    });
+
+    if (sum > 0) {
+        $("#advance_amount").val(Math.round(sum));
+        
+        // SO Amount
+        let totalAmount = parseFloat(so_amount) || 0;
+        if (totalAmount === 0) {
+            let do_amount = 0;
+            $(".amount").each(function() {
+                do_amount += parseFloat($(this).val()) || 0;
+            });
+            totalAmount = do_amount;
+        }
+        
+        // Withhold percentage se withhold calculate karo
+        let percentage = parseFloat($("#withhold_percentage").val()) || 10;
+        let calculatedWithhold = (totalAmount * (percentage / 100));
+        
+        // ✅ Agar withhold advance se zyada hai toh advance ke barabar set karo
+        if (calculatedWithhold > sum) {
+            calculatedWithhold = sum;
+            if (totalAmount > 0) {
+                const newPercentage = (sum / totalAmount) * 100;
+                $("#withhold_percentage").val(newPercentage.toFixed(2));
+            }
+        }
+        
+        $("#withhold_amount").val(Math.round(calculatedWithhold));
+        change_withhold_amount();
+    } else {
+        $("#advance_amount").val("");
+        $("#withhold_amount").val("0");
+        $("#withhold_percentage").val("10");
+        change_withhold_amount();
+    }
+
+    update_delivery_date_min();
+}
+
+// ✅ ORIGINAL CALCULATE WITHHOLD BY PERCENTAGE - FIXED
+function calculate_withhold_by_percentage(el) {
+    let percentage = parseFloat($(el).val()) || 0;
+    if (percentage > 100) {
+        percentage = 100;
+        $(el).val(100);
+    }
+    if (percentage < 0) {
+        percentage = 0;
+        $(el).val(0);
+    }
+
+    let totalAmount = parseFloat(so_amount) || 0;
+    
+    if (totalAmount === 0) {
+        let do_amount = 0;
+        $(".amount").each(function() {
+            do_amount += parseFloat($(this).val()) || 0;
+        });
+        totalAmount = do_amount;
+    }
+
+    // ✅ WITHHOLD = TOTAL AMOUNT * PERCENTAGE
+    let withhold = (totalAmount * (percentage / 100));
+    
+    // ✅ ADVANCE AMOUNT
+    const advanceAmount = parseFloat($("#advance_amount").val()) || 0;
+    
+    // ✅ IF WITHHOLD > ADVANCE, SET WITHHOLD = ADVANCE
+    if (advanceAmount > 0 && withhold > advanceAmount) {
+        withhold = advanceAmount;
+        if (totalAmount > 0) {
+            const newPercentage = (advanceAmount / totalAmount) * 100;
+            $("#withhold_percentage").val(newPercentage.toFixed(2));
+        }
+        Swal.fire({
+            icon: 'warning',
+            title: 'Limit Exceeded',
+            text: 'Withhold amount cannot exceed advance amount (' + advanceAmount + ').',
+            confirmButtonText: 'OK'
+        });
+    }
+    
+    $("#withhold_amount").val(Math.round(withhold));
+    
+    // ✅ CALL change_withhold_amount FOR QUANTITY CALCULATION
+    change_withhold_amount();
+}
+
+// ✅ ORIGINAL CALCULATE PERCENTAGE BY WITHHOLD - FIXED
+function calculate_percentage_by_withhold(el) {
+    let withhold = parseFloat($(el).val()) || 0;
+
+    let totalAmount = parseFloat(so_amount) || 0;
+    
+    if (totalAmount === 0) {
+        let do_amount = 0;
+        $(".amount").each(function() {
+            do_amount += parseFloat($(this).val()) || 0;
+        });
+        totalAmount = do_amount;
+    }
+
+    const advanceAmount = parseFloat($("#advance_amount").val()) || 0;
+    
+    // ✅ IF WITHHOLD > ADVANCE, SET WITHHOLD = ADVANCE
+    if (advanceAmount > 0 && withhold > advanceAmount) {
+        withhold = advanceAmount;
+        $(el).val(advanceAmount);
+        Swal.fire({
+            icon: 'warning',
+            title: 'Limit Exceeded',
+            text: 'Withhold amount cannot exceed advance amount (' + advanceAmount + ').',
+            confirmButtonText: 'OK'
+        });
+    }
+
+    if (totalAmount > 0) {
+        if (withhold > totalAmount) {
+            withhold = totalAmount;
+            $(el).val(totalAmount);
+        }
+        if (withhold < 0) {
+            withhold = 0;
+            $(el).val(0);
+        }
+        // ✅ PERCENTAGE = (WITHHOLD / TOTAL AMOUNT) * 100
+        const percentage = (withhold / totalAmount) * 100;
+        $("#withhold_percentage").val(percentage.toFixed(2));
+    } else {
+        $(el).val(0);
+        $("#withhold_percentage").val(0);
+    }
+    
+    // ✅ CALL change_withhold_amount FOR QUANTITY CALCULATION
+    change_withhold_amount();
+}
+
+// ✅ ORIGINAL CHANGE WITHHOLD AMOUNT - FIXED
+function change_withhold_amount() {
+    const withhold = parseFloat($("#withhold_amount").val()) || 0;
+    const advance = parseFloat($("#advance_amount").val()) || 0;
+
+    // ✅ GET TOTAL AMOUNT
+    let totalAmount = parseFloat(so_amount) || 0;
+    if (totalAmount === 0) {
+        let do_amount = 0;
+        $(".amount").each(function() {
+            do_amount += parseFloat($(this).val()) || 0;
+        });
+        totalAmount = do_amount;
+    }
+
+    // ✅ REMAINING FOR QUANTITY = ADVANCE - WITHHOLD
+    let remainingForQuantity = 0;
+    
+    if (advance > 0) {
+        remainingForQuantity = advance - withhold;
+    } else if (withhold > 0) {
+        remainingForQuantity = totalAmount - withhold;
+    } else {
+        remainingForQuantity = totalAmount;
+    }
+
+    // ✅ ENSURE REMAINING IS NOT NEGATIVE
+    if (remainingForQuantity < 0) {
+        remainingForQuantity = 0;
+    }
+
+    // ✅ CALCULATE QUANTITY FOR FIRST ROW
+    let bag_size = $("#bag_size_0").val() || 0;
+    let rate = $("#rate_0").val() || 0;
+    
+    if (rate == 0) {
+        rate = $("#rate_per_mond_0").val() || 0;
+    }
+    
+    if (rate > 0 && remainingForQuantity > 0) {
+        const qtyVal = Math.round(remainingForQuantity / rate);
+        $("#qty_0").val(qtyVal);
+        $("#qty_0").prop("readonly", true);
+        $("#amount_0").val((parseFloat(rate) * parseFloat(qtyVal)).toFixed(0));
+        
+        if (bag_size > 0) {
+            const no_of_bags = Math.round(parseFloat(qtyVal) / parseFloat(bag_size));
+            $("#no_of_bags_0").val(isNaN(no_of_bags) ? 0 : no_of_bags);
+        }
+    } else {
+        $("#qty_0").val(0);
+        $("#amount_0").val(0);
+        $("#no_of_bags_0").val(0);
+    }
+
+    // ✅ UPDATE WITHHOLD FOR RV DROPDOWN
+    update_withhold_for_rv();
+}
+
+function update_withhold_for_rv() {
+    // ✅ Only proceed if advanced payment is enabled
+    if (!isAdvancedPayment) {
+        let withholdSelect = $("#withhold_for_rv");
+        withholdSelect.empty();
+        withholdSelect.append(`<option value='' data-amount="0">Select Receipt Voucher</option>`);
+        withholdSelect.prop("disabled", true);
+        withholdSelect.trigger('change.select2');
+        return;
+    }
+
+    const withhold = parseFloat($("#withhold_amount").val()) || 0;
+    const receipt_vouchers = $("#receipt_vouchers");
+    let withholdSelect = $("#withhold_for_rv");
+    let currentWithholdVal = withholdSelect.val();
+    
+    withholdSelect.empty();
+    withholdSelect.append(`<option value='' data-amount="0">Select Receipt Voucher</option>`);
+    
+    // Get selected receipt vouchers and add them to withhold_for_rv
+    $("#receipt_vouchers option:selected").each(function() {
+        const val = $(this).val();
+        const text = $(this).text();
+        const amount = $(this).data('amount');
+        
+        if (val) {
+            withholdSelect.append(
+                `<option value="${val}" data-amount="${amount}">${text}</option>`
+            );
+        }
+    });
+
+    // Re-select previous value if still exists
+    if (currentWithholdVal && withholdSelect.find(`option[value="${currentWithholdVal}"]`).length > 0) {
+        withholdSelect.val(currentWithholdVal);
+    }
+
+    if (withhold > 0 && receipt_vouchers.val() && receipt_vouchers.val().length > 0) {
+        withholdSelect.prop("disabled", false);
+    } else {
+        withholdSelect.prop("disabled", true);
+        withholdSelect.val("").trigger("change");
+    }
+    
+    withholdSelect.trigger('change.select2');
+}
+
+function update_delivery_date_min() {
+    let maxDate = "";
+    $("#receipt_vouchers option:selected").each(function() {
+        let date = $(this).data("date");
+        if (date && (!maxDate || date > maxDate)) {
+            maxDate = date;
+        }
+    });
+    
+    if (maxDate) {
+        $("#delivery_date").attr("min", maxDate);
+        if ($("#delivery_date").val() && $("#delivery_date").val() < maxDate) {
+            $("#delivery_date").val(maxDate);
+            Swal.fire({
+                icon: 'info',
+                title: 'Delivery Date Adjusted',
+                text: 'Delivery date cannot be before the latest receipt voucher date (' + maxDate + ').',
+                confirmButtonText: 'OK'
+            });
+        }
+    }
+}
+
+function addRow() {
+    let index = salesInquiryRowIndex++;
+    let row = `
+    <tr id="row_${index}">
+        <td>
+            <select name="item_id[]" id="item_id_${index}" class="form-control select2">
+                <option value="">Select Item</option>
+                @foreach ($items ?? [] as $item)
+                    <option value="{{ $item->id }}">{{ $item->name }}</option>
+                @endforeach
+            </select>
+        </td>
+        <td>
+            <select name="bag_type[]" id="bag_type_${index}" class="form-control select2">
+                <option value="">Select Bag Type</option>
+                @foreach ($bag_types ?? [] as $bag_type)
+                    <option value="{{ $bag_type->id }}">{{ $bag_type->name }}</option>
+                @endforeach
+            </select>
+            <input type="hidden" name="so_data_id[]" value="">
+        </td>
+        <td>
+            <input type="text" name="bag_size[]" id="bag_size_${index}" class="form-control bag_size" onkeyup="calc(this)" step="0.01" min="0">
+        </td>
+        <td>
+            <input type="text" name="no_of_bags[]" id="no_of_bags_${index}" class="form-control no_of_bags" step="0.01" min="0" readonly>
+        </td>
+        <td>
+            <input type="text" name="qty[]" id="qty_${index}" class="form-control qty" step="0.01" min="0" oninput="calc(this)">
+            <input type="hidden" name="current_qty[]" value="0">
+        </td>
+        <td>
+            <input type="text" name="rate[]" id="rate_${index}" onkeyup="calc(this)" class="form-control rate" step="0.01" min="0">
+        </td>
+        <td>
+            <input type="text" name="rate_per_mond[]" id="rate_per_mond_${index}" onkeyup="calc(this)" class="form-control rate_per_mond" step="0.01" min="0">
+        </td>
+        <td>
+            <input type="text" name="amount[]" id="amount_${index}" class="form-control amount" readonly>
+        </td>
+        <td>
+            <select name="brand_id[]" id="brand_id_${index}" class="form-control select2">
+                <option value="">Select Brand</option>
+                @foreach (getAllBrands() ?? [] as $brand)
+                    <option value="{{ $brand->id }}">{{ $brand->name }}</option>
+                @endforeach
+            </select>
+        </td>
+        <td>
+            <input type="text" name="desc[]" id="desc_${index}" class="form-control">
+        </td>
+        <td style="display: none;">
+            <input type="text" name="pack_size[]" id="pack_size_${index}" value="0" class="form-control pack_size" readonly>
+        </td>
+        <td>
+            <button type="button" class="btn btn-danger btn-sm removeRowBtn" onclick="removeRow(${index})" style="width:60px;">
+                <i class="fa fa-trash"></i>
+            </button>
+        </td>
+    </tr>
+`;
+    $('#soTableBody').append(row);
+    $(`#item_id_${index}`).select2();
+    $(`#bag_type_${index}`).select2();
+    $(`#brand_id_${index}`).select2();
+}
+
+function removeRow(index) {
+    $('#row_' + index).remove();
+}
+
+function calc(el) {
+    const element = $(el).closest("tr");
+    const bag_size = $(element).find(".bag_size");
+    const no_of_bags = $(element).find(".no_of_bags");
+    const qty = $(element).find(".qty");
+    const rate = $(element).find(".rate");
+    const amount = $(element).find(".amount");
+
+    const balance = parseFloat(no_of_bags.data("balance")) || parseFloat($(element).find(".allowed_value").val()) ||
+        null;
+
+    if (bag_size.val() && qty.val()) {
+        let bagsResult = Math.round(parseFloat(parseFloat(qty.val() / bag_size.val())));
+
+        if (balance && bagsResult > balance) {
+            bagsResult = balance;
+            const limitedQty = parseFloat(balance) * parseFloat(bag_size.val());
+            qty.val(Math.round(limitedQty));
         }
 
-        const qtyVal = parseFloat(qty.val()) || 0;
-        const rateVal = parseFloat(rate.val()) || 0;
-        amount.val((qtyVal * rateVal).toFixed(0));
-        
-        calculate_so_withhold();
-        
-        // Update withhold calculations when amount changes
+        no_of_bags.val(bagsResult);
+    } else {
+        no_of_bags.val('');
+    }
+
+    const qtyVal = parseFloat(qty.val()) || 0;
+    const rateVal = parseFloat(rate.val()) || 0;
+    amount.val((qtyVal * rateVal).toFixed(0));
+    
+    calculate_so_withhold();
+    
+    // ✅ Update withhold calculations when amount changes
+    if (isAdvancedPayment) {
         const withholdAmount = parseFloat($("#withhold_amount").val()) || 0;
         if (withholdAmount > 0) {
             calculate_percentage_by_withhold(document.getElementById('withhold_amount'));
         }
+        change_withhold_amount();
     }
+}
 
-    function validateBagsBeforeSubmit() {
-        let valid = true;
-        $("#soTableBody tr").each(function() {
-            const row = $(this);
-            const no_of_bags = row.find(".no_of_bags");
-            const bag_size = row.find(".bag_size");
-            const qty = row.find(".qty");
-            const balance = parseFloat(no_of_bags.data("balance")) || parseFloat(row.find(".allowed_value")
-                .val()) || null;
+function validateBagsBeforeSubmit() {
+    let valid = true;
+    $("#soTableBody tr").each(function() {
+        const row = $(this);
+        const no_of_bags = row.find(".no_of_bags");
+        const bag_size = row.find(".bag_size");
+        const qty = row.find(".qty");
+        const balance = parseFloat(no_of_bags.data("balance")) || parseFloat(row.find(".allowed_value")
+            .val()) || null;
 
-            if (balance) {
-                if (bag_size.val() && qty.val()) {
-                    const bagsResult = Math.round(parseFloat(bag_size.val()) * parseFloat(qty.val()));
-                    if (bagsResult > balance) {
-                        valid = false;
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'Limit Exceeded',
-                            text: 'No of bags cannot exceed available balance (' + balance + ').',
-                        });
-                        return false;
-                    }
+        if (balance) {
+            if (bag_size.val() && qty.val()) {
+                const bagsResult = Math.round(parseFloat(bag_size.val()) * parseFloat(qty.val()));
+                if (bagsResult > balance) {
+                    valid = false;
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Limit Exceeded',
+                        text: 'No of bags cannot exceed available balance (' + balance + ').',
+                    });
+                    return false;
                 }
             }
-        });
-        return valid;
-    }
-
-    $("#ajaxSubmit").on("submit", function(e) {
-        if (!validateBagsBeforeSubmit()) {
-            e.preventDefault();
         }
     });
+    return valid;
+}
 
-    function get_sale_orders() {
-        const customer_id = $("#customer_id").val();
-        
-        if (!customer_id) {
-            $("#sale_order").empty().append('<option value="" selected>Select Sale Order</option>').trigger('change');
-            return;
+$("#ajaxSubmit").on("submit", function(e) {
+    if (!validateBagsBeforeSubmit()) {
+        e.preventDefault();
+    }
+});
+
+function get_sale_orders() {
+    const customer_id = $("#customer_id").val();
+    
+    if (!customer_id) {
+        $("#sale_order").empty().append('<option value="" selected>Select Sale Order</option>').trigger('change');
+        return;
+    }
+
+    $.ajax({
+        url: "{{ route('sales.get.delivery-order.getSoAgainstCustomer') }}",
+        method: "GET",
+        data: {
+            customer_id: customer_id
+        },
+        dataType: "json",
+        success: function(res) {
+            const data = res.processedData;
+            $("#sale_order").empty();
+
+            // Add default "Select Sale Order" option first
+            $("#sale_order").append('<option value="" selected>Select Sale Order</option>');
+
+            data.forEach(item => {
+                $("#sale_order").append(`
+                    <option value="${item.id}" 
+                            data-type="${item.type || ''}">
+                        ${item.text}
+                    </option>
+                `);
+            });
+
+            $("#sale_order").select2();
+        },
+        error: function(error) {
+
         }
+    });
+}
 
-        $.ajax({
-            url: "{{ route('sales.get.delivery-order.getSoAgainstCustomer') }}",
-            method: "GET",
-            data: {
-                customer_id: customer_id
-            },
-            dataType: "json",
-            success: function(res) {
-                const data = res.processedData;
-                $("#sale_order").empty();
+function getNumber() {
+    $.ajax({
+        url: "{{ route('sales.get.delivery-order.getnumber') }}",
+        method: "GET",
+        data: {
+            contract_date: $("#dispatch_date").val()
+        },
+        dataType: "json",
+        success: function(res) {
+            $("#reference_no").val(res.so_no)
+        },
+        error: function(error) {
+            $('.loader-container').hide();
+            console.error("Error:", error);
+        }
+    });
+}
 
-                // Add default "Select Sale Order" option first
-                $("#sale_order").append('<option value="" selected>Select Sale Order</option>');
+function get_so_detail() {
+    const soId = $("#sale_order").val();
+    if (!soId) {
+        applySaudaType('');
+        updateLocations([]);
+        soFactoryMap = {};
+        soSectionMap = {};
+        $("#delivery_date").val('').prop("readonly", true);
+        isAdvancedPayment = false;
+        $(".advanced").hide();
+        return;
+    }
 
-                data.forEach(item => {
-                    $("#sale_order").append(`
-                        <option value="${item.id}" 
-                                data-type="${item.type || ''}">
-                            ${item.text}
-                        </option>
-                    `);
-                });
-
-                $("#sale_order").select2();
-            },
-            error: function(error) {
-
+    $.ajax({
+        url: "{{ route('sales.get.delivery-order.details') }}",
+        method: "GET",
+        data: {
+            so_id: soId,
+        },
+        dataType: "json",
+        success: function(res) {
+            applySaudaType(res.sauda_type);
+            if (!isEdit) {
+                updateLocations(res.locations || []);
             }
-        });
-    }
+            soFactoryMap = res.factory_map || {};
+            soSectionMap = res.section_map || {};
 
-    function get_inquiry_data() {
-        const inquiry_id = $("#inquiry_id").val();
-
-        $.ajax({
-            url: "{{ route('sales.get-sale-inquiry-data') }}",
-            method: "GET",
-            data: {
-                inquiry_id: inquiry_id
-            },
-            dataType: "html",
-            success: function(res) {
-                console.log("success");
-                $("#alesInquiryBody").empty();
-                $("#salesInquiryBody").html(res);
-            },
-            error: function(error) {
-                console.log(error);
+            so_amount = res.so_amount || 0;
+            
+            // ✅ Check if this is an advance payment SO
+            const payType = $("#sale_order").find("option:selected").data("type");
+            if (payType == 10) {
+                isAdvancedPayment = true;
+                $(".advanced").show();
+            } else {
+                isAdvancedPayment = false;
+                $(".advanced").hide();
+                $("#advance_amount").val(0);
+                $("#withhold_amount").val(0);
+                $("#withhold_percentage").val(10);
+                $("#receipt_vouchers").val(null).trigger('change.select2');
+                let withholdSelect = $("#withhold_for_rv");
+                withholdSelect.empty();
+                withholdSelect.append(`<option value='' data-amount="0">Select Receipt Voucher</option>`);
+                withholdSelect.prop("disabled", true);
+                withholdSelect.trigger('change.select2');
             }
-        });
-
-    }
-
-    function getNumber() {
-        $.ajax({
-            url: "{{ route('sales.get.delivery-order.getnumber') }}",
-            method: "GET",
-            data: {
-                contract_date: $("#dispatch_date").val()
-            },
-            dataType: "json",
-            success: function(res) {
-                $("#reference_no").val(res.so_no)
-            },
-            error: function(error) {
-                $('.loader-container').hide();
-                console.error("Error:", error);
-            }
-        });
-    }
-
-    function calculate_percentage(el) {
-        const percentage = parseFloat($(el).val()) || 0;
-        const unused_amount = $("#unused_amount").val();
-        const err_message = $(".advance-amount-err-message");
-
-        if (!percentage) {
-            $("#advance_amount").val("");
-            $("#advance_amount").prop("disabled", false);
-            return;
-        }
-        const so_amount = parseFloat($("#so_amount").val()) || 0;
-
-        const result = (so_amount * percentage) / 100;
-
-        if (result > unused_amount) {
-            $(".submitbutton").prop("disabled", true);
-            $("#advance_amount").addClass("is-invalid");
-            err_message.css("display", "block");
-        } else {
-            $(".submitbutton").prop("disabled", false);
-            $("#advance_amount").removeClass("is-invalid");
-            err_message.css("display", "none");
-        }
-
-        $("#advance_amount").prop("disabled", true);
-        $("#advance_amount").val(result);
-        $("#withhold_amount").val((result * 0.1).toFixed(2));
-    }
-
-    function manualChecking() {
-        const advance_amount = $("#advance_amount").val();
-        const unused_amount = $("#unused_amount").val();
-        const err_message = $(".advance-amount-err-message");
-
-        if (parseFloat(advance_amount) > parseFloat(unused_amount)) {
-            $(".submitbutton").prop("disabled", true);
-            $("#advance_amount").addClass("is-invalid");
-            err_message.css("display", "block");
-        } else {
-            $(".submitbutton").prop("disabled", false);
-            $("#advance_amount").removeClass("is-invalid");
-            err_message.css("display", "none");
-        }
-    }
-
-    function get_so_detail() {
-        const soId = $("#sale_order").val();
-        if (!soId) {
-            applySaudaType('');
-            updateLocations([]);
-            soFactoryMap = {};
-            soSectionMap = {};
-            $("#delivery_date").val('').prop("readonly", true);
-            return;
-        }
-
-        $.ajax({
-            url: "{{ route('sales.get.delivery-order.details') }}",
-            method: "GET",
-            data: {
-                so_id: soId,
-            },
-            dataType: "json",
-            success: function(res) {
-                applySaudaType(res.sauda_type);
-                if (!isEdit) {
-                    updateLocations(res.locations || []);
-                }
-                soFactoryMap = res.factory_map || {};
-                soSectionMap = res.section_map || {};
-
-                // Set the global so_amount
-                so_amount = res.so_amount || 0;
-                
-                // Update SO withhold calculation
-                setTimeout(calculate_so_withhold, 100);
-                
-                // Update withhold percentage calculation with new so_amount
-                setTimeout(function() {
+            
+            setTimeout(calculate_so_withhold, 100);
+            
+            setTimeout(function() {
+                if (isAdvancedPayment) {
                     const withholdAmount = parseFloat($("#withhold_amount").val()) || 0;
                     if (withholdAmount > 0) {
                         calculate_percentage_by_withhold(document.getElementById('withhold_amount'));
-                    } else {
-                        // If no withhold amount, set percentage to 0
-                        $("#withhold_percentage").val(0);
                     }
-                }, 200);
-
-                // Re-apply saved location/arrival/section after refreshing maps
-                $("#locations").val(String(initialLocationId || ''));
-
-                if (!isInitialLoad) {
-                    $("#delivery_date").val(res.delivery_date);
                 }
+            }, 200);
 
-                if (res.remarks !== null && res.remarks !== undefined) {
-                    $("#remarks").val(res.remarks);
-                }
-                isInitialLoad = false;
-                $("#delivery_date").prop("readonly", true);
-            },
-            error: function(error) {
-                $('.loader-container').hide();
-                console.error("Error:", error);
+            $("#locations").val(String(initialLocationId || ''));
+
+            if (!isInitialLoad) {
+                $("#delivery_date").val(res.delivery_date);
             }
-        });
+
+            if (res.remarks !== null && res.remarks !== undefined) {
+                $("#remarks").val(res.remarks);
+            }
+            isInitialLoad = false;
+            $("#delivery_date").prop("readonly", true);
+        },
+        error: function(error) {
+            $('.loader-container').hide();
+            console.error("Error:", error);
+        }
+    });
+}
+
+function get_receipt_vouchers() {
+    if (!isAdvancedPayment) {
+        let select = $("#receipt_vouchers");
+        select.empty();
+        select.append(
+            `<option value='' data-amount="0">Select Receipt Voucher</option>`
+        );
+        select.trigger('change.select2');
+        return;
     }
 
-    function get_receipt_vouchers() {
-        const customer_id = $("#customer_id").val();
-        const sale_order_id = $("#sale_order").val();
+    const customer_id = $("#customer_id").val();
+    const sale_order_id = $("#sale_order").val();
 
-        if (!customer_id) {
+    if (!customer_id) {
+        let select = $("#receipt_vouchers");
+        select.empty();
+        select.append(
+            `<option value='' data-amount="0">Select Receipt Voucher</option>`
+        );
+        select.trigger('change.select2');
+        add_advance_amount();
+        return;
+    }
+
+    $.ajax({
+        url: "{{ route('sales.get.delivery-order.getRvAgainstSo') }}",
+        method: "GET",
+        data: {
+            customer_id: customer_id,
+            sale_order_id: sale_order_id
+        },
+        dataType: "json",
+        success: function(res) {
             let select = $("#receipt_vouchers");
+            let selectedValues = select.val() || [];
             select.empty();
             select.append(
                 `<option value='' data-amount="0">Select Receipt Voucher</option>`
             );
-            select.trigger('change.select2');
-            add_advance_amount();
-            return;
-        }
 
-        $.ajax({
-            url: "{{ route('sales.get.delivery-order.getRvAgainstSo') }}",
-            method: "GET",
-            data: {
-                customer_id: customer_id,
-                sale_order_id: sale_order_id
-            },
-            dataType: "json",
-            success: function(res) {
-                let select = $("#receipt_vouchers");
-                let selectedValues = select.val() || [];
-                select.empty();
+            res.forEach(item => {
                 select.append(
-                    `<option value='' data-amount="0">Select Receipt Voucher</option>`
+                    `<option value="${item.id}"
+                            data-amount="${item.amount}">
+                        ${item.text}
+                    </option>`
                 );
+            });
 
-                res.forEach(item => {
-                    select.append(
-                        `<option value="${item.id}"
-                                data-amount="${item.amount}">
-                            ${item.text}
-                        </option>`
-                    );
-                });
+            select.val(selectedValues).trigger('change.select2');
+            add_advance_amount();
 
-                select.val(selectedValues).trigger('change.select2');
-                add_advance_amount();
+            let withholdSelect = $("#withhold_for_rv");
+            let selectedWithhold = withholdSelect.val();
+            withholdSelect.empty();
+            withholdSelect.append(
+                `<option value='' data-amount="0">Select Receipt Voucher</option>`
+            );
+            
+            update_withhold_for_rv();
+        },
+        error: function(error) {
+            $('.loader-container').hide();
+            console.error("Error:", error);
+        }
+    });
+}
 
-                if (res.length > 0) {
-                    // $(".advanced").show();
-                }
-
-                let withholdSelect = $("#withhold_for_rv");
-                let selectedWithhold = withholdSelect.val();
-                withholdSelect.empty();
-                withholdSelect.append(
-                    `<option value='' data-amount="0">Select Receipt Voucher</option>`
-                );
-                
-                change_withhold_amount();
-            },
-            error: function(error) {
-                $('.loader-container').hide();
-                console.error("Error:", error);
-            }
-        });
+function get_so_items() {
+    const soId = $("#sale_order").val();
+    if (!soId) {
+        $('#soTableBody').empty();
+        return;
     }
 
-    function get_so_items() {
-        const soId = $("#sale_order").val();
-        if (!soId) {
+    $.ajax({
+        url: "{{ route('sales.get.delivery-order.getSoItems') }}",
+        method: "GET",
+        data: {
+            so_id: soId,
+        },
+        dataType: "html",
+        success: function(res) {
             $('#soTableBody').empty();
-            return;
-        }
-
-        $.ajax({
-            url: "{{ route('sales.get.delivery-order.getSoItems') }}",
-            method: "GET",
-            data: {
-                so_id: soId,
-            },
-            dataType: "html",
-            success: function(res) {
-                $('#soTableBody').empty();
-                $('#soTableBody').html(res);
-                
-                setTimeout(function() {
-                    calculate_so_withhold();
-                    // Update withhold calculations
+            $('#soTableBody').html(res);
+            
+            setTimeout(function() {
+                calculate_so_withhold();
+                if (isAdvancedPayment) {
                     const withholdAmount = parseFloat($("#withhold_amount").val()) || 0;
                     if (withholdAmount > 0) {
                         calculate_percentage_by_withhold(document.getElementById('withhold_amount'));
                     }
-                }, 300);
-            },
-            error: function(error) {
-                $('.loader-container').hide();
-                console.error("Error:", error);
-            }
-        });
-    }
-
-    function calculate_so_withhold() {
-        let percentage = parseFloat($("#so_withhold_percentage").val());
-        if (isNaN(percentage)) percentage = 0;
-
-        if (percentage < 0) {
-            percentage = 0;
-            $("#so_withhold_percentage").val(0);
-        } else if (percentage > 100) {
-            percentage = 100;
-            $("#so_withhold_percentage").val(100);
+                }
+            }, 300);
+        },
+        error: function(error) {
+            $('.loader-container').hide();
+            console.error("Error:", error);
         }
-
-        // Use global so_amount
-        const heldAmount = (so_amount * (percentage / 100)).toFixed(2);
-        $("#so_held_amount").val(heldAmount);
-    }
-
-    function calculate_so_percentage() {
-        let held = parseFloat($("#so_held_amount").val()) || 0;
-
-        if (so_amount > 0) {
-            if (held > so_amount) {
-                held = so_amount;
-                $("#so_held_amount").val(so_amount);
-            }
-            if (held < 0) {
-                held = 0;
-                $("#so_held_amount").val(0);
-            }
-            const percentage = (held / so_amount) * 100;
-            $("#so_withhold_percentage").val(percentage.toFixed(2));
-        } else {
-            $("#so_held_amount").val(0);
-            $("#so_withhold_percentage").val(0);
-        }
-    }
-
-    $('.select2').on('select2:open', function (e) {
-        $(document).off('scroll.select2');
-        $(window).off('scroll.select2');
-        $('*').off('scroll.select2');
     });
-</script>
+}
+
+function calculate_so_withhold() {
+    let percentage = parseFloat($("#so_withhold_percentage").val());
+    if (isNaN(percentage)) percentage = 0;
+
+    if (percentage < 0) {
+        percentage = 0;
+        $("#so_withhold_percentage").val(0);
+    } else if (percentage > 100) {
+        percentage = 100;
+        $("#so_withhold_percentage").val(100);
+    }
+
+    const heldAmount = (so_amount * (percentage / 100)).toFixed(2);
+    $("#so_held_amount").val(heldAmount);
+}
+
+function calculate_so_percentage() {
+    let held = parseFloat($("#so_held_amount").val()) || 0;
+
+    if (so_amount > 0) {
+        if (held > so_amount) {
+            held = so_amount;
+            $("#so_held_amount").val(so_amount);
+        }
+        if (held < 0) {
+            held = 0;
+            $("#so_held_amount").val(0);
+        }
+        const percentage = (held / so_amount) * 100;
+        $("#so_withhold_percentage").val(percentage.toFixed(2));
+    } else {
+        $("#so_held_amount").val(0);
+        $("#so_withhold_percentage").val(0);
+    }
+}
+
+$('.select2').on('select2:open', function (e) {
+    $(document).off('scroll.select2');
+    $(window).off('scroll.select2');
+    $('*').off('scroll.select2');
+});
+    </script>
