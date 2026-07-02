@@ -375,7 +375,8 @@ class LoadingSlipController extends Controller
                     'customer' => $do->customer->name ?? '',
                     'commodity' => $do->delivery_order_data->first()->item->name ?? '',
                     'so_qty' => $do->delivery_order_data->sum(function ($d) {
-                        return $d->salesOrderData->qty ?? 0; }),
+                        return $d->salesOrderData->qty ?? 0;
+                    }),
                     'do_qty' => $do->delivery_order_data->sum('qty'),
                     'factory_names' => $factoryNames,
                     'gala_names' => $galaNames,
@@ -404,7 +405,8 @@ class LoadingSlipController extends Controller
                 'customer' => $do->customer->name ?? '',
                 'commodity' => $do->delivery_order_data->first()->item->name ?? '',
                 'so_qty' => $do->delivery_order_data->sum(function ($d) {
-                    return $d->salesOrderData->qty ?? 0; }),
+                    return $d->salesOrderData->qty ?? 0;
+                }),
                 'do_qty' => $do->delivery_order_data->sum('qty'),
                 'factory_names' => $factoryNames,
                 'gala_names' => $galaNames,
