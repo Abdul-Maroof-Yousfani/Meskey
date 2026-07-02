@@ -19,7 +19,7 @@ class LogisticsController extends Controller
         $logistics = Logistics::with(['items.transporter'])
             ->orderBy('id', 'desc')
             ->get();
-            
+
         return view('management.sales.logistics.index', compact('logistics'));
     }
 
@@ -36,7 +36,7 @@ class LogisticsController extends Controller
                 $hasApprovedLogistic = $so->logistics
                     ->where('am_approval_status', 'approved')
                     ->isNotEmpty();
-                
+
                 return !$hasApprovedLogistic;
             });
 
@@ -51,7 +51,7 @@ class LogisticsController extends Controller
 
                 return !$hasApprovedLogistic;
             });
-        
+
         $companyLocations = CompanyLocation::where('status', 'active')->get();
         $arrivalLocations = \App\Models\Master\ArrivalLocation::where('status', 'active')->get();
 
@@ -84,14 +84,14 @@ class LogisticsController extends Controller
         }
 
         $totalQty = $order->sales_order_data->sum('qty');
-        $commodities = $order->sales_order_data->map(function($item) {
+        $commodities = $order->sales_order_data->map(function ($item) {
             return $item->item->name ?? 'N/A';
         })->unique()->implode(', ');
 
         $fromLocationOptions = $order->locations
             ->pluck('companyLocation')
             ->filter()
-            ->map(fn ($location) => ['id' => $location->id, 'name' => $location->name])
+            ->map(fn($location) => ['id' => $location->id, 'name' => $location->name])
             ->unique('id')
             ->values()
             ->toArray();
@@ -99,7 +99,7 @@ class LogisticsController extends Controller
 
         $toLocationOptions = CompanyLocation::where('status', 'active')
             ->get(['id', 'name'])
-            ->map(fn ($location) => ['id' => $location->id, 'name' => $location->name])
+            ->map(fn($location) => ['id' => $location->id, 'name' => $location->name])
             ->values()
             ->toArray();
 
@@ -116,7 +116,7 @@ class LogisticsController extends Controller
             'commodity' => $commodities,
             'sauda_type' => $order->sauda_type,
             'customer' => $order->customer->name ?? 'N/A',
-            'delivery_address' => 'Static Delivery Address 123', 
+            'delivery_address' => 'Static Delivery Address 123',
             'from_location_id' => $fromLocation['id'] ?? '',
             'from_location_options' => $fromLocationOptions,
             'to_location_id' => '',
@@ -144,7 +144,7 @@ class LogisticsController extends Controller
         $locationName = CompanyLocation::whereIn('id', $companyLocationIds)->pluck('name')->implode(', ');
         $fromLocationOptions = CompanyLocation::where('status', 'active')
             ->get(['id', 'name'])
-            ->map(fn ($location) => ['id' => $location->id, 'name' => $location->name])
+            ->map(fn($location) => ['id' => $location->id, 'name' => $location->name])
             ->values()
             ->toArray();
 
@@ -160,7 +160,7 @@ class LogisticsController extends Controller
         $cFreight = \App\Models\Export\CFreight::with('rates')->where('export_order_id', $id)->first();
         $approvedRate = $cFreight ? $cFreight->rates->where('is_approved', 1)->first() : null;
         $shippingLine = $approvedRate ? $approvedRate->shipping_line : ($cFreight->shipping_line ?? '');
-        
+
         $jobOrder = \App\Models\Production\JobOrder\JobOrder::where('export_order_id', $id)->first();
 
         $brands = $order->packingItems->map(fn($item) => $item->brand->name ?? null)->filter()->unique()->values()->toArray();
@@ -197,7 +197,7 @@ class LogisticsController extends Controller
             'type' => 'required|in:sale_order,export_order',
             'sale_order_id' => 'nullable|required_if:type,sale_order|exists:sales_orders,id',
             'export_order_id' => 'nullable|required_if:type,export_order|exists:export_orders,id',
-            'location' => 'required',
+            // 'location' => 'required',
             'items' => 'required|array|min:1',
             'items.*.rate_type' => 'required|string',
             'items.*.rate' => 'required|numeric',
@@ -222,9 +222,9 @@ class LogisticsController extends Controller
                 throw ValidationException::withMessages(['to_location' => 'Selected port of loading is invalid.']);
             }
         } else {
-            if (!CompanyLocation::whereKey($request->location)->exists()) {
-                throw ValidationException::withMessages(['location' => 'Selected from location is invalid.']);
-            }
+            // if (!CompanyLocation::whereKey($request->location)->exists()) {
+            //     throw ValidationException::withMessages(['location' => 'Selected from location is invalid.']);
+            // }
 
             if (!CompanyLocation::whereKey($request->to_location)->exists()) {
                 throw ValidationException::withMessages(['to_location' => 'Selected to location is invalid.']);
@@ -238,7 +238,7 @@ class LogisticsController extends Controller
                 : ['type' => 'sale_order', 'sale_order_id' => $request->sale_order_id];
 
             $logistics = Logistics::firstOrNew($lookup);
-            
+
             if (!$logistics->exists) {
                 $logistics->created_by = auth()->user()->id;
             }
@@ -248,7 +248,7 @@ class LogisticsController extends Controller
             $logistics->to_location = $request->to_location;
             $logistics->am_approval_status = 'pending';
             $logistics->am_change_made = 1;
-            
+
             $logistics->fill([
                 'date' => $request->date,
                 'type' => $request->type,
@@ -307,20 +307,20 @@ class LogisticsController extends Controller
     public function getList(Request $request)
     {
         $search = $request->search;
-        
+
         $logistics = Logistics::with(['items.transporter'])
-            ->when($search, function($query) use ($search) {
+            ->when($search, function ($query) use ($search) {
                 $query->where('so_no', 'like', "%$search%")
                     ->orWhere('customer', 'like', "%$search%")
                     ->orWhere('commodity', 'like', "%$search%")
                     ->orWhere('type', 'like', "%$search%")
-                    ->orWhereHas('items', function($q) use ($search) {
+                    ->orWhereHas('items', function ($q) use ($search) {
                         $q->where('transporter_name', 'like', "%$search%");
                     });
             })
             ->orderBy('id', 'desc')
             ->get();
-            
+
         return view('management.sales.logistics.getList', compact('logistics'));
     }
 

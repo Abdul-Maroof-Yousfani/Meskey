@@ -62,7 +62,8 @@
                         <option value="">Select Customer</option>
                         @foreach ($customers ?? [] as $customer)
                             <option value="{{ $customer->id }}" @selected($delivery_challan->customer_id == $customer->id)>
-                                {{ $customer->name }}</option>
+                                {{ $customer->name }}
+                            </option>
                         @endforeach
                     </select>
                 </div>
@@ -90,7 +91,7 @@
                     </select>
                 </div>
             </div>
-            <div class="col-md-6 d-none">
+            <div class="col-md-6 d-none\">
                 <div class="form-group">
                     <label class="form-label">Reference Number:</label>
                     <input type="text" value="{{ $delivery_challan->reference_number }}" class="form-control" readonly>
@@ -193,7 +194,8 @@
                     </select>
                 </div>
             </div>
-
+        </div>
+        <!-- <div class="row">
             <div class="col-12 mt-3">
                 <h6 class="header-heading-sepration">Financials</h6>
             </div>
@@ -233,7 +235,7 @@
                     <textarea class="form-control" readonly rows="3">{{ $delivery_challan->remarks }}</textarea>
                 </div>
             </div>
-        </div>
+        </div> -->
     </div>
 </div>
 
@@ -248,9 +250,9 @@
                         <th style="width: 250px;">Packing</th>
                         <th>No of Bags</th>
                         <th>Quantity (kg)</th>
-                        <th>Rate per Kg</th>
+                        <!-- <th>Rate per Kg</th>
                         <th>Rate per Mond</th>
-                        <th>Amount</th>
+                        <th>Amount</th> -->
                         <th>Brand</th>
                         <th>Truck No.</th>
                         <th>Container Number</th>
@@ -291,17 +293,17 @@
                             <td>
                                 <input type="text" value="{{ round($data->qty) }}" class="form-control" readonly>
                             </td>
-                            <td>
-                                <input type="text" value="{{ $data->rate }}" class="form-control" readonly>
-                            </td>
-                            <td>
-                                <input type="text" value="{{ $data->deliveryOrderData->salesOrderData->rate_per_mond }}"
-                                    class="form-control" readonly>
-                            </td>
-                            <td>
-                                <input type="text" value="{{ round($data->rate * ($data->qty ?? 0)) }}"
-                                    class="form-control" readonly>
-                            </td>
+                            <!-- <td>
+                                    <input type="text" value="{{ $data->rate }}" class="form-control" readonly>
+                                </td>
+                                <td>
+                                    <input type="text" value="{{ $data->deliveryOrderData->salesOrderData->rate_per_mond }}"
+                                        class="form-control" readonly>
+                                </td>
+                                <td>
+                                    <input type="text" value="{{ round($data->rate * ($data->qty ?? 0)) }}" class="form-control"
+                                        readonly>
+                                </td> -->
                             <td>
                                 <input type="text" value="{{ getBrandById($data->brand_id)?->name }}" class="form-control"
                                     readonly>

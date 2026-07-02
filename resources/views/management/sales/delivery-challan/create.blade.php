@@ -189,7 +189,8 @@
                         </select>
                     </div>
                 </div>
-
+            </div>
+            <div class="row d-none">
                 <div class="col-12 mt-3">
                     <h6 class="header-heading-sepration">Financials</h6>
                 </div>
@@ -236,10 +237,10 @@
     <div class="row form-mar">
 
         <div class="col-12 text-right mb-2">
-            <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()" id="addRowBtn"
+            <!-- <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()" id="addRowBtn"
                 disabled>
                 <i class="fa fa-plus"></i>&nbsp; Add New Item
-            </button>
+            </button> -->
         </div>
 
         <div class="col-md-12">

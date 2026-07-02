@@ -35,8 +35,8 @@
     }
 </style>
 
-<form action="{{ route('sales.delivery-challan.update', ['delivery_challan' => $delivery_challan->id]) }}"
-    method="POST" id="ajaxSubmit" autocomplete="off">
+<form action="{{ route('sales.delivery-challan.update', ['delivery_challan' => $delivery_challan->id]) }}" method="POST"
+    id="ajaxSubmit" autocomplete="off">
     @csrf
     {{ method_field("PUT") }}
     <input type="hidden" id="listRefresh" value="{{ route('sales.get.delivery-challan.list') }}" />
@@ -237,7 +237,8 @@
                             <option value="">Select Transporter</option>
                             @foreach ($transporters ?? [] as $transporter)
                                 <option value="{{ $transporter->id }}" @selected($transporterId == $transporter->id)>
-                                    {{ $transporter->name }}</option>
+                                    {{ $transporter->name }}
+                                </option>
                             @endforeach
                         </select>
                         <input type="hidden" name="transporter" id="transporter" value="{{ $transporterId }}">
@@ -255,7 +256,8 @@
                         </select>
                     </div>
                 </div>
-
+            </div>
+            <!-- <div class="row">
                 <div class="col-12 mt-3">
                     <h6 class="header-heading-sepration">Financials</h6>
                 </div>
@@ -299,7 +301,7 @@
                             rows="3">{{ $delivery_challan->remarks }}</textarea>
                     </div>
                 </div>
-            </div>
+            </div> -->
         </div>
     </div>
 
@@ -318,9 +320,9 @@
     <div class="row mt-4">
         <div class="col-12 d-flex justify-content-between align-items-center mb-2">
             <h6 class="m-0 font-weight-bold color-dark">Item Details</h6>
-            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addRow()" id="addRowBtn" disabled>
+            <!-- <button type="button" class="btn btn-sm btn-outline-primary" onclick="addRow()" id="addRowBtn" disabled>
                 <i class="fa fa-plus"></i>&nbsp; Add New Item
-            </button>
+            </button> -->
         </div>
         <div class="col-md-12">
             <div class="table-responsive">
@@ -332,9 +334,9 @@
                             <th style="min-width: 130px; width: 130px;">Packing</th>
                             <th>No of Bags</th>
                             <th>Quantity (kg)</th>
-                            <th>Rate (Kg)</th>
+                            <!-- <th>Rate (Kg)</th>
                             <th>Rate (Mond)</th>
-                            <th>Amount</th>
+                            <th>Amount</th> -->
                             <th>Brand</th>
                             <th>Truck No.</th>
                             <th>Container Number</th>
@@ -392,20 +394,20 @@
                                     <input type="text" name="qty[]" id="qty_{{ $index }}" value="{{ round($data->qty) }}"
                                         class="form-control qty" oninput="calc(this)" readonly>
                                 </td>
-                                <td>
-                                    <input type="text" name="rate[]" id="rate_{{ $index }}" value="{{ $data->rate }}"
-                                        class="form-control rate" readonly>
-                                </td>
-                                <td>
-                                    <input type="text" name="rate_per_mond[]" id="rate_per_mond_{{ $index }}"
-                                        value="{{ $data->deliveryOrderData->salesOrderData->rate_per_mond ?? '' }}"
-                                        class="form-control rate" readonly>
-                                </td>
-                                <td>
-                                    <input type="text" name="amount[]" id="amount_{{ $index }}"
-                                        value="{{ round($data->rate * ($data->qty ?? 0)) }}" class="form-control amount"
-                                        readonly>
-                                </td>
+                                <!-- <td>
+                                            <input type="text" name="rate[]" id="rate_{{ $index }}" value="{{ $data->rate }}"
+                                                class="form-control rate" readonly>
+                                        </td>
+                                        <td>
+                                            <input type="text" name="rate_per_mond[]" id="rate_per_mond_{{ $index }}"
+                                                value="{{ $data->deliveryOrderData->salesOrderData->rate_per_mond ?? '' }}"
+                                                class="form-control rate" readonly>
+                                        </td>
+                                        <td>
+                                            <input type="text" name="amount[]" id="amount_{{ $index }}"
+                                                value="{{ round($data->rate * ($data->qty ?? 0)) }}" class="form-control amount"
+                                                readonly>
+                                        </td> -->
                                 <td>
                                     <input type="text" name="" id="brand_id_display_{{ $index }}"
                                         value="{{ getBrandById($data->brand_id)?->name }}" class="form-control" readonly>
