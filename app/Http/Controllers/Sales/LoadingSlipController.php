@@ -44,10 +44,10 @@ class LoadingSlipController extends Controller
                 return $q->where(function ($sq) use ($searchTerm) {
                     $sq->whereHas('loadingProgramItem', function ($query) use ($searchTerm) {
                         $query->where('transaction_number', 'like', $searchTerm)
-                              ->orWhere('truck_number', 'like', $searchTerm);
+                            ->orWhere('truck_number', 'like', $searchTerm);
                     })
-                    ->orWhere('customer', 'like', $searchTerm)
-                    ->orWhere('commodity', 'like', $searchTerm);
+                        ->orWhere('customer', 'like', $searchTerm)
+                        ->orWhere('commodity', 'like', $searchTerm);
                 });
             })
             ->latest()
@@ -64,15 +64,15 @@ class LoadingSlipController extends Controller
         // Get available tickets that have accepted Sales QC and no loading slip
         $availableTickets = LoadingProgramItem::whereHas('salesQc', function ($query) {
             $query->where('status', 'accept')
-                    ->orWhere("am_approval_status", "approved");
+                ->orWhere("am_approval_status", "approved");
         })
-        ->whereDoesntHave('loadingSlip')
-        ->with([
-            'loadingProgram.deliveryOrder.customer',
-            'loadingProgram.deliveryOrder.delivery_order_data.item',
-            'salesQc'
-        ])
-        ->get();
+            ->whereDoesntHave('loadingSlip')
+            ->with([
+                'loadingProgram.deliveryOrder.customer',
+                'loadingProgram.deliveryOrder.delivery_order_data.item',
+                'salesQc'
+            ])
+            ->get();
 
         return view('management.sales.loading-slip.create', compact('availableTickets'));
     }
@@ -99,7 +99,7 @@ class LoadingSlipController extends Controller
             'company_id' => 'required|numeric'
         ]);
 
-      
+
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
@@ -113,7 +113,7 @@ class LoadingSlipController extends Controller
         try {
             DB::beginTransaction();
 
-                    // Get ticket data to auto-populate fields
+            // Get ticket data to auto-populate fields
             $LoadingProgramItem = LoadingProgramItem::with([
                 'loadingProgram.deliveryOrder.customer',
                 'loadingProgram.deliveryOrder.salesOrder',
@@ -125,23 +125,23 @@ class LoadingSlipController extends Controller
 
             $DeliveryOrder = DeliveryOrder::find($LoadingProgramItem->delivery_order_id);
             $no_of_bags = $request->no_of_bags;
-            
+
             // Only check balance if delivery order exists
             if ($DeliveryOrder) {
-            $total_no_of_bags = $DeliveryOrder->delivery_order_data->sum('no_of_bags');
-            $used_no_of_bags = $DeliveryOrder->loadingSlips->sum("no_of_bags");
-            $remaining_no_of_bags = $total_no_of_bags - $used_no_of_bags;
+                $total_no_of_bags = $DeliveryOrder->delivery_order_data->sum('no_of_bags');
+                $used_no_of_bags = $DeliveryOrder->loadingSlips->sum("no_of_bags");
+                $remaining_no_of_bags = $total_no_of_bags - $used_no_of_bags;
 
-            // if(!$remaining_no_of_bags) {
-            //     return response()->json('You do not have any balance.', 422);
-            // }
+                // if(!$remaining_no_of_bags) {
+                //     return response()->json('You do not have any balance.', 422);
+                // }
 
-            // if($no_of_bags > $remaining_no_of_bags) {
-            //     return response()->json('Your balance is '.$remaining_no_of_bags.'.', 422);
-            // }
+                // if($no_of_bags > $remaining_no_of_bags) {
+                //     return response()->json('Your balance is '.$remaining_no_of_bags.'.', 422);
+                // }
             }
 
-            
+
             $loadingSlip = LoadingSlip::create([
                 'loading_program_item_id' => $request->loading_program_item_id,
                 'customer' => $request->customer,
@@ -214,7 +214,7 @@ class LoadingSlipController extends Controller
         // Check if there's a rejected dispatch QC
         $rejectedDispatchQc = null;
         $canEdit = $loadingSlip->canBeEdited();
-        
+
         if ($loadingSlip->hasRejectedDispatchQc()) {
             $rejectedDispatchQc = $loadingSlip->getLatestRejectedDispatchQc();
         }
@@ -248,19 +248,19 @@ class LoadingSlipController extends Controller
 
 
         $loadingSlip = LoadingSlip::with('loadingProgramItem.dispatchQc')->findOrFail($id);
-        
+
         // Check if editing is allowed
         if (!$loadingSlip->canBeEdited()) {
             return response()->json(['error' => 'This loading slip cannot be edited because its Dispatch QC has been accepted.'], 422);
         }
-        
+
         $DeliveryOrder = DeliveryOrder::find($loadingSlip->loadingProgramItem->delivery_order_id);
-        
+
         // Only check bag balance if delivery order exists
         if ($DeliveryOrder) {
             $total_no_of_bags = $DeliveryOrder->delivery_order_data->sum('no_of_bags');
             $used_no_of_bags = $DeliveryOrder->loadingSlips->sum("no_of_bags");
-           
+
             // if($no_of_bags > ($remaining_no_of_bags + $loadingSlip->no_of_bags)) {
             //     return response()->json('Your balance is '.($remaining_no_of_bags + $loadingSlip->no_of_bags).'.', 422);
             // }
@@ -291,7 +291,7 @@ class LoadingSlipController extends Controller
                     'edited_by' => auth()->user()->id,
                     "delivery_order_id" => $DeliveryOrder?->id
                 ]);
-                
+
             }
 
             $loadingSlip->update([
@@ -361,7 +361,7 @@ class LoadingSlipController extends Controller
             foreach ($LoadingProgramItem->deliveryOrders as $do) {
                 $factoryNames = [];
                 $galaNames = [];
-                
+
                 if ($do->arrival_location_id) {
                     $factoryNames = \App\Models\Master\ArrivalLocation::whereIn('id', explode(',', $do->arrival_location_id))->pluck('name')->toArray();
                 }
@@ -374,7 +374,8 @@ class LoadingSlipController extends Controller
                     'number' => $do->reference_no,
                     'customer' => $do->customer->name ?? '',
                     'commodity' => $do->delivery_order_data->first()->item->name ?? '',
-                    'so_qty' => $do->delivery_order_data->sum(function($d) { return $d->salesOrderData->qty ?? 0; }),
+                    'so_qty' => $do->delivery_order_data->sum(function ($d) {
+                        return $d->salesOrderData->qty ?? 0; }),
                     'do_qty' => $do->delivery_order_data->sum('qty'),
                     'factory_names' => $factoryNames,
                     'gala_names' => $galaNames,
@@ -383,13 +384,13 @@ class LoadingSlipController extends Controller
                     'is_pohanch' => (strtolower($do->sauda_type ?? '') == 'pohanch')
                 ];
             }
-        } 
+        }
         // Fallback to single delivery order if exists
         elseif ($LoadingProgramItem->loadingProgram && $LoadingProgramItem->loadingProgram->deliveryOrder) {
             $do = $LoadingProgramItem->loadingProgram->deliveryOrder;
             $factoryNames = [];
             $galaNames = [];
-            
+
             if ($do->arrival_location_id) {
                 $factoryNames = \App\Models\Master\ArrivalLocation::whereIn('id', explode(',', $do->arrival_location_id))->pluck('name')->toArray();
             }
@@ -402,7 +403,8 @@ class LoadingSlipController extends Controller
                 'number' => $do->reference_no,
                 'customer' => $do->customer->name ?? '',
                 'commodity' => $do->delivery_order_data->first()->item->name ?? '',
-                'so_qty' => $do->delivery_order_data->sum(function($d) { return $d->salesOrderData->qty ?? 0; }),
+                'so_qty' => $do->delivery_order_data->sum(function ($d) {
+                    return $d->salesOrderData->qty ?? 0; }),
                 'do_qty' => $do->delivery_order_data->sum('qty'),
                 'factory_names' => $factoryNames,
                 'gala_names' => $galaNames,
@@ -450,7 +452,7 @@ class LoadingSlipController extends Controller
 
         // If still empty, use defaults from LoadingProgramItem directly
         if (empty($orders)) {
-             $orders[] = [
+            $orders[] = [
                 'type' => 'Ticket',
                 'number' => $LoadingProgramItem->transaction_number,
                 'customer' => 'N/A',
@@ -466,7 +468,7 @@ class LoadingSlipController extends Controller
         }
 
         return response()->json([
-            'success' => true, 
+            'success' => true,
             'data' => [
                 'orders' => $orders,
                 'customer' => $orders[0]['customer'],
@@ -477,7 +479,8 @@ class LoadingSlipController extends Controller
                 'gala_names' => $orders[0]['gala_names'],
                 'bag_size' => $orders[0]['bag_size'],
                 'brand' => $orders[0]['brand'],
-                'is_pohanch' => $orders[0]['is_pohanch']
+                'is_pohanch' => $orders[0]['is_pohanch'],
+                'suggested_qty' => $LoadingProgramItem->qty,
             ]
         ]);
     }
