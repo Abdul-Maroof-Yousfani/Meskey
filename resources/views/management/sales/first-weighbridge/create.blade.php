@@ -4,13 +4,16 @@
     <div class="row form-mar">
 
         <div class="col-xs-12 col-sm-12 col-md-12">
+            {!! getUserMissingInfoAlert()  !!}
+
             <div class="form-group">
                 <label>Tickets:</label>
                 <select class="form-control select2" name="loading_program_item_id" id="loading_program_item_id">
                     <option value="">Select Ticket</option>
                     @foreach ($Tickets as $ticket)
                         <option value="{{ $ticket->id }}">
-                            {{ $ticket->transaction_number }} -- {{ $ticket->truck_number }}
+                            {{ $ticket->transaction_number }} -- {{ $ticket->truck_number }} --
+                            {{ $ticket->arrivalLocation->companyLocation->code ?? 'N/A' }}
                         </option>
                     @endforeach
                 </select>
@@ -29,13 +32,13 @@
 </form>
 
 <script>
-    $(document).ready(function() {
+    $(document).ready(function () {
         $('.select2').select2();
     });
 
-    $(document).ready(function() {
+    $(document).ready(function () {
         // Handle ticket selection
-        $('#loading_program_item_id').change(function() {
+        $('#loading_program_item_id').change(function () {
             var loading_program_item_id = $(this).val();
 
             if (loading_program_item_id) {
@@ -46,7 +49,7 @@
                         loading_program_item_id: loading_program_item_id
                     },
                     dataType: 'json',
-                    beforeSend: function() {
+                    beforeSend: function () {
                         Swal.fire({
                             title: "Processing...",
                             text: "Please wait while fetching ticket details.",
@@ -56,7 +59,7 @@
                             }
                         });
                     },
-                    success: function(response) {
+                    success: function (response) {
                         Swal.close();
                         if (response.success) {
                             // Append the rendered HTML to a container element
@@ -66,7 +69,7 @@
                                 "info");
                         }
                     },
-                    error: function() {
+                    error: function () {
                         Swal.close();
                         Swal.fire("Error", "Something went wrong. Please try again.",
                             "error");

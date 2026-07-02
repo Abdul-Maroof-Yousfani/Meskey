@@ -70,6 +70,7 @@ class FirstWeighBridgeController extends Controller
                 $query->where('type', 'sale_order');
             })
                 ->whereDoesntHave('firstWeighbridge')
+                ->whereIn('arrival_location_id', getUserCurrentCompanyArrivalLocations())
                 ->with([
                     'deliveryOrders.customer',
                     'deliveryOrders.delivery_order_data.item',
@@ -87,6 +88,15 @@ class FirstWeighBridgeController extends Controller
      */
     public function store(Request $request)
     {
+
+        $locations = getUserCurrentCompanyArrivalLocations();
+        $firstLocationId = collect($locations)->first();
+
+        if (!$firstLocationId) {
+            return response('User doesn\'t have arrival location assigned please contact admin to assign user arrival location.', 422);
+        }
+
+
         $validator = Validator::make($request->all(), [
             'loading_program_item_id' => 'required|exists:loading_program_items,id',
             'first_weight' => 'required|numeric',
@@ -99,6 +109,11 @@ class FirstWeighBridgeController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
+
+        // $loadingProgramItem = LoadingProgramItem::find($request->loading_program_item_id);
+        // $loadingProgramItem->first_weighbridge_location_id = $firstLocationId;
+        // $loadingProgramItem->save();
+
         // Check if the ticket already has a first weighbridge
         $existingFirstWeighbridge = FirstWeighbridge::where('loading_program_item_id', $request->loading_program_item_id)->first();
         if ($existingFirstWeighbridge) {
@@ -108,6 +123,9 @@ class FirstWeighBridgeController extends Controller
         $loadingProgramItem = LoadingProgramItem::whereHas('loadingProgram', function ($query) {
             $query->where('type', 'sale_order');
         })->with('deliveryOrders')->findOrFail($request->loading_program_item_id);
+        $loadingProgramItem->first_weighbridge_location_id = $firstLocationId;
+        $loadingProgramItem->save();
+
         $deliveryOrders = $loadingProgramItem->deliveryOrders;
 
         $request['created_by'] = auth()->user()->id;
@@ -133,10 +151,10 @@ class FirstWeighBridgeController extends Controller
                 ->where('company_location_id', $companyLocationId)
                 ->first();
 
-                $trucktype = ArrivalTruckType::with('locationAmounts')->findOrFail($request->truck_type_id);
-                $weighbridgeAmount = $trucktype->locationAmounts
-                    ->where('id', $companyLocationId)
-                    ->first();
+            $trucktype = ArrivalTruckType::with('locationAmounts')->findOrFail($request->truck_type_id);
+            $weighbridgeAmount = $trucktype->locationAmounts
+                ->where('id', $companyLocationId)
+                ->first();
 
 
             if (!$weighbridgeAmount) {
