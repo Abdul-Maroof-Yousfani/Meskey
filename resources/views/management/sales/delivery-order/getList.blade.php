@@ -87,7 +87,7 @@
                                     default => 'badge-secondary',
                                 };
                             @endphp
-                            <span class="badge {{ $badge }} px-3 py-2">
+                            <span class="badge {{ $badge }} ">
                                 {{ ucfirst($status) }}
                             </span>
                         </td>
