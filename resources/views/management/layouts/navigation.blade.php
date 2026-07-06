@@ -851,6 +851,16 @@
                                 </li>
                                 @endcanAccess
 
+                                @canAccess('documentlist-list')
+                                <li data-menu="">
+                                    <a class="dropdown-item d-flex align-items-center" href="{{ route('document-list.index') }}"
+                                        onclick="loadPageContent('{{ route('document-list.index') }}')" data-toggle="dropdown"><i
+                                            class="ft-arrow-right submenu-icon"></i>
+                                        <span data-i18n="Task Board">Document List</span>
+                                    </a>
+                                </li>
+                                @endcanAccess
+
                             </ul>
                         </li>
                         @endcanAccess

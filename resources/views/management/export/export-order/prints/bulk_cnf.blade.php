@@ -242,14 +242,19 @@
                             <td>{{ $spec->spec_value }} {{ $spec->uom }} {{ strtoupper($spec->value_type) }}</td>
                         </tr>
                     @endforeach
-                    @if($exportOrder->other_specifications)
+                    <tr>
+                        <td colspan="2" style="border: 0; padding-top: 15px; text-align: left;">
+                            OTHER DETAILS AS PER PAKISTAN EXPORT STANDARD
+                        </td>
+                    </tr>
+                    {{-- @if($exportOrder->other_specifications)
                         <tr>
                             <td colspan="2" style="border: 0; padding-top: 15px; text-align: left;">
                                 OTHER DETAILS AS PER PAKISTAN EXPORT STANDARD<br>
                                 {{ $exportOrder->other_specifications }}
                             </td>
                         </tr>
-                    @endif
+                    @endif --}}
                 </table>
             @else
                 <p>AS PER STANDARD EXPORT QUALITY.</p>
@@ -336,11 +341,20 @@
             </ol>
         </div>
 
-        @if(strtoupper($exportOrder->insurance_covered_by) == 'BUYER')
+        @php
+            $incotermName = strtoupper(trim($exportOrder->incoterm?->name ?? ''));
+        @endphp
+        @if($incotermName == 'CNF' || $incotermName == 'FOB')
         <div class="section-title">INSURANCE:</div>
         <div class="data-section">
             <p>AT BUYER'S COST & ACCOUNT.</p>
-            <p style="margin-top: 10px;">THE BUYER UNDERTAKE TO MAKE SURE THAT CARGO IS INSURED AFTER SAILING FROM LOAD PORT AT THEIR COST, RISK AND ACCOUNT. THE BUYER ALSO UNDERTAKES TO PROVIDE A COPY OF THE SAME TO THE SELLER PRIOR TO SAILING OF VESSEL.</p>
+            <p style="margin-top: 10px;">THE BUYER UNDERTAKES TO MAKE SURE THAT CARGO IS INSURED AFTER SAILING FROM LOAD PORT AT THEIR COST, RISK AND ACCOUNT. THE BUYER ALSO UNDERTAKES TO PROVIDE A COPY OF THE SAME TO THE SELLER PRIOR TO SAILING OF VESSEL.</p>
+        </div>
+        @elseif($incotermName == 'CIF')
+        <div class="section-title">INSURANCE:</div>
+        <div class="data-section">
+            <p>AT SELLER'S COST & ACCOUNT.</p>
+            <p style="margin-top: 10px;">THE SELLER UNDERTAKES TO MAKE SURE THAT CARGO IS INSURED AT THEIR COST, RISK AND ACCOUNT. THE SELLER ALSO UNDERTAKES TO PROVIDE A COPY OF THE SAME TO THE BUYER.</p>
         </div>
         @endif
 
