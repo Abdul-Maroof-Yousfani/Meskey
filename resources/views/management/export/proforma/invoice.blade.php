@@ -236,7 +236,7 @@
                     <div>{!! nl2br(e($company->address ?? '-')) !!}</div>
                 </td>
             </tr>
-            <tr>
+            {{-- <tr>
                 <td class="block-label">Consignee</td>
                 <td class="party-content">
                     @if ($consignee)
@@ -248,7 +248,7 @@
                         <div class="stack-line">{!! nl2br(e($buyer->address ?? '-')) !!}</div>
                     @endif
                 </td>
-            </tr>
+            </tr> --}}
             @if (filled(strip_tags((string) $notifyParty)) || $buyer)
                 <tr>
                     <td class="block-label">Notify Party</td>
@@ -284,10 +284,10 @@
                     <td>AS PER CONTRACT.</td>
                     <td class="align-center">{{ number_format((float) $item->metric_tons, 3) }} MT</td>
                     <td>
-                        IN {{ rtrim(rtrim(number_format((float) $item->bag_size, 2), '0'), '.') }} KG {{ $item->bagCondition->name ?? '-' }} {{ $item->bagType->name ?? '' }} BAG{{ $item->bagPacking?->name ? '.' : '' }}
-                        @if($item->bagPacking?->name)
+                        IN {{ rtrim(rtrim(number_format((float) $item->bag_size, 2), '0'), '.') }} KG {{ $item->bagCondition->name ?? '-' }} {{ $item->bagType->name ?? '' }} BAG.
+                        {{-- @if($item->bagPacking?->name)
                             <div class="stack-line">{{ $item->bagPacking->name }}</div>
-                        @endif
+                        @endif --}}
                     </td>
                     <td>{{ $item->brand->name ?? ($exportOrder->marking_labeling ?: '-') }}</td>
                     <td class="text-nowrap">

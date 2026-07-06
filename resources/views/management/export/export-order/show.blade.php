@@ -111,32 +111,40 @@
         </div>
 
         <div class="col-md-12 mt-2">
-            <h6 class="header-heading-sepration mt-3">Additional Details</h6>
+            <h6 class="header-heading-sepration mt-3">Discharge Terms</h6>
             <div class="row">
-                <div class="col-md-3">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label>Discharge Rate:</label>
                         <input type="text" class="form-control" value="{{ $exportOrder->discharge_rate ?? '-' }}" readonly>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label>SHEX/EIU (Discharge):</label>
                         <input type="text" class="form-control" value="{{ $exportOrder->discharge_shex_eiu ?? '-' }}" readonly>
                     </div>
                 </div>
-                <div class="col-md-3">
+            </div>
+
+            <h6 class="header-heading-sepration mt-3">Load Terms</h6>
+            <div class="row">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label>Minimum Daily Rate:</label>
                         <input type="text" class="form-control" value="{{ $exportOrder->minimum_daily_rate ?? '-' }}" readonly>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label>SHEX/EIU (Min Daily):</label>
                         <input type="text" class="form-control" value="{{ $exportOrder->minimum_daily_shex_eiu ?? '-' }}" readonly>
                     </div>
                 </div>
+            </div>
+
+            <h6 class="header-heading-sepration mt-3">Additional Details</h6>
+            <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
                         <label>Fumigation By:</label>
@@ -169,7 +177,7 @@
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label>Shipment Country:</label>
+                        <label>Arbitration Country:</label>
                         @php
                             $scNames = [];
                             if (is_array($exportOrder->shipment_country)) {
@@ -422,19 +430,19 @@
             <div class="col-md-6">
                 <div class="form-group">
                     <label>Force Majure:</label>
-                    <div class="show-content-box">{!! $exportOrder->force_majure !!}</div>
+                    <div class="show-content-box">{!! $exportOrder->force_majure ?? '<ol><li>Dummy text for Force Majure</li></ol>' !!}</div>
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="form-group">
-                    <label>Application Law:</label>
-                    <div class="show-content-box">{!! $exportOrder->application_law !!}</div>
+                    <label>Governing Law:</label>
+                    <div class="show-content-box">{!! $exportOrder->application_law ?? '<ol><li>Dummy text for Governing Law</li></ol>' !!}</div>
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="form-group">
                     <label>Confidentiality:</label>
-                    <div class="show-content-box">{!! $exportOrder->confidentiality !!}</div>
+                    <div class="show-content-box">{!! $exportOrder->confidentiality ?? '<ol><li>Dummy text for Confidentiality</li></ol>' !!}</div>
                 </div>
             </div>
             <div class="col-md-12">
@@ -498,7 +506,7 @@
                 </tr>
                 @if(str_contains(strtoupper(optional($exportOrder->incoterm)->name), 'FOB'))
                 <tr>
-                    <td style="font-weight:bold;vertical-align:middle;">FOB ACCOUNT</td>
+                    <td style="font-weight:bold;vertical-align:middle;">THC</td>
                     <td>
                         <input type="text" class="form-control" value="{{ $exportOrder->fob_account ?? '-' }}" readonly>
                     </td>

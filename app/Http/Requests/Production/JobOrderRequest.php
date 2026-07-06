@@ -76,7 +76,7 @@ class JobOrderRequest extends FormRequest
             ],
             'specifications.*.product_slab_type_id' => [
                 'required',
-                'exists:product_slabs,id'
+                'exists:product_slab_types,id'
             ],
             'specifications.*.spec_name' => [
                 'required',

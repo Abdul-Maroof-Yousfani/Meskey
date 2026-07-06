@@ -117,32 +117,44 @@
                 </div>
 
                 <div class="">
-                    <h6 class="header-heading-sepration mt-3">Additional Details</h6>
+                    <h6 class="header-heading-sepration mt-3">Discharge Terms</h6>
                     <div class="row">
-                        <div class="col-md-3">
+                        <div class="col-md-6">
                             <div class="form-group">
                                 <label>Discharge Rate:</label>
                                 <input type="text" name="discharge_rate" class="form-control" value="{{ old('discharge_rate', $exportOrder->discharge_rate) }}" required>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-6">
                             <div class="form-group">
                                 <label>SHEX/EIU (Discharge):</label>
                                 <input type="text" name="discharge_shex_eiu" class="form-control" value="{{ old('discharge_shex_eiu', $exportOrder->discharge_shex_eiu) }}" required>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                    </div>
+                </div>
+
+                <div class="">
+                    <h6 class="header-heading-sepration mt-3">Load Terms</h6>
+                    <div class="row">
+                        <div class="col-md-6">
                             <div class="form-group">
                                 <label>Minimum Daily Rate:</label>
                                 <input type="text" name="minimum_daily_rate" class="form-control" value="{{ old('minimum_daily_rate', $exportOrder->minimum_daily_rate) }}" required>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-6">
                             <div class="form-group">
                                 <label>SHEX/EIU (Min Daily):</label>
                                 <input type="text" name="minimum_daily_shex_eiu" class="form-control" value="{{ old('minimum_daily_shex_eiu', $exportOrder->minimum_daily_shex_eiu) }}" required>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <div class="">
+                    <h6 class="header-heading-sepration mt-3">Additional Details</h6>
+                    <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label>Fumigation By:</label>
@@ -176,7 +188,7 @@
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label>Shipment Country</label>
+                                <label>Arbitration Country</label>
                                 @php
                                     $scArray = is_array($exportOrder->shipment_country) ? $exportOrder->shipment_country : [];
                                 @endphp
@@ -477,8 +489,25 @@
             {{-- doucments to be povided --}}
             <div class="col-md-12 mb-3">
                 <label>Documents to be provided:</label>
-                <textarea name="documents_to_be_provided" id="documents_to_be_provided"
-                    class="form-control">{{ old('documents_to_be_provided', $exportOrder->documents_to_be_provided) }}</textarea>
+                <div class="documents-checklist" style="max-height: 200px; overflow-y: auto; border: 1px solid #d9d9d9; padding: 10px; border-radius: 4px;">
+                    @php
+                        $existingDocs = $exportOrder->documents_to_be_provided ?? '';
+                    @endphp
+                    @foreach($documentLists as $doc)
+                        @php
+                            $isChecked = strpos($existingDocs, $doc->name) !== false || $doc->is_required;
+                        @endphp
+                        <div class="custom-control custom-checkbox mb-1">
+                            <input type="checkbox" class="custom-control-input document-checkbox" 
+                                id="doc_{{ $doc->id }}" 
+                                value="{{ $doc->name }}" 
+                                {{ $isChecked ? 'checked' : '' }}
+                                {{ $doc->is_required ? 'disabled' : '' }}>
+                            <label class="custom-control-label" for="doc_{{ $doc->id }}">{{ $doc->name }}</label>
+                        </div>
+                    @endforeach
+                </div>
+                <input type="hidden" name="documents_to_be_provided" id="documents_to_be_provided" value="{{ old('documents_to_be_provided', $exportOrder->documents_to_be_provided) }}">
             </div>
 
             <div class="row p-2">
@@ -493,20 +522,20 @@
                     <div class="form-group">
                         <label>Force Majure:</label>
                         <textarea name="force_majure" id="force_majure" class="form-control"
-                            rows="3">{{ old('force_majure', $exportOrder->force_majure) }}</textarea>
+                            rows="3">{{ old('force_majure', $exportOrder->force_majure ?? '<ol><li>Dummy text for Force Majure</li></ol>') }}</textarea>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label>Application Law:</label>
+                        <label>Governing Law:</label>
                         <textarea name="application_law" id="application_law" class="form-control"
-                            rows="3">{{ old('application_law', $exportOrder->application_law) }}</textarea>
+                            rows="3">{{ old('application_law', $exportOrder->application_law ?? '<ol><li>Dummy text for Governing Law</li></ol>') }}</textarea>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
                         <label>Confidentiality:</label>
-                        <textarea name="confidentiality" id="confidentiality" class="form-control summernote" rows="3">{{ old('confidentiality', $exportOrder->confidentiality) }}</textarea>
+                        <textarea name="confidentiality" id="confidentiality" class="form-control summernote" rows="3">{{ old('confidentiality', $exportOrder->confidentiality ?? '<ol><li>Dummy text for Confidentiality</li></ol>') }}</textarea>
                     </div>
                 </div>
                 <div class="col-md-12">
@@ -578,7 +607,7 @@
                         </td>
                     </tr>
                     <tr id="fob_account_tr" style="display: {{ (str_contains(strtoupper(optional($exportOrder->incoterm)->name), 'FOB')) ? 'table-row' : 'none' }};">
-                        <td style="width: 30%; font-weight: bold; vertical-align: middle;">FOB ACCOUNT</td>
+                        <td style="width: 30%; font-weight: bold; vertical-align: middle;">THC</td>
                         <td style="width: 70%;">
                             <div class="d-flex">
                                 <div class="custom-control custom-radio mr-2">
@@ -1151,6 +1180,26 @@
             $('select[name="buyer_id"], select[name="product_id"]').prop('disabled', false);
         });
 
+        function updateDocumentsList() {
+            var items = [];
+            $('.document-checkbox:checked').each(function() {
+                items.push('<li>' + $(this).val() + '</li>');
+            });
+            
+            if (items.length > 0) {
+                $('#documents_to_be_provided').val('<ol>' + items.join('') + '</ol>');
+            } else {
+                $('#documents_to_be_provided').val('');
+            }
+        }
+
+        $(document).on('change', '.document-checkbox', function() {
+            updateDocumentsList();
+        });
+
+        // Initialize on load to ensure hidden input matches checked boxes
+        updateDocumentsList();
+
         const defaultCompanyId = '{{ auth()->user()->current_company_id }}';
         const savedBeneficiaryBankId = '{{ $exportOrder->customer_bank_type && $exportOrder->customer_bank_id ? $exportOrder->customer_bank_type . "_" . $exportOrder->customer_bank_id : "" }}';
         const savedCorrespondentBankId = '{{ old('correspondent_bank_id', $exportOrder->correspondent_bank_id) }}';
@@ -1172,7 +1221,7 @@
             ]
         };
 
-        $('#shipping_instructions, #documents_to_be_provided, #other_condition, #force_majure, #application_law, #additional_info, #confidentiality').summernote(summernoteOptions);
+        $('#shipping_instructions, #other_condition, #force_majure, #application_law, #additional_info, #confidentiality').summernote(summernoteOptions);
 
         // Initialize Select2
         $('.select2').select2({ width: '100%' });
@@ -1929,6 +1978,15 @@
 
         $('#companyLocationSelect').on('change', function () { populateArrivalLocations($(this).val(), [], []); });
         $('#arrivalLocationSelect').on('change', function () { populateArrivalSubLocations($(this).val(), []); });
+
+        $('select[name="incoterm_id"]').on('change', function() {
+            var incotermText = $(this).find('option:selected').text().toUpperCase().trim();
+            if (incotermText === 'CIF') {
+                $('select[name="insurance_covered_by"]').val('Supplier').trigger('change');
+            } else if (incotermText === 'CNF' || incotermText === 'FOB') {
+                $('select[name="insurance_covered_by"]').val('Buyer').trigger('change');
+            }
+        });
 
         // Initial Load
         loadCompanyBanks($('#companyId').val());
