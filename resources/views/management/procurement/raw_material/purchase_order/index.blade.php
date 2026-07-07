@@ -21,7 +21,7 @@
 
                     <!-- Export CSV Button -->
                     <button onclick="exportCSV()" type="button" class="btn btn-success position-relative ml-2">
-                        <i class="ft-file"></i> Export CSV
+                        <i class="ft-file mr-1"></i> Export CSV
                     </button>
                 </div>
                 @endcanAccess
@@ -117,15 +117,15 @@
             Swal.fire({
                 title: 'Processing Export...',
                 html: `
-                <div style="margin: 20px 0;">
-                    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
-                        <span class="sr-only">Loading...</span>
-                    </div>
-                    <p style="margin-top: 15px; color: #6c757d;">
-                        Please wait while we prepare your data...
-                    </p>
-                </div>
-            `,
+                                <div style="margin: 20px 0;">
+                                    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                                        <span class="sr-only">Loading...</span>
+                                    </div>
+                                    <p style="margin-top: 15px; color: #6c757d;">
+                                        Please wait while we prepare your data...
+                                    </p>
+                                </div>
+                            `,
                 allowOutsideClick: false,
                 allowEscapeKey: false,
                 showConfirmButton: false,
