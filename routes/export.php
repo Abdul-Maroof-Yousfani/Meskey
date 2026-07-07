@@ -27,6 +27,7 @@ use App\Http\Controllers\Export\ExportDispatchQcController;
 use App\Http\Controllers\Export\ExportDeliveryChallanController;
 use App\Http\Controllers\Export\ExportSecondWeighBridgeController;
 use App\Http\Controllers\Export\ExportOuterItemController;
+use App\Http\Controllers\Export\DocumentListController;
 
 // mode of terms
 Route::resource('modeofterms', ModeOfTermController::class);
@@ -221,3 +222,7 @@ Route::get('/get-shipment-advise-packing-lists', [ShipmentAdviseController::clas
 Route::resource('export-soda-field', ExportSodaFieldController::class);
 Route::post('/get-export-soda-field', [ExportSodaFieldController::class, 'getExportSodaFieldTable'])->name('get.export-soda-field');
 Route::post('/export-soda-field/update-status/{id}', [ExportSodaFieldController::class, 'updateStatus'])->name('export-soda-field.update-status');
+
+// document list
+Route::resource('document-list', DocumentListController::class);
+Route::post('/get-document-list', [DocumentListController::class, 'getList'])->name('get.document-list');
