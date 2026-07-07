@@ -1,12 +1,12 @@
 <table class="table m-0">
     <thead>
         <tr>
-            <th class="col-sm-4">Name </th>
-            <th class="col-sm-4">Type</th>
-            <th class="col-sm-4">Description</th>
-            <th class="col-sm-1">Status</th>
+            <th class="col-sm-3">Name </th>
+            <th class="col-sm-2">Type</th>
+            <th class="col-sm-3">Description</th>
+            <th class="col-sm-2">Status</th>
             <th class="col-sm-2">Created</th>
-            <th class="col-sm-1">Action</th>
+            <th class="col-sm-2">Action</th>
         </tr>
     </thead>
     <tbody>
