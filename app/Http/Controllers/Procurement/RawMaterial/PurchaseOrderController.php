@@ -808,7 +808,7 @@ class PurchaseOrderController extends Controller
             (isset($row->min_quantity) ? intval($row->min_quantity) : '-') . '-' . (isset($row->max_quantity) ? intval($row->max_quantity) : '-'),
             (isset($row->min_quantity) && isset($row->product->bag_weight_for_purchasing) && $row->product->bag_weight_for_purchasing > 0 ? intval($row->min_quantity / $row->product->bag_weight_for_purchasing) : '-') . '-' . (isset($row->max_quantity) && isset($row->product->bag_weight_for_purchasing) && $row->product->bag_weight_for_purchasing > 0 ? intval($row->max_quantity / $row->product->bag_weight_for_purchasing) : '-'),
             $row->rate_per_kg ?? 'N/A',
-            'Thadda Rate',
+            '',
             $row->delivery_date ? Carbon::parse($row->delivery_date)->format('d-M-Y') : 'N/A',
             $row->credit_days ?? 'N/A',
             // $row->rate_per_mound ?? 'N/A',
