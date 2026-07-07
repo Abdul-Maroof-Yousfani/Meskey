@@ -171,7 +171,7 @@
         samplingResults: [
             @foreach ($samplingRequestResults as $slab)
                 @if ($slab->applied_deduction)
-                                                                                                                                                                    {
+                                                                                                                                                                            {
                         id: {{ $slab->id }},
                         applied_deduction: {{ $slab->applied_deduction ?? 0 }},
                         deduction_type: '{{ $slab->deduction_type ?? 'amount' }}',
@@ -185,10 +185,10 @@
         compulsoryResults: [
             @foreach ($samplingRequestCompulsuryResults as $slab)
                 @if ($slab->applied_deduction)
-                                                                                            {
+                                                                                                {
                     id: {{ $slab->id }},
                     applied_deduction: {{ $slab->applied_deduction ?? 0 }}
-                                                                                            },
+                                                                                                },
                 @endif
             @endforeach
         ],
@@ -296,7 +296,7 @@
                 <div class="form-group">
                     <label>Station</label>
                     <input type="text" class="form-control" name="station"
-                        value="{{ $purchaseOrder->station_name ?? 'N/A' }}" readonly>
+                        value="{{ $purchaseOrder->purchaseFreight->station_name ?? 'N/A' }}" readonly>
                 </div>
             </div>
             <div class="col-md-3">
@@ -1258,7 +1258,7 @@
                 const totalDeductionsForFormula = totalSamplingDeductions + bagWeightAmount +
                     loadingWeighbridgeAmount + deduction_on_access_weight_amount;
                 const totalAmount = grossAmount - totalDeductionsForFormula + bagRateAmount +
-                                                                                            {{ $totalSupplierCommission }};
+                                                                                                {{ $totalSupplierCommission }};
 
                 $('#modal_total_amount').val(totalAmount);
                 $('#modal_total_amount_display').val(totalAmount.toFixed(2));
