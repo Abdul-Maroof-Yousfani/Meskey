@@ -117,21 +117,21 @@
             Swal.fire({
                 title: 'Processing Export...',
                 html: `
-                                <div style="margin: 20px 0;">
-                                    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
-                                        <span class="sr-only">Loading...</span>
+                                    <div style="margin: 20px 0;">
+                                        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                                            <span class="sr-only">Loading...</span>
+                                        </div>
+                                        <p style="margin-top: 15px; color: #6c757d;">
+                                            Please wait while we prepare your data...
+                                        </p>
                                     </div>
-                                    <p style="margin-top: 15px; color: #6c757d;">
-                                        Please wait while we prepare your data...
-                                    </p>
-                                </div>
-                            `,
+                                `,
                 allowOutsideClick: false,
                 allowEscapeKey: false,
                 showConfirmButton: false,
-                showCancelButton: true,
-                cancelButtonText: 'Cancel',
-                cancelButtonColor: '#dc3545',
+                // showCancelButton: true,
+                // cancelButtonText: 'Cancel',
+                // cancelButtonColor: '#dc3545',
             });
 
             // Get filter values
