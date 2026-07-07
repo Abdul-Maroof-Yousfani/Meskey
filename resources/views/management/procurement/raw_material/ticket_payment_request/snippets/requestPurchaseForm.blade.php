@@ -169,7 +169,7 @@
         samplingResults: [
             @foreach ($samplingRequestResults as $slab)
                 @if ($slab->applied_deduction)
-                                    {
+                                            {
                         id: {{ $slab->id }},
                         applied_deduction: {{ $slab->applied_deduction ?? 0 }},
                         deduction_type: '{{ $slab->deduction_type ?? 'amount' }}',
@@ -183,10 +183,10 @@
         compulsoryResults: [
             @foreach ($samplingRequestCompulsuryResults as $slab)
                 @if ($slab->applied_deduction)
-                            {
+                                {
                     id: {{ $slab->id }},
                     applied_deduction: {{ $slab->applied_deduction ?? 0 }}
-                            },
+                                },
                 @endif
             @endforeach
         ],
@@ -758,11 +758,11 @@
                             <td>
                                 <input type="text" class="form-control" name="supplier_commission_display"
                                     id="supplier_commission_display"
-                                    value="{{ number_format($purchaseOrder->supplier_commission * $loadingWeight, 2) }}"
+                                    value="{{ number_format($purchaseOrder->supplier_commission * $arrivedWeight, 2) }}"
                                     readonly>
                                 <input type="hidden" class="form-control" name="supplier_commission"
                                     id="supplier_commission"
-                                    value="{{ $purchaseOrder->supplier_commission * $loadingWeight }}" readonly>
+                                    value="{{ $purchaseOrder->supplier_commission * $arrivedWeight }}" readonly>
                             </td>
                         </tr>
                         @if ($purchaseOrder->supplier_commission < 0)
@@ -792,10 +792,10 @@
                                 <td>
                                     <input type="text" class="form-control" name="brokery_amount_display"
                                         id="brokery_amount_display"
-                                        value="{{ number_format($purchaseOrder->supplier_commission * $loadingWeight, 2) }}"
+                                        value="{{ number_format($purchaseOrder->supplier_commission * $arrivedWeight, 2) }}"
                                         readonly>
                                     <input type="hidden" class="form-control" name="brokery_amount" id="brokery_amount"
-                                        value="{{ $purchaseOrder->supplier_commission * $loadingWeight }}" readonly>
+                                        value="{{ $purchaseOrder->supplier_commission * $arrivedWeight }}" readonly>
                                 </td>
                             </tr>
                         @endif
