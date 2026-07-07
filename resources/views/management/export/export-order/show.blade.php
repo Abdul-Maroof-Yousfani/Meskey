@@ -121,7 +121,13 @@
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label>SHEX/EIU (Discharge):</label>
+                        <label>SHEX/EIU (Discharge) Type:</label>
+                        <input type="text" class="form-control" value="{{ $exportOrder->discharge_term_type ?? '-' }}" readonly>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>SHEX/EIU (Discharge) Value:</label>
                         <input type="text" class="form-control" value="{{ $exportOrder->discharge_shex_eiu ?? '-' }}" readonly>
                     </div>
                 </div>
@@ -137,7 +143,13 @@
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label>SHEX/EIU (Min Daily):</label>
+                        <label>SHEX/EIU (Min Daily) Type:</label>
+                        <input type="text" class="form-control" value="{{ $exportOrder->load_term_type ?? '-' }}" readonly>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>SHEX/EIU (Min Daily) Value:</label>
                         <input type="text" class="form-control" value="{{ $exportOrder->minimum_daily_shex_eiu ?? '-' }}" readonly>
                     </div>
                 </div>

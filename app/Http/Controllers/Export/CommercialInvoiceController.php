@@ -306,6 +306,9 @@ class CommercialInvoiceController extends Controller
 
         return ExportOrder::with(['buyer'])
             ->where('am_approval_status', 'approved')
+            ->whereNotIn('id', function($q) {
+                $q->select('export_order_id')->from('export_order_addendums');
+            })
             ->whereHas('billOfLadings', function ($query) use ($takenBolIds) {
                 $query->whereNotIn('id', $takenBolIds);
             })

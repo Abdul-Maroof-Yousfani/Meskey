@@ -299,7 +299,7 @@
 
         <div class="section-title">DISCHARGE RATE:</div>
         <div class="data-section">
-            <p>CARGO TO BE DISCHARGED AT THE RATE OF {{ number_format((float) $exportOrder->discharge_rate) }} METRIC TONS PWWD {{ strtoupper($exportOrder->discharge_shex_eiu) }}. VESSEL AGENT AT DISCHARGE PORT TO BE AT BUYERS CHOICE AND OWNER / SHIPPER TO PAY PORT DA SUBJECT REASONABLE FDA.</p>
+            <p>CARGO TO BE DISCHARGED AT THE RATE OF {{ number_format((float) $exportOrder->discharge_rate) }} METRIC TONS PWWD {{ strtoupper($exportOrder->discharge_term_type ?? 'SHEX EIU') }} {{ strtoupper($exportOrder->discharge_shex_eiu) }}. VESSEL AGENT AT DISCHARGE PORT TO BE AT BUYERS CHOICE AND OWNER / SHIPPER TO PAY PORT DA SUBJECT REASONABLE FDA.</p>
             <p style="margin-top: 10px;">NOTICE OF READINESS (N.O.R.) TENDERABLE IN WRITING BETWEEN THE NORMAL BUSINESS HOURS OF 08:00 TO 17:00 HOURS MONDAY THROUGH FRIDAY AND BETWEEN 08:00 AND 12:00 HOURS ON SATURDAYS.</p>
             <p style="margin-top: 10px;">NOR MAY BE TENDERED WHETHER IN BERTH OR NOT (WIBON), WHETHER IN PORT OR NOT (WIPON), WHETHER IN FREE PRATIQUE OR NOT (WIFPON), WHETHER CUSTOM CLEARED OR NOT (WCCON).</p>
             <p style="margin-top: 10px;">LAYTIME TO COMMENCE AFTER N.O.R. TENDERED WHETHER IN BERTH OR NOT (WIBON), WHETHER IN PORT OR NOT (WIPON), WHETHER IN FREE PRATIQUE OR NOT (WIFPON), WHETHER CUSTOM CLEARED OR NOT (WCCON).</p>
