@@ -116,7 +116,31 @@
                             readonly>
                     </div>
                 </div>
-
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="form-label">Broker:</label>
+                        <select name="broker_id" id="broker_id" class="form-control select2">
+                            <option value="">Select Broker</option>
+                            @foreach ($brokers ?? [] as $broker)
+                                <option value="{{ $broker->id }}">{{ $broker->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="form-label">Comission RS per KG:</label>
+                        <input type="number" name="commission_per_kg" id="commission_per_kg" class="form-control"
+                            step="0.0001" min="0" value="0">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="form-label">Comission in % per KG:</label>
+                        <input type="number" name="commission_percent_per_kg" id="commission_percent_per_kg"
+                            class="form-control" step="0.01" min="0" value="0">
+                    </div>
+                </div>
                 <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Contact Person:</label>
@@ -356,7 +380,7 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label class="form-label">Comission RS per KG:</label>
-                <input type="number" name="commission_per_kg" id="commission_per_kg" class="form-control" step="0.01"
+                <input type="number" name="commission_per_kg" id="commission_per_kg" class="form-control" step="0.0001"
                     min="0" value="0">
             </div>
         </div>
@@ -1106,9 +1130,9 @@
         const ratePerKg = getFirstItemRate();
         const qty = getFirstItemQty();
 
-        if (ratePerKg > 0) {
-            const commissionInRs = (percent / 100) * (ratePerKg);
-            $('#commission_per_kg').val(commissionInRs.toFixed(2));
+        if (ratePerKg > 0 && qty > 0) {
+            const commissionInRs = (percent / 100) * (ratePerKg * qty);
+            $('#commission_per_kg').val(commissionInRs.toFixed(4));
         } else {
             $('#commission_per_kg').val('0');
         }

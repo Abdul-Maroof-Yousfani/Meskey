@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Sales;
 
 use App\Http\Controllers\Controller;
+use App\Models\Master\Customer;
 use App\Models\Sales\Logistics;
 use App\Models\Sales\LogisticsItem;
 use App\Models\Export\ExportOrder;
@@ -25,21 +26,6 @@ class LogisticsController extends Controller
 
     public function create()
     {
-        $saleOrders = \App\Models\Sales\SalesOrder::with('logistics')
-            ->where('transporter_used', 'yes')
-            ->where('am_approval_status', 'approved')
-            ->orderBy('id', 'desc')
-            ->get()
-            ->filter(function ($so) {
-                // If any associated logistic record is approved, skip this Sale Order
-                // Using collection methods on eager-loaded relationship to avoid extra queries
-                $hasApprovedLogistic = $so->logistics
-                    ->where('am_approval_status', 'approved')
-                    ->isNotEmpty();
-
-                return !$hasApprovedLogistic;
-            });
-
         $exportOrders = ExportOrder::with('logistics')
             ->where('am_approval_status', 'approved')
             ->whereNotIn('id', function($q) {
@@ -58,7 +44,41 @@ class LogisticsController extends Controller
         $companyLocations = CompanyLocation::where('status', 'active')->get();
         $arrivalLocations = \App\Models\Master\ArrivalLocation::where('status', 'active')->get();
 
-        return view('management.sales.logistics.create', compact('saleOrders', 'exportOrders', 'companyLocations', 'arrivalLocations'));
+        $customers = Customer::where("type", "local")->get();
+
+        return view('management.sales.logistics.create', compact('exportOrders', 'companyLocations', 'arrivalLocations', 'customers'));
+    }
+
+    public function getSo(Request $request)
+    {
+        $customer_id = $request->customer_id;
+
+        $saleOrders = \App\Models\Sales\SalesOrder::with('logistics')
+            ->where('transporter_used', 'yes')
+            ->where('am_approval_status', 'approved')
+            ->where('customer_id', $customer_id)
+            ->orderBy('id', 'desc')
+            ->get()
+            ->filter(function ($so) {
+                $hasApprovedLogistic = $so->logistics
+                    ->where('am_approval_status', 'approved')
+                    ->isNotEmpty();
+                
+                return !$hasApprovedLogistic;
+            });
+
+        $data = [];
+        foreach ($saleOrders as $saleOrder) {
+            $data[] = [
+                'text' => $saleOrder->reference_no,
+                'id' => $saleOrder->id,
+            ];
+        }
+
+        return [
+            "rawData" => $saleOrders,
+            "processedData" => $data
+        ];
     }
 
     public function getOrderDetails(Request $request, $id)
