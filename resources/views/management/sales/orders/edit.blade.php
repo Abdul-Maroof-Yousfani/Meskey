@@ -121,7 +121,7 @@
                         <input type="text" class="form-control" value="{{ $sale_order->parent_user->name ?? 'N/A' }}" readonly>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <!-- <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Broker:</label>
                         <select name="broker_id" id="broker_id" class="form-control select2">
@@ -144,7 +144,7 @@
                         <input type="number" name="commission_percent_per_kg" id="commission_percent_per_kg"
                             class="form-control" step="0.01" min="0" value="0">
                     </div>
-                </div>
+                </div> -->
                 <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Contact Person:</label>
