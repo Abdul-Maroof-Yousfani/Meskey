@@ -94,6 +94,28 @@
                                 </div>
                             </div>
 
+
+
+                            @if($defaulterAccountsOfSupplier || $defaulterBroker)
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                @if($defaulterAccountsOfSupplier)
+                                    <div class="alert alert-danger rounded-pill" role="alert">
+                                    <p class="mb-0"><i class="ft-alert-circle mr-2"></i> The account  of {{ $arrivalTicket->accounts_of_name ?? 'N/A' }} are defaulter. 
+                                        You are not allowed to link contracts with defaulter accounts.
+                                    </p>
+                                    </div>
+                                @endif
+                                @if($defaulterBroker)
+                                <div class="alert alert-danger rounded-pill" role="alert">
+                                    <p class="mb-0"><i class="ft-alert-circle mr-2"></i>The Broker of {{ $arrivalTicket->broker_name ?? 'N/A' }} are defaulter. 
+                                        You are not allowed to link contracts with defaulter brokers.
+                                    </p>
+                                </div>
+                                @endif 
+                                </div>
+                            </div>
+                            @endif
                             <div class="row mt-3">
                                 <div class="col-12">
                                     <div class="card shadow">

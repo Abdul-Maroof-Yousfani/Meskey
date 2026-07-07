@@ -32,8 +32,7 @@
                                 </div>
                             </td>
 
-                            <td rowspan="{{ $group['rowspan'] }}" class="align-middle"
-                                style="background-color: #e3f2fd;">
+                            <td rowspan="{{ $group['rowspan'] }}" class="align-middle" style="background-color: #e3f2fd;">
                                 <strong>{{ $group['customer'] ? get_customer_name($group['customer']) : 'N/A' }}</strong>
                                 <br>
                                 <small class="text-muted">
@@ -47,8 +46,7 @@
                         <td class="align-middle" style="background-color: #f8fff8;">
                             <strong>{{ $itemRow['item']->name ?? 'N/A' }}</strong>
                             @if ($itemRow['item_data']->description)
-                                <br><small
-                                    class="text-muted">{{ Str::limit($itemRow['item_data']->description, 60) }}</small>
+                                <br><small class="text-muted">{{ Str::limit($itemRow['item_data']->description, 60) }}</small>
                             @endif
                         </td>
 
@@ -68,8 +66,7 @@
                             <td rowspan="{{ $group['rowspan'] }}" class="text-center align-middle">
                                 {{ \Carbon\Carbon::parse($group['date'])->format('d M Y') }}
                                 <br>
-                                <small
-                                    class="text-muted">{{ \Carbon\Carbon::parse($group['created_at'])->format('h:i A') }}</small>
+                                <small class="text-muted">{{ \Carbon\Carbon::parse($group['created_at'])->format('h:i A') }}</small>
                             </td>
 
                             <td rowspan="{{ $group['rowspan'] }}" class="text-center align-middle">
@@ -90,7 +87,7 @@
                             <td rowspan="{{ $group['rowspan'] }}" class="text-center align-middle">
                                 <div class="btn-group" role="group">
                                     <a class="btn btn-sm btn-info"
-                                        onclick="openModal(this,'{{ route('sales.sales-inquiry.view', ['sales_inquiry' => $group['id']]) }}','View Sales Inquiry', false, '60%')"
+                                        onclick="openModal(this,'{{ route('sales.sales-inquiry.view', ['sales_inquiry' => $group['id']]) }}','View Sales Inquiry', false, '90%')"
                                         title="View" style="margin-right: 10px;">
                                         <i class="ft-eye"></i>
                                     </a>
@@ -98,9 +95,8 @@
                                         @if ($group['status'] == 'pending' || $group['status'] == 'reverted')
 
                                             <button
-                                                onclick="openModal(this,'{{ route('sales.sales-inquiry.edit', ['sales_inquiry' => $group['id']]) }}','Edit Sales Inquiry', false, '60%')"
-                                                class="btn btn-sm btn-warning" title="Edit"
-                                                style="margin-right: 10px;">
+                                                onclick="openModal(this,'{{ route('sales.sales-inquiry.edit', ['sales_inquiry' => $group['id']]) }}','Edit Sales Inquiry', false, '90%')"
+                                                class="btn btn-sm btn-warning" title="Edit" style="margin-right: 10px;">
                                                 <i class="ft-edit"></i>
                                             </button>
 
@@ -146,8 +142,7 @@
                     <td class="text-center align-middle">
                         {{ \Carbon\Carbon::parse($group['date'])->format('d M Y') }}
                         <br>
-                        <small
-                            class="text-muted">{{ \Carbon\Carbon::parse($group['created_at'])->format('h:i A') }}</small>
+                        <small class="text-muted">{{ \Carbon\Carbon::parse($group['created_at'])->format('h:i A') }}</small>
                     </td>
 
                     <td class="text-center align-middle">

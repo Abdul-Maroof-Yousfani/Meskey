@@ -61,7 +61,9 @@
                     <select class="form-control select2" disabled>
                         <option value="">Select Customer</option>
                         @foreach ($customers ?? [] as $customer)
-                            <option value="{{ $customer->id }}" @selected($delivery_challan->customer_id == $customer->id)>{{ $customer->name }}</option>
+                            <option value="{{ $customer->id }}" @selected($delivery_challan->customer_id == $customer->id)>
+                                {{ $customer->name }}
+                            </option>
                         @endforeach
                     </select>
                 </div>
@@ -73,7 +75,8 @@
                         <option value="">Select Delivery Order</option>
                         @foreach ($delivery_orders as $delivery_order)
                             <option value="{{ $delivery_order->id }}" @selected(in_array($delivery_order->id, $delivery_challan->delivery_order->pluck('id')->toArray()))>
-                                {{ $delivery_order->reference_no }}</option>
+                                {{ $delivery_order->reference_no }}
+                            </option>
                         @endforeach
                     </select>
                 </div>
@@ -88,7 +91,7 @@
                     </select>
                 </div>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-6 d-none\">
                 <div class="form-group">
                     <label class="form-label">Reference Number:</label>
                     <input type="text" value="{{ $delivery_challan->reference_number }}" class="form-control" readonly>
@@ -105,7 +108,8 @@
                             $ticketLabour = $loadingSlip?->labour;
                         }
                     @endphp
-                    <input type="text" class="form-control" value="{{ $ticketLabour ? ($ticketLabour === 'paid' ? 'Paid' : 'Not Paid') : 'N/A' }}" readonly>
+                    <input type="text" class="form-control"
+                        value="{{ $ticketLabour ? ($ticketLabour === 'paid' ? 'Paid' : 'Not Paid') : 'N/A' }}" readonly>
                 </div>
             </div>
 
@@ -183,38 +187,45 @@
                     <label class="form-label">In-house Weighbridge:</label>
                     <select class="form-control select2" disabled>
                         <option value="">Select Weighbridge</option>
-                        <option value="1" @selected($delivery_challan->{'inhouse-weighbridge'} == 1)>Weighbridge 1</option>
-                        <option value="2" @selected($delivery_challan->{"inhouse-weighbridge"} == 2)>Weighbridge 2</option>
+                        <option value="1" @selected($delivery_challan->{'inhouse-weighbridge'} == 1)>Weighbridge 1
+                        </option>
+                        <option value="2" @selected($delivery_challan->{"inhouse-weighbridge"} == 2)>Weighbridge 2
+                        </option>
                     </select>
                 </div>
             </div>
-
+        </div>
+        <!-- <div class="row">
             <div class="col-12 mt-3">
                 <h6 class="header-heading-sepration">Financials</h6>
             </div>
             <div class="col-md-4">
                 <div class="form-group">
                     <label class="form-label">Labour Rate:</label>
-                    <input type="text" value="{{ $delivery_challan->labour_rate ?? 'N/A' }}" class="form-control" readonly style="background-color: #f8f9fa;">
+                    <input type="text" value="{{ $delivery_challan->labour_rate ?? 'N/A' }}" class="form-control"
+                        readonly style="background-color: #f8f9fa;">
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="form-group">
                     <label class="form-label">Labour Amount:</label>
-                    <input type="number" value="{{ $delivery_challan->labour_amount }}" class="form-control" readonly style="background-color: #f8f9fa;">
+                    <input type="number" value="{{ $delivery_challan->labour_amount }}" class="form-control" readonly
+                        style="background-color: #f8f9fa;">
                     <small class="text-muted">(Rate * Total Bags)</small>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="form-group">
                     <label class="form-label">Transporter Amount:</label>
-                    <input type="number" value="{{ $delivery_challan->transporter_amount }}" class="form-control" readonly>
+                    <input type="number" value="{{ $delivery_challan->transporter_amount }}" class="form-control"
+                        readonly>
                 </div>
             </div>
             <div class="col-md-3" style="display: none;">
                 <div class="form-group">
                     <label class="form-label">Weighbridge Amount:</label>
-                    <input type="number" value="{{ $delivery_challan->{"weighbridge-amount"} }}" class="form-control" readonly>
+                    <input type="number" value="{{ $delivery_challan->{"weighbridge-amount"} }}" class="form-control"
+                        readonly>
                 </div>
             </div>
 
@@ -224,7 +235,7 @@
                     <textarea class="form-control" readonly rows="3">{{ $delivery_challan->remarks }}</textarea>
                 </div>
             </div>
-        </div>
+        </div> -->
     </div>
 </div>
 
@@ -239,9 +250,9 @@
                         <th style="width: 250px;">Packing</th>
                         <th>No of Bags</th>
                         <th>Quantity (kg)</th>
-                        <th>Rate per Kg</th>
+                        <!-- <th>Rate per Kg</th>
                         <th>Rate per Mond</th>
-                        <th>Amount</th>
+                        <th>Amount</th> -->
                         <th>Brand</th>
                         <th>Truck No.</th>
                         <th>Container Number</th>
@@ -250,60 +261,64 @@
                 </thead>
                 <tbody id="dcTableBody">
                     @foreach ($delivery_challan->delivery_challan_data as $index => $data)
-                    @php
-                        $index = "TICKET-" . $data->ticket_id;
-                    @endphp
-                    <tr id="row_{{ $index }}">
-                        <td>
-                            <input type="text" value="{{ getItem($data->item_id)?->name }}"
-                                class="form-control" readonly>
-                        </td>
-                        
-                        <td>
-                            <input type="text" value="{{ $data->bag_type ? bag_type_name($data->bag_type) : '' }}"
-                                class="form-control" readonly>
-                        </td>
-                      
-                        <td>
-                            <select class="form-select select2 packing-select" multiple disabled>
-                                @php
-                                    $packings = explode(',', $data->bag_size);
-                                @endphp
-                                @foreach($packings as $p)
-                                    @if(trim($p))
-                                        <option value="{{ trim($p) }}" selected>{{ trim($p) }}</option>
-                                    @endif
-                                @endforeach
-                            </select>
-                        </td>
-                        <td>
-                            <input type="text" value="{{ $data->no_of_bags }}" class="form-control" readonly>
-                        </td>
-                        <td>
-                            <input type="text" value="{{ round($data->qty) }}" class="form-control" readonly>
-                        </td>
-                        <td>
-                            <input type="text" value="{{ $data->rate }}" class="form-control" readonly>
-                        </td>
-                        <td>
-                            <input type="text" value="{{ $data->deliveryOrderData->salesOrderData->rate_per_mond }}" class="form-control" readonly>
-                        </td>
-                        <td>
-                            <input type="text" value="{{ round($data->rate * ($data->qty ?? 0) ) }}" class="form-control" readonly>
-                        </td>
-                        <td>
-                            <input type="text" value="{{ getBrandById($data->brand_id)?->name }}" class="form-control" readonly>
-                        </td>
-                        <td>
-                            <input type="text" value="{{ $data->truck_no }}" class="form-control" readonly>
-                        </td>
-                        <td>
-                            <input type="text" value="{{ $data->loadingProgramItem->container_number ?? '' }}" class="form-control" readonly>
-                        </td>
-                        <td>
-                            <input type="text" value="{{ $data->description }}" class="form-control" readonly>
-                        </td>
-                    </tr>
+                        @php
+                            $index = "TICKET-" . $data->ticket_id;
+                        @endphp
+                        <tr id="row_{{ $index }}">
+                            <td>
+                                <input type="text" value="{{ getItem($data->item_id)?->name }}" class="form-control"
+                                    readonly>
+                            </td>
+
+                            <td>
+                                <input type="text" value="{{ $data->bag_type ? bag_type_name($data->bag_type) : '' }}"
+                                    class="form-control" readonly>
+                            </td>
+
+                            <td>
+                                <select class="form-select select2 packing-select" multiple disabled>
+                                    @php
+                                        $packings = explode(',', $data->bag_size);
+                                    @endphp
+                                    @foreach($packings as $p)
+                                        @if(trim($p))
+                                            <option value="{{ trim($p) }}" selected>{{ trim($p) }}</option>
+                                        @endif
+                                    @endforeach
+                                </select>
+                            </td>
+                            <td>
+                                <input type="text" value="{{ $data->no_of_bags }}" class="form-control" readonly>
+                            </td>
+                            <td>
+                                <input type="text" value="{{ round($data->qty) }}" class="form-control" readonly>
+                            </td>
+                            <!-- <td>
+                                    <input type="text" value="{{ $data->rate }}" class="form-control" readonly>
+                                </td>
+                                <td>
+                                    <input type="text" value="{{ $data->deliveryOrderData->salesOrderData->rate_per_mond }}"
+                                        class="form-control" readonly>
+                                </td>
+                                <td>
+                                    <input type="text" value="{{ round($data->rate * ($data->qty ?? 0)) }}" class="form-control"
+                                        readonly>
+                                </td> -->
+                            <td>
+                                <input type="text" value="{{ getBrandById($data->brand_id)?->name }}" class="form-control"
+                                    readonly>
+                            </td>
+                            <td>
+                                <input type="text" value="{{ $data->truck_no }}" class="form-control" readonly>
+                            </td>
+                            <td>
+                                <input type="text" value="{{ $data->loadingProgramItem->container_number ?? '' }}"
+                                    class="form-control" readonly>
+                            </td>
+                            <td>
+                                <input type="text" value="{{ $data->description }}" class="form-control" readonly>
+                            </td>
+                        </tr>
                     @endforeach
                 </tbody>
             </table>
@@ -313,19 +328,18 @@
 
 <div class="row bottom-button-bar">
     <div class="col-12 text-end">
-        <a type="button"
-            class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton me-2">Close</a>
+        <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton me-2">Close</a>
     </div>
 </div>
 
 <div class="row">
     <div class="col-12">
-        <x-approval-status :model="$delivery_challan" :list-refresh="route('sales.get.delivery-challan.list')"/>
+        <x-approval-status :model="$delivery_challan" :list-refresh="route('sales.get.delivery-challan.list')" />
     </div>
 </div>
 
 <script>
-    $(document).ready(function() {
+    $(document).ready(function () {
         $('.select2').select2({ width: '100%' });
     });
 </script>

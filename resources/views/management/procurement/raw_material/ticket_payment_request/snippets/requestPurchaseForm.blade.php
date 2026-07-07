@@ -4,24 +4,7 @@
     $paymentDetails = calculatePaymentDetails($arrivalTicket->id, $arrivalTicket->sauda_type_id);
     $Deductionfromhelperfunction = $paymentDetails['deductions']['sampling_deduction_details'];
 
-
-    // dd($Deductionfromhelperfunction);
-    // $lumpsumDeduction = $paymentDetails->lumpsumDeduction;
-    // $lumpsumDeductionKgs = $paymentDetails->lumpsumDeductionKgs;
-
     $hasLoadingWeight = true;
-
-    // $hasLoadingWeight = false;
-
-    // if ($isThadda) {
-    //     if ($purchaseOrder && $purchaseOrder->purchaseFreight && $purchaseOrder->purchaseFreight->loading_weight) {
-    //         $hasLoadingWeight = true;
-    //     }
-    // } else {
-    //     if ($arrivalTicket && $arrivalTicket->freight && $arrivalTicket->freight->arrived_weight) {
-    //         $hasLoadingWeight = true;
-    //     }
-    // }
 
     $isSlabs = false;
     $isCompulsury = false;
@@ -38,18 +21,22 @@
     }
 
     $bagWeight = $arrivalTicket->bag_weight ?? 0;
-    // $bagRate = $purchaseOrder->bag_rate ?? 0;
     $bagRate = 0;
 
     $totalDeductions = 0;
-    $loadingWeight = $arrivalTicket->freight->arrived_weight ?? 0;
+    $arrivedWeight = $arrivalTicket->freight->arrived_weight ?? 0;
+    $loadingWeight = $arrivalTicket->net_weight ?? 0;
+    $accessWeight = $arrivedWeight > $loadingWeight ? $arrivedWeight - $loadingWeight : 0;
+    $exemptedWeight = $accessWeight > 100 ? 100 : $accessWeight;
+
+    $exemptedWeight = $paymentRequestData->exempted_weight ?? $exemptedWeight;
+    $billingWeight = $arrivedWeight > $loadingWeight ? ($loadingWeight + $exemptedWeight) : $arrivedWeight;
     $noOfBags = $arrivalTicket->approvals->total_bags ?? 0;
     $ratePerKg = $purchaseOrder->rate_per_kg ?? 0;
     $kantaCharges = $arrivalTicket->freight->karachi_kanta_charges ?? 0;
     $arrivalFreightAmount = $arrivalTicket->freight->gross_freight_amount ?? 0;
     $grossFreightAmount = $freightPaymentRequestgrossAmount == 0 ? $arrivalTicket->freight->net_freight : $freightPaymentRequestgrossAmount;
 
-    // dd($grossFreightAmount);
     $netWeight = $loadingWeight - $bagWeight * $noOfBags;
 
     foreach ($samplingRequestCompulsuryResults as $slab) {
@@ -76,20 +63,22 @@
     }
 
     $bagWeightInKgSum = $ratePerKg * ($bagWeight * $noOfBags);
-    // $loadingWeighbridgeSum = $kantaCharges / 2;
     $loadingWeighbridgeSum = 0;
     $bagsRateSum = $bagRate * $noOfBags;
     $requestedAmount = $requestedAmount ?? 0;
-    // dd($requestedAmount);
     $paidAmount = $approvedAmount ?? 0;
     $advanceFreight = $ticket->purchaseFreight->advance_freight ?? 0;
     $remainingFreight = $advanceFreight - ($pRsSumForFreight ?? 0);
-    // $totalDeductions += $bagsRateSum + $loadingWeighbridgeSum + $bagWeightInKgSum - $arrivalFreightAmount;
     $totalDeductions += $bagsRateSum + $loadingWeighbridgeSum + $bagWeightInKgSum - $grossFreightAmount;
     $totalAmount += $bagWeightInKgSum + $loadingWeighbridgeSum;
     $grossAmount = $ratePerKg * $loadingWeight;
     $existingOtherDeductionKg = $otherDeduction->other_deduction_kg ?? 0;
     $existingOtherDeductionAmount = $otherDeduction->other_deduction_value ?? 0;
+    $existingRerateOnAccessWeightKg = $otherDeduction->rerate_on_access_weight_kg ?? 0;
+    $existingRerateOnAccessWeightRate = $otherDeduction->rerate_on_access_weight_rate ?? 0;
+    $existingRerateOnAccessWeightAmount = $otherDeduction->rerate_on_access_weight_amount ?? 0;
+    $deduction_on_weight_difference_kg = $otherDeduction->deduction_on_weight_difference_kg ?? 0;
+    $deduction_on_weight_difference_amount = $otherDeduction->deduction_on_weight_difference_amount ?? 0;
     $isApprovalPage = isset($isRequestApprovalPage) && $isRequestApprovalPage;
     $currentPaymentAmount = 0;
     $currentFreightAmount = 0;
@@ -168,11 +157,10 @@
 <input type="hidden" name="purchase_order_id" value="{{ $purchaseOrder->id }}">
 <input type="hidden" name="ticket_id" value="{{ $arrivalTicket->id ?? '' }}">
 <input type="hidden" id="original_bag_weight" value="{{ $bagWeight }}">
-<input type="hidden" id="loading_weight" value="{{ $loadingWeight }}">
+<input type="hidden" id="loading_weight" value="{{ $billingWeight }}">
 <input type="hidden" id="no_of_bags" value="{{ $noOfBags }}">
 <input type="hidden" id="rate_per_kg" value="{{ $ratePerKg }}">
 <input type="hidden" id="bag_rate" value="{{ $bagRate }}">
-{{-- <input type="hidden" id="kanta_charges" value="{{ $kantaCharges }}"> --}}
 <input type="hidden" id="kanta_charges" value="0">
 
 <!-- Store sampling data for JS calculations -->
@@ -181,7 +169,7 @@
         samplingResults: [
             @foreach ($samplingRequestResults as $slab)
                 @if ($slab->applied_deduction)
-                                                                                    {
+                                            {
                         id: {{ $slab->id }},
                         applied_deduction: {{ $slab->applied_deduction ?? 0 }},
                         deduction_type: '{{ $slab->deduction_type ?? 'amount' }}',
@@ -195,10 +183,10 @@
         compulsoryResults: [
             @foreach ($samplingRequestCompulsuryResults as $slab)
                 @if ($slab->applied_deduction)
-                                                    {
+                                {
                     id: {{ $slab->id }},
                     applied_deduction: {{ $slab->applied_deduction ?? 0 }}
-                                                    },
+                                },
                 @endif
             @endforeach
         ],
@@ -254,22 +242,22 @@
             Loading Information
         </h6>
     </div>
-    <div class="col-md-12 mb-3 d-none">
-        <div class="form-check form-check-inline">
-            <input class="form-check-input" type="radio" name="loading_type" id="loading" value="loading" {{ $hasLoadingWeight ? 'checked' : '' }} {{ $hasLoadingWeight ? '' : 'disabled' }}>
-            <label class="form-check-label" for="loading">Loading</label>
-        </div>
-        <div class="form-check form-check-inline">
-            <input class="form-check-input" type="radio" name="loading_type" id="without_loading"
-                value="without_loading" {{ !$hasLoadingWeight ? 'checked' : '' }} {{ $hasLoadingWeight ? '' : 'disabled' }}>
-            <label class="form-check-label" for="without_loading">Without Loading</label>
-        </div>
-        <input type="hidden" name="{{ $hasLoadingWeight ? '' : 'loading_type' }}"
-            value="{{ $hasLoadingWeight ? 'loading' : 'without_loading' }}">
-    </div>
 
     @if ($hasLoadingWeight)
         <div id="loading-section" class="row w-100 mx-auto px-0">
+            <div class="col-md-12 mb-3 d-none" bis_skin_checked="1">
+                <div class="form-check form-check-inline" bis_skin_checked="1">
+                    <input class="form-check-input" type="radio" name="loading_type" id="loading" value="loading"
+                        checked="">
+                    <label class="form-check-label" for="loading">Loading</label>
+                </div>
+                <div class="form-check form-check-inline" bis_skin_checked="1">
+                    <input class="form-check-input" type="radio" name="loading_type" id="without_loading"
+                        value="without_loading">
+                    <label class="form-check-label" for="without_loading">Without Loading</label>
+                </div>
+                <input type="hidden" name="" value="loading">
+            </div>
             <div class="col-md-3">
                 <div class="form-group">
                     <label>Truck #</label>
@@ -280,7 +268,6 @@
             <div class="col-md-3">
                 <div class="form-group">
                     <label>Arrival Date</label>
-                    {{-- @dd($arrivalTicket->loading_date->format('d-M-Y')) --}}
                     <input type="text" class="form-control" name="loading_date"
                         value="{{ $arrivalTicket && $arrivalTicket->freight->created_at ? $arrivalTicket->freight->created_at->format('d-M-Y') : 'N/A' }}"
                         readonly>
@@ -308,10 +295,40 @@
             </div>
             <div class="col-md-3">
                 <div class="form-group">
-                    <label>Arrival Weight</label>
+                    <label>Loading Weight</label>
                     <input type="text" class="form-control" name="loading_weight" value="{{ $loadingWeight }}" readonly>
                 </div>
             </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label>Arrival Weight</label>
+                    <input type="text" class="form-control" name="arrived_weight" value="{{ $arrivedWeight }}" readonly>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label>Access Weight</label>
+                    <input type="text" class="form-control" name="access_weight" value="{{ $accessWeight }}" readonly>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label>Exempted Weight</label>
+                    <input type="number" class="form-control" name="exempted_weight" id="exempted_weight"
+                        value="{{ $exemptedWeight }}" {{ $exemptedWeight == 0 ? 'readonly' : ''}}
+                        max="{{ $exemptedWeight != 0 ? $accessWeight : ''}}">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label>Billing Weight</label>
+                    <input type="number" class="form-control" name="billing_weight" id="billing_weight"
+                        value="{{ $billingWeight }}" readonly>
+                </div>
+            </div>
+
             <div class="col-md-3">
                 <div class="form-group">
                     <label>Average Bag Weight</label>
@@ -327,32 +344,18 @@
                     <table class="table m-0 togglehistorytable">
                         <thead>
                             <tr>
-                                <th>
-                                    Request Date
-                                </th>
-                                <th>
-                                    Amount
-                                </th>
-                                <th>
-                                    Remarks
-                                </th>
-                                <th>
-                                    Status
-                                </th>
+                                <th>Request Date</th>
+                                <th>Amount</th>
+                                <th>Remarks</th>
+                                <th>Status</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach ($paymentRequests as $paymentRequest)
                                 <tr>
-                                    <td>
-                                        {{$paymentRequest->created_at}}
-                                    </td>
-                                    <td>
-                                        {{$paymentRequest->amount}}
-                                    </td>
-                                    <td>
-                                        {{$paymentRequest->approval->remarks ?? 'N/A'}}
-                                    </td>
+                                    <td>{{$paymentRequest->created_at}}</td>
+                                    <td>{{$paymentRequest->amount}}</td>
+                                    <td>{{$paymentRequest->approval->remarks ?? 'N/A'}}</td>
                                     <td>
                                         @if($paymentRequest->status == 'pending')
                                             <label class="badge badge-warning">Pending</label>
@@ -362,7 +365,6 @@
                                             <label class="badge badge-danger">Rejected</label>
                                         @endif
                                     </td>
-
                                 </tr>
                             @endforeach
                         </tbody>
@@ -386,10 +388,8 @@
                                     data-lumpsum-amount="{{ number_format($Deductionfromhelperfunction['lumpsum']['amount_deduction'] ?? 0, 2) }}">
                                     <td>Lumpsum Deduction Rupees</td>
                                     <td>{{ number_format($samplingRequest->lumpsum_deduction, 2) }} Rs./KG </td>
-                                    <td>
-                                        {{ number_format($Deductionfromhelperfunction['lumpsum']['amount_deduction'] ?? 0, 2) }}
-                                        Rs.
-                                    </td>
+                                    <td>{{ number_format($Deductionfromhelperfunction['lumpsum']['amount_deduction'] ?? 0, 2) }}
+                                        Rs.</td>
                                 </tr>
                                 <tr
                                     data-lumpsum-kgamount="{{ number_format($Deductionfromhelperfunction['lumpsum']['kgs_deduction'] ?? 0, 2) }}">
@@ -446,7 +446,6 @@
                                 </tr>
                             </thead>
                             <tbody id="sampling-results-tbody">
-                                {{-- @dd($samplingRequestResults) --}}
                                 @if (count($samplingRequestResults) != 0)
                                     @foreach ($samplingRequestResults as $slab)
                                         @php
@@ -511,7 +510,6 @@
                                                 $deductionValue = $appliedDeduction;
                                             }
 
-                                            // Calculate deduction amount based on net weight
                                             $calculatedValue = $deductionValue * $netWeight;
                                             if (($slab->deduction_type ?? 'amount') !== 'amount') {
                                                 $calculatedValue = ($calculatedValue / 100) * $ratePerKg;
@@ -548,14 +546,11 @@
                                                 <div class="input-group mb-0">
                                                     <input type="text" class="form-control applied-deduction-input"
                                                         name="sampling_results[{{ $slab->id }}][applied_deduction]"
-                                                        value="{{ $deductionValue }}" placeholder="Suggested Deduction" {{-- {{
-                                                        $isApprovalPage ? '' : 'readonly' }} --}} readonly
+                                                        value="{{ $deductionValue }}" placeholder="Suggested Deduction" readonly
                                                         data-slab-id="{{ $slab->id }}"
                                                         data-deduction-type="{{ $slab->deduction_type ?? 'amount' }}"
                                                         data-applied-deduction="{{ $slab->applied_deduction ?? 0 }}">
                                                     <div class="input-group-append">
-                                                        {{-- <span class="input-group-text text-sm">{{ $slab->slabType->qc_symbol
-                                                            }}</span> --}}
                                                         <span
                                                             class="input-group-text text-sm">{{ ($slab->deduction_type ?? 'amount') == 'amount' ? 'Rs.' : "KG's" }}</span>
                                                     </div>
@@ -600,9 +595,8 @@
                                                 <div class="input-group mb-0">
                                                     <input type="text" class="form-control compulsory-applied-deduction"
                                                         name="compulsory_results[{{ $slab->id }}][applied_deduction]"
-                                                        value="{{ $slab->applied_deduction }}" placeholder="Suggested Deduction" {{-- {{
-                                                        $isApprovalPage ? '' : 'readonly' }} --}} readonly
-                                                        data-compulsory-id="{{ $slab->id }}"
+                                                        value="{{ $slab->applied_deduction }}" placeholder="Suggested Deduction"
+                                                        readonly data-compulsory-id="{{ $slab->id }}"
                                                         data-applied-deduction="{{ $slab->applied_deduction ?? 0 }}">
                                                     <div class="input-group-append">
                                                         <span
@@ -641,12 +635,46 @@
                                     </td>
                                     <td>
                                         <div class="input-group mb-0">
-                                            <!-- {{ $existingOtherDeductionAmount }} -->
                                             <input type="text" class="form-control" name="other_deduction[kg_amount]"
                                                 id="other_deduction_amount_display"
                                                 value="{{ number_format($existingOtherDeductionAmount, 2) }}" readonly>
                                             <input type="hidden" class="form-control" name="other_deduction[deduction_amount]"
                                                 id="other_deduction_amount" value="{{ $existingOtherDeductionAmount }}">
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <!-- Re-rate on Access weight Row -->
+                                <tr class="other-deduction-row" data-other-deduction="true">
+                                    <td><strong>Re-rate on Access weight</strong>
+                                        <input type="hidden" name="other_deduction[slab_name]" value="Other Deduction">
+                                    </td>
+                                    <td>N/A</td>
+                                    <td>
+                                        <div class="input-group mb-0">
+                                            <input type="number" step="any" class="form-control editable-field"
+                                                name="rerate_on_access_weight_kg" id="rerate_on_access_weight_kg"
+                                                value="{{ $existingRerateOnAccessWeightKg }}" placeholder="Enter KG value">
+                                            <div class="input-group-append">
+                                                <span class="input-group-text text-sm">Kg</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="input-group mb-0">
+                                            <input type="number" step="any" class="form-control editable-field"
+                                                name="rerate_on_access_weight_rate" id="rerate_on_access_weight_rate"
+                                                value="{{ $existingRerateOnAccessWeightRate }}" placeholder="Enter KG value">
+                                            <div class="input-group-append">
+                                                <span class="input-group-text text-sm">Rs</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="input-group mb-0">
+                                            <input type="text" class="form-control" name="rerate_on_access_weight_amount"
+                                                readonly id="rerate_on_access_weight_amount"
+                                                value="{{ $existingRerateOnAccessWeightAmount }}">
                                         </div>
                                     </td>
                                 </tr>
@@ -730,11 +758,11 @@
                             <td>
                                 <input type="text" class="form-control" name="supplier_commission_display"
                                     id="supplier_commission_display"
-                                    value="{{ number_format($purchaseOrder->supplier_commission * $loadingWeight, 2) }}"
+                                    value="{{ number_format($purchaseOrder->supplier_commission * $arrivedWeight, 2) }}"
                                     readonly>
                                 <input type="hidden" class="form-control" name="supplier_commission"
                                     id="supplier_commission"
-                                    value="{{ $purchaseOrder->supplier_commission * $loadingWeight }}" readonly>
+                                    value="{{ $purchaseOrder->supplier_commission * $arrivedWeight }}" readonly>
                             </td>
                         </tr>
                         @if ($purchaseOrder->supplier_commission < 0)
@@ -749,8 +777,7 @@
                                         @endphp
                                         <select name="broker_id" id="broker_id" class="form-control select_b"
                                             @disabled($isBrokerDisabled) data-commission="#broker_commission">
-                                            <option value="">N/A
-                                            </option>
+                                            <option value="">N/A</option>
                                             @foreach ($brokers as $broker)
                                                 <option value="{{ $broker->id }}" @selected($broker->id == $selectedBrokerId)>
                                                     {{ $broker->name }}
@@ -765,10 +792,10 @@
                                 <td>
                                     <input type="text" class="form-control" name="brokery_amount_display"
                                         id="brokery_amount_display"
-                                        value="{{ number_format($purchaseOrder->supplier_commission * $loadingWeight, 2) }}"
+                                        value="{{ number_format($purchaseOrder->supplier_commission * $arrivedWeight, 2) }}"
                                         readonly>
                                     <input type="hidden" class="form-control" name="brokery_amount" id="brokery_amount"
-                                        value="{{ $purchaseOrder->supplier_commission * $loadingWeight }}" readonly>
+                                        value="{{ $purchaseOrder->supplier_commission * $arrivedWeight }}" readonly>
                                 </td>
                             </tr>
                         @endif
@@ -784,7 +811,7 @@
         $totalwithCommisio = $totalAmount + $totalSupplierCommission;
         $totalwithCommision = $paymentDetails['calculations']['supplier_net_amount'] ?? $totalwithCommisio
     @endphp
-    {{-- @if (!$isApprovalPage) --}}
+
     <div class="col mb-3 px-0">
         <div class="row mx-auto ">
             <div class="col-md-6">
@@ -835,13 +862,7 @@
                 </div>
             @endif
         </div>
-
-
-
-
     </div>
-    {{-- @endif --}}
-
 </div>
 
 @if ($hasLoadingWeight)
@@ -850,13 +871,9 @@
         var isSlabs = <?= $isSlabs ? 'true' : 'false' ?>;
         var isCompulsury = <?= $isCompulsury ? 'true' : 'false' ?>;
 
-        if (showLumpSum && !isSlabs && !isCompulsury) {
-            console.log('true');
-        }
         $(document).ready(function () {
             $('[data-toggle="tooltip"]').tooltip();
             $('.select_b').select2();
-
 
             const $loadingRadio = $('#loading');
             const $withoutLoadingRadio = $('#without_loading');
@@ -864,7 +881,7 @@
             const $contractRangeField = $('.contract-range-field');
 
             const originalBagWeight = parseFloat($('#original_bag_weight').val()) || 0;
-            const loadingWeight = parseFloat($('#loading_weight').val()) || 0;
+            const loadingWeight = parseFloat($('input[name="billing_weight"]').val()) || 0;
             const noOfBags = parseFloat($('#no_of_bags').val()) || 0;
             const ratePerKg = parseFloat($('#rate_per_kg').val()) || 0;
             const bagRate = parseFloat($('#bag_rate').val()) || 0;
@@ -872,17 +889,8 @@
             const paidAmount = parseFloat({{ $requestedAmount }});
             const originalRequested = {{ $currentPaymentAmount }};
 
-            function toggleSections() {
-                if ($loadingRadio.is(':checked')) {
-                    $loadingSection.show();
-                    $contractRangeField.show();
-                } else {
-                    $loadingSection.hide();
-                    $contractRangeField.hide();
-                }
-            }
-
             function calculateNetWeight() {
+                const loadingWeight = parseFloat($('input[name="billing_weight"]').val()) || 0;
                 const currentBagWeight = parseFloat($('#bag_weight_input').val()) || 0;
                 return loadingWeight - (currentBagWeight * noOfBags);
             }
@@ -896,17 +904,7 @@
                 const deductionType = slabData.deduction_type || 'amount';
                 let deductionValue = 0;
 
-                console.log('Slab calculation:', {
-                    id: slabData.id,
-                    dValCalculatedOn: dValCalculatedOn,
-                    SLAB_TYPE_PERCENTAGE: window.samplingData.SLAB_TYPE_PERCENTAGE,
-                    appliedDeduction: appliedDeduction,
-                    val: val,
-                    matchingSlabsCount: matchingSlabs.length
-                });
-
                 if (dValCalculatedOn === window.samplingData.SLAB_TYPE_PERCENTAGE && matchingSlabs.length > 0) {
-                    // Sort matching slabs
                     matchingSlabs.sort((a, b) => parseFloat(a.from) - parseFloat(b.from));
 
                     let highestRmPoEnd = 0;
@@ -917,17 +915,10 @@
                         }
                     });
 
-                    console.log('Highest RM PO End:', highestRmPoEnd);
-
                     matchingSlabs.forEach(mSlab => {
-                        console.log(mSlab);
                         const from = parseFloat(mSlab.from);
                         const to = parseFloat(mSlab.to);
-
-                        // Fix: Properly handle is_tiered value (can be string "true"/"false" or boolean)
                         const isTiered = (mSlab.is_tiered === true || mSlab.is_tiered === 'true' || mSlab.is_tiered === 1) ? 1 : 0;
-
-                        console.log(isTiered + ' is_tiered value (1=tiered, 0=not tiered)');
                         const deductionVal = parseFloat(mSlab.deduction_value || 0);
 
                         if (val >= from) {
@@ -938,37 +929,31 @@
                                 if (isTiered === 1) {
                                     const applicableAmount = effectiveTo - effectiveFrom + 1;
                                     deductionValue += deductionVal * applicableAmount;
-                                    console.log(`Tiered: ${deductionVal} x ${applicableAmount} = ${deductionVal * applicableAmount}`);
                                 } else {
                                     deductionValue += deductionVal;
-                                    console.log(`Non-tiered: adding ${deductionVal}`);
                                 }
                             }
                         }
                     });
                 } else {
                     deductionValue = appliedDeduction;
-                    console.log('Using direct deduction value:', deductionValue);
                 }
 
-                console.log('Final deductionValue before multiplication:', deductionValue);
-
                 let calculatedValue = deductionValue * netWeight;
-                console.log('After multiplication with netWeight:', calculatedValue);
-
-                // Handle percentage-based deductions correctly
                 if (deductionType !== 'amount') {
                     calculatedValue = (calculatedValue / 100) * ratePerKg;
-                    console.log('After percentage conversion:', calculatedValue);
                 }
 
                 return calculatedValue;
             }
+
             function updateOtherDeduction() {
+                const loadingWeight = parseFloat($('input[name="billing_weight"]').val()) || 0;
+
                 const otherDeductionKg = parseFloat($('#other_deduction_kg').val()) || 0;
                 const bagWeightTotal = parseFloat($('#bag_weight_total').val()) || 0;
                 const otherDeductionAmount = otherDeductionKg * (loadingWeight - bagWeightTotal);
-
+                console.log('other deductioh: ' + loadingWeight);
                 $('#other_deduction_amount').val(otherDeductionAmount);
                 $('#other_deduction_amount_display').val(otherDeductionAmount.toFixed(2));
 
@@ -980,37 +965,28 @@
                 let totalSamplingAmount = 0;
 
                 window.samplingData.samplingResults.forEach(slabData => {
-                    console.log(netWeight + 'nw');
                     const calculatedValue = calculateSlabDeduction(slabData, netWeight);
-                    console.log(calculatedValue + 'ddddjjj');
                     totalSamplingAmount += calculatedValue;
 
-                    $(`.deduction-amount-display[data-slab-id="${slabData.id}"]`).val(calculatedValue
-                        .toFixed(2));
+                    $(`.deduction-amount-display[data-slab-id="${slabData.id}"]`).val(calculatedValue.toFixed(2));
                     $(`.deduction-amount-hidden[data-slab-id="${slabData.id}"]`).val(calculatedValue);
                 });
-
 
                 window.samplingData.compulsoryResults.forEach(slabData => {
                     const calculatedValue = slabData.applied_deduction * netWeight;
                     totalSamplingAmount += calculatedValue;
 
-                    $(`.compulsory-deduction-amount[data-compulsory-id="${slabData.id}"]`).val(
-                        calculatedValue.toFixed(2));
+                    $(`.compulsory-deduction-amount[data-compulsory-id="${slabData.id}"]`).val(calculatedValue.toFixed(2));
                 });
-
-
 
                 if (showLumpSum && !isSlabs && !isCompulsury) {
                     var lumpsumAmount = $('tr[data-lumpsum-amount]').data('lumpsum-amount') || 0;
                     var lumpsumKgAmount = $('tr[data-lumpsum-kgamount]').data('lumpsum-kgamount') || 0;
-                    console.log(lumpsumAmount)
 
                     totalSamplingAmount += parseFloat(lumpsumAmount.replace(/,/g, '')) || 0;
                     totalSamplingAmount += parseFloat(lumpsumKgAmount.replace(/,/g, '')) || 0;
-                    // console.log(totalSamplingAmount+'Wow');
-
                 }
+
                 const otherDeductionAmount = updateOtherDeduction();
                 totalSamplingAmount += otherDeductionAmount;
 
@@ -1027,7 +1003,6 @@
                 const calculatedBagWeightAmount = ratePerKg * bagWeightTotal;
 
                 if (Math.abs(bagWeightAmount - calculatedBagWeightAmount) > 0.01) {
-                    // Amount was manually changed, calculate weight
                     const newBagWeight = bagWeightAmount / (ratePerKg * noOfBags);
                     if (!isNaN(newBagWeight) && isFinite(newBagWeight)) {
                         $('#bag_weight_input').val(newBagWeight.toFixed(4));
@@ -1046,24 +1021,47 @@
                 const currentPaymentRequest = parseFloat(paymentRequestInput.val()) || 0;
                 const remainingAmount = totalAmount - requested_amount;
 
-                // Update remaining amount
                 $('#remaining_amount').val(remainingAmount.toFixed(2));
 
-                // If payment request amount exists, update percentage
                 if (currentPaymentRequest > 0) {
                     const percentage = remainingAmount > 0 ? (currentPaymentRequest / remainingAmount) * 100 : 0;
                     percentageInput.val(percentage.toFixed(2));
                 } else {
-                    // If no payment request, reset percentage
                     percentageInput.val('0');
                 }
 
-                // Ensure payment request doesn't exceed remaining amount
                 if (currentPaymentRequest > remainingAmount) {
                     paymentRequestInput.val(remainingAmount.toFixed(2));
                     percentageInput.val('100');
                 }
             }
+
+            // ================ FIXED: Function to set billing weight ================
+            function setBillingWeight(value) {
+                const billingInput = document.querySelector('input[name="billing_weight"]');
+                if (!billingInput) return;
+
+                // Set value using multiple methods
+                billingInput.value = value;
+                billingInput.setAttribute('value', value);
+                billingInput.defaultValue = value;
+
+                // Trigger all possible events
+                ['input', 'change', 'blur', 'focus', 'keyup', 'keydown', 'keypress'].forEach(eventType => {
+                    billingInput.dispatchEvent(new Event(eventType, {
+                        bubbles: true,
+                        cancelable: true
+                    }));
+                });
+
+                // Also trigger jQuery events
+                $(billingInput).trigger('change').trigger('input');
+
+                console.log('Billing weight set to:', value);
+                console.log('DOM Value:', billingInput.value);
+                console.log('Attribute Value:', billingInput.getAttribute('value'));
+            }
+            // ================ END FIX ================
 
             function updateAllCalculations() {
                 updateBagWeightCalculations();
@@ -1081,22 +1079,49 @@
 
                 const totalSamplingDeductions = updateSamplingResultsDeductions();
 
+                const deduction_on_access_weight_kg = parseFloat($('#rerate_on_access_weight_kg').val()) || 0;
+                const deduction_on_access_weight_rate = parseFloat($('#rerate_on_access_weight_rate').val()) || 0;
+                const deduction_on_access_weight_amount = deduction_on_access_weight_rate * deduction_on_access_weight_kg;
+                $('#rerate_on_access_weight_amount').val(deduction_on_access_weight_amount.toFixed(2) || 0);
+
                 const grossAmount = ratePerKg * loadingWeight;
                 const totalDeductionsForFormula = totalSamplingDeductions + bagWeightAmount +
-                    loadingWeighbridgeAmount;
-                const totalAmount = grossAmount - totalDeductionsForFormula + bagRateAmount - parseInt(
-                                                    {{ $grossFreightAmount ?? 0 }}) + {{ $totalSupplierCommission }};
+                    loadingWeighbridgeAmount + deduction_on_access_weight_amount;
+                const totalAmount = grossAmount - totalDeductionsForFormula + bagRateAmount - parseInt({{ $grossFreightAmount ?? 0 }}) + {{ $totalSupplierCommission }};
 
                 $('#total_amount').val(totalAmount);
                 $('#total_amount_display').val(totalAmount.toFixed(2));
 
-                // Update payment request calculations
                 updatePaymentRequestCalculations();
-
                 $('#bag_weight_amount_display').val(bagWeightAmount.toFixed(2));
             }
 
-            // These three fields will trigger payment request calculations
+            // ================ FIXED: Exempted weight handler ================
+            $(document).on('input', 'input[name="exempted_weight"]', function () {
+                const loadingweight = parseFloat($('input[name="loading_weight"]').val()) || 0;
+                const access_weight = parseFloat($('input[name="access_weight"]').val()) || 0;
+                const exemptedWeight = parseFloat($(this).val()) || 0;
+
+                $(this).next('.error-message').remove();
+
+                if (exemptedWeight > access_weight) {
+                    $(this).after('<small class="error-message text-danger">Exempted weight cannot be greater than access weight.</small>');
+                    setBillingWeight(loadingweight);
+                    updateSamplingResultsDeductions();
+                    updateAllCalculations();
+                    return;
+                }
+
+                const billingweight = loadingweight + exemptedWeight;
+
+                // Use the fixed function
+                setBillingWeight(billingweight);
+
+                updateSamplingResultsDeductions();
+                updateAllCalculations();
+            });
+
+            // Other event handlers
             $('#other_deduction_kg').on('input', function () {
                 updateAllCalculations();
             });
@@ -1112,32 +1137,26 @@
                 updateAllCalculations();
             });
 
-            // Payment request input handler
             $('.payment-request-input').on('input', function () {
                 const totalAmount = parseFloat($('#total_amount').val()) || 0;
                 const paidAmount = parseFloat($('#paid_amount').val()) || 0;
                 const requested_amount = parseFloat($('#requested_amount').val()) || 0;
                 const newRequested = parseFloat($(this).val()) || 0;
-                // const remainingAmount = totalAmount - paidAmount;
                 const remainingAmount = totalAmount - requested_amount;
 
-                // Ensure payment request doesn't exceed remaining amount
                 if (newRequested > remainingAmount) {
                     $(this).val(remainingAmount.toFixed(2));
                 }
 
-                // Update percentage
                 const percentageInput = $('.percentage-input');
                 const finalRequested = parseFloat($(this).val()) || 0;
                 const percentage = remainingAmount > 0 ? (finalRequested / remainingAmount) * 100 : 0;
                 percentageInput.val(percentage.toFixed(2));
 
-                // Update remaining amount display
                 const finalRemaining = totalAmount - (paidAmount + finalRequested);
                 $('#remaining_amount').val(finalRemaining.toFixed(2));
             });
 
-            // Percentage input handler
             $('.percentage-input').on('input', function () {
                 let percentage = parseFloat($(this).val()) || 0;
                 if (percentage > 100) {
@@ -1148,15 +1167,11 @@
                 const totalAmount = parseFloat($('#total_amount').val()) || 0;
                 const paidAmount = parseFloat($('#paid_amount').val()) || 0;
                 const requested_amount = parseFloat($('#requested_amount').val()) || 0;
-
-                // const remainingAmount = totalAmount - paidAmount;
                 const remainingAmount = totalAmount - requested_amount;
 
                 const amount = (remainingAmount * percentage) / 100;
-
                 $('.payment-request-input').val(amount.toFixed(2));
 
-                // Update remaining amount
                 const finalRemaining = totalAmount - (requested_amount + amount);
                 $('#remaining_amount').val(finalRemaining.toFixed(2));
             });
@@ -1166,7 +1181,6 @@
                 const paidAmount = parseFloat({{ $pRsSumForFreight }});
                 const paymentRequest = parseFloat($(this).val()) || 0;
                 const remaining = (amount - paymentRequest - paidAmount);
-
                 $('input[name="remaining_freight"]').val(remaining.toFixed(2));
             });
 
@@ -1180,34 +1194,32 @@
                     percentage = 100;
                     $(this).val(100);
                 }
-
                 const amount = (remainingAmountF * percentage) / 100;
                 paymentRequestInputF.val(amount.toFixed(2));
             });
 
             paymentRequestInputF.on('input', function () {
                 let amount = parseFloat($(this).val()) || 0;
-
                 if (amount > remainingAmountF) {
                     amount = remainingAmountF;
                     $(this).val(remainingAmountF.toFixed(2));
                 }
-
                 const percentage = remainingAmountF > 0 ? (amount / remainingAmountF) * 100 : 0;
                 percentageInputF.val(percentage.toFixed(2));
             });
 
-            toggleSections();
-            updateAllCalculations();
-
-            $loadingRadio.on('change', toggleSections);
-            $withoutLoadingRadio.on('change', toggleSections);
-
+            // Other handlers
+            $(document).on('input', '#rerate_on_access_weight_kg, #rerate_on_access_weight_rate', function () {
+                updateAllCalculations();
+            });
 
             $(".togglehistory").click(function () {
                 $(".togglehistorytable").slideToggle(400);
                 $(this).toggleClass("active");
             });
+
+            // Initial calculations
+            updateAllCalculations();
         });
     </script>
 @endif

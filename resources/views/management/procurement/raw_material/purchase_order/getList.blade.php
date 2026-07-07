@@ -48,12 +48,16 @@
             }
         @endphp
 
-        <tr class="{{ $row->hasExpired() ? 'expired' : '' }}">
+        <tr class="{{ $row->hasExpired() ? 'expired' : '' }} {{ $row->defaulter == 1 ? 'defaulter' : '' }}">
             <td>
                 #{{ $row->contract_no }}
             </td>
             <td>{{ $row->product->name ?? 'N/A' }}</td>
             <td>{{ $row->purchase_type == 'gate_buying' ? $row->supplier_name ?? 'N/A' : $row->supplier->name ?? 'N/A' }}
+
+                @if($row->defaulter == 1)
+                    <span for="" class="badge badge-danger ml-2">Defaulter</span>
+                @endif
             </td>
             <td>{{ $row->broker_one_name ?? ($row->broker_two_name ?? ($row->broker_three_name ?? 'N/A')) }}</td>
             <td>{{ $row->decisionOfUser->name ?? 'N/A' }}</td>

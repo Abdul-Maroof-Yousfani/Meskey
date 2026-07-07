@@ -40,8 +40,8 @@ class DeliveryOrderRequest extends FormRequest
             'item_id' => 'required',
             'item_id.*' => 'required',
 
-            'qty' => 'required',
-            'qty.*' => 'required',
+            'qty' => 'required|array|min:1',
+            'qty.*' => 'required|integer|min:1',
 
             'rate' => 'required',
             'rate.*' => 'required',
@@ -64,20 +64,20 @@ class DeliveryOrderRequest extends FormRequest
         ];
 
         $saleOrder = SalesOrder::find(request()->sale_order_id);
-       
-        if($saleOrder && $saleOrder->pay_type_id == 10) {
-              $rules = array_merge($rules, [
-                'advance_amount'   => 'nullable',
-                'withhold_amount'  => 'nullable',
+
+        if ($saleOrder && $saleOrder->pay_type_id == 10) {
+            $rules = array_merge($rules, [
+                'advance_amount' => 'nullable',
+                'withhold_amount' => 'nullable',
                 'withhold_for_rv' => 'nullable',
                 "receipt_vouchers" => "required",
                 "receipt_vouchers.*" => "required"
             ]);
-            if(request()->withhold_amount && request()->withhold_amount > 0) {
+            if (request()->withhold_amount && request()->withhold_amount > 0) {
                 $rules["withhold_for_rv"] = "required";
             }
         }
-      
+
 
         return $rules;
     }

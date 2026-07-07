@@ -25,7 +25,7 @@
         font-size: 13px;
     }
 
-    .packing-select + .select2-container .select2-selection--multiple {
+    .packing-select+.select2-container .select2-selection--multiple {
         min-width: 130px !important;
         width: 130px !important;
     }
@@ -55,13 +55,15 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Date:</label>
-                        <input type="date" name="date" onchange="getNumber()" id="date" class="form-control" value="{{ date('Y-m-d') }}" readonly>
+                        <input type="date" name="date" onchange="getNumber()" id="date" class="form-control"
+                            value="{{ date('Y-m-d') }}" readonly>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Select Ticket: <span class="text-danger">*</span></label>
-                        <select name="initial_ticket_id" id="initial_ticket_id" onchange="onInitialTicketSelect(this)" class="form-control select2">
+                        <select name="initial_ticket_id" id="initial_ticket_id" onchange="onInitialTicketSelect(this)"
+                            class="form-control select2">
                             <option value="">Select Ticket</option>
                         </select>
                     </div>
@@ -81,7 +83,8 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">DO Number:</label>
-                        <select name="do_no[]" id="do_no" onchange="get_items(this)" class="form-control select2" disabled>
+                        <select name="do_no[]" id="do_no" onchange="get_items(this)" class="form-control select2"
+                            disabled>
                             <option value="">Select Delivery Order</option>
                         </select>
                         <input type='hidden' name="delivery_order_id" id="delivery_order_id" />
@@ -97,7 +100,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-6 d-none ">
                     <div class="form-group">
                         <label class="form-label">Reference Number:</label>
                         <input type="text" name="reference_number" id="reference_number" class="form-control" disabled>
@@ -166,7 +169,8 @@
                 <div class="col-md-6" id="transporter_col">
                     <div class="form-group">
                         <label class="form-label">Transporter:</label>
-                        <select id="transporter_display" class="form-control select2" onchange="$('#transporter').val(this.value)">
+                        <select id="transporter_display" class="form-control select2"
+                            onchange="$('#transporter').val(this.value)">
                             <option value="">Select Transporter</option>
                             @foreach ($transporters ?? [] as $transporter)
                                 <option value="{{ $transporter->id }}">{{ $transporter->name }}</option>
@@ -185,33 +189,38 @@
                         </select>
                     </div>
                 </div>
-
+            </div>
+            <div class="row d-none">
                 <div class="col-12 mt-3">
                     <h6 class="header-heading-sepration">Financials</h6>
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Labour Rates:</label>
-                        <input type="text" name="labour_rate" id="standard_labour_rate" class="form-control" readonly style="background-color: #f8f9fa;">
+                        <input type="text" name="labour_rate" id="standard_labour_rate" class="form-control" readonly
+                            style="background-color: #f8f9fa;">
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Labour Amount:</label>
-                        <input type="number" name="labour_amount" id="labour_amount" class="form-control" readonly style="background-color: #f8f9fa;">
+                        <input type="number" name="labour_amount" id="labour_amount" class="form-control" readonly
+                            style="background-color: #f8f9fa;">
                         <small class="text-muted">(Rate * Total Bags)</small>
                     </div>
                 </div>
                 <div class="col-md-4" id="transporter_amount_col">
                     <div class="form-group">
                         <label class="form-label">Transporter Amount:</label>
-                        <input type="number" name="transporter_amount" onchange="" id="transporter_amount" class="form-control">
+                        <input type="number" name="transporter_amount" onchange="" id="transporter_amount"
+                            class="form-control">
                     </div>
                 </div>
                 <div class="col-md-3" style="display: none;">
                     <div class="form-group">
                         <label class="form-label">Weighbridge Amount:</label>
-                        <input type="number" name="weighbridge_amount" onchange="" id="weighbridge_amount" class="form-control">
+                        <input type="number" name="weighbridge_amount" onchange="" id="weighbridge_amount"
+                            class="form-control">
                     </div>
                 </div>
 
@@ -228,10 +237,10 @@
     <div class="row form-mar">
 
         <div class="col-12 text-right mb-2">
-            <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()"
-                id="addRowBtn" disabled>
+            <!-- <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()" id="addRowBtn"
+                disabled>
                 <i class="fa fa-plus"></i>&nbsp; Add New Item
-            </button>
+            </button> -->
         </div>
 
         <div class="col-md-12">
@@ -277,9 +286,9 @@
 <script>
     salesInquiryRowIndex = 1;
 
-    $(document).ready(function() {
+    $(document).ready(function () {
         $('.select2').select2({ width: '100%' });
-        
+        console.log('ddddd agya yhun')
         // Load tickets with accepted Dispatch QC on page load
         loadTicketsWithDispatchQc();
         getNumber();
@@ -291,19 +300,19 @@
             url: "{{ route('sales.delivery-challan.get-tickets-with-dispatch-qc') }}",
             method: "GET",
             dataType: "json",
-            success: function(response) {
+            success: function (response) {
                 const select = $("#initial_ticket_id");
                 select.empty().append('<option value="">Select Ticket</option>');
-                
+
                 if (response.tickets && response.tickets.length > 0) {
-                    response.tickets.forEach(function(ticket) {
+                    response.tickets.forEach(function (ticket) {
                         select.append(`<option value="${ticket.id}">${ticket.text}</option>`);
                     });
                 }
-                
+
                 select.select2();
             },
-            error: function(error) {
+            error: function (error) {
                 console.error('Error loading tickets:', error);
             }
         });
@@ -323,7 +332,7 @@
             method: "GET",
             data: { ticket_id: ticketId },
             dataType: "json",
-            beforeSend: function() {
+            beforeSend: function () {
                 Swal.fire({
                     title: "Loading...",
                     text: "Fetching ticket data",
@@ -333,16 +342,16 @@
                     }
                 });
             },
-            success: function(response) {
+            success: function (response) {
                 Swal.close();
-                
+
                 if (response.success) {
                     // Set Ticket Labour (readonly)
                     // Set Ticket Labour
                     if (response.loading_slip_labour) {
                         $("#labour_status").val(response.loading_slip_labour).trigger('change');
                     }
-                    
+
                     if (response.is_labour_editable) {
                         $("#labour_status").prop('disabled', false);
                     } else {
@@ -448,24 +457,24 @@
                         method: "GET",
                         data: { ticket_id: ticketId },
                         dataType: "html",
-                        success: function(res) {
+                        success: function (res) {
                             $("#dcTableBody").empty();
                             $("#dcTableBody").append(res);
                             $(".select2").select2();
-                            
+
                             // Track added ticket IDs
                             addedTicketIds = [parseInt(ticketId)];
-                            
+
                             // Load additional tickets for the same customer/DO
                             loadAdditionalTickets(response.delivery_order.id, ticketId);
                         },
-                        error: function(error) {
+                        error: function (error) {
                             console.error('Error loading ticket items:', error);
                         }
                     });
                 }
             },
-            error: function(error) {
+            error: function (error) {
                 Swal.close();
                 Swal.fire("Error", "Failed to load ticket data", "error");
                 console.error('Error fetching ticket data:', error);
@@ -492,10 +501,10 @@
         addedTicketIds = [];
         doMeta = {};
     }
-    
+
     // Track which tickets have been added
     addedTicketIds = [];
-    
+
     // Load additional tickets for the same delivery order
     function loadAdditionalTickets(deliveryOrderId, excludeTicketId) {
         $.ajax({
@@ -504,100 +513,100 @@
             data: {
                 delivery_order_ids: [deliveryOrderId]
             },
-            success: function(response) {
+            success: function (response) {
                 const select = $("#add_ticket_id");
                 select.empty().append('<option value="">Select Ticket to Add</option>');
-                
+
                 if (response.tickets && response.tickets.length > 0) {
                     let hasOptions = false;
-                    response.tickets.forEach(function(ticket) {
+                    response.tickets.forEach(function (ticket) {
                         // Exclude already added tickets
                         if (!addedTicketIds.includes(ticket.id)) {
                             select.append(`<option value="${ticket.id}">${ticket.text}</option>`);
                             hasOptions = true;
                         }
                     });
-                    
+
                     if (hasOptions) {
                         $("#addTicketContainer").show();
                     } else {
                         $("#addTicketContainer").hide();
                     }
                 }
-                
+
                 select.select2();
             },
-            error: function(error) {
+            error: function (error) {
                 console.error('Error loading additional tickets:', error);
             }
         });
     }
-    
+
     // Handle adding more tickets
-    $("#initial_ticket_id").on("change", function() {
+    $("#initial_ticket_id").on("change", function () {
         const ticketId = $(this).val();
-        
+
         if (!ticketId) return;
-        
+
         // Check if already added
         if (addedTicketIds.includes(parseInt(ticketId))) {
             Swal.fire("Warning", "This ticket has already been added", "warning");
             $(this).val('').trigger('change');
             return;
         }
-        
+
         // Load the ticket item row and append to table
         $.ajax({
             url: "{{ route('sales.delivery-challan.get-ticket-items') }}",
             method: "GET",
             data: { ticket_id: ticketId },
             dataType: "html",
-            success: function(res) {
+            success: function (res) {
                 console.log(res);
                 $("#dcTableBody").append(res);
                 $(".select2").select2();
-                
+
                 // Track this ticket as added
                 addedTicketIds.push(parseInt(ticketId));
-                
+
                 // Remove this ticket from the dropdown
                 $("#add_ticket_id option[value='" + ticketId + "']").remove();
                 $("#add_ticket_id").val('').trigger('change');
-                
+
                 // Hide the dropdown if no more tickets available
                 if ($("#add_ticket_id option").length <= 1) {
                     $("#addTicketContainer").hide();
                 }
             },
-            error: function(error) {
+            error: function (error) {
                 console.error('Error loading ticket items:', error);
                 Swal.fire("Error", "Failed to load ticket data", "error");
             }
         });
     });
-    
+
     // Remove ticket row from table
     function removeTicketRow(btn) {
         const ticketId = $(btn).data('ticket-id');
         const ticketText = $(btn).data('ticket-text');
-        
+
         // Check if this is the last row
         if ($("#dcTableBody tr").length <= 1) {
             Swal.fire("Warning", "Cannot remove the last ticket. At least one ticket is required.", "warning");
             return;
         }
-        
+
         // Remove from table
         $(btn).closest('tr').remove();
-        
+
         // Remove from tracked IDs
         addedTicketIds = addedTicketIds.filter(id => id !== parseInt(ticketId));
-        
+
         // Add back to dropdown
         const select = $("#add_ticket_id");
         select.append(`<option value="${ticketId}">${ticketText}</option>`);
         select.select2();
-        
+
         // Show the dropdown if it was hidden
         $("#addTicketContainer").show();
     }
@@ -622,23 +631,23 @@
         const locOptions = [];
         const arrOptions = [];
         const secOptions = [];
-        
+
         (selectedIds || []).forEach(id => {
             const meta = doMeta[id];
             console.log(meta);
             if (!meta) return;
-            
+
             // Handle location
             if (meta.location_id && !locSet.has(meta.location_id)) {
                 locSet.add(meta.location_id);
                 locOptions.push({ id: meta.location_id, text: meta.location_name || meta.location_id });
             }
-            
+
             // Handle arrival locations (factories) - now using arrival_names object
             $("#arrival_location_csv").val(meta.arrival_location_id || "");
             if (meta.arrival_location_id) {
                 const arrivalIds = meta.arrival_location_id.split(",");
-                arrivalIds.forEach(function(arrival_location_id) {
+                arrivalIds.forEach(function (arrival_location_id) {
                     arrival_location_id = arrival_location_id.trim();
                     if (arrival_location_id && !arrSet.has(arrival_location_id)) {
                         arrSet.add(arrival_location_id);
@@ -653,7 +662,7 @@
             $("#storage_location_csv").val(meta.sub_arrival_location_id || "");
             if (meta.sub_arrival_location_id) {
                 const sectionIds = meta.sub_arrival_location_id.split(",");
-                sectionIds.forEach(function(section_id) {
+                sectionIds.forEach(function (section_id) {
                     section_id = section_id.trim();
                     if (section_id && !secSet.has(section_id)) {
                         secSet.add(section_id);
@@ -714,7 +723,7 @@
                 location_id: company
             },
             dataType: "json",
-            success: function(res) {
+            success: function (res) {
                 $("#arrivals").empty();
                 $("#arrivals").append(`<option value=''>Select Factory</option>`)
 
@@ -728,7 +737,7 @@
 
                 $("#arrivals").prop("disabled", false).select2();
             },
-            error: function(error) {
+            error: function (error) {
 
             }
         });
@@ -738,7 +747,7 @@
     function get_items(el) {
         // get.delivery-challan.get-items
         const delivery_orders = $(el).val();
-      
+
         // Update readonly multi-selects for location/factory/section
         hydrateLocationsFromDos([delivery_orders]);
     }
@@ -759,7 +768,7 @@
                 customer_id: customer_id
             },
             dataType: "json",
-            success: function(res) {
+            success: function (res) {
                 $("#do_no").empty();
                 $("#do_no").append(`<option value=''>Select Delivery Order</option>`)
 
@@ -784,7 +793,7 @@
 
                 $("#do_no").select2();
             },
-            error: function(error) {
+            error: function (error) {
 
             }
         });
@@ -807,7 +816,7 @@
                     arrival_id: arrival
                 },
                 dataType: "json",
-                success: function(res) {
+                success: function (res) {
                     console.log(res);
                     $("#storages").empty();
                     $("#storages").append(`<option value=''>Select Storage</option>`)
@@ -821,7 +830,7 @@
 
                     $("#storages").select2();
                 },
-                error: function(error) {
+                error: function (error) {
 
                 }
             });
@@ -830,7 +839,7 @@
 
     function add_advance_amount() {
         let selectedAmounts = $("#receipt_vouchers option:selected")
-            .map(function() {
+            .map(function () {
                 return $(this).data("amount");
             }).get();
 
@@ -857,7 +866,7 @@
 
         $("withhold_for_rv").val("").trigger("change");
         $('#withhold_for_rv').select2({
-            templateResult: function(data) {
+            templateResult: function (data) {
 
                 if (!data.id) return data.text;
 
@@ -944,7 +953,7 @@
                 customer_id: customer_id
             },
             dataType: "json",
-            success: function(res) {
+            success: function (res) {
                 $("#sale_order").empty();
 
                 res.forEach(item => {
@@ -958,7 +967,7 @@
 
                 $("#sale_order").select2();
             },
-            error: function(error) {
+            error: function (error) {
 
             }
         });
@@ -976,12 +985,12 @@
                 inquiry_id: inquiry_id
             },
             dataType: "html",
-            success: function(res) {
+            success: function (res) {
                 console.log("success");
                 $("#alesInquiryBody").empty();
                 $("#salesInquiryBody").html(res);
             },
-            error: function(error) {
+            error: function (error) {
                 console.log(error);
             }
         });
@@ -996,10 +1005,10 @@
                 contract_date: $("#date").val()
             },
             dataType: "json",
-            success: function(res) {
+            success: function (res) {
                 $("#dc_no").val(res.dc_no)
             },
-            error: function(error) {
+            error: function (error) {
                 // Handle errors here
                 $('.loader-container').hide();
                 console.error("Error:", error);
@@ -1063,7 +1072,7 @@
                 so_id: $("#sale_order").val(),
             },
             dataType: "json",
-            success: function(res) {
+            success: function (res) {
                 // $("#amount_received").val(res.amount_received)
                 // $("#so_amount").val(res.so_amount)
                 // $("#unused_amount").val(res.unused_amount)
@@ -1078,7 +1087,7 @@
 
                 // $("#locations").val(res.locations).trigger("change");
             },
-            error: function(error) {
+            error: function (error) {
                 // Handle errors here
                 $('.loader-container').hide();
                 console.error("Error:", error);
@@ -1096,7 +1105,7 @@
                 customer_id: $("#customer_id").val(),
             },
             dataType: "json",
-            success: function(res) {
+            success: function (res) {
                 // withhold_for_rv
 
                 let select = $("#receipt_vouchers");
@@ -1136,7 +1145,7 @@
 
 
             },
-            error: function(error) {
+            error: function (error) {
                 // Handle errors here
                 $('.loader-container').hide();
                 console.error("Error:", error);
@@ -1154,13 +1163,13 @@
                 so_id: $("#sale_order").val(),
             },
             dataType: "html",
-            success: function(res) {
+            success: function (res) {
                 $('#soTableBody').empty();
 
                 $('#soTableBody').html(res);
 
             },
-            error: function(error) {
+            error: function (error) {
                 // Handle errors here
                 $('.loader-container').hide();
                 console.error("Error:", error);
@@ -1169,7 +1178,7 @@
     }
     function calculateLabourAmount() {
         let totalBags = 0;
-        $(".no_of_bags").each(function() {
+        $(".no_of_bags").each(function () {
             let bags = parseFloat($(this).val()) || 0;
             totalBags += bags;
         });
@@ -1180,17 +1189,18 @@
     }
 
     // Override the existing calc function or ensure it calls calculateLabourAmount
-    const originalCalc = calc;
-    calc = function(el) {
+    // const originalCalc =  calc;
+    calc = function (el) {
         originalCalc(el);
         calculateLabourAmount();
     };
 
-    const originalCalcAmount = calcAmount;
-    calcAmount = function(el) {
+    calcAmount = function (el) {
         originalCalcAmount(el);
         calculateLabourAmount();
     };
+    // const originalCalcAmount = calcAmount;
+
     function updateLabourVendors(arrivalLocationIds) {
         if (!arrivalLocationIds || arrivalLocationIds.length === 0) {
             $("#labour").empty().trigger('change.select2');
@@ -1202,11 +1212,11 @@
             method: "GET",
             data: { arrival_location_ids: arrivalLocationIds },
             dataType: "json",
-            success: function(vendors) {
+            success: function (vendors) {
                 const labourSelect = $("#labour");
                 const currentVal = labourSelect.val();
                 labourSelect.empty();
-                vendors.forEach(function(vendor) {
+                vendors.forEach(function (vendor) {
                     labourSelect.append(`<option value="${vendor.id}" ${vendor.id == currentVal ? 'selected' : ''}>${vendor.name}</option>`);
                 });
                 if (vendors.length === 1 && !currentVal) {
@@ -1214,7 +1224,7 @@
                 }
                 labourSelect.trigger('change.select2');
             },
-            error: function(error) {
+            error: function (error) {
                 console.error('Error fetching vendors by locations:', error);
             }
         });

@@ -387,6 +387,19 @@
                 </select>
             </div>
         </div>
+            <div class="col-xs-12 col-sm-12 col-md-12">
+            <div class="form-group ">
+                 <div class="checkbox">
+                     <input type="checkbox" name="defaulter" value="1" class="custom-control-input"
+                         id="defaulter-yes" {{ $arrivalPurchaseOrder->defaulter == 1 ? 'checked' : '' }}>
+                     <label for="defaulter-yes">
+                        <span>
+                            Mark as Defaulter
+                        </span>
+                     </label>
+                 </div>
+            </div>
+            </div>
          <div class="col-xs-12 col-sm-12 col-md-12">
              <div class="form-group">
                  <label>Remarks (Optional):</label>

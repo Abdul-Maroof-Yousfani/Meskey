@@ -300,7 +300,7 @@
                          <div class="radio radio-primary">
                              <input name="is_for_sales" type="radio" id="is_for_sales_no" value="0"
                                  {{ old('is_for_sales', $broker->is_for_sales) == 0 ? 'checked' : '' }}>
-                             <label for="is_for_sales_no"><span>Not for Sales</span></label>
+                             <label for="is_for_sales_no"><span>Not Purchase</span></label>
                          </div>
                      </li>
                  </ul>

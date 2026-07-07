@@ -12,7 +12,7 @@
     <tbody>
         @if (count($Suppliers) != 0)
             @foreach ($Suppliers as $key => $row)
-                <tr>
+                <tr class=" {{ $row->defaulter == 1 ? 'defaulter' : '' }}">
                     <td>
                         <p class="m-0">
                             {{ $row->unique_no }}
@@ -21,7 +21,10 @@
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ $row->owner_name }} <br>
+                            {{ $row->owner_name }}
+                            @if($row->defaulter == 1)
+                                <span for="" class="badge badge-danger ml-2">Defaulter</span>
+                            @endif
                             {{-- <small class="text-black-50">{{ $row->owner_mobile_no ?? '--' }}</small> <br> --}}
                         </p>
                     </td>
@@ -37,7 +40,7 @@
                         </p>
                     </td>
                     <td>
-                         {!! dateFormatHtml($row->created_at) !!}
+                        {!! dateFormatHtml($row->created_at) !!}
                     </td>
                     <td>
                         @can('role-edit')

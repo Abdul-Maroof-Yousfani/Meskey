@@ -110,6 +110,10 @@
                                       ({{ $transaction->against_reference_no }})
                                   @endif
                                   ({{ formatEnumValue($transaction->purpose) }})
+
+                                  @if ($transaction->grn_no)
+                                      | GRN: {{ $transaction->grn_no }}
+                                  @endif
                               </small>
                           @endif
                       </td>

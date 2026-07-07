@@ -22,8 +22,8 @@
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ $row->name }} <br>
-                            <small>{{ $row->email ?? '--' }}</small> <br>
+                            {{ $row->company_name }} <br>
+                            <!-- <small>{{ $row->email ?? '--' }}</small> <br> -->
                         </p>
                     </td>
                     <td>
@@ -42,7 +42,7 @@
                             @if ($row->is_for_sales == 1)
                                 <span class="badge badge-success">Sales</span>
                             @else
-                                <span class="badge badge-info text-dark">Not for Sales</span>
+                                <span class="badge badge-info text-white">Purchase</span>
                             @endif
                         </p>
                     </td>
