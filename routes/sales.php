@@ -109,6 +109,7 @@ Route::name("sales.")->group(function () {
     Route::resource("logistics", \App\Http\Controllers\Sales\LogisticsController::class);
     Route::post("get-logistics", [\App\Http\Controllers\Sales\LogisticsController::class, "getList"])->name("get.logistics.list");
     Route::get("logistics/get-order-details/{id}", [\App\Http\Controllers\Sales\LogisticsController::class, "getOrderDetails"])->name("logistics.getOrderDetails");
+    Route::get("/get-logistics-so-against-customer", [\App\Http\Controllers\Sales\LogisticsController::class, "getSo"])->name("get.logistics.getSoAgainstCustomer");
 
     Route::resource("loading-slip", \App\Http\Controllers\Sales\LoadingSlipController::class);
     Route::post("get-loading-slip", [\App\Http\Controllers\Sales\LoadingSlipController::class, "getList"])->name("get.loading-slip");
