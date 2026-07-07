@@ -54,6 +54,9 @@ class ExportDeliveryOrderController extends Controller
         // Filter only Export Orders that have remaining capacity (Total MT - Consumed MT > 0)
         $export_orders = ExportOrder::with(['packingItems', 'deliveryOrders.exportPackingItems'])
             ->where('am_approval_status', 'approved')
+            ->whereNotIn('id', function($q) {
+                $q->select('export_order_id')->from('export_order_addendums');
+            })
             ->latest()
             ->get()
             ->filter(function ($eo) {
@@ -123,7 +126,11 @@ class ExportDeliveryOrderController extends Controller
 
     public function getExportOrderDetails($id)
     {
-        $exportOrder = ExportOrder::where('am_approval_status', 'approved')->with([
+        $exportOrder = ExportOrder::where('am_approval_status', 'approved')
+            ->whereNotIn('id', function($q) {
+                $q->select('export_order_id')->from('export_order_addendums');
+            })
+            ->with([
             'product',
             'specifications.productSlabType',
             'packingItems.subItems.bagType',
@@ -568,7 +575,11 @@ class ExportDeliveryOrderController extends Controller
             'locations.companyLocation'
         ])->findOrFail($id);
         $buyers = Customer::get();
-        $export_orders = ExportOrder::where('am_approval_status', 'approved')->latest()->get();
+        $export_orders = ExportOrder::where('am_approval_status', 'approved')
+            ->whereNotIn('id', function($q) {
+                $q->select('export_order_id')->from('export_order_addendums');
+            })
+            ->latest()->get();
 
         // Calculate quantity variables for the view (Form-E centric)
         $totalAllowedMt = (float) ($deliveryOrder->exportFormE->input_quantity ?? 0);
@@ -921,6 +932,9 @@ class ExportDeliveryOrderController extends Controller
         $export_orders = ExportOrder::with(['packingItems', 'deliveryOrders.exportPackingItems'])
             ->where('buyer_id', $buyer_id)
             ->where('am_approval_status', 'approved')
+            ->whereNotIn('id', function($q) {
+                $q->select('export_order_id')->from('export_order_addendums');
+            })
             ->latest()
             ->get()
             ->filter(function ($eo) {

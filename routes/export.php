@@ -28,7 +28,7 @@ use App\Http\Controllers\Export\ExportDeliveryChallanController;
 use App\Http\Controllers\Export\ExportSecondWeighBridgeController;
 use App\Http\Controllers\Export\ExportOuterItemController;
 use App\Http\Controllers\Export\DocumentListController;
-
+use App\Http\Controllers\Export\ExportOrderAddendumController;
 // mode of terms
 Route::resource('modeofterms', ModeOfTermController::class);
 Route::post('/get-modes', [ModeOfTermController::class, 'getTable'])->name('get.modes');
@@ -226,3 +226,7 @@ Route::post('/export-soda-field/update-status/{id}', [ExportSodaFieldController:
 // document list
 Route::resource('document-list', DocumentListController::class);
 Route::post('/get-document-list', [DocumentListController::class, 'getList'])->name('get.document-list');
+
+// export order addendum
+Route::resource('export-order-addendum', ExportOrderAddendumController::class);
+Route::post('/get-export-order-addendum', [ExportOrderAddendumController::class, 'getList'])->name('export-order-addendum.getList');

@@ -118,36 +118,58 @@
                     </div>
                 </div>
                 
-                <div class="">
+                <div id="discharge_terms_section">
                     <h6 class="header-heading-sepration mt-3">Discharge Terms</h6>
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group">
                                 <label>Discharge Rate:</label>
                                 <input type="text" name="discharge_rate" class="form-control" required>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group">
-                                <label>SHEX/EIU (Discharge):</label>
+                                <label>Discharge Term Type:</label>
+                                <select name="discharge_term_type" class="form-control" required onchange="document.getElementById('discharge_value_label').innerText = this.value ? this.value + ' Value:' : 'Term Value:'">
+                                    <option value="">Select Term</option>
+                                    <option value="SHEX EIU">SHEX EIU</option>
+                                    <option value="SHEX UU">SHEX UU</option>
+                                    <option value="SHINC">SHINC</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label id="discharge_value_label">Term Value:</label>
                                 <input type="text" name="discharge_shex_eiu" class="form-control" required>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="">
+                <div id="load_terms_section">
                     <h6 class="header-heading-sepration mt-3">Load Terms</h6>
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group">
                                 <label>Minimum Daily Rate:</label>
                                 <input type="text" name="minimum_daily_rate" class="form-control" required>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group">
-                                <label>SHEX/EIU (Min Daily):</label>
+                                <label>Load Term Type:</label>
+                                <select name="load_term_type" class="form-control" required onchange="document.getElementById('load_value_label').innerText = this.value ? this.value + ' Value:' : 'Term Value:'">
+                                    <option value="">Select Term</option>
+                                    <option value="SHEX EIU">SHEX EIU</option>
+                                    <option value="SHEX UU">SHEX UU</option>
+                                    <option value="SHINC">SHINC</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label id="load_value_label">Term Value:</label>
                                 <input type="text" name="minimum_daily_shex_eiu" class="form-control" required>
                             </div>
                         </div>
@@ -1691,12 +1713,47 @@
         });
         $('select[name="incoterm_id"]').on('change', function() {
             var incotermText = $(this).find('option:selected').text().toUpperCase().trim();
+            var packingType = $('select[name="packing_type"]').val() || '';
+            packingType = packingType.toUpperCase().trim();
+
             if (incotermText === 'CIF') {
                 $('select[name="insurance_covered_by"]').val('Supplier').trigger('change');
             } else if (incotermText === 'CNF' || incotermText === 'FOB') {
                 $('select[name="insurance_covered_by"]').val('Buyer').trigger('change');
             }
+
+            if (packingType === 'IN CONTAINER' || packingType === 'IN CONATINER') {
+                $('#load_terms_section').hide();
+                $('#load_terms_section input, #load_terms_section select').prop('required', false).val('');
+                $('#discharge_terms_section').hide();
+                $('#discharge_terms_section input, #discharge_terms_section select').prop('required', false).val('');
+                return;
+            }
+
+            if (incotermText.includes('FOB')) {
+                $('#load_terms_section').show();
+                $('#load_terms_section input, #load_terms_section select').prop('required', true);
+                $('#discharge_terms_section').hide();
+                $('#discharge_terms_section input, #discharge_terms_section select').prop('required', false).val('');
+            } else if (incotermText.includes('CIF') || incotermText.includes('CNF') || incotermText.includes('C&F')) {
+                $('#discharge_terms_section').show();
+                $('#discharge_terms_section input, #discharge_terms_section select').prop('required', true);
+                $('#load_terms_section').hide();
+                $('#load_terms_section input, #load_terms_section select').prop('required', false).val('');
+            } else {
+                $('#load_terms_section').show();
+                $('#discharge_terms_section').show();
+            }
         });
+        
+        // Add event listener for packing_type as well
+        $('select[name="packing_type"]').on('change', function() {
+            $('select[name="incoterm_id"]').trigger('change');
+        });
+
+        setTimeout(() => {
+            $('select[name="incoterm_id"]').trigger('change');
+        }, 100);
 
         loadCompanyBanks(defaultCompanyId);
         });

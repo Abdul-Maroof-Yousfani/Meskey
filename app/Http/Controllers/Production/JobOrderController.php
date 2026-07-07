@@ -137,6 +137,10 @@ class JobOrderController extends Controller
     public function create()
     {
         $exportOrders = \App\Models\Export\ExportOrder::with(['packingItems', 'jobOrders.packingItems'])
+            ->where('am_approval_status', 'approved')
+            ->whereNotIn('id', function($q) {
+                $q->select('export_order_id')->from('export_order_addendums');
+            })
             ->latest()
             ->get()
             ->filter(function ($eo) {
@@ -371,6 +375,10 @@ class JobOrderController extends Controller
         ])->findOrFail($id);
         
         $exportOrders = \App\Models\Export\ExportOrder::with(['packingItems', 'jobOrders.packingItems'])
+            ->where('am_approval_status', 'approved')
+            ->whereNotIn('id', function($q) {
+                $q->select('export_order_id')->from('export_order_addendums');
+            })
             ->latest()
             ->get()
             ->filter(function ($eo) use ($jobOrder) {

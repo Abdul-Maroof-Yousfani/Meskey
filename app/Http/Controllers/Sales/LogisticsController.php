@@ -42,6 +42,9 @@ class LogisticsController extends Controller
 
         $exportOrders = ExportOrder::with('logistics')
             ->where('am_approval_status', 'approved')
+            ->whereNotIn('id', function($q) {
+                $q->select('export_order_id')->from('export_order_addendums');
+            })
             ->orderBy('id', 'desc')
             ->get()
             ->filter(function ($eo) {
