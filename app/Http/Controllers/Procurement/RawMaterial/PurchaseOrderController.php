@@ -796,6 +796,23 @@ class PurchaseOrderController extends Controller
             ? $orderedTrucks - $arrivedTrucks - $inTransitTrucks
             : $orderedTrucks - $arrivedTrucks - $inTransitTrucks - $totalRejectedTrucks;
 
+        $brokerDetails = '';
+        if (isset($row->broker_one_id)) {
+            $brokerDetails = 'Broker 1: ' . ($row->broker_one_name ?? 'N/A') . ' (' . ($row->broker_one_commission ?? 0) . '%)';
+        }
+        if (isset($row->broker_two_id)) {
+            $brokerDetails .= ($brokerDetails ? "\n" : '') . 'Broker 2: ' . ($row->brokerTwo->name ?? 'N/A') . ' (' . ($row->brokerTwo->broker_one_commission ?? 0) . '%)';
+        }
+        if (isset($row->broker_three_id)) {
+            $brokerDetails .= ($brokerDetails ? "\n" : '') . 'Broker 3: ' . ($row->brokerThree->name ?? 'N/A') . ' (' . ($row->brokerThree->broker_one_commission ?? 0) . '%)';
+        }
+
+        // If no broker
+        if (empty($brokerDetails)) {
+            $brokerDetails = 'No Broker';
+        }
+
+
         return [
             '#' . $row->contract_no,
             $row->created_at->format('Y-m-d'),
@@ -813,7 +830,14 @@ class PurchaseOrderController extends Controller
             $row->credit_days ?? 'N/A',
             // $row->rate_per_mound ?? 'N/A',
             // $row->rate_per_100kg ?? 'N/A',
-            'Sauda Type: ' . ($row->saudaType->name ?? '') . "\n" . ucfirst($row->calculation_type) . ' Wise' . "\nReplacement: " . ($row->is_replacement == 1 ? 'Yes' : 'No') . "\nSupllier Commision: " . $row->supplier_commission . "\nRemarks: " . $row->remarks,
+            'Sauda Type: ' . ($row->saudaType->name ?? '') . "\n" .
+            ucfirst($row->calculation_type) . ' Wise' . "\n" .
+            'Replacement: ' . ($row->is_replacement == 1 ? 'Yes' : 'No') . "\n\n" .
+            'COMMISSIONS:' . "\n" .
+            'Supplier Commission: ' . ($row->supplier_commission ?? 0) . "\n" .
+            $brokerDetails . "\n\n" .
+            'REMARKS:' . "\n" .
+            ($row->remarks ?? ''),
             $row->delivery_address ?? 'N/A',
 
             // $row->calculation_type == 'trucks' ? ($row->no_of_trucks ?? 0) : 'N/A',
