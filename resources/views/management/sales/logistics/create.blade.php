@@ -13,8 +13,8 @@
                     <div class="form-group">
                         <label for="type">Type</label>
                         <select name="type" id="type" class="form-control select2" required>
-                            <option value="">Select Type</option>
-                            <option value="sale_order" selected>Sale Order</option>
+                            <option value="" selected>Select Type</option>
+                            <option value="sale_order">Sale Order</option>
                             <option value="export_order">Export Order</option>
                         </select>
                     </div>
@@ -27,17 +27,24 @@
                         <h6 class="header-heading-sepration text-uppercase">Document Information</h6>
                     </div>
                 
+                    <div class="col-md-4" id="customer_container" style="display: none;">
+                        <div class="form-group">
+                            <label for="customer_id" class="text-uppercase">Customer (Buyer)</label>
+                            <select name="customer_id" id="customer_id" class="form-control select2" style="width: 100%;">
+                                <option value="">Select Customer</option>
+                                @foreach($customers as $customer)
+                                    <option value="{{ $customer->id }}">{{ $customer->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+
                     <!-- Row 1: Loading Request, Date, SO # -->
                     <div class="col-md-4">
                         <div class="form-group">
                             <label for="sale_order_id" class="text-uppercase" id="document_select_label">Loading Request (Sale Order)</label>
                             <select name="sale_order_id" id="sale_order_id" class="form-control select2 document-select" style="width: 100%;">
                                 <option value="">Select Sale Order</option>
-                                @foreach($saleOrders as $order)
-                                    <option value="{{ $order->id }}">
-                                        {{ $order->reference_no }}
-                                    </option>
-                                @endforeach
                             </select>
                             <select name="export_order_id" id="export_order_id" class="form-control select2 document-select" style="width: 100%; display: none;">
                                 <option value="">Select Export Order</option>
@@ -444,6 +451,10 @@
             $('#export_order_id').prop('required', isExport).toggle(isExport);
             $('#sale_order_id').next('.select2-container').toggle(!isExport);
             $('#export_order_id').next('.select2-container').toggle(isExport);
+            
+            $('#customer_container').toggle(!isExport);
+            $('#customer_id').prop('required', !isExport);
+            
             $('#to_location_label').text(isExport ? 'Port of Loading' : 'To Location');
 
             $('#itemsBody .transporter-select').each(function () {
@@ -470,10 +481,63 @@
             if (type === 'sale_order' || type === 'export_order') {
                 $('#document_info_container').show();
                 updateTypeUI(type);
+                
+                $('#customer_id').val('').trigger('change');
+                $('#sale_order_id, #export_order_id').val('').trigger('change');
+
+                // Clear fields if no order selected
+                $('#date, #so_no, #so_qty, #commodity, #sauda_type').val('');
+                populateSelectOptions($('#location'), [], '', 'Select From Location');
+                $('#location').prop('disabled', type !== 'export_order');
+                populateSelectOptions($('#to_location'), type === 'export_order' ? [] : saleToLocationOptions, '', type === 'export_order' ? 'Select Port of Loading' : 'Select To Location');
+                populateSelectOptions($('#factory'), [], '', 'Select Factory');
+                populateSelectOptions($('#section'), [], '', 'Select Section');
             } else {
                 $('#document_info_container').hide();
             }
         }).trigger('change');
+
+        // Filter Sale Orders by Customer via AJAX
+        $('#customer_id').on('change', function() {
+            get_sale_orders();
+        });
+
+        function get_sale_orders() {
+            const customer_id = $('#customer_id').val();
+            const $saleOrderSelect = $('#sale_order_id');
+            const currentValue = $saleOrderSelect.val();
+
+            $saleOrderSelect.empty();
+            $saleOrderSelect.append('<option value="">Select Sale Order</option>');
+
+            if (!customer_id) {
+                $saleOrderSelect.trigger('change');
+                return;
+            }
+
+            $.ajax({
+                url: '{{ route('sales.get.logistics.getSoAgainstCustomer') }}',
+                method: 'GET',
+                data: {
+                    customer_id: customer_id
+                },
+                success: function(response) {
+                    const data = response.processedData;
+                    data.forEach(function(item) {
+                        $saleOrderSelect.append(new Option(item.text, item.id));
+                    });
+
+                    if (currentValue && $saleOrderSelect.find('option[value="' + currentValue + '"]').length > 0) {
+                        $saleOrderSelect.val(currentValue);
+                    }
+                    $saleOrderSelect.trigger('change');
+                },
+                error: function(err) {
+                    console.error('Error fetching sale orders', err);
+                    $saleOrderSelect.trigger('change');
+                }
+            });
+        }
 
         function fetchOrderDetails(orderId, type, loadingRequestText) {
             if (orderId) {

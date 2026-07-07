@@ -130,7 +130,7 @@
                     <div class="form-group">
                         <label class="form-label">Comission RS per KG:</label>
                         <input type="number" name="commission_per_kg" id="commission_per_kg" class="form-control"
-                            step="0.01" min="0" value="0">
+                            step="0.0001" min="0" value="0">
                     </div>
                 </div>
                 <div class="col-md-3">
@@ -1089,7 +1089,7 @@
 
         if (ratePerKg > 0 && qty > 0) {
             const commissionInRs = (percent / 100) * (ratePerKg * qty);
-            $('#commission_per_kg').val(commissionInRs.toFixed(2));
+            $('#commission_per_kg').val(commissionInRs.toFixed(4));
         } else {
             $('#commission_per_kg').val('0');
         }
