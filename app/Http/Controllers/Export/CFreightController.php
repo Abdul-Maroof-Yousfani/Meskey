@@ -35,7 +35,10 @@ class CFreightController extends Controller
 
     public function create(): View
     {
-        $exportOrders = ExportOrder::latest()->get();
+        $exportOrders = ExportOrder::where('am_approval_status', 'approved')
+            ->whereNotIn('id', function($q) {
+                $q->select('export_order_id')->from('export_order_addendums');
+            })->latest()->get();
         return view('management.export.c-freight.create', compact('exportOrders'));
     }
 

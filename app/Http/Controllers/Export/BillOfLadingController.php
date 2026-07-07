@@ -386,6 +386,9 @@ class BillOfLadingController extends Controller
 
         return ExportOrder::with(['buyer'])
             ->where('am_approval_status', 'approved')
+            ->whereNotIn('id', function($q) {
+                $q->select('export_order_id')->from('export_order_addendums');
+            })
             ->whereHas('deliveryOrders.delivery_challans', function ($q) use ($takenChallanIds) {
                 $q->whereNotIn('delivery_challans.id', $takenChallanIds)
                     ->where('delivery_challans.am_approval_status', 'approved');

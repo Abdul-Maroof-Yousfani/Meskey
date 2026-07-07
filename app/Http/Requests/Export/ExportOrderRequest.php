@@ -86,12 +86,57 @@ class ExportOrderRequest extends FormRequest
             'application_law' => ['required', 'string'],
             'confidentiality' => ['required', 'string'],
 
-            'discharge_rate' => ['required', 'string'],
-            'discharge_shex_eiu' => ['required', 'string'],
-            'minimum_daily_rate' => ['required', 'string'],
-            'minimum_daily_shex_eiu' => ['required', 'string'],
+            'discharge_rate' => [
+                Rule::requiredIf(function () {
+                    if (strcasecmp($this->packing_type, 'In Bulk') !== 0) return false;
+                    $incoterm = \App\Models\Export\IncoTerm::find($this->incoterm_id);
+                    return $incoterm && (stripos($incoterm->name, 'CIF') !== false || stripos($incoterm->name, 'CNF') !== false);
+                }),
+                'nullable', 'string'
+            ],
+            'discharge_term_type' => [
+                Rule::requiredIf(function () {
+                    if (strcasecmp($this->packing_type, 'In Bulk') !== 0) return false;
+                    $incoterm = \App\Models\Export\IncoTerm::find($this->incoterm_id);
+                    return $incoterm && (stripos($incoterm->name, 'CIF') !== false || stripos($incoterm->name, 'CNF') !== false || stripos($incoterm->name, 'C&F') !== false);
+                }),
+                'nullable', 'string'
+            ],
+            'discharge_shex_eiu' => [
+                Rule::requiredIf(function () {
+                    if (strcasecmp($this->packing_type, 'In Bulk') !== 0) return false;
+                    $incoterm = \App\Models\Export\IncoTerm::find($this->incoterm_id);
+                    return $incoterm && (stripos($incoterm->name, 'CIF') !== false || stripos($incoterm->name, 'CNF') !== false || stripos($incoterm->name, 'C&F') !== false);
+                }),
+                'nullable', 'string'
+            ],
+            
+            'minimum_daily_rate' => [
+                Rule::requiredIf(function () {
+                    if (strcasecmp($this->packing_type, 'In Bulk') !== 0) return false;
+                    $incoterm = \App\Models\Export\IncoTerm::find($this->incoterm_id);
+                    return $incoterm && stripos($incoterm->name, 'FOB') !== false;
+                }),
+                'nullable', 'string'
+            ],
+            'load_term_type' => [
+                Rule::requiredIf(function () {
+                    if (strcasecmp($this->packing_type, 'In Bulk') !== 0) return false;
+                    $incoterm = \App\Models\Export\IncoTerm::find($this->incoterm_id);
+                    return $incoterm && stripos($incoterm->name, 'FOB') !== false;
+                }),
+                'nullable', 'string'
+            ],
+            'minimum_daily_shex_eiu' => [
+                Rule::requiredIf(function () {
+                    if (strcasecmp($this->packing_type, 'In Bulk') !== 0) return false;
+                    $incoterm = \App\Models\Export\IncoTerm::find($this->incoterm_id);
+                    return $incoterm && stripos($incoterm->name, 'FOB') !== false;
+                }),
+                'nullable', 'string'
+            ],
             'fob_account' => [
-                \Illuminate\Validation\Rule::requiredIf(function () {
+                Rule::requiredIf(function () {
                     $incoterm = \App\Models\Export\IncoTerm::find($this->incoterm_id);
                     return $incoterm && stripos($incoterm->name, 'FOB') !== false;
                 }),

@@ -73,7 +73,11 @@ class ExportLoadingProgramController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $exportOrders = ExportOrder::where('am_approval_status', 'approved')->whereIn('id', $request->export_order_id)->get();
+        $exportOrders = ExportOrder::where('am_approval_status', 'approved')
+            ->whereNotIn('id', function($q) {
+                $q->select('export_order_id')->from('export_order_addendums');
+            })
+            ->whereIn('id', $request->export_order_id)->get();
         $exportOrder = $exportOrders->first();
         $deliveryOrders = DeliveryOrder::with('locations')->whereIn('id', $request->delivery_order_id)->get();
 
@@ -171,6 +175,9 @@ class ExportLoadingProgramController extends Controller
             : array_filter(explode(',', (string) $loadingProgram->company_locations));
 
         $ExportOrders = ExportOrder::query()
+            ->whereNotIn('id', function($q) {
+                $q->select('export_order_id')->from('export_order_addendums');
+            })
             ->with([
                 'deliveryOrders' => function ($q) {
                     $q->where('am_approval_status', 'approved');
@@ -229,7 +236,11 @@ class ExportLoadingProgramController extends Controller
                 return response()->json(['errors' => $validator->errors()], 422);
             }
 
-            $exportOrders = ExportOrder::where('am_approval_status', 'approved')->whereIn('id', $request->export_order_id)->get();
+            $exportOrders = ExportOrder::where('am_approval_status', 'approved')
+                ->whereNotIn('id', function($q) {
+                    $q->select('export_order_id')->from('export_order_addendums');
+                })
+                ->whereIn('id', $request->export_order_id)->get();
             $exportOrder = $exportOrders->first();
             $deliveryOrders = DeliveryOrder::with('locations')->whereIn('id', $request->delivery_order_id)->get();
 
@@ -478,6 +489,9 @@ class ExportLoadingProgramController extends Controller
             ->toArray();
 
         $exportOrders = ExportOrder::where('am_approval_status', 'approved')
+            ->whereNotIn('id', function($q) {
+                $q->select('export_order_id')->from('export_order_addendums');
+            })
             ->whereIn('id', $exportOrderIds)
             ->get()
             ->map(function ($eo) {
@@ -499,6 +513,9 @@ class ExportLoadingProgramController extends Controller
         $company_location_id = $request->company_location_id;
 
         $ExportOrders = ExportOrder::with(['packingItems', 'deliveryOrders'])
+            ->whereNotIn('id', function($q) {
+                $q->select('export_order_id')->from('export_order_addendums');
+            })
             ->where('am_approval_status', 'approved')
             ->whereIn('id', $export_order_ids)
             ->get();

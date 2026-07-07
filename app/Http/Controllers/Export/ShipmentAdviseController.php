@@ -287,6 +287,9 @@ class ShipmentAdviseController extends PackingListController
             ->all();
 
         return ExportOrder::with(['buyer'])
+            ->whereNotIn('id', function($q) {
+                $q->select('export_order_id')->from('export_order_addendums');
+            })
             ->whereHas('packingLists', function ($query) use ($takenIds) {
                 $query->when(!empty($takenIds), function ($subQuery) use ($takenIds) {
                     $subQuery->whereNotIn('id', $takenIds);

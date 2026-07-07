@@ -344,6 +344,9 @@ class PackingListController extends CommercialInvoiceController
             ->all();
 
         return ExportOrder::with(['buyer'])
+            ->whereNotIn('id', function($q) {
+                $q->select('export_order_id')->from('export_order_addendums');
+            })
             ->whereHas('commercialInvoices', function ($query) use ($takenInvoiceIds) {
                 $query->when(!empty($takenInvoiceIds), function ($subQuery) use ($takenInvoiceIds) {
                     $subQuery->whereNotIn('id', $takenInvoiceIds);

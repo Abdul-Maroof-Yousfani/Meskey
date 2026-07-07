@@ -994,6 +994,13 @@
                         </li>
 
                         <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                href="{{ route('export-order-addendum.index') }}"
+                                onclick="loadPageContent('{{ route('export-order-addendum.index') }}')"
+                                data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                    data-i18n="Extended">Addendum</span></a>
+                        </li>
+
+                        <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                 href="{{ route('bill-of-lading.index') }}"
                                 onclick="loadPageContent('{{ route('bill-of-lading.index') }}')"
                                 data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
