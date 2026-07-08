@@ -83,13 +83,22 @@
                         <input type="text" name="so_reference_no" id="so_reference_no" class="form-control">
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Transporter used:</label>
                         <select name="transporter_used" id="transporter_used" class="form-control select2">
                             <option value="no">No</option>
                             <option value="yes">Yes</option>
                         </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="form-label">Payment on Kaanta:</label>
+                        <div class="custom-control custom-checkbox mt-2">
+                            <input type="checkbox" class="custom-control-input" id="payment_on_kaanta" name="payment_on_kaanta" value="1">
+                            <label class="custom-control-label" for="payment_on_kaanta">Create DO Automatically</label>
+                        </div>
                     </div>
                 </div>
 

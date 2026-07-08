@@ -112,7 +112,7 @@ class DeliveryOrderController extends Controller
                 'withhold_amount' => $request->withhold_amount ?? 0,
                 'withhold_for_rv_id' => $withhold_rv_id,
                 'dispatch_date' => $request->dispatch_date,
-                'reference_no' => self::getNumber($request, null, $request->dispatch_date),
+                'reference_no' => $this->getNumber($request, null, $request->dispatch_date),
                 'ref_no' => $request->ref_no,
                 'payment_term_id' => $request->payment_term_id ?? (PaymentTerm::first())->id,
                 'sauda_type' => $request->sauda_type,

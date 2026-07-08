@@ -343,7 +343,7 @@ if (!function_exists("getLoadingProgramBalance")) {
         
         // Get all items and their linked DOs to perform global FIFO allocation
         // We order by ID to ensure a consistent FIFO sequence for items
-        $allItems = LoadingProgramItem::with('deliveryOrders')
+        $allItems = LoadingProgramItem::with(['deliveryOrders', 'secondWeighbridge'])
             ->when($excludeItemIds, function($q) use ($excludeItemIds) {
                 if (is_array($excludeItemIds)) {
                     return $q->whereNotIn('id', $excludeItemIds);
@@ -376,6 +376,8 @@ if (!function_exists("getLoadingProgramBalance")) {
             $doUsed[$d->id] = 0;
         }
         
+        $dosDict = $dos->keyBy('id');
+
         foreach ($allItems as $item) {
             $linkedDos = $item->deliveryOrders->sortBy('id')->pluck('id')->toArray();
             if (empty($linkedDos) && $item->delivery_order_id) {
@@ -383,6 +385,17 @@ if (!function_exists("getLoadingProgramBalance")) {
             }
             
             $remainingQty = $item->qty;
+            if ($item->secondWeighbridge) {
+                $isExport = false;
+                if (!empty($linkedDos) && isset($dosDict[$linkedDos[0]])) {
+                    $isExport = $dosDict[$linkedDos[0]]->type == 'export_order';
+                }
+                
+                $remainingQty = $isExport 
+                    ? ($item->secondWeighbridge->net_weight / 1000)
+                    : $item->secondWeighbridge->net_weight;
+            }
+
             foreach ($linkedDos as $d_id) {
                 if (!isset($doCapacities[$d_id])) continue;
                 

@@ -485,6 +485,7 @@ class DispatchQCController extends Controller
                 $orders[] = [
                     'type' => 'DO',
                     'number' => $do->reference_no,
+                    'is_auto' => $do->is_auto_created_from_so,
                     'customer' => $do->customer->name ?? '',
                     'commodity' => $do->delivery_order_data->first()->item->name ?? '',
                     'so_qty' => $do->delivery_order_data->sum(function ($d) {
@@ -512,6 +513,7 @@ class DispatchQCController extends Controller
             $orders[] = [
                 'type' => 'DO',
                 'number' => $do->reference_no,
+                'is_auto' => $do->is_auto_created_from_so,
                 'customer' => $do->customer->name ?? '',
                 'commodity' => $do->delivery_order_data->first()->item->name ?? '',
                 'so_qty' => $do->delivery_order_data->sum(function ($d) {

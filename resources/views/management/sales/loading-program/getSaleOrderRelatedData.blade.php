@@ -69,6 +69,9 @@
                     <li class="nav-item do-tab-item" data-do-id="{{ $do->id }}" style="flex: 0 0 auto; display: none;">
                         <a class="nav-link" id="do-tab-{{ $do->id }}" data-toggle="pill" href="#do-content-{{ $do->id }}" role="tab" aria-controls="do-content-{{ $do->id }}">
                             {{ $do->reference_no }}
+                            @if($do->is_auto_created_from_so)
+                                <span class="badge badge-warning" style="font-size: 0.6rem;">Auto</span>
+                            @endif
                         </a>
                     </li>
                 @endforeach
@@ -116,7 +119,8 @@
         
         @foreach($DeliveryOrders as $deliveryOrder)
             var selected = currentSelectedDeliveryOrders.includes('{{ $deliveryOrder->id }}') ? 'selected' : '';
-            $('#delivery_order_id').append('<option value="{{ $deliveryOrder->id }}" ' + selected + '>{{ $deliveryOrder->reference_no }}</option>');
+            var autoText = '{{ $deliveryOrder->is_auto_created_from_so ? " (Auto)" : "" }}';
+            $('#delivery_order_id').append('<option value="{{ $deliveryOrder->id }}" ' + selected + '>{{ $deliveryOrder->reference_no }}' + autoText + '</option>');
         @endforeach
         $('#delivery_order_id').trigger('change');
 

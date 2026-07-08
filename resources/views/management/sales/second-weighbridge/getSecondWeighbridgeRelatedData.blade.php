@@ -1,3 +1,11 @@
+@if(isset($isAutoDo) && $isAutoDo)
+    <div class="col-12 mb-3">
+        <div class="alert alert-danger mb-0">
+            <strong>Not Allowed:</strong> This ticket is linked to an Auto-Generated Delivery Order. Only actual DO can be passed to Second Weighbridge.
+        </div>
+    </div>
+@endif
+
 <div class="col-12">
     <h6 class="header-heading-sepration">
         Loading Slip Details
@@ -15,7 +23,7 @@
                 <option value="">Select Delivery Order</option>
                 @foreach($deliveryOrders as $deliveryOrder)
                     <option value="{{ $deliveryOrder->id }}">
-                        {{ $deliveryOrder->reference_no }} - {{ $deliveryOrder->customer->name ?? 'N/A' }}
+                        {{ $deliveryOrder->reference_no }}{{ $deliveryOrder->is_auto_created_from_so ? " (Auto)" : "" }} - {{ $deliveryOrder->customer->name ?? 'N/A' }}
                     </option>
                 @endforeach
             </select>
@@ -59,6 +67,7 @@
                 'id' => $do->id,
                 'type' => 'DO',
                 'number' => $do->reference_no,
+                'is_auto' => $do->is_auto_created_from_so,
                 'customer' => $do->customer->name ?? '',
                 'commodity' => $do->delivery_order_data->first()->item->name ?? '',
                 'so_qty' => $do->delivery_order_data->sum(function ($d) {
@@ -79,6 +88,7 @@
                     $orders[] = [
                         'type' => 'SO',
                         'number' => $so->reference_no,
+                        'is_auto' => false,
                         'customer' => $so->customer->name ?? '',
                         'commodity' => $so->sales_order_data->first()->item->name ?? '',
                         'so_qty' => $so->sales_order_data->sum('qty'),
@@ -93,6 +103,7 @@
                 $orders[] = [
                     'type' => 'SO',
                     'number' => $so->reference_no,
+                    'is_auto' => false,
                     'customer' => $so->customer->name ?? '',
                     'commodity' => $so->sales_order_data->first()->item->name ?? '',
                     'so_qty' => $so->sales_order_data->sum('qty'),
@@ -132,6 +143,9 @@
                         aria-controls="wb-pane-{{ $modalIdentifier }}-{{ $index }}"
                         aria-selected="{{ $index === 0 ? 'true' : 'false' }}">
                         {{ $order['type'] }}: {{ $order['number'] }}
+                        @if($order['is_auto'])
+                            <span class="badge badge-warning" style="font-size: 0.6rem;">Auto</span>
+                        @endif
                     </a>
                 </li>
             @endforeach
@@ -299,6 +313,14 @@
     $(document).ready(function () {
         $('.select2').select2();
 
+        @if(isset($isAutoDo) && $isAutoDo)
+            $('.submitbutton').prop('disabled', true);
+            $('#second_weight').prop('readonly', true);
+        @else
+            $('.submitbutton').prop('disabled', false);
+            $('#second_weight').prop('readonly', false);
+        @endif
+
         // Calculate net weight when second weight changes
         $('#second_weight').on('input', function () {
             const firstWeight = parseFloat($('#first_weight_display').val()) || 0;
@@ -319,7 +341,9 @@
             } else {
                 $(this).removeClass('is-invalid');
                 $(this).next('.invalid-feedback').remove();
-                $('.submitbutton').prop('disabled', false);
+                @if(!isset($isAutoDo) || !$isAutoDo)
+                    $('.submitbutton').prop('disabled', false);
+                @endif
             }
         });
     });

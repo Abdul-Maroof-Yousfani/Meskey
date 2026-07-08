@@ -423,6 +423,7 @@ class SalesQcController extends Controller
                 $orders[] = [
                     'type' => 'DO',
                     'number' => $do->reference_no,
+                    'is_auto' => $do->is_auto_created_from_so,
                     'customer' => $do->customer->name ?? '',
                     'commodity' => $do->delivery_order_data->first()->item->name ?? '',
                     'so_qty' => $do->delivery_order_data->sum(function($d) { return $d->salesOrderData->qty ?? 0; }),
@@ -448,6 +449,7 @@ class SalesQcController extends Controller
             $orders[] = [
                 'type' => 'DO',
                 'number' => $do->reference_no,
+                'is_auto' => $do->is_auto_created_from_so,
                 'customer' => $do->customer->name ?? '',
                 'commodity' => $do->delivery_order_data->first()->item->name ?? '',
                 'so_qty' => $do->delivery_order_data->sum(function($d) { return $d->salesOrderData->qty ?? 0; }),

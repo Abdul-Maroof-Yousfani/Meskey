@@ -39,7 +39,8 @@ class SalesOrder extends Model
         "broker_id",
         "parent_user_id",
         "commission_per_kg",
-        "receipt_voucher_item_ids"
+        "receipt_voucher_item_ids",
+        "payment_on_kaanta"
     ];
 
     protected $casts = [
@@ -110,5 +111,69 @@ class SalesOrder extends Model
 
     public function broker() {
         return $this->belongsTo(\App\Models\Master\Broker::class, "broker_id");
+    }
+
+    protected static function booted()
+    {
+        static::updated(function ($salesOrder) {
+            if ($salesOrder->isDirty('am_approval_status') && $salesOrder->am_approval_status === 'approved') {
+                if ($salesOrder->payment_on_kaanta) {
+                    self::autoCreateDeliveryOrder($salesOrder);
+                }
+            }
+        });
+    }
+
+    private static function autoCreateDeliveryOrder(SalesOrder $salesOrder)
+    {
+        $exists = \App\Models\Sales\DeliveryOrder::where('so_id', $salesOrder->id)
+            ->where('is_auto_created_from_so', true)
+            ->exists();
+
+        if ($exists) {
+            return;
+        }
+
+        $companyLocation = $salesOrder->locations->first();
+        
+        $deliveryOrder = \App\Models\Sales\DeliveryOrder::create([
+            'customer_id' => $salesOrder->customer_id,
+            'so_id' => $salesOrder->id,
+            'advance_amount' => 0,
+            'withhold_amount' => 0,
+            'withhold_for_rv_id' => null,
+            'dispatch_date' => $salesOrder->order_date,
+            'reference_no' => app(\App\Http\Controllers\Sales\DeliveryOrderController::class)->getNumber(new \Illuminate\Http\Request(), null, $salesOrder->order_date),
+            'ref_no' => null,
+            'payment_term_id' => $salesOrder->payment_term_id ?? (\App\Models\PaymentTerm::first())->id,
+            'sauda_type' => $salesOrder->sauda_type,
+            'location_id' => $companyLocation ? $companyLocation->location_id : null,
+            'arrival_location_id' => $salesOrder->arrival_location_id,
+            'sub_arrival_location_id' => $salesOrder->arrival_sub_location_id,
+            'delivery_date' => $salesOrder->delivery_date,
+            'line_desc' => "Auto-generated from Payment on Kaanta SO",
+            'remarks' => "Auto-generated from Payment on Kaanta SO",
+            'company_id' => $salesOrder->company_id,
+            'created_by' => $salesOrder->created_by,
+            'am_approval_status' => 'approved',
+            'so_withhold_percentage' => 0,
+            'so_held_amount' => 0,
+            'is_auto_created_from_so' => true
+        ]);
+
+        foreach ($salesOrder->sales_order_data as $soData) {
+            $deliveryOrder->delivery_order_data()->create([
+                'item_id' => $soData->item_id,
+                'qty' => $soData->qty,
+                'rate' => $soData->rate,
+                'brand_id' => $soData->brand_id,
+                'bag_type' => $soData->bag_type,
+                'bag_size' => $soData->bag_size,
+                'no_of_bags' => $soData->no_of_bags,
+                'pack_size' => $soData->pack_size,
+                'so_data_id' => $soData->id,
+                "description" => $soData->description ?? ""
+            ]);
+        }
     }
 }

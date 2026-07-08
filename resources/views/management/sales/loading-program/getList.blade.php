@@ -31,11 +31,20 @@
                     }
                     $soReferences = array_unique(array_filter($soReferences));
 
-                    $doReferences = $loadingProgram->deliveryOrders->pluck('reference_no')->toArray();
-                    if ($loadingProgram->deliveryOrder && !in_array($loadingProgram->deliveryOrder->reference_no, $doReferences)) {
-                        array_unshift($doReferences, $loadingProgram->deliveryOrder->reference_no);
+                    $doReferences = [];
+                    foreach ($loadingProgram->deliveryOrders as $do) {
+                        $doReferences[$do->reference_no] = [
+                            'ref' => $do->reference_no,
+                            'is_auto' => $do->is_auto_created_from_so
+                        ];
                     }
-                    $doReferences = array_unique(array_filter($doReferences));
+                    if ($loadingProgram->deliveryOrder) {
+                        $doReferences[$loadingProgram->deliveryOrder->reference_no] = [
+                            'ref' => $loadingProgram->deliveryOrder->reference_no,
+                            'is_auto' => $loadingProgram->deliveryOrder->is_auto_created_from_so
+                        ];
+                    }
+                    $doReferences = array_values($doReferences);
 
                     $customerNames = $loadingProgram->saleOrders->pluck('customer.name')->toArray();
                     if ($loadingProgram->saleOrder && !in_array($loadingProgram->saleOrder->customer->name, $customerNames)) {
@@ -68,8 +77,13 @@
                                     @endforelse
                                 </td>
                                 <td rowspan="{{ $rowspan }}" style="background-color: #e8f5e8; vertical-align: middle;">
-                                    @forelse($doReferences as $ref)
-                                        <div class="badge badge-success mb-1 d-block">{{ $ref }}</div>
+                                    @forelse($doReferences as $doItem)
+                                        <div class="badge badge-success mb-1 d-block">
+                                            {{ $doItem['ref'] }}
+                                            @if($doItem['is_auto'])
+                                                <span class="badge badge-warning ml-1">Auto</span>
+                                            @endif
+                                        </div>
                                     @empty
                                         N/A
                                     @endforelse
@@ -109,7 +123,7 @@
                                 </td>
                                 <td rowspan="{{ $rowspan }}" style="vertical-align: middle;">
                                     <div class="d-flex gap-1">
-                                        @if($loadingProgram?->loadingProgramItems()->whereDoesntHave("firstWeighbridge")->count() > 0)
+                                        @if($loadingProgram?->loadingProgramItems()->whereDoesntHave("secondWeighbridge")->count() > 0)
                                         <a onclick="openModal(this,'{{ route('sales.loading-program.edit', $loadingProgram->id) }}','Edit Loading Program', false, '90%')"
                                                 class="warning p-1 text-center mr-1 position-relative" title="Edit">
                                                 <i class="ft-edit font-medium-3"></i>

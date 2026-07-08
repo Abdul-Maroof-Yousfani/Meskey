@@ -41,7 +41,7 @@
                 <select class="form-control select2" name="delivery_order_id[]" id="delivery_order_id" multiple>
                     {{-- Options will be populated via AJAX --}}
                     @foreach($LoadingProgram->deliveryOrders as $do)
-                        <option value="{{ $do->id }}" selected>{{ $do->reference_no }}</option>
+                        <option value="{{ $do->id }}" selected>{{ $do->reference_no }}{{ $do->is_auto_created_from_so ? " (Auto)" : "" }}</option>
                     @endforeach
                 </select>
                 <small id="delivery_order_optional_note" class="text-muted" style="display: none;">
@@ -161,10 +161,11 @@
                         @forelse($LoadingProgram->loadingProgramItems as $index => $item)
                             <tr class="item-row" data-index="{{ $index }}" data-item-id="{{ $item->id }}">
                                 <td>
-                                    <div @if($item->firstWeighbridge) data-toggle="tooltip" title="Locked: Ticket already in Weighbridge" @endif>
+                                    <input type="hidden" name="loading_program_items[{{ $index }}][id]" value="{{ $item->id }}">
+                                    <div @if($item->secondWeighbridge) data-toggle="tooltip" title="Locked: Ticket already in Second Weighbridge" @endif>
                                         <select name="loading_program_items[{{ $index }}][sale_order_id][]"
                                             class="form-control form-control-sm select2 row-so-select"
-                                            multiple @disabled($item->firstWeighbridge)>
+                                            multiple @disabled($item->secondWeighbridge)>
                                             @foreach ($LoadingProgram->saleOrders as $so)
                                                 <option value="{{ $so->id }}" data-type="{{ $so->pay_type_id }}" @selected($item->saleOrders->contains($so->id))>
                                                     {{ $so->reference_no }}
@@ -177,7 +178,7 @@
                                         <div class="row-do-container">
                                             <select name="loading_program_items[{{ $index }}][delivery_order_id][]"
                                                 class="form-control form-control-sm select2 delivery-order-select"
-                                                multiple @disabled($item->firstWeighbridge)>
+                                                multiple @disabled($item->secondWeighbridge)>
                                                 @php
                                                     $itemSoIds = $item->saleOrders->pluck('id')->toArray();
                                                     $rowDos = \App\Models\Sales\DeliveryOrder::whereIn('so_id', $itemSoIds)->where('am_approval_status', 'approved')->get();
@@ -190,7 +191,7 @@
                                                 @foreach ($rowDos as $do)
                                                     @if (in_array($do->id, $mainSelectedDoIds))
                                                         <option value="{{ $do->id }}" @selected($item->deliveryOrders->contains($do->id))>
-                                                            {{ $do->reference_no }}
+                                                            {{ $do->reference_no }}{{ $do->is_auto_created_from_so ? " (Auto)" : "" }}
                                                         </option>
                                                     @endif
                                                 @endforeach
@@ -200,41 +201,41 @@
                                 </td>
                                 <td>
                                     <div
-                                        @if($item->firstWeighbridge)
+                                        @if($item->secondWeighbridge)
                                             data-toggle="tooltip"
-                                            title="You cannot update information because Ticket is already passed to first Weighbridge"
+                                            title="You cannot update information because Ticket is already passed to second Weighbridge"
                                             data-placement="left"
                                         @endif
                                     >
                                         <input type="text"
                                             name="loading_program_items[{{ $index }}][truck_number]"
                                             class="form-control form-control-sm" required
-                                            value="{{ $item->truck_number }}" @disabled($item->firstWeighbridge)>
+                                            value="{{ $item->truck_number }}" @disabled($item->secondWeighbridge)>
                                         <input type="hidden"
                                             name="loading_program_items[{{ $index }}][transaction_number]"
                                             class="form-control form-control-sm" required
-                                            value="{{ $item->transaction_number }}" @disabled($item->firstWeighbridge)>
+                                            value="{{ $item->transaction_number }}" @disabled($item->secondWeighbridge)>
                                     </div>
                                 </td>
                                 <td>
                                     <div
-                                        @if($item->firstWeighbridge)
+                                        @if($item->secondWeighbridge)
                                             data-toggle="tooltip"
-                                            title="You cannot update information because Ticket is already passed to first Weighbridge"
+                                            title="You cannot update information because Ticket is already passed to second Weighbridge"
                                             data-placement="left"
                                         @endif
                                     >
                                     <input type="text"
                                         name="loading_program_items[{{ $index }}][container_number]"
                                         class="form-control form-control-sm"
-                                        value="{{ $item->container_number }}" @disabled($item->firstWeighbridge)>
+                                        value="{{ $item->container_number }}" @disabled($item->secondWeighbridge)>
                                     </div>
                                 </td>
                                 <td>
                                     <div
-                                        @if($item->firstWeighbridge)
+                                        @if($item->secondWeighbridge)
                                             data-toggle="tooltip"
-                                            title="You cannot update information because Ticket is already passed to first Weighbridge"
+                                            title="You cannot update information because Ticket is already passed to second Weighbridge"
                                             data-placement="left"
                                         @endif
                                     >
@@ -251,9 +252,9 @@
                                 </td>
                                 <td>
                                     <div
-                                        @if($item->firstWeighbridge)
+                                        @if($item->secondWeighbridge)
                                             data-toggle="tooltip"
-                                            title="You cannot update information because Ticket is already passed to first Weighbridge"
+                                            title="You cannot update information because Ticket is already passed to second Weighbridge"
                                             data-placement="left"
                                         @endif
                                     >
@@ -275,15 +276,15 @@
                                 </td>
                                 <td>
                                     <div
-                                        @if($item->firstWeighbridge)
+                                        @if($item->secondWeighbridge)
                                             data-toggle="tooltip"
-                                            title="You cannot update information because Ticket is already passed to first Weighbridge"
+                                            title="You cannot update information because Ticket is already passed to second Weighbridge"
                                             data-placement="left"
                                         @endif
                                     >
                                         <select name="loading_program_items[{{ $index }}][arrival_location_id]"
                                             class="form-control form-control-sm select2 arrival-location-select" required
-                                            data-arrival="{{ $item->arrival_location_id }}" @disabled($item->firstWeighbridge)>
+                                            data-arrival="{{ $item->arrival_location_id }}" @disabled($item->secondWeighbridge)>
                                             <option value="">Select Location</option>
                                             @foreach($locations[1] as $factory)
                                                 <option value="{{ $factory["id"] }}" @selected($item->arrival_location_id == $factory["id"])>{{ $factory["text"] }}</option>
@@ -293,15 +294,15 @@
                                 </td>
                                 <td>
                                     <div
-                                        @if($item->firstWeighbridge)
+                                        @if($item->secondWeighbridge)
                                             data-toggle="tooltip"
-                                            title="You cannot update information because Ticket is already passed to first Weighbridge"
+                                            title="You cannot update information because Ticket is already passed to second Weighbridge"
                                             data-placement="left"
                                         @endif
                                     >
                                         <select name="loading_program_items[{{ $index }}][sub_arrival_location_id]"
                                             class="form-control form-control-sm select2 sub-arrival-location-select"
-                                            required data-subarrival="{{ $item->sub_arrival_location_id }}" @disabled($item->firstWeighbridge)>
+                                            required data-subarrival="{{ $item->sub_arrival_location_id }}" @disabled($item->secondWeighbridge)>
                                             <option value="">Select Sub Location</option>
                                             @foreach($locations[2] as $section)
                                                 <option value="{{ $section["id"] }}" @selected($item->sub_arrival_location_id == $section["id"])>{{ $section["text"] }}</option>
@@ -311,42 +312,42 @@
                                 </td>
                                 <td>
                                     <div
-                                        @if($item->firstWeighbridge)
+                                        @if($item->secondWeighbridge)
                                             data-toggle="tooltip"
-                                            title="You cannot update information because Ticket is already passed to first Weighbridge"
+                                            title="You cannot update information because Ticket is already passed to second Weighbridge"
                                             data-placement="left"
                                         @endif
                                     >
                                         <input type="text"
                                             name="loading_program_items[{{ $index }}][driver_name]"
                                             class="form-control form-control-sm"
-                                            value="{{ $item->driver_name }}" @disabled($item->firstWeighbridge)>
+                                            value="{{ $item->driver_name }}" @disabled($item->secondWeighbridge)>
                                     </div>
                                 </td>
                                 <td>
                                     <div
-                                        @if($item->firstWeighbridge)
+                                        @if($item->secondWeighbridge)
                                             data-toggle="tooltip"
-                                            title="You cannot update information because Ticket is already passed to first Weighbridge"
+                                            title="You cannot update information because Ticket is already passed to second Weighbridge"
                                             data-placement="left"
                                         @endif
                                     >
                                         <input type="text"
                                             name="loading_program_items[{{ $index }}][contact_details]"
                                             class="form-control form-control-sm"
-                                            value="{{ $item->contact_details }}" @disabled($item->firstWeighbridge)>
+                                            value="{{ $item->contact_details }}" @disabled($item->secondWeighbridge)>
                                     </div>
                                 </td>
                                 <td>
                                     <div
-                                        @if($item->firstWeighbridge)
+                                        @if($item->secondWeighbridge)
                                             data-toggle="tooltip"
-                                            title="You cannot update information because Ticket is already passed to first Weighbridge"
+                                            title="You cannot update information because Ticket is already passed to second Weighbridge"
                                             data-placement="left"
                                         @endif
                                     >
                                         <select name="loading_program_items[{{ $index }}][transporter_id]" 
-                                            class="form-control form-control-sm select2 transporter-select" @disabled($item->firstWeighbridge)>
+                                            class="form-control form-control-sm select2 transporter-select" @disabled($item->secondWeighbridge)>
                                             @if($item->transporter_id)
                                                 <option value="{{ $item->transporter_id }}" selected>{{ $item->transporter?->name }}</option>
                                             @else
@@ -358,25 +359,25 @@
                                 </td>
                                 <td>
                                     <div
-                                        @if($item->firstWeighbridge)
+                                        @if($item->secondWeighbridge)
                                             data-toggle="tooltip"
-                                            title="You cannot update information because Ticket is already passed to first Weighbridge"
+                                            title="You cannot update information because Ticket is already passed to second Weighbridge"
                                             data-placement="left"
                                         @endif
                                     >
                                         <input type="number" name="loading_program_items[{{ $index }}][qty]"
                                             class="form-control form-control-sm qty-input" step="0.01"
-                                            value="{{ round($item->qty) }}" @disabled($item->firstWeighbridge)>
+                                            value="{{ round($item->qty) }}" @disabled($item->secondWeighbridge)>
                                     </div>
                                 </td>
                                 <td class="text-center">
                                     <button 
                                         type="button" 
                                         class="btn btn-sm btn-danger remove-item-btn" 
-                                        @disabled($item->firstWeighbridge)
-                                        @if($item->firstWeighbridge)
+                                        @disabled($item->secondWeighbridge)
+                                        @if($item->secondWeighbridge)
                                             data-toggle="tooltip"
-                                            title="You cannot update information because Ticket already in Weighbridge"
+                                            title="You cannot update information because Ticket already in Second Weighbridge"
                                         @endif
                                     >
                                         <i class="ft-trash-2"></i>
@@ -480,7 +481,7 @@
                 const rowSOIds = $row.find('.row-so-select').val() || [];
                 
                 // Re-bind handlers for existing rows
-                $row.find('.row-so-select').change(function() {
+                $row.find('.row-so-select').change(function(e, isInitialLoad) {
                     if (window.isUpdatingUI) return;
                     const soIds = $(this).val() || [];
                     const $doSelect = $row.find('.delivery-order-select');
@@ -491,6 +492,7 @@
                             data: { 
                                 sale_order_id: soIds,
                                 company_location_id: $('#main_company_location_id').val(),
+                                loading_program_id: '{{ $LoadingProgram->id }}',
                                 loading_program_item_id: $row.data('item-id')
                              },
                             success: function(response) {
@@ -507,7 +509,9 @@
                                     // Aggregate Packing and Brands
                                     const selectedDoIds = $doSelect.val() || [];
                                     const filteredDOs = response.delivery_orders.filter(d => selectedDoIds.includes(d.id.toString()));
-                                    updateRowMetadata($row, filteredDOs);
+                                    if (!isInitialLoad) {
+                                        updateRowMetadata($row, filteredDOs);
+                                    }
 
                                     // Update global transporters map
                                     if (response.transporters_map) {
@@ -516,7 +520,9 @@
                                     }
 
                                     window.isUpdatingUI = false;
-                                    updateItemLocations($row);
+                                    if (!isInitialLoad) {
+                                        updateItemLocations($row);
+                                    }
                                     updateRowDORequiredStatus($row);
                                     updateTransporterOptions($row);
                                     validateRowQty($row);
@@ -532,7 +538,9 @@
                     $row.find('.packing-hidden').val('');
                     $row.find('.brand-hidden').val('');
                     window.isUpdatingUI = false;
-                    updateItemLocations($row);
+                    if (!isInitialLoad) {
+                        updateItemLocations($row);
+                    }
                     updateRowDORequiredStatus($row);
                     updateTransporterOptions($row);
                 }
@@ -550,7 +558,7 @@
 
             // Trigger initial fetch for existing rows to populate data()
             if (rowSOIds.length > 0) {
-                $row.find('.row-so-select').trigger('change');
+                $row.find('.row-so-select').trigger('change', [true]);
             } else {
                 updateRowDORequiredStatus($row);
                 updateTransporterOptions($row);
@@ -927,7 +935,8 @@
                             $doSelect.append('<option value="">Select Delivery Order</option>');
                             response.delivery_orders.forEach(do_item => {
                                 if (selectedGlobalDoIds.includes(do_item.id.toString())) {
-                                    $doSelect.append(new Option(do_item.reference_no, do_item.id, false, currentDOVals.includes(do_item.id.toString())));
+                                    const doText = do_item.reference_no + (do_item.is_auto_created_from_so ? " (Auto)" : "");
+                                    $doSelect.append(new Option(doText, do_item.id, false, currentDOVals.includes(do_item.id.toString())));
                                 }
                             });
                             $doSelect.trigger('change.select2');
