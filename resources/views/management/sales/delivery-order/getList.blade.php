@@ -25,6 +25,9 @@
                                     <td rowspan="{{ $group['rowspan'] }}" class="align-middle text-center font-weight-bold" style="background-color: #e3f2fd;">
                                         <div class="p-2">
                                             #{{ $group['so_no'] }}
+                                            @if(isset($group['sale_order']) && $group['sale_order']->is_auto_created_from_so)
+                                                <span class="badge badge-warning" style="font-size: 0.7rem;">Auto</span>
+                                            @endif
                                             <br>
                                             <small class="text-muted">
                                                 {{ \Carbon\Carbon::parse($group['created_at'])->format('d M Y') }}

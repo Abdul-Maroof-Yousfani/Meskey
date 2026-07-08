@@ -43,6 +43,7 @@ class SalesOrderRequest extends FormRequest
             "remarks" => "nullable",
             "contact_person" => "nullable|string|max:255",
             "commission_per_kg" => "nullable|numeric|min:0",
+            "payment_on_kaanta" => "nullable|boolean",
             "arrival_location_id" => "nullable|array",
             "arrival_location_id.*" => "integer|exists:arrival_locations,id",
             "arrival_sub_location_id" => "nullable|array",

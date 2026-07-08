@@ -104,11 +104,12 @@
             var selectedAttr = index === 0 ? 'true' : 'false';
             var tabId = `order-tab-${index}`;
             var contentId = `order-content-${index}`;
+            var autoBadge = order.is_auto ? '<span class="badge badge-warning" style="font-size: 0.6rem;">Auto</span>' : '';
 
             tabsHtml += `
                 <li class="nav-item">
                     <a class="nav-link ${activeClass}" id="${tabId}" data-toggle="tab" href="#${contentId}" role="tab" aria-controls="${contentId}" aria-selected="${selectedAttr}">
-                        ${order.type}: ${order.number}
+                        ${order.type}: ${order.number} ${autoBadge}
                     </a>
                 </li>
             `;

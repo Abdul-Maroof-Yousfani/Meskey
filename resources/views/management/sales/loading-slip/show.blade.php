@@ -29,6 +29,7 @@
                     $orders[] = [
                         'type' => 'DO',
                         'number' => $do->reference_no,
+                        'is_auto' => $do->is_auto_created_from_so,
                         'customer' => $do->customer->name ?? '',
                         'commodity' => $do->delivery_order_data->first()->item->name ?? '',
                         'so_qty' => $do->delivery_order_data->sum(function($d) { return $d->salesOrderData->qty ?? 0; }),
@@ -55,6 +56,7 @@
                 $orders[] = [
                     'type' => 'DO',
                     'number' => $do->reference_no,
+                    'is_auto' => $do->is_auto_created_from_so,
                     'customer' => $do->customer->name ?? '',
                     'commodity' => $do->delivery_order_data->first()->item->name ?? '',
                     'so_qty' => $do->delivery_order_data->sum(function($d) { return $d->salesOrderData->qty ?? 0; }),
@@ -107,6 +109,9 @@
                     <li class="nav-item">
                         <a class="nav-link {{ $index === 0 ? 'active' : '' }}" id="order-tab-{{ $index }}" data-toggle="tab" href="#order-content-{{ $index }}" role="tab" aria-controls="order-content-{{ $index }}" aria-selected="{{ $index === 0 ? 'true' : 'false' }}">
                             {{ $order['type'] }}: {{ $order['number'] }}
+                            @if(!empty($order['is_auto']))
+                                <span class="badge badge-warning" style="font-size: 0.6rem;">Auto</span>
+                            @endif
                         </a>
                     </li>
                 @endforeach

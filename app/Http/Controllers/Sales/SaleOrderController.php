@@ -141,6 +141,7 @@ class SaleOrderController extends Controller
         $payload["payment_term_id"] = !$request->payment_term_id ? PaymentTerm::first()->id : $request->payment_term_id;
         $payload["commission_per_kg"] = $request->commission_per_kg ?? 0;
         $payload["receipt_voucher_item_ids"] = $request->receipt_voucher_item_ids ?? null;
+        $payload["payment_on_kaanta"] = $request->has('payment_on_kaanta') ? 1 : 0;
 
         $soTotal = array_sum($request->amount ?? []);
         if ($request->pay_type_id == 10 && $request->receipt_voucher_item_ids) { // Advanced
@@ -294,6 +295,7 @@ class SaleOrderController extends Controller
             $payload["payment_term_id"] = !$request->payment_term_id ? PaymentTerm::first()->id : $request->payment_term_id;
             $payload["commission_per_kg"] = $request->commission_per_kg ?? 0;
             $payload["receipt_voucher_item_ids"] = $request->receipt_voucher_item_ids;
+            $payload["payment_on_kaanta"] = $request->has('payment_on_kaanta') ? 1 : 0;
 
             // Update parent sale order data
             $sales_order->update($payload);
