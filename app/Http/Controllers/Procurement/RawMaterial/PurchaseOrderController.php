@@ -13,6 +13,7 @@ use App\Models\Procurement\PurchaseOrder;
 use App\Models\Product;
 use App\Models\Master\ProductSlabForRmPo;
 use App\Models\Master\Supplier;
+use App\Models\SaudaType;
 use App\Models\TruckSizeRange;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -320,6 +321,8 @@ class PurchaseOrderController extends Controller
         return view('management.procurement.raw_material.purchase_order.edit', $data);
     }
 
+
+
     /**
      * Update the specified resource in storage.
      */
@@ -332,6 +335,10 @@ class PurchaseOrderController extends Controller
                 "message" => "Purchase Order Already Approved or Rejected."
             ], 400);
         }
+
+
+
+
 
         $data = $request->validated();
         $data = $request->all();
@@ -371,6 +378,7 @@ class PurchaseOrderController extends Controller
                 "am_approval_status" => "pending",
                 "am_change_made" => 1,
                 'remarks' => $data['remarks'] ?? null,
+                'defaulter' => $data['defaulter'] ?? 0,
             ];
 
             if ($data['calculation_type'] == 'trucks') {
@@ -391,6 +399,19 @@ class PurchaseOrderController extends Controller
             $arrivalPurchaseOrder->update($updateData);
 
             ProductSlabForRmPo::where('arrival_purchase_order_id', $arrivalPurchaseOrder->id)->delete();
+            $defaulter = ArrivalPurchaseOrder::where('supplier_id', $data['supplier_id'])->where('defaulter', 1)->get();
+
+            if (count($defaulter) > 0) {
+                Supplier::findOrFail($data['supplier_id'])->update([
+                    'defaulter' => 1,
+                ]);
+            } else {
+                Supplier::findOrFail($data['supplier_id'])->update([
+                    'defaulter' => 0,
+                ]);
+            }
+
+
 
             if (isset($data['slabs']) && count($data['slabs']) > 0) {
                 foreach ($data['slabs'] as $slabId => $range) {
@@ -514,4 +535,304 @@ class PurchaseOrderController extends Controller
             'suppliers' => $suppliers
         ]);
     }
+
+
+
+
+
+    /**
+     * Export purchase orders to CSV with auto-download
+     */
+    public function exportCsv(Request $request)
+    {
+        try {
+            $purchaseOrders = $this->getFilteredDataForExport($request);
+
+            if ($purchaseOrders->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No data found to export with the applied filters.'
+                ]);
+            }
+
+            // Generate CSV content
+            $csvContent = $this->generateCsvContent($purchaseOrders);
+
+            // Generate filename
+            // $filename = 'purchase-orders-' . date('Y-m-d') . '.csv';
+
+            $filename = $this->generateFilename($request);
+
+
+            // Return as downloadable CSV
+            return response($csvContent)
+                ->header('Content-Type', 'text/csv; charset=utf-8')
+                ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to export data: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+
+    private function generateFilename($request)
+    {
+        $filename = 'purchase-orders';
+        $parts = [];
+
+        // Date range
+        if ($request->filled('daterange')) {
+            $dates = explode(' - ', $request->daterange);
+            if (count($dates) == 2) {
+                try {
+                    $start = Carbon::createFromFormat('m/d/Y', trim($dates[0]))->format('Y-m-d');
+                    $end = Carbon::createFromFormat('m/d/Y', trim($dates[1]))->format('Y-m-d');
+                    $parts[] = $start . '_to_' . $end;
+                } catch (\Exception $e) {
+                    $parts[] = date('Y-m-d');
+                }
+            }
+        } else {
+            $parts[] = date('Y-m-d');
+        }
+
+        // Location
+        if ($request->filled('company_location_id_f')) {
+            $location = CompanyLocation::find($request->company_location_id_f);
+            if ($location) {
+                $parts[] = preg_replace('/[^a-zA-Z0-9]/', '_', $location->name);
+            }
+        }
+
+        // Supplier
+        if ($request->filled('supplier_id_f')) {
+            $supplier = Supplier::find($request->supplier_id_f);
+            if ($supplier) {
+                $name = $supplier->company_name ?? $supplier->name;
+                $parts[] = preg_replace('/[^a-zA-Z0-9]/', '_', $name);
+            }
+        }
+
+        // Sauda Type
+        if ($request->filled('sauda_type_id_f')) {
+            $saudaType = SaudaType::find($request->sauda_type_id_f);
+            if ($saudaType) {
+                $parts[] = preg_replace('/[^a-zA-Z0-9]/', '_', $saudaType->name);
+            }
+        }
+
+        // Search term
+        if ($request->filled('search')) {
+            $search = preg_replace('/[^a-zA-Z0-9]/', '_', substr(trim($request->search), 0, 15));
+            if (!empty($search)) {
+                $parts[] = 'search_' . $search;
+            }
+        }
+
+        // Add timestamp
+        $parts[] = date('His');
+
+        // Build filename
+        $filename = $filename . '_' . implode('_', array_map(fn($part) => strtolower($part), $parts));
+
+        // Clean up any double underscores
+        $filename = preg_replace('/_+/', '_', $filename);
+
+        return $filename . '.csv';
+    }
+
+    private function generateCsvContent($purchaseOrders)
+    {
+        $output = fopen('php://temp', 'r+');
+        fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+        // Headers
+        $headers = [
+            'Contract #',
+            'Date',
+            'Time',
+            'Commodity',
+            'Supplier Name',
+            'Broker',
+            'Decision Of',
+            'No of Trucks',
+            'Qty in Kgs',
+
+            // 'Rate (Mound)',
+            // 'Rate (100KG)',
+            'Bags',
+            'Rate (KG)',
+            'Thadda Rate',
+            'Last Delivery Date',
+            'Payment Terms',
+            'Other Condition',
+            'Place Of Delivery',
+            // 'Sauda Type',
+            // 'Replacement',
+            // 'Remarks',
+            // 'No of Trucks',
+            // 'Ordered QTY (Min)',
+            // 'Ordered QTY (Max)',
+            // 'Arrived Trucks',
+            // 'Arrived Net Weight',
+            // 'Balance Trucks',
+            // 'Balance Quantity (Min)',
+            // 'Balance Quantity (Max)',
+            // 'Stock in Transit Trucks',
+            // 'Rejected Trucks',
+            // 'Contract Status',
+            // 'Approval Status',
+            // 'Created By',
+            // 'Created At',
+            // 'Location'
+        ];
+        fputcsv($output, $headers);
+
+        foreach ($purchaseOrders as $row) {
+            // dd($this->mapPurchaseOrderData($row));
+            fputcsv($output, $this->mapPurchaseOrderData($row));
+        }
+
+        rewind($output);
+        $content = stream_get_contents($output);
+        fclose($output);
+        return $content;
+    }
+
+    private function getFilteredDataForExport(Request $request)
+    {
+        $query = ArrivalPurchaseOrder::with([
+            'stockInTransitTickets',
+            'rejectedArrivalTickets',
+            'approvedArrivalTickets',
+            'product',
+            'supplier',
+            'decisionOfUser',
+            'createdByUser',
+            'location',
+            'saudaType'
+        ]);
+
+        // Apply filters
+        if ($request->filled('search')) {
+            $searchTerm = '%' . $request->search . '%';
+            $query->where(function ($sq) use ($searchTerm) {
+                $sq->orWhereHas('supplier', fn($q) => $q->where('name', 'like', $searchTerm))
+                    ->orWhereHas('location', fn($q) => $q->where('name', 'like', $searchTerm))
+                    ->orWhereHas('product', fn($q) => $q->where('name', 'like', $searchTerm))
+                    ->orWhere('broker_one_name', 'like', $searchTerm)
+                    ->orWhere('broker_two_name', 'like', $searchTerm)
+                    ->orWhere('broker_three_name', 'like', $searchTerm)
+                    ->orWhere('contract_no', 'like', $searchTerm);
+            });
+        }
+
+        if ($request->filled('sauda_type_id_f')) {
+            $query->where('sauda_type_id', $request->sauda_type_id_f);
+        }
+
+        if ($request->filled('company_location_id_f')) {
+            $query->where('company_location_id', $request->company_location_id_f);
+        }
+
+        if ($request->filled('supplier_id_f')) {
+            $query->where('supplier_id', $request->supplier_id_f);
+        }
+
+        if ($request->filled('daterange')) {
+            $dates = explode(' - ', $request->daterange);
+            if (count($dates) == 2) {
+                $startDate = Carbon::createFromFormat('m/d/Y', trim($dates[0]))->format('Y-m-d');
+                $endDate = Carbon::createFromFormat('m/d/Y', trim($dates[1]))->format('Y-m-d');
+                $query->whereDate('contract_date', '>=', $startDate)
+                    ->whereDate('contract_date', '<=', $endDate);
+            }
+        }
+
+        // User permissions
+        if (auth()->user()->user_type != 'super-admin') {
+            $query->whereIn('company_location_id', getUserCurrentCompanyLocations());
+        }
+
+        if (
+            !auth()->user()->can("procurement-raw-purchase-approval") &&
+            auth()->user()->parent_user_id != null &&
+            auth()->user()->user_type != 'super-admin'
+        ) {
+            $query->where('created_by', auth()->user()->id);
+        }
+
+        if (
+            auth()->user()->can("procurement-raw-purchase-approval") &&
+            auth()->user()->user_type != 'super-admin'
+        ) {
+            $query->where("decision_of_id", auth()->user()->parent_user_id);
+        }
+
+        if (
+            auth()->user()->parent_user_id == null &&
+            auth()->user()->user_type != 'super-admin'
+        ) {
+            $query->where('decision_of_id', auth()->user()->id);
+        }
+
+        $query->where('purchase_type', 'regular')->latest();
+        return $query->get();
+    }
+
+    private function mapPurchaseOrderData($row)
+    {
+        $arrivedTrucks = $row->approvedArrivalTickets()->sum('closing_trucks_qty');
+        $rejectedTrucks = $row->rejectedArrivalTickets()->sum('closing_trucks_qty');
+        $rejectedHalfTrucks = $row->rejectedHalfArrivalTickets->count() != 0 ? $row->rejectedHalfArrivalTickets->count() / 2 : 0;
+        $totalRejectedTrucks = $rejectedTrucks + $rejectedHalfTrucks;
+        $inTransitTrucks = $row->stockInTransitTickets->count();
+        $orderedTrucks = $row->no_of_trucks ?? 0;
+
+        $balanceTrucks = $row->is_replacement == 1
+            ? $orderedTrucks - $arrivedTrucks - $inTransitTrucks
+            : $orderedTrucks - $arrivedTrucks - $inTransitTrucks - $totalRejectedTrucks;
+
+        return [
+            '#' . $row->contract_no,
+            $row->created_at->format('Y-m-d'),
+            $row->created_at->format('H:i:s'),
+            $row->product->name ?? 'N/A',
+            $row->purchase_type == 'gate_buying' ? ($row->supplier_name ?? 'N/A') : ($row->supplier->name ?? 'N/A'),
+            $row->broker_one_name ?? ($row->broker_two_name ?? ($row->broker_three_name ?? 'N/A')),
+            $row->decisionOfUser->name ?? 'N/A',
+            $row->calculation_type == 'trucks' ? ($row->no_of_trucks ?? 0) : 'N/A',
+            (isset($row->min_quantity) ? intval($row->min_quantity) : '-') . '-' . (isset($row->max_quantity) ? intval($row->max_quantity) : '-'),
+            (isset($row->min_quantity) && isset($row->product->bag_weight_for_purchasing) && $row->product->bag_weight_for_purchasing > 0 ? intval($row->min_quantity / $row->product->bag_weight_for_purchasing) : '-') . '-' . (isset($row->max_quantity) && isset($row->product->bag_weight_for_purchasing) && $row->product->bag_weight_for_purchasing > 0 ? intval($row->max_quantity / $row->product->bag_weight_for_purchasing) : '-'),
+            $row->rate_per_kg ?? 'N/A',
+            '',
+            $row->delivery_date ? Carbon::parse($row->delivery_date)->format('d-M-Y') : 'N/A',
+            $row->credit_days ?? 'N/A',
+            // $row->rate_per_mound ?? 'N/A',
+            // $row->rate_per_100kg ?? 'N/A',
+            'Sauda Type: ' . ($row->saudaType->name ?? '') . "\n" . ucfirst($row->calculation_type) . ' Wise' . "\nReplacement: " . ($row->is_replacement == 1 ? 'Yes' : 'No') . "\nSupllier Commision: " . $row->supplier_commission . "\nRemarks: " . $row->remarks,
+            $row->delivery_address ?? 'N/A',
+
+            // $row->calculation_type == 'trucks' ? ($row->no_of_trucks ?? 0) : 'N/A',
+            // isset($row->min_quantity) ? intval($row->min_quantity) : '-',
+            // isset($row->max_quantity) ? intval($row->max_quantity) : '-',
+            // $arrivedTrucks,
+            // $row->totalArrivedNetWeight->total_arrived_net_weight ?? 0,
+            // $row->calculation_type == 'trucks' ? $balanceTrucks : 'N/A',
+            // (($row->min_quantity ?? 0) - ($row->totalArrivedNetWeight->total_arrived_net_weight ?? 0) ?? '-'),
+            // (($row->max_quantity ?? 0) - ($row->totalArrivedNetWeight->total_arrived_net_weight ?? 0) ?? '-'),
+            // $inTransitTrucks,
+            // $totalRejectedTrucks,
+            // $row->status == 'completed' ? 'Closed' : 'Pending',
+            // ucfirst($row->am_approval_status ?? 'pending'),
+            // $row->createdByUser->name ?? 'N/A',
+            // $row->created_at ? $row->created_at->format('d-m-Y H:i:s') : 'N/A',
+            // $row->location->name ?? 'N/A'
+        ];
+    }
+
+
 }

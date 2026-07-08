@@ -1,4 +1,5 @@
-<form action="{{ route('broker.store') }}" method="POST" id="ajaxSubmit" autocomplete="off" enctype="multipart/form-data">
+<form action="{{ route('broker.store') }}" method="POST" id="ajaxSubmit" autocomplete="off"
+    enctype="multipart/form-data">
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('get.broker') }}" />
 
@@ -105,8 +106,7 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Owner Name:</label>
-                <input type="text" name="owner_name" placeholder="Owner Name" class="form-control"
-                    autocomplete="off" />
+                <input type="text" name="owner_name" placeholder="Owner Name" class="form-control" autocomplete="off" />
             </div>
         </div>
 
@@ -122,8 +122,8 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Owner CNIC:</label>
-                <input type="text" name="owner_cnic_no" placeholder="12345-1234567-1"
-                    class="form-control cnic-input" autocomplete="off" maxlength="15" />
+                <input type="text" name="owner_cnic_no" placeholder="12345-1234567-1" class="form-control cnic-input"
+                    autocomplete="off" maxlength="15" />
                 <small class="text-muted">Format: 12345-1234567-1</small>
 
             </div>
@@ -137,8 +137,8 @@
                         <div class="col-xs-6 col-sm-6 col-md-6">
                             <div class="form-group">
                                 <label>Bank Name:</label>
-                                <input type="text" name="owner_bank_name[]" placeholder="Bank Name"
-                                    class="form-control" autocomplete="off" />
+                                <input type="text" name="owner_bank_name[]" placeholder="Bank Name" class="form-control"
+                                    autocomplete="off" />
                             </div>
                         </div>
                         <div class="col-xs-6 col-sm-6 col-md-6">
@@ -192,8 +192,7 @@
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Name:</label>
-                <input type="text" name="next_to_kin" placeholder="Name" class="form-control"
-                    autocomplete="off" />
+                <input type="text" name="next_to_kin" placeholder="Name" class="form-control" autocomplete="off" />
             </div>
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
@@ -241,7 +240,7 @@
                     <li class="d-inline-block mr-2">
                         <div class="radio radio-primary">
                             <input name="is_for_sales" type="radio" id="is_for_sales_no" value="0">
-                            <label for="is_for_sales_no"><span>Not for Sales</span></label>
+                            <label for="is_for_sales_no"><span>For Purchase</span></label>
                         </div>
                     </li>
                 </ul>
@@ -282,7 +281,7 @@
         }
     }
 
-    $(document).on('input', '.cnic-input', function() {
+    $(document).on('input', '.cnic-input', function () {
         let value = $(this).val().replace(/\D/g, '');
         let formattedValue = '';
 
@@ -301,14 +300,14 @@
 
     toggleRemoveButton();
 
-    $('body').on('click', '.add-more', function() {
+    $('body').on('click', '.add-more', function () {
         var newCard = $('#card-container .clonecard:first').clone();
         newCard.find('input').val('');
         $('#card-container').append(newCard);
         toggleRemoveButton();
     });
 
-    $(document).on('click', '.remove-card', function() {
+    $(document).on('click', '.remove-card', function () {
         if ($('#card-container .clonecard').length > 1) {
             $(this).closest('.clonecard').remove();
             toggleRemoveButton();
@@ -326,14 +325,14 @@
 
     toggleRemoveButton2();
 
-    $('body').on('click', '.add-more2', function() {
+    $('body').on('click', '.add-more2', function () {
         var newCard = $('#card-container2 .clonecard2:first').clone();
         newCard.find('input').val('');
         $('#card-container2').append(newCard);
         toggleRemoveButton2();
     });
 
-    $(document).on('click', '.remove-card2', function() {
+    $(document).on('click', '.remove-card2', function () {
         if ($('#card-container2 .clonecard2').length > 1) {
             $(this).closest('.clonecard2').remove();
             toggleRemoveButton2();

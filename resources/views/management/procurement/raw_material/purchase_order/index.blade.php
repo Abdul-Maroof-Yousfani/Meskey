@@ -11,13 +11,19 @@
                 </div>
 
                 @canAccess("procurement-raw-purchase-order-create")
-                    <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
-                        <button
-                            onclick="openModal(this,'{{ route('raw-material.purchase-order.create') }}','Add Purchase Contract (Raw Material)')"
-                            type="button" class="btn btn-primary position-relative ">
-                            Create Purchase Contract/Order
-                        </button>
-                    </div>
+                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
+                    <button
+                        onclick="openModal(this,'{{ route('raw-material.purchase-order.create') }}','Add Purchase Contract (Raw Material)')"
+                        type="button" class="btn btn-primary position-relative ">
+                        Create Purchase Contract/Order
+                    </button>
+
+
+                    <!-- Export CSV Button -->
+                    <button onclick="exportCSV()" type="button" class="btn btn-success position-relative ml-2">
+                        <i class="ft-file mr-1"></i> Export CSV
+                    </button>
+                </div>
                 @endcanAccess
             </div>
             <div class="row">
@@ -105,7 +111,105 @@
 
 @section('script')
     <script>
-        $(document).ready(function() {
+
+        function exportCSV() {
+            // Show processing SweetAlert
+            Swal.fire({
+                title: 'Processing Export...',
+                html: `
+                                <div style="margin: 20px 0;">
+                                    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                                        <span class="sr-only">Loading...</span>
+                                    </div>
+                                    <p style="margin-top: 15px; color: #6c757d;">
+                                        Please wait while we prepare your data...
+                                    </p>
+                                </div>
+                            `,
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                showCancelButton: true,
+                cancelButtonText: 'Cancel',
+                cancelButtonColor: '#dc3545',
+            });
+
+            // Get filter values
+            const params = {};
+            $('#filterForm').serializeArray().forEach(item => {
+                if (item.value) {
+                    params[item.name] = item.value;
+                }
+            });
+
+            const queryString = new URLSearchParams(params).toString();
+
+            // Use AJAX to download file
+            $.ajax({
+                url: `{{ route('raw-material.purchase-order.export-csv') }}?${queryString}`,
+                type: 'GET',
+                xhrFields: {
+                    responseType: 'blob'
+                },
+                success: function (response, status, xhr) {
+                    // Close SweetAlert
+                    Swal.close();
+
+                    // Get filename from headers
+                    const disposition = xhr.getResponseHeader('content-disposition');
+                    let filename = 'purchase-orders-' + new Date().toISOString().split('T')[0] + '.csv';
+
+                    if (disposition && disposition.indexOf('filename=') !== -1) {
+                        filename = disposition.split('filename=')[1].replace(/["']/g, '');
+                    }
+
+                    // Auto download
+                    const url = window.URL.createObjectURL(response);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = filename;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+
+                    // Show success message
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Download Complete!',
+                        text: 'Your file has been downloaded successfully.',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                },
+                error: function (xhr, status, error) {
+                    // Close SweetAlert
+                    Swal.close();
+
+                    let errorMessage = 'An error occurred while generating the export.';
+
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        if (response.message) {
+                            errorMessage = response.message;
+                        }
+                    } catch (e) { }
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Export Failed',
+                        text: errorMessage,
+                        confirmButtonColor: '#dc3545',
+                        confirmButtonText: 'Try Again'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            exportCSV();
+                        }
+                    });
+                }
+            });
+        }
+        $(document).ready(function () {
             filterationCommon(`{{ route('raw-material.get.purchase-order') }}`);
 
             initializeDynamicSelect2('#sauda_type', 'sauda_types', 'name', 'id', true, false, true, true);
@@ -124,6 +228,10 @@
                 true,
                 true,
             );
+
+
+
+
         });
     </script>
 @endsection

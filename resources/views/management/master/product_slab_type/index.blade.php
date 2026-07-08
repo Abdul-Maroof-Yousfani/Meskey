@@ -43,11 +43,10 @@
                                 <table class="table m-0">
                                     <thead>
                                         <tr>
-                                            <th class="col-sm-1">Image </th>
                                             <th class="col-sm-3">Name </th>
-
-                                            <th class="col-sm-4">Description</th>
-                                            <th class="col-sm-1">Name </th>
+                                            <th class="col-sm-2">Type</th>
+                                            <th class="col-sm-3">Description</th>
+                                            <th class="col-sm-1">Status</th>
                                             <th class="col-sm-2">Created</th>
                                             <th class="col-sm-1">Action</th>
                                         </tr>
@@ -63,7 +62,7 @@
 @endsection
 @section('script')
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             filterationCommon(`{{ route('get.product-slab-type') }}`)
         });
     </script>

@@ -287,7 +287,7 @@ class SaleOrderController extends Controller
             $payload['arrival_sub_location_id'] = $sectionIds[0] ?? null;
             $payload['am_approval_status'] = 'pending';
             $payload['am_change_made'] = 1;
-            $payload['parent_user_id'] = auth()->user()->parent_user_id;
+            // $payload['parent_user_id'] = auth()->user()->parent_user_id ?? auth()->user()->id;
             $payload["remarks"] = !$request->remarks ? '' : $request->remarks;
             $payload["contact_person"] = !$request->contact_person ? '' : $request->contact_person;
             $payload["so_reference_no"] = !$request->so_reference_no ? '' : $request->so_reference_no;

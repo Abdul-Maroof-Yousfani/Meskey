@@ -53,7 +53,8 @@
                     <div class="form-group">
                         <label class="form-label">Sale Orders:</label>
                         <select name="sale_order_id" id="sale_order"
-                            onchange="get_so_detail(), get_so_items(), check_so_type(); validate_expiry(); get_receipt_vouchers()" class="form-control select2">
+                            onchange="get_so_detail(), get_so_items(), check_so_type(); validate_expiry(); get_receipt_vouchers()"
+                            class="form-control select2">
                             <option value="">Select SO</option>
                         </select>
                     </div>
@@ -71,14 +72,8 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Do Date:</label>
-                        <input
-                            type="date"
-                            name="dispatch_date"
-                            id="dispatch_date"
-                            class="form-control"
-                            value="{{ date('Y-m-d') }}"
-                            readonly
-                        >
+                        <input type="date" name="dispatch_date" id="dispatch_date" class="form-control"
+                            value="{{ date('Y-m-d') }}" readonly>
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -95,7 +90,8 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Delivery Date:</label>
-                        <input type="date" name="delivery_date" id="delivery_date" class="form-control" readonly style="background-color: #e9ecef; pointer-events: none;">
+                        <input type="date" name="delivery_date" id="delivery_date" class="form-control" readonly
+                            style="background-color: #e9ecef; pointer-events: none;">
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -107,13 +103,16 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Withhold %:</label>
-                        <input type="number" step="any" min="0" max="100" name="so_withhold_percentage" id="so_withhold_percentage" value="10" class="form-control" onkeyup="calculate_so_withhold()" onchange="calculate_so_withhold()">
+                        <input type="number" step="any" min="0" max="100" name="so_withhold_percentage"
+                            id="so_withhold_percentage" value="10" class="form-control"
+                            onkeyup="calculate_so_withhold()" onchange="calculate_so_withhold()">
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Amount to be Held:</label>
-                        <input type="number" step="any" name="so_held_amount" id="so_held_amount" class="form-control" readonly>
+                        <input type="number" step="any" name="so_held_amount" id="so_held_amount" class="form-control"
+                            readonly>
                     </div>
                 </div>
 
@@ -140,15 +139,17 @@
                 <div class="col-md-2 advanced" style="display: none">
                     <div class="form-group">
                         <label class="form-label">Withhold %:</label>
-                        <input type="number" step="any" id="withhold_percentage" value="10"
-                            class="form-control" onkeyup="calculate_withhold_by_percentage(this)" onchange="calculate_withhold_by_percentage(this)">
+                        <input type="number" step="any" id="withhold_percentage" value="10" class="form-control"
+                            onkeyup="calculate_withhold_by_percentage(this)"
+                            onchange="calculate_withhold_by_percentage(this)">
                     </div>
                 </div>
                 <div class="col-md-2 advanced" style="display: none">
                     <div class="form-group">
                         <label class="form-label">Withhold Amount:</label>
-                        <input type="number" step="any" name="withhold_amount" value="0"
-                            id="withhold_amount" class="form-control" onkeyup="calculate_percentage_by_withhold(this)" onchange="calculate_percentage_by_withhold(this)">
+                        <input type="number" step="any" name="withhold_amount" value="0" id="withhold_amount"
+                            class="form-control" onkeyup="calculate_percentage_by_withhold(this)"
+                            onchange="calculate_percentage_by_withhold(this)">
                     </div>
                 </div>
                 <div class="col-md-3 advanced" style="display: none">
@@ -215,8 +216,8 @@
     <div class="row form-mar">
 
         {{-- <div class="col-12 text-right mb-2">
-            <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()"
-                id="addRowBtn" disabled>
+            <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()" id="addRowBtn"
+                disabled>
                 <i class="fa fa-plus"></i>&nbsp; Add New Item
             </button>
         </div> --}}
@@ -264,7 +265,7 @@
     soFactoryMap = {};
     soSectionMap = {};
 
-    $(document).ready(function() {
+    $(document).ready(function () {
         $('.select2').select2();
         $('#sauda_type').prop('disabled', true);
         getNumber();
@@ -274,7 +275,7 @@
 
         // const do_date = $("#dispatch_date").val();
         // const delivery_date = $("#delivery_date").val();
-     
+
         // const dispatchDate = new Date(do_date);
         // const deliveryDate = new Date(delivery_date);
 
@@ -302,7 +303,7 @@
     }
 
     function updateLocations(locations) {
-        const select = $("#locations").select2({data: locations});
+        const select = $("#locations").select2({ data: locations });
         const current = select.val();
         select.empty();
         select.append('<option value="">Select Locations</option>');
@@ -352,11 +353,11 @@
             allowedFactories.forEach(loc => {
                 $("#arrivals").append(`<option value="${loc.id}">${loc.text}</option>`);
             });
-            
+
             // Auto-select ALL factories
             const allFactoryIds = allowedFactories.map(loc => String(loc.id));
             $("#arrivals").val(allFactoryIds).trigger('change.select2');
-            
+
             // Populate and select all sections for all selected factories
             selectAllStorages(allFactoryIds);
         } else {
@@ -368,7 +369,7 @@
                     location_id: company
                 },
                 dataType: "json",
-                success: function(res) {
+                success: function (res) {
                     $("#arrivals").empty();
 
                     res.forEach(loc => {
@@ -382,21 +383,21 @@
                     // Auto-select ALL factories
                     const allFactoryIds = res.map(loc => String(loc.id));
                     $("#arrivals").val(allFactoryIds).trigger('change.select2');
-                    
+
                     // Clear sections as no mapping exists
                     $("#storages").empty().prop("disabled", true).trigger('change.select2');
                 },
-                error: function(error) {
+                error: function (error) {
 
                 }
             });
         }
     }
-    
+
     // Function to populate and select all sections for all selected factories (using SO mapping)
     function selectAllStorages(factoryIds) {
         $("#storages").prop("disabled", false).empty();
-        
+
         let allSections = [];
         factoryIds.forEach(factoryId => {
             const sections = soSectionMap[String(factoryId)] || [];
@@ -407,12 +408,12 @@
                 }
             });
         });
-        
+
         if (allSections.length > 0) {
             allSections.forEach(section => {
                 $("#storages").append(`<option value="${section.id}">${section.text}</option>`);
             });
-            
+
             // Auto-select ALL sections
             const allSectionIds = allSections.map(s => String(s.id));
             $("#storages").val(allSectionIds).trigger('change.select2');
@@ -424,7 +425,7 @@
 
     function selectStorage(el) {
         const arrivals = $(el).val(); // This is now an array since it's multiple select
-        
+
         if (!arrivals || arrivals.length === 0) {
             $("#storages").prop("disabled", true);
             $("#storages").empty();
@@ -433,14 +434,14 @@
 
         // Convert to array if single value
         const factoryIds = Array.isArray(arrivals) ? arrivals : [arrivals];
-        
+
         // We strictly use mapping data, no server fallback
         selectAllStorages(factoryIds);
     }
 
     function add_advance_amount() {
         let selectedAmounts = $("#receipt_vouchers option:selected")
-            .map(function() {
+            .map(function () {
                 return $(this).data("amount");
             }).get();
 
@@ -476,11 +477,13 @@
         }
 
         let do_amount = 0;
-        $(".amount").each(function() {
+        $(".amount").each(function () {
             do_amount += parseFloat($(this).val()) || 0;
         });
 
-        const totalAmount = parseFloat(do_amount) || 0;
+        // const totalAmount = parseFloat(do_amount) || 0;
+        const totalAmount = parseFloat(so_amount);
+
         const withhold = (totalAmount * (percentage / 100)).toFixed(0);
         $("#withhold_amount").val(withhold);
         change_withhold_amount();
@@ -490,11 +493,11 @@
         let withhold = parseFloat($(el).val()) || 0;
 
         let do_amount = 0;
-        $(".amount").each(function() {
+        $(".amount").each(function () {
             do_amount += parseFloat($(this).val()) || 0;
         });
 
-        const totalAmount = parseFloat(do_amount) || 0;
+        const totalAmount = parseFloat(so_amount) || 0;
 
         if (totalAmount > 0) {
             if (withhold > totalAmount) {
@@ -516,13 +519,13 @@
 
     function update_delivery_date_min() {
         let maxDate = "";
-        $("#receipt_vouchers option:selected").each(function() {
+        $("#receipt_vouchers option:selected").each(function () {
             let date = $(this).data("date");
             if (date && (!maxDate || date > maxDate)) {
                 maxDate = date;
             }
         });
-        
+
         if (maxDate) {
             $("#delivery_date").attr("min", maxDate);
             if ($("#delivery_date").val() && $("#delivery_date").val() < maxDate) {
@@ -543,19 +546,42 @@
         const withhold = parseFloat($("#withhold_amount").val()) || 0;
         const advance = parseFloat($("#advance_amount").val()) || 0;
 
+
+
+        // Basic calculation for first row
+        if (advance > 0 || withhold > 0) {
+            remaining_amount = advance - withhold;
+            bag_size = $("#bag_size_0").val() || 0;
+            rate = $("#rate_0").val() || 0;
+
+            if (rate > 0) {
+                const qtyVal = Math.round(remaining_amount / rate);
+                $("#qty_0").val(qtyVal);
+                $("#qty_0").prop("readonly", true);
+                $("#amount_0").val((parseFloat(rate) * parseFloat(qtyVal)).toFixed(0));
+
+                if (bag_size > 0) {
+                    const no_of_bags = Math.round(parseFloat(qtyVal) / parseFloat(bag_size));
+                    $("#no_of_bags_0").val(isNaN(no_of_bags) ? 0 : no_of_bags);
+                }
+            }
+        }
+
+
+
         const receipt_vouchers = $("#receipt_vouchers");
         let withholdSelect = $("#withhold_for_rv");
         let currentWithholdVal = withholdSelect.val();
-        
+
         withholdSelect.empty();
         withholdSelect.append(`<option value='' data-amount="0">Select Receipt Voucher</option>`);
-        
+
         // Get selected receipt vouchers and add them to withhold_for_rv
-        $("#receipt_vouchers option:selected").each(function() {
+        $("#receipt_vouchers option:selected").each(function () {
             const val = $(this).val();
             const text = $(this).text();
             const amount = $(this).data('amount');
-            
+
             if (val) {
                 withholdSelect.append(
                     `<option value="${val}" data-amount="${amount}">${text}</option>`
@@ -574,7 +600,7 @@
             withholdSelect.prop("disabled", true);
             withholdSelect.val("").trigger("change");
         }
-        
+
         withholdSelect.trigger('change.select2');
     }
 
@@ -654,13 +680,13 @@
         const qtyVal = parseFloat(qty.val()) || 0;
         const rateVal = parseFloat(rate.val()) || 0;
         amount.val((qtyVal * rateVal).toFixed(0));
-        
+
         calculate_so_withhold();
     }
 
     function validateBagsBeforeSubmit() {
         let valid = true;
-        $("#soTableBody tr").each(function() {
+        $("#soTableBody tr").each(function () {
             const row = $(this);
             const no_of_bags = row.find(".no_of_bags");
             const bag_size = row.find(".bag_size");
@@ -686,7 +712,7 @@
         return valid;
     }
 
-    $("#ajaxSubmit").on("submit", function(e) {
+    $("#ajaxSubmit").on("submit", function (e) {
         if (!validateBagsBeforeSubmit()) {
             e.preventDefault();
         }
@@ -694,8 +720,8 @@
 
     function get_sale_orders() {
         const customer_id = $("#customer_id").val();
-        
-        
+
+
         if (!customer_id) {
             $("#sale_order").empty().append('<option value="" selected>Select Sale Order</option>').trigger('change');
             return;
@@ -708,15 +734,15 @@
                 customer_id: customer_id
             },
             dataType: "json",
-            success: function(res) {
+            success: function (res) {
                 const data = res.processedData;
                 const rawData = res.rawData;
-        
+
                 $("#sale_order").empty();
 
                 // Add default "Select Sale Order" option first
                 $("#sale_order").append('<option value="" selected>Select Sale Order</option>');
-                
+
                 data.forEach(item => {
                     $("#sale_order").append(`
                         <option value="${item.id}" 
@@ -728,7 +754,7 @@
 
                 $("#sale_order").select2();
             },
-            error: function(error) {
+            error: function (error) {
 
             }
         });
@@ -744,11 +770,11 @@
                 inquiry_id: inquiry_id
             },
             dataType: "html",
-            success: function(res) {
+            success: function (res) {
                 $("#alesInquiryBody").empty();
                 $("#salesInquiryBody").html(res);
             },
-            error: function(error) {
+            error: function (error) {
                 console.log(error);
             }
         });
@@ -763,10 +789,10 @@
                 contract_date: $("#dispatch_date").val()
             },
             dataType: "json",
-            success: function(res) {
+            success: function (res) {
                 $("#reference_no").val(res.so_no)
             },
-            error: function(error) {
+            error: function (error) {
                 // Handle errors here
                 $('.loader-container').hide();
                 console.error("Error:", error);
@@ -840,7 +866,7 @@
                 so_id: soId,
             },
             dataType: "json",
-            success: function(res) {
+            success: function (res) {
                 // $("#amount_received").val(res.amount_received)
                 // $("#so_amount").val(res.so_amount)
                 // $("#unused_amount").val(res.unused_amount)
@@ -864,13 +890,13 @@
                 }
 
                 validate_expiry();
-                
+
                 calculate_so_withhold();
 
                 // $("#locations").val(res.locations).trigger("change");
-               
+
             },
-            error: function(error) {
+            error: function (error) {
                 // Handle errors here
                 $('.loader-container').hide();
                 console.error("Error:", error);
@@ -903,7 +929,7 @@
                 sale_order_id: sale_order_id
             },
             dataType: "json",
-            success: function(res) {
+            success: function (res) {
                 // Populate receipt_vouchers dropdown
                 let select = $("#receipt_vouchers");
                 let selectedValues = select.val() || [];
@@ -938,7 +964,7 @@
                 withholdSelect.prop("disabled", true);
                 withholdSelect.select2();
             },
-            error: function(error) {
+            error: function (error) {
                 // Handle errors here
                 $('.loader-container').hide();
                 console.error("Error:", error);
@@ -960,16 +986,16 @@
                 so_id: soId,
             },
             dataType: "html",
-            success: function(res) {
+            success: function (res) {
                 $('#soTableBody').empty();
                 console.log(res);
                 $('#soTableBody').html(res);
                 $("#locations").val("");
                 $("#locations").trigger("change");
-                
+
                 setTimeout(calculate_so_withhold, 500);
             },
-            error: function(error) {
+            error: function (error) {
                 // Handle errors here
                 $('.loader-container').hide();
                 console.error("Error:", error);
@@ -990,11 +1016,11 @@
         }
 
         let do_amount = 0;
-        $(".amount").each(function() {
+        $(".amount").each(function () {
             do_amount += parseFloat($(this).val()) || 0;
         });
 
-        const heldAmount = (do_amount * (percentage / 100)).toFixed(2);
+        const heldAmount = (so_amount * (percentage / 100)).toFixed(2);
         $("#so_held_amount").val(heldAmount);
     }
 
@@ -1002,7 +1028,7 @@
         let held = parseFloat($("#so_held_amount").val()) || 0;
 
         let do_amount = 0;
-        $(".amount").each(function() {
+        $(".amount").each(function () {
             do_amount += parseFloat($(this).val()) || 0;
         });
 
@@ -1015,7 +1041,7 @@
                 held = 0;
                 $("#so_held_amount").val(0);
             }
-            const percentage = (held / do_amount) * 100;
+            const percentage = (held / so_amount) * 100;
             $("#so_withhold_percentage").val(percentage.toFixed(2));
         } else {
             $("#so_held_amount").val(0);

@@ -1,4 +1,5 @@
-<form action="{{ route('sales.loading-slip.store') }}" method="POST" id="ajaxSubmit" autocomplete="off" enctype="multipart/form-data">
+<form action="{{ route('sales.loading-slip.store') }}" method="POST" id="ajaxSubmit" autocomplete="off"
+    enctype="multipart/form-data">
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('sales.get.loading-slip') }}" />
 
@@ -40,13 +41,13 @@
 </form>
 
 <script>
-    $(document).ready(function() {
+    $(document).ready(function () {
         $('.select2').select2();
     });
 
-    $(document).ready(function() {
+    $(document).ready(function () {
         // Handle ticket selection
-        $('#loading_program_item_id').change(function() {
+        $('#loading_program_item_id').change(function () {
             var loading_program_item_id = $(this).val();
 
             if (loading_program_item_id) {
@@ -57,7 +58,7 @@
                         loading_program_item_id: loading_program_item_id
                     },
                     dataType: 'json',
-                    beforeSend: function() {
+                    beforeSend: function () {
                         Swal.fire({
                             title: "Processing...",
                             text: "Please wait while fetching ticket details.",
@@ -67,7 +68,7 @@
                             }
                         });
                     },
-                    success: function(response) {
+                    success: function (response) {
                         Swal.close();
                         if (response.success) {
                             // Populate the form with ticket data
@@ -77,7 +78,7 @@
                                 "info");
                         }
                     },
-                    error: function() {
+                    error: function () {
                         Swal.close();
                         Swal.fire("Error", "Something went wrong. Please try again.",
                             "error");
@@ -204,7 +205,13 @@
                 </div>
                 <div style="display: none;">
                     <div class="form-group">
-                        <label>Kilogram: <span class="text-danger">*</span></label>
+                        <label>Suggested Qty: <span class="text-danger">*</span></label>
+                        <input type="number" name="suggested_qty" id="suggested_qty" value="${data.suggested_qty}" class="form-control" readonly required step="0.01" />
+                    </div>
+                </div>
+                  <div style="display: none;">
+                    <div class="form-group">
+                        <label>QTY KG: <span class="text-danger">*</span> (No. Bags x Bag Size)</label>
                         <input type="number" name="kilogram" id="kilogram" value="0.00" class="form-control" readonly required step="0.01" />
                     </div>
                 </div>
@@ -228,7 +235,7 @@
         });
 
         // Calculate kilogram when no_of_bags changes
-        $('#no_of_bags').on('input', function() {
+        $('#no_of_bags').on('input', function () {
             calculateKilogram();
         });
 

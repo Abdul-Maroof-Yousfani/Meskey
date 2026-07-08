@@ -124,20 +124,7 @@
                             readonly>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label class="form-label">Broker:</label>
-                        <input type="text" value="{{ $sale_order->broker->name ?? 'N/A' }}" class="form-control"
-                            readonly>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label class="form-label">Comission RS per KG:</label>
-                        <input type="text" value="{{ $sale_order->commission_per_kg ?? 0 }}" class="form-control"
-                            readonly>
-                    </div>
-                </div>
+
                 <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Contact Person:</label>
@@ -272,7 +259,7 @@
                 <table class="table table-bordered" id="salesInquiryTable" style="min-width:2000px;">
                     <thead>
                         <tr>
-                            <th>Item</th>
+                            <th class="col-3">Item</th>
                             <th>Bag Type</th>
                             <th>Packing</th>
                             <th>No of Bags</th>
@@ -316,19 +303,17 @@
                                         value="{{ $data->no_of_bags }}" class="form-control no_of_bags" readonly>
                                 </td>
                                 {{-- <td>
-                                    <input type="number" name="qty[]" id="qty_{{ $index }}" value="{{ round($data->qty) }}" class="form-control qty" step="0.01"
-                                        min="0" readonly>
+                                    <input type="number" name="qty[]" id="qty_{{ $index }}" value="{{ round($data->qty) }}"
+                                        class="form-control qty" step="0.01" min="0" readonly>
                                 </td> --}}
                                 <td>
-                                    <input type="number" name="minimum_qty[]" id="minimum_qty_{{ $index }}" value="{{ round($data->minimum_qty) }}" class="form-control minimum_qty" step="0.01"
-                                        min="0" readonly>
                                     <input type="number" name="minimum_qty[]" id="minimum_qty_{{ $index }}"
-                                        value="{{ $data->minimum_qty }}" class="form-control minimum_qty" step="0.01"
-                                        min="0" readonly>
+                                        value="{{ round($data->minimum_qty) }}" class="form-control minimum_qty"
+                                        step="0.01" min="0" readonly>
                                 </td>
                                 <td>
-                                    <input type="number" name="qty[]" id="qty_{{ $index }}" value="{{ $data->qty }}"
-                                        class="form-control qty" step="0.01" min="0" readonly>
+                                    <input type="number" name="qty[]" id="qty_{{ $index }}"
+                                        value="{{ $data->qty }}" class="form-control qty" step="0.01" min="0" readonly>
                                 </td>
                                 <td>
                                     <input type="number" name="rate[]" id="rate_{{ $index }}" value="{{ $data->rate }}"
@@ -372,6 +357,34 @@
                 </table>
             </div>
         </div>
+
+
+
+
+
+         <div class="col-12 mt-3">
+                    <h6 class="header-heading-sepration">Broker Details</h6>
+                </div>
+                        <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="form-label">Broker:</label>
+                        <input type="text" value="{{ $sale_order->broker->name ?? 'N/A' }}" class="form-control"
+                            readonly>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="form-label">Comission RS per KG:</label>
+                        <input type="text" value="{{ $sale_order->commission_per_kg ?? 0 }}" class="form-control"
+                            readonly>
+                    </div>
+                </div>
+                  <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="form-label">Comission in % per KG:</label>
+        <input type="text" value="{{ number_format(($sale_order->commission_per_kg ?? 0) / (($sale_order->sales_order_data->first()->rate ?? 1) ?: 1) * 100, 4) }}" class="form-control" readonly>
+                    </div>
+                </div>
     </div>
 
 

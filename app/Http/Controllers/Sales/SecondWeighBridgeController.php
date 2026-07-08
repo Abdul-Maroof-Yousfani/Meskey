@@ -43,7 +43,7 @@ class SecondWeighBridgeController extends Controller
                 return $q->where(function ($sq) use ($searchTerm) {
                     $sq->whereHas('loadingSlip.loadingProgramItem', function ($query) use ($searchTerm) {
                         $query->where('transaction_number', 'like', $searchTerm)
-                              ->orWhere('truck_number', 'like', $searchTerm);
+                            ->orWhere('truck_number', 'like', $searchTerm);
                     });
                 });
             })
@@ -60,7 +60,10 @@ class SecondWeighBridgeController extends Controller
     {
         // Get loading slips that have accepted dispatch QC but don't have a second weighbridge yet
         $LoadingSlips = LoadingSlip::whereDoesntHave('secondWeighbridge')
-            ->whereHas('loadingProgramItem.dispatchQcs', function($query) {
+            ->whereHas('loadingProgramItem', function ($query) {
+                $query->whereIn('arrival_location_id', getUserCurrentCompanyArrivalLocations());
+            })
+            ->whereHas('loadingProgramItem.dispatchQcs', function ($query) {
                 $query->where('status', 'accept');
             })
             ->with([
@@ -117,14 +120,14 @@ class SecondWeighBridgeController extends Controller
         $second_weight = $request->second_weight;
         $net_weight = $second_weight - $first_weight;
 
-        if($second_weight < $first_weight) {
+        if ($second_weight < $first_weight) {
             return response()->json("Second Weight can not be less than First Weight", 422);
         }
 
         // Get aggregate balance for all DOs on the ticket
         $balance = get_second_weighbridge_balance($loadingSlip);
-        
-        if($net_weight > $balance) {
+
+        if ($net_weight > $balance) {
             return response()->json("Your total remaining net weight balance for all associated DOs on this ticket is: " . number_format($balance, 2), 422);
         }
 
@@ -159,8 +162,9 @@ class SecondWeighBridgeController extends Controller
         }
 
         foreach ($deliveryOrders as $do) {
-            if ($remainingWeight <= 0) break;
-            
+            if ($remainingWeight <= 0)
+                break;
+
             $doBalance = get_second_weighbridge_balance_by_delivery_order($do->id);
             if ($doBalance > 0) {
                 $deduct = min($doBalance, $remainingWeight);
@@ -191,12 +195,12 @@ class SecondWeighBridgeController extends Controller
             'loadingSlip.loadingProgramItem.saleOrders.customer',
             'loadingSlip.loadingProgramItem.saleOrders.sales_order_data.item',
         ])->findOrFail($id);
-        $data['LoadingSlips'] = LoadingSlip::where(function($q) use ($data) {
-                $q->whereDoesntHave('secondWeighbridge')
-                    ->whereHas('loadingProgramItem.dispatchQcs', function($query) {
-                        $query->where('status', 'accept');
-                    });
-            })
+        $data['LoadingSlips'] = LoadingSlip::where(function ($q) use ($data) {
+            $q->whereDoesntHave('secondWeighbridge')
+                ->whereHas('loadingProgramItem.dispatchQcs', function ($query) {
+                    $query->where('status', 'accept');
+                });
+        })
             ->orWhere('id', $data['SecondWeighbridge']->loading_slip_id)
             ->with([
                 'loadingProgramItem.deliveryOrders.customer',
@@ -292,7 +296,7 @@ class SecondWeighBridgeController extends Controller
         $second_weight = $request->second_weight;
         $net_weight = $second_weight - $first_weight;
 
-        if($second_weight < $first_weight) {
+        if ($second_weight < $first_weight) {
             return response()->json("Second Weight can not be less than First Weight", 422);
         }
 
@@ -300,7 +304,7 @@ class SecondWeighBridgeController extends Controller
         $current_balance = get_second_weighbridge_balance($loadingSlip);
         $available_balance = $current_balance + $secondWeighbridge->net_weight;
 
-        if($net_weight > $available_balance) {
+        if ($net_weight > $available_balance) {
             return response()->json("Your total remaining net weight balance for all associated DOs on this ticket is: " . number_format($available_balance, 2), 422);
         }
 
@@ -328,8 +332,9 @@ class SecondWeighBridgeController extends Controller
         }
 
         foreach ($deliveryOrders as $do) {
-            if ($remainingWeight <= 0) break;
-            
+            if ($remainingWeight <= 0)
+                break;
+
             $doBalance = get_second_weighbridge_balance_by_delivery_order($do->id);
             if ($doBalance > 0) {
                 $deduct = min($doBalance, $remainingWeight);
@@ -375,7 +380,7 @@ class SecondWeighBridgeController extends Controller
 
         // Check if loading slip has delivery_order_id
         $needsDeliveryOrder = !$LoadingSlip->delivery_order_id;
-     
+
         $deliveryOrders = collect();
 
         // If loading slip doesn't have delivery_order_id, get available delivery orders for the sale order

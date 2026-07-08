@@ -46,7 +46,7 @@ class SalesOrderRequest extends FormRequest
             "payment_on_kaanta" => "nullable|boolean",
             "arrival_location_id" => "nullable|array",
             "arrival_location_id.*" => "integer|exists:arrival_locations,id",
-            "arrival_sub_location_id" => "nullable|array",
+            "arrival_sub_location_id" => "required|array",
             "arrival_sub_location_id.*" => "integer|exists:arrival_sub_locations,id",
 
             "item_id" => "required",

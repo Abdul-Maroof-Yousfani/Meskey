@@ -3,7 +3,8 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>Ticket:</label>
-                <input type="text" value="{{ $loadingSlip->loadingProgramItem->transaction_number ?? 'N/A' }} -- {{ $loadingSlip->loadingProgramItem->truck_number ?? 'N/A' }}"
+                <input type="text"
+                    value="{{ $loadingSlip->loadingProgramItem->transaction_number ?? 'N/A' }} -- {{ $loadingSlip->loadingProgramItem->truck_number ?? 'N/A' }}"
                     disabled class="form-control" autocomplete="off" readonly />
             </div>
         </div>
@@ -32,7 +33,9 @@
                         'is_auto' => $do->is_auto_created_from_so,
                         'customer' => $do->customer->name ?? '',
                         'commodity' => $do->delivery_order_data->first()->item->name ?? '',
-                        'so_qty' => $do->delivery_order_data->sum(function($d) { return $d->salesOrderData->qty ?? 0; }),
+                        'so_qty' => $do->delivery_order_data->sum(function ($d) {
+                            return $d->salesOrderData->qty ?? 0;
+                        }),
                         'do_qty' => $do->delivery_order_data->sum('qty'),
                         'factory_names' => $factoryNames,
                         'gala_names' => $galaNames,
@@ -40,7 +43,7 @@
                         'brand' => $item->brand->name ?? 'N/A'
                     ];
                 }
-            } 
+            }
             // Fallback to single delivery order if exists
             elseif ($item && $item->loadingProgram && $item->loadingProgram->deliveryOrder) {
                 $do = $item->loadingProgram->deliveryOrder;
@@ -59,7 +62,9 @@
                     'is_auto' => $do->is_auto_created_from_so,
                     'customer' => $do->customer->name ?? '',
                     'commodity' => $do->delivery_order_data->first()->item->name ?? '',
-                    'so_qty' => $do->delivery_order_data->sum(function($d) { return $d->salesOrderData->qty ?? 0; }),
+                    'so_qty' => $do->delivery_order_data->sum(function ($d) {
+                        return $d->salesOrderData->qty ?? 0;
+                    }),
                     'do_qty' => $do->delivery_order_data->sum('qty'),
                     'factory_names' => $factoryNames,
                     'gala_names' => $galaNames,
@@ -107,7 +112,9 @@
             <ul class="nav nav-tabs nav-justified" id="orderTabs" role="tablist">
                 @foreach($orders as $index => $order)
                     <li class="nav-item">
-                        <a class="nav-link {{ $index === 0 ? 'active' : '' }}" id="order-tab-{{ $index }}" data-toggle="tab" href="#order-content-{{ $index }}" role="tab" aria-controls="order-content-{{ $index }}" aria-selected="{{ $index === 0 ? 'true' : 'false' }}">
+                        <a class="nav-link {{ $index === 0 ? 'active' : '' }}" id="order-tab-{{ $index }}" data-toggle="tab"
+                            href="#order-content-{{ $index }}" role="tab" aria-controls="order-content-{{ $index }}"
+                            aria-selected="{{ $index === 0 ? 'true' : 'false' }}">
                             {{ $order['type'] }}: {{ $order['number'] }}
                             @if(!empty($order['is_auto']))
                                 <span class="badge badge-warning" style="font-size: 0.6rem;">Auto</span>
@@ -118,30 +125,35 @@
             </ul>
             <div class="tab-content pt-1" id="orderTabsContent">
                 @foreach($orders as $index => $order)
-                    <div class="tab-pane fade show {{ $index === 0 ? 'active' : '' }}" id="order-content-{{ $index }}" role="tabpanel" aria-labelledby="order-tab-{{ $index }}">
+                    <div class="tab-pane fade show {{ $index === 0 ? 'active' : '' }}" id="order-content-{{ $index }}"
+                        role="tabpanel" aria-labelledby="order-tab-{{ $index }}">
                         <div class="row">
                             <div class="col-xs-12 col-sm-6 col-md-3">
                                 <div class="form-group">
                                     <label>Customer:</label>
-                                    <input type="text" value="{{ $order['customer'] }}" class="form-control" readonly disabled />
+                                    <input type="text" value="{{ $order['customer'] }}" class="form-control" readonly
+                                        disabled />
                                 </div>
                             </div>
                             <div class="col-xs-12 col-sm-6 col-md-3">
                                 <div class="form-group">
                                     <label>Commodity:</label>
-                                    <input type="text" value="{{ $order['commodity'] }}" class="form-control" readonly disabled />
+                                    <input type="text" value="{{ $order['commodity'] }}" class="form-control" readonly
+                                        disabled />
                                 </div>
                             </div>
                             <div class="col-xs-12 col-sm-6 col-md-3">
                                 <div class="form-group">
                                     <label>SO Qty:</label>
-                                    <input type="number" value="{{ round($order['so_qty']) }}" class="form-control" readonly disabled />
+                                    <input type="number" value="{{ round($order['so_qty']) }}" class="form-control" readonly
+                                        disabled />
                                 </div>
                             </div>
                             <div class="col-xs-12 col-sm-6 col-md-3">
                                 <div class="form-group">
                                     <label>DO Qty:</label>
-                                    <input type="number" value="{{ round($order['do_qty']) }}" class="form-control" readonly disabled />
+                                    <input type="number" value="{{ round($order['do_qty']) }}" class="form-control" readonly
+                                        disabled />
                                 </div>
                             </div>
                         </div>
@@ -149,7 +161,8 @@
                             <div class="col-xs-12 col-sm-6 col-md-3">
                                 <div class="form-group">
                                     <label>Factory:</label>
-                                    <select class="form-control select2 w-100" multiple disabled style="width: 100% !important;">
+                                    <select class="form-control select2 w-100" multiple disabled
+                                        style="width: 100% !important;">
                                         @foreach($order['factory_names'] as $name)
                                             <option selected>{{ $name }}</option>
                                         @endforeach
@@ -159,7 +172,8 @@
                             <div class="col-xs-12 col-sm-6 col-md-3">
                                 <div class="form-group">
                                     <label>Gala:</label>
-                                    <select class="form-control select2 w-100" multiple disabled style="width: 100% !important;">
+                                    <select class="form-control select2 w-100" multiple disabled
+                                        style="width: 100% !important;">
                                         @foreach($order['gala_names'] as $name)
                                             <option selected>{{ $name }}</option>
                                         @endforeach
@@ -169,7 +183,8 @@
                             <div class="col-xs-12 col-sm-6 col-md-3">
                                 <div class="form-group">
                                     <label>Bag Size:</label>
-                                    <input type="number" value="{{ $order['bag_size'] }}" class="form-control" readonly disabled />
+                                    <input type="number" value="{{ $order['bag_size'] }}" class="form-control" readonly
+                                        disabled />
                                 </div>
                             </div>
                             <div class="col-xs-12 col-sm-6 col-md-3">
@@ -191,15 +206,23 @@
         <div class="col-xs-12 col-sm-6 col-md-4">
             <div class="form-group">
                 <label>No. of Bags:</label>
-                <input type="text" value="{{ $loadingSlip->no_of_bags ?? 'N/A' }}"
-                    disabled class="form-control" autocomplete="off" readonly />
+                <input type="text" value="{{ $loadingSlip->no_of_bags ?? 'N/A' }}" disabled class="form-control"
+                    autocomplete="off" readonly />
             </div>
         </div>
         <div class="col-xs-12 col-sm-6 col-md-4">
             <div class="form-group">
-                <label>Kilogram:</label>
-                <input type="text" value="{{ $loadingSlip->kilogram ?? 'N/A' }}"
-                    disabled class="form-control" autocomplete="off" readonly />
+                <label>Suggested Qty: <span class="text-danger">*</span></label>
+                <input type="number" name="suggested_qty" id="suggested_qty"
+                    value="{{ $loadingSlip->loadingProgramItem->qty ?? 'N/A' }}" class="form-control" readonly required
+                    step="0.01" />
+            </div>
+        </div>
+        <div class="col-xs-12 col-sm-6 col-md-4">
+            <div class="form-group">
+                <label>QTY KG: <span class="text-danger">*</span> (No. Bags x Bag Size)</label>
+                <input type="text" value="{{ $loadingSlip->kilogram ?? 'N/A' }}" disabled class="form-control"
+                    autocomplete="off" readonly />
             </div>
         </div>
         <div class="col-xs-4 col-sm-4 col-md-4">
@@ -207,7 +230,7 @@
                 <label>Labour</label>
                 <select name='labour' class='form-control select2'>
                     <option value='paid' @selected($loadingSlip->labour == 'paid')>Paid</option>
-                    <option value='not_paid' @selected($loadingSlip->labour == 'not_paid')>Not Paid</option>    
+                    <option value='not_paid' @selected($loadingSlip->labour == 'not_paid')>Not Paid</option>
                 </select>
             </div>
         </div>
@@ -223,18 +246,20 @@
         {{-- <div class="col-xs-12 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Created Date:</label>
-                <input type="text" value="{{ $loadingSlip->created_at->format('d-m-Y H:i:s') }}"
-                    disabled class="form-control" autocomplete="off" readonly />
+                <input type="text" value="{{ $loadingSlip->created_at->format('d-m-Y H:i:s') }}" disabled
+                    class="form-control" autocomplete="off" readonly />
             </div>
         </div> --}}
     </div>
 </div>
 <div>
-    <button type="button" class="btn btn-secondary" style="float: right; margin-bottom: 20px;" data-dismiss="modal">Close</button>
-    <a href="{{ route('sales.loading-slip.print', $loadingSlip->id) }}" target="_blank" class="btn btn-primary" style="float: right; margin-bottom: 20px; margin-right: 10px;">
+    <button type="button" class="btn btn-secondary" style="float: right; margin-bottom: 20px;"
+        data-dismiss="modal">Close</button>
+    <a href="{{ route('sales.loading-slip.print', $loadingSlip->id) }}" target="_blank" class="btn btn-primary"
+        style="float: right; margin-bottom: 20px; margin-right: 10px;">
         <i class="ft-printer"></i> Print
     </a>
 </div>
 <script>
     $(".select2").select2();
-    </script>
+</script>

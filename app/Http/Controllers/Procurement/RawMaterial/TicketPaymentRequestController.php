@@ -588,6 +588,9 @@ class TicketPaymentRequestController extends Controller
             'payment_request_data_id' => $paymentRequestData->id,
             'other_deduction_kg' => $request->other_deduction['kg_value'] ?? 0,
             'other_deduction_value' => $request->other_deduction['kg_amount'] ?? 0,
+            'rerate_on_access_weight_kg' => $request->rerate_on_access_weight_kg ?? 0,
+            'rerate_on_access_weight_rate' => $request->rerate_on_access_weight_rate ?? 0,
+            'rerate_on_access_weight_amount' => $request->rerate_on_access_weight_amount ?? 0,
             'request_type' => 'payment',
             'account_id' => $accountId,
             'module_type' => 'ticket',
@@ -747,7 +750,7 @@ class TicketPaymentRequestController extends Controller
                 $query->where('module_type', 'ticket');
 
                 $query->where('purchase_order_id', $arrivalTicket->arrival_purchase_order_id);
-            })->select('other_deduction_kg', 'other_deduction_value')
+            })->select('other_deduction_kg', 'other_deduction_value', 'rerate_on_access_weight_kg', 'rerate_on_access_weight_rate', 'rerate_on_access_weight_amount')
                 ->latest()
                 ->first();
         }

@@ -18,111 +18,127 @@ class PurchaseBillData extends Model
         "updated_at"
     ];
 
-    protected static function booted() {
-        static::creating(function($model) {
+    protected static function booted()
+    {
+        static::creating(function ($model) {
             // getAccountDetailsByHierarchyPath
 
-                $bill = $model->purchase_bill;
-                $supplier = Supplier::find($bill->supplier_id);
-                $item = Product::find($model->item_id);
+            $bill = $model->purchase_bill;
+            $supplier = Supplier::find($bill->supplier_id);
+            $item = Product::find($model->item_id);
+            $grnNo = $bill->grn->purchase_order_receiving_no;
+            if ($supplier && $supplier->account_id) {
+                createTransaction(
+                    $model->final_amount,
+                    $supplier->account_id,
+                    5,
+                    $model->purchase_bill->bill_no,
+                    'credit',
+                    'no',
+                    [
+                        'purpose' => "supplier-payable",
+                        'grn_no' => $grnNo,
+                        'payment_against' => "store-purchase",
+                        'remarks' => "Amount payable to supplier for purchase of goods"
+                    ]
+                );
+            }
 
-                if($supplier && $supplier->account_id) {
-                    createTransaction(
-                        $model->final_amount,
-                        $supplier->account_id,
-                        5,
-                        $model->purchase_bill->bill_no,
-                        'credit',
-                        'no',
-                        [
-                            'payment_against' => "Purchase Bill",
-                            'remarks' => $data->description ?? "Purchase Bill"
-                        ] 
-                    );
-                }
+            if ($model->discount_amount > 0) {
+                createTransaction(
+                    $model->discount_amount,
+                    getAccountDetailsByHierarchyPath("6-1")->id,
+                    5,
+                    $model->purchase_bill->bill_no,
+                    'credit',
+                    'no',
+                    [
+                        'purpose' => "purchase-discount",
+                        'grn_no' => $grnNo,
+                        'payment_against' => "store-purchase",
+                        'remarks' => "Discount received from supplier on purchase (Early payment/Bulk order/Trade discount)"
+                    ]
+                );
+            }
 
-                 if($model->discount_amount > 0) {
-                    createTransaction(
-                        $model->discount_amount,
-                        getAccountDetailsByHierarchyPath("6-1")->id,
-                        5,
-                        $model->purchase_bill->bill_no,
-                        'credit',
-                        'no',
-                        [
-                            'payment_against' => "Purchase Bill",
-                            'remarks' => $data->description ?? "Purchase Bill"
-                        ] 
-                    );
-                }
-
-                if($model->deduction > 0) {
-                    createTransaction(
-                        $model->deduction,
-                        getAccountDetailsByHierarchyPath("5-2")->id,
-                        5,
-                        $model->purchase_bill->bill_no,
-                        'credit',
-                        'no',
-                        [
-                            'payment_against' => "Purchase Bill",
-                            'remarks' => $data->description ?? "Purchase Bill"
-                        ] 
-                    );
-                }
+            if ($model->deduction > 0) {
+                createTransaction(
+                    $model->deduction,
+                    getAccountDetailsByHierarchyPath("5-2")->id,
+                    5,
+                    $model->purchase_bill->bill_no,
+                    'credit',
+                    'no',
+                    [
+                        'purpose' => "purchase-deduction",
+                        'grn_no' => $grnNo,
+                        'payment_against' => "store-purchase",
+                        'remarks' => "Deduction applied due to quality issues/late delivery/quantity shortage/damaged goods"
+                    ]
+                );
+            }
 
 
-                if($item && $item->account_id) {
-                    createTransaction(
-                        $model->gross_amount,
-                        $item->account_id,
-                        5,
-                        $model->purchase_bill->bill_no,
-                        'debit',
-                        'no',
-                        [
-                            'payment_against' => "Purchase Bill",
-                            'remarks' => $data->description ?? "Purchase Bill"
-                        ] 
-                    );
-                }
+            if ($item && $item->account_id) {
+                createTransaction(
+                    $model->gross_amount,
+                    $item->account_id,
+                    5,
+                    $model->purchase_bill->bill_no,
+                    'debit',
+                    'no',
+                    [
+                        'purpose' => "cost-of-store-purchase",
+                        'grn_no' => $grnNo,
+                        'payment_against' => "store-purchase",
+                        'remarks' => "Cost of goods purchased (Gross amount including all direct costs and before deductions)"
+                    ]
+                );
+            }
 
-               
-                if($model->tax_amount > 0) {
-                    createTransaction(
-                        $model->tax_amount,
-                        getAccountDetailsByHierarchyPath("2-6")->id,
-                        5,
-                        $model->purchase_bill->bill_no,
-                        'debit',
-                        'no',
-                        [
-                            'payment_against' => "Purchase Bill",
-                            'remarks' => $data->description ?? "Purchase Bill"
-                        ] 
-                    );
-                }
 
-        
+            if ($model->tax_amount > 0) {
+                createTransaction(
+                    $model->tax_amount,
+                    getAccountDetailsByHierarchyPath("2-6")->id,
+                    5,
+                    $model->purchase_bill->bill_no,
+                    'debit',
+                    'no',
+                    [
+                        'purpose' => "purchase-tax",
+                        'grn_no' => $grnNo,
+                        'payment_against' => "store-purchase",
+                        'remarks' => "Input tax (VAT/GST/Sales Tax) paid on purchase - Recoverable tax asset"
+                    ]
+                );
+            }
+
+
         });
     }
 
-    public function PurchaseOrderReceivingData() {
+    public function PurchaseOrderReceivingData()
+    {
         return $this->belongsTo(PurchaseOrderReceivingData::class, "purchase_order_receiving_data_id");
     }
 
-    public function item() {
+    public function item()
+    {
         return $this->belongsTo(Product::class, "item_id");
     }
 
-    public function debit_note_data() {
+    public function debit_note_data()
+    {
         return $this->hasMany(DebitNoteData::class, "purchase_bill_data_id");
     }
-    
-    public function purchase_bill() {
+
+    public function purchase_bill()
+    {
         return $this->belongsTo(PurchaseBill::class, "purchase_bill_id");
     }
-    public function purchaseBill() {
+    public function purchaseBill()
+    {
         return $this->belongsTo(PurchaseBill::class, "purchase_bill_id");
     }
 }

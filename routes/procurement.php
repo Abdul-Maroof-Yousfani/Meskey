@@ -40,7 +40,7 @@ use App\Http\Controllers\Procurement\Store\{
 Route::prefix('raw-material')->name('raw-material.')->group(function () {
     Route::resource('purchase-request', PurchaseRequestController::class);
     Route::post('get-purchase-request', [PurchaseRequestController::class, 'getList'])->name('get.purchase-request');
-   
+
 
     Route::resource('gate-buying', GateBuyingController::class);
     Route::post('get-gate-buying', [GateBuyingController::class, 'getList'])->name('get.gate-buying');
@@ -51,6 +51,8 @@ Route::prefix('raw-material')->name('raw-material.')->group(function () {
     Route::resource('purchase-order', PurchaseOrderController::class);
     Route::get('purchase-order/{id}/view', [PurchaseOrderController::class, 'view'])->name('purchase-order.view');
     Route::post('get-purchase-order', [PurchaseOrderController::class, 'getList'])->name('get.purchase-order');
+    Route::get('/export-csv', [PurchaseOrderController::class, 'exportCsv'])->name('purchase-order.export-csv');
+
     Route::post('purchase-order/mark-completed', [PurchaseOrderController::class, 'markAsCompleted'])->name('purchase-order.mark-completed');
     Route::get('/getMainSlabByProduct', [PurchaseOrderController::class, 'getMainSlabByProduct'])->name('getMainSlabByProduct');
     Route::post('/generate-contract-number', [PurchaseOrderController::class, 'getContractNumber'])->name('generate.contract.number');
@@ -65,7 +67,7 @@ Route::prefix('raw-material')->name('raw-material.')->group(function () {
     Route::post('get-purchase-sampling', [PurchaseSamplingController::class, 'getList'])->name('get.purchase-sampling');
     Route::post('get-purchase-resampling', [PurchaseSamplingController::class, 'getList'])->name('get.purchase-resampling');
 
-    Route::resource('sampling-monitoring',  PurchaseSamplingMonitoringController::class);
+    Route::resource('sampling-monitoring', PurchaseSamplingMonitoringController::class);
     Route::post('/get-sampling-monitoring', [PurchaseSamplingMonitoringController::class, 'getList'])->name('get.sampling-monitoring');
 
     Route::resource('freight', PurchaseFreightController::class);
@@ -127,11 +129,11 @@ Route::prefix('raw-material')->name('raw-material.')->group(function () {
         Route::resource('payment-request', GateBuyingPaymentRequestController::class)->names('gate-buy.payment-request');
         Route::post('/get-payment-request', [GateBuyingPaymentRequestController::class, 'getList'])->name('gate-buy.get.payment-request');
 
-       // Route::resource('payment-request-approval', PaymentRequestApprovalController::class)->names('gate-buying.payment-request-approval');
-       // Route::post('/get-payment-request-approval', [PaymentRequestApprovalController::class, 'getList'])->name('gate-buying.get.payment-request-approval');
-       // Route::post('/approve', [PaymentRequestApprovalController::class, 'approve'])->name('gate-buying.payment-request-approval.approve');
+        // Route::resource('payment-request-approval', PaymentRequestApprovalController::class)->names('gate-buying.payment-request-approval');
+        // Route::post('/get-payment-request-approval', [PaymentRequestApprovalController::class, 'getList'])->name('gate-buying.get.payment-request-approval');
+        // Route::post('/approve', [PaymentRequestApprovalController::class, 'approve'])->name('gate-buying.payment-request-approval.approve');
 
-       // Route::get('/get-freight-form', [PurchaseFreightController::class, 'getFreightForm'])->name('gate-buying.freight.getFreightForm');
+        // Route::get('/get-freight-form', [PurchaseFreightController::class, 'getFreightForm'])->name('gate-buying.freight.getFreightForm');
     });
 });
 
@@ -165,7 +167,7 @@ Route::prefix('store')->name('store.')->group(function () {
     Route::get('purchase-quotation/comparison-approvals/{id}', [PurchaseQuotationController::class, 'manageComparisonApprovals'])->name('purchase-quotation.comparison-approvals');
     Route::get('purchase-quotation/comparison-approvals-view/{id}', [PurchaseQuotationController::class, 'manageComparisonApprovalsView'])->name('purchase-quotation.comparison-approvals-view');
     Route::get('purchase-quotation/comparison-approvals-for-view/{id}', [PurchaseQuotationController::class, 'dataForComparison'])->name('purchase-quotation.dataForComparison');
-   
+
 
 
     Route::post("qc/create", [PurchaseOrderReceivingController::class, "createQc"])->name("qc.create");
@@ -203,7 +205,7 @@ Route::prefix('store')->name('store.')->group(function () {
     Route::post("/purchase-bill/getList", [PurchaseBillController::class, "getList"])->name("get.purchase-bill");
     Route::get("get-unique-number-purchase-bill/{locationId}/{contractDate}", [PurchaseBillController::class, "getNumber"])->name("purchase-bill.getNumber");
     Route::get("get-grns", [PurchaseBillController::class, "getGrns"])->name("get.grns");
-   
+
     Route::get("/debit-note/get-grns/{supplier_id}", [DebitNoteController::class, "get_grns"])->name("debit-note.get-grns");
     Route::get("/debit-note/get-bills/{grn_id}", [DebitNoteController::class, "get_bills"])->name("debit-note.get-bills");
     Route::get("/debit-note/get-bill-items/{bill_id}", [DebitNoteController::class, "get_bill_items"])->name("debit-note.get-bill-items");
@@ -213,7 +215,7 @@ Route::prefix('store')->name('store.')->group(function () {
 
 
     Route::get('purchase-quotation/filtered-options', [PurchaseQuotationController::class, 'getFilteredOptions'])->name('purchase-quotation.filtered-options');
-    
+
     Route::delete("/qc/{qc}/delete", [QcController::class, "destroy"])->name("qc.delete");
     Route::post("qc/submit", [QcController::class, "store"])->name("qc.store");
     Route::post("qc/update", [QcController::class, "update"])->name("qc.update");

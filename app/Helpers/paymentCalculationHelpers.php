@@ -510,11 +510,12 @@ function calculatePohaunchDeductions($loadingInfo, $samplingData, $ratePerKg, $t
             $query->where('ticket_id', $ticketId)
                 ->where('module_type', 'ticket');
         })
-            ->select('other_deduction_kg', 'other_deduction_value')
+            ->select('other_deduction_kg', 'other_deduction_value', 'rerate_on_access_weight_amount')
             ->latest()
             ->first();
 
         $otherDeductionValue = (float) ($otherDeduction->other_deduction_value ?? 0);
+        $rerateOnAccessWeightAmount = (float) ($otherDeduction->rerate_on_access_weight_amount ?? 0);
     }
 
     return [
@@ -523,6 +524,7 @@ function calculatePohaunchDeductions($loadingInfo, $samplingData, $ratePerKg, $t
         'compulsory_deduction_details' => $compulsoryDeductionDetails,
         'bag_weight_in_kg_sum' => $bagWeightInKgSum,
         'other_deduction_calculated' => $otherDeductionValue,
+        'rerate_on_access_weight_deduction' => $rerateOnAccessWeightAmount,
         'loading_weighbridge_sum' => $loadingWeighbridgeSum,
         'bags_rate_sum' => $bagsRateSum,
         'total_deductions' => $totalSamplingDeductions + $bagWeightInKgSum + $loadingWeighbridgeSum + $bagsRateSum,
@@ -612,11 +614,12 @@ function calculateThaddaDeductions($loadingInfo, $samplingData, $ratePerKg, $tic
             $query->where('ticket_id', $ticketId)
                 ->where('module_type', 'purchase_order');
         })
-            ->select('other_deduction_kg', 'other_deduction_value')
+            ->select('other_deduction_kg', 'other_deduction_value', 'rerate_on_access_weight_amount')
             ->latest()
             ->first();
 
         $otherDeductionValue = (float) ($otherDeduction->other_deduction_value ?? 0);
+        $rerateOnAccessWeightAmount = (float) ($otherDeduction->rerate_on_access_weight_amount ?? 0);
     }
 
     return [
@@ -625,6 +628,7 @@ function calculateThaddaDeductions($loadingInfo, $samplingData, $ratePerKg, $tic
         'compulsory_deduction_details' => $compulsoryDeductionDetails,
         'bag_weight_in_kg_sum' => $bagWeightInKgSum,
         'other_deduction_calculated' => $otherDeductionValue,
+        'rerate_on_access_weight_deduction' => $rerateOnAccessWeightAmount,
         'loading_weighbridge_sum' => $loadingWeighbridgeSum,
         'bags_rate_sum' => $bagsRateSum,
         'total_deductions' => $totalSamplingDeductions + $bagWeightInKgSum + $loadingWeighbridgeSum + $bagsRateSum,
@@ -640,7 +644,8 @@ function calculatePohaunchAmounts($loadingInfo, $deductions, $ratePerKg, $grossF
     $totalDeductionsForFormula = $deductions['total_sampling_deductions'] +
         $deductions['bag_weight_in_kg_sum'] +
         $deductions['loading_weighbridge_sum'] +
-        $deductions['other_deduction_calculated'];
+        $deductions['other_deduction_calculated'] +
+        $deductions['rerate_on_access_weight_deduction'];
     ;
 
     // $totalAmount = $grossAmount - $totalDeductionsForFormula + $deductions['bags_rate_sum'] - $grossFreightAmount;
@@ -662,7 +667,9 @@ function calculateThaddaAmounts($loadingInfo, $deductions, $ratePerKg)
     $totalDeductionsForFormula = $deductions['total_sampling_deductions'] +
         $deductions['bag_weight_in_kg_sum'] +
         $deductions['loading_weighbridge_sum'] +
-        $deductions['other_deduction_calculated'];
+        $deductions['other_deduction_calculated'] +
+        $deductions['rerate_on_access_weight_deduction']
+    ;
 
 
     $arrivedFreightAmount = $loadingInfo['arrived_frieght_amount'] ?? 0;

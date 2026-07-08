@@ -102,6 +102,7 @@
                     </div>
                 </div>
 
+
                 <div class="col-12 mt-3">
                     <h6 class="header-heading-sepration">Customer Details</h6>
                 </div>
@@ -124,7 +125,7 @@
                             readonly>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <!-- <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Broker:</label>
                         <select name="broker_id" id="broker_id" class="form-control select2">
@@ -148,7 +149,7 @@
                         <input type="number" name="commission_percent_per_kg" id="commission_percent_per_kg"
                             class="form-control" step="0.01" min="0" value="0">
                     </div>
-                </div>
+                </div> -->
                 <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Contact Person:</label>
@@ -263,7 +264,7 @@
                 <table class="table table-bordered" id="salesInquiryTable" style="min-width:2000px;">
                     <thead>
                         <tr>
-                            <th>Item</th>
+                            <th class="col-3">Item</th>
                             <th>Bag Type</th>
                             <th>Packing</th>
                             <th>No of Bags</th>
@@ -365,6 +366,42 @@
                 </table>
             </div>
         </div>
+
+
+
+
+
+
+        <div class="col-12 mt-3">
+            <h6 class="header-heading-sepration">Broker Details</h6>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label class="form-label">Broker:</label>
+                <select name="broker_id" id="broker_id" class="form-control select2">
+                    <option value="">Select Broker</option>
+                    @foreach ($brokers ?? [] as $broker)
+                        <option value="{{ $broker->id }}">{{ $broker->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label class="form-label">Comission RS per KG:</label>
+                <input type="number" name="commission_per_kg" id="commission_per_kg" class="form-control" step="0.0001"
+                    min="0" value="0">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label class="form-label">Comission in % per KG:</label>
+                <input type="number" name="commission_percent_per_kg" id="commission_percent_per_kg"
+                    class="form-control" step="0.01" min="0" value="0">
+            </div>
+        </div>
+
+
     </div>
 
     <input type="hidden" id="rowCount" value="0">
@@ -459,7 +496,7 @@
 
         if (isOrderDateComplete && isDeliveryDateComplete) {
             if (orderDate > deliveryDate) {
-                $('#delivery_date').val('');
+                // $('#delivery_date').val('');
                 Swal.fire({
                     icon: 'error',
                     title: 'Invalid Date!',
@@ -777,6 +814,12 @@
                 // Fill contract type (sauda_type)
                 if (res.contract_type) {
                     $("#sauda_type").val(res.contract_type).trigger('change.select2');
+                    if (res.contract_type == 'x-mill') {
+                        $('#transporter_used').val('no').trigger('change.select2');
+                    }
+                    else {
+                        $('#transporter_used').val('yes').trigger('change.select2');
+                    }
                 }
 
                 if (res.contact_person) {
@@ -1109,8 +1152,8 @@
         const ratePerKg = getFirstItemRate();
         const qty = getFirstItemQty();
 
-        if (ratePerKg > 0 && qty > 0) {
-            const percent = (commissionInRs / (ratePerKg * qty)) * 100;
+        if (ratePerKg > 0) {
+            const percent = (commissionInRs / (ratePerKg)) * 100;
             $('#commission_percent_per_kg').val(percent.toFixed(2));
         } else {
             $('#commission_percent_per_kg').val('0');
@@ -1132,7 +1175,7 @@
         if ($('#commission_percent_per_kg').val() && $('#commission_percent_per_kg').val() != '0') {
             calculateCommissionFromPercent();
         } else if ($('#commission_per_kg').val() && $('#commission_per_kg').val() != '0') {
-            calculateCommissionFromRs();
+            // calculateCommissionFromRs();
         }
     }
 

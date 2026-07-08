@@ -15,7 +15,7 @@ use Validator;
 
 class DispatchQCController extends Controller
 {
-     function __construct()
+    function __construct()
     {
         // $this->middleware('check.company:sales-sales-qc', ['only' => ['index']]);
         // $this->middleware('check.company:sales-sales-qc', ['only' => ['edit']]);
@@ -44,9 +44,9 @@ class DispatchQCController extends Controller
                 return $q->where(function ($sq) use ($searchTerm) {
                     $sq->whereHas('loadingProgramItem', function ($query) use ($searchTerm) {
                         $query->where('transaction_number', 'like', $searchTerm)
-                              ->orWhere('truck_number', 'like', $searchTerm);
+                            ->orWhere('truck_number', 'like', $searchTerm);
                     })
-                    ->orWhere('status', 'like', $searchTerm);
+                        ->orWhere('status', 'like', $searchTerm);
                 });
             })
             ->latest()
@@ -64,10 +64,11 @@ class DispatchQCController extends Controller
         // 1. No dispatch QC at all, OR
         // 2. Latest QC is rejected AND loading slip was edited after that specific rejection
         $Tickets = LoadingProgramItem::whereHas('loadingSlip')
-            ->whereDoesntHave('dispatchQcs', function($q) {
+            ->whereDoesntHave('dispatchQcs', function ($q) {
                 // Exclude tickets that have an accepted QC
                 $q->where('status', 'accept');
             })
+            ->whereIn('arrival_location_id', getUserCurrentCompanyArrivalLocations())
             ->with([
                 'loadingProgram.deliveryOrder.customer',
                 'loadingProgram.deliveryOrder.delivery_order_data.item',
@@ -76,28 +77,28 @@ class DispatchQCController extends Controller
                 'loadingSlip.logs'
             ])
             ->get()
-            ->filter(function($ticket) {
+            ->filter(function ($ticket) {
                 // If no dispatch QC exists, ticket is eligible
                 if ($ticket->dispatchQcs->isEmpty()) {
                     return true;
                 }
-                
+
                 // Get the latest rejected QC
                 $latestRejectedQc = $ticket->dispatchQcs
                     ->where('status', 'reject')
                     ->sortByDesc('created_at')
                     ->first();
-                
+
                 if (!$latestRejectedQc) {
                     return false;
                 }
-                
+
                 // Check if loading slip was edited after this specific rejection
                 // (there must be a log entry with this dispatch_qc_id)
                 $hasEditedAfterRejection = $ticket->loadingSlip->logs
                     ->where('dispatch_qc_id', $latestRejectedQc->id)
                     ->isNotEmpty();
-                
+
                 return $hasEditedAfterRejection;
             })
             ->values();
@@ -131,24 +132,24 @@ class DispatchQCController extends Controller
 
         // Check if the ticket already has an accepted dispatch QC
         $loadingProgramItem = LoadingProgramItem::with(['dispatchQcs', 'loadingSlip.logs'])->findOrFail($request->loading_program_item_id);
-        
+
         if ($loadingProgramItem->hasAcceptedDispatchQc()) {
             return response()->json(['errors' => ['loading_program_item_id' => 'This ticket already has an accepted Dispatch QC.']], 422);
         }
-        
+
         // Check if there's a rejected QC but loading slip hasn't been edited yet
         $latestRejectedQc = $loadingProgramItem->dispatchQcs
             ->where('status', 'reject')
             ->sortByDesc('created_at')
             ->first();
-            
+
         if ($latestRejectedQc) {
             // Check if loading slip was edited after this specific rejection
             $loadingSlip = $loadingProgramItem->loadingSlip;
             $hasEditedAfterRejection = $loadingSlip && $loadingSlip->logs
                 ->where('dispatch_qc_id', $latestRejectedQc->id)
                 ->isNotEmpty();
-            
+
             if (!$hasEditedAfterRejection) {
                 return response()->json(['errors' => ['loading_program_item_id' => 'Please edit the loading slip first before creating a new Dispatch QC.']], 422);
             }
@@ -172,7 +173,7 @@ class DispatchQCController extends Controller
         try {
             $DeliveryOrder = DeliveryOrder::find($loadingProgramItem->delivery_order_id);
             $SaleOrder = $LoadingProgramItem->loadingProgram->saleOrder;
-    
+
             // Auto-populate fields from ticket data (no matter what)
             if ($DeliveryOrder) {
                 $dispatchQcData = [
@@ -204,16 +205,16 @@ class DispatchQCController extends Controller
                     'created_by' => auth()->user()->id
                 ];
             }
-    
+
             $dispatchQc = DispatchQc::create($dispatchQcData);
-    
+
             // Handle file attachments
             if ($request->hasFile('attachments')) {
                 foreach ($request->file('attachments') as $file) {
                     $originalName = $file->getClientOriginalName();
                     $fileName = time() . '_' . uniqid() . '_' . $originalName;
                     $path = $file->storeAs('sales_qc_attachments', $fileName, 'public');
-    
+
                     DispatchQcAttachment::create([
                         'dispatch_qc_id' => $dispatchQc->id,
                         'file_path' => 'storage/' . $path,
@@ -232,7 +233,7 @@ class DispatchQCController extends Controller
             } elseif ($dispatchQc->status == 'reject') {
                 $LoadingProgramItem->update(['process_status' => 'Dispatch QC Rejected']);
             }
-        } catch(Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
             return response()->json($e->getMessage(), 500);
         }
@@ -283,6 +284,7 @@ class DispatchQCController extends Controller
         ])->findOrFail($id);
 
         $Tickets = LoadingProgramItem::whereHas('loadingSlip')
+            ->whereIn('arrival_location_id', getUserCurrentCompanyArrivalLocations())
             ->with([
                 'loadingProgram.deliveryOrder.customer',
                 'loadingProgram.deliveryOrder.delivery_order_data.item',
@@ -472,7 +474,7 @@ class DispatchQCController extends Controller
             foreach ($LoadingProgramItem->deliveryOrders as $do) {
                 $factoryNames = [];
                 $galaNames = [];
-                
+
                 if ($do->arrival_location_id) {
                     $factoryNames = \App\Models\Master\ArrivalLocation::whereIn('id', explode(',', $do->arrival_location_id))->pluck('name')->toArray();
                 }
@@ -486,19 +488,21 @@ class DispatchQCController extends Controller
                     'is_auto' => $do->is_auto_created_from_so,
                     'customer' => $do->customer->name ?? '',
                     'commodity' => $do->delivery_order_data->first()->item->name ?? '',
-                    'so_qty' => $do->delivery_order_data->sum(function($d) { return $d->salesOrderData->qty ?? 0; }),
+                    'so_qty' => $do->delivery_order_data->sum(function ($d) {
+                        return $d->salesOrderData->qty ?? 0;
+                    }),
                     'do_qty' => $do->delivery_order_data->sum('qty'),
                     'factory_names' => $factoryNames,
                     'gala_names' => $galaNames
                 ];
             }
-        } 
+        }
         // Fallback to single delivery order if exists
         elseif ($LoadingProgramItem->loadingProgram && $LoadingProgramItem->loadingProgram->deliveryOrder) {
             $do = $LoadingProgramItem->loadingProgram->deliveryOrder;
             $factoryNames = [];
             $galaNames = [];
-            
+
             if ($do->arrival_location_id) {
                 $factoryNames = \App\Models\Master\ArrivalLocation::whereIn('id', explode(',', $do->arrival_location_id))->pluck('name')->toArray();
             }
@@ -512,7 +516,9 @@ class DispatchQCController extends Controller
                 'is_auto' => $do->is_auto_created_from_so,
                 'customer' => $do->customer->name ?? '',
                 'commodity' => $do->delivery_order_data->first()->item->name ?? '',
-                'so_qty' => $do->delivery_order_data->sum(function($d) { return $d->salesOrderData->qty ?? 0; }),
+                'so_qty' => $do->delivery_order_data->sum(function ($d) {
+                    return $d->salesOrderData->qty ?? 0;
+                }),
                 'do_qty' => $do->delivery_order_data->sum('qty'),
                 'factory_names' => $factoryNames,
                 'gala_names' => $galaNames
@@ -551,7 +557,7 @@ class DispatchQCController extends Controller
 
         // If still empty, use defaults from LoadingProgramItem directly
         if (empty($orders)) {
-             $orders[] = [
+            $orders[] = [
                 'type' => 'Ticket',
                 'number' => $LoadingProgramItem->transaction_number,
                 'customer' => 'N/A',
@@ -564,7 +570,7 @@ class DispatchQCController extends Controller
         }
 
         return response()->json([
-            'success' => true, 
+            'success' => true,
             'data' => [
                 'orders' => $orders,
                 'customer' => $orders[0]['customer'],
@@ -580,7 +586,8 @@ class DispatchQCController extends Controller
     /**
      * Get Gate Out Pass view for a Dispatch QC.
      */
-    public function get_gate_out(int $id) {
+    public function get_gate_out(int $id)
+    {
         $DispatchQc = DispatchQc::with([
             'loadingProgramItem.loadingProgram.deliveryOrder.customer',
             'loadingProgramItem.loadingProgram.deliveryOrder.delivery_order_data.item',
