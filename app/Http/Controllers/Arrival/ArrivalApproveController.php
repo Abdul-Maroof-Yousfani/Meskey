@@ -9,6 +9,7 @@ use App\Models\BagCondition;
 use App\Models\BagPacking;
 use App\Models\BagType;
 use App\Models\Master\ArrivalSubLocation;
+use App\Models\Master\LocationType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -86,6 +87,7 @@ class ArrivalApproveController extends Controller
                 return $q->where('arrival_location_id', auth()->user()->arrival_location_id);
             })
             ->get();
+        $data['locationTypes'] = LocationType::where('status', 'active')->get();
 
         return view('management.arrival.approved_arrival.create', $data);
     }
@@ -118,6 +120,7 @@ class ArrivalApproveController extends Controller
             'arrival_ticket_id' => 'required|exists:arrival_tickets,id',
             'gala_id' => 'required|exists:arrival_sub_locations,id',
             'truck_no' => 'required|string',
+            'location_type_id' => 'required|exists:location_types,id',
             'bag_type_id' => 'required|exists:bag_types,id',
             // 'filling_bags_no' => 'required|integer',
             // 'bag_condition_id' => 'required|exists:bag_conditions,id',
@@ -169,13 +172,15 @@ class ArrivalApproveController extends Controller
         $bagTypes = BagType::all();
         $bagConditions = BagCondition::all();
         $bagPackings = BagPacking::all();
+        $locationTypes = LocationType::where('status', 'active')->get();
 
         return view('management.arrival.approved_arrival.edit', compact(
             'arrivalApprove',
             'arrivalTickets',
             'bagTypes',
             'bagConditions',
-            'bagPackings'
+            'bagPackings',
+            'locationTypes'
         ));
     }
 
@@ -188,6 +193,7 @@ class ArrivalApproveController extends Controller
             'arrival_ticket_id' => 'required|exists:arrival_tickets,id',
             'gala_name' => 'required|string',
             'truck_no' => 'required|string',
+            'location_type_id' => 'required|exists:location_types,id',
             'bag_type_id' => 'required|exists:bag_types,id',
             // 'filling_bags_no' => 'required|integer',
             // 'bag_condition_id' => 'required|exists:bag_conditions,id',

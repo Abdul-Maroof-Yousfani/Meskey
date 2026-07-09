@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Arrival\ArrivalTicket;
 use App\Models\Master\ArrivalSubLocation;
+use App\Models\Master\LocationType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -32,7 +33,8 @@ class ArrivalApprove extends Model
         'total_rejection',
         'amanat',
         'remark',
-        'company_id'
+        'company_id',
+        'location_type_id'
     ];
 
     /**
@@ -77,5 +79,10 @@ class ArrivalApprove extends Model
     public function gala()
     {
         return $this->belongsTo(ArrivalSubLocation::class);
+    }
+
+    public function locationType()
+    {
+        return $this->belongsTo(LocationType::class, 'location_type_id');
     }
 }
