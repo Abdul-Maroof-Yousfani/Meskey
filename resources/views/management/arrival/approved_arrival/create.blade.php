@@ -36,6 +36,17 @@
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
+                <label>Location Type:</label>
+                <select class="form-control select2" name="location_type_id" required>
+                    <option value="">Select Location Type</option>
+                    @foreach ($locationTypes as $locationType)
+                        <option value="{{ $locationType->id }}">{{ $locationType->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+        <div class="col-xs-6 col-sm-6 col-md-6">
+            <div class="form-group">
                 <label>Truck No:</label>
                 <input type="text" readonly name="truck_no" placeholder="Truck No" class="form-control"
                     autocomplete="off" required />
