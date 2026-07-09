@@ -31,6 +31,28 @@
     @csrf
     <input type="hidden" id="listRefresh" value="{{ route('get.arrival-slip') }}" />
     <input type="text" class="d-none" value="{{ $arrivalTicket->arrivalSlip->unique_no ?? 'N/A' }}" />
+    <style>
+        #printSection {
+            color: #222 !important;
+        }
+        #printSection p, 
+        #printSection td, 
+        #printSection th, 
+        #printSection div {
+            color: #222 !important;
+            font-weight: 500 !important;
+        }
+        #printSection h5 {
+            font-size: 1.25rem !important;
+            font-weight: 700 !important;
+            color: #000 !important;
+        }
+        #printSection input[type="text"], 
+        #printSection input[type="number"] {
+            color: #000 !important;
+            font-weight: 600 !important;
+        }
+    </style>
     <div class="row form-mar">
         <div class="pri" id="printSection">
             <!-- header -->
@@ -39,7 +61,7 @@
                     <div class="logo">
                         <img src="{{ asset('management/app-assets/img/meskay-logo.png') }}"
                             alt=""class="img-fluid">
-                        <p>Original / Duplicate</p>
+                        <p style="margin-top: 20px; margin-bottom: 5px; font-weight: 600 !important;color: #000 !important;font-size: 1.25rem !important;">Original / Duplicate</p>
                     </div>
                     <div class="logo-cont">
                         <div class="add-main1">
@@ -126,7 +148,7 @@
                             <td style=" padding: 8px; border: none;">
                                 <input type="text"
                                     style=" border: 1px solid #ddd; padding: 10px 10px; background: transparent;"
-                                    value="{{ now()->format('d-M-Y') }}" readonly>
+                                    value="{{ \Carbon\Carbon::parse($arrival_slip->created_at)->format('Y-m-d') ?? 'N/A' }}" readonly>
                             </td>
                             <td style=" padding: 8px;border: none;">Truck No.</td>
                             <td style=" padding: 8px; border: none;">
@@ -276,7 +298,7 @@
                     <div class="row">
                         <div class=" col-lg-8 col-md-8 col-sm-8 col-xs-8">
                             <!-- Freight Section -->
-                            <div style="margin-top: 5px; font-weight: bold; padding: 5px 0;">Freight</div>
+                            <div style="margin-top: 5px; font-weight: 600 !important; font-size: 1.25rem !important; color: #000 !important; padding: 5px 0;">Freight</div>
                             <hr style="border: 1px solid #ddd; margin-bottom: 0;margin-top: 0;">
                             <table style="border-collapse: collapse; ">
                                 <tr>
@@ -298,14 +320,14 @@
                                     <td style=" padding: 8px;">
                                         <input type="text"
                                             style="width:100%;border:1px solid #ddd;padding:10px 10px;"
-                                            value="{{ $arrivalTicket->freight->freight_written_on_bilty ?? '0.00' }}"
+                                            value="{{ empty($arrivalTicket->freight->freight_written_on_bilty) || (int)$arrivalTicket->freight->freight_written_on_bilty == 0 ? '-' : (int)$arrivalTicket->freight->freight_written_on_bilty }}"
                                             readonly>
                                     </td>
                                     <td style="padding:8px;border:none;"> Freight per Ton</td>
                                     <td style=" padding: 8px;">
                                         <input type="text"
                                             style="width:100%;border:1px solid #ddd;padding:10px 10px;"
-                                            value="{{ $arrivalTicket->freight->freight_per_ton ?? '0.00' }}" readonly>
+                                            value="{{ empty($arrivalTicket->freight->freight_per_ton) || (int)$arrivalTicket->freight->freight_per_ton == 0 ? '-' : (int)$arrivalTicket->freight->freight_per_ton }}" readonly>
                                     </td>
                                 </tr>
 
@@ -313,14 +335,14 @@
                                     <td style=" padding:8px;border:none;">Arrived Kanta Charges </td>
                                     <td style="padding: 8px;">
                                         <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px;"
-                                            value="{{ $arrivalTicket->freight->karachi_kanta_charges ?? '0.00' }}"
+                                            value="{{ empty($arrivalTicket->freight->karachi_kanta_charges) || (int)$arrivalTicket->freight->karachi_kanta_charges == 0 ? '-' : (int)$arrivalTicket->freight->karachi_kanta_charges }}"
                                             readonly>
                                     </td>
                                     <td style=" padding: 8px;border: none;">Kanta Loading Charges
                                     </td>
                                     <td style="padding: 8px;" colspan="3">
                                         <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px;"
-                                            value="{{ $arrivalTicket->freight->kanta_golarchi_charges ?? '0.00' }}"
+                                            value="{{ empty($arrivalTicket->freight->kanta_golarchi_charges) || (int)$arrivalTicket->freight->kanta_golarchi_charges == 0 ? '-' : (int)$arrivalTicket->freight->kanta_golarchi_charges }}"
                                             readonly>
                                     </td>
                                 </tr>
@@ -330,13 +352,13 @@
                                     <td style=" padding: 8px;border: none;">Other (+)/ Labour Charges</td>
                                     <td style="padding: 8px;" colspan="1">
                                         <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px;"
-                                            value="{{ $arrivalTicket->freight->other_labour_charges ?? '0.00' }}"
+                                            value="{{ empty($arrivalTicket->freight->other_labour_charges) || (int)$arrivalTicket->freight->other_labour_charges == 0 ? '-' : (int)$arrivalTicket->freight->other_labour_charges }}"
                                             readonly>
                                     </td>
                                     <td style="padding: 8px;" colspan="8">
                                         <input type="text"
                                             style="    width: 100%; border: 1px solid #ddd; padding: 10px 10px; font-style: italic;"
-                                            value="{{ numberToWords($arrivalTicket->freight->other_labour_charges ?? 0) }}"
+                                            value="{{ empty($arrivalTicket->freight->other_labour_charges) || (int)$arrivalTicket->freight->other_labour_charges == 0 ? '-' : numberToWords((int)$arrivalTicket->freight->other_labour_charges) }}"
                                             readonly>
                                     </td>
                                 </tr>
@@ -346,13 +368,13 @@
                                     </td>
                                     <td style="padding: 8px;" colspan="1">
                                         <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px;"
-                                            value="{{ $arrivalTicket->freight->other_deduction ?? '0.00' }}" readonly>
+                                            value="{{ empty($arrivalTicket->freight->other_deduction) || (int)$arrivalTicket->freight->other_deduction == 0 ? '-' : (int)$arrivalTicket->freight->other_deduction }}" readonly>
                                     </td>
 
                                     <td style="padding: 8px;" colspan="8">
                                         <input type="text"
                                             style="    width: 100%; border: 1px solid #ddd; padding: 10px 10px; font-style: italic;"
-                                            value="{{ numberToWords($arrivalTicket->freight->other_deduction ?? 0) }}"
+                                            value="{{ empty($arrivalTicket->freight->other_deduction) || (int)$arrivalTicket->freight->other_deduction == 0 ? '-' : numberToWords((int)$arrivalTicket->freight->other_deduction) }}"
                                             readonly>
                                     </td>
                                 </tr>
@@ -368,25 +390,25 @@
                                     <td style=" padding: 8px;border: none;">Total Freight Payable (Rs.)</td>
                                     <td style="padding: 8px;">
                                         <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px;"
-                                            value="{{ $payableCharges }}" readonly>
+                                            value="{{ empty($payableCharges) || (int)$payableCharges == 0 ? '-' : (int)$payableCharges }}" readonly>
                                     </td>
                                     <td style="padding: 8px;" colspan="8">
                                         <input type="text"
                                             style="     width: 100%; border: 1px solid #ddd; padding: 10px 10px; font-style: italic;"
-                                            value="{{ numberToWords($payableCharges ?? 0) }}" readonly>
+                                            value="{{ empty($payableCharges) || (int)$payableCharges == 0 ? '-' : numberToWords((int)$payableCharges) }}" readonly>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td style=" padding: 8px;border: none;">Unpaid Labour Charge</td>
                                     <td style="padding: 8px;">
                                         <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px;"
-                                            value="{{ $arrivalTicket->freight->unpaid_labor_charges ?? '0.00' }}"
+                                            value="{{ empty($arrivalTicket->freight->unpaid_labor_charges) || (int)$arrivalTicket->freight->unpaid_labor_charges == 0 ? '-' : (int)$arrivalTicket->freight->unpaid_labor_charges }}"
                                             readonly>
                                     </td>
                                     <td style="padding: 8px;" colspan="8">
                                         <input type="text"
                                             style="    width: 100%; border: 1px solid #ddd; padding: 10px 10px; font-style: italic;"
-                                            value="{{ numberToWords($arrivalTicket->freight->unpaid_labor_charges ?? 0) }}"
+                                            value="{{ empty($arrivalTicket->freight->unpaid_labor_charges) || (int)$arrivalTicket->freight->unpaid_labor_charges == 0 ? '-' : numberToWords((int)$arrivalTicket->freight->unpaid_labor_charges) }}"
                                             readonly>
                                     </td>
                                 </tr>
@@ -394,12 +416,12 @@
                                     <td style=" padding: 8px;border: none;">Final Figure</td>
                                     <td style="padding: 8px;">
                                         <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px;"
-                                            value="{{ $arrivalTicket->freight->net_freight ?? '0.00' }}" readonly>
+                                            value="{{ empty($arrivalTicket->freight->net_freight) || (int)$arrivalTicket->freight->net_freight == 0 ? '-' : (int)$arrivalTicket->freight->net_freight }}" readonly>
                                     </td>
                                     <td style="padding: 8px;" colspan="8">
                                         <input type="text"
                                             style="     width: 100%; border: 1px solid #ddd; padding: 10px 10px; font-style: italic;"
-                                            value="{{ numberToWords($arrivalTicket->freight->net_freight ?? 0) }}"
+                                            value="{{ empty($arrivalTicket->freight->net_freight) || (int)$arrivalTicket->freight->net_freight == 0 ? '-' : numberToWords((int)$arrivalTicket->freight->net_freight) }}"
                                             readonly>
                                     </td>
                                 </tr>
@@ -408,7 +430,7 @@
                         </div>
                         <div class=" col-lg-4 col-md-4 col-sm-4 col-xs-4">
                             <!-- Weights Section -->
-                            <div style="margin-top:5px;font-weight:bold;padding:5px 0;"> Weights</div>
+                            <div style="margin-top:5px; font-weight:600 !important; font-size: 1.25rem !important; color: #000 !important; padding:5px 0;"> Weights</div>
                             <hr style="border: 1px solid #ddd; margin-bottom: 0;margin-top: 0;">
                             <table style="border-collapse: collapse;">
                                 {{-- <tr>
@@ -449,7 +471,7 @@
                             <div>
                                 @if ($isCompulsury || $isSlabs || $showLumpSum)
                                     <!-- Sampling Results Section -->
-                                    <div style="margin-top:15px;font-weight:bold;padding:5px 0;"> Sampling Results
+                                    <div style="margin-top:15px; font-weight: 600 !important; font-size: 1.25rem !important; color: #000 !important; padding:5px 0;"> Sampling Results
                                     </div>
                                     <hr style="border: 1px solid #ddd; margin-bottom: 0;margin-top: 0;">
                                     <table
@@ -553,19 +575,19 @@
                         <table style="width: 100%; border-collapse: collapse; margin-top: 30px;">
                             <tr>
                                 <td style="width: 33%; text-align: center; padding: 8px; vertical-align: top;">
-                                    <div style="font-weight: bold; margin-bottom: 5px;">Confirmed Form</div>
+                                    <div style="font-weight: 800; color: #000; font-size: 1.1rem; margin-bottom: 5px;">Confirmed Form</div>
                                     <div style="margin-top: 30px; border-top: 1px solid #000; padding-top: 5px;">
                                         {{ $arrivalTicket->purchaseOrder->unique_no ?? 'N/A' }}
                                     </div>
                                 </td>
                                 <td style="width: 33%; text-align: center; padding: 8px; vertical-align: top;">
-                                    <div style="font-weight: bold; margin-bottom: 5px;">Contact Number</div>
+                                    <div style="font-weight: 800; color: #000; font-size: 1.1rem; margin-bottom: 5px;">Contact Number</div>
                                     <div style="margin-top: 30px; border-top: 1px solid #000; padding-top: 5px;">
                                         {{ $arrivalTicket->purchaseOrder->unique_no ?? 'N/A' }}
                                     </div>
                                 </td>
                                 <td style="width: 33%; text-align: center; padding: 8px; vertical-align: top;">
-                                    <div style="font-weight: bold; margin-bottom: 5px;">Prepared By:</div>
+                                    <div style="font-weight: 800; color: #000; font-size: 1.1rem; margin-bottom: 5px;">Prepared By:</div>
                                     <div style="margin-top: 30px; border-top: 1px solid #000; padding-top: 5px;">
                                         {{ auth()->user()->name }}
                                     </div>
