@@ -753,7 +753,7 @@
             </li>
             @endcanAccess
             {{-- @endcanAccess --}}
-            {{-- @canAccess('export-sales') --}}
+            @canAccess('export-sales')
             <li class="dropdown nav-item {{ request()->is('export*') ? 'active' : '' }}" data-menu="dropdown"><a {{--
                     @canAccess('export-module') --}} <li class="dropdown nav-item" data-menu="dropdown"><a
                         class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
@@ -1035,7 +1035,7 @@
                     </ul>
 
             </li>
-            {{-- @endcanAccess --}}
+            @endcanAccess
 
             @canAccess('access-control')
             <li class="dropdown nav-item {{ request()->is('acl*') ? 'active' : '' }}" data-menu="dropdown"><a
