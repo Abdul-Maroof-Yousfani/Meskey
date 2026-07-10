@@ -195,6 +195,7 @@ class ProductSlabController extends Controller
             $compulsoryParams = ArrivalCompulsoryQcParam::get();
             $slabs = ProductSlab::generalEnabled()
                 ->where('product_id', $request->product_id)
+                ->orderBy('product_slab_type_id', 'asc')
                 ->get()
                 ->groupBy('product_slab_type_id')
                 ->map(function ($group) {
@@ -243,7 +244,7 @@ class ProductSlabController extends Controller
         }
 
         $arrivalSamplingRequest = ArrivalSamplingRequest::findOrFail($request->sampling_request_id);
-        $compulsoryParams  = ArrivalCompulsoryQcParam::get();
+        $compulsoryParams = ArrivalCompulsoryQcParam::get();
 
         // Check if related arrivalTicket exists
         if (!$arrivalSamplingRequest->arrivalTicket) {
