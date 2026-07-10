@@ -49,7 +49,7 @@ class PaymentRequestApprovalController extends Controller
                     $query->where('company_location_id', $request->company_location_id);
                 });
             })
-            ->whereHas('paymentRequestData.purchaseOrder', function ($query) use ($request) {
+            ->whereHas('paymentRequestData.purchaseOrder', function ($query) {
                 $query->whereIn('company_location_id', getUserCurrentCompanyLocations());
             })
             ->when($request->filled('supplier_id'), function ($q) use ($request) {
