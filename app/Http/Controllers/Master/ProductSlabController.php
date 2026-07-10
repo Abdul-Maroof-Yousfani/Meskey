@@ -252,7 +252,9 @@ class ProductSlabController extends Controller
         }
 
         $product_id = $arrivalSamplingRequest->arrivalTicket->product_id;
-        $slabs = ProductSlab::generalEnabled()->where('product_id', $product_id)->get()->unique('product_slab_type_id');
+        $slabs = ProductSlab::generalEnabled()->where('product_id', $product_id)
+            ->orderBy('product_slab_type_id', 'asc')
+            ->get()->unique('product_slab_type_id');
 
         // Render view with the slabs wrapped inside a div
         $html = view('management.master.product_slab.forInspection', compact('slabs', 'compulsoryParams'))->render();
