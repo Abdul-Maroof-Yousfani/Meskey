@@ -549,14 +549,14 @@ class ArrivalApproveController extends Controller
                     ],
                     'total_bags' => 'required|integer|min:1',
                     'total_rejection' => 'nullable|integer',
-                    'amanat' => [
-                        'required',
-                        function ($attribute, $value, $fail) {
-                            if (!in_array($value, ['Yes', 'No'])) {
-                                $fail('The amanat must be either "Yes" or "No".');
-                            }
-                        }
-                    ],
+                    // 'amanat' => [
+                    //     'required',
+                    //     function ($attribute, $value, $fail) {
+                    //         if (!in_array($value, ['Yes', 'No'])) {
+                    //             $fail('The amanat must be either "Yes" or "No".');
+                    //         }
+                    //     }
+                    // ],
                     'note' => 'nullable|string',
 
                     // // ✅ Conditionally required fields
