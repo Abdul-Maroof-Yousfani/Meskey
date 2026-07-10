@@ -38,20 +38,24 @@ class ArrivalApproveController extends Controller
                 ->whereHas('unloadingLocation', function ($query) {
                     $query->whereIn('arrival_location_id', getUserCurrentCompanyArrivalLocations());
                 })
-                ->select('arrival_tickets.*')
-                ->get()
-                ->map(function ($ticket) {
-                    if ($ticket->second_qc_status === 'rejected') {
-                        $ticket->unloading_approval_status = 'Half Approved';
-                    } elseif ($ticket->second_qc_status === 'approved') {
-                        $ticket->unloading_approval_status = 'Full Approved';
-                    } elseif (is_null($ticket->second_qc_status) && $ticket->first_qc_status === 'approved') {
-                        $ticket->unloading_approval_status = 'Full Approved';
-                    } else {
-                        $ticket->unloading_approval_status = null;
-                    }
-                    return $ticket;
-                });
+                ->select('arrival_tickets.*');
+            if ($request->has('paginate')) {
+                $tickets = $tickets->paginate(10);
+            } else {
+                $tickets = $tickets->get();
+            }
+            $tickets = $tickets->map(function ($ticket) {
+                if ($ticket->second_qc_status === 'rejected') {
+                    $ticket->unloading_approval_status = 'Half Approved';
+                } elseif ($ticket->second_qc_status === 'approved') {
+                    $ticket->unloading_approval_status = 'Full Approved';
+                } elseif (is_null($ticket->second_qc_status) && $ticket->first_qc_status === 'approved') {
+                    $ticket->unloading_approval_status = 'Full Approved';
+                } else {
+                    $ticket->unloading_approval_status = null;
+                }
+                return $ticket;
+            });
 
 
             return ApiResponse::success($tickets, 'Available tickets retrieved successfully');
