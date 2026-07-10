@@ -70,6 +70,7 @@ class LoginController extends Controller
                 'email' => $user->email,
                 'user_type' => $user->user_type,
                 'current_company_id' => $user->current_company_id,
+                'profile_image' => $user->profile_image ? url('/') . $user->profile_image : null,
                 'company_location_id' => $user->company_location_id,
                 'arrival_location_id' => $user->arrival_location_id,
                 'roles' => $roles,
