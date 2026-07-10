@@ -82,7 +82,7 @@
                         <button
                             onclick="openModal(this,'{{ route('ticket.get-bilty-attachments', $row->id) }}','Bilty Return Attachments', true)"
                             class="badge badge-success border-0 mr-2">
-                            Return Confirmed
+                            <i class="ft-eye font-medium-3"></i> Return Confirmed
                         </button>
                     @endif
                 </div>
