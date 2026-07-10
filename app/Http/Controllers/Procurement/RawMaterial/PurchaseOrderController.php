@@ -768,6 +768,7 @@ class PurchaseOrderController extends Controller
         }
 
         if (
+
             auth()->user()->can("procurement-raw-purchase-approval") &&
             auth()->user()->user_type != 'super-admin'
         ) {
@@ -775,6 +776,7 @@ class PurchaseOrderController extends Controller
         }
 
         if (
+            !auth()->user()->can("procurement-raw-list-all-purchase-order") &&
             auth()->user()->parent_user_id == null &&
             auth()->user()->user_type != 'super-admin'
         ) {
