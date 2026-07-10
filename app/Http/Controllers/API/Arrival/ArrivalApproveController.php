@@ -437,7 +437,7 @@ class ArrivalApproveController extends Controller
 
 
                 )
-                ->orderBy('arrival_tickets.id', 'desc')
+                ->orderBy('arrival_tickets.id', 'desc');
             if ($request->has('paginate')) {
                 $tickets = $tickets->paginate(10);
             } else {
