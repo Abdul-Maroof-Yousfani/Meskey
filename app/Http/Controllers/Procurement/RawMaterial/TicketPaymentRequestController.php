@@ -63,6 +63,7 @@ class TicketPaymentRequestController extends Controller
                 ]);
             }
         ])
+            ->whereIn('location_id', getUserCurrentCompanyLocations())
             ->where('is_ticket_verified', 1)
             ->when($request->filled('company_location_id'), function ($q) use ($request) {
                 return $q->where('location_id', $request->company_location_id);
