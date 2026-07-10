@@ -27,11 +27,13 @@ class PurchaseOrderController extends Controller
      */
     public function index()
     {
+        $commodities = Product::all();
+
         // $companyLocations = CompanyLocation::when(auth()->user()->user_type != 'super-admin', function ($q) {
         //     return $q->where('id', auth()->user()->company_location_id);
         // })->get();
         $companyLocations = CompanyLocation::whereIn('id', getUserCurrentCompanyLocations())->get();
-        return view('management.procurement.raw_material.purchase_order.index', compact('companyLocations'));
+        return view('management.procurement.raw_material.purchase_order.index', compact('companyLocations', 'commodities'));
     }
 
     /**
@@ -88,13 +90,13 @@ class PurchaseOrderController extends Controller
             ->when(auth()->user()->user_type != 'super-admin', function ($q) {
                 return $q->whereIn('company_location_id', getUserCurrentCompanyLocations());
             })
-            ->when(!auth()->user()->can("procurement-raw-purchase-approval") && auth()->user()->parent_user_id != null && auth()->user()->user_type != 'super-admin', function ($q) {
+            ->when(!auth()->user()->can("procurement-raw-list-all-purchase-order") && !auth()->user()->can("procurement-raw-purchase-approval") && auth()->user()->parent_user_id != null && auth()->user()->user_type != 'super-admin', function ($q) {
                 return $q->where('created_by', auth()->user()->id);
             })
             ->when(auth()->user()->can("procurement-raw-purchase-approval") && auth()->user()->user_type != 'super-admin', function ($q) {
                 return $q->where("decision_of_id", auth()->user()->parent_user_id);
             })
-            ->when(auth()->user()->parent_user_id == null && auth()->user()->user_type != 'super-admin', function ($q) {
+            ->when(!auth()->user()->can("procurement-raw-list-all-purchase-order") && auth()->user()->parent_user_id == null && auth()->user()->user_type != 'super-admin', function ($q) {
                 return $q->where('decision_of_id', auth()->user()->id);
             })
             ->where('purchase_type', 'regular')
