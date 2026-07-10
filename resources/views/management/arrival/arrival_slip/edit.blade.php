@@ -148,7 +148,7 @@
                             <td style=" padding: 8px; border: none;">
                                 <input type="text"
                                     style=" border: 1px solid #ddd; padding: 10px 10px; background: transparent;"
-                                    value="{{ \Carbon\Carbon::parse($arrival_slip->created_at)->format('Y-m-d') ?? 'N/A' }}" readonly>
+                                    value="{{ \Carbon\Carbon::parse($arrivalTicket->created_at)->format('Y-m-d') ?? 'N/A' }}" readonly>
                             </td>
                             <td style=" padding: 8px;border: none;">Truck No.</td>
                             <td style=" padding: 8px; border: none;">
