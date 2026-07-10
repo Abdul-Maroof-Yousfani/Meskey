@@ -54,6 +54,9 @@ class MasterController extends Controller
     {
         try {
             $gala = ArrivalSubLocation::with('arrivalLocation') // ✅ Relation include
+                ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+                    return $q->where('arrival_location_id', auth()->user()->arrival_location_id);
+                })
                 ->get(['id', 'name', 'status', 'arrival_location_id']); // arrival_location_id bhi chahiye hoga
 
             return ApiResponse::success($gala, 'Gala retrieved successfully');
