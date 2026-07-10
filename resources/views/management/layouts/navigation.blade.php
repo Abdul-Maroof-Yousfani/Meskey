@@ -1468,6 +1468,15 @@
                         </a>
                     </li>
                     @endcanAccess
+                    @canAccess('manage-location-type')
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('location-type.index') }}"
+                            onclick="loadPageContent('{{ route('location-type.index') }}')" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Task Board">Manage Location Types</span>
+                        </a>
+                    </li>
+                    @endcanAccess
                     @canAccess('arrival-doubt-trucks')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('raw-material.doubt-trucks.index') }}"

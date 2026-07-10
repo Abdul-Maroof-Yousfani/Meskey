@@ -18,14 +18,25 @@
                 </select>
             </div>
         </div>
-        <div class="col-xs-12 col-sm-12 col-md-12">
+        <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Gala Name:</label>
                 <input type="text" name="gala_name" placeholder="Gala Name" class="form-control" autocomplete="off"
                     value="{{ $arrivalApprove->gala_name }}" required />
             </div>
         </div>
-        <div class="col-xs-12 col-sm-12 col-md-12">
+        <div class="col-xs-6 col-sm-6 col-md-6">
+            <div class="form-group">
+                <label>Location Type:</label>
+                <select class="form-control select2" name="location_type_id" required>
+                    <option value="">Select Location Type</option>
+                    @foreach ($locationTypes as $locationType)
+                        <option value="{{ $locationType->id }}" {{ $arrivalApprove->location_type_id == $locationType->id ? 'selected' : '' }}>{{ $locationType->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+        <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group">
                 <label>Truck No:</label>
                 <input type="text" name="truck_no" placeholder="Truck No" class="form-control" autocomplete="off"

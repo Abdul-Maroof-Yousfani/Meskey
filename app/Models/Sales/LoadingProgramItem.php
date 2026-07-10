@@ -153,6 +153,18 @@ class LoadingProgramItem extends Model
         return $this->hasOne(\App\Models\Export\ExportLoadingSlip::class, "loading_program_item_id");
     }
 
+    public function secondWeighbridge()
+    {
+        return $this->hasOneThrough(
+            \App\Models\Sales\SecondWeighbridge::class,
+            \App\Models\Sales\LoadingSlip::class,
+            'loading_program_item_id',
+            'loading_slip_id',
+            'id',
+            'id'
+        );
+    }
+
     public function exportSecondWeighbridge()
     {
         return $this->hasOneThrough(

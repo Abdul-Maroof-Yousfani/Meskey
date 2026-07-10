@@ -1,37 +1,39 @@
 {{-- resources/views/management/procurement/store/sales_inquiry/getList.blade.php --}}
 
-<table class="table table-hover m-0">
-    <thead class="bg-light">
-        <tr>
-            <th width="10%">Do No</th>
-            <th width="10%">So No</th>
-            <th width="16%">Customer</th>
-            <th width="14%">Item Description</th>
-            <th width="8%" class="text-right">Qty</th>
-            <th width="8%" class="text-right">Rate</th>
-            <th width="10%" class="text-right">Amount</th>
-            <th width="10%">Delivery Date</th>
-            <th width="8%">Status</th>
-            <th width="6%">Action</th>
-        </tr>
-    </thead>
-    <tbody>
-        @forelse($groupedDeliveryOrders as $group)
-            @php $isFirstRow = true; @endphp
-            @foreach($group['items'] as $itemRow)
-                <tr>
-                    {{-- Inquiry No & Customer - Show only on first row --}}
-                    @if($isFirstRow)
-                        <td rowspan="{{ $group['rowspan'] }}" class="align-middle text-center font-weight-bold"
-                            style="background-color: #e3f2fd;">
-                            <!-- <div class="p-2"> -->
-                            {{ $group['so_no'] }}
-                            <br>
-                            <small class="text-muted">
-                                {{ \Carbon\Carbon::parse($group['created_at'])->format('d M Y') }}
-                            </small>
-                            <!-- </div> -->
-                        </td>
+            <table class="table table-hover m-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th width="10%">Do No</th>
+                        <th width="10%">So No</th>
+                        <th width="16%">Customer</th>
+                        <th width="14%">Item Description</th>
+                        <th width="8%" class="text-right">Qty</th>
+                        <th width="8%" class="text-right">Rate</th>
+                        <th width="10%" class="text-right">Amount</th>
+                        <th width="10%">Delivery Date</th>
+                        <th width="8%">Status</th>
+                        <th width="6%">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($groupedDeliveryOrders as $group)
+                        @php $isFirstRow = true; @endphp
+                        @foreach($group['items'] as $itemRow)
+                            <tr>
+                                {{-- Inquiry No & Customer - Show only on first row --}}
+                                @if($isFirstRow)
+                                    <td rowspan="{{ $group['rowspan'] }}" class="align-middle text-center font-weight-bold" style="background-color: #e3f2fd;">
+                                        <div class="p-2">
+                                            #{{ $group['so_no'] }}
+                                            @if(isset($group['sale_order']) && $group['sale_order']->is_auto_created_from_so)
+                                                <span class="badge badge-warning" style="font-size: 0.7rem;">Auto</span>
+                                            @endif
+                                            <br>
+                                            <small class="text-muted">
+                                                {{ \Carbon\Carbon::parse($group['created_at'])->format('d M Y') }}
+                                            </small>
+                                        </div>
+                                    </td>
 
                         <td rowspan="{{ $group['rowspan'] }}" class="align-middle text-center font-weight-bold"
                             style="background-color: #fce4ec;">

@@ -88,13 +88,22 @@
                             class="form-control">
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Transporter used:</label>
                         <select name="transporter_used" id="transporter_used" class="form-control select2">
                             <option value="no" @selected($sale_order->transporter_used == 'no')>No</option>
                             <option value="yes" @selected($sale_order->transporter_used == 'yes')>Yes</option>
                         </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="form-label">Payment on Kaanta:</label>
+                        <div class="custom-control custom-checkbox mt-2">
+                            <input type="checkbox" class="custom-control-input" id="payment_on_kaanta" name="payment_on_kaanta" value="1" @checked($sale_order->payment_on_kaanta)>
+                            <label class="custom-control-label" for="payment_on_kaanta">Create DO Automatically</label>
+                        </div>
                     </div>
                 </div>
 

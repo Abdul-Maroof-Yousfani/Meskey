@@ -229,6 +229,29 @@ class SecondWeighBridgeController extends Controller
             }
         }
 
+        $isAutoDo = false;
+        if ($loadingSlip) {
+            $item = $loadingSlip->loadingProgramItem;
+            if ($loadingSlip->delivery_order_id) {
+                $do = DeliveryOrder::find($loadingSlip->delivery_order_id);
+                if ($do && $do->is_auto_created_from_so) $isAutoDo = true;
+            } else if ($item) {
+                if ($item->deliveryOrders && $item->deliveryOrders->isNotEmpty()) {
+                    foreach ($item->deliveryOrders as $do) {
+                        if ($do->is_auto_created_from_so) { $isAutoDo = true; break; }
+                    }
+                } else if ($item->delivery_order_id) {
+                    $do = DeliveryOrder::find($item->delivery_order_id);
+                    if ($do && $do->is_auto_created_from_so) $isAutoDo = true;
+                } else if ($item->loadingProgram && $item->loadingProgram->deliveryOrders && $item->loadingProgram->deliveryOrders->isNotEmpty()) {
+                    foreach ($item->loadingProgram->deliveryOrders as $do) {
+                        if ($do->is_auto_created_from_so) { $isAutoDo = true; break; }
+                    }
+                }
+            }
+        }
+        $data['isAutoDo'] = $isAutoDo;
+
         return view('management.sales.second-weighbridge.edit', $data);
     }
 
@@ -371,10 +394,32 @@ class SecondWeighBridgeController extends Controller
             }
         }
 
-        // Render view with the loading slip data
-        $html = view('management.sales.second-weighbridge.getSecondWeighbridgeRelatedData', compact('LoadingSlip', 'needsDeliveryOrder', 'deliveryOrders'))->with('SecondWeighbridge', null)->render();
+        $isAutoDo = false;
+        if ($LoadingSlip) {
+            $item = $LoadingSlip->loadingProgramItem;
+            if ($LoadingSlip->delivery_order_id) {
+                $do = DeliveryOrder::find($LoadingSlip->delivery_order_id);
+                if ($do && $do->is_auto_created_from_so) $isAutoDo = true;
+            } else if ($item) {
+                if ($item->deliveryOrders && $item->deliveryOrders->isNotEmpty()) {
+                    foreach ($item->deliveryOrders as $do) {
+                        if ($do->is_auto_created_from_so) { $isAutoDo = true; break; }
+                    }
+                } else if ($item->delivery_order_id) {
+                    $do = DeliveryOrder::find($item->delivery_order_id);
+                    if ($do && $do->is_auto_created_from_so) $isAutoDo = true;
+                } else if ($item->loadingProgram && $item->loadingProgram->deliveryOrders && $item->loadingProgram->deliveryOrders->isNotEmpty()) {
+                    foreach ($item->loadingProgram->deliveryOrders as $do) {
+                        if ($do->is_auto_created_from_so) { $isAutoDo = true; break; }
+                    }
+                }
+            }
+        }
 
-        return response()->json(['success' => true, 'html' => $html, 'needsDeliveryOrder' => $needsDeliveryOrder]);
+        // Render view with the loading slip data
+        $html = view('management.sales.second-weighbridge.getSecondWeighbridgeRelatedData', compact('LoadingSlip', 'needsDeliveryOrder', 'deliveryOrders', 'isAutoDo'))->with('SecondWeighbridge', null)->render();
+
+        return response()->json(['success' => true, 'html' => $html, 'needsDeliveryOrder' => $needsDeliveryOrder, 'isAutoDo' => $isAutoDo]);
     }
 
 

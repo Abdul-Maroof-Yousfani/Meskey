@@ -29,6 +29,7 @@
                 $orders[] = [
                     'type' => 'DO',
                     'number' => $do->reference_no,
+                    'is_auto' => $do->is_auto_created_from_so,
                     'customer' => $do->customer->name ?? '',
                     'commodity' => $do->delivery_order_data->first()->item->name ?? '',
                     'so_qty' => $do->delivery_order_data->sum(function ($d) {
@@ -55,6 +56,7 @@
             $orders[] = [
                 'type' => 'DO',
                 'number' => $do->reference_no,
+                'is_auto' => $do->is_auto_created_from_so,
                 'customer' => $do->customer->name ?? '',
                 'commodity' => $do->delivery_order_data->first()->item->name ?? '',
                 'so_qty' => $do->delivery_order_data->sum(function ($d) {
@@ -73,6 +75,7 @@
                     $orders[] = [
                         'type' => 'SO',
                         'number' => $so->reference_no,
+                        'is_auto' => false,
                         'customer' => $so->customer->name ?? '',
                         'commodity' => $so->sales_order_data->first()->item->name ?? '',
                         'so_qty' => $so->sales_order_data->sum('qty'),
@@ -87,6 +90,7 @@
             $orders[] = [
                 'type' => 'SO',
                 'number' => $so->reference_no,
+                'is_auto' => false,
                 'customer' => $so->customer->name ?? '',
                 'commodity' => $so->sales_order_data->first()->item->name ?? '',
                 'so_qty' => $so->sales_order_data->sum('qty'),
@@ -105,6 +109,9 @@
                         href="#order-content-{{ $index }}" role="tab" aria-controls="order-content-{{ $index }}"
                         aria-selected="{{ $index === 0 ? 'true' : 'false' }}">
                         {{ $order['type'] }}: {{ $order['number'] }}
+                        @if(!empty($order['is_auto']))
+                            <span class="badge badge-warning" style="font-size: 0.6rem;">Auto</span>
+                        @endif
                     </a>
                 </li>
             @endforeach

@@ -256,9 +256,9 @@
                     <div class="field-label">Delivery Order No.:</div>
                     <div class="field-value">
                         @if($DispatchQc->loadingProgramItem->deliveryOrders->isNotEmpty())
-                            {{ $DispatchQc->loadingProgramItem->deliveryOrders->pluck('reference_no')->implode(', ') }}
+                            {{ $DispatchQc->loadingProgramItem->deliveryOrders->map(function($do) { return $do->reference_no . ($do->is_auto_created_from_so ? " (Auto)" : ""); })->implode(', ') }}
                         @else
-                            {{ $DispatchQc->loadingProgramItem->loadingProgram->deliveryOrder->reference_no ?? 'N/A' }}
+                            {{ $DispatchQc->loadingProgramItem->loadingProgram->deliveryOrder ? $DispatchQc->loadingProgramItem->loadingProgram->deliveryOrder->reference_no . ($DispatchQc->loadingProgramItem->loadingProgram->deliveryOrder->is_auto_created_from_so ? " (Auto)" : "") : 'N/A' }}
                         @endif
                     </div>
                 </div>
