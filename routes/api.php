@@ -49,6 +49,7 @@ Route::prefix('v1')->middleware(['api', 'throttle:60,1'])->group(function () {
 
         Route::prefix('master')->controller(MasterController::class)->group(function () {
             Route::get('bag-types', 'getBagTypes');
+            Route::get('location-types', 'getLocationType');
             Route::get('bag-conditions', 'getBagConditions');
             Route::get('bag-packings', 'getBagPackings');
             Route::get('gala', 'getGala');
