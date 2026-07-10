@@ -256,7 +256,7 @@
                                 </a>
                             </li>
                             @endcanAccess
-                            @canAccess('p-r-m-payment-request-pohouch')
+                            @canAccess('p-r-m-freight-payment-request')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                     href="{{ route('raw-material.freight-request.index') }}"
                                     onclick="loadPageContent('{{ route('raw-material.freight-request.index') }}')"
