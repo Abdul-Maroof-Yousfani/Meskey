@@ -167,7 +167,7 @@
                     </li>
                     @endcanAccess
 
-
+                    @canAccess("thadda-purchase-process")
                     <li class="dropdown dropdown-submenu" data-menu="dropdown-submenu"><a
                             class="dropdown-item d-flex align-items-center dropdown-toggle" href="javascript:;"
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
@@ -219,6 +219,7 @@
 
                         </ul>
                     </li>
+                    @endcanAccess
 
 
 
