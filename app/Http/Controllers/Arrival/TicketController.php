@@ -467,10 +467,13 @@ class TicketController extends Controller
 
     public function confirmBiltyReturn(ArrivalTicket $ticket)
     {
+        // dd(request()->all());
         try {
             $updateData = [
                 'bilty_return_confirmation' => 1,
-                'bilty_return_reason' => request('bilty_return_reason')
+                'bilty_return_reason' => request('bilty_return_reason'),
+                // 'weightslip_attachment' => request('weightslip_attachment'),
+                // 'other_attachment' => request('other_attachment')
             ];
 
             $ticket->update($updateData);
@@ -479,6 +482,12 @@ class TicketController extends Controller
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()]);
         }
+    }
+
+    public function getBiltyAttachments($id)
+    {
+        $ticket = ArrivalTicket::findOrFail($id);
+        return view('management.arrival.ticket.bilty-attachments', compact('ticket'));
     }
 
 
