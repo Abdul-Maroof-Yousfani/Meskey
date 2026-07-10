@@ -438,7 +438,11 @@ class ArrivalApproveController extends Controller
 
                 )
                 ->orderBy('arrival_tickets.id', 'desc')
-                ->get();
+            if ($request->has('paginate')) {
+                $tickets = $tickets->paginate(10);
+            } else {
+                $tickets = $tickets->get();
+            }
             /* ===== Final Mapping ===== */
             $data = $tickets->map(function ($ticket) {
 
