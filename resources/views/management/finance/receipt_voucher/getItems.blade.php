@@ -17,8 +17,8 @@
         <td>{{ $item->date }}</td>
         <td>{{ $item->customer_name }}</td>
         <td>
-            <input type="number" step="0.01" readonly class="form-control amount-input" name="items[{{ $idx }}][amount_display]"
-                value="0.00" data-balance="{{ $balance }}">
+            <input type="number" step="0.01" class="form-control amount-input" name="items[{{ $idx }}][amount_display]"
+                value="{{ $balance }}" data-balance="{{ $balance }}" readonly>
             Balance: {{ $balance }}
         </td>
         <td>
@@ -55,17 +55,22 @@
                     <h6 class="mb-0 text-info font-weight-bold" style="font-size: 0.9rem;">
                         <i class="fa fa-university mr-1"></i> Bank/Account Details for {{ $item->number }}
                     </h6>
-                    <button type="button" class="btn btn-xs btn-success add-nested-bank-btn" data-row-idx="{{ $idx }}" style="padding: .2rem .4rem; font-size: .75rem;">
-                        <i class="fa fa-plus"></i> Add Account
-                    </button>
+                    <div>
+                        <button type="button" class="btn btn-xs btn-success add-nested-bank-btn" data-row-idx="{{ $idx }}" style="padding: .2rem .4rem; font-size: .75rem;">
+                            <i class="fa fa-plus"></i> Add Account
+                        </button>
+                        <button type="button" class="btn btn-xs btn-primary add-nested-advance-btn ml-1" data-row-idx="{{ $idx }}" style="padding: .2rem .4rem; font-size: .75rem;">
+                            <i class="fa fa-plus"></i> Add Advance
+                        </button>
+                    </div>
                 </div>
                 <div class="card-body p-2" style="background-color: #ffffff;">
                     <table class="table table-bordered table-sm mb-0">
                         <thead>
                             <tr class="bg-light">
-                                <th>Account</th>
+                                <th>Account / Advance</th>
                                 <th width="20%">Amount</th>
-                                <th width="30%">Cheque No</th>
+                                <th width="25%">Cheque No</th>
                                 <th width="8%">Action</th>
                             </tr>
                         </thead>

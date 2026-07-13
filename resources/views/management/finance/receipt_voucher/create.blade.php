@@ -386,6 +386,8 @@
         }
     }
 
+    let customerAdvancesOptions = '<option value="">Select Advance</option>';
+
     // This function can stay outside if it's called from elsewhere (e.g., onchange of customer)
     function select_customer() {
         // Reset advances when customer changes
@@ -410,6 +412,22 @@
                 console.error(error);
                 console.error(xhr.responseText);
             },
+        });
+
+        // Fetch customer advances
+        $.ajax({
+            url: '{{ route("receipt-voucher.get-customer-advances") }}',
+            type: 'POST',
+            data: {
+                customer_id: $("#customer_id").val(),
+                _token: '{{ csrf_token() }}'
+            },
+            success: function (response) {
+                customerAdvancesOptions = '<option value="">Select Advance</option>';
+                response.forEach(function(adv) {
+                    customerAdvancesOptions += `<option value="${adv.id}" data-max="${adv.remaining_amount}">${adv.text}</option>`;
+                });
+            }
         });
     }
 
@@ -444,7 +462,7 @@
         const rowHtml = `
             <tr class="nested-bank-row">
                 <td>
-                    <select name="bank_details[${bankIdx}][account_id]" class="form-control select2-nested-bank" required style="width: 100%;">
+                    <select name="bank_details[${bankIdx}][account_id]" class="form-control select2-nested-bank account-select" style="width: 100%;">
                         ${accountOptions}
                     </select>
                 </td>
@@ -452,7 +470,7 @@
                     <input type="number" step="0.01" name="bank_details[${bankIdx}][amount]" class="form-control bank-amount" required>
                 </td>
                 <td>
-                    <input type="text" name="bank_details[${bankIdx}][cheque_no]" class="form-control">
+                    <input type="text" name="bank_details[${bankIdx}][cheque_no]" class="form-control" placeholder="Cheque No">
                 </td>
                 <td class="text-center">
                     <button type="button" class="btn btn-xs btn-danger remove-nested-bank-row" style="padding: .2rem .4rem; font-size: .75rem;">
@@ -465,8 +483,41 @@
         const container = $(`#nested-bank-data-${rowIdx}`);
         container.append(rowHtml);
         
-        // Initialize select2 on the newly added select
-        container.find('.select2-nested-bank').last().select2({
+        // Initialize select2 on the newly added selects
+        container.find('.select2-nested-bank').select2({
+            width: '100%'
+        });
+    }
+
+    function addNestedAdvanceRow(rowIdx) {
+        let bankIdx = Date.now() + Math.floor(Math.random() * 1000);
+
+        const rowHtml = `
+            <tr class="nested-bank-row advance-row">
+                <td>
+                    <select name="bank_details[${bankIdx}][customer_advance_id]" class="form-control select2-nested-bank advance-select" style="width: 100%;">
+                        ${customerAdvancesOptions}
+                    </select>
+                </td>
+                <td>
+                    <input type="number" step="0.01" name="bank_details[${bankIdx}][amount]" class="form-control bank-amount" required>
+                </td>
+                <td>
+                    <span class="text-muted">N/A</span>
+                </td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-xs btn-danger remove-nested-bank-row" style="padding: .2rem .4rem; font-size: .75rem;">
+                        <i class="fa fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+        
+        const container = $(`#nested-bank-data-${rowIdx}`);
+        container.append(rowHtml);
+        
+        // Initialize select2 on the newly added selects
+        container.find('.select2-nested-bank').select2({
             width: '100%'
         });
     }
@@ -496,6 +547,12 @@
             addNestedBankDetailRow(rowIdx);
         });
 
+        // Add nested advance row click
+        $(document).on('click', '.add-nested-advance-btn', function() {
+            const rowIdx = $(this).data('row-idx');
+            addNestedAdvanceRow(rowIdx);
+        });
+
         // Remove nested bank row click
         $(document).on('click', '.remove-nested-bank-row', function() {
             const subrow = $(this).closest('tr.bank-details-subrow');
@@ -509,8 +566,6 @@
             });
             
             const mainRow = $(`#reference-row-${rowIdx}`);
-            mainRow.find('.amount-input').val(sum.toFixed(2));
-            recalcRow(mainRow);
             
             validateBankTotal();
         });
@@ -809,6 +864,31 @@
                 sum += parseFloat($(this).val()) || 0;
             });
             
+            // Advance validation: if an advance is selected, check its remaining amount limit
+            const advanceSelect = $(this).closest('tr').find('.advance-select');
+            if (advanceSelect.length && advanceSelect.val()) {
+                const selectedOpt = advanceSelect.find('option:selected');
+                const maxAdvanceAmount = parseFloat(selectedOpt.data('max')) || 0;
+                const currentVal = parseFloat($(this).val()) || 0;
+                
+                if (currentVal > maxAdvanceAmount) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Amount Exceeds Advance Balance',
+                        text: `The amount cannot exceed the selected advance's remaining balance of ${maxAdvanceAmount.toFixed(2)}.`,
+                        confirmButtonText: 'OK'
+                    });
+                    
+                    $(this).val(maxAdvanceAmount.toFixed(2));
+                    
+                    // Recalculate sum
+                    sum = 0;
+                    subrow.find('.bank-amount').each(function() {
+                        sum += parseFloat($(this).val()) || 0;
+                    });
+                }
+            }
+
             // If not an advance, allow_excess is not checked, and the sum exceeds the outstanding balance, auto-cap it
             if (!isAdvance && !allowExcess && sum > balanceVal) {
                 Swal.fire({
@@ -829,15 +909,51 @@
                     sum += parseFloat($(this).val()) || 0;
                 });
             }
-            
-            // Set the sum as the value of the main reference row's amount-display input
-            mainRow.find('.amount-input').val(sum.toFixed(2));
-            
-            // Re-trigger calculation for the main row
-            recalcRow(mainRow);
-            
             // Validate bank details total
             validateBankTotal();
+            
+            // Recalculate amount if allowExcess is checked and sum > balanceVal
+            if (allowExcess && sum > balanceVal) {
+                mainRow.find('.amount-input').val(sum.toFixed(2));
+            } else {
+                mainRow.find('.amount-input').val(balanceVal.toFixed(2));
+            }
+            recalcRow(mainRow);
+        });
+
+        // Auto-fill bank amount when advance is selected
+        $(document).on('change', '.advance-select', function() {
+            const val = $(this).val();
+            if (val) {
+                const maxAdvanceAmount = parseFloat($(this).find('option:selected').data('max')) || 0;
+                
+                const subrow = $(this).closest('tr.bank-details-subrow');
+                const rowIdx = subrow.attr('id').replace('bank-subrow-', '');
+                const mainRow = $(`#reference-row-${rowIdx}`);
+                const balanceVal = parseFloat(mainRow.find('.amount-input').attr('data-balance')) || 0;
+                
+                const bankAmountInput = $(this).closest('tr').find('.bank-amount');
+                
+                // Calculate other bank amounts in the same subrow
+                let otherSum = 0;
+                subrow.find('.bank-amount').not(bankAmountInput).each(function() {
+                    otherSum += parseFloat($(this).val()) || 0;
+                });
+                
+                // Remaining SO balance to cover
+                const remainingToCover = Math.max(0, balanceVal - otherSum);
+                
+                // Use the minimum of maxAdvanceAmount and remainingToCover
+                const amountToSet = Math.min(maxAdvanceAmount, remainingToCover);
+                
+                if (amountToSet > 0) {
+                    bankAmountInput.val(amountToSet.toFixed(2)).trigger('input');
+                } else {
+                    bankAmountInput.val('').trigger('input');
+                }
+            } else {
+                $(this).closest('tr').find('.bank-amount').val('').trigger('input');
+            }
         });
 
         // Also re-validate when references change (which updates #total_receipt_amount)
@@ -866,6 +982,29 @@
                     title: 'Validation Error',
                     text: `Total Bank/Account Detail amount (${bankDetailsTotal.toFixed(2)}) exceeds the total Selected References amount (${referencesTotal.toFixed(2)}). Enable "Allow Excess Amount" to permit advances.`
                 });
+                return false;
+            }
+
+            if (bankDetailsTotal < referencesTotal) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Validation Error',
+                    text: `Total Bank/Account Detail amount (${bankDetailsTotal.toFixed(2)}) is less than the total Selected References amount (${referencesTotal.toFixed(2)}). You must pay the full balance of the selected documents.`
+                });
+                return false;
+            }
+
+            let validRows = true;
+            $('.nested-bank-row').each(function() {
+                const account = $(this).find('.account-select').val();
+                const advance = $(this).find('.advance-select').val();
+                if (!account && !advance) {
+                    validRows = false;
+                }
+            });
+
+            if (!validRows) {
+                Swal.fire('Validation', 'Please select either an Account or an Advance for all Bank Details.', 'warning');
                 return false;
             }
             // ------------------------

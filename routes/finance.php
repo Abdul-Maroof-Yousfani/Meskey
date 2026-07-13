@@ -37,6 +37,7 @@ Route::prefix('receipt-voucher')->group(function () {
     Route::post('reference-details', [ReceiptVoucherController::class, 'getReferenceDetails'])->name('receipt-voucher.reference-details');
     Route::get("/get/documents-for-rv", [ReceiptVoucherController::class, "getDocumentsForRv"])->name("receipt.voucher.get-documents");
     Route::get('generate-advance-number', [ReceiptVoucherController::class, 'generateAdvanceNumber'])->name('receipt-voucher.generate-advance-number');
+    Route::post('get-customer-advances', [ReceiptVoucherController::class, 'getCustomerAdvances'])->name('receipt-voucher.get-customer-advances');
 });
 Route::resource('receipt-voucher', ReceiptVoucherController::class);
 Route::get("/direct-receipt-voucher", [ReceiptVoucherController::class, "directReceiptVoucher"])->name("direct.receipt-voucher");

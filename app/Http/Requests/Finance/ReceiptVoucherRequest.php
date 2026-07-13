@@ -33,7 +33,8 @@ class ReceiptVoucherRequest extends FormRequest
             'items.*.net_amount' => ['nullable', 'numeric'],
             'items.*.line_desc' => ['nullable', 'string'],
             'bank_details' => ['nullable', 'array'],
-            'bank_details.*.account_id' => ['required', 'exists:accounts,id'],
+            'bank_details.*.account_id' => ['required_without:bank_details.*.customer_advance_id', 'nullable', 'exists:accounts,id'],
+            'bank_details.*.customer_advance_id' => ['required_without:bank_details.*.account_id', 'nullable', 'exists:customer_advances,id'],
             'bank_details.*.amount' => ['required', 'numeric', 'min:0'],
             'bank_details.*.cheque_no' => ['nullable', 'string'],
             "company_id" => ["required"]

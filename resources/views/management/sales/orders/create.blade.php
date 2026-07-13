@@ -192,7 +192,7 @@
                     </div>
                 </div>
 
-                <div class="col-md-6 d-none" id="unallocated_rv_container">
+                <div class="col-md-6 d-none" id="unallocated_rv_container" style="display: none !important;">
                     <div class="form-group">
                         <label class="form-label d-block">Unallocated Receipt Vouchers:</label>
                         <select name="receipt_voucher_item_ids[]" id="receipt_voucher_item_ids"
