@@ -537,7 +537,7 @@ class ArrivalApproveController extends Controller
                     'company_id' => 'required',
                     'truck_no' => 'required|string',
                     'gala_id' => 'required|exists:arrival_sub_locations,id',
-                    'location_type_id' => 'required|exists:location_types,id',
+                    // 'location_type_id' => 'nullanle|exists:location_types,id',
                     'bag_type_id' => 'required|exists:bag_types,id',
                     'bag_packing_approval' => [
                         'required',
