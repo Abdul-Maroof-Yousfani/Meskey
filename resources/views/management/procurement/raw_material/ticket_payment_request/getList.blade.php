@@ -61,8 +61,8 @@
                     <td>
                         @if(isset($lastPaymentApproval))
                             <span
-                                class="d-inline-block mb-1 badge  {{ $lastPaymentApproval->status == 'approved' ? 'badge-success' : ($lastPaymentApproval->status == 'pending' ? 'badge-warning' : ($lastPaymentApproval->status == 'rejected' ? 'badge-danger' : 'badge-secondary')) }}">
-                                {{ $lastPaymentApproval->status ?? '' }}
+                                class="d-inline-block text-capitalize mb-1 badge  {{ $lastPaymentApproval->status == 'approved' ? 'badge-success' : ($lastPaymentApproval->status == 'pending' ? 'badge-warning' : ($lastPaymentApproval->status == 'rejected' ? 'badge-danger' : 'badge-secondary')) }}">
+                                Last Payment Status: {{ $lastPaymentApproval->status ?? '' }}
                             </span>
                         @endif
                         @if ($ticket->calculated_values['total_payment_sum'] == 0 && $ticket->calculated_values['total_freight_sum'] == 0)
