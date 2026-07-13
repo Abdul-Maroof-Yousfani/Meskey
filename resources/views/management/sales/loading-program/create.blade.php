@@ -616,7 +616,7 @@
                                 $doSelect.empty();
                                 response.delivery_orders.forEach(do_item => {
                                     if (selectedGlobalDoIds.includes(do_item.id.toString())) {
-                                        const doText = do_item.reference_no + (do_item.is_auto_created_from_so ? " (Auto)" : "");
+                                        const doText = do_item.reference_no + (do_item.is_auto_created_from_so ? " (Dummy DO)" : "");
                                         $doSelect.append(new Option(doText, do_item.id, false, currentDOVals.includes(do_item.id.toString())));
                                     }
                                 });

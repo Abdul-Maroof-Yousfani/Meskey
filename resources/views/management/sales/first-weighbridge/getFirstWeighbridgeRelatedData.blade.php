@@ -13,7 +13,7 @@
                             <a class="nav-link {{ $index === 0 ? 'active' : '' }}" id="do-tab-{{ $do->id }}" data-toggle="pill" href="#do-content-{{ $do->id }}" role="tab" aria-controls="do-content-{{ $do->id }}" aria-selected="{{ $index === 0 ? 'true' : 'false' }}">
                                 DO: {{ $do->reference_no }}
                                 @if($do->is_auto_created_from_so)
-                                    <span class="badge badge-warning" style="font-size: 0.6rem;">Auto</span>
+                                    <span class="badge badge-warning" style="font-size: 0.6rem;">Dummy DO</span>
                                 @endif
                             </a>
                         </li>

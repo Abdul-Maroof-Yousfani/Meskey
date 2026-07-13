@@ -1,7 +1,7 @@
 @if(isset($isAutoDo) && $isAutoDo)
     <div class="col-12 mb-3">
         <div class="alert alert-danger mb-0">
-            <strong>Not Allowed:</strong> This ticket is linked to an Auto-Generated Delivery Order. Only actual DO can be passed to Second Weighbridge.
+            <strong>Not Allowed:</strong> This ticket is linked to an Dummy Delivery Order. Only actual DO can be passed to Second Weighbridge.
         </div>
     </div>
 @endif
@@ -23,7 +23,7 @@
                 <option value="">Select Delivery Order</option>
                 @foreach($deliveryOrders as $deliveryOrder)
                     <option value="{{ $deliveryOrder->id }}">
-                        {{ $deliveryOrder->reference_no }}{{ $deliveryOrder->is_auto_created_from_so ? " (Auto)" : "" }} - {{ $deliveryOrder->customer->name ?? 'N/A' }}
+                        {{ $deliveryOrder->reference_no }}{{ $deliveryOrder->is_auto_created_from_so ? " (Dummy DO)" : "" }} - {{ $deliveryOrder->customer->name ?? 'N/A' }}
                     </option>
                 @endforeach
             </select>
@@ -144,7 +144,7 @@
                         aria-selected="{{ $index === 0 ? 'true' : 'false' }}">
                         {{ $order['type'] }}: {{ $order['number'] }}
                         @if($order['is_auto'])
-                            <span class="badge badge-warning" style="font-size: 0.6rem;">Auto</span>
+                            <span class="badge badge-warning" style="font-size: 0.6rem;">Dummy DO</span>
                         @endif
                     </a>
                 </li>
