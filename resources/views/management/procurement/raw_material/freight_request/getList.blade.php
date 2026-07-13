@@ -17,6 +17,9 @@
     <tbody>
         @if (count($tickets) != 0)
             @foreach ($tickets as $ticket)
+                @php
+                    $lastPaymentApproval = lastpaymentStatus($ticket['model']->id, 'freight_payment');
+                @endphp
                 <tr>
                     <td>
                         <strong>Ticket:</strong> #{{ $ticket['unique_no'] ?? 'N/A' }}<br>
@@ -27,7 +30,7 @@
                     <td>{{ $ticket['model']->location->name ?? 'N/A' }}</td>
                     <td>{{ $ticket['purchaseOrder']->supplier?->name ?? ($ticket['model']->accountsOf?->name ?? 'N/A') }}</td>
                     <td>{{ $ticket['purchaseOrder']->qcProduct?->name ?? ($ticket['qcProduct']?->name ?? 'N/A') }}</td>
-                    
+
                     <td>
                         @if ($ticket['type'] == 'thadda')
                             {{ $ticket['purchaseFreight'] ? \Carbon\Carbon::parse($ticket['purchaseFreight']->loading_date)->format('Y-m-d') : 'N/A' }}
@@ -37,6 +40,7 @@
                     </td>
                     <td>
                         <div class="div-box-b">
+
                             @if ($ticket['calculated_values']['total_payment_sum'] == 0 && $ticket['calculated_values']['total_freight_sum'] == 0)
                                 <span class="text-muted"> No requests generated yet</span>
                             @else
@@ -69,6 +73,12 @@
                         </div>
                     </td>
                     <td>
+                        @if(isset($lastPaymentApproval))
+                            <span
+                                class="d-inline-block text-capitalize mb-1 badge  {{ $lastPaymentApproval->status == 'approved' ? 'badge-success' : ($lastPaymentApproval->status == 'pending' ? 'badge-warning' : ($lastPaymentApproval->status == 'rejected' ? 'badge-danger' : 'badge-secondary')) }}">
+                                Last Payment Status: {{ $lastPaymentApproval->status ?? '' }}
+                            </span>
+                        @endif
                         @if ($ticket['calculated_values']['total_payment_sum'] == 0 && $ticket['calculated_values']['total_freight_sum'] == 0)
                             <span class="text-muted"> N/A </span>
                         @else
@@ -86,9 +96,9 @@
                         @endif
                         @if($ticket["model"]->paymentRequestData?->isNotEmpty())
                             <span class="badge badge-primary mt-2">
-                                {{ $ticket["model"]->paymentRequestData?->contains('is_paid_by_supplier', true) 
-                                    ? 'Paid by Supplier' 
-                                    : 'Not Paid by Supplier' }}
+                                {{ $ticket["model"]->paymentRequestData?->contains('is_paid_by_supplier', true)
+                            ? 'Paid by Supplier'
+                            : 'Not Paid by Supplier' }}
                             </span>
                         @endif
                     </td>
@@ -97,10 +107,10 @@
                         {{ \Carbon\Carbon::parse($ticket['calculated_values']['created_at'])->format('H:i A') }}
                     </td>
                     <td>
-                            <a onclick="openModal(this,'{{ route('raw-material.freight-request.edit', $ticket['model']->id) }}','Manage Freight Payment Request', false, '80%')"
-                                class="info p-1 text-center mr-2 position-relative">
-                                <i class="ft-edit font-medium-3"></i>
-                            </a>
+                        <a onclick="openModal(this,'{{ route('raw-material.freight-request.edit', $ticket['model']->id) }}','Manage Freight Payment Request', false, '80%')"
+                            class="info p-1 text-center mr-2 position-relative">
+                            <i class="ft-edit font-medium-3"></i>
+                        </a>
                     </td>
                 </tr>
             @endforeach
