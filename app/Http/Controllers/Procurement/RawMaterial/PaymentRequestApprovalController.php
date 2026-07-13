@@ -731,7 +731,7 @@ class PaymentRequestApprovalController extends Controller
                 $otherDeduction = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($ticket, $moduleType) {
                     $query->where('ticket_id', $ticket->id);
                     $query->where('module_type', $moduleType);
-                })->select('other_deduction_kg', 'other_deduction_value')
+                })->select('other_deduction_kg', 'other_deduction_value', 'rerate_on_access_weight_kg', 'rerate_on_access_weight_rate', 'rerate_on_access_weight_amount')
                     ->latest()
                     ->first();
             }
@@ -804,11 +804,12 @@ class PaymentRequestApprovalController extends Controller
                 $otherDeduction = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($ticket, $moduleType) {
                     $query->where('ticket_id', $ticket->id);
                     $query->where('module_type', $moduleType);
-                })->select('other_deduction_kg', 'other_deduction_value')
+                })->select('other_deduction_kg', 'other_deduction_value', 'rerate_on_access_weight_kg', 'rerate_on_access_weight_rate', 'rerate_on_access_weight_amount')
                     ->latest()
                     ->first();
             }
 
+            // dd($otherDeduction);
             $requestPurchaseForm = view('management.procurement.raw_material.ticket_payment_request.snippets.requestPurchaseForm', [
                 'arrivalTicket' => $ticket,
                 'ticket' => $ticket,
@@ -869,7 +870,7 @@ class PaymentRequestApprovalController extends Controller
                 $otherDeduction = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($ticket, $moduleType) {
                     $query->where('ticket_id', $ticket->id);
                     $query->where('module_type', $moduleType);
-                })->select('other_deduction_kg', 'other_deduction_value')
+                })->select('other_deduction_kg', 'other_deduction_value', 'rerate_on_access_weight_kg', 'rerate_on_access_weight_rate', 'rerate_on_access_weight_amount')
                     ->latest()
                     ->first();
             }
