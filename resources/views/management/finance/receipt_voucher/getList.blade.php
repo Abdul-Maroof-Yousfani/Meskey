@@ -43,11 +43,11 @@
                                 : route('receipt-voucher.edit', $voucher->id);
                         @endphp
 
-                        <!-- <a class="info p-1 text-center mr-2 position-relative"
+                        <a class="info p-1 text-center mr-2 position-relative"
                         href="{{ $editRoute }}"
                         title="Edit">
                             <i class="ft-edit font-medium-3"></i>
-                        </a> -->
+                        </a>
 
                     </td>
                 </tr>
