@@ -27,11 +27,13 @@ class PurchaseOrderController extends Controller
      */
     public function index()
     {
+        $commodities = Product::all();
+
         // $companyLocations = CompanyLocation::when(auth()->user()->user_type != 'super-admin', function ($q) {
         //     return $q->where('id', auth()->user()->company_location_id);
         // })->get();
         $companyLocations = CompanyLocation::whereIn('id', getUserCurrentCompanyLocations())->get();
-        return view('management.procurement.raw_material.purchase_order.index', compact('companyLocations'));
+        return view('management.procurement.raw_material.purchase_order.index', compact('companyLocations', 'commodities'));
     }
 
     /**
@@ -88,13 +90,13 @@ class PurchaseOrderController extends Controller
             ->when(auth()->user()->user_type != 'super-admin', function ($q) {
                 return $q->whereIn('company_location_id', getUserCurrentCompanyLocations());
             })
-            ->when(!auth()->user()->can("procurement-raw-purchase-approval") && auth()->user()->parent_user_id != null && auth()->user()->user_type != 'super-admin', function ($q) {
+            ->when(!auth()->user()->can("procurement-raw-list-all-purchase-order") && !auth()->user()->can("procurement-raw-purchase-approval") && auth()->user()->parent_user_id != null && auth()->user()->user_type != 'super-admin', function ($q) {
                 return $q->where('created_by', auth()->user()->id);
             })
             ->when(auth()->user()->can("procurement-raw-purchase-approval") && auth()->user()->user_type != 'super-admin', function ($q) {
                 return $q->where("decision_of_id", auth()->user()->parent_user_id);
             })
-            ->when(auth()->user()->parent_user_id == null && auth()->user()->user_type != 'super-admin', function ($q) {
+            ->when(!auth()->user()->can("procurement-raw-list-all-purchase-order") && auth()->user()->parent_user_id == null && auth()->user()->user_type != 'super-admin', function ($q) {
                 return $q->where('decision_of_id', auth()->user()->id);
             })
             ->where('purchase_type', 'regular')
@@ -766,6 +768,7 @@ class PurchaseOrderController extends Controller
         }
 
         if (
+
             auth()->user()->can("procurement-raw-purchase-approval") &&
             auth()->user()->user_type != 'super-admin'
         ) {
@@ -773,6 +776,7 @@ class PurchaseOrderController extends Controller
         }
 
         if (
+            !auth()->user()->can("procurement-raw-list-all-purchase-order") &&
             auth()->user()->parent_user_id == null &&
             auth()->user()->user_type != 'super-admin'
         ) {
@@ -796,6 +800,23 @@ class PurchaseOrderController extends Controller
             ? $orderedTrucks - $arrivedTrucks - $inTransitTrucks
             : $orderedTrucks - $arrivedTrucks - $inTransitTrucks - $totalRejectedTrucks;
 
+        $brokerDetails = '';
+        if (isset($row->broker_one_id)) {
+            $brokerDetails = 'Broker 1: ' . ($row->broker_one_name ?? 'N/A') . ' (' . ($row->broker_one_commission ?? 0) . '%)';
+        }
+        if (isset($row->broker_two_id)) {
+            $brokerDetails .= ($brokerDetails ? "\n" : '') . 'Broker 2: ' . ($row->brokerTwo->name ?? 'N/A') . ' (' . ($row->brokerTwo->broker_one_commission ?? 0) . '%)';
+        }
+        if (isset($row->broker_three_id)) {
+            $brokerDetails .= ($brokerDetails ? "\n" : '') . 'Broker 3: ' . ($row->brokerThree->name ?? 'N/A') . ' (' . ($row->brokerThree->broker_one_commission ?? 0) . '%)';
+        }
+
+        // If no broker
+        if (empty($brokerDetails)) {
+            $brokerDetails = 'No Broker';
+        }
+
+
         return [
             '#' . $row->contract_no,
             $row->created_at->format('Y-m-d'),
@@ -813,7 +834,14 @@ class PurchaseOrderController extends Controller
             $row->credit_days ?? 'N/A',
             // $row->rate_per_mound ?? 'N/A',
             // $row->rate_per_100kg ?? 'N/A',
-            'Sauda Type: ' . ($row->saudaType->name ?? '') . "\n" . ucfirst($row->calculation_type) . ' Wise' . "\nReplacement: " . ($row->is_replacement == 1 ? 'Yes' : 'No') . "\nSupllier Commision: " . $row->supplier_commission . "\nRemarks: " . $row->remarks,
+            'Sauda Type: ' . ($row->saudaType->name ?? '') . "\n" .
+            ucfirst($row->calculation_type) . ' Wise' . "\n" .
+            'Replacement: ' . ($row->is_replacement == 1 ? 'Yes' : 'No') . "\n\n" .
+            'COMMISSIONS:' . "\n" .
+            'Supplier Commission: ' . ($row->supplier_commission ?? 0) . "\n" .
+            $brokerDetails . "\n\n" .
+            'REMARKS:' . "\n" .
+            ($row->remarks ?? ''),
             $row->delivery_address ?? 'N/A',
 
             // $row->calculation_type == 'trucks' ? ($row->no_of_trucks ?? 0) : 'N/A',

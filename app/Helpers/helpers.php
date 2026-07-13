@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\Acl\{Company, Menu};
-use App\Models\{BagType, BillPaymentVoucherData, Category, Master\ArrivalLocation, Master\ArrivalSubLocation, Master\Customer, Master\Stitching, Master\Tax, PaymentTerm, Procurement\Store\DebitNoteData, Procurement\Store\PurchaseAgainstJobOrder, Procurement\Store\PurchaseBagQC, Procurement\Store\PurchaseBill, Procurement\Store\PurchaseBillData, Procurement\Store\PurchaseOrderData, Procurement\Store\PurchaseOrderReceiving, Procurement\Store\PurchaseRequest, Procurement\Store\PurchaseRequestData, Procurement\Store\PurchaseReturnData, Product, Production\JobOrder\JobOrder, Production\JobOrder\JobOrderPackingItem, Production\JobOrder\JobOrderPackingSubItem, ReceiptVoucher, ReceiptVoucherItem, Sales\DeliveryChallan, Sales\DeliveryChallanData, Sales\DeliveryOrder, Sales\DeliveryOrderData, Sales\LoadingProgramItem, Sales\LoadingSlip, Sales\SaleReturnData, Sales\SalesInquiry, Sales\SalesInvoiceData, Sales\SalesOrder, Sales\SalesOrderData, User};
+use App\Models\{BagType, BillPaymentVoucherData, Category, Master\ArrivalLocation, Master\ArrivalSubLocation, Master\Customer, Master\Stitching, Master\Tax, PaymentTerm, Procurement\PaymentRequest, Procurement\PaymentRequestApproval, Procurement\Store\DebitNoteData, Procurement\Store\PurchaseAgainstJobOrder, Procurement\Store\PurchaseBagQC, Procurement\Store\PurchaseBill, Procurement\Store\PurchaseBillData, Procurement\Store\PurchaseOrderData, Procurement\Store\PurchaseOrderReceiving, Procurement\Store\PurchaseRequest, Procurement\Store\PurchaseRequestData, Procurement\Store\PurchaseReturnData, Product, Production\JobOrder\JobOrder, Production\JobOrder\JobOrderPackingItem, Production\JobOrder\JobOrderPackingSubItem, ReceiptVoucher, ReceiptVoucherItem, Sales\DeliveryChallan, Sales\DeliveryChallanData, Sales\DeliveryOrder, Sales\DeliveryOrderData, Sales\LoadingProgramItem, Sales\LoadingSlip, Sales\SaleReturnData, Sales\SalesInquiry, Sales\SalesInvoiceData, Sales\SalesOrder, Sales\SalesOrderData, User};
 use App\Models\Arrival\ArrivalSamplingRequest;
 use App\Models\Arrival\ArrivalSamplingResult;
 use App\Models\Arrival\ArrivalSamplingResultForCompulsury;
@@ -313,9 +313,11 @@ if (!function_exists("numberToOrdinalWord")) {
 }
 
 if (!function_exists("getSaleOrderBalanceAgainstDC")) {
-    function getSaleOrderBalanceAgainstDC($sale_order_id, $excludeLoadingProgramItemId = null) {
+    function getSaleOrderBalanceAgainstDC($sale_order_id, $excludeLoadingProgramItemId = null)
+    {
         $so = SalesOrder::with('sales_order_data')->find($sale_order_id);
-        if (!$so) return 0;
+        if (!$so)
+            return 0;
 
         $totalSoQty = $so->sales_order_data->sum('qty');
 
@@ -339,12 +341,13 @@ if (!function_exists("getLoadingProgramBalance")) {
         }
 
         $delivery_order = DeliveryOrder::withoutGlobalScopes()->find($delivery_order_id);
-        if (!$delivery_order) return 0;
-        
+        if (!$delivery_order)
+            return 0;
+
         // Get all items and their linked DOs to perform global FIFO allocation
         // We order by ID to ensure a consistent FIFO sequence for items
         $allItems = LoadingProgramItem::with(['deliveryOrders', 'secondWeighbridge'])
-            ->when($excludeItemIds, function($q) use ($excludeItemIds) {
+            ->when($excludeItemIds, function ($q) use ($excludeItemIds) {
                 if (is_array($excludeItemIds)) {
                     return $q->whereNotIn('id', $excludeItemIds);
                 }
@@ -352,13 +355,14 @@ if (!function_exists("getLoadingProgramBalance")) {
             })
             ->orderBy('id')
             ->get();
-        
-        $allDoIds = $allItems->flatMap(function($item) {
+
+        $allDoIds = $allItems->flatMap(function ($item) {
             $ids = $item->deliveryOrders->pluck('id')->toArray();
-            if (empty($ids) && $item->delivery_order_id) $ids = [$item->delivery_order_id];
+            if (empty($ids) && $item->delivery_order_id)
+                $ids = [$item->delivery_order_id];
             return $ids;
         })->unique()->toArray();
-        
+
         if (!in_array($delivery_order_id, $allDoIds)) {
             $allDoIds[] = $delivery_order_id;
         }
@@ -370,12 +374,12 @@ if (!function_exists("getLoadingProgramBalance")) {
             ->get();
 
         foreach ($dos as $d) {
-            $doCapacities[$d->id] = ($d->type == 'export_order') 
-                ? $d->exportPackingItems->sum("metric_tons") 
+            $doCapacities[$d->id] = ($d->type == 'export_order')
+                ? $d->exportPackingItems->sum("metric_tons")
                 : $d->delivery_order_data->sum("qty");
             $doUsed[$d->id] = 0;
         }
-        
+
         $dosDict = $dos->keyBy('id');
 
         foreach ($allItems as $item) {
@@ -383,35 +387,37 @@ if (!function_exists("getLoadingProgramBalance")) {
             if (empty($linkedDos) && $item->delivery_order_id) {
                 $linkedDos = [$item->delivery_order_id];
             }
-            
+
             $remainingQty = $item->qty;
             if ($item->secondWeighbridge) {
                 $isExport = false;
                 if (!empty($linkedDos) && isset($dosDict[$linkedDos[0]])) {
                     $isExport = $dosDict[$linkedDos[0]]->type == 'export_order';
                 }
-                
-                $remainingQty = $isExport 
+
+                $remainingQty = $isExport
                     ? ($item->secondWeighbridge->net_weight / 1000)
                     : $item->secondWeighbridge->net_weight;
             }
 
             foreach ($linkedDos as $d_id) {
-                if (!isset($doCapacities[$d_id])) continue;
-                
+                if (!isset($doCapacities[$d_id]))
+                    continue;
+
                 $available = max(0, $doCapacities[$d_id] - $doUsed[$d_id]);
                 $consumed = min($remainingQty, $available);
-                
+
                 $doUsed[$d_id] += $consumed;
                 $remainingQty -= $consumed;
-                
-                if ($remainingQty <= 0) break;
+
+                if ($remainingQty <= 0)
+                    break;
             }
         }
-        
+
         // Update cache for the specific request
         $balanceCache[$cacheKey] = max(0, $doCapacities[$delivery_order_id] - $doUsed[$delivery_order_id]);
-        
+
         return $balanceCache[$cacheKey];
     }
 }
@@ -2031,7 +2037,8 @@ function getDebitNoteAmountOfBill(PurchaseBill $bill)
     return $debit_note_items_amount;
 }
 
-function getPurchaseReturnAmountOfBill(PurchaseBill $bill) {
+function getPurchaseReturnAmountOfBill(PurchaseBill $bill)
+{
     $bill_data_ids = $bill->bill_data->pluck('id')->toArray();
     $amount = PurchaseReturnData::whereIn('purchase_bill_data_id', $bill_data_ids)
         ->whereHas('purchase_return', function ($query) {
@@ -2277,18 +2284,37 @@ if (!function_exists('getStockByItem')) {
 }
 
 
+
+if (!function_exists('lastpaymentStatus')) {
+    function lastpaymentStatus($id, $request_type)
+    {
+        $approval = PaymentRequestApproval::where('ticket_id', $id)
+            ->where('request_type', $request_type)
+            ->get()
+            ->last();
+
+        if ($approval) {
+            return $approval;
+        } else {
+            return null;
+        }
+
+
+    }
+}
+
 function delivery_order_qty_balance($sale_order_data_id)
 {
-    $data = DeliveryOrderData::whereHas("delivery_order", function($query) {
+    $data = DeliveryOrderData::whereHas("delivery_order", function ($query) {
         $query->where("am_approval_status", "!=", "rejected");
     })->where("so_data_id", $sale_order_data_id)->get();
-    
+
     $spent = $data->sum("qty");
     $soData = SalesOrderData::find($sale_order_data_id);
     $able_to_spend = $soData ? $soData->qty : 0;
-    
+
     return $able_to_spend - $spent;
-}   
+}
 
 function delivery_order_qty_used($sale_order_data_id)
 {

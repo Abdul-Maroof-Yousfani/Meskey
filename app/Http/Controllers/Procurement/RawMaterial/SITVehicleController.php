@@ -17,7 +17,7 @@ class SITVehicleController extends Controller
 {
     public function index()
     {
-        return view('management.procurement.raw_material.sit_vehicles.index',);
+        return view('management.procurement.raw_material.sit_vehicles.index', );
     }
 
     public function getList(Request $request)
@@ -56,6 +56,9 @@ class SITVehicleController extends Controller
                 return $q->whereHas('purchaseOrder', function ($query) use ($request) {
                     $query->where('company_location_id', $request->company_location_id);
                 });
+            })
+            ->whereHas('purchaseOrder', function ($query) use ($request) {
+                $query->whereIn('company_location_id', getUserCurrentCompanyLocations());
             })
             ->when($request->filled('supplier_id'), function ($q) use ($request) {
                 return $q->whereHas('purchaseOrder', function ($query) use ($request) {

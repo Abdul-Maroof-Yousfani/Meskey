@@ -17,6 +17,11 @@
     <tbody>
         @if (count($tickets) != 0)
             @foreach ($tickets as $ticket)
+                @php
+                    // $lastPaymentApproval = lastpaymentStatus($ticket->id, 'freight');
+                    $lastPaymentApproval = lastpaymentStatus($ticket->id, 'payment');
+                    // dd($lastPaymentApproval);
+                @endphp
                 <tr>
                     <td>#{{ $ticket->unique_no }} <br>
                         #{{ $ticket->purchaseOrder->contract_no }}
@@ -54,6 +59,12 @@
                         </div>
                     </td>
                     <td>
+                        @if(isset($lastPaymentApproval))
+                            <span
+                                class="d-inline-block text-capitalize mb-1 badge  {{ $lastPaymentApproval->status == 'approved' ? 'badge-success' : ($lastPaymentApproval->status == 'pending' ? 'badge-warning' : ($lastPaymentApproval->status == 'rejected' ? 'badge-danger' : 'badge-secondary')) }}">
+                                Last Payment Status: {{ $lastPaymentApproval->status ?? '' }}
+                            </span>
+                        @endif
                         @if ($ticket->calculated_values['total_payment_sum'] == 0 && $ticket->calculated_values['total_freight_sum'] == 0)
                             <span class="text-muted"> N/A </span>
                         @else

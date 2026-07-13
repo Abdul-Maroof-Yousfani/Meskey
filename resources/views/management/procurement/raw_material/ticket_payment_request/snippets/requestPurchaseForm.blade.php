@@ -35,7 +35,12 @@
     $ratePerKg = $purchaseOrder->rate_per_kg ?? 0;
     $kantaCharges = $arrivalTicket->freight->karachi_kanta_charges ?? 0;
     $arrivalFreightAmount = $arrivalTicket->freight->gross_freight_amount ?? 0;
-    $grossFreightAmount = $freightPaymentRequestgrossAmount == 0 ? $arrivalTicket->freight->net_freight : $freightPaymentRequestgrossAmount;
+
+    if ($arrivalTicket->freight_paid_by_supplier) {
+        $grossFreightAmount = $freightPaymentRequestgrossAmount;
+    } else {
+        $grossFreightAmount = $freightPaymentRequestgrossAmount ?? $arrivalTicket->freight->net_freight;
+    }
 
     $netWeight = $loadingWeight - $bagWeight * $noOfBags;
 
@@ -169,7 +174,7 @@
         samplingResults: [
             @foreach ($samplingRequestResults as $slab)
                 @if ($slab->applied_deduction)
-                                            {
+                                                                                            {
                         id: {{ $slab->id }},
                         applied_deduction: {{ $slab->applied_deduction ?? 0 }},
                         deduction_type: '{{ $slab->deduction_type ?? 'amount' }}',
@@ -183,10 +188,10 @@
         compulsoryResults: [
             @foreach ($samplingRequestCompulsuryResults as $slab)
                 @if ($slab->applied_deduction)
-                                {
+                                                        {
                     id: {{ $slab->id }},
                     applied_deduction: {{ $slab->applied_deduction ?? 0 }}
-                                },
+                                                        },
                 @endif
             @endforeach
         ],

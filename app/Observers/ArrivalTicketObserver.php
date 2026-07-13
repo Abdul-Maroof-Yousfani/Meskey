@@ -27,12 +27,12 @@ class ArrivalTicketObserver
     public function created(ArrivalTicket $arrivalTicket): void
     {
         ArrivalSamplingRequest::create([
-            'company_id'       => $arrivalTicket->company_id,
+            'company_id' => $arrivalTicket->company_id,
             'arrival_ticket_id' => $arrivalTicket->id,
-            'sampling_type'    => 'initial',
-            'is_re_sampling'   => 'no',
-            'is_done'          => 'no',
-            'remark'           => null,
+            'sampling_type' => 'initial',
+            'is_re_sampling' => 'no',
+            'is_done' => 'no',
+            'remark' => null,
         ]);
     }
 
@@ -59,6 +59,28 @@ class ArrivalTicketObserver
 
             $ticket->bilty_return_attachment = 'storage/' . $path;
         }
+
+        if (request()->hasFile('weightslip_attachment')) {
+            if ($ticket->weightslip_attachment) {
+                $this->deleteFile($ticket->weightslip_attachment);
+            }
+
+            $file = request()->file('weightslip_attachment');
+            $path = $file->store('bilty_return_attachments', 'public');
+
+            $ticket->weightslip_attachment = 'storage/' . $path;
+        }
+
+        if (request()->hasFile('other_attachment')) {
+            if ($ticket->other_attachment) {
+                $this->deleteFile($ticket->other_attachment);
+            }
+
+            $file = request()->file('other_attachment');
+            $path = $file->store('bilty_return_attachments', 'public');
+
+            $ticket->other_attachment = 'storage/' . $path;
+        }
     }
 
     /**
@@ -84,6 +106,14 @@ class ArrivalTicketObserver
     {
         if ($ticket->bilty_return_attachment) {
             $this->deleteFile($ticket->bilty_return_attachment);
+        }
+
+        if ($ticket->weightslip_attachment) {
+            $this->deleteFile($ticket->weightslip_attachment);
+        }
+
+        if ($ticket->other_attachment) {
+            $this->deleteFile($ticket->other_attachment);
         }
     }
 }

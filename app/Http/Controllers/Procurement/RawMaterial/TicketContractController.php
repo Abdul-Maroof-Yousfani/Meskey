@@ -28,6 +28,10 @@ use Illuminate\Support\Facades\DB;
 
 class TicketContractController extends Controller
 {
+    function __construct()
+    {
+        $this->middleware('check.company:contract-linking', ['only' => ['index', 'getList', 'create']]);
+    }
     /**
      * Display a listing of the resource.
      */

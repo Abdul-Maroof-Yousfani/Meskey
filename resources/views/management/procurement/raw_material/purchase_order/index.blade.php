@@ -10,21 +10,24 @@
                     <h2 class="page-title">Purchase Orders</h2>
                 </div>
 
-                @canAccess("procurement-raw-purchase-order-create")
+
+                
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
-                    <button
-                        onclick="openModal(this,'{{ route('raw-material.purchase-order.create') }}','Add Purchase Contract (Raw Material)')"
+                    @canAccess("procurement-raw-purchase-order-create")
+                    <button onclick="openModal(this,'{{ route('raw-material.purchase-order.create') }}','Add Purchase Contract (Raw Material)')"
                         type="button" class="btn btn-primary position-relative ">
                         Create Purchase Contract/Order
                     </button>
-
-
+                    @endcanAccess
+                    @canAccess("procurement-raw-purchase-order-export-csv")
                     <!-- Export CSV Button -->
                     <button onclick="exportCSV()" type="button" class="btn btn-success position-relative ml-2">
                         <i class="ft-file mr-1"></i> Export CSV
                     </button>
+                    @endcanAccess
+
                 </div>
-                @endcanAccess
+           
             </div>
             <div class="row">
                 <div class="col-12">
@@ -49,6 +52,21 @@
                                                         <option value="">Location</option>
                                                         @foreach ($companyLocations as $location)
                                                             <option value="{{ $location->id }}">{{ $location->name }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                            </div>
+                                             <div class="col-md-2">
+                                                <div class="form-group mb-0">
+                                                    <label>Commodity:</label>
+                                                    <select name="commodity_id_f" id="commodity_id_f"
+                                                        class="form-control selectWithoutAjax">
+                                                        <option value="">Select Commodity</option>
+                                                        @foreach ($commodities as $commodity)
+                                                            <option value="{{ $commodity->id }}"
+                                                                {{ request('commodity_id') == $commodity->id ? 'selected' : '' }}>
+                                                                {{ $commodity->name }}
+                                                            </option>
                                                         @endforeach
                                                     </select>
                                                 </div>
@@ -117,21 +135,21 @@
             Swal.fire({
                 title: 'Processing Export...',
                 html: `
-                                <div style="margin: 20px 0;">
-                                    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
-                                        <span class="sr-only">Loading...</span>
+                                    <div style="margin: 20px 0;">
+                                        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                                            <span class="sr-only">Loading...</span>
+                                        </div>
+                                        <p style="margin-top: 15px; color: #6c757d;">
+                                            Please wait while we prepare your data...
+                                        </p>
                                     </div>
-                                    <p style="margin-top: 15px; color: #6c757d;">
-                                        Please wait while we prepare your data...
-                                    </p>
-                                </div>
-                            `,
+                                `,
                 allowOutsideClick: false,
                 allowEscapeKey: false,
                 showConfirmButton: false,
-                showCancelButton: true,
-                cancelButtonText: 'Cancel',
-                cancelButtonColor: '#dc3545',
+                // showCancelButton: true,
+                // cancelButtonText: 'Cancel',
+                // cancelButtonColor: '#dc3545',
             });
 
             // Get filter values

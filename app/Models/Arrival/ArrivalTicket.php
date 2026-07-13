@@ -78,6 +78,8 @@ class ArrivalTicket extends Model
         'arrival_slip_status',
         'bilty_return_reason',
         'bilty_return_attachment',
+        'weightslip_attachment',
+        'other_attachment',
         'miller_id',
     ];
 
