@@ -105,7 +105,7 @@
             var selectedAttr = index === 0 ? 'true' : 'false';
             var tabId = `order-tab-${index}`;
             var contentId = `order-content-${index}`;
-            var autoBadge = order.is_auto ? '<span class="badge badge-warning" style="font-size: 0.6rem;">Auto</span>' : '';
+            var autoBadge = order.is_auto ? '<span class="badge badge-warning" style="font-size: 0.6rem;">Dummy DO</span>' : '';
 
             tabsHtml += `
                 <li class="nav-item">
