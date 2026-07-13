@@ -141,7 +141,7 @@
                         <a class="nav-link {{ $index === 0 ? 'active' : '' }}" id="order-tab-{{ $index }}" data-toggle="tab" href="#order-content-{{ $index }}" role="tab" aria-controls="order-content-{{ $index }}" aria-selected="{{ $index === 0 ? 'true' : 'false' }}">
                             {{ $order['type'] }}: {{ $order['number'] }}
                             @if(!empty($order['is_auto']))
-                                <span class="badge badge-warning" style="font-size: 0.6rem;">Auto</span>
+                                <span class="badge badge-warning" style="font-size: 0.6rem;">Dummy DO</span>
                             @endif
                         </a>
                     </li>

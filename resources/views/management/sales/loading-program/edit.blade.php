@@ -41,7 +41,7 @@
                 <select class="form-control select2" name="delivery_order_id[]" id="delivery_order_id" multiple>
                     {{-- Options will be populated via AJAX --}}
                     @foreach($LoadingProgram->deliveryOrders as $do)
-                        <option value="{{ $do->id }}" selected>{{ $do->reference_no }}{{ $do->is_auto_created_from_so ? " (Auto)" : "" }}</option>
+                        <option value="{{ $do->id }}" selected>{{ $do->reference_no }}{{ $do->is_auto_created_from_so ? " (Dummy DO)" : "" }}</option>
                     @endforeach
                 </select>
                 <small id="delivery_order_optional_note" class="text-muted" style="display: none;">
@@ -191,7 +191,7 @@
                                                 @foreach ($rowDos as $do)
                                                     @if (in_array($do->id, $mainSelectedDoIds))
                                                         <option value="{{ $do->id }}" @selected($item->deliveryOrders->contains($do->id))>
-                                                            {{ $do->reference_no }}{{ $do->is_auto_created_from_so ? " (Auto)" : "" }}
+                                                            {{ $do->reference_no }}{{ $do->is_auto_created_from_so ? " (Dummy DO)" : "" }}
                                                         </option>
                                                     @endif
                                                 @endforeach
@@ -935,7 +935,7 @@
                             $doSelect.append('<option value="">Select Delivery Order</option>');
                             response.delivery_orders.forEach(do_item => {
                                 if (selectedGlobalDoIds.includes(do_item.id.toString())) {
-                                    const doText = do_item.reference_no + (do_item.is_auto_created_from_so ? " (Auto)" : "");
+                                    const doText = do_item.reference_no + (do_item.is_auto_created_from_so ? " (Dummy DO)" : "");
                                     $doSelect.append(new Option(doText, do_item.id, false, currentDOVals.includes(do_item.id.toString())));
                                 }
                             });

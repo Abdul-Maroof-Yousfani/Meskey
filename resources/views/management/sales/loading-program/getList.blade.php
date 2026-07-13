@@ -81,7 +81,7 @@
                                         <div class="badge badge-success mb-1 d-block">
                                             {{ $doItem['ref'] }}
                                             @if($doItem['is_auto'])
-                                                <span class="badge badge-warning ml-1">Auto</span>
+                                                <span class="badge badge-warning ml-1">Dummy DO</span>
                                             @endif
                                         </div>
                                     @empty

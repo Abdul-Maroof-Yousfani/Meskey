@@ -20,7 +20,7 @@
                 <label>Delivery Order:</label>
                 <select class="form-control select2" multiple disabled style="width: 100% !important;">
                     @foreach ($DeliveryOrders as $do)
-                        <option value="{{ $do->id }}" selected>{{ $do->reference_no }}{{ $do->is_auto_created_from_so ? " (Auto)" : "" }}</option>
+                        <option value="{{ $do->id }}" selected>{{ $do->reference_no }}{{ $do->is_auto_created_from_so ? " (Dummy DO)" : "" }}</option>
                     @endforeach
                 </select>
             </div>
@@ -100,7 +100,7 @@
                                 <a class="nav-link {{ $index == 0 ? 'active' : '' }}" id="do-tab-{{ $do->id }}" data-toggle="pill" href="#do-content-{{ $do->id }}" role="tab">
                                     {{ $do->reference_no }}
                                     @if($do->is_auto_created_from_so)
-                                        <span class="badge badge-warning" style="font-size: 0.6rem;">Auto</span>
+                                        <span class="badge badge-warning" style="font-size: 0.6rem;">Dummy DO</span>
                                     @endif
                                 </a>
                             </li>
@@ -236,10 +236,10 @@
                             <td>
                                 <select class="form-control form-control-sm select2" multiple disabled>
                                     @foreach($item->deliveryOrders as $do)
-                                        <option value="{{ $do->id }}" selected>{{ $do->reference_no }}{{ $do->is_auto_created_from_so ? " (Auto)" : "" }}</option>
+                                        <option value="{{ $do->id }}" selected>{{ $do->reference_no }}{{ $do->is_auto_created_from_so ? " (Dummy DO)" : "" }}</option>
                                     @endforeach
                                     @if($item->deliveryOrders->isEmpty() && $LoadingProgram->deliveryOrder)
-                                        <option value="{{ $LoadingProgram->deliveryOrder->id }}" selected>{{ $LoadingProgram->deliveryOrder->reference_no }}{{ $LoadingProgram->deliveryOrder->is_auto_created_from_so ? " (Auto)" : "" }}</option>
+                                        <option value="{{ $LoadingProgram->deliveryOrder->id }}" selected>{{ $LoadingProgram->deliveryOrder->reference_no }}{{ $LoadingProgram->deliveryOrder->is_auto_created_from_so ? " (Dummy DO)" : "" }}</option>
                                     @endif
                                 </select>
                             </td>
