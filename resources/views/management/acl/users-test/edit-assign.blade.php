@@ -52,7 +52,7 @@
                 </div>
 
                 <!-- Purchase Order Approval -->
-        
+
             </div>
 
 
@@ -87,37 +87,41 @@
                                             $itemId .
                                             '\')">';
 
-                                        echo '<div class="perm_permission-title">
-                                    <label class="perm_custom-checkbox">
-                                        <input type="checkbox" name="permission[]" value="' .
+                                        echo '<div class="perm_permission-title d-block">
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <label class="perm_custom-checkbox">
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        <input type="checkbox" name="permission[]" value="' .
                                             $item->name .
                                             '" 
-                                               class="perm_checkbox" id="' .
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               class="perm_checkbox" id="' .
                                             $itemId .
                                             '" 
-                                               data-level="' .
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               data-level="' .
                                             $level .
                                             '" 
-                                               data-parent="' .
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               data-parent="' .
                                             ($level > 0 ? 'item-' . $item->parent_id : '') .
                                             '"
-                                            ' .
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ' .
                                             (in_array($item->name, $assignedPermissions) ? 'checked' : '') .
                                             '>
-                                        <span class="perm_checkmark"></span>
-                                        <span class="perm_permission-name">' .
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        <span class="perm_checkmark"></span>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        <span class="perm_permission-name">' .
                                             $item->name .
                                             '</span>
-                                    </label>
-                                </div>';
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    </label>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 <p class="perm_permission-description my-2">' .
+                                            $item->description .
+                                            '</p>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </div>';
 
                                         if ($hasChildren) {
                                             echo '<div class="perm_permission-meta">
-                                        <span class="perm_permission-count">' .
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        <span class="perm_permission-count">' .
                                                 $children->count() .
                                                 '</span>
-                                        <div class="perm_toggle-icon"><i class="perm_toggle-arrow"></i></div>
-                                      </div>';
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        <div class="perm_toggle-icon"><i class="perm_toggle-arrow"></i></div>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      </div>';
                                         }
 
                                         echo '</div>';
@@ -150,18 +154,20 @@
                                 @endphp
 
                                 <div class="perm_permission-card">
-                                    <div class="perm_permission-header"
-                                        onclick="togglePermission('{{ $rootId }}')">
-                                        <div class="perm_permission-title">
+                                    <div class="perm_permission-header" onclick="togglePermission('{{ $rootId }}')">
+                                        <div class="perm_permission-title d-block">
                                             <label class="perm_custom-checkbox">
                                                 <input type="checkbox" name="permission[]"
                                                     value="{{ $rootPermission->name }}"
                                                     class="perm_checkbox perm_root-checkbox" id="{{ $rootId }}"
-                                                    data-level="0"
-                                                    {{ in_array($rootPermission->name, $assignedPermissions) ? 'checked' : '' }}>
+                                                    data-level="0" {{ in_array($rootPermission->name, $assignedPermissions) ? 'checked' : '' }}>
                                                 <span class="perm_checkmark"></span>
                                                 <span class="perm_permission-name">{{ $rootPermission->name }}</span>
+
                                             </label>
+                                            <p class="perm_permission-description my-2">
+                                                {{ $rootPermission->description }}
+                                            </p>
                                         </div>
 
                                         @if ($hasRootChildren)
@@ -184,18 +190,25 @@
                 </div>
             </div>
 
-             <div class="col-md-12 mt-3">
+            <div class="col-md-12 mt-3">
                 <div class="d-flex align-items-center">
-                    <input type="checkbox" name="purchase_order_approval" class="mr-2 po-approval-checkbox" id="po_approval_0" value="1" {{ $purchaseOrderApproval ? 'checked' : '' }} style="width: 20px; height: 20px;">
+                    <input type="checkbox" name="purchase_order_approval" class="mr-2 po-approval-checkbox"
+                        id="po_approval_0" value="1" {{ $purchaseOrderApproval ? 'checked' : '' }}
+                        style="width: 20px; height: 20px;">
                     <label class="font-weight-bold mb-0" for="po_approval_0">Purchase Order Approval</label>
                 </div>
-                <div class="mt-3 p-3 bg-light-info rounded border-left-info shadow-sm" style="background-color: #e7f3f5; border-left: 5px solid #17a2b8;">
+                <div class="mt-3 p-3 bg-light-info rounded border-left-info shadow-sm"
+                    style="background-color: #e7f3f5; border-left: 5px solid #17a2b8;">
                     <h6 class="text-info font-weight-bold mb-2"><i class="ft-info mr-2"></i> Important Information</h6>
                     <p class="text-dark mb-0" style="font-size: 14px; line-height: 1.6;">
-                        If your account does not have a parent user, the system simply uses your own account’s most recent access setting. 
-                        However, if your account does have a parent, the system first looks up the parent account and then checks among 
-                        its child users to find the one who has <strong>“Purchase Order Approval”</strong> enabled. Once it finds that 
-                        specific child, it uses that child user’s most recent access setting instead. It’s important to note that only one 
+                        If your account does not have a parent user, the system simply uses your own account’s most
+                        recent access setting.
+                        However, if your account does have a parent, the system first looks up the parent account and
+                        then checks among
+                        its child users to find the one who has <strong>“Purchase Order Approval”</strong> enabled. Once
+                        it finds that
+                        specific child, it uses that child user’s most recent access setting instead. It’s important to
+                        note that only one
                         child user can have the “Purchase Order Approval” option enabled at any given time.
                     </p>
                 </div>
@@ -213,22 +226,23 @@
 
 {!! Form::close() !!}
 
-{{-- <script>
-    let selectedArrivals = {!! json_encode($selectedArrivals ?? []) !!};
-    let selectedLocations = {!! json_encode($selectedLocations ?? []) !!};
+{{--
+<script>
+    let selectedArrivals = {!! json_encode($selectedArrivals ?? [])!!};
+    let selectedLocations = {!! json_encode($selectedLocations ?? [])!!};
     let editCompanyId = {{ $companyId ?? 'null' }};
 
-    $(document).ready(function() {
+    $(document).ready(function () {
 
         /* ------------------ Select2 Init ------------------ */
         function initSelect2() {
             try {
-                $('.company-select, .location-select, .arrival-select').each(function() {
+                $('.company-select, .location-select, .arrival-select').each(function () {
                     if ($(this).hasClass('select2-hidden-accessible')) {
                         $(this).select2('destroy');
                     }
                 });
-            } catch (e) {}
+            } catch (e) { }
 
             $('.company-select').select2({
                 width: '100%'
@@ -243,7 +257,7 @@
 
         /* ------------------ Reindex Cards ------------------ */
         function reindexCards() {
-            $('#card-container .clonecard').each(function(index) {
+            $('#card-container .clonecard').each(function (index) {
                 $(this).find('.company-select').attr('name', `company[${index}]`);
                 $(this).find('.location-select').attr('name', `company_location_id[${index}][]`);
             });
@@ -260,15 +274,15 @@
 
             if (!companyId) return;
 
-            $.get(`/acl/get-company-locations/${companyId}`, function(data) {
+            $.get(`/acl/get-company-locations/${companyId}`, function (data) {
 
                 data.forEach(loc => {
 
                     let isSelected =
                         selectedLocations.includes(String(loc.id)) ||
-                        selectedLocations.includes(Number(loc.id)) ?
-                        'selected' :
-                        '';
+                            selectedLocations.includes(Number(loc.id)) ?
+                            'selected' :
+                            '';
 
                     locationSelect.append(
                         `<option value="${loc.id}" ${isSelected}>${loc.name}</option>`
@@ -288,7 +302,7 @@
 
             let selectField = arrivalBox.find('select.arrival-select');
 
-            $.get(`/acl/get-arrival-locations/${locationId}`, function(data) {
+            $.get(`/acl/get-arrival-locations/${locationId}`, function (data) {
 
                 selectField.empty();
 
@@ -296,9 +310,9 @@
 
                     let isSelected =
                         selectedArrivals.includes(String(item.id)) ||
-                        selectedArrivals.includes(Number(item.id)) ?
-                        'selected' :
-                        '';
+                            selectedArrivals.includes(Number(item.id)) ?
+                            'selected' :
+                            '';
 
                     selectField.append(
                         `<option value="${item.id}" ${isSelected}>${item.name}</option>`
@@ -328,7 +342,7 @@
                 return;
             }
 
-            selected.forEach(function(locationId) {
+            selected.forEach(function (locationId) {
 
                 let arrivalBox = $(`
                     <div class="single-arrival mb-2" data-location="${locationId}">
@@ -346,26 +360,26 @@
         /* ------------------ Change Events ------------------ */
 
         // Company change
-        $(document).on('change', '.company-select', function() {
+        $(document).on('change', '.company-select', function () {
             let card = $(this).closest('.clonecard');
             let companyId = $(this).val();
             loadCompanyLocations(card, companyId);
         });
 
         // Location change
-        $(document).on('change', '.location-select', function() {
+        $(document).on('change', '.location-select', function () {
             let card = $(this).closest('.clonecard');
             buildArrivalWrapperForCard(card);
         });
 
         /* ------------------ Add / Remove Card ------------------ */
 
-        $('body').on('click', '.add-more', function() {
+        $('body').on('click', '.add-more', function () {
 
             let newCard = $('#card-container .clonecard:first').clone();
 
             newCard.find('.select2').remove();
-            newCard.find('select').each(function() {
+            newCard.find('select').each(function () {
                 $(this)
                     .val(null)
                     .removeClass('select2-hidden-accessible')
@@ -381,7 +395,7 @@
             initSelect2();
         });
 
-        $('body').on('click', '.remove-card', function() {
+        $('body').on('click', '.remove-card', function () {
             if ($('#card-container .clonecard').length > 1) {
                 $(this).closest('.clonecard').remove();
                 reindexCards();
@@ -390,9 +404,9 @@
 
         /* ------------------ Initial Load (Edit + Normal) ------------------ */
 
-        setTimeout(function() {
+        setTimeout(function () {
 
-            $('#card-container .clonecard').each(function(index) {
+            $('#card-container .clonecard').each(function (index) {
 
                 let card = $(this);
                 let companyId = editCompanyId ?? card.find('.company-select').val();
@@ -400,7 +414,7 @@
                 if (companyId) {
                     loadCompanyLocations(card, companyId);
 
-                    setTimeout(function() {
+                    setTimeout(function () {
                         buildArrivalWrapperForCard(card);
                     }, 200);
                 }
@@ -419,23 +433,23 @@
     let selectedLocations = {!! json_encode($selectedLocations ?? []) !!};
     let editCompanyId = {{ $companyId ?? 'null' }};
 
-    $(document).ready(function() {
+    $(document).ready(function () {
 
         function initSelect2() {
             try {
-                $('.company-select, .location-select, .arrival-select').each(function() {
+                $('.company-select, .location-select, .arrival-select').each(function () {
                     if ($(this).hasClass('select2-hidden-accessible')) {
                         $(this).select2('destroy');
                     }
                 });
-            } catch (e) {}
+            } catch (e) { }
             $('.company-select, .location-select, .arrival-select').select2({
                 width: '100%'
             });
         }
 
         function reindexCards() {
-            $('#card-container .clonecard').each(function(index) {
+            $('#card-container .clonecard').each(function (index) {
                 $(this).find('.company-select').attr('name', `company[${index}]`);
                 $(this).find('.location-select').attr('name', `company_location_id[${index}][]`);
             });
@@ -450,7 +464,7 @@
 
             if (!companyId) return;
 
-            $.get(`/acl/get-company-locations/${companyId}`, function(data) {
+            $.get(`/acl/get-company-locations/${companyId}`, function (data) {
                 data.forEach(loc => {
                     let isSelected = selectedLocations.includes(String(loc.id)) ||
                         selectedLocations.includes(Number(loc.id)) ? 'selected' : '';
@@ -485,7 +499,7 @@
             selectField.empty();
 
             selected.forEach(locationId => {
-                $.get(`/acl/get-arrival-locations/${locationId}`, function(data) {
+                $.get(`/acl/get-arrival-locations/${locationId}`, function (data) {
                     data.forEach(item => {
                         let isSelected = selectedArrivals.includes(String(item.id)) ||
                             selectedArrivals.includes(Number(item.id)) ? 'selected' :
@@ -505,20 +519,20 @@
         }
 
         // Company change
-        $(document).on('change', '.company-select', function() {
+        $(document).on('change', '.company-select', function () {
             let card = $(this).closest('.clonecard');
             let companyId = $(this).val();
             loadCompanyLocations(card, companyId);
         });
 
         // Location change
-        $(document).on('change', '.location-select', function() {
+        $(document).on('change', '.location-select', function () {
             let card = $(this).closest('.clonecard');
             buildArrivalWrapperForCard(card);
         });
 
         // Add / Remove card
-        $('body').on('click', '.add-more', function() {
+        $('body').on('click', '.add-more', function () {
             let newCard = $('#card-container .clonecard:first').clone();
             newCard.find('.select2').remove();
             newCard.find('select').val(null).removeClass('select2-hidden-accessible').removeAttr(
@@ -530,7 +544,7 @@
             initSelect2();
         });
 
-        $('body').on('click', '.remove-card', function() {
+        $('body').on('click', '.remove-card', function () {
             if ($('#card-container .clonecard').length > 1) {
                 $(this).closest('.clonecard').remove();
                 reindexCards();
@@ -551,7 +565,7 @@
         //     });
         // }, 300);
 
-        $('#card-container .clonecard').each(function() {
+        $('#card-container .clonecard').each(function () {
             let card = $(this);
             let companyId = card.find('.company-select').val();
 
@@ -579,12 +593,12 @@
         $(event.currentTarget).find('.perm_toggle-arrow').toggleClass('perm_rotated');
     }
 
-    $(document).ready(function() {
-        $('.perm_custom-checkbox').on('click', function(e) {
+    $(document).ready(function () {
+        $('.perm_custom-checkbox').on('click', function (e) {
             e.stopPropagation();
         });
 
-        $('.perm_checkbox').change(function() {
+        $('.perm_checkbox').change(function () {
             var isChecked = $(this).prop('checked');
             var itemId = $(this).attr('id');
 
@@ -601,7 +615,7 @@
                 var $siblings = $('[data-parent="' + parentId + '"]');
                 var anyChecked = false;
 
-                $siblings.each(function() {
+                $siblings.each(function () {
                     if ($(this).prop('checked')) {
                         anyChecked = true;
                         return false;
@@ -614,24 +628,24 @@
             }
         }
 
-        $('#expandAll').click(function() {
+        $('#expandAll').click(function () {
             $('.perm_permission-children').slideDown(200).addClass('perm_show');
             $('.perm_toggle-arrow').addClass('perm_rotated');
         });
 
-        $('#collapseAll').click(function() {
+        $('#collapseAll').click(function () {
             $('.perm_permission-children').slideUp(200).removeClass('perm_show');
             $('.perm_toggle-arrow').removeClass('perm_rotated');
         });
 
-        $('#searchPermissions').on('keyup', function() {
+        $('#searchPermissions').on('keyup', function () {
             var searchText = $(this).val().toLowerCase();
 
             if (searchText.length > 0) {
                 $('.perm_permission-children').slideDown(200).addClass('perm_show');
                 $('.perm_toggle-arrow').addClass('perm_rotated');
 
-                $('.perm_permission-name').each(function() {
+                $('.perm_permission-name').each(function () {
                     var permissionText = $(this).text().toLowerCase();
                     var permissionItem = $(this).closest(
                         '.perm_permission-card, .perm_permission-item');
@@ -655,7 +669,7 @@
                 });
             } else {
                 $('.perm_permission-card, .perm_permission-item').show();
-                $('.perm_permission-name').each(function() {
+                $('.perm_permission-name').each(function () {
                     $(this).html($(this).text());
                 });
             }

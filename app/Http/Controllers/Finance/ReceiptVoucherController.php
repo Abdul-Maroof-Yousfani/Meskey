@@ -27,7 +27,8 @@ class ReceiptVoucherController extends Controller
         return view('management.finance.receipt_voucher.index');
     }
 
-    public function getitems(Request $request) {
+    public function getitems(Request $request)
+    {
         $items = json_decode($request->items);
         $taxes = Tax::where("status", "active")->get();
 
@@ -35,7 +36,8 @@ class ReceiptVoucherController extends Controller
     }
 
 
-    public function direct_receipt_voucher(DirectReceiptVoucherRequest $request) {
+    public function direct_receipt_voucher(DirectReceiptVoucherRequest $request)
+    {
         DB::beginTransaction();
         try {
             $receipt_voucher = ReceiptVoucher::create([
@@ -45,7 +47,7 @@ class ReceiptVoucherController extends Controller
             $amount = 0;
 
 
-            foreach($request->account as $index => $account) {
+            foreach ($request->account as $index => $account) {
 
                 $receipt_voucher->items()->create([
                     "reference_id" => "1234",
@@ -67,7 +69,7 @@ class ReceiptVoucherController extends Controller
                     'no',
                     [
                         'counter_account_id' => $request->account_id,
-                     ]
+                    ]
                 );
 
                 $amount += $request->net_amount[$index];
@@ -80,69 +82,70 @@ class ReceiptVoucherController extends Controller
                 $receipt_voucher->unique_no,
                 'debit',
                 'no',
-                
+
             );
 
             DB::commit();
-        } catch(Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
             return response()->json($e->getMessage(), 500);
         }
     }
 
-    public function getDocumentsForRv(Request $request) {
+    public function getDocumentsForRv(Request $request)
+    {
         $is_advance = $request->is_advance === 'true' ? true : false;
         $customer_id = $request->customer_id;
         $dropdowndData = [];
         $data = [];
-       
-        if($is_advance) {
+
+        if ($is_advance) {
             $dropdowndData[] = [
                 "id" => "",
                 "text" => "Select Sale Order"
             ];
 
             $data = SalesOrder::select("id", "reference_no")
-                                    ->with("sales_order_data")
-                                    ->where("customer_id", $customer_id)
-                                    ->where("am_approval_status", 'approved')
-                                    ->get()
-                                    ->filter(function($saleOrder) {
-                                        // Example: keep only if any related sale_order_data has quantity > 0
-                                        return $saleOrder->sales_order_data->contains(function($item) {
-                                            $balance = receipt_voucher_balance($item->sale_order_id);
-                                            return $balance > 0; 
-                                        });
-                                    });
-                                   
-                                    
+                ->with("sales_order_data")
+                ->where("customer_id", $customer_id)
+                ->where("am_approval_status", 'approved')
+                ->get()
+                ->filter(function ($saleOrder) {
+                    // Example: keep only if any related sale_order_data has quantity > 0
+                    return $saleOrder->sales_order_data->contains(function ($item) {
+                        $balance = receipt_voucher_balance($item->sale_order_id);
+                        return $balance > 0;
+                    });
+                });
+
+
         } else {
-                $dropdowndData[] = [
-                    "id" => "",
-                    "text" => "Select Sale Invoice"
-                ];
+            $dropdowndData[] = [
+                "id" => "",
+                "text" => "Select Sale Invoice"
+            ];
 
-                $data = SalesInvoice::select("id", "si_no as reference_no")
-                                    ->where("customer_id", $customer_id)
-                                    ->where("am_approval_status", "approved")
-                                    ->get()
-                                    ->filter(function($sale_invoice) {
-                                        // Example: keep only if any related sale_order_data has quantity > 0
-                                        return $sale_invoice->sales_invoice_data->contains(function($item) {
-                                            $balance = receipt_voucher_balance($item->sales_invoice_id, "sales_invoie");
-                                            return $balance > 0; 
-                                        });
-                                    });
+            $data = SalesInvoice::select("id", "si_no as reference_no")
+                ->where("customer_id", $customer_id)
+                ->where("am_approval_status", "approved")
+                ->get()
+                ->filter(function ($sale_invoice) {
+                    // Example: keep only if any related sale_order_data has quantity > 0
+                    return $sale_invoice->sales_invoice_data->contains(function ($item) {
+                        $balance = receipt_voucher_balance($item->sales_invoice_id, "sales_invoie");
+                        return $balance > 0;
+                    });
+                });
         }
-        
-      
 
-        foreach($data as $datum) {
+
+
+        foreach ($data as $datum) {
             $dropdowndData[] = [
                 "id" => $datum->id,
                 "text" => $datum->reference_no
             ];
-            
+
         }
 
 
@@ -164,12 +167,12 @@ class ReceiptVoucherController extends Controller
             })
             ->latest()
             ->paginate(request('per_page', 25))
-            ->through(function($item) {
+            ->through(function ($item) {
                 $item->is_advance = $item->items->where("reference_type", "sale_order")->isNotEmpty();
                 return $item;
             });
 
-       
+
 
         return view('management.finance.receipt_voucher.getList', compact('receiptVouchers'));
     }
@@ -308,7 +311,8 @@ class ReceiptVoucherController extends Controller
         ]);
     }
 
-    public function edit_direct($id){
+    public function edit_direct($id)
+    {
         $receiptVoucher = ReceiptVoucher::with('items')->findOrFail($id);
         $accounts = Account::all();
         $taxes = Tax::select('id', 'name', 'percentage')->where('status', 'active')->get();
@@ -316,149 +320,150 @@ class ReceiptVoucherController extends Controller
     }
 
     public function update_direct(Request $request, $id)
-{
-    // TODO: Create a validation request class if needed, similar to ReceiptVoucherRequest
-    // For now, assuming basic validation
-    $request->validate([
-        'voucher_type' => 'required|in:bank_payment_voucher,cash_payment_voucher',
-        'rv_date' => 'required|date',
-        'unique_no' => 'required|string',
-        'account_id' => 'required|exists:accounts,id',
-        'ref_bill_no' => 'nullable|string',
-        'bill_date' => 'nullable|date',
-        'account.*' => 'required|exists:accounts,id',
-        'amount.*' => 'required|numeric|min:0',
-        'tax_id.*' => 'nullable|exists:taxes,id',
-        'tax_amount.*' => 'nullable|numeric|min:0',
-        'net_amount.*' => 'nullable|numeric|min:0',
-        'description.*' => 'nullable|string',
-    ]);
-
-    $payload = $request->all();
-    $receiptVoucher = ReceiptVoucher::findOrFail($id);
-
-    DB::beginTransaction();
-    try {
-        // Calculate items and totals
-        $accounts_array = $payload['account'] ?? [];
-        $amounts = $payload['amount'] ?? [];
-        $tax_ids = $payload['tax_id'] ?? [];
-        $tax_amounts = $payload['tax_amount'] ?? [];
-        $net_amounts = $payload['net_amount'] ?? [];
-        $descriptions = $payload['description'] ?? [];
-
-        $totalNetAmount = 0;
-        $items = [];
-
-        for ($i = 0; $i < count($accounts_array); $i++) {
-            if (empty($accounts_array[$i]) || empty($amounts[$i])) continue;
-
-            $amount = (float) ($amounts[$i] ?? 0);
-            $tax_id = $tax_ids[$i] ?? null;
-            $tax_amount = (float) ($tax_amounts[$i] ?? 0);
-            $net_amount = (float) ($net_amounts[$i] ?? ($amount + $tax_amount));
-            $description = $descriptions[$i] ?? null;
-
-            $totalNetAmount += $net_amount;
-
-            $items[] = [
-                'account_id' => $accounts_array[$i],
-                'amount' => $amount,
-                'tax_id' => $tax_id,
-                'tax_amount' => $tax_amount,
-                'net_amount' => $net_amount,
-                'line_desc' => $description,
-                'reference_id' => 1234,
-                'reference_type' => "direct"
-            ];
-        }
-
-        if (empty($items)) {
-            throw new \Exception('At least one valid voucher entry is required.');
-        }
-
-        // Delete old transactions
-        $oldPurpose = "RV-{$receiptVoucher->id}-{$receiptVoucher->unique_no}";
-        Transaction::where('purpose', $oldPurpose)->delete();
-
-        // Update the receipt voucher
-        $receiptVoucher->update([
-            'unique_no' => $payload['unique_no'],
-            'rv_date' => $payload['rv_date'],
-            'ref_bill_no' => $payload['ref_bill_no'] ?? null,
-            'bill_date' => $payload['bill_date'] ?? null,
-            'account_id' => $payload['account_id'],
-            'voucher_type' => $payload['voucher_type'],
-            'remarks' => $payload['remarks'] ?? null, // Assuming optional, as in create
-            'total_amount' => $totalNetAmount,
-            'company_id' => $request->company_id, // Assuming same as create
+    {
+        // TODO: Create a validation request class if needed, similar to ReceiptVoucherRequest
+        // For now, assuming basic validation
+        $request->validate([
+            'voucher_type' => 'required|in:bank_payment_voucher,cash_payment_voucher',
+            'rv_date' => 'required|date',
+            'unique_no' => 'required|string',
+            'account_id' => 'required|exists:accounts,id',
+            'ref_bill_no' => 'nullable|string',
+            'bill_date' => 'nullable|date',
+            'account.*' => 'required|exists:accounts,id',
+            'amount.*' => 'required|numeric|min:0',
+            'tax_id.*' => 'nullable|exists:taxes,id',
+            'tax_amount.*' => 'nullable|numeric|min:0',
+            'net_amount.*' => 'nullable|numeric|min:0',
+            'description.*' => 'nullable|string',
         ]);
 
-        // Delete old items
-        $receiptVoucher->items()->delete();
+        $payload = $request->all();
+        $receiptVoucher = ReceiptVoucher::findOrFail($id);
 
-        // Create new items
-        foreach ($items as $item) {
-            ReceiptVoucherItem::create(array_merge($item, ['receipt_voucher_id' => $receiptVoucher->id]));
+        DB::beginTransaction();
+        try {
+            // Calculate items and totals
+            $accounts_array = $payload['account'] ?? [];
+            $amounts = $payload['amount'] ?? [];
+            $tax_ids = $payload['tax_id'] ?? [];
+            $tax_amounts = $payload['tax_amount'] ?? [];
+            $net_amounts = $payload['net_amount'] ?? [];
+            $descriptions = $payload['description'] ?? [];
+
+            $totalNetAmount = 0;
+            $items = [];
+
+            for ($i = 0; $i < count($accounts_array); $i++) {
+                if (empty($accounts_array[$i]) || empty($amounts[$i]))
+                    continue;
+
+                $amount = (float) ($amounts[$i] ?? 0);
+                $tax_id = $tax_ids[$i] ?? null;
+                $tax_amount = (float) ($tax_amounts[$i] ?? 0);
+                $net_amount = (float) ($net_amounts[$i] ?? ($amount + $tax_amount));
+                $description = $descriptions[$i] ?? null;
+
+                $totalNetAmount += $net_amount;
+
+                $items[] = [
+                    'account_id' => $accounts_array[$i],
+                    'amount' => $amount,
+                    'tax_id' => $tax_id,
+                    'tax_amount' => $tax_amount,
+                    'net_amount' => $net_amount,
+                    'line_desc' => $description,
+                    'reference_id' => 1234,
+                    'reference_type' => "direct"
+                ];
+            }
+
+            if (empty($items)) {
+                throw new \Exception('At least one valid voucher entry is required.');
+            }
+
+            // Delete old transactions
+            $oldPurpose = "RV-{$receiptVoucher->id}-{$receiptVoucher->unique_no}";
+            Transaction::where('purpose', $oldPurpose)->delete();
+
+            // Update the receipt voucher
+            $receiptVoucher->update([
+                'unique_no' => $payload['unique_no'],
+                'rv_date' => $payload['rv_date'],
+                'ref_bill_no' => $payload['ref_bill_no'] ?? null,
+                'bill_date' => $payload['bill_date'] ?? null,
+                'account_id' => $payload['account_id'],
+                'voucher_type' => $payload['voucher_type'],
+                'remarks' => $payload['remarks'] ?? null, // Assuming optional, as in create
+                'total_amount' => $totalNetAmount,
+                'company_id' => $request->company_id, // Assuming same as create
+            ]);
+
+            // Delete old items
+            $receiptVoucher->items()->delete();
+
+            // Create new items
+            foreach ($items as $item) {
+                ReceiptVoucherItem::create(array_merge($item, ['receipt_voucher_id' => $receiptVoucher->id]));
+            }
+
+            // Create new transactions
+            // For direct receipt: Debit the main account (bank/cash) for each item's net_amount, credit the item's account
+            // This creates balanced pairs per item
+            $purpose = "RV-{$receiptVoucher->id}-{$receiptVoucher->unique_no}";
+            $remarks = $payload['remarks'] ?? null;
+            $unique_no = $receiptVoucher->unique_no;
+            $company_id = $request->company_id; // Assuming from request, as in create
+
+            foreach ($items as $item) {
+                $net_amount = $item['net_amount'];
+                $item_account_id = $item['account_id'];
+                $main_account_id = $payload['account_id'];
+
+                // Debit main account (bank/cash)
+                createTransaction(
+                    $net_amount,
+                    $main_account_id,
+                    $company_id,
+                    $unique_no,
+                    'debit',
+                    'no',
+                    [
+                        'purpose' => $purpose,
+                        'payment_against' => $unique_no,
+                        'counter_account_id' => $item_account_id,
+                        'remarks' => $remarks
+                    ]
+                );
+
+                // Credit item account
+                createTransaction(
+                    $net_amount,
+                    $item_account_id,
+                    $company_id,
+                    $unique_no,
+                    'credit',
+                    'no',
+                    [
+                        'purpose' => $purpose,
+                        'payment_against' => $unique_no,
+                        'counter_account_id' => $main_account_id,
+                        'remarks' => $remarks
+                    ]
+                );
+            }
+
+            DB::commit();
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return response()->json(['error' => $th->getMessage()], 500);
         }
 
-        // Create new transactions
-        // For direct receipt: Debit the main account (bank/cash) for each item's net_amount, credit the item's account
-        // This creates balanced pairs per item
-        $purpose = "RV-{$receiptVoucher->id}-{$receiptVoucher->unique_no}";
-        $remarks = $payload['remarks'] ?? null;
-        $unique_no = $receiptVoucher->unique_no;
-        $company_id = $request->company_id; // Assuming from request, as in create
-
-        foreach ($items as $item) {
-            $net_amount = $item['net_amount'];
-            $item_account_id = $item['account_id'];
-            $main_account_id = $payload['account_id'];
-
-            // Debit main account (bank/cash)
-            createTransaction(
-                $net_amount,
-                $main_account_id,
-                $company_id,
-                $unique_no,
-                'debit',
-                'no',
-                [
-                    'purpose' => $purpose,
-                    'payment_against' => $unique_no,
-                    'counter_account_id' => $item_account_id,
-                    'remarks' => $remarks
-                ]
-            );
-
-            // Credit item account
-            createTransaction(
-                $net_amount,
-                $item_account_id,
-                $company_id,
-                $unique_no,
-                'credit',
-                'no',
-                [
-                    'purpose' => $purpose,
-                    'payment_against' => $unique_no,
-                    'counter_account_id' => $main_account_id,
-                    'remarks' => $remarks
-                ]
-            );
-        }
-
-        DB::commit();
-    } catch (\Throwable $th) {
-        DB::rollBack();
-        return response()->json(['error' => $th->getMessage()], 500);
+        return response()->json([
+            'success' => 'Direct Receipt Voucher updated successfully!',
+            'redirect' => route('receipt-voucher.index')
+        ]);
     }
-
-    return response()->json([
-        'success' => 'Direct Receipt Voucher updated successfully!',
-        'redirect' => route('receipt-voucher.index')
-    ]);
-}
 
     public function store(ReceiptVoucherRequest $request)
     {
@@ -481,7 +486,7 @@ class ReceiptVoucherController extends Controller
             $totalAmount = $items->sum(function ($item) {
                 return (float) ($item['amount'] ?? 0);
             });
-            
+
             $totalNetAmount = $items->sum(function ($item) {
                 $amount = (float) ($item['amount'] ?? 0);
                 $taxAmount = (float) ($item['tax_amount'] ?? 0);
@@ -491,7 +496,7 @@ class ReceiptVoucherController extends Controller
 
             // Validation: Bank Details Total <= Reference Total
             $totalBankDetailsAmount = collect($request->bank_details ?? [])
-                ->sum(fn($detail) => (float)($detail['amount'] ?? 0));
+                ->sum(fn($detail) => (float) ($detail['amount'] ?? 0));
 
             // if ($totalBankDetailsAmount > $totalNetAmount) {
             //     throw new \Exception("Total Bank/Account amount ($totalBankDetailsAmount) cannot exceed the total Selected References amount ($totalNetAmount).");
@@ -503,7 +508,7 @@ class ReceiptVoucherController extends Controller
                 throw new \Exception('Selected customer has no linked account.');
             }
 
-       
+
             $receiptVoucher = ReceiptVoucher::create([
                 'unique_no' => $payload['unique_no'],
                 'rv_date' => $payload['rv_date'],
@@ -535,11 +540,11 @@ class ReceiptVoucherController extends Controller
                 } else {
                     $balance = receipt_voucher_balance($item['reference_id'], $item['reference_type']);
                     $excessAmount = $item['amount'] - $balance;
-                    if($excessAmount > 0) {
-                        if(!$request->allow_excess) {
+                    if ($excessAmount > 0) {
+                        if (!$request->allow_excess) {
                             throw new \Exception("Paid amount (" . $item['amount'] . ") for " . ucwords(str_replace('_', ' ', $item['reference_type'])) . " ID: " . $item['reference_id'] . " exceeds its remaining balance (" . $balance . "). Please enable 'Allow Excess Amount' or reduce the amount.");
                         }
-                        
+
                         $tax_amount = $item["tax_id"] ? Tax::find($item['tax_id'])->percentage * $excessAmount / 100 : 0;
                         $totalExcessAmount += ($excessAmount + $tax_amount);
                         $notAllocatedItem = ReceiptVoucherItem::create([
@@ -567,7 +572,7 @@ class ReceiptVoucherController extends Controller
                                 'purpose' => "Extra Amount Received (Item #{$notAllocatedItem->id}) for the customer " . $customer->name,
                                 'payment_against' => $receiptVoucher->unique_no,
                                 'counter_account_id' => $payload['account_id'],
-                                'remarks' => "",
+                                'remarks' => "Customer advance created from excess payment against Receipt Voucher " . $receiptVoucher->unique_no,
                                 'receipt_voucher_item_id' => $notAllocatedItem->id
                             ]
                         );
@@ -578,24 +583,24 @@ class ReceiptVoucherController extends Controller
 
 
                     $amount = $item['amount'] ?? 0;
-                    
+
                     $taxAmount = $item['tax_amount'] ?? 0;
                     $netAmount = $item['net_amount'] ?? $amount;
 
                     ReceiptVoucherItem::create([
                         'receipt_voucher_id' => $receiptVoucher->id,
-                        'reference_type'     => $item['reference_type'],
-                        'reference_id'       => $item['reference_id'],
+                        'reference_type' => $item['reference_type'],
+                        'reference_id' => $item['reference_id'],
 
                         // safe subtraction
-                        'amount'             => max(0, $amount - $excess),
-                        'tax_amount'         => max(0, $taxAmount - $excess),
-                        'net_amount'         => max(0, $netAmount - $excess),
+                        'amount' => max(0, $amount - $excess),
+                        'tax_amount' => max(0, $taxAmount - $excess),
+                        'net_amount' => max(0, $netAmount - $excess),
 
-                        'tax_id'             => $item['tax_id'] ?? null,
-                        'account_id'         => null,
-                        'line_desc'          => $item['line_desc'] ?? null,
-                        'customer_id'        => $payload['customer_id'],
+                        'tax_id' => $item['tax_id'] ?? null,
+                        'account_id' => null,
+                        'line_desc' => $item['line_desc'] ?? null,
+                        'customer_id' => $payload['customer_id'],
                     ]);
                 }
             }
@@ -676,7 +681,8 @@ class ReceiptVoucherController extends Controller
         ]);
     }
 
-    public function directReceiptVoucher(Request $request) {
+    public function directReceiptVoucher(Request $request)
+    {
         $accounts = Account::all();
         $taxes = Tax::select('id', 'name', 'percentage')->where('status', 'active')->get();
         return view("management.finance.receipt_voucher.directReceiptVoucher", compact("taxes", "accounts"));
@@ -827,124 +833,124 @@ class ReceiptVoucherController extends Controller
         ]);
     }
 
-   
+
 
     public function update(Request $request, $id)
-{
-    $receiptVoucher = ReceiptVoucher::findOrFail($id);
-    $payload = app(ReceiptVoucherRequest::class)->validated();
+    {
+        $receiptVoucher = ReceiptVoucher::findOrFail($id);
+        $payload = app(ReceiptVoucherRequest::class)->validated();
 
-    // Filter valid items
-    $items = collect($payload['items'] ?? [])
-        ->filter(fn($item) => !empty($item['reference_id']) && !empty($item['reference_type']));
+        // Filter valid items
+        $items = collect($payload['items'] ?? [])
+            ->filter(fn($item) => !empty($item['reference_id']) && !empty($item['reference_type']));
 
-    DB::beginTransaction();
-    try {
-        $totalNetAmount = $items->sum(function ($item) {
-            $amount = (float) ($item['amount'] ?? 0);
-            $taxAmount = (float) ($item['tax_amount'] ?? 0);
-            return $item['net_amount'] ?? ($amount + $taxAmount);
-        });
+        DB::beginTransaction();
+        try {
+            $totalNetAmount = $items->sum(function ($item) {
+                $amount = (float) ($item['amount'] ?? 0);
+                $taxAmount = (float) ($item['tax_amount'] ?? 0);
+                return $item['net_amount'] ?? ($amount + $taxAmount);
+            });
 
-        $customer = Customer::with('account')->findOrFail($payload['customer_id']);
-        $customerAccountId = $customer->account_id;
-        if (!$customerAccountId) {
-            throw new \Exception('Selected customer has no linked account.');
-        }
-
-        // Update receipt voucher
-        $receiptVoucher->update([
-            'rv_date' => $payload['rv_date'],
-            'ref_bill_no' => $payload['ref_bill_no'] ?? null,
-            'bill_date' => $payload['bill_date'] ?? null,
-            'cheque_no' => $payload['cheque_no'] ?? null,
-            'cheque_date' => $payload['cheque_date'] ?? null,
-            'account_id' => $payload['account_id'],
-            'customer_id' => $payload['customer_id'] ?? null,
-            'voucher_type' => $payload['voucher_type'],
-            'remarks' => $payload['remarks'] ?? null,
-            'total_amount' => $totalNetAmount,
-        ]);
-        
-        // Delete old items and advances and recreate
-        ReceiptVoucherItem::where('receipt_voucher_id', $receiptVoucher->id)->delete();
-        $receiptVoucher->advances()->delete();
-
-        foreach ($request->items as $item) {
-            if ($item['reference_type'] === 'advance') {
-                $receiptVoucher->advances()->create([
-                    'customer_id' => $payload['customer_id'],
-                    'adv_no' => $item['adv_no'] ?? 'ADV-001',
-                    'amount' => $item["amount_display"] ?? 0,
-                    'tax_id' => $item['tax_id'] ?? null,
-                    'tax_amount' => $item['tax_amount'] ?? 0,
-                    'net_amount' => $item['net_amount'] ?? ($item['amount_display'] ?? 0),
-                    'line_desc' => $item['line_desc'] ?? null,
-                ]);
-            } else {
-                ReceiptVoucherItem::create([
-                    'receipt_voucher_id' => $receiptVoucher->id,
-                    'reference_type' => $item['reference_type'],
-                    'reference_id' => $item['reference_id'],
-                    'amount' => $item["amount_display"],
-                    'tax_id' => $item['tax_id'] ?? null,
-                    'tax_amount' => $item['tax_amount'] ?? 0,
-                    'net_amount' => $item['net_amount'] ?? ($item['amount_display'] ?? 0),
-                    'line_desc' => $item['line_desc'] ?? null,
-                ]);
+            $customer = Customer::with('account')->findOrFail($payload['customer_id']);
+            $customerAccountId = $customer->account_id;
+            if (!$customerAccountId) {
+                throw new \Exception('Selected customer has no linked account.');
             }
+
+            // Update receipt voucher
+            $receiptVoucher->update([
+                'rv_date' => $payload['rv_date'],
+                'ref_bill_no' => $payload['ref_bill_no'] ?? null,
+                'bill_date' => $payload['bill_date'] ?? null,
+                'cheque_no' => $payload['cheque_no'] ?? null,
+                'cheque_date' => $payload['cheque_date'] ?? null,
+                'account_id' => $payload['account_id'],
+                'customer_id' => $payload['customer_id'] ?? null,
+                'voucher_type' => $payload['voucher_type'],
+                'remarks' => $payload['remarks'] ?? null,
+                'total_amount' => $totalNetAmount,
+            ]);
+
+            // Delete old items and advances and recreate
+            ReceiptVoucherItem::where('receipt_voucher_id', $receiptVoucher->id)->delete();
+            $receiptVoucher->advances()->delete();
+
+            foreach ($request->items as $item) {
+                if ($item['reference_type'] === 'advance') {
+                    $receiptVoucher->advances()->create([
+                        'customer_id' => $payload['customer_id'],
+                        'adv_no' => $item['adv_no'] ?? 'ADV-001',
+                        'amount' => $item["amount_display"] ?? 0,
+                        'tax_id' => $item['tax_id'] ?? null,
+                        'tax_amount' => $item['tax_amount'] ?? 0,
+                        'net_amount' => $item['net_amount'] ?? ($item['amount_display'] ?? 0),
+                        'line_desc' => $item['line_desc'] ?? null,
+                    ]);
+                } else {
+                    ReceiptVoucherItem::create([
+                        'receipt_voucher_id' => $receiptVoucher->id,
+                        'reference_type' => $item['reference_type'],
+                        'reference_id' => $item['reference_id'],
+                        'amount' => $item["amount_display"],
+                        'tax_id' => $item['tax_id'] ?? null,
+                        'tax_amount' => $item['tax_amount'] ?? 0,
+                        'net_amount' => $item['net_amount'] ?? ($item['amount_display'] ?? 0),
+                        'line_desc' => $item['line_desc'] ?? null,
+                    ]);
+                }
+            }
+
+            // Remove old transactions
+            Transaction::where('voucher_no', $receiptVoucher->unique_no)->delete();
+
+            $purpose = "RV-{$receiptVoucher->id}-{$receiptVoucher->unique_no}";
+            $remarks = $payload['remarks'] ?? null;
+
+            // Create debit transaction for account
+            createTransaction(
+                $totalNetAmount,
+                $payload['account_id'],
+                1,
+                $receiptVoucher->unique_no,
+                'debit',
+                'no',
+                [
+                    'purpose' => $purpose,
+                    'payment_against' => $receiptVoucher->unique_no,
+                    'counter_account_id' => $customerAccountId,
+                    'remarks' => $remarks
+                ]
+            );
+
+            // Create credit transaction for customer
+            createTransaction(
+                $totalNetAmount,
+                $customerAccountId,
+                1,
+                $receiptVoucher->unique_no,
+                'credit',
+                'no',
+                [
+                    'purpose' => $purpose,
+                    'payment_against' => $receiptVoucher->unique_no,
+                    'counter_account_id' => $payload['account_id'],
+                    'remarks' => $remarks
+                ]
+            );
+
+            DB::commit();
+
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return response()->json(['error' => $th->getMessage()], 500);
         }
 
-        // Remove old transactions
-        Transaction::where('voucher_no', $receiptVoucher->unique_no)->delete();
-
-        $purpose = "RV-{$receiptVoucher->id}-{$receiptVoucher->unique_no}";
-        $remarks = $payload['remarks'] ?? null;
-
-        // Create debit transaction for account
-        createTransaction(
-            $totalNetAmount,
-            $payload['account_id'],
-            1,
-            $receiptVoucher->unique_no,
-            'debit',
-            'no',
-            [
-                'purpose' => $purpose,
-                'payment_against' => $receiptVoucher->unique_no,
-                'counter_account_id' => $customerAccountId,
-                'remarks' => $remarks
-            ]
-        );
-
-        // Create credit transaction for customer
-        createTransaction(
-            $totalNetAmount,
-            $customerAccountId,
-            1,
-            $receiptVoucher->unique_no,
-            'credit',
-            'no',
-            [
-                'purpose' => $purpose,
-                'payment_against' => $receiptVoucher->unique_no,
-                'counter_account_id' => $payload['account_id'],
-                'remarks' => $remarks
-            ]
-        );
-
-        DB::commit();
-
-    } catch (\Throwable $th) {
-        DB::rollBack();
-        return response()->json(['error' => $th->getMessage()], 500);
+        return response()->json([
+            'success' => 'Receipt voucher updated successfully!',
+            'redirect' => route('receipt-voucher.index')
+        ]);
     }
-
-    return response()->json([
-        'success' => 'Receipt voucher updated successfully!',
-        'redirect' => route('receipt-voucher.index')
-    ]);
-}
 
 
     public function destroy($id)

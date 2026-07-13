@@ -79,7 +79,11 @@
                             Confirm Bilty Return
                         </button>
                     @elseif($row->first_qc_status == 'rejected' && $row->bilty_return_confirmation == 1)
-                        <span class="badge badge-success">Return Confirmed</span>
+                        <button
+                            onclick="openModal(this,'{{ route('ticket.get-bilty-attachments', $row->id) }}','Bilty Return Attachments', true)"
+                            class="badge badge-success border-0 mr-2">
+                            <i class="ft-eye font-medium-3"></i> Return Confirmed
+                        </button>
                     @endif
                 </div>
             </td>
@@ -102,6 +106,14 @@
                     <label for="biltyReturnAttachment" class="form-label">Attachment (Optional)</label>
                     <input type="file" id="biltyReturnAttachment" class="form-control">
                 </div>
+                <div class="mb-3">
+                    <label for="weightslip" class="form-label">Weight Slip (Optional)</label>
+                    <input type="file" id="weightslipattachment" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label for="other" class="form-label">Other (Optional)</label>
+                    <input type="file" id="otherattachment" class="form-control">
+                </div>
             </div>
         `,
             icon: 'warning',
@@ -112,7 +124,9 @@
             preConfirm: () => {
                 return {
                     reason: document.getElementById('biltyReturnReason').value,
-                    attachment: document.getElementById('biltyReturnAttachment').files[0]
+                    attachment: document.getElementById('biltyReturnAttachment').files[0],
+                    weightslipattachment: document.getElementById('weightslipattachment').files[0],
+                    otherattachment: document.getElementById('otherattachment').files[0]
                 }
             }
         }).then((result) => {
@@ -124,6 +138,14 @@
 
                 if (result.value.attachment) {
                     formData.append('bilty_return_attachment', result.value.attachment);
+                }
+
+                if (result.value.weightslipattachment) {
+                    formData.append('weightslip_attachment', result.value.weightslipattachment);
+                }
+
+                if (result.value.otherattachment) {
+                    formData.append('other_attachment', result.value.otherattachment);
                 }
 
                 $.ajax({

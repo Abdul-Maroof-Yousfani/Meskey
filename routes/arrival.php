@@ -20,6 +20,7 @@ use App\Models\Master\CompanyLocation;
 Route::resource('ticket', TicketController::class);
 Route::post('/get-ticket', [TicketController::class, 'getList'])->name('get.ticket');
 Route::put('/ticket/{ticket}/confirm-bilty-return', [TicketController::class, 'confirmBiltyReturn'])->name('ticket.confirm-bilty-return');
+Route::get('/ticket/{ticket}/get-bilty-attachments', [TicketController::class, 'getBiltyAttachments'])->name('ticket.get-bilty-attachments');
 Route::get('/ticket-revert/{ticket}', [ArrivalMasterRevertController::class, 'arrivalRevert'])->name('ticket.arrival-revert');
 Route::post('/ticket-revert/{ticket}', [ArrivalMasterRevertController::class, 'update'])->name('ticket.arrival-revert.update');
 Route::get('/get-unique-number', [TicketController::class, 'getTicketNumber']);

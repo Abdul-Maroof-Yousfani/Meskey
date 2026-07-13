@@ -24,7 +24,7 @@
                                             <div class="col-md-2">
                                                 <div class="form-group mb-0">
                                                     <label>Location:</label>
-                                                    <select name="company_location_id" id="company_location"
+                                                    <select name="company_location_id" id="company_locatio"
                                                         class="form-control select2">
                                                         <option value="">Location</option>
                                                         @foreach ($companyLocations as $location)
