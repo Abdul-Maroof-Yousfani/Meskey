@@ -16,7 +16,7 @@
     <tbody>
         @if (count($paymentRequests) != 0)
             @foreach ($paymentRequests as $request)
-                
+
                 <tr>
                     <td>
                         @if ($request->payment_type !== null)
@@ -34,8 +34,10 @@
                     <td>{{ $request->paymentRequestData->supplier_name ?? ($request->purchaseOrder->purchaseOrderData[0]->supplier->name ?? 'N/A') }}
                     </td>
                     <td>{{ $request->sauda_type }}</td>
-                    <td>{{ $request->paymentRequestData->truck_no ?? ($request->freight_data->truck_no ?? 'N/A') }}</td>
-                    <td>{{ $request->paymentRequestData->bilty_no ?? ($request->freight_data->bilty_no ?? 'N/A') }}</td>
+                    <td>{{ $request->paymentRequestData->arrivalTicket->truck_no ?? $request->paymentRequestData->truck_no ?? $request->freight_data->truck_no ?? 'N/A' }}
+
+                    <td>{{ $request->paymentRequestData->arrivalTicket->bilty_no ?? $request->paymentRequestData->bilty_no ?? $request->freight_data->bilty_no ?? 'N/A' }}
+                    </td>
                     <td>
                         @if ($request->payment_type !== null)
                             @if ($request->payment_type == 'advance')
@@ -68,8 +70,9 @@
                                 <span class="badge badge-yellow mt-1">Arrival Freight</span>
                             @endif
                         @endif
-                    </td>   
-                    <td>{{ !$request->paymentRequestData->is_paid_by_supplier ? number_format($request->amount, 2) : "Paid by supplier" }}</td>
+                    </td>
+                    <td>{{ !$request->paymentRequestData->is_paid_by_supplier ? number_format($request->amount, 2) : "Paid by supplier" }}
+                    </td>
                     <td>
                         @if ($request->status == 'approved')
                             <span class="badge badge-success">Approved</span>
@@ -87,7 +90,7 @@
                             <i class="ft-edit font-medium-3"></i>
                         </a>
                         @endcanAccess
-                         <a onclick="openModal(this,'{{ route($request->payment_type !== null ? 'raw-material.purchase-order-payment-request-approval.edit' : ($request->is_advance_payment == 1 ? 'raw-material.advance-payment-request-approval.edit' : 'raw-material.payment-request-approval.edit'), $request->id) }}','Manage Payment Request','true', '80%')"
+                        <a onclick="openModal(this,'{{ route($request->payment_type !== null ? 'raw-material.purchase-order-payment-request-approval.edit' : ($request->is_advance_payment == 1 ? 'raw-material.advance-payment-request-approval.edit' : 'raw-material.payment-request-approval.edit'), $request->id) }}','Manage Payment Request','true', '80%')"
                             class="info p-1 text-center mr-2 position-relative">
                             <i class="ft-eye font-medium-3"></i>
                         </a>
