@@ -1,7 +1,8 @@
 @foreach ($items as $idx => $item)
     {{-- @dd($item->quantity) --}}
     @php
-        $balance = receipt_voucher_balance($item->reference_id, $item->reference_type);
+        $exclude_rv_id = $exclude_rv_id ?? null;
+        $balance = receipt_voucher_balance($item->reference_id, $item->reference_type, $exclude_rv_id);
         if(!$balance) continue;
     @endphp
     <tr class="reference-main-row" id="reference-row-{{ $idx }}">
