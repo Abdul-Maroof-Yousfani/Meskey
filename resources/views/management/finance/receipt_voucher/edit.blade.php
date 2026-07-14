@@ -109,7 +109,7 @@
                                         <label class="form-check-label" for="is_advance">Advance</label>
                                     </div>
                                     <div class="form-check mb-3">
-                                        <input class="form-check-input" type="checkbox" name="allow_excess" id="allow_excess" value="1" {{ \App\Models\CustomerAdvance::where('voucher_no', $receiptVoucher->unique_no)->where('source_type', 'excess_payment')->exists() ? 'checked' : '' }}>
+                                        <input class="form-check-input" type="checkbox" name="allow_excess" id="allow_excess" value="1" {{ $receiptVoucher->allow_excess_amount ? 'checked' : '' }}>
                                         <label class="form-check-label font-weight-bold text-primary" for="allow_excess">
                                             Allow Excess Amount (Advances)
                                         </label>
@@ -189,10 +189,10 @@
     </div>
 @endsection
 
-@section('script')
+@section('scripts')
 <script>
-    let advanceCount = 0;
-    let nextAdvNo = null;
+    var advanceCount = 0;
+    var nextAdvNo = null;
 
     function addAdvanceRow() {
         const customerId = $("#customer_id").val();
@@ -405,7 +405,8 @@
             url: '{{ route("receipt.voucher.get-documents") }}',
             data: {
                 customer_id: $("#customer_id").val(),
-                is_advance: $("#is_advance").is(":checked")
+                is_advance: $("#is_advance").is(":checked"),
+                exclude_rv_id: '{{ $receiptVoucher->id }}'
             },
             success: function (response) {
                 console.log(response);
@@ -424,11 +425,12 @@
             type: 'POST',
             data: {
                 customer_id: $("#customer_id").val(),
+                voucher_no: '{{ $receiptVoucher->unique_no }}',
                 _token: '{{ csrf_token() }}'
             },
             success: function (response) {
                 customerAdvancesOptions = '<option value="">Select Advance</option>';
-                response.forEach(function(adv) {
+                response.advances.forEach(function(adv) {
                     customerAdvancesOptions += `<option value="${adv.id}" data-max="${adv.remaining_amount}">${adv.text}</option>`;
                 });
             }
@@ -471,7 +473,7 @@
                     </select>
                 </td>
                 <td>
-                    <input type="number" step="0.01" name="bank_details[${bankIdx}][amount]" class="form-control bank-amount" required>
+                    <input type="number" step="0.01" min="0" name="bank_details[${bankIdx}][amount]" class="form-control bank-amount" required>
                 </td>
                 <td>
                     <input type="text" name="bank_details[${bankIdx}][cheque_no]" class="form-control" placeholder="Cheque No">
@@ -504,7 +506,7 @@
                     </select>
                 </td>
                 <td>
-                    <input type="number" step="0.01" name="bank_details[${bankIdx}][amount]" class="form-control bank-amount" required>
+                    <input type="number" step="0.01" min="0" name="bank_details[${bankIdx}][amount]" class="form-control bank-amount" required>
                 </td>
                 <td>
                     <span class="text-muted">N/A</span>
@@ -527,6 +529,13 @@
     }
 
     $(document).ready(function () {
+        window.isInitialLoad = true;
+
+        $('#customer_id').on('change', function() {
+            if (!window.isInitialLoad && typeof select_customer === 'function') {
+                select_customer();
+            }
+        });
         // Toggle subrow bank details
         $(document).on('click', '.toggle-bank-subrow', function() {
             const rowIdx = $(this).data('row-idx');
@@ -632,10 +641,10 @@
                         $('#unique_no').val(resp.rv_number);
                     } else {
                         const $accountSelect = $('#account_id');
-                        $accountSelect.empty().append('<option value="">Select Account</option>
+                        $accountSelect.empty().append(`<option value="">Select Account</option>
                                             @foreach ($accounts ?? [] as $acc)
                                                 <option value="{{ $acc->id }}" {{ $receiptVoucher->account_id == $acc->id ? 'selected' : '' }}>{{ $acc->name }} ({{ $acc->hierarchy_path ?? $acc->unique_no }})</option>
-                                            @endforeach');
+                                            @endforeach`);
                         resp.accounts.forEach(function (acc) {
                             $accountSelect.append(`<option value="${acc.id}">${acc.name} (${acc.hierarchy_path ?? acc.unique_no ?? ''})</option>`);
                         });
@@ -682,13 +691,14 @@
 
         // ==================== Build Table Rows from Selected References ====================
         
-        function buildRows(items) {
+        function buildRows(items, callback) {
             referencesTableBody.empty();
 
             if (!items.length) {
                 referencesTableBody.html('<tr><td colspan="12" class="text-center text-muted">No data found for selected references.</td></tr>');
                 selectAll.prop('checked', $('#referencesTable tbody').find('.row-select:not(:checked)').length === 0 && $('#referencesTable tbody').find('.row-select').length > 0);
                 updateSelectedDocsList();
+                if (typeof callback === "function") callback();
                 return;
             }
 
@@ -709,13 +719,19 @@
                 type: "POST",
                 data: {
                     _token: '{{ csrf_token() }}',
-                    items: JSON.stringify(items)
+                    items: JSON.stringify(items),
+                    exclude_rv_id: '{{ $receiptVoucher->id }}'
                 },
                 success: function (response) {
                     $("#rv-data").html(response);
 
+                    // Check checkboxes for all loaded rows in edit mode
+                    if (window.isInitialLoad) {
+                        $('#referencesTable tbody').find('.row-select').prop('checked', true);
+                    }
+
                     // Automatically add bank row to first selected reference if voucher type is selected
-                    if ($('#voucher_type').val() !== '') {
+                    if (!window.isInitialLoad && $('#voucher_type').val() !== '') {
                         const firstChecked = $('#referencesTable tbody').find('.row-select:checked').first();
                         if (firstChecked.length) {
                             const rowIdx = firstChecked.data('row');
@@ -730,11 +746,13 @@
 
                     // Now update the selected list
                     updateSelectedDocsList();
+                    if (typeof callback === "function") callback();
                 },
                 error: function (xhr, status, error) {
                     console.error(error);
                     console.error(xhr.responseText);
                     referencesTableBody.html('<tr><td colspan="12" class="text-center text-danger">Error loading rows.</td></tr>');
+                    if (typeof callback === "function") callback();
                 }
             });
         }
@@ -750,6 +768,7 @@
 
         // Reference select change → load details
         referenceSelect.on('change', function () {
+            if (window.isInitialLoad) return;
             const ids = $(this).val() || [];
             const isAdvance = $('#is_advance').is(':checked');
             const refType = isAdvance ? 'sale_order' : 'sales_invoice';
@@ -875,7 +894,7 @@
             const advanceSelect = $(this).closest('tr').find('.advance-select');
             if (advanceSelect.length && advanceSelect.val()) {
                 const selectedOpt = advanceSelect.find('option:selected');
-                const maxAdvanceAmount = parseFloat(selectedOpt.data('max')) || 0;
+                const maxAdvanceAmount = parseFloat(selectedOpt.attr('data-max')) || 0;
                 const currentVal = parseFloat($(this).val()) || 0;
                 
                 if (currentVal > maxAdvanceAmount) {
@@ -919,8 +938,9 @@
             // Validate bank details total
             validateBankTotal();
             
-            // Recalculate amount if allowExcess is checked and sum > balanceVal
-            if (allowExcess && sum > balanceVal) {
+            // Set the main row amount to the sum of bank amounts if there is any inputted bank amount, 
+            // otherwise default to balance
+            if (sum > 0) {
                 mainRow.find('.amount-input').val(sum.toFixed(2));
             } else {
                 mainRow.find('.amount-input').val(balanceVal.toFixed(2));
@@ -932,7 +952,7 @@
         $(document).on('change', '.advance-select', function() {
             const val = $(this).val();
             if (val) {
-                const maxAdvanceAmount = parseFloat($(this).find('option:selected').data('max')) || 0;
+                const maxAdvanceAmount = parseFloat($(this).find('option:selected').attr('data-max')) || 0;
                 
                 const subrow = $(this).closest('tr.bank-details-subrow');
                 const rowIdx = subrow.attr('id').replace('bank-subrow-', '');
@@ -1001,21 +1021,6 @@
                 return false;
             }
 
-            let validRows = true;
-            $('.nested-bank-row').each(function() {
-                const account = $(this).find('.account-select').val();
-                const advance = $(this).find('.advance-select').val();
-                if (!account && !advance) {
-                    validRows = false;
-                }
-            });
-
-            if (!validRows) {
-                Swal.fire('Validation', 'Please select either an Account or an Advance for all Bank Details.', 'warning');
-                return false;
-            }
-            // ------------------------
-
             // Remove unselected rows and their subrows from DOM before submit
             referencesTableBody.find('tr.reference-main-row').each(function () {
                 const checkbox = $(this).find('.row-select');
@@ -1039,6 +1044,15 @@
                 Swal.fire('Validation', 'Please select at least one reference.', 'warning');
                 return false;
             }
+
+            // Remove any empty nested bank rows automatically
+            $('.nested-bank-row').each(function() {
+                const account = $(this).find('.account-select').val();
+                const advance = $(this).find('.advance-select').val();
+                if (!account && !advance) {
+                    $(this).remove();
+                }
+            });
 
             const form = $(this);
 
@@ -1088,66 +1102,11 @@
             });
 
         });
-    });
 
-$(document).ready(function () {
             const initialItems = @json($initialItems);
             const initialBankDetails = @json($bankDetails);
             const initialAdvanceAdjustments = @json($advanceAdjustments);
             const selectedReferences = @json($selectedReferences);
-
-            if (initialItems && initialItems.length > 0) {
-                $('#referencesTable tbody').empty();
-                buildRows(initialItems);
-
-                if ($('#referencesTable tbody').find(".reference-main-row").length > 0) {
-                    const firstRow = $('#referencesTable tbody').find(".reference-main-row").first();
-                    const firstRowIdx = firstRow.attr("id").replace("reference-row-", "");
-                    
-                    if (initialBankDetails && initialBankDetails.length > 0) {
-                        $(`.toggle-bank-subrow[data-row-idx="${firstRowIdx}"]`).find("i").removeClass("fa-chevron-down").addClass("fa-chevron-up");
-                        
-                        initialBankDetails.forEach((bd, i) => {
-                            bankDetailCount++;
-                            const bankIdx = `bank_${bankDetailCount}`;
-                            const bdAmt = bd.amount ? parseFloat(bd.amount).toFixed(2) : "0.00";
-                            const newRow = `
-                                <tr class="nested-bank-row advance-row" id="bank-subrow-${firstRowIdx}">
-                                    <td colspan="10"></td>
-                                    <td>
-                                        <select name="bank_details[${bankIdx}][account_id]" class="form-control select2-nested-bank bd-acc" required style="width: 100%;">
-                                            <option value="">Select Account</option>
-                                        </select>
-                                    </td>
-                                    <td>
-                                        <input type="number" step="0.01" class="form-control bank-amount" name="bank_details[${bankIdx}][amount]" value="${bdAmt}" required placeholder="Amount">
-                                    </td>
-                                    <td>
-                                        <input type="text" class="form-control" name="bank_details[${bankIdx}][cheque_no]" value="${bd.cheque_no || ''}" placeholder="Cheque No (Optional)">
-                                    </td>
-                                    <td class="text-center">
-                                        <button type="button" class="btn btn-xs btn-danger remove-nested-bank-row" style="padding: .2rem .4rem; font-size: .75rem;">
-                                            <i class="fa fa-trash"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                            `;
-                            firstRow.after(newRow);
-                            
-                            // Initialize options
-                            const newSelect = $(`select[name="bank_details[${bankIdx}][account_id]"]`);
-                            let optsHtml = "";
-                            @foreach ($accounts ?? [] as $acc)
-                                optsHtml += `<option value="{{ $acc->id }}" ${bd.account_id == "{{ $acc->id }}" ? "selected" : ""}>{{ $acc->name }} ({{ $acc->hierarchy_path ?? $acc->unique_no }})</option>`;
-                            @endforeach
-                            newSelect.append(optsHtml);
-                            
-                        });
-                        $(".select2-nested-bank").select2();
-                    }
-                }
-                updateTotals();
-            }
 
             // Always load the options for the selected customer on load
             if ($("#customer_id").val()) {
@@ -1156,17 +1115,120 @@ $(document).ready(function () {
                     url: '{{ route("receipt.voucher.get-documents") }}',
                     data: {
                         customer_id: $("#customer_id").val(),
-                        is_advance: $("#is_advance").is(":checked")
+                        is_advance: $("#is_advance").is(":checked"),
+                        exclude_rv_id: '{{ $receiptVoucher->id }}'
                     },
                     success: function (response) {
                         $("#reference_ids").empty();
                         $("#reference_ids").select2({ data: response });
                         
-                        if (selectedReferences && selectedReferences.length > 0) {
+                        if (typeof selectedReferences !== 'undefined' && selectedReferences.length > 0) {
                             $("#reference_ids").val(selectedReferences).trigger('change.select2');
                         }
                     }
                 });
+            }
+
+            if (initialItems && initialItems.length > 0) {
+                $('#referencesTable tbody').empty();
+                buildRows(initialItems, function() {
+                    if ($('#referencesTable tbody').find(".reference-main-row").length > 0) {
+                        const firstRow = $('#referencesTable tbody').find(".reference-main-row").first();
+                        const firstRowIdx = firstRow.attr("id").replace("reference-row-", "");
+                        
+                        if (initialBankDetails && initialBankDetails.length > 0) {
+                            $(`#bank-subrow-${firstRowIdx}`).show();
+                            $(`.toggle-bank-subrow[data-row-idx="${firstRowIdx}"]`).find("i").removeClass("fa-chevron-down").addClass("fa-chevron-up");
+                            
+                            initialBankDetails.forEach((bd, i) => {
+                                bankDetailCount++;
+                                const bankIdx = `bank_${bankDetailCount}`;
+                                const bdAmt = bd.amount ? parseFloat(bd.amount).toFixed(2) : "0.00";
+                                const newRow = `
+                                    <tr class="nested-bank-row">
+                                        <td>
+                                            <select name="bank_details[${bankIdx}][account_id]" class="form-control select2-nested-bank bd-acc" required style="width: 100%;">
+                                                <option value="">Select Account</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <input type="number" step="0.01" min="0" class="form-control bank-amount" name="bank_details[${bankIdx}][amount]" value="${bdAmt}" required placeholder="Amount">
+                                        </td>
+                                        <td>
+                                            <input type="text" class="form-control" name="bank_details[${bankIdx}][cheque_no]" value="${bd.cheque_no || ''}" placeholder="Cheque No (Optional)">
+                                        </td>
+                                        <td class="text-center">
+                                            <button type="button" class="btn btn-xs btn-danger remove-nested-bank-row" style="padding: .2rem .4rem; font-size: .75rem;">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                `;
+                                $(`#nested-bank-data-${firstRowIdx}`).append(newRow);
+                                
+                                // Initialize options
+                                const newSelect = $(`select[name="bank_details[${bankIdx}][account_id]"]`);
+                                let optsHtml = "";
+                                @foreach ($accounts ?? [] as $acc)
+                                    optsHtml += `<option value="{{ $acc->id }}">{{ $acc->name }} ({{ $acc->hierarchy_path ?? $acc->unique_no }})</option>`;
+                                @endforeach
+                                newSelect.append(optsHtml);
+                                newSelect.val(bd.account_id);
+                                
+                            });
+                            $(".select2-nested-bank").select2();
+                        }
+                        
+                        if (initialAdvanceAdjustments && initialAdvanceAdjustments.length > 0) {
+                            $(`#bank-subrow-${firstRowIdx}`).show();
+                            $(`.toggle-bank-subrow[data-row-idx="${firstRowIdx}"]`).find("i").removeClass("fa-chevron-down").addClass("fa-chevron-up");
+                            
+                            initialAdvanceAdjustments.forEach((adv, i) => {
+                                bankDetailCount++;
+                                const bankIdx = `bank_${bankDetailCount}`;
+                                const advAmt = adv.amount ? parseFloat(adv.amount).toFixed(2) : "0.00";
+                                const newRow = `
+                                    <tr class="nested-bank-row advance-row">
+                                        <td>
+                                            <select name="bank_details[${bankIdx}][customer_advance_id]" class="form-control select2-nested-bank advance-select" required style="width: 100%;">
+                                                <option value="">Select Advance</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <input type="number" step="0.01" min="0" class="form-control bank-amount" name="bank_details[${bankIdx}][amount]" value="${advAmt}" required placeholder="Amount">
+                                        </td>
+                                        <td>
+                                            <span class="text-muted">N/A</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <button type="button" class="btn btn-xs btn-danger remove-nested-bank-row" style="padding: .2rem .4rem; font-size: .75rem;">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                `;
+                                $(`#nested-bank-data-${firstRowIdx}`).append(newRow);
+                                
+                                const newSelect = $(`select[name="bank_details[${bankIdx}][customer_advance_id]"]`);
+                                let optsHtml = "";
+                                @foreach ($customerAdvances ?? [] as $advItem)
+                                    optsHtml += `<option value="{{ $advItem->id }}" data-max="{{ $advItem->remaining_amount }}">{{ $advItem->text }}</option>`;
+                                @endforeach
+                                newSelect.append(optsHtml);
+                                newSelect.val(adv.customer_advance_id);
+                            });
+                            $(".select2-nested-bank").select2();
+                        }
+                    }
+                    if (typeof updateTotals === 'function') updateTotals();
+                    
+                    // Trigger input on all bank amounts to reflect sum in main row amount
+                    $('.bank-amount').trigger('input');
+                    
+                    window.isInitialLoad = false;
+                });
+            } else {
+                window.isInitialLoad = false;
             }
 });
 </script>
