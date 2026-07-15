@@ -436,6 +436,17 @@
         subtree: true
     });
     $(document).ready(function () {
+        $('.toggleFreightBox').hide();
+        // Request History Toggle
+        $(document).on('click', '.togglehistory', function () {
+            $('.togglehistorytable').slideToggle(500);
+        });
+        $(document).on('click', '.toggleFreight', function () {
+            $('.toggleFreightBox').slideToggle(500);
+        });
+
+
+
         $('body').on('input', '.percentage-input-field', function () {
             let percentage = parseFloat($(this).val()) || 0;
             if (percentage > 100) {
