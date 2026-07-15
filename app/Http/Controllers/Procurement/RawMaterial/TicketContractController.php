@@ -18,6 +18,7 @@ use App\Models\Master\CompanyLocation;
 use App\Models\Master\Miller;
 use App\Models\Master\ProductSlab;
 use App\Models\Master\Supplier;
+use App\Models\SaudaType;
 use Illuminate\Http\Request;
 use App\Models\Master\QcReliefParameter;
 use App\Models\Procurement\PurchaseFreight;
@@ -35,12 +36,20 @@ class TicketContractController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
+        $selectedsupplier = null;
+        $selectedSaudaType = null;
+        if ($request->supplier_id) {
+            $selectedsupplier = Supplier::findOrFail($request->supplier_id);
+        }
+        if ($request->sauda_type_id) {
+            $selectedSaudaType = SaudaType::findOrFail($request->sauda_type_id);
+        }
         $commodities = Product::all();
         $millers = Miller::all();
         $companyLocations = CompanyLocation::whereIn('id', getUserCurrentCompanyLocations())->get();
-        return view('management.procurement.raw_material.ticket_contracts.index', compact('commodities', 'millers', 'companyLocations'));
+        return view('management.procurement.raw_material.ticket_contracts.index', compact('commodities', 'millers', 'companyLocations', 'selectedsupplier', 'selectedSaudaType'));
     }
 
     /**
@@ -48,6 +57,8 @@ class TicketContractController extends Controller
      */
     public function getList(Request $request)
     {
+
+
         $isOnlyVerified = str()->contains($request->route()->getName(), 'verified');
         $tickets = ArrivalTicket::select('arrival_tickets.*', 'grn_numbers.unique_no as grn_unique_no')
             ->leftJoin('arrival_slips', 'arrival_tickets.id', '=', 'arrival_slips.arrival_ticket_id')
