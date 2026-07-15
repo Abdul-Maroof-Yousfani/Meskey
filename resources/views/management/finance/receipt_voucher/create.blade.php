@@ -185,10 +185,10 @@
     </div>
 @endsection
 
-@section('script')
+@section('scripts')
 <script>
-    let advanceCount = 0;
-    let nextAdvNo = null;
+    var advanceCount = 0;
+    var nextAdvNo = null;
 
     function addAdvanceRow() {
         const customerId = $("#customer_id").val();
@@ -424,7 +424,7 @@
             },
             success: function (response) {
                 customerAdvancesOptions = '<option value="">Select Advance</option>';
-                response.forEach(function(adv) {
+                response.advances.forEach(function(adv) {
                     customerAdvancesOptions += `<option value="${adv.id}" data-max="${adv.remaining_amount}">${adv.text}</option>`;
                 });
             }
@@ -467,7 +467,7 @@
                     </select>
                 </td>
                 <td>
-                    <input type="number" step="0.01" name="bank_details[${bankIdx}][amount]" class="form-control bank-amount" required>
+                    <input type="number" step="0.01" min="0" name="bank_details[${bankIdx}][amount]" class="form-control bank-amount" required>
                 </td>
                 <td>
                     <input type="text" name="bank_details[${bankIdx}][cheque_no]" class="form-control" placeholder="Cheque No">
@@ -500,7 +500,7 @@
                     </select>
                 </td>
                 <td>
-                    <input type="number" step="0.01" name="bank_details[${bankIdx}][amount]" class="form-control bank-amount" required>
+                    <input type="number" step="0.01" min="0" name="bank_details[${bankIdx}][amount]" class="form-control bank-amount" required>
                 </td>
                 <td>
                     <span class="text-muted">N/A</span>
@@ -868,7 +868,7 @@
             const advanceSelect = $(this).closest('tr').find('.advance-select');
             if (advanceSelect.length && advanceSelect.val()) {
                 const selectedOpt = advanceSelect.find('option:selected');
-                const maxAdvanceAmount = parseFloat(selectedOpt.data('max')) || 0;
+                const maxAdvanceAmount = parseFloat(selectedOpt.attr('data-max')) || 0;
                 const currentVal = parseFloat($(this).val()) || 0;
                 
                 if (currentVal > maxAdvanceAmount) {
@@ -912,8 +912,9 @@
             // Validate bank details total
             validateBankTotal();
             
-            // Recalculate amount if allowExcess is checked and sum > balanceVal
-            if (allowExcess && sum > balanceVal) {
+            // Set the main row amount to the sum of bank amounts if there is any inputted bank amount, 
+            // otherwise default to balance
+            if (sum > 0) {
                 mainRow.find('.amount-input').val(sum.toFixed(2));
             } else {
                 mainRow.find('.amount-input').val(balanceVal.toFixed(2));
@@ -925,7 +926,7 @@
         $(document).on('change', '.advance-select', function() {
             const val = $(this).val();
             if (val) {
-                const maxAdvanceAmount = parseFloat($(this).find('option:selected').data('max')) || 0;
+                const maxAdvanceAmount = parseFloat($(this).find('option:selected').attr('data-max')) || 0;
                 
                 const subrow = $(this).closest('tr.bank-details-subrow');
                 const rowIdx = subrow.attr('id').replace('bank-subrow-', '');
@@ -994,19 +995,14 @@
                 return false;
             }
 
-            let validRows = true;
+            // Remove any empty nested bank rows automatically
             $('.nested-bank-row').each(function() {
                 const account = $(this).find('.account-select').val();
                 const advance = $(this).find('.advance-select').val();
                 if (!account && !advance) {
-                    validRows = false;
+                    $(this).remove();
                 }
             });
-
-            if (!validRows) {
-                Swal.fire('Validation', 'Please select either an Account or an Advance for all Bank Details.', 'warning');
-                return false;
-            }
             // ------------------------
 
             // Remove unselected rows and their subrows from DOM before submit

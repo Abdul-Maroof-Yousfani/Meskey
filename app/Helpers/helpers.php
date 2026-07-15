@@ -1073,9 +1073,13 @@ function get_second_weighbridge_balance_by_delivery_order_kg($delivery_order_id)
 }
 
 
-function receipt_voucher_balance($reference_id, $type = "sale_order")
+function receipt_voucher_balance($reference_id, $type = "sale_order", $exclude_receipt_voucher_id = null)
 {
-    $data = ReceiptVoucherItem::where("reference_id", $reference_id)->get();
+    $query = ReceiptVoucherItem::where("reference_id", $reference_id)->where("reference_type", $type);
+    if ($exclude_receipt_voucher_id) {
+        $query->where("receipt_voucher_id", "!=", $exclude_receipt_voucher_id);
+    }
+    $data = $query->get();
     $total_spent = $data->sum(callback: "amount");
     if ($type == "sale_order") {
         $total_overall_amount = SalesOrderData::where('sale_order_id', $reference_id)

@@ -31,8 +31,9 @@ class ReceiptVoucherController extends Controller
     {
         $items = json_decode($request->items);
         $taxes = Tax::where("status", "active")->get();
+        $exclude_rv_id = $request->exclude_rv_id ?? null;
 
-        return view("management.finance.receipt_voucher.getItems", compact("items", "taxes"));
+        return view("management.finance.receipt_voucher.getItems", compact("items", "taxes", "exclude_rv_id"));
     }
 
 
@@ -96,6 +97,7 @@ class ReceiptVoucherController extends Controller
     {
         $is_advance = $request->is_advance === 'true' ? true : false;
         $customer_id = $request->customer_id;
+        $exclude_rv_id = $request->exclude_rv_id ?? null;
         $dropdowndData = [];
         $data = [];
 
@@ -110,10 +112,10 @@ class ReceiptVoucherController extends Controller
                 ->where("customer_id", $customer_id)
                 ->where("am_approval_status", 'approved')
                 ->get()
-                ->filter(function ($saleOrder) {
+                ->filter(function ($saleOrder) use ($exclude_rv_id) {
                     // Example: keep only if any related sale_order_data has quantity > 0
-                    return $saleOrder->sales_order_data->contains(function ($item) {
-                        $balance = receipt_voucher_balance($item->sale_order_id);
+                    return $saleOrder->sales_order_data->contains(function ($item) use ($saleOrder, $exclude_rv_id) {
+                        $balance = receipt_voucher_balance($item->sale_order_id, "sale_order", $exclude_rv_id);
                         return $balance > 0;
                     });
                 });
@@ -129,10 +131,10 @@ class ReceiptVoucherController extends Controller
                 ->where("customer_id", $customer_id)
                 ->where("am_approval_status", "approved")
                 ->get()
-                ->filter(function ($sale_invoice) {
+                ->filter(function ($sale_invoice) use ($exclude_rv_id) {
                     // Example: keep only if any related sale_order_data has quantity > 0
-                    return $sale_invoice->sales_invoice_data->contains(function ($item) {
-                        $balance = receipt_voucher_balance($item->sales_invoice_id, "sales_invoie");
+                    return $sale_invoice->sales_invoice_data->contains(function ($item) use ($sale_invoice, $exclude_rv_id) {
+                        $balance = receipt_voucher_balance($item->sales_invoice_id, "sales_invoice", $exclude_rv_id);
                         return $balance > 0;
                     });
                 });
@@ -223,7 +225,9 @@ class ReceiptVoucherController extends Controller
         $taxes = Tax::select('id', 'name', 'percentage')->where('status', 'active')->get();
 
         $selectedReferences = [];
-        $initialItems = $receiptVoucher->items->map(function ($item) use (&$selectedReferences) {
+        $initialItems = $receiptVoucher->items->filter(function ($item) {
+            return $item->reference_type !== 'not-allocated';
+        })->map(function ($item) use (&$selectedReferences) {
             $selectedReferences[] = (string) $item->reference_id;
             $docNo = '';
             $customerName = '';
@@ -299,6 +303,25 @@ class ReceiptVoucherController extends Controller
         $bankDetails = $receiptVoucher->bankDetails;
         $advanceAdjustments = \App\Models\CustomerAdvanceAdjustment::where("voucher_no", $receiptVoucher->unique_no)->get();
 
+        $customerAdvances = \App\Models\CustomerAdvance::where("customer_id", $receiptVoucher->customer_id)
+            ->where(function ($q) use ($receiptVoucher) {
+                $q->whereIn("status", ["pending", "partial_payment"])
+                  ->orWhereHas('adjustments', function ($adjQuery) use ($receiptVoucher) {
+                      $adjQuery->where('voucher_no', $receiptVoucher->unique_no);
+                  });
+            })->get()->map(function ($adv) use ($receiptVoucher) {
+                $remaining = (float)$adv->remaining_amount;
+                $adjustment = \App\Models\CustomerAdvanceAdjustment::where('customer_advance_id', $adv->id)
+                    ->where('voucher_no', $receiptVoucher->unique_no)
+                    ->sum('amount');
+                $remaining += (float)$adjustment;
+                return (object)[
+                    "id" => $adv->id,
+                    "text" => $adv->voucher_no . " - " . number_format($remaining, 2),
+                    "remaining_amount" => $remaining
+                ];
+            });
+
         return view("management.finance.receipt_voucher.edit", [
             "receiptVoucher" => $receiptVoucher,
             "customers" => $customers,
@@ -310,7 +333,8 @@ class ReceiptVoucherController extends Controller
             "selectedReferences" => $selectedReferences,
             "isAdvance" => $isAdvance,
             "bankDetails" => $bankDetails,
-            "advanceAdjustments" => $advanceAdjustments
+            "advanceAdjustments" => $advanceAdjustments,
+            "customerAdvances" => $customerAdvances
         ]);
     }
 
@@ -526,6 +550,7 @@ class ReceiptVoucherController extends Controller
                 'total_amount' => $totalNetAmount,
                 "is_direct" => 0,
                 "company_id" => $request->company_id,
+                "allow_excess_amount" => $request->allow_excess ? 1 : 0,
             ]);
 
             $totalExcessAmount = 0;
@@ -588,8 +613,7 @@ class ReceiptVoucherController extends Controller
                             "amount" => $excessAmount + $tax_amount,
                             "used_amount" => 0,
                             "remaining_amount" => $excessAmount + $tax_amount,
-                            "status" => "pending",
-                            "transaction_id" => $transaction->id
+                            "status" => "pending"
                         ]);
                     }
 
@@ -963,6 +987,9 @@ class ReceiptVoucherController extends Controller
                 "remarks" => $payload["remarks"] ?? null,
                 "total_amount" => $totalNetAmount,
                 "company_id" => $request->company_id,
+                "allow_excess_amount" => $request->allow_excess ? 1 : 0,
+                "am_approval_status" => 'pending',
+                "am_change_made" => 1,
             ]);
 
             $totalExcessAmount = 0;
@@ -1026,8 +1053,7 @@ class ReceiptVoucherController extends Controller
                             "amount" => $excessAmount + $tax_amount,
                             "used_amount" => 0,
                             "remaining_amount" => $excessAmount + $tax_amount,
-                            "status" => "pending",
-                            "transaction_id" => $transaction->id
+                            "status" => "pending"
                         ]);
                     }
 
