@@ -660,7 +660,7 @@
                     <label>Attach Bilty</label>
                     @if ($arrivalTicket->freight->bilty_document)
                         <a href="{{ asset($arrivalTicket->freight->bilty_document) }}" target="_blank">
-                            <img src="{{ asset($arrivalTicket->freight->bilty_document) }}" class="d-block " />
+                            <img src="{{ asset($arrivalTicket->freight->bilty_document) }}" class="d-block w-100" />
                         </a>
                     @endif
                 </div>
@@ -670,7 +670,7 @@
                     <label>Attach Loading Weight</label>
                     @if ($arrivalTicket->freight->loading_weight_document)
                         <a href="{{ asset($arrivalTicket->freight->loading_weight_document) }}" target="_blank">
-                            <img src="{{ asset($arrivalTicket->freight->loading_weight_document) }}" class="d-block " />
+                            <img src="{{ asset($arrivalTicket->freight->loading_weight_document) }}" class="d-block w-100" />
                         </a>
                     @endif
                 </div>
@@ -681,7 +681,7 @@
                     <label>Other Document (Optional)</label>
                     @if ($arrivalTicket->freight->other_document)
                         <a href="{{ asset($arrivalTicket->freight->other_document) }}" target="_blank">
-                            <img src="{{ asset($arrivalTicket->freight->other_document) }}" class="d-block " />
+                            <img src="{{ asset($arrivalTicket->freight->other_document) }}" class="d-block w-100" />
                         </a>
                     @endif
                 </div>
@@ -691,7 +691,7 @@
                     <label>Other Document 2 (Optional)</label>
                     @if ($arrivalTicket->freight->other_document_2)
                         <a href="{{ asset($arrivalTicket->freight->other_document_2) }}" target="_blank">
-                            <img src="{{ asset($arrivalTicket->freight->other_document_2) }}" class="d-block " />
+                            <img src="{{ asset($arrivalTicket->freight->other_document_2) }}" class="d-block w-100" />
                         </a>
                     @endif
                 </div>
@@ -713,7 +713,7 @@
                     @if ($arrivalTicket->purchaseOrder?->purchaseFreight?->bilty_slip)
                         <a href="{{ asset($arrivalTicket->purchaseOrder?->purchaseFreight?->bilty_slip) }}" target="_blank">
                             <img src="{{ asset($arrivalTicket->purchaseOrder?->purchaseFreight?->bilty_slip) }}"
-                                class="d-block " />
+                                class="d-block w-100" />
                         </a>
                     @endif
                 </div>
@@ -725,7 +725,7 @@
                         <a href="{{ asset($arrivalTicket->purchaseOrder?->purchaseFreight?->weighbridge_slip) }}"
                             target="_blank">
                             <img src="{{ asset($arrivalTicket->purchaseOrder?->purchaseFreight?->weighbridge_slip) }}"
-                                class="d-block " />
+                                class="d-block w-100" />
                         </a>
                     @endif
                 </div>
@@ -737,7 +737,7 @@
                     @if ($arrivalTicket->purchaseOrder?->purchaseFreight?->supplier_bill)
                         <a href="{{ asset($arrivalTicket->purchaseOrder?->purchaseFreight?->supplier_bill) }}" target="_blank">
                             <img src="{{ asset($arrivalTicket->purchaseOrder?->purchaseFreight?->supplier_bill) }}"
-                                class="d-block " />
+                                class="d-block w-100" />
                         </a>
                     @endif
                 </div>
