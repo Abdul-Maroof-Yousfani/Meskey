@@ -3,12 +3,13 @@
         <tr>
             <th>RV No</th>
             <th>Date</th>
-            <th>Status</th>
+            <th>Creation Mode</th>
             <th>Type</th>
             <th>Document</th>
             <th>Account</th>
             <th>Bill/Ref No</th>
             <th>Amount</th>
+            <th>Approval</th>
             <th>Type</th>
             <th>Actions</th>
         </tr>
@@ -19,12 +20,27 @@
                 <tr>
                     <td>{{ $voucher->unique_no }}</td>
                     <td>{{ optional($voucher->rv_date)->format('d-m-Y') }}</td>
-                    <td>{{ $voucher->is_direct ? "Direct RV" : "Via" . (($voucher->is_advance) ? ' Sale Order' : ' Sale Invoice') }}</td>
+                    <td>{{ $voucher->is_direct ? "Direct RV" : "Via" . (($voucher->is_advance) ? ' Sale Order' : ' Sale Invoice') }}
+                    </td>
                     <td>{{ ucfirst(str_replace('_', ' ', $voucher->voucher_type)) }}</td>
                     <td>{{ $voucher->is_advance ? 'Sale Order' : 'Sale Invoice' }}</td>
                     <td>{{ $voucher->account->account_name ?? $voucher->account->name ?? 'N/A' }}</td>
                     <td>{{ $voucher->ref_bill_no ?? 'N/A' }}</td>
                     <td>{{ number_format($voucher->total_amount, 2) }}</td>
+                    <td>
+                        @php
+                            $status = $voucher->am_approval_status ?? 'pending';
+                            $badge = match (strtolower($status)) {
+                                'approved' => 'badge-success',
+                                'rejected' => 'badge-danger',
+                                'pending' => 'badge-warning',
+                                'reverted' => 'badge-secondary',
+                            };
+                        @endphp
+                        <span class="badge {{ $badge }} px-2 py-1">
+                            {{ ucfirst($status) }}
+                        </span>
+                    </td>
                     <td>
                         @if($voucher->is_advance)
                             <span class="badge bg-success">Advance</span>
@@ -41,13 +57,16 @@
                             $editRoute = $voucher->is_direct
                                 ? route('direct.receipt-voucher.edit', $voucher->id)
                                 : route('receipt-voucher.edit', $voucher->id);
+
+                            $approvalColumn = $voucher->getApprovalModule()->approval_column ?? 'am_approval_status';
+                            $approvalStatus = strtolower($voucher->{$approvalColumn} ?? '');
                         @endphp
 
-                        <a class="info p-1 text-center mr-2 position-relative"
-                        href="{{ $editRoute }}"
-                        title="Edit">
-                            <i class="ft-edit font-medium-3"></i>
-                        </a>
+                        @if ($approvalStatus === 'pending' || $approvalStatus === 'reverted')
+                            <a class="info p-1 text-center mr-2 position-relative" href="{{ $editRoute }}" title="Edit">
+                                <i class="ft-edit font-medium-3"></i>
+                            </a>
+                        @endif
 
                     </td>
                 </tr>
@@ -83,5 +102,3 @@
         {{ $receiptVouchers->links() }}
     </div>
 </div>
-    
-

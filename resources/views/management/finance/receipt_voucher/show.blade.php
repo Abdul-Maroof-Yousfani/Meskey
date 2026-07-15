@@ -128,6 +128,13 @@
         </div>
     </div>
 </div>
+
+<div class="row">
+    <div class="col-12">
+        <x-approval-status :model="$receiptVoucher" :list-refresh="route('get.receipt-vouchers')" />
+    </div>
+</div>
+
 <div class="row bottom-button-bar">
     <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
         <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
