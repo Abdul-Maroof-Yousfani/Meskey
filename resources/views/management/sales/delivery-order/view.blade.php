@@ -150,7 +150,7 @@
                         <div class="form-group">
                             <label class="form-label">Advance Amount:</label>
                             <input type="number" step="any" name="advance_amount" id="advance_amount" class="form-control"
-                                value="{{ $delivery_order->advance_amount }}" readonly>
+                                value="{{ $delivery_order->advance_amount > 0 ? $delivery_order->advance_amount : '' }}" readonly>
                         </div>
                     </div>
                     <div class="col-md-3 advanced">
@@ -170,6 +170,28 @@
                                         {{ $item->unified_text }}</option>
                                 @endforeach
                             </select>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12 mt-2"></div>
+                    <div class="col-md-3 advanced">
+                        <div class="form-group">
+                            <label class="form-label">Journal Vouchers:</label>
+                            <select name="journal_vouchers[]" id="journal_vouchers" class="form-control select2" disabled multiple>
+                                <option value="">Select Journal Vouchers</option>
+                                @foreach ($journal_vouchers as $item)
+                                    <option value="{{ $item['id'] }}" selected>
+                                        {{ $item['text'] }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3 advanced">
+                        <div class="form-group">
+                            <label class="form-label">JV Amount:</label>
+                            <input type="number" step="any" name="jv_amount" id="jv_amount" class="form-control"
+                                value="{{ $delivery_order->jv_amount > 0 ? $delivery_order->jv_amount : '' }}" readonly>
                         </div>
                     </div>
                 @endif

@@ -41,7 +41,7 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Customer:</label>
-                        <select name="customer_id" id="customer_id" onchange="get_sale_orders()"
+                        <select name="customer_id" id="customer_id" onchange="get_sale_orders(); get_journal_vouchers()"
                             class="form-control select2">
                             <option value="">Select Customer</option>
                             @foreach ($customers ?? [] as $customer)
@@ -130,6 +130,7 @@
                     </div>
                 </div>
                 
+
                 <div class="col-12 mt-3 advanced" style="display: {{ $sale_order_of_delivery_order->pay_type_id == 10 ? 'block' : 'none' }}">
                     <h6 class="header-heading-sepration">Payment Details</h6>
                 </div>
@@ -212,6 +213,30 @@
                             </select>
                         </div>
                     </div>
+
+                    <div class="col-md-3 advanced" style="display: {{ $sale_order_of_delivery_order->pay_type_id == 10 ? 'block' : 'none' }}">
+                    <div class="form-group">
+                        <label class="form-label">Journal Vouchers:</label>
+                        <select name="journal_vouchers[]" id="journal_vouchers" onchange="add_advance_amount()" class="form-control select2" multiple>
+                            <!-- Options will be populated via AJAX and pre-selected JVs from backend -->
+                            @if(isset($journal_vouchers))
+                                @foreach ($journal_vouchers as $jv)
+                                    <option value="jv_{{ $jv['id'] }}" data-amount="{{ $jv['amount'] }}" @selected($jv['is_selected'])>
+                                        {{ $jv['text'] }}
+                                    </option>
+                                @endforeach
+                            @endif
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-2 advanced" style="display: {{ $sale_order_of_delivery_order->pay_type_id == 10 ? 'block' : 'none' }}">
+                    <div class="form-group">
+                        <label class="form-label">JV Amount:</label>
+                        <input type="number" step="any" name="jv_amount" onchange="" id="jv_amount" class="form-control"
+                            value="{{ isset($journal_vouchers) ? collect($journal_vouchers)->where('is_selected', true)->sum('amount') : '' }}"
+                            readonly>
+                    </div>
+                </div>
 
                 <div class="col-12 mt-3">
                     <h6 class="header-heading-sepration">Location Details</h6>
@@ -348,6 +373,7 @@
                                 <td>
                                     <input type="text" name="qty[]" id="qty_{{ $index }}"
                                         value="{{ round($data->qty) }}" class="form-control qty" step="0.01" data-balance="{{ delivery_order_balance($data->so_data_id) + $data->no_of_bags }}"
+                                        data-qty-balance="{{ delivery_order_qty_balance($data->so_data_id) + $data->qty }}"
                                         min="0" onkeyup="check_balance(this, 'no_of_bags_{{ $index }}')"
                                         onchange="check_balance(this, 'no_of_bags_{{ $index }}')" oninput="calc(this)" @readonly($delivery_order->salesOrder->pay_type_id == 10)>
                                      
@@ -655,13 +681,28 @@ function add_advance_amount() {
             return $(this).data("amount");
         }).get();
 
+    let selectedJVAmounts = $("#journal_vouchers option:selected")
+        .map(function() {
+            return $(this).data("amount");
+        }).get();
+
     let sum = 0;
+    let rv_sum = 0;
+    let jv_sum = 0;
+    
     selectedAmounts.forEach(selectedAmount => {
+        rv_sum += parseFloat(selectedAmount);
+        sum += parseFloat(selectedAmount);
+    });
+
+    selectedJVAmounts.forEach(selectedAmount => {
+        jv_sum += parseFloat(selectedAmount);
         sum += parseFloat(selectedAmount);
     });
 
     if (sum > 0) {
-        $("#advance_amount").val(Math.round(sum));
+        $("#advance_amount").val(rv_sum > 0 ? Math.round(rv_sum) : "");
+        $("#jv_amount").val(jv_sum > 0 ? Math.round(jv_sum) : "");
         
         // SO Amount
         let totalAmount = parseFloat(so_amount) || 0;
@@ -690,6 +731,7 @@ function add_advance_amount() {
         change_withhold_amount();
     } else {
         $("#advance_amount").val("");
+        $("#jv_amount").val("");
         $("#withhold_amount").val("0");
         $("#withhold_percentage").val("10");
         change_withhold_amount();
@@ -698,81 +740,37 @@ function add_advance_amount() {
     update_delivery_date_min();
 }
 
-// ✅ ORIGINAL CALCULATE WITHHOLD BY PERCENTAGE - FIXED
 function calculate_withhold_by_percentage(el) {
     let percentage = parseFloat($(el).val()) || 0;
-    if (percentage > 100) {
-        percentage = 100;
-        $(el).val(100);
-    }
-    if (percentage < 0) {
-        percentage = 0;
-        $(el).val(0);
-    }
+    if (percentage > 100) percentage = 100;
+    if (percentage < 0) percentage = 0;
+    $(el).val(percentage);
 
     let totalAmount = parseFloat(so_amount) || 0;
-    
     if (totalAmount === 0) {
         let do_amount = 0;
-        $(".amount").each(function() {
+        $(".amount").each(function () {
             do_amount += parseFloat($(this).val()) || 0;
         });
         totalAmount = do_amount;
     }
 
-    // ✅ WITHHOLD = TOTAL AMOUNT * PERCENTAGE
-    let withhold = (totalAmount * (percentage / 100));
+    const withhold = (totalAmount * (percentage / 100)).toFixed(0);
+    $("#withhold_amount").val(withhold);
     
-    // ✅ ADVANCE AMOUNT
-    const advanceAmount = parseFloat($("#advance_amount").val()) || 0;
-    
-    // ✅ IF WITHHOLD > ADVANCE, SET WITHHOLD = ADVANCE
-    if (advanceAmount > 0 && withhold > advanceAmount) {
-        withhold = advanceAmount;
-        if (totalAmount > 0) {
-            const newPercentage = (advanceAmount / totalAmount) * 100;
-            $("#withhold_percentage").val(newPercentage.toFixed(2));
-        }
-        Swal.fire({
-            icon: 'warning',
-            title: 'Limit Exceeded',
-            text: 'Withhold amount cannot exceed advance amount (' + advanceAmount + ').',
-            confirmButtonText: 'OK'
-        });
-    }
-    
-    $("#withhold_amount").val(Math.round(withhold));
-    
-    // ✅ CALL change_withhold_amount FOR QUANTITY CALCULATION
     change_withhold_amount();
 }
 
-// ✅ ORIGINAL CALCULATE PERCENTAGE BY WITHHOLD - FIXED
 function calculate_percentage_by_withhold(el) {
     let withhold = parseFloat($(el).val()) || 0;
-
-    let totalAmount = parseFloat(so_amount) || 0;
     
+    let totalAmount = parseFloat(so_amount) || 0;
     if (totalAmount === 0) {
         let do_amount = 0;
-        $(".amount").each(function() {
+        $(".amount").each(function () {
             do_amount += parseFloat($(this).val()) || 0;
         });
         totalAmount = do_amount;
-    }
-
-    const advanceAmount = parseFloat($("#advance_amount").val()) || 0;
-    
-    // ✅ IF WITHHOLD > ADVANCE, SET WITHHOLD = ADVANCE
-    if (advanceAmount > 0 && withhold > advanceAmount) {
-        withhold = advanceAmount;
-        $(el).val(advanceAmount);
-        Swal.fire({
-            icon: 'warning',
-            title: 'Limit Exceeded',
-            text: 'Withhold amount cannot exceed advance amount (' + advanceAmount + ').',
-            confirmButtonText: 'OK'
-        });
     }
 
     if (totalAmount > 0) {
@@ -784,7 +782,6 @@ function calculate_percentage_by_withhold(el) {
             withhold = 0;
             $(el).val(0);
         }
-        // ✅ PERCENTAGE = (WITHHOLD / TOTAL AMOUNT) * 100
         const percentage = (withhold / totalAmount) * 100;
         $("#withhold_percentage").val(percentage.toFixed(2));
     } else {
@@ -792,66 +789,62 @@ function calculate_percentage_by_withhold(el) {
         $("#withhold_percentage").val(0);
     }
     
-    // ✅ CALL change_withhold_amount FOR QUANTITY CALCULATION
     change_withhold_amount();
 }
 
-// ✅ ORIGINAL CHANGE WITHHOLD AMOUNT - FIXED
 function change_withhold_amount() {
     const withhold = parseFloat($("#withhold_amount").val()) || 0;
     const advance = parseFloat($("#advance_amount").val()) || 0;
+    const jv_amount = parseFloat($("#jv_amount").val()) || 0;
 
-    // ✅ GET TOTAL AMOUNT
     let totalAmount = parseFloat(so_amount) || 0;
     if (totalAmount === 0) {
         let do_amount = 0;
-        $(".amount").each(function() {
+        $(".amount").each(function () {
             do_amount += parseFloat($(this).val()) || 0;
         });
         totalAmount = do_amount;
     }
 
-    // ✅ REMAINING FOR QUANTITY = ADVANCE - WITHHOLD
-    let remainingForQuantity = 0;
-    
-    if (advance > 0) {
-        remainingForQuantity = advance - withhold;
-    } else if (withhold > 0) {
-        remainingForQuantity = totalAmount - withhold;
-    } else {
-        remainingForQuantity = totalAmount;
-    }
-
-    // ✅ ENSURE REMAINING IS NOT NEGATIVE
-    if (remainingForQuantity < 0) {
-        remainingForQuantity = 0;
-    }
-
-    // ✅ CALCULATE QUANTITY FOR FIRST ROW
+    const qtyBalance = parseFloat($("#qty_0").data("qty-balance"));
+    let rate = $("#rate_0").val() || $("#rate_per_mond_0").val() || 0;
     let bag_size = $("#bag_size_0").val() || 0;
-    let rate = $("#rate_0").val() || 0;
-    
-    if (rate == 0) {
-        rate = $("#rate_per_mond_0").val() || 0;
-    }
-    
-    if (rate > 0 && remainingForQuantity > 0) {
-        const qtyVal = Math.round(remainingForQuantity / rate);
-        $("#qty_0").val(qtyVal);
-        $("#qty_0").prop("readonly", true);
-        $("#amount_0").val((parseFloat(rate) * parseFloat(qtyVal)).toFixed(0));
-        
-        if (bag_size > 0) {
-            const no_of_bags = Math.round(parseFloat(qtyVal) / parseFloat(bag_size));
-            $("#no_of_bags_0").val(isNaN(no_of_bags) ? 0 : no_of_bags);
+
+    if (advance === 0 && jv_amount === 0 && withhold === 0) {
+        if (!isNaN(qtyBalance) && rate > 0) {
+            $("#qty_0").val(qtyBalance);
+            $("#qty_0").prop("readonly", false);
+            $("#amount_0").val((parseFloat(rate) * parseFloat(qtyBalance)).toFixed(0));
+
+            if (bag_size > 0) {
+                const no_of_bags = Math.round(parseFloat(qtyBalance) / parseFloat(bag_size));
+                $("#no_of_bags_0").val(isNaN(no_of_bags) ? 0 : no_of_bags);
+            }
         }
     } else {
-        $("#qty_0").val(0);
-        $("#amount_0").val(0);
-        $("#no_of_bags_0").val(0);
+        let remaining_amount = (totalAmount - withhold) + jv_amount;
+        if (remaining_amount < 0) remaining_amount = 0;
+
+        if (rate > 0) {
+            let qtyVal = remaining_amount / rate;
+            
+            if (!isNaN(qtyBalance) && qtyVal > qtyBalance) {
+                qtyVal = qtyBalance;
+            }
+
+            qtyVal = Math.round(qtyVal);
+
+            $("#qty_0").val(qtyVal);
+            $("#qty_0").prop("readonly", true);
+            $("#amount_0").val((parseFloat(rate) * parseFloat(qtyVal)).toFixed(0));
+            
+            if (bag_size > 0) {
+                const no_of_bags = Math.round(parseFloat(qtyVal) / parseFloat(bag_size));
+                $("#no_of_bags_0").val(isNaN(no_of_bags) ? 0 : no_of_bags);
+            }
+        }
     }
 
-    // ✅ UPDATE WITHHOLD FOR RV DROPDOWN
     update_withhold_for_rv();
 }
 
@@ -1006,22 +999,35 @@ function calc(el) {
 
     const balance = parseFloat(no_of_bags.data("balance")) || parseFloat($(element).find(".allowed_value").val()) ||
         null;
+    // const qtyBalance = parseFloat(qty.data("qty-balance"));
+
+    let qtyVal = parseFloat(qty.val()) || 0;
+
+    // if (!isNaN(qtyBalance) && qtyVal > qtyBalance) {
+    //     Swal.fire({
+    //         icon: 'warning',
+    //         title: 'Limit Exceeded',
+    //         text: 'Quantity cannot exceed available balance (' + qtyBalance + ').',
+    //     });
+    //     qtyVal = qtyBalance;
+    //     qty.val(qtyBalance);
+    // }
 
     if (bag_size.val() && qty.val()) {
         let bagsResult = Math.round(parseFloat(parseFloat(qty.val() / bag_size.val())));
 
-        if (balance && bagsResult > balance) {
-            bagsResult = balance;
-            const limitedQty = parseFloat(balance) * parseFloat(bag_size.val());
-            qty.val(Math.round(limitedQty));
-        }
+        // if (balance && bagsResult > balance) {
+        //     bagsResult = balance;
+        //     const limitedQty = parseFloat(balance) * parseFloat(bag_size.val());
+        //     qty.val(Math.round(limitedQty));
+        // }
 
         no_of_bags.val(bagsResult);
     } else {
         no_of_bags.val('');
     }
 
-    const qtyVal = parseFloat(qty.val()) || 0;
+    qtyVal = parseFloat(qty.val()) || 0;
     const rateVal = parseFloat(rate.val()) || 0;
     amount.val((qtyVal * rateVal).toFixed(0));
     
@@ -1051,13 +1057,13 @@ function validateBagsBeforeSubmit() {
             if (bag_size.val() && qty.val()) {
                 const bagsResult = Math.round(parseFloat(bag_size.val()) * parseFloat(qty.val()));
                 if (bagsResult > balance) {
-                    valid = false;
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Limit Exceeded',
-                        text: 'No of bags cannot exceed available balance (' + balance + ').',
-                    });
-                    return false;
+                    // valid = false;
+                    // Swal.fire({
+                    //     icon: 'warning',
+                    //     title: 'Limit Exceeded',
+                    //     text: 'No of bags cannot exceed available balance (' + balance + ').',
+                    // });
+                    // return false;
                 }
             }
         }
@@ -1271,6 +1277,57 @@ function get_receipt_vouchers() {
         },
         error: function(error) {
             $('.loader-container').hide();
+            console.error("Error:", error);
+        }
+    });
+}
+
+function get_journal_vouchers() {
+    const customer_id = $("#customer_id").val();
+
+    if (!customer_id) {
+        let select = $("#journal_vouchers");
+        select.empty();
+        select.append(
+            `<option value='' data-amount="0">Select Journal Voucher</option>`
+        );
+        select.trigger('change.select2');
+        add_advance_amount();
+        return;
+    }
+
+    $.ajax({
+        url: "{{ route('sales.get.delivery-order.getJvAgainstCustomer') }}",
+        method: "GET",
+        data: {
+            customer_id: customer_id,
+            delivery_order_id: "{{ $delivery_order->id }}"
+        },
+        dataType: "json",
+        success: function (res) {
+            let select = $("#journal_vouchers");
+            let selectedValues = select.val() || [];
+            
+            // Remove options that are not selected (to update remaining options via AJAX)
+            select.find('option:not(:selected)').remove();
+
+            res.forEach(item => {
+                // Check if this option already exists (was pre-selected from backend)
+                if (select.find(`option[value="${item.id}"]`).length === 0) {
+                    select.append(
+                        `<option value="${item.id}"
+                                data-amount="${item.amount}"
+                                data-date="${item.date}">
+                            ${item.text}
+                        </option>`
+                    );
+                }
+            });
+
+            select.val(selectedValues).trigger('change.select2');
+            add_advance_amount();
+        },
+        error: function (error) {
             console.error("Error:", error);
         }
     });

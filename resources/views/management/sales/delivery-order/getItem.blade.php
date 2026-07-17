@@ -34,7 +34,7 @@
             <input type="text" style="margin-bottom: 10px;" name="no_of_bags[]" id="no_of_bags_{{ $index }}" value="{{ $total_quantity - $used_quantity }}" class="form-control no_of_bags" step="0.01" min="0" readonly>
         </td>
         <td>
-            <input type="text" name="qty[]" @readonly($sale_order->pay_type_id == 10) value="{{ round($remaining_qty) }}" id="qty_{{ $index }}" class="form-control qty" step="0.01" min="0" onchange="calc(this); check_balance(this, 'no_of_bags_{{ $index }}')" onkeyup="check_balance(this, 'no_of_bags_{{ $index }}')" data-balance="{{ delivery_order_balance($data->id) }}" oninput="calc(this)">
+            <input type="text" name="qty[]" @readonly($sale_order->pay_type_id == 10) value="{{ round($remaining_qty) }}" id="qty_{{ $index }}" class="form-control qty" step="0.01" min="0" onchange="calc(this); check_balance(this, 'no_of_bags_{{ $index }}')" onkeyup="check_balance(this, 'no_of_bags_{{ $index }}')" data-balance="{{ delivery_order_balance($data->id) }}" data-qty-balance="{{ delivery_order_qty_balance($data->id) }}" oninput="calc(this)">
             <input type="hidden" name="current_qty[]" value="0">
             <span style="font-size: 14px;">Used Quantity: {{ round(delivery_order_qty_used($data->id))  }}</span>
             <br />
@@ -91,14 +91,14 @@
         const quantity = $(el).val();
         const threshold = $(el).data("balance");
         
-        if(parseFloat(quantity) > parseFloat(threshold)) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Limit Exceeded',
-                text: 'Cannot proceed more than ' + threshold,
-            });
-            $(el).val(threshold);
-        }
+        // if(parseFloat(quantity) > parseFloat(threshold)) {
+        //     Swal.fire({
+        //         icon: 'warning',
+        //         title: 'Limit Exceeded',
+        //         text: 'Cannot proceed more than ' + threshold,
+        //     });
+        //     $(el).val(threshold);
+        // }
     }
 
     function calcAmount(el) {
@@ -122,9 +122,21 @@
         const no_of_bags = $(element).find(".no_of_bags");
         const qty = $(element).find(".qty");
         const balance = parseFloat(no_of_bags.data("balance")) || null;
+        // const qtyBalance = parseFloat(qty.data("qty-balance"));
+
+        let qtyVal = parseFloat(qty.val());
+        
+        // if (!isNaN(qtyBalance) && qtyVal > qtyBalance) {
+        //     Swal.fire({
+        //         icon: 'warning',
+        //         title: 'Limit Exceeded',
+        //         text: 'Quantity cannot exceed available balance (' + qtyBalance + ').',
+        //     });
+        //     qtyVal = qtyBalance;
+        //     qty.val(qtyBalance);
+        // }
 
         const bagSizeVal = parseFloat(bag_size.val());
-        const qtyVal = parseFloat(qty.val());
 
         if(!(bagSizeVal && qtyVal)) {
             no_of_bags.val("");
@@ -134,17 +146,6 @@
 
         let bagsResult = Math.round(qtyVal / bagSizeVal);
 
-        if (balance && bagsResult > balance) {
-            // Swal.fire({
-            //     icon: 'warning',
-            //     title: 'Limit Exceeded',
-            //     text: 'No of bags cannot exceed available balance (' + balance + ').',
-            // });
-            // bagsResult = balance;
-            // const limitedQty = parseFloat(bagsResult) / parseFloat(bag_size.val() || 1);
-            // qty.val(limitedQty.toFixed(2));
-        }
-  
         no_of_bags.val(bagsResult);
         calcAmount(el);
     }
