@@ -39,6 +39,7 @@ Route::name("sales.")->group(function () {
     Route::get("/get-so-against-customer", [DeliveryOrderController::class, "getSo"])->name("get.delivery-order.getSoAgainstCustomer");
     Route::get("/get-so-items-against-so", [DeliveryOrderController::class, "get_so_items"])->name("get.delivery-order.getSoItems");
     Route::get("/get-rv-against-so-no", [DeliveryOrderController::class, "get_receipt_vouchers"])->name("get.delivery-order.getRvAgainstSo");
+    Route::get("/get-jv-against-customer", [DeliveryOrderController::class, "get_journal_vouchers"])->name("get.delivery-order.getJvAgainstCustomer");
     Route::get("/get-so-details", [DeliveryOrderController::class, "getDetails"])->name("get.delivery-order.details");
     Route::get("/delivery-order/{id}/view", [DeliveryOrderController::class, "view"])->name("get.delivery-order.view");
     Route::get("/get-arrival-locations-against-company-location", [DeliveryOrderController::class, "get_arrivals"])->name("get.arrival-locations");

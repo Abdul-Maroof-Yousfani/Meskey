@@ -70,7 +70,25 @@ class DeliveryOrderController extends Controller
         $sale_order_of_delivery_order = SalesOrder::find($delivery_order->so_id);
         $latestLog = $delivery_order->approvalLogs()->with(['user', 'role'])->latest()->first();
 
-        return view('management.sales.delivery-order.view', compact('sale_order_of_delivery_order', 'payment_terms', 'delivery_order', 'customers', 'sales_orders', 'receipt_vouchers', 'latestLog'));
+        // Fetch JVs that are linked to this DO
+        $linked_jvs = DB::table('settlement_adjustments')
+            ->where('reference_type', 'journal_voucher')
+            ->where('voucher_no', $delivery_order->reference_no)
+            ->get();
+            
+        $journal_vouchers = [];
+        foreach ($linked_jvs as $jv_adj) {
+            $jv = DB::table('journal_vouchers')->where('id', $jv_adj->reference_id)->first();
+            if ($jv) {
+                $journal_vouchers[] = [
+                    'id' => $jv->id,
+                    'text' => $jv->jv_no . ' (Consumed: ' . $jv_adj->amount . ')',
+                    'amount' => $jv_adj->amount
+                ];
+            }
+        }
+
+        return view('management.sales.delivery-order.view', compact('sale_order_of_delivery_order', 'payment_terms', 'delivery_order', 'customers', 'sales_orders', 'receipt_vouchers', 'journal_vouchers', 'latestLog'));
     }
 
     public function create()
@@ -109,6 +127,7 @@ class DeliveryOrderController extends Controller
                 'customer_id' => $request->customer_id,
                 'so_id' => $request->sale_order_id,
                 'advance_amount' => $request->advance_amount ?? 0,
+                'jv_amount' => $request->jv_amount ?? 0,
                 'withhold_amount' => $request->withhold_amount ?? 0,
                 'withhold_for_rv_id' => $withhold_rv_id,
                 'dispatch_date' => $request->dispatch_date,
@@ -147,7 +166,7 @@ class DeliveryOrderController extends Controller
                         if ($adv) {
                             $spent = DB::table('delivery_order_receipt_voucher')
                                 ->where('receipt_voucher_advance_id', $adv->id)
-                                ->sum('amount');
+                                ->sum(DB::raw('amount + coalesce(withhold_amount, 0)'));
                             $remaining = doubleval($adv->net_amount) - doubleval($spent);
 
                             $withhold_amount = ($rv_val == $request->withhold_for_rv) ? ($request->withhold_amount ?? 0) : 0;
@@ -176,7 +195,7 @@ class DeliveryOrderController extends Controller
                                 ->where('delivery_order_receipt_voucher.receipt_voucher_id', $rv->id)
                                 ->where('delivery_order.so_id', $request->sale_order_id)
                                 ->whereNull('delivery_order_receipt_voucher.receipt_voucher_advance_id')
-                                ->sum('delivery_order_receipt_voucher.amount');
+                                ->sum(DB::raw('delivery_order_receipt_voucher.amount + coalesce(delivery_order_receipt_voucher.withhold_amount, 0)'));
 
 
 
@@ -199,6 +218,41 @@ class DeliveryOrderController extends Controller
                                 'amount' => $remaining - $withhold_amount,
                                 'withhold_amount' => $withhold_amount,
                                 'last_withhold_amount' => 0,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            // Handle Journal Vouchers
+            $journal_vouchers = $request->journal_vouchers ?? [];
+            if ($salesOrder && $salesOrder->pay_type_id == 10) {
+                foreach ($journal_vouchers as $jv_val) {
+                    $jv_id = str_replace('jv_', '', $jv_val);
+                    
+                    $total_credit = DB::table('journal_voucher_details')
+                        ->where('journal_voucher_id', $jv_id)
+                        ->where('acc_id', function($q) use ($request) {
+                            $q->select('account_id')->from('customers')->where('id', $request->customer_id);
+                        })
+                        ->sum('credit_amount');
+                        
+                    if ($total_credit > 0) {
+                        $spent = DB::table('settlement_adjustments')
+                            ->where('reference_type', 'journal_voucher')
+                            ->where('reference_id', $jv_id)
+                            ->sum('amount');
+                            
+                        $remaining = doubleval($total_credit) - doubleval($spent);
+                        
+                        if ($remaining > 0) {
+                            DB::table('settlement_adjustments')->insert([
+                                'reference_type' => 'journal_voucher',
+                                'reference_id' => $jv_id,
+                                'voucher_no' => $delivery_order->reference_no,
+                                'amount' => $remaining,
                                 'created_at' => now(),
                                 'updated_at' => now(),
                             ]);
@@ -541,7 +595,7 @@ class DeliveryOrderController extends Controller
                 // Calculate spent amount for this specific advance
                 $spent = DB::table('delivery_order_receipt_voucher')
                     ->where('receipt_voucher_advance_id', $adv->id)
-                    ->sum('amount');
+                    ->sum(DB::raw('amount + coalesce(withhold_amount, 0)'));
                 $adv->remaining_amount = doubleval($adv->net_amount) - doubleval($spent);
                 return $adv;
             })
@@ -583,7 +637,7 @@ class DeliveryOrderController extends Controller
                     ->where('delivery_order_receipt_voucher.receipt_voucher_id', $rv->id)
                     ->where('delivery_order.so_id', $sale_order_id)
                     ->whereNull('delivery_order_receipt_voucher.receipt_voucher_advance_id')
-                    ->sum('delivery_order_receipt_voucher.amount');
+                    ->sum(DB::raw('delivery_order_receipt_voucher.amount + coalesce(delivery_order_receipt_voucher.withhold_amount, 0)'));
 
 
 
@@ -607,6 +661,62 @@ class DeliveryOrderController extends Controller
                         'date' => $rv->rv_date->format('Y-m-d'),
                     ];
                 }
+            }
+        }
+
+        return $data;
+    }
+
+    public function get_journal_vouchers(Request $request)
+    {
+        $customer_id = $request->customer_id;
+        $data = [];
+
+        if (!$customer_id) {
+            return $data;
+        }
+
+        $customer = Customer::find($customer_id);
+        if (!$customer || !$customer->account_id) {
+            return $data;
+        }
+
+        // Fetch JVs where this customer's account has a credit balance
+        $jv_details = DB::table('journal_voucher_details')
+            ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
+            ->whereNull('journal_vouchers.deleted_at')
+            ->whereNull('journal_voucher_details.deleted_at')
+            ->where('journal_voucher_details.acc_id', $customer->account_id)
+            ->where('journal_voucher_details.credit_amount', '>', 0)
+            ->select('journal_vouchers.id as jv_id', 'journal_vouchers.jv_no', 'journal_vouchers.jv_date', 'journal_voucher_details.id as jv_detail_id', 'journal_voucher_details.credit_amount')
+            ->get();
+
+        $delivery_order_id = $request->delivery_order_id;
+
+        foreach ($jv_details as $detail) {
+            // Calculate how much of this JV Detail is already consumed in DOs
+            $spent_query = DB::table('settlement_adjustments')
+                ->where('reference_type', 'journal_voucher')
+                ->where('reference_id', $detail->jv_id);
+                
+            if ($delivery_order_id) {
+                $do = DeliveryOrder::find($delivery_order_id);
+                if ($do) {
+                    $spent_query->where('voucher_no', '!=', $do->reference_no);
+                }
+            }
+            
+            $spent = $spent_query->sum('amount');
+            
+            $remaining = doubleval($detail->credit_amount) - doubleval($spent);
+
+            if ($remaining > 0) {
+                $data[] = [
+                    'id' => "jv_{$detail->jv_id}",
+                    'text' => "{$detail->jv_no} ({$remaining})",
+                    'amount' => $remaining,
+                    'date' => $detail->jv_date ? date('Y-m-d', strtotime($detail->jv_date)) : null,
+                ];
             }
         }
 
@@ -659,7 +769,7 @@ class DeliveryOrderController extends Controller
                 $spent = DB::table('delivery_order_receipt_voucher')
                     ->where('receipt_voucher_advance_id', $adv->id)
                     ->where('delivery_order_id', '!=', $delivery_order->id)
-                    ->sum('amount');
+                    ->sum(DB::raw('amount + coalesce(withhold_amount, 0)'));
                 $adv->remaining_amount = doubleval($adv->net_amount) - doubleval($spent);
                 $adv->unified_id = "adv_{$adv->id}";
                 $adv->unified_text = "advance ({$adv->net_amount})";
@@ -693,7 +803,7 @@ class DeliveryOrderController extends Controller
                         ->where('delivery_order.so_id', $delivery_order->so_id)
                         ->whereNull('delivery_order_receipt_voucher.receipt_voucher_advance_id')
                         ->where('delivery_order_receipt_voucher.delivery_order_id', '!=', $delivery_order->id)
-                        ->sum('delivery_order_receipt_voucher.amount');
+                        ->sum(DB::raw('delivery_order_receipt_voucher.amount + coalesce(delivery_order_receipt_voucher.withhold_amount, 0)'));
 
                     $jv_spent = DB::table('journal_voucher_details')
                         ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
@@ -718,7 +828,47 @@ class DeliveryOrderController extends Controller
         $receipt_vouchers = $advancesList->concat($rvsList)->values();
         $latestLog = $delivery_order->approvalLogs()->with(['user', 'role'])->latest()->first();
 
-        return view('management.sales.delivery-order.edit', compact('sale_order_of_delivery_order', 'payment_terms', 'customers', 'items', 'sale_orders', 'delivery_order', 'receipt_vouchers', 'bag_types', 'latestLog'));
+        // 3. Fetch all JVs with available balance + JVs linked to this DO
+        $customer = Customer::find($delivery_order->customer_id);
+        $journal_vouchers = [];
+        
+        if ($customer && $customer->account_id) {
+            $jv_details = DB::table('journal_voucher_details')
+                ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
+                ->whereNull('journal_vouchers.deleted_at')
+                ->whereNull('journal_voucher_details.deleted_at')
+                ->where('journal_voucher_details.acc_id', $customer->account_id)
+                ->where('journal_voucher_details.credit_amount', '>', 0)
+                ->select('journal_vouchers.id as jv_id', 'journal_vouchers.jv_no', 'journal_vouchers.jv_date', 'journal_voucher_details.id as jv_detail_id', 'journal_voucher_details.credit_amount')
+                ->get();
+
+            $linked_jvs = DB::table('settlement_adjustments')
+                ->where('reference_type', 'journal_voucher')
+                ->where('voucher_no', $delivery_order->reference_no)
+                ->pluck('reference_id')->toArray();
+
+            foreach ($jv_details as $detail) {
+                $spent = DB::table('settlement_adjustments')
+                    ->where('reference_type', 'journal_voucher')
+                    ->where('reference_id', $detail->jv_id)
+                    ->where('voucher_no', '!=', $delivery_order->reference_no)
+                    ->sum('amount');
+                
+                $remaining = doubleval($detail->credit_amount) - doubleval($spent);
+                $is_linked = in_array($detail->jv_id, $linked_jvs);
+                
+                if ($remaining > 0 || $is_linked) {
+                    $journal_vouchers[] = [
+                        'id' => $detail->jv_id,
+                        'text' => "{$detail->jv_no} (Remaining: {$remaining})",
+                        'amount' => $remaining,
+                        'is_selected' => $is_linked
+                    ];
+                }
+            }
+        }
+
+        return view('management.sales.delivery-order.edit', compact('sale_order_of_delivery_order', 'payment_terms', 'customers', 'items', 'sale_orders', 'delivery_order', 'receipt_vouchers', 'journal_vouchers', 'bag_types', 'latestLog'));
 
     }
 
@@ -741,6 +891,7 @@ class DeliveryOrderController extends Controller
                 'customer_id' => $request->customer_id,
                 'so_id' => $request->sale_order_id,
                 'advance_amount' => $request->advance_amount ?? 0,
+                'jv_amount' => $request->jv_amount ?? 0,
                 'withhold_amount' => $request->withhold_amount ?? 0,
                 'withhold_for_rv_id' => $withhold_rv_id,
                 'dispatch_date' => $request->dispatch_date,
@@ -780,7 +931,7 @@ class DeliveryOrderController extends Controller
                             $spent = DB::table('delivery_order_receipt_voucher')
                                 ->where('receipt_voucher_advance_id', $adv->id)
                                 ->where('delivery_order_id', '!=', $delivery_order->id)
-                                ->sum('amount');
+                                ->sum(DB::raw('amount + coalesce(withhold_amount, 0)'));
                             $remaining = doubleval($adv->net_amount) - doubleval($spent);
 
                             $withhold_amount = ($rv_val == $request->withhold_for_rv) ? ($request->withhold_amount ?? 0) : 0;
@@ -810,7 +961,7 @@ class DeliveryOrderController extends Controller
                                 ->where('delivery_order.so_id', $request->sale_order_id)
                                 ->whereNull('delivery_order_receipt_voucher.receipt_voucher_advance_id')
                                 ->where('delivery_order_receipt_voucher.delivery_order_id', '!=', $delivery_order->id)
-                                ->sum('delivery_order_receipt_voucher.amount');
+                                ->sum(DB::raw('delivery_order_receipt_voucher.amount + coalesce(delivery_order_receipt_voucher.withhold_amount, 0)'));
 
                             $jv_spent = DB::table('journal_voucher_details')
                                 ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
@@ -831,6 +982,46 @@ class DeliveryOrderController extends Controller
                                 'amount' => $remaining - $withhold_amount,
                                 'withhold_amount' => $withhold_amount,
                                 'last_withhold_amount' => 0,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            // Handle Journal Vouchers
+            DB::table('settlement_adjustments')
+                ->where('reference_type', 'journal_voucher')
+                ->where('voucher_no', $delivery_order->reference_no)
+                ->delete();
+
+            $journal_vouchers = $request->journal_vouchers ?? [];
+            if ($salesOrder && $salesOrder->pay_type_id == 10) {
+                foreach ($journal_vouchers as $jv_val) {
+                    $jv_id = str_replace('jv_', '', $jv_val);
+                    
+                    $total_credit = DB::table('journal_voucher_details')
+                        ->where('journal_voucher_id', $jv_id)
+                        ->where('acc_id', function($q) use ($request) {
+                            $q->select('account_id')->from('customers')->where('id', $request->customer_id);
+                        })
+                        ->sum('credit_amount');
+                        
+                    if ($total_credit > 0) {
+                        $spent = DB::table('settlement_adjustments')
+                            ->where('reference_type', 'journal_voucher')
+                            ->where('reference_id', $jv_id)
+                            ->sum('amount');
+                            
+                        $remaining = doubleval($total_credit) - doubleval($spent);
+                        
+                        if ($remaining > 0) {
+                            DB::table('settlement_adjustments')->insert([
+                                'reference_type' => 'journal_voucher',
+                                'reference_id' => $jv_id,
+                                'voucher_no' => $delivery_order->reference_no,
+                                'amount' => $remaining,
                                 'created_at' => now(),
                                 'updated_at' => now(),
                             ]);
@@ -931,3 +1122,5 @@ class DeliveryOrderController extends Controller
         return $balance;
     }
 }
+
+
