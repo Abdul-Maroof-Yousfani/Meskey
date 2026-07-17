@@ -73,7 +73,7 @@
                                     'approved' => 'badge-success',
                                     'rejected' => 'badge-danger',
                                     'pending' => 'badge-warning',
-                                    default => 'badge-secondary',
+                                    'reverted' => 'badge-secondary',
                                 };
                             @endphp
                             <span class="badge {{ $badge }} px-3 py-2">
