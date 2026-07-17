@@ -23,28 +23,31 @@ class FreightController extends Controller
         return view('management.arrival.freight.index');
     }
 
-      public function getList(Request $request)
+    public function getList(Request $request)
     {
         $authUser = auth()->user();
         $isSuperAdmin = $authUser->user_type === 'super-admin';
 
         $query = Freight::with(['arrivalTicket'])
-    ->when($request->filled('search'), function ($q) use ($request) {
-        $searchTerm = '%' . $request->search . '%';
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $searchTerm = '%' . $request->search . '%';
 
-        $q->where(function ($sq) use ($searchTerm) {
-               $sq->orWhereHas('arrivalTicket', function ($aq) use ($searchTerm) {
-                    $aq->where('unique_no', 'like', $searchTerm)
-                        ->orWhere("truck_no", 'like', $searchTerm)
-                        ->orWhere('bilty_no', 'like', $searchTerm);
-
-               });
-        });
-    })
-    ->where('company_id', $request->company_id)
-    ->whereHas('arrivalTicket', function ($q) {
-        $q->whereIn('location_id', getUserCurrentCompanyLocations());
-    });
+                $q->where(function ($sq) use ($searchTerm) {
+                    $sq->orWhereHas('arrivalTicket', function ($aq) use ($searchTerm) {
+                        $aq->where('unique_no', 'like', $searchTerm)
+                            ->orWhere("truck_no", 'like', $searchTerm)
+                            ->orWhere('bilty_no', 'like', $searchTerm)
+                            ->orWhere('accounts_of_name', 'like', $searchTerm)
+                            ->orWhereHas('miller', function ($millerQuery) use ($searchTerm) {
+                                $millerQuery->where('name', 'like', $searchTerm);
+                            });
+                    });
+                });
+            })
+            ->where('company_id', $request->company_id)
+            ->whereHas('arrivalTicket', function ($q) {
+                $q->whereIn('location_id', getUserCurrentCompanyLocations());
+            });
 
         $freights = $query->latest()
             ->paginate($request->get('per_page', 25));
@@ -360,7 +363,7 @@ class FreightController extends Controller
                     null,
                     "Goods Received Note (Arrival)",
                     [
-                        "subarrival_id" => $ticket->approvals->gala_id,    
+                        "subarrival_id" => $ticket->approvals->gala_id,
                         "company_location_id" => $ticket->location_id,
                         "arrival_id" => $ticket->unloadingLocation->arrival_location_id,
                         "parentable_id" => $ticket->id,
