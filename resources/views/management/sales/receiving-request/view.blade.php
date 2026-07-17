@@ -35,7 +35,12 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Labour</label>
-                <input type="text" class="form-control bg-light" value="{{ $labourOptions[$receivingRequest->labour] ?? 'N/A' }}" readonly>
+                <select name="labour" id="labour" class="form-control select2" disabled>
+                    <option value="">Select Labour</option>
+                    @foreach ($labours ?? [] as $labour)
+                        <option value="{{ $labour->id }}" @selected($receivingRequest->labour == $labour->id)>{{ $labour->name }}</option>
+                    @endforeach
+                </select>
             </div>
         </div>
         <div class="col-md-3">

@@ -66,7 +66,8 @@ class ReceivingRequestController extends Controller
         $receivingRequest = ReceivingRequest::with(['deliveryChallan.delivery_challan_data', 'items.product'])->findOrFail($id);
         
         $transporters = \App\Models\Master\Transporter::all();
-        return view('management.sales.receiving-request.edit', compact('receivingRequest', 'transporters'));
+        $labours = \App\Models\Master\Vendor::all();
+        return view('management.sales.receiving-request.edit', compact('receivingRequest', 'transporters', 'labours'));
     }
 
     /**
@@ -143,7 +144,8 @@ class ReceivingRequestController extends Controller
         $receivingRequest = ReceivingRequest::with(['deliveryChallan.delivery_challan_data', 'items.product'])->findOrFail($id);
         
         $transporters = \App\Models\Master\Transporter::all();
-        return view('management.sales.receiving-request.view', compact('receivingRequest', 'transporters'));
+        $labours = \App\Models\Master\Vendor::all();
+        return view('management.sales.receiving-request.view', compact('receivingRequest', 'transporters', 'labours'));
     }
 }
 
