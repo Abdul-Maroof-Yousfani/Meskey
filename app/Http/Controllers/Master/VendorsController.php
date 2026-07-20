@@ -191,8 +191,25 @@ class VendorsController extends Controller
 
             if (empty($supplier->account_id)) {
 
-                $account = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-4', 'vendors'));
+                // $account = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->company_name, '2-4', 'vendors'));
 
+
+
+
+                $account = Account::firstOrCreate(
+                    [
+                        'company_id' => $request->company_id,
+                        'company_name' => $request->company_name,
+                        'hierarchy_path'
+
+                    ],
+                    getParamsForAccountCreationByPath(
+                        $request->company_id,
+                        $request->company_name,
+                        '2-4',
+                        'vendors'
+                    )
+                );
                 $requestData['account_id'] = $account->id;
             }
 

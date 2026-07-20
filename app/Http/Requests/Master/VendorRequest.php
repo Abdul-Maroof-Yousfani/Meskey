@@ -16,14 +16,14 @@ class VendorRequest extends FormRequest
     {
         return [
             'company_id' => 'required|exists:companies,id',
-            'unique_no' => 'nullable|string|max:255|unique:suppliers,unique_no',
+            'unique_no' => 'nullable|string|max:255|unique:vendors,unique_no',
             'company_name' => [
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('suppliers', 'company_name')
+                Rule::unique('vendors', 'company_name')
                     ->where('company_id', $this->input('company_id'))
-                    ->ignore($this->supplier)
+                    ->ignore($this->vendors)
             ],
             // 'company_name' => 'required|string|max:255',
             // 'account_type' => 'required|in:credit,debit',
