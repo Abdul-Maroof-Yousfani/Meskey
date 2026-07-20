@@ -457,6 +457,10 @@ class DeliveryOrderController extends Controller
                 //     }
                 // }
     
+                if (DeliveryOrder::where('so_id', $saleOrder->id)->where('is_auto_created_from_so', true)->exists()) {
+                    return true;
+                }
+
                 foreach ($saleOrder->sales_order_data as $data) {
                     $balance = delivery_order_balance($data->id);
                     if ($balance > 0) {
