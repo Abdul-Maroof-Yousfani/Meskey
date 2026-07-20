@@ -926,7 +926,10 @@ function delivery_order_balance($sale_order_data_id)
 {
     $spent = DeliveryOrderData::where("so_data_id", $sale_order_data_id)
         ->whereHas('delivery_order', function($q) {
-            $q->where('is_auto_created_from_so', '!=', true);
+            $q->where(function($query) {
+                $query->whereNull('is_auto_created_from_so')
+                      ->orWhere('is_auto_created_from_so', '!=', 1);
+            });
             $q->where('am_approval_status', '!=', 'rejected');
         })
         ->sum("no_of_bags");
@@ -2315,6 +2318,10 @@ function delivery_order_qty_balance($sale_order_data_id)
 {
     $data = DeliveryOrderData::whereHas("delivery_order", function ($query) {
         $query->where("am_approval_status", "!=", "rejected");
+        $query->where(function ($q) {
+            $q->whereNull('is_auto_created_from_so')
+              ->orWhere('is_auto_created_from_so', '!=', 1);
+        });
     })->where("so_data_id", $sale_order_data_id)->get();
 
     $spent = $data->sum("qty");
@@ -2328,6 +2335,10 @@ function delivery_order_qty_used($sale_order_data_id)
 {
     $data = DeliveryOrderData::whereHas("delivery_order", function ($query) {
         $query->where("am_approval_status", "!=", "rejected");
+        $query->where(function ($q) {
+            $q->whereNull('is_auto_created_from_so')
+              ->orWhere('is_auto_created_from_so', '!=', 1);
+        });
     })->where("so_data_id", $sale_order_data_id)->get();
 
     return $data->sum("qty");
