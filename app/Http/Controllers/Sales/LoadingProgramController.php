@@ -727,7 +727,22 @@ class LoadingProgramController extends Controller
                         $loadingProgramItem->saleOrders()->sync($itemData['sale_order_id']);
                     }
                     if (!empty($selected_do_ids)) {
+                        $old_do_ids = $loadingProgramItem->deliveryOrders()->pluck('delivery_order.id')->map(fn($id) => (string)$id)->toArray();
+                        sort($old_do_ids);
+                        
+                        $new_do_ids = collect($selected_do_ids)->map(fn($id) => (string)$id)->toArray();
+                        sort($new_do_ids);
+
                         $loadingProgramItem->deliveryOrders()->sync($selected_do_ids);
+
+                        if ($old_do_ids !== $new_do_ids) {
+                            $real_do_id = $selected_do_ids[0] ?? null;
+                            if ($real_do_id) {
+                                \App\Models\Sales\FirstWeighbridge::where('loading_program_item_id', $loadingProgramItem->id)->update(['delivery_order_id' => $real_do_id]);
+                                \App\Models\Sales\SalesQc::where('loading_program_item_id', $loadingProgramItem->id)->update(['delivery_order_id' => $real_do_id]);
+                                \App\Models\Sales\LoadingSlip::where('loading_program_item_id', $loadingProgramItem->id)->update(['delivery_order_id' => $real_do_id]);
+                            }
+                        }
 
                         // Enforce SO balance check
                         $totalBalance = 0;
