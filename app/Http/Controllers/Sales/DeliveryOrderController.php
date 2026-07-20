@@ -262,7 +262,12 @@ class DeliveryOrderController extends Controller
             }
 
 
-            $spent_qty = $salesOrder->delivery_orders->where("am_approval_status", "!=", "rejected")->flatMap->delivery_order_data->sum("qty");
+            $spent_qty = $salesOrder->delivery_orders
+                ->reject(function($do) {
+                    return $do->am_approval_status === "rejected" || $do->is_auto_created_from_so;
+                })
+                ->flatMap->delivery_order_data
+                ->sum("qty");
             $total_qty = $salesOrder?->sales_order_data?->first()->qty;
             $remaining_qty = $total_qty - $spent_qty;
 
@@ -570,8 +575,9 @@ class DeliveryOrderController extends Controller
             ->find($so_id);
 
         $spent = $sale_order->delivery_orders
-            ->where("am_approval_status", "!=", "rejected")
-            ->where("is_auto_created_from_so", "!=", true)
+            ->reject(function($do) {
+                return $do->am_approval_status === "rejected" || $do->is_auto_created_from_so;
+            })
             ->flatMap->delivery_order_data
             ->sum('qty');
 
@@ -1038,6 +1044,10 @@ class DeliveryOrderController extends Controller
             $salesOrder = SalesOrder::with('sales_order_data')->find($request->sale_order_id);
             $spent_qty = $salesOrder->delivery_orders()
                 ->where("am_approval_status", "!=", "rejected")
+                ->where(function($query) {
+                    $query->whereNull("is_auto_created_from_so")
+                          ->orWhere("is_auto_created_from_so", "!=", 1);
+                })
                 ->with('delivery_order_data')
                 ->get()
                 ->flatMap->delivery_order_data
