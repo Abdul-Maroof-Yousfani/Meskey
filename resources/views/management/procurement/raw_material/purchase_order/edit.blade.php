@@ -6,6 +6,12 @@
      <input type="hidden" name="id" value="{{ $arrivalPurchaseOrder->id }}">
      <input type="hidden" name="company_id" value="{{ $arrivalPurchaseOrder->company_id }}">
 
+     @if(in_array($arrivalPurchaseOrder->am_approval_status, ['approved', 'rejected']))
+         <div class="alert alert-warning px-3 py-2">
+             <i class="fa fa-exclamation-triangle"></i> <strong>Note:</strong> Since this Purchase Order is <strong>{{ ucfirst($arrivalPurchaseOrder->am_approval_status) }}</strong>, you can only update <strong>Delivery Date, Contract Status, Defaulter, and Remarks</strong>. Changes to any other fields will be ignored.
+         </div>
+     @endif
+
      <div class="row form-mar">
          <div class="col-xs-6 col-sm-6 col-md-6">
              <div class="form-group">
