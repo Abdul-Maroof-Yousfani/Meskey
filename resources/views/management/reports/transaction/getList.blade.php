@@ -80,7 +80,7 @@
                               @endphp
                               <a href="{{ url('transactions/report') }}?account_id={{ $transaction->account_id }}&daterange={{ $daterange }}&_f"
                                   target="_blank">
-                                  {{ $transaction->account->name }}
+                                  {{ $transaction->account->name ?? 'N/A' }}
                               </a>
                           @else
                               <span> N/A </span>
@@ -96,7 +96,7 @@
                               @endphp
                               <a href="{{ url('transactions/report') }}?account_id={{ $transaction->counter_account_id }}&daterange={{ $daterange }}&_f"
                                   target="_blank">
-                                  {{ $transaction->counterAccount->name }}
+                                  {{ $transaction->counterAccount->name ?? 'N/A' }}
                               </a>
                           @else
                               <span title="Counter Account"> N/A </span>
