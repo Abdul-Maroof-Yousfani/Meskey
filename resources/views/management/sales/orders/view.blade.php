@@ -382,7 +382,7 @@
                   <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Comission in % per KG:</label>
-        <input type="text" value="{{ number_format(($sale_order->commission_per_kg ?? 0) / (($sale_order->sales_order_data->first()->rate ?? 1) ?: 1) * 100, 4) }}" class="form-control" readonly>
+                        <input type="text" value="{{ number_format(($sale_order->commission_per_kg ?? 0) / ((($sale_order->sales_order_data->first()->rate ?? 1) * ($sale_order->sales_order_data->first()->qty ?? 1)) ?: 1) * 100, 4) }}" class="form-control" readonly>
                     </div>
                 </div>
     </div>

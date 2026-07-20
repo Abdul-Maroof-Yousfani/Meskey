@@ -114,14 +114,13 @@
                                     <i class="ft-eye"></i>
                                 </a>
                                 @if(auth()->user()->id == $group['created_by_id'])
-                                    @if($group['status'] === 'pending' || $group['status'] === 'reverted')
                                         <button
                                             onclick="openModal(this,'{{ route('sales.sale-order.edit', ['sale_order' => $group['id']]) }}','Edit Sale Order', false, '90%')"
                                             class="btn btn-sm btn-warning" title="Edit" style="margin-right: 10px;">
                                             <i class="ft-edit"></i>
                                         </button>
 
-
+                                    @if($group['status'] === 'pending' || $group['status'] === 'reverted')
                                         <button
                                             onclick="deletemodal('{{ route('sales.sale-order.destroy', ['sale_order' => $group['id']]) }}', '{{ route('sales.get.sales-order.list') }}')"
                                             type="button" class="btn btn-sm btn-danger" title="Delete">

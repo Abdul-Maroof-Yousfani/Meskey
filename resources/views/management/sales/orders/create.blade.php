@@ -1135,7 +1135,12 @@
 
     // Commission conversion functions
     function calculateCommissionFromPercent() {
-        const percent = parseFloat($('#commission_percent_per_kg').val()) || 0;
+        let percent = parseFloat($('#commission_percent_per_kg').val()) || 0;
+        if (percent > 100) {
+            percent = 100;
+            $('#commission_percent_per_kg').val(percent);
+        }
+
         const ratePerKg = getFirstItemRate();
         const qty = getFirstItemQty();
 
@@ -1148,12 +1153,17 @@
     }
 
     function calculateCommissionFromRs() {
-        const commissionInRs = parseFloat($('#commission_per_kg').val()) || 0;
+        let commissionInRs = parseFloat($('#commission_per_kg').val()) || 0;
         const ratePerKg = getFirstItemRate();
         const qty = getFirstItemQty();
 
-        if (ratePerKg > 0) {
-            const percent = (commissionInRs / (ratePerKg)) * 100;
+        if (ratePerKg > 0 && qty > 0) {
+            let percent = (commissionInRs / (ratePerKg * qty)) * 100;
+            if (percent > 100) {
+                percent = 100;
+                commissionInRs = (100 / 100) * (ratePerKg * qty);
+                $('#commission_per_kg').val(commissionInRs.toFixed(4));
+            }
             $('#commission_percent_per_kg').val(percent.toFixed(2));
         } else {
             $('#commission_percent_per_kg').val('0');

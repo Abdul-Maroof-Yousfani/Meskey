@@ -264,6 +264,15 @@ class SaleOrderController extends Controller
             $sales_order = SalesOrder::find($id);
 
             if ($sales_order->am_approval_status == "approved" || $sales_order->am_approval_status == 'rejected') {
+                $oldDeliveryDate = $sales_order->delivery_date ? Carbon::parse($sales_order->delivery_date)->format('Y-m-d') : null;
+                $newDeliveryDate = !empty($request->delivery_date) ? Carbon::parse($request->delivery_date)->format('Y-m-d') : null;
+
+                if ($oldDeliveryDate != $newDeliveryDate) {
+                    $sales_order->update(['delivery_date' => $request->delivery_date]);
+                    DB::commit();
+                    return response()->json(['data' => 'Sale Order Specific Fields Updated Successfully.']);
+                }
+
                 return response()->json("Sales Order has been approved/rejected and cannot be updated.", 400);
             }
 

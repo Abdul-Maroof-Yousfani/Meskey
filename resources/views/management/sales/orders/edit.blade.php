@@ -31,6 +31,12 @@
     @csrf
     {{ method_field('PUT') }}
     <input type="hidden" id="listRefresh" value="{{ route('sales.get.sales-order.list') }}" />
+
+    @if(in_array($sale_order->am_approval_status, ['approved', 'rejected']))
+        <div class="alert alert-warning px-3 py-2 mt-2">
+            <i class="fa fa-exclamation-triangle"></i> <strong>Note:</strong> Since this Sale Order is <strong>{{ ucfirst($sale_order->am_approval_status) }}</strong>, you can only update the <strong>Delivery Date</strong>. Changes to any other fields will be ignored.
+        </div>
+    @endif
     <div class="row form-mar">
         <div class="col-md-12">
             <div class="row">
@@ -1201,7 +1207,12 @@
     }
     // Commission conversion functions
     function calculateCommissionFromPercent() {
-        const percent = parseFloat($('#commission_percent_per_kg').val()) || 0;
+        let percent = parseFloat($('#commission_percent_per_kg').val()) || 0;
+        if (percent > 100) {
+            percent = 100;
+            $('#commission_percent_per_kg').val(percent);
+        }
+
         const ratePerKg = getFirstItemRate();
         const qty = getFirstItemQty();
 
@@ -1214,13 +1225,17 @@
     }
 
     function calculateCommissionFromRs() {
-        const commissionInRs = parseFloat($('#commission_per_kg').val()) || 0;
+        let commissionInRs = parseFloat($('#commission_per_kg').val()) || 0;
         const ratePerKg = getFirstItemRate();
         const qty = getFirstItemQty();
 
-        // if (ratePerKg > 0 && qty > 0) {
-        if (ratePerKg > 0) {
-            const percent = (commissionInRs / (ratePerKg)) * 100;
+        if (ratePerKg > 0 && qty > 0) {
+            let percent = (commissionInRs / (ratePerKg * qty)) * 100;
+            if (percent > 100) {
+                percent = 100;
+                commissionInRs = (100 / 100) * (ratePerKg * qty);
+                $('#commission_per_kg').val(commissionInRs.toFixed(4));
+            }
             $('#commission_percent_per_kg').val(percent.toFixed(2));
         } else {
             $('#commission_percent_per_kg').val('0');
