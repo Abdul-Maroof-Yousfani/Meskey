@@ -24,16 +24,17 @@
                 <td>{{ $logistic->commodity ?? '' }}</td>
                 <td>{{ $logistic->customer ?? '' }}</td>
                 <td>{{ $logistic->sauda_type }}</td>
-                <td>{{ $logistic->items->map(fn($item) => $item->transporter_name ?: $item->transporter?->company_name ?: $item->transporter?->name)->filter()->unique()->implode(', ') }}</td>
+                <td>{{ $logistic->items->map(fn($item) => $item->transporter_name ?: $item->transporter?->company_name ?: $item->transporter?->name)->filter()->unique()->implode(', ') }}
+                </td>
                 <td>{{ round($logistic->items->sum('qty'))  }}</td>
                 <td class="text-center">
                     @php
                         $status = $logistic->am_approval_status ?? 'pending';
-                        $badge = match(strtolower($status)) {
+                        $badge = match (strtolower($status)) {
                             'approved' => 'badge-success',
                             'rejected' => 'badge-danger',
-                            'pending'  => 'badge-warning',
-                            default    => 'badge-secondary',
+                            'pending' => 'badge-warning',
+                            'reverted' => 'badge-secondary',
                         };
                     @endphp
                     <span class="badge {{ $badge }} px-2 py-1">
@@ -41,6 +42,15 @@
                     </span>
                 </td>
                 <td class="text-center">
+                    @if(auth()->user()->id == $logistic->created_by)
+                        @if(in_array(strtolower($status), ['pending', 'reverted']))
+                            <button
+                                onclick="openModal(this,'{{ route('sales.logistics.edit', ['logistic' => $logistic->id]) }}','Edit Logistics',false,'90%')"
+                                type="button" class="btn btn-sm btn-primary" title="Edit">
+                                <i class="ft-edit"></i>
+                            </button>
+                        @endif
+                    @endif
                     <button
                         onclick="openModal(this,'{{ route('sales.logistics.show', ['logistic' => $logistic->id]) }}','View Logistics',false,'90%')"
                         type="button" class="btn btn-sm btn-info" title="View">

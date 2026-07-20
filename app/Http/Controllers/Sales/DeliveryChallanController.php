@@ -84,6 +84,82 @@ class DeliveryChallanController extends Controller
             $arrival_location_csv = $request->arrival_location_csv;
             $storage_location_csv = $request->storage_location_csv;
           
+            // Calculate total qty
+            $total_qty = 0;
+            if(is_array($request->qty)) {
+                $total_qty = array_sum($request->qty);
+            }
+
+            // Auto calculate labour rate and amount based on matched rules
+            $labour_rate = ($request->labour_rate === 'N/A' || $request->labour_rate === null) ? 0 : (float)$request->labour_rate;
+            $labour_amount = $request->labour_amount ? (float)$request->labour_amount : 0;
+
+            if ($request->labour) {
+                $arrival_id = explode(',', $arrival_location_csv)[0] ?? null;
+                $first_item_id = $request->item_id[0] ?? null;
+                $first_bag_size = $request->bag_size[0] ?? null;
+                
+                if ($first_item_id && $first_bag_size && $arrival_id) {
+                    $product = Product::find($first_item_id);
+                    $category_id = $product ? $product->category_id : null;
+                    
+                    $clean_packing = is_numeric($first_bag_size) ? $first_bag_size : trim(explode(',', (string)$first_bag_size)[0]);
+                    
+                    $bag_packing = \App\Models\BagPacking::select("id")
+                        ->where(function($q) use ($clean_packing) {
+                            $q->where("name", $clean_packing . " kg")
+                              ->orWhere("name", $clean_packing . "KG")
+                              ->orWhere("name", "like", $clean_packing . "%");
+                        })
+                        ->where("status", 1)
+                        ->first();
+                    
+                    if ($category_id && $bag_packing) {
+                        $rateObj = \App\Models\Master\LabourRate::where("category_id", $category_id)
+                            ->where("factory_id", $arrival_id)
+                            ->where("bag_packing_id", $bag_packing->id)
+                            ->where("status", 'active')
+                            ->first();
+                            
+                        if ($rateObj) {
+                            $labour_rate = $rateObj->rate;
+                        }
+                    }
+                }
+                
+                if ($labour_rate > 0) {
+                    $labour_amount = $total_qty * $labour_rate;
+                }
+            }
+
+            // Auto calculate transporter amount based on Logistics
+            $transporter_amount = $request->transporter_amount ? (float)$request->transporter_amount : 0;
+            
+            if ($request->transporter) {
+                $transporter_rate = 0;
+                $delivery_order = DeliveryOrder::find($do_id);
+                
+                if ($delivery_order && $delivery_order->so_id) {
+                    $logistics = \App\Models\Sales\Logistics::where('type', 'sale_order')
+                        ->where('sale_order_id', $delivery_order->so_id)
+                        ->first();
+                        
+                    if ($logistics) {
+                        $logisticsItem = \App\Models\Sales\LogisticsItem::where('logistics_id', $logistics->id)
+                            ->where('transporter_id', $request->transporter)
+                            ->first();
+                            
+                        if ($logisticsItem) {
+                            $transporter_rate = (float)$logisticsItem->rate;
+                        }
+                    }
+                }
+                
+                if ($transporter_rate > 0) {
+                    $transporter_amount = $total_qty * $transporter_rate;
+                }
+            }
+
             $delivery_challan = DeliveryChallan::create([
                 "customer_id" => $request->customer_id,
                 "reference_number" => self::getNumber($request, null, $request->date),
@@ -97,13 +173,13 @@ class DeliveryChallanController extends Controller
                 "labour_status" => $request->labour_status ?? 'paid',
                 "company_id" => $request->company_id,
                 "labour" => $request->labour,
-                "labour_amount" => $request->labour_amount,
+                "labour_amount" => $labour_amount,
                 "transporter" => $request->transporter,
-                "transporter_amount" => $request->transporter_amount,
+                "transporter_amount" => $transporter_amount,
                 "inhouse-weighbridge" => $request->weighbridge,
                 "weighbridge-amount" => $request->weighbridge_amount,
                 "remarks" => $request->remarks,
-                'labour_rate' => ($request->labour_rate === 'N/A' || $request->labour_rate === null) ? 0 : $request->labour_rate,
+                'labour_rate' => $labour_rate,
                 "created_by_id" => auth()->user()->id,
             ]);
 
@@ -154,37 +230,39 @@ class DeliveryChallanController extends Controller
             }
 
             // Create Receiving Request after DC data is created
-            $receivingRequest = ReceivingRequest::create([
-                'delivery_challan_id' => $delivery_challan->id,
-                'dc_no' => $delivery_challan->dc_no,
-                'dc_date' => $delivery_challan->dispatch_date,
-                'truck_number' => $request->truck_no[0] ?? null,
-                'bilty' => $request->bilty_no[0] ?? null,
-                'labour' => $delivery_challan->labour,
-                'transporter' => $delivery_challan->transporter,
-                'inhouse_weighbridge' => $delivery_challan->{'inhouse-weighbridge'} ?? null,
-                'labour_amount' => $delivery_challan->labour_amount ?? 0,
-                'transporter_amount' => $delivery_challan->transporter_amount ?? 0,
-                'inhouse_weighbridge_amount' => $delivery_challan->{'weighbridge-amount'} ?? 0,
-                'company_id' => $delivery_challan->company_id,
-                'created_by_id' => $delivery_challan->created_by_id,
-            ]);
-
-            // Create Receiving Request Items for each DC item
-            foreach ($createdItems as $dcData) {
-                $product = Product::find($dcData->item_id);
-                
-                ReceivingRequestItem::create([
-                    'receiving_request_id' => $receivingRequest->id,
-                    'delivery_challan_data_id' => $dcData->id,
-                    'item_id' => $dcData->item_id,
-                    'item_name' => $product?->name ?? 'N/A',
-                    'dispatch_weight' => $dcData->qty ?? 0,
-                    'receiving_weight' => 0,
-                    'difference_weight' => $dcData->qty ?? 0,
-                    'seller_portion' => 0,
-                    'remaining_amount' => $dcData->qty ?? 0,
+            if (strtolower($delivery_challan->sauda_type) == 'pohanch') {
+                $receivingRequest = ReceivingRequest::create([
+                    'delivery_challan_id' => $delivery_challan->id,
+                    'dc_no' => $delivery_challan->dc_no,
+                    'dc_date' => $delivery_challan->dispatch_date,
+                    'truck_number' => $request->truck_no[0] ?? null,
+                    'bilty' => $request->bilty_no[0] ?? null,
+                    'labour' => $delivery_challan->labour,
+                    'transporter' => $delivery_challan->transporter,
+                    'inhouse_weighbridge' => $delivery_challan->{'inhouse-weighbridge'} ?? null,
+                    'labour_amount' => $delivery_challan->labour_amount ?? 0,
+                    'transporter_amount' => $delivery_challan->transporter_amount ?? 0,
+                    'inhouse_weighbridge_amount' => $delivery_challan->{'weighbridge-amount'} ?? 0,
+                    'company_id' => $delivery_challan->company_id,
+                    'created_by_id' => $delivery_challan->created_by_id,
                 ]);
+
+                // Create Receiving Request Items for each DC item
+                foreach ($createdItems as $dcData) {
+                    $product = Product::find($dcData->item_id);
+                    
+                    ReceivingRequestItem::create([
+                        'receiving_request_id' => $receivingRequest->id,
+                        'delivery_challan_data_id' => $dcData->id,
+                        'item_id' => $dcData->item_id,
+                        'item_name' => $product?->name ?? 'N/A',
+                        'dispatch_weight' => $dcData->qty ?? 0,
+                        'receiving_weight' => 0,
+                        'difference_weight' => $dcData->qty ?? 0,
+                        'seller_portion' => 0,
+                        'remaining_amount' => $dcData->qty ?? 0,
+                    ]);
+                }
             }
 
             DB::commit();
@@ -228,6 +306,82 @@ class DeliveryChallanController extends Controller
             $arrival_location_csv = $request->arrival_location_csv;
             $storage_location_csv = $request->storage_location_csv;
 
+            // Calculate total qty
+            $total_qty = 0;
+            if(is_array($request->qty)) {
+                $total_qty = array_sum($request->qty);
+            }
+
+            // Auto calculate labour rate and amount based on matched rules
+            $labour_rate = ($request->labour_rate === 'N/A' || $request->labour_rate === null) ? 0 : (float)$request->labour_rate;
+            $labour_amount = $request->labour_amount ? (float)$request->labour_amount : 0;
+
+            if ($request->labour) {
+                $arrival_id = explode(',', $arrival_location_csv)[0] ?? null;
+                $first_item_id = $request->item_id[0] ?? null;
+                $first_bag_size = $request->bag_size[0] ?? null;
+
+                if ($first_item_id && $first_bag_size && $arrival_id) {
+                    $product = Product::find($first_item_id);
+                    $category_id = $product ? $product->category_id : null;
+                    
+                    $clean_packing = is_numeric($first_bag_size) ? $first_bag_size : trim(explode(',', (string)$first_bag_size)[0]);
+                    
+                    $bag_packing = \App\Models\BagPacking::select("id")
+                        ->where(function($q) use ($clean_packing) {
+                            $q->where("name", $clean_packing . " kg")
+                              ->orWhere("name", $clean_packing . "KG")
+                              ->orWhere("name", "like", $clean_packing . "%");
+                        })
+                        ->where("status", 1)
+                        ->first();
+                    
+                    if ($category_id && $bag_packing) {
+                        $rateObj = \App\Models\Master\LabourRate::where("category_id", $category_id)
+                            ->where("factory_id", $arrival_id)
+                            ->where("bag_packing_id", $bag_packing->id)
+                            ->where("status", 'active')
+                            ->first();
+                            
+                        if ($rateObj) {
+                            $labour_rate = $rateObj->rate;
+                        }
+                    }
+                }
+                
+                if ($labour_rate > 0) {
+                    $labour_amount = $total_qty * $labour_rate;
+                }
+            }
+
+            // Auto calculate transporter amount based on Logistics
+            $transporter_amount = $request->transporter_amount ? (float)$request->transporter_amount : 0;
+            
+            if ($request->transporter) {
+                $transporter_rate = 0;
+                $delivery_order = DeliveryOrder::find($do_id);
+                
+                if ($delivery_order && $delivery_order->so_id) {
+                    $logistics = \App\Models\Sales\Logistics::where('type', 'sale_order')
+                        ->where('sale_order_id', $delivery_order->so_id)
+                        ->first();
+                        
+                    if ($logistics) {
+                        $logisticsItem = \App\Models\Sales\LogisticsItem::where('logistics_id', $logistics->id)
+                            ->where('transporter_id', $request->transporter)
+                            ->first();
+                            
+                        if ($logisticsItem) {
+                            $transporter_rate = (float)$logisticsItem->rate;
+                        }
+                    }
+                }
+                
+                if ($transporter_rate > 0) {
+                    $transporter_amount = $total_qty * $transporter_rate;
+                }
+            }
+
             $delivery_challan->update([
                 "customer_id" => $request->customer_id,
                 "reference_number" => $request->reference_number,
@@ -239,15 +393,15 @@ class DeliveryChallanController extends Controller
                 "labour_status" => $request->labour_status ?? 'paid',
                 "company_id" => $request->company_id,
                 "labour" => $request->labour,
-                "labour_amount" => $request->labour_amount,
+                "labour_amount" => $labour_amount,
                 "transporter" => $request->transporter,
-                "transporter_amount" => $request->transporter_amount,
+                "transporter_amount" => $transporter_amount,
                 "inhouse-weighbridge" => $request->weighbridge,
                 "weighbridge-amount" => $request->weighbridge_amount,
                 "remarks" => $request->remarks,
                 "arrival_id" => $arrival_location_csv,
                 "section_id" => $storage_location_csv,
-                'labour_rate' => ($request->labour_rate === 'N/A' || $request->labour_rate === null) ? 0 : $request->labour_rate,
+                'labour_rate' => $labour_rate,
                 "created_by_id" => auth()->user()->id,
                 "am_approval_status" => "pending",
                 "am_change_made" => 1
@@ -276,53 +430,61 @@ class DeliveryChallanController extends Controller
             }
 
             // Sync Receiving Request
-            $receivingRequest = $delivery_challan->receivingRequest;
-            if ($receivingRequest) {
-                $receivingRequest->update([
-                    'dc_no' => $delivery_challan->dc_no,
-                    'dc_date' => $delivery_challan->dispatch_date,
-                    'truck_number' => $request->truck_no[0] ?? null,
-                    'bilty' => $request->bilty_no[0] ?? null,
-                    'labour' => $delivery_challan->labour,
-                    'transporter' => $delivery_challan->transporter,
-                    'inhouse_weighbridge' => $delivery_challan->{'inhouse-weighbridge'} ?? null,
-                    'labour_amount' => $delivery_challan->labour_amount ?? 0,
-                    'transporter_amount' => $delivery_challan->transporter_amount ?? 0,
-                    'inhouse_weighbridge_amount' => $delivery_challan->{'weighbridge-amount'} ?? 0,
-                ]);
-            } else {
-                $receivingRequest = ReceivingRequest::create([
-                    'delivery_challan_id' => $delivery_challan->id,
-                    'dc_no' => $delivery_challan->dc_no,
-                    'dc_date' => $delivery_challan->dispatch_date,
-                    'truck_number' => $request->truck_no[0] ?? null,
-                    'bilty' => $request->bilty_no[0] ?? null,
-                    'labour' => $delivery_challan->labour,
-                    'transporter' => $delivery_challan->transporter,
-                    'inhouse_weighbridge' => $delivery_challan->{'inhouse-weighbridge'} ?? null,
-                    'labour_amount' => $delivery_challan->labour_amount ?? 0,
-                    'transporter_amount' => $delivery_challan->transporter_amount ?? 0,
-                    'inhouse_weighbridge_amount' => $delivery_challan->{'weighbridge-amount'} ?? 0,
-                    'company_id' => $delivery_challan->company_id,
-                    'created_by_id' => $delivery_challan->created_by_id,
-                ]);
-            }
+            if (strtolower($delivery_challan->sauda_type) == 'pohanch') {
+                $receivingRequest = $delivery_challan->receivingRequest;
+                if ($receivingRequest) {
+                    $receivingRequest->update([
+                        'dc_no' => $delivery_challan->dc_no,
+                        'dc_date' => $delivery_challan->dispatch_date,
+                        'truck_number' => $request->truck_no[0] ?? null,
+                        'bilty' => $request->bilty_no[0] ?? null,
+                        'labour' => $delivery_challan->labour,
+                        'transporter' => $delivery_challan->transporter,
+                        'inhouse_weighbridge' => $delivery_challan->{'inhouse-weighbridge'} ?? null,
+                        'labour_amount' => $delivery_challan->labour_amount ?? 0,
+                        'transporter_amount' => $delivery_challan->transporter_amount ?? 0,
+                        'inhouse_weighbridge_amount' => $delivery_challan->{'weighbridge-amount'} ?? 0,
+                    ]);
+                } else {
+                    $receivingRequest = ReceivingRequest::create([
+                        'delivery_challan_id' => $delivery_challan->id,
+                        'dc_no' => $delivery_challan->dc_no,
+                        'dc_date' => $delivery_challan->dispatch_date,
+                        'truck_number' => $request->truck_no[0] ?? null,
+                        'bilty' => $request->bilty_no[0] ?? null,
+                        'labour' => $delivery_challan->labour,
+                        'transporter' => $delivery_challan->transporter,
+                        'inhouse_weighbridge' => $delivery_challan->{'inhouse-weighbridge'} ?? null,
+                        'labour_amount' => $delivery_challan->labour_amount ?? 0,
+                        'transporter_amount' => $delivery_challan->transporter_amount ?? 0,
+                        'inhouse_weighbridge_amount' => $delivery_challan->{'weighbridge-amount'} ?? 0,
+                        'company_id' => $delivery_challan->company_id,
+                        'created_by_id' => $delivery_challan->created_by_id,
+                    ]);
+                }
 
-            // Sync Receiving Request Items
-            $receivingRequest->items()->delete();
-            foreach ($createdItems as $dcData) {
-                $product = Product::find($dcData->item_id);
-                ReceivingRequestItem::create([
-                    'receiving_request_id' => $receivingRequest->id,
-                    'delivery_challan_data_id' => $dcData->id,
-                    'item_id' => $dcData->item_id,
-                    'item_name' => $product?->name ?? 'N/A',
-                    'dispatch_weight' => $dcData->qty ?? 0,
-                    'receiving_weight' => 0,
-                    'difference_weight' => $dcData->qty ?? 0,
-                    'seller_portion' => 0,
-                    'remaining_amount' => $dcData->qty ?? 0,
-                ]);
+                // Sync Receiving Request Items
+                $receivingRequest->items()->delete();
+                foreach ($createdItems as $dcData) {
+                    $product = Product::find($dcData->item_id);
+                    ReceivingRequestItem::create([
+                        'receiving_request_id' => $receivingRequest->id,
+                        'delivery_challan_data_id' => $dcData->id,
+                        'item_id' => $dcData->item_id,
+                        'item_name' => $product?->name ?? 'N/A',
+                        'dispatch_weight' => $dcData->qty ?? 0,
+                        'receiving_weight' => 0,
+                        'difference_weight' => $dcData->qty ?? 0,
+                        'seller_portion' => 0,
+                        'remaining_amount' => $dcData->qty ?? 0,
+                    ]);
+                }
+            } else {
+                $receivingRequest = $delivery_challan->receivingRequest;
+                if ($receivingRequest) {
+                    $receivingRequest->items()->delete();
+                    $receivingRequest->delete();
+                }
             }
 
             DB::commit();
@@ -605,7 +767,7 @@ class DeliveryChallanController extends Controller
 
         // Get tickets (loading program items) that belong to selected DOs and have second weighbridges
         // First get all loading program items that belong to selected DOs
-        $query = \App\Models\Sales\LoadingProgramItem::with([
+        $query = LoadingProgramItem::with([
                 'loadingProgram.deliveryOrder',
                 'dispatchQc'
             ])
@@ -768,11 +930,11 @@ class DeliveryChallanController extends Controller
 
         $arrival_location_id = $ticket->arrival_location_id;
         $delivery_order_id = $ticket->delivery_order_id;
-        $delivery_order = \App\Models\Sales\DeliveryOrder::find($delivery_order_id);
+        $delivery_order = DeliveryOrder::find($delivery_order_id);
         
         $category_id = null;
         if ($delivery_order && $delivery_order->delivery_order_data->isNotEmpty()) {
-            $product = \App\Models\Product::find($delivery_order->delivery_order_data[0]->item_id);
+            $product = Product::find($delivery_order->delivery_order_data[0]->item_id);
             $category_id = $product ? $product->category_id : null;
         }
 

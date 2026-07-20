@@ -35,22 +35,25 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Labour</label>
-                <select name="labour" id="labour" class="form-control select2">
+                <select id="labour" class="form-control select2" disabled>
                     <option value="">Select Labour</option>
-                    <option value="1" @selected($receivingRequest->labour == '1')>Labour 1</option>
-                    <option value="2" @selected($receivingRequest->labour == '2')>Labour 2</option>
+                    @foreach ($labours ?? [] as $labour)
+                        <option value="{{ $labour->id }}" @selected($receivingRequest->labour == $labour->id)>{{ $labour->name }}</option>
+                    @endforeach
                 </select>
+                <input type="hidden" name="labour" value="{{ $receivingRequest->labour }}">
             </div>
         </div>
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Transporter</label>
-                <select name="transporter" id="transporter" class="form-control select2">
+                <select id="transporter" class="form-control select2" disabled>
                     <option value="">Select Transporter</option>
                     @foreach ($transporters ?? [] as $transporter)
                         <option value="{{ $transporter->id }}" @selected($receivingRequest->transporter == $transporter->id)>{{ $transporter->name }}</option>
                     @endforeach
                 </select>
+                <input type="hidden" name="transporter" value="{{ $receivingRequest->transporter }}">
             </div>
         </div>
         <div class="col-md-3">

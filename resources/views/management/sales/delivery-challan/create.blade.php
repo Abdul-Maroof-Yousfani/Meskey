@@ -253,9 +253,9 @@
                             <th style="min-width: 130px; width: 130px;">Packing</th>
                             <th>No of Bags</th>
                             <th>Quantity (kg)</th>
-                            <th>Rate per Kg</th>
-                            <th>Rate per Mond</th>
-                            <th>Amount</th>
+                            <th style="display: none">Rate per Kg</th>
+                            <th style="display: none">Rate per Mond</th>
+                            <th style="display: none">Amount</th>
                             <th>Brand</th>
                             <th>Truck No.</th>
                             <th>Container Number</th>

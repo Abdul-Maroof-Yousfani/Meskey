@@ -160,6 +160,20 @@
                         </select>
                     </div>
                 </div>
+                <div class="col-md-3 advanced" style="display: none">
+                    <div class="form-group">
+                        <label class="form-label">Journal Vouchers:</label>
+                        <select name="journal_vouchers[]" id="journal_vouchers" onchange="add_advance_amount()" class="form-control select2" multiple>
+                            <!-- Options will be populated via AJAX -->
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-2 advanced" style="display: none">
+                    <div class="form-group">
+                        <label class="form-label">JV Amount:</label>
+                        <input type="number" step="any" name="jv_amount" id="jv_amount" class="form-control" value="0" readonly>
+                    </div>
+                </div>
 
                 <div class="col-12 mt-3">
                     <h6 class="header-heading-sepration">Location Details</h6>
@@ -445,59 +459,73 @@
                 return $(this).data("amount");
             }).get();
 
+        let selectedJVAmounts = $("#journal_vouchers option:selected")
+            .map(function() {
+                return $(this).data("amount");
+            }).get();
 
-        sum = 0;
+        let sum = 0;
+        let rv_sum = 0;
+        let jv_sum = 0;
+        
         selectedAmounts.forEach(selectedAmount => {
+            rv_sum += parseFloat(selectedAmount);
             sum += parseFloat(selectedAmount);
         });
 
-
+        selectedJVAmounts.forEach(selectedAmount => {
+            jv_sum += parseFloat(selectedAmount);
+            sum += parseFloat(selectedAmount);
+        });
 
         if (sum > 0) {
-            $("#advance_amount").val(sum.toFixed(0));
+            $("#advance_amount").val(rv_sum > 0 ? Math.round(rv_sum) : "");
+            $("#jv_amount").val(jv_sum > 0 ? Math.round(jv_sum) : "");
+            
             calculate_withhold_by_percentage(document.getElementById('withhold_percentage'));
         } else {
             $("#advance_amount").val("");
+            $("#jv_amount").val("");
             $("#withhold_amount").val("0");
             $("#withhold_percentage").val("10");
         }
 
         update_delivery_date_min();
+        change_withhold_amount();
     }
 
     function calculate_withhold_by_percentage(el) {
         let percentage = parseFloat($(el).val()) || 0;
-        if (percentage > 100) {
-            percentage = 100;
-            $(el).val(100);
-        }
-        if (percentage < 0) {
-            percentage = 0;
-            $(el).val(0);
-        }
+        if (percentage > 100) percentage = 100;
+        if (percentage < 0) percentage = 0;
+        $(el).val(percentage);
 
-        let do_amount = 0;
-        $(".amount").each(function () {
-            do_amount += parseFloat($(this).val()) || 0;
-        });
-
-        // const totalAmount = parseFloat(do_amount) || 0;
-        const totalAmount = parseFloat(so_amount);
+        let totalAmount = parseFloat(so_amount) || 0;
+        if (totalAmount === 0) {
+            let do_amount = 0;
+            $(".amount").each(function () {
+                do_amount += parseFloat($(this).val()) || 0;
+            });
+            totalAmount = do_amount;
+        }
 
         const withhold = (totalAmount * (percentage / 100)).toFixed(0);
         $("#withhold_amount").val(withhold);
+        
         change_withhold_amount();
     }
 
     function calculate_percentage_by_withhold(el) {
         let withhold = parseFloat($(el).val()) || 0;
-
-        let do_amount = 0;
-        $(".amount").each(function () {
-            do_amount += parseFloat($(this).val()) || 0;
-        });
-
-        const totalAmount = parseFloat(so_amount) || 0;
+        
+        let totalAmount = parseFloat(so_amount) || 0;
+        if (totalAmount === 0) {
+            let do_amount = 0;
+            $(".amount").each(function () {
+                do_amount += parseFloat($(this).val()) || 0;
+            });
+            totalAmount = do_amount;
+        }
 
         if (totalAmount > 0) {
             if (withhold > totalAmount) {
@@ -545,17 +573,45 @@
     function change_withhold_amount() {
         const withhold = parseFloat($("#withhold_amount").val()) || 0;
         const advance = parseFloat($("#advance_amount").val()) || 0;
+        const jv_amount = parseFloat($("#jv_amount").val()) || 0;
 
+        let totalAmount = parseFloat(so_amount) || 0;
+        if (totalAmount === 0) {
+            let do_amount = 0;
+            $(".amount").each(function () {
+                do_amount += parseFloat($(this).val()) || 0;
+            });
+            totalAmount = do_amount;
+        }
 
+        const qtyBalance = parseFloat($("#qty_0").data("qty-balance"));
+        let rate = $("#rate_0").val() || $("#rate_per_mond_0").val() || 0;
+        let bag_size = $("#bag_size_0").val() || 0;
 
-        // Basic calculation for first row
-        if (advance > 0 || withhold > 0) {
-            remaining_amount = advance - withhold;
-            bag_size = $("#bag_size_0").val() || 0;
-            rate = $("#rate_0").val() || 0;
+        if (advance === 0 && jv_amount === 0 && withhold === 0) {
+            if (!isNaN(qtyBalance) && rate > 0) {
+                $("#qty_0").val(qtyBalance);
+                $("#qty_0").prop("readonly", false);
+                $("#amount_0").val((parseFloat(rate) * parseFloat(qtyBalance)).toFixed(0));
+
+                if (bag_size > 0) {
+                    const no_of_bags = Math.round(parseFloat(qtyBalance) / parseFloat(bag_size));
+                    $("#no_of_bags_0").val(isNaN(no_of_bags) ? 0 : no_of_bags);
+                }
+            }
+        } else {
+            let remaining_amount = (totalAmount - withhold) + jv_amount;
+            if (remaining_amount < 0) remaining_amount = 0;
 
             if (rate > 0) {
-                const qtyVal = Math.round(remaining_amount / rate);
+                let qtyVal = remaining_amount / rate;
+                
+                if (!isNaN(qtyBalance) && qtyVal > qtyBalance) {
+                    qtyVal = qtyBalance;
+                }
+
+                qtyVal = Math.round(qtyVal);
+
                 $("#qty_0").val(qtyVal);
                 $("#qty_0").prop("readonly", true);
                 $("#amount_0").val((parseFloat(rate) * parseFloat(qtyVal)).toFixed(0));
@@ -566,8 +622,6 @@
                 }
             }
         }
-
-
 
         const receipt_vouchers = $("#receipt_vouchers");
         let withholdSelect = $("#withhold_for_rv");
@@ -963,6 +1017,35 @@
                 );
                 withholdSelect.prop("disabled", true);
                 withholdSelect.select2();
+                
+                $.ajax({
+                    url: "{{ route('sales.get.delivery-order.getJvAgainstCustomer') }}",
+                    method: "GET",
+                    data: {
+                        customer_id: customer_id
+                    },
+                    dataType: "json",
+                    success: function (res) {
+                        let selectJv = $("#journal_vouchers");
+                        let selectedValuesJv = selectJv.val() || [];
+                        selectJv.empty();
+
+                        res.forEach(item => {
+                            selectJv.append(
+                                `<option value="jv_${item.id}"
+                                        data-amount="${item.amount}">
+                                    ${item.text}
+                                </option>`
+                            );
+                        });
+
+                        selectJv.val(selectedValuesJv).trigger('change.select2');
+                        add_advance_amount();
+                    },
+                    error: function (error) {
+                        console.error("Error fetching JVs:", error);
+                    }
+                });
             },
             error: function (error) {
                 // Handle errors here

@@ -203,7 +203,7 @@ class ReceiptVoucherController extends Controller
         return view('management.finance.receipt_voucher.create', compact('customers', 'saleOrders', 'salesInvoices', 'taxes', 'accounts'));
     }
 
-        public function edit($id)
+    public function edit($id)
     {
         $receiptVoucher = ReceiptVoucher::with(['items', 'advances', 'account', 'customer', 'bankDetails'])->findOrFail($id);
 
@@ -306,16 +306,16 @@ class ReceiptVoucherController extends Controller
         $customerAdvances = \App\Models\CustomerAdvance::where("customer_id", $receiptVoucher->customer_id)
             ->where(function ($q) use ($receiptVoucher) {
                 $q->whereIn("status", ["pending", "partial_payment"])
-                  ->orWhereHas('adjustments', function ($adjQuery) use ($receiptVoucher) {
-                      $adjQuery->where('voucher_no', $receiptVoucher->unique_no);
-                  });
+                    ->orWhereHas('adjustments', function ($adjQuery) use ($receiptVoucher) {
+                        $adjQuery->where('voucher_no', $receiptVoucher->unique_no);
+                    });
             })->get()->map(function ($adv) use ($receiptVoucher) {
-                $remaining = (float)$adv->remaining_amount;
+                $remaining = (float) $adv->remaining_amount;
                 $adjustment = \App\Models\CustomerAdvanceAdjustment::where('customer_advance_id', $adv->id)
                     ->where('voucher_no', $receiptVoucher->unique_no)
                     ->sum('amount');
-                $remaining += (float)$adjustment;
-                return (object)[
+                $remaining += (float) $adjustment;
+                return (object) [
                     "id" => $adv->id,
                     "text" => $adv->voucher_no . " - " . number_format($remaining, 2),
                     "remaining_amount" => $remaining
@@ -551,6 +551,8 @@ class ReceiptVoucherController extends Controller
                 "is_direct" => 0,
                 "company_id" => $request->company_id,
                 "allow_excess_amount" => $request->allow_excess ? 1 : 0,
+                "am_approval_status" => "pending",
+                "am_change_made" => 1,
             ]);
 
             $totalExcessAmount = 0;
@@ -588,22 +590,6 @@ class ReceiptVoucherController extends Controller
                             'line_desc' => $item['line_desc'] ?? null,
                             'customer_id' => $payload["customer_id"]
                         ]);
-
-                        $transaction = createTransaction(
-                            $excessAmount + $tax_amount,
-                            $customerAccountId,
-                            $request->company_id,
-                            "-",
-                            'credit',
-                            'no',
-                            [
-                                'purpose' => "Extra Amount Received (Item #{$notAllocatedItem->id}) for the customer " . $customer->name,
-                                'payment_against' => $receiptVoucher->unique_no,
-                                'counter_account_id' => $payload['account_id'],
-                                'remarks' => "Customer advance created from excess payment against Receipt Voucher " . $receiptVoucher->unique_no,
-                                'receipt_voucher_item_id' => $notAllocatedItem->id
-                            ]
-                        );
 
                         \App\Models\CustomerAdvance::create([
                             "customer_id" => $payload["customer_id"],
@@ -649,64 +635,39 @@ class ReceiptVoucherController extends Controller
             $remarks = $payload['remarks'] ?? null;
 
             // Save Bank Details and create Debit Transactions
+            $totalAdvanceConsumed = 0;
             if ($request->filled('bank_details')) {
                 foreach ($request->bank_details as $detail) {
-                    if (!empty($detail['account_id']) && !empty($detail['amount'])) {
+                    if (!empty($detail['customer_advance_id']) && !empty($detail['amount'])) {
+                        $advance = \App\Models\CustomerAdvance::find($detail['customer_advance_id']);
+                        if ($advance) {
+                            $adjAmount = $detail['amount'];
+                            if ($adjAmount > $advance->remaining_amount) {
+                                throw new \Exception("Cannot consume more than the remaining amount of the advance.");
+                            }
+                            $advance->used_amount += $adjAmount;
+                            $advance->remaining_amount -= $adjAmount;
+                            $advance->status = ($advance->remaining_amount <= 0 && $advance->used_amount == $advance->amount) ? "completed" : "partial_payment";
+                            $advance->save();
+
+                            \App\Models\CustomerAdvanceAdjustment::create([
+                                "customer_advance_id" => $advance->id,
+                                "voucher_no" => $receiptVoucher->unique_no,
+                                "amount" => $adjAmount
+                            ]);
+                            $totalAdvanceConsumed += $adjAmount;
+                        }
+                    } elseif (!empty($detail['account_id']) && !empty($detail['amount'])) {
                         $receiptVoucher->bankDetails()->create([
                             'account_id' => $detail['account_id'],
                             'amount' => $detail['amount'],
                             'cheque_no' => $detail['cheque_no'] ?? null,
                         ]);
-
-                        createTransaction(
-                            $detail['amount'],
-                            $detail['account_id'],
-                            $request->company_id,
-                            $receiptVoucher->unique_no,
-                            'debit',
-                            'no',
-                            [
-                                'purpose' => $purpose,
-                                'payment_against' => $receiptVoucher->unique_no,
-                                'counter_account_id' => $customerAccountId,
-                                'remarks' => $remarks . ($detail['cheque_no'] ? " (Cheque: {$detail['cheque_no']})" : "")
-                            ]
-                        );
                     }
                 }
-            } else {
-                createTransaction(
-                    $totalNetAmount,
-                    $payload['account_id'],
-                    $request->company_id,
-                    $receiptVoucher->unique_no,
-                    'debit',
-                    'no',
-                    [
-                        'purpose' => $purpose,
-                        'payment_against' => $receiptVoucher->unique_no,
-                        'counter_account_id' => $customerAccountId,
-                        'remarks' => $remarks
-                    ]
-                );
             }
 
-            // Always credit the customer for the total net amount
-
-            createTransaction(
-                $totalNetAmount - $totalExcessAmount,
-                $customerAccountId,
-                $request->company_id,
-                $receiptVoucher->unique_no,
-                'credit',
-                'no',
-                [
-                    'purpose' => $purpose,
-                    'payment_against' => $receiptVoucher->unique_no,
-                    'counter_account_id' => $payload['account_id'],
-                    'remarks' => $remarks
-                ]
-            );
+            // Always credit the customer for the total net amount (done on approval)
 
             DB::commit();
         } catch (\Throwable $th) {
@@ -743,12 +704,12 @@ class ReceiptVoucherController extends Controller
             })->get();
 
         $formatted = $advances->map(function ($adv) use ($voucherNo) {
-            $remaining = (float)$adv->remaining_amount;
+            $remaining = (float) $adv->remaining_amount;
             if ($voucherNo) {
                 $adjustment = \App\Models\CustomerAdvanceAdjustment::where('customer_advance_id', $adv->id)
                     ->where('voucher_no', $voucherNo)
                     ->sum('amount');
-                $remaining += (float)$adjustment;
+                $remaining += (float) $adjustment;
             }
 
             return [
@@ -907,13 +868,11 @@ class ReceiptVoucherController extends Controller
         ]);
     }
 
-
-
-        public function update(Request $request, $id)
+    public function update(Request $request, $id)
     {
         $receiptVoucher = ReceiptVoucher::findOrFail($id);
         $payload = app(\App\Http\Requests\Finance\ReceiptVoucherRequest::class)->validated();
-        
+
         $items = collect($payload["items"] ?? [])
             ->filter(function ($item) {
                 return !empty($item["reference_id"]) && !empty($item["reference_type"]);
@@ -988,7 +947,7 @@ class ReceiptVoucherController extends Controller
                 "total_amount" => $totalNetAmount,
                 "company_id" => $request->company_id,
                 "allow_excess_amount" => $request->allow_excess ? 1 : 0,
-                "am_approval_status" => 'pending',
+                "am_approval_status" => "pending",
                 "am_change_made" => 1,
             ]);
 
@@ -1028,22 +987,6 @@ class ReceiptVoucherController extends Controller
                             "line_desc" => $item["line_desc"] ?? null,
                             "customer_id" => $payload["customer_id"]
                         ]);
-
-                        $transaction = createTransaction(
-                            $excessAmount + $tax_amount,
-                            $customerAccountId,
-                            $request->company_id,
-                            "-",
-                            "credit",
-                            "no",
-                            [
-                                "purpose" => "Extra Amount Received (Item #{$notAllocatedItem->id}) for the customer " . $customer->name,
-                                "payment_against" => $receiptVoucher->unique_no,
-                                "counter_account_id" => $payload["account_id"],
-                                "remarks" => "",
-                                "receipt_voucher_item_id" => $notAllocatedItem->id
-                            ]
-                        );
 
                         \App\Models\CustomerAdvance::create([
                             "customer_id" => $payload["customer_id"],
@@ -1109,57 +1052,8 @@ class ReceiptVoucherController extends Controller
                             "amount" => $detail["amount"],
                             "cheque_no" => $detail["cheque_no"] ?? null,
                         ]);
-
-                        createTransaction(
-                            $detail["amount"],
-                            $detail["account_id"],
-                            $request->company_id,
-                            $receiptVoucher->unique_no,
-                            "debit",
-                            "no",
-                            [
-                                "purpose" => $purpose,
-                                "payment_against" => $receiptVoucher->unique_no,
-                                "counter_account_id" => $customerAccountId,
-                                "remarks" => $remarks . ($detail["cheque_no"] ? " (Cheque: {$detail["cheque_no"]})" : "")
-                            ]
-                        );
                     }
                 }
-            } else {
-                createTransaction(
-                    $totalNetAmount,
-                    $payload["account_id"],
-                    $request->company_id,
-                    $receiptVoucher->unique_no,
-                    "debit",
-                    "no",
-                    [
-                        "purpose" => $purpose,
-                        "payment_against" => $receiptVoucher->unique_no,
-                        "counter_account_id" => $customerAccountId,
-                        "remarks" => $remarks
-                    ]
-                );
-            }
-
-            $creditAmount = $totalNetAmount - $totalAdvanceConsumed;
-
-            if ($creditAmount > 0) {
-                createTransaction(
-                    $creditAmount,
-                    $customerAccountId,
-                    $request->company_id,
-                    $receiptVoucher->unique_no,
-                    "credit",
-                    "no",
-                    [
-                        "purpose" => $purpose,
-                        "payment_against" => $receiptVoucher->unique_no,
-                        "counter_account_id" => $payload["account_id"],
-                        "remarks" => $remarks
-                    ]
-                );
             }
 
             DB::commit();
@@ -1173,7 +1067,8 @@ class ReceiptVoucherController extends Controller
             "redirect" => route("receipt-voucher.index")
         ]);
     }
-public function destroy($id)
+    
+    public function destroy($id)
     {
         abort(404);
     }

@@ -82,7 +82,16 @@ class ArrivalSlipController extends Controller
                 return $q->where(function ($sq) use ($searchTerm) {
                     $sq->where('arrival_slips.unique_no', 'like', $searchTerm)
                         ->orWhereHas('arrivalTicket', function ($ticketQuery) use ($searchTerm) {
-                            $ticketQuery->where('unique_no', 'like', $searchTerm);
+                            $ticketQuery->where('unique_no', 'like', $searchTerm)
+                                ->orWhere('truck_no', 'like', $searchTerm)
+                                ->orWhere('bilty_no', 'like', $searchTerm)
+                                ->orWhere('accounts_of_name', 'like', $searchTerm)
+                                ->orWhereHas('product', function ($productQuery) use ($searchTerm) {
+                                    $productQuery->where('name', 'like', $searchTerm);
+                                })
+                                ->orWhereHas('unloadingLocation.arrivalLocation', function ($locationQuery) use ($searchTerm) {
+                                    $locationQuery->where('name', 'like', $searchTerm);
+                                });
                         });
                 });
             })
