@@ -924,9 +924,13 @@ function get_storage_name_by_id($storage_id)
 
 function delivery_order_balance($sale_order_data_id)
 {
-    $data = DeliveryOrderData::where("so_data_id", $sale_order_data_id)->get();
+    $spent = DeliveryOrderData::where("so_data_id", $sale_order_data_id)
+        ->whereHas('delivery_order', function($q) {
+            $q->where('is_auto_created_from_so', '!=', true);
+            $q->where('am_approval_status', '!=', 'rejected');
+        })
+        ->sum("no_of_bags");
 
-    $spent = $data->sum("no_of_bags");
     $able_to_spend = (SalesOrderData::where("id", $sale_order_data_id)->first())->no_of_bags;
     $balance = (int) $able_to_spend - (int) $spent;
 

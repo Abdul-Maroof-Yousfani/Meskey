@@ -571,10 +571,11 @@ class DeliveryOrderController extends Controller
 
         $spent = $sale_order->delivery_orders
             ->where("am_approval_status", "!=", "rejected")
+            ->where("is_auto_created_from_so", "!=", true)
             ->flatMap->delivery_order_data
             ->sum('qty');
 
-        $spent_qty = $sale_order->delivery_orders->where("am_approval_status", "!=", "rejected")->flatMap->delivery_order_data->sum("qty");
+        $spent_qty = $spent;
         $total_qty = $sale_order?->sales_order_data?->first()->qty;
         $remaining_qty = $total_qty - $spent_qty;
 
