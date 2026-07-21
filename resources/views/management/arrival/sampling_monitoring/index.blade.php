@@ -25,6 +25,15 @@
                                     <div class="col-md-12 my-1 ">
                                         <div class="row justify-content-end text-right">
                                             <div class="col-md-2 text-left">
+                                                <label for="approval_status" class="form-label">Approval Status</label>
+                                                <select class="form-control" name="approval_status">
+                                                    <option value="pending" {{ request('approval_status') == 'pending' ? 'selected' : '' }}>Pending
+                                                    </option>
+                                                    <option value="completed" {{ request('approval_status') == 'completed' ? 'selected' : '' }}>Completed
+                                                    </option>
+                                                </select>
+                                            </div>div>
+                                            <div class="col-md-2 text-left">
                                                 <label for="from_date" class="form-label">Sampling Type</label>
                                                 <select class="form-control" name="sampling_type">
                                                     <option value="">All</option>
@@ -84,7 +93,7 @@
 @endsection
 @section('script')
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             filterationCommon(`{{ route('get.sampling-monitoring') }}`)
         });
     </script>

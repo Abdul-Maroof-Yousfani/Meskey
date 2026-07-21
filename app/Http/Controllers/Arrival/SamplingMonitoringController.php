@@ -66,14 +66,30 @@ class SamplingMonitoringController extends Controller
             ->whereHas('arrivalTicket', function ($query) {
                 $query->whereIn('location_id', getUserCurrentCompanyLocations());
             })
-            ->where(function ($q) {
-                $q->where('approved_status', 'pending')
-                    ->orWhere(function ($q) {
-                        $q->where('decision_making', 1);
-                        // ->where('lumpsum_deduction', 0)
-                        // ->where('lumpsum_deduction_kgs', 0);
-                    });
+
+            ->when($request->filled('approval_status'), function ($q) use ($request) {
+                if ($request->approval_status == 'pending') {
+                    return $q->where('approved_status', 'pending');
+                } elseif ($request->approval_status == 'completed') {
+                    return $q->whereIn('approved_status', ['rejected', 'approved', 'resampling']);
+                }
+            })
+            ->when(!$request->filled('approval_status'), function ($q) {
+                return $q->where(function ($q) {
+                    $q->where('approved_status', 'pending')
+                        ->orWhere('decision_making', 1);
+                });
             });
+
+
+        // ->where(function ($q) {
+        //     $q->where('approved_status', 'pending')
+        //         ->orWhere(function ($q) {
+        //             $q->where('decision_making', 1);
+
+        //         });
+        // });
+
 
         $samplingRequests = $query->latest()
             ->paginate($request->get('per_page', 25));

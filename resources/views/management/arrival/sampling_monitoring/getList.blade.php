@@ -23,8 +23,8 @@
                 } else {
                     $color = 'grey';
                 }
-                
-                ?>
+
+                                                ?>
                 <tr class="bg-{{ $color }}">
                     <td>
                         <p class="m-0">
@@ -48,7 +48,7 @@
                     </td>
                     <td>
                         {{-- @if ($row->is_auto_approved == 'no')
-                            <div class="badge badge-danger">Approval Required</div>
+                        <div class="badge badge-danger">Approval Required</div>
                         @endif --}}
 
                         @if ($row->approved_status == 'pending')
@@ -87,15 +87,22 @@
                             </div>
                         </div> --}}
                         {{-- @else
-                       <p style="font-size: 12px;margin:0;font-weight:bold;"><small> No Action Available</small></p> --}}
+                        <p style="font-size: 12px;margin:0;font-weight:bold;"><small> No Action Available</small></p> --}}
                         {{-- @endif --}}
 
 
                         {{-- @can('role-edit') --}}
-                        <a onclick="openModal(this,'{{ route('sampling-monitoring.edit', $row->id) }}','View Approval Requests',false,'90%')"
-                            class="info p-1 text-center mr-2 position-relative ">
-                            <i class="ft-eye font-medium-3"></i>
-                        </a>
+                        @if($row->approved_status == 'pending')
+                            <a onclick="openModal(this,'{{ route('sampling-monitoring.edit', $row->id) }}','View Approval Requests',false,'90%')"
+                                class="info p-1 text-center mr-2 position-relative ">
+                                <i class="ft-eye font-medium-3"></i>
+                            </a>
+                        @else
+                            <a onclick="openModal(this,'{{ route('sampling-monitoring.edit', $row->id) }}','View Approval Requests',true,'90%')"
+                                class="info p-1 text-center mr-2 position-relative ">
+                                <i class="ft-eye font-medium-3"></i>
+                            </a>
+                        @endif
                         {{-- @endcan --}}
                         {{-- @can('role-delete')
                         <a onclick="deletemodal('{{ route('ticket.destroy', $row->id) }}','{{ route('get.ticket') }}')"
@@ -160,7 +167,7 @@
                         request_id: requestId,
                         status: status
                     },
-                    beforeSend: function() {
+                    beforeSend: function () {
                         Swal.fire({
                             title: "Processing...",
                             text: "Please wait",
@@ -171,7 +178,7 @@
                             }
                         });
                     },
-                    success: function(response) {
+                    success: function (response) {
                         Swal.fire({
                             title: "Success!",
                             text: response.message,
@@ -180,7 +187,7 @@
                             location.reload();
                         });
                     },
-                    error: function(xhr) {
+                    error: function (xhr) {
                         Swal.fire({
                             title: "Error!",
                             text: xhr.responseJSON.message || "Something went wrong!",
