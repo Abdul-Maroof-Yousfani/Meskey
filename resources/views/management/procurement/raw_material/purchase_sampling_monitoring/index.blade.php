@@ -25,6 +25,15 @@
                                         <div class="row justify-content-end text-right0">
                                             <div class="col-md-2">
                                                 <div class="form-group">
+                                                    <label>Approval Status:</label>
+                                                    <select name="approval_status_filter" class="form-control">
+                                                        <option value="pending" {{ request('approval_status_filter') == 'pending' ? 'selected' : '' }}>Pending</option>
+                                                        <option value="completed" {{ request('approval_status_filter') == 'completed' ? 'selected' : '' }}>Completed</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <div class="form-group">
                                                     <label>Date:</label>
                                                     <input type="text" name="daterange" class="form-control"
                                                         value="{{ request('daterange', \Carbon\Carbon::now()->subMonth()->format('m/d/Y') . ' - ' . \Carbon\Carbon::now()->format('m/d/Y')) }}" />
