@@ -82,6 +82,7 @@
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
+                        {{-- DO date is saving in DB as dispatch_date --}}
                         <label class="form-label">Do Date:</label>
                         <input type="date" name="dispatch_date" readonly onchange="getNumber(); validate_expiry()" id="dispatch_date"
                             value="{{ $delivery_order->dispatch_date }}" class="form-control">
