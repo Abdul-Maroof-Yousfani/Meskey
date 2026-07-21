@@ -26,7 +26,10 @@
                                         <div class="p-2">
                                             #{{ $group['so_no'] }}
                                             @if(isset($group['sale_order']) && $group['sale_order']->is_auto_created_from_so)
-                                                <span class="badge badge-warning" style="font-size: 0.7rem;">Dummy DO</span>
+                                                <span class="badge badge-primary" style="font-size: 0.7rem;">Dummy DO</span>
+                                            @endif
+                                            @if(isset($group['sale_order']) && $group['sale_order']->do_status === 'closed')
+                                                <br><span class="badge badge-danger" style="font-size: 0.7rem; margin-top: 2px;">Closed</span>
                                             @endif
                                             <br>
                                             <small class="text-muted">
@@ -103,19 +106,23 @@
                                     <i class="ft-eye"></i>
                                 </a>
                                 @if(auth()->user()->id == $group['created_by_id'])
-                                    @if($group['status'] === 'pending' || $group['status'] === 'reverted')
-                                        <button
-                                            onclick="openModal(this,'{{ route('sales.delivery-order.edit', ['delivery_order' => $group['id']]) }}','Edit Delivery Order', false, '90%')"
-                                            class="btn btn-sm btn-warning" title="Edit" style="margin-right: 10px;">
-                                            <i class="ft-edit"></i>
-                                        </button>
+                                    @if(isset($group['sale_order']) && $group['sale_order']->do_status !== 'closed')
+                                        @if(!$group['sale_order']->is_auto_created_from_so)
+                                            <button
+                                                onclick="openModal(this,'{{ route('sales.delivery-order.edit', ['delivery_order' => $group['id']]) }}','Edit Delivery Order', false, '90%')"
+                                                class="btn btn-sm btn-warning" title="Edit" style="margin-right: 10px;">
+                                                <i class="ft-edit"></i>
+                                            </button>
+                                        @endif
 
+                                        @if($group['status'] === 'pending' || $group['status'] === 'reverted')
                                         <button
                                             onclick="deletemodal('{{ route('sales.delivery-order.destroy', ['delivery_order' => $group['id']]) }}', '{{ route('sales.get.delivery-order.list') }}')"
                                             type="button" onclick="confirmDelete(this.closest('form'))" class="btn btn-sm btn-danger"
                                             title="Delete">
                                             <i class="ft-trash-2"></i>
                                         </button>
+                                        @endif
                                     @endif
                                 @endif
                             </div>

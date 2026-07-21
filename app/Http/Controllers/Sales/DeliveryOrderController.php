@@ -890,7 +890,19 @@ class DeliveryOrderController extends Controller
 
 
         if ($delivery_order->am_approval_status == "approved" || $delivery_order->am_approval_status == 'rejected') {
-            return response()->json("Delivery Order has been approved/rejected and cannot be updated.", 400);
+            if ($request->do_status == $delivery_order->do_status || !$request->has('do_status')) {
+                return response()->json("Delivery Order has been approved/rejected and cannot be updated.", 400);
+            }
+            
+            $delivery_order->update([
+                'do_status' => $request->do_status
+            ]);
+            DB::commit();
+            return response()->json("Delivery Order Status updated successfully.", 200);
+        }
+
+        if ($delivery_order->do_status == 'closed' && $request->do_status != 'closed') {
+            return response()->json("This Delivery Order is closed and its status cannot be changed.", 400);
         }
 
         if ($request->withhold_for_rv && str_starts_with($request->withhold_for_rv, 'rv_')) {
@@ -920,6 +932,7 @@ class DeliveryOrderController extends Controller
                 'am_change_made' => 1,
                 'so_withhold_percentage' => $request->so_withhold_percentage ?? 0,
                 'so_held_amount' => $request->so_held_amount ?? 0,
+                'do_status' => $request->do_status ?? $delivery_order->do_status,
             ]);
 
             // $delivery_order->locations()->delete();
