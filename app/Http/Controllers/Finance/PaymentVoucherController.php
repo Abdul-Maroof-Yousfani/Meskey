@@ -719,7 +719,7 @@ class PaymentVoucherController extends Controller
                         return [
                             'id' => $request->id,
                             'supplier_id' => $request->paymentRequestData->purchaseOrder->supplier_id ?? '',
-                            'purchaseOrder' => $request->paymentRequestData->purchaseOrder,
+                            'purchaseOrder' => $request->paymentRequestData->purchaseOrder ?? null,
                             'truck_no' => $request->paymentRequestData->truck_no ?? $request->paymentRequestData->arrivalTicket->truck_no ?? '-',
                             'bilty_no' => $request->paymentRequestData->bilty_no ?? $request->paymentRequestData->arrivalTicket->bilty_no ?? '-',
                             'loading_date' => $request->paymentRequestData && $request->paymentRequestData->loading_date
