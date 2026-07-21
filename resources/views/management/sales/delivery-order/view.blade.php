@@ -53,7 +53,8 @@
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
-                        <label class="form-label">Do Date:</label>
+                        {{-- DO date is saving in DB as dispatch date --}}
+                        <label class="form-label">Do Date:</label> 
                         <input type="date" name="dispatch_date" id="dispatch_date" class="form-control"
                             value="{{ $delivery_order->dispatch_date }}" readonly>
                     </div>
@@ -254,6 +255,18 @@
             </div>
         </div>
 
+    </div>
+
+    <div class="row">
+        <div class="col-md-3 offset-md-9 text-end mb-3">
+            <div class="form-group">
+                <label for="do_status" class="form-label">DO Status:</label>
+                <select class="form-control" disabled>
+                    <option value="active" {{ $delivery_order->do_status == 'active' ? 'selected' : '' }}>Active</option>
+                    <option value="closed" {{ $delivery_order->do_status == 'closed' ? 'selected' : '' }}>Closed</option>
+                </select>
+            </div>
+        </div>
     </div>
 
     <div class="row form-mar">

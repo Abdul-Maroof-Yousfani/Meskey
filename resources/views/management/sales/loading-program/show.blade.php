@@ -100,7 +100,7 @@
                                 <a class="nav-link {{ $index == 0 ? 'active' : '' }}" id="do-tab-{{ $do->id }}" data-toggle="pill" href="#do-content-{{ $do->id }}" role="tab">
                                     {{ $do->reference_no }}
                                     @if($do->is_auto_created_from_so)
-                                        <span class="badge badge-warning" style="font-size: 0.6rem;">Dummy DO</span>
+                                        <span class="badge badge-primary" style="font-size: 0.6rem;">Dummy DO</span>
                                     @endif
                                 </a>
                             </li>

@@ -119,7 +119,7 @@
                             aria-selected="{{ $index === 0 ? 'true' : 'false' }}">
                             {{ $order['type'] }}: {{ $order['number'] }}
                             @if(!empty($order['is_auto']))
-                                <span class="badge badge-warning" style="font-size: 0.6rem;">Dummy DO</span>
+                                <span class="badge badge-primary" style="font-size: 0.6rem;">Dummy DO</span>
                             @endif
                         </a>
                     </li>

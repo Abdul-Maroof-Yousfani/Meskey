@@ -331,20 +331,51 @@ class PurchaseOrderController extends Controller
     public function update(ArrivalPurchaseOrderRequest $request, $id)
     {
         $arrivalPurchaseOrder = ArrivalPurchaseOrder::findOrFail($id);
-        if ($arrivalPurchaseOrder->am_approval_status == "approved" || $arrivalPurchaseOrder->am_approval_status == 'rejected') {
-            return response()->json([
-                "success" => false,
-                "message" => "Purchase Order Already Approved or Rejected."
-            ], 400);
-        }
-
-
-
-
-
+        
         $data = $request->validated();
         $data = $request->all();
-        // dd($data);
+
+        if ($arrivalPurchaseOrder->am_approval_status == "approved" || $arrivalPurchaseOrder->am_approval_status == 'rejected') {
+            
+            $oldDeliveryDate = $arrivalPurchaseOrder->delivery_date ? \Carbon\Carbon::parse($arrivalPurchaseOrder->delivery_date)->format('Y-m-d') : null;
+            $newDeliveryDate = !empty($data['delivery_date']) ? \Carbon\Carbon::parse($data['delivery_date'])->format('Y-m-d') : null;
+            $deliveryDateChanged = $oldDeliveryDate != $newDeliveryDate;
+            
+            $contractStatusChanged = ($data['contract_status'] ?? null) != $arrivalPurchaseOrder->contract_status;
+            $remarksChanged = ($data['remarks'] ?? null) != $arrivalPurchaseOrder->remarks;
+            $defaulterChanged = (isset($data['defaulter']) ? (int)$data['defaulter'] : 0) != (int)$arrivalPurchaseOrder->defaulter;
+
+            if (!$deliveryDateChanged && !$contractStatusChanged && !$remarksChanged && !$defaulterChanged) {
+                return response()->json([
+                    "success" => false,
+                    "message" => "Purchase Order Already Approved or Rejected."
+                ], 400);
+            }
+
+            DB::transaction(function () use ($data, $arrivalPurchaseOrder) {
+                $updateData = [
+                    'delivery_date' => $data['delivery_date'] ?? null,
+                    'contract_status' => $data['contract_status'] ?? null,
+                    'status' => (isset($data['contract_status']) && ($data['contract_status'] == 'close-contract-due-to-market-down' || $data['contract_status'] == 'close-with-market-rate-penalty')) ? 'cancelled' : $arrivalPurchaseOrder->status,
+                    'remarks' => $data['remarks'] ?? null,
+                    'defaulter' => $data['defaulter'] ?? 0,
+                ];
+
+                $arrivalPurchaseOrder->update($updateData);
+
+                $defaulter = ArrivalPurchaseOrder::where('supplier_id', $arrivalPurchaseOrder->supplier_id)->where('defaulter', 1)->get();
+                if (count($defaulter) > 0) {
+                    Supplier::findOrFail($arrivalPurchaseOrder->supplier_id)->update(['defaulter' => 1]);
+                } else {
+                    Supplier::findOrFail($arrivalPurchaseOrder->supplier_id)->update(['defaulter' => 0]);
+                }
+            });
+
+            return response()->json([
+                'success' => 'Purchase Order Specific Fields Updated Successfully.',
+                'data' => $arrivalPurchaseOrder
+            ], 200);
+        }
 
         DB::transaction(function () use ($data, $arrivalPurchaseOrder) {
             $updateData = [

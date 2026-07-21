@@ -259,19 +259,19 @@
                 <table class="table table-bordered" id="salesInquiryTable" style="min-width:2000px;">
                     <thead>
                         <tr>
-                            <th class="col-3">Item</th>
-                            <th>Bag Type</th>
-                            <th>Packing</th>
-                            <th>No of Bags</th>
-                            <th>Minimum Qty (kg)</th>
-                            <th>Maximum Qty (kg)</th>
-                            <th>Rate per Kg</th>
-                            <th>Rate per Mond</th>
-                            <th>Amount</th>
-                            <th>Brand</th>
+                            <th style="min-width: 250px;">Item</th>
+                            <th style="min-width: 150px;">Bag Type</th>
+                            <th style="min-width: 120px;">Packing</th>
+                            <th style="min-width: 120px;">No of Bags</th>
+                            <th style="min-width: 150px;">Minimum Qty (kg)</th>
+                            <th style="min-width: 150px;">Maximum Qty (kg)</th>
+                            <th style="min-width: 150px;">Rate per Kg</th>
+                            <th style="min-width: 150px;">Rate per Mond</th>
+                            <th style="min-width: 150px;">Amount</th>
+                            <th style="min-width: 180px;">Brand</th>
                             <th style="display: none;">Pack Size</th>
-                            <th>Description</th>
-                            <th>Action</th>
+                            <th style="min-width: 200px;">Description</th>
+                            <th style="min-width: 80px;">Action</th>
                         </tr>
                     </thead>
                     <tbody id="salesInquiryBody">
@@ -382,7 +382,7 @@
                   <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Comission in % per KG:</label>
-        <input type="text" value="{{ number_format(($sale_order->commission_per_kg ?? 0) / (($sale_order->sales_order_data->first()->rate ?? 1) ?: 1) * 100, 4) }}" class="form-control" readonly>
+                        <input type="text" value="{{ number_format(($sale_order->commission_per_kg ?? 0) / ((($sale_order->sales_order_data->first()->rate ?? 1) * ($sale_order->sales_order_data->first()->qty ?? 1)) ?: 1) * 100, 4) }}" class="form-control" readonly>
                     </div>
                 </div>
     </div>

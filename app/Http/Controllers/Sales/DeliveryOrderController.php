@@ -130,7 +130,7 @@ class DeliveryOrderController extends Controller
                 'jv_amount' => $request->jv_amount ?? 0,
                 'withhold_amount' => $request->withhold_amount ?? 0,
                 'withhold_for_rv_id' => $withhold_rv_id,
-                'dispatch_date' => $request->dispatch_date,
+                'dispatch_date' => $request->dispatch_date, // this is DO date
                 'reference_no' => $this->getNumber($request, null, $request->dispatch_date),
                 'ref_no' => $request->ref_no,
                 'payment_term_id' => $request->payment_term_id ?? (PaymentTerm::first())->id,
@@ -139,7 +139,7 @@ class DeliveryOrderController extends Controller
                 'arrival_location_id' => is_array($request->arrival_id) ? implode(',', $request->arrival_id) : $request->arrival_id,
                 'sub_arrival_location_id' => is_array($request->storage_id) ? implode(',', $request->storage_id) : $request->storage_id,
                 // 'line_desc' => $request->line_desc,
-                'delivery_date' => $request->delivery_date,
+                // 'delivery_date' => $request->delivery_date,
                 'line_desc' => $request->remarks ?? "",
                 'remarks' => $request->remarks ?? "",
                 'company_id' => $request->company_id,
@@ -262,7 +262,12 @@ class DeliveryOrderController extends Controller
             }
 
 
-            $spent_qty = $salesOrder->delivery_orders->where("am_approval_status", "!=", "rejected")->flatMap->delivery_order_data->sum("qty");
+            $spent_qty = $salesOrder->delivery_orders
+                ->reject(function($do) {
+                    return $do->am_approval_status === "rejected" || $do->is_auto_created_from_so;
+                })
+                ->flatMap->delivery_order_data
+                ->sum("qty");
             $total_qty = $salesOrder?->sales_order_data?->first()->qty;
             $remaining_qty = $total_qty - $spent_qty;
 
@@ -457,6 +462,10 @@ class DeliveryOrderController extends Controller
                 //     }
                 // }
     
+                if (DeliveryOrder::where('so_id', $saleOrder->id)->where('is_auto_created_from_so', true)->exists()) {
+                    return true;
+                }
+
                 foreach ($saleOrder->sales_order_data as $data) {
                     $balance = delivery_order_balance($data->id);
                     if ($balance > 0) {
@@ -566,11 +575,13 @@ class DeliveryOrderController extends Controller
             ->find($so_id);
 
         $spent = $sale_order->delivery_orders
-            ->where("am_approval_status", "!=", "rejected")
+            ->reject(function($do) {
+                return $do->am_approval_status === "rejected" || $do->is_auto_created_from_so;
+            })
             ->flatMap->delivery_order_data
             ->sum('qty');
 
-        $spent_qty = $sale_order->delivery_orders->where("am_approval_status", "!=", "rejected")->flatMap->delivery_order_data->sum("qty");
+        $spent_qty = $spent;
         $total_qty = $sale_order?->sales_order_data?->first()->qty;
         $remaining_qty = $total_qty - $spent_qty;
 
@@ -589,7 +600,9 @@ class DeliveryOrderController extends Controller
 
         // 1. Fetch Advances for the customer
         $advances = \App\Models\ReceiptVoucherAdvance::where('customer_id', $customer_id)
-            ->whereHas('receiptVoucher')
+            ->whereHas('receiptVoucher', function($q) {
+                $q->where('am_approval_status', 'approved');
+            })
             ->get()
             ->map(function ($adv) {
                 // Calculate spent amount for this specific advance
@@ -622,6 +635,7 @@ class DeliveryOrderController extends Controller
                 }
             ])
                 ->where("customer_id", $customer_id)
+                ->where("am_approval_status", "approved")
                 ->get();
 
 
@@ -779,7 +793,9 @@ class DeliveryOrderController extends Controller
                 return $adv;
             })
             ->filter(function ($adv) use ($delivery_order) {
-                return $adv->remaining_amount > 0 || $delivery_order->receipt_vouchers->contains('pivot.receipt_voucher_advance_id', $adv->id);
+                $is_attached = $delivery_order->receipt_vouchers->contains('pivot.receipt_voucher_advance_id', $adv->id);
+                $is_approved = $adv->receiptVoucher && $adv->receiptVoucher->am_approval_status === 'approved';
+                return ($adv->remaining_amount > 0 && $is_approved) || $is_attached;
             });
 
         // 2. Fetch Regular RVs linked to the Sale Order of this DO
@@ -821,7 +837,9 @@ class DeliveryOrderController extends Controller
                     return $rv;
                 })
                 ->filter(function ($rv) use ($delivery_order) {
-                    return $rv->remaining_amount > 0 || $delivery_order->receipt_vouchers->whereNull('pivot.receipt_voucher_advance_id')->contains('id', $rv->id);
+                    $is_attached = $delivery_order->receipt_vouchers->whereNull('pivot.receipt_voucher_advance_id')->contains('id', $rv->id);
+                    $is_approved = $rv->am_approval_status === 'approved';
+                    return ($rv->remaining_amount > 0 && $is_approved) || $is_attached;
                 });
         }
 
@@ -879,7 +897,19 @@ class DeliveryOrderController extends Controller
 
 
         if ($delivery_order->am_approval_status == "approved" || $delivery_order->am_approval_status == 'rejected') {
-            return response()->json("Delivery Order has been approved/rejected and cannot be updated.", 400);
+            if ($request->do_status == $delivery_order->do_status || !$request->has('do_status')) {
+                return response()->json("Delivery Order has been approved/rejected and cannot be updated.", 400);
+            }
+            
+            $delivery_order->update([
+                'do_status' => $request->do_status
+            ]);
+            DB::commit();
+            return response()->json("Delivery Order Status updated successfully.", 200);
+        }
+
+        if ($delivery_order->do_status == 'closed' && $request->do_status != 'closed') {
+            return response()->json("This Delivery Order is closed and its status cannot be changed.", 400);
         }
 
         if ($request->withhold_for_rv && str_starts_with($request->withhold_for_rv, 'rv_')) {
@@ -894,7 +924,7 @@ class DeliveryOrderController extends Controller
                 'jv_amount' => $request->jv_amount ?? 0,
                 'withhold_amount' => $request->withhold_amount ?? 0,
                 'withhold_for_rv_id' => $withhold_rv_id,
-                'dispatch_date' => $request->dispatch_date,
+                'dispatch_date' => $request->dispatch_date, // this is DO date
                 'reference_no' => $request->reference_no,
                 'ref_no' => $request->ref_no,
                 'payment_term_id' => $request->payment_term_id ?? (PaymentTerm::first())->id,
@@ -902,13 +932,14 @@ class DeliveryOrderController extends Controller
                 'location_id' => $request->location_id,
                 'arrival_location_id' => is_array($request->arrival_id) ? implode(',', $request->arrival_id) : $request->arrival_id,
                 'sub_arrival_location_id' => is_array($request->storage_id) ? implode(',', $request->storage_id) : $request->storage_id,
-                'delivery_date' => $request->delivery_date,
+                // 'delivery_date' => $request->delivery_date,
                 'line_desc' => $request->remarks ?? "",
                 'remarks' => $request->remarks ?? "",
                 'am_approval_status' => 'pending',
                 'am_change_made' => 1,
                 'so_withhold_percentage' => $request->so_withhold_percentage ?? 0,
                 'so_held_amount' => $request->so_held_amount ?? 0,
+                'do_status' => $request->do_status ?? $delivery_order->do_status,
             ]);
 
             // $delivery_order->locations()->delete();
@@ -1033,6 +1064,10 @@ class DeliveryOrderController extends Controller
             $salesOrder = SalesOrder::with('sales_order_data')->find($request->sale_order_id);
             $spent_qty = $salesOrder->delivery_orders()
                 ->where("am_approval_status", "!=", "rejected")
+                ->where(function($query) {
+                    $query->whereNull("is_auto_created_from_so")
+                          ->orWhere("is_auto_created_from_so", "!=", 1);
+                })
                 ->with('delivery_order_data')
                 ->get()
                 ->flatMap->delivery_order_data
