@@ -67,14 +67,14 @@ class SamplingMonitoringController extends Controller
                 $query->whereIn('location_id', getUserCurrentCompanyLocations());
             })
 
-            ->when($request->filled('approval_status'), function ($q) use ($request) {
-                if ($request->approval_status == 'pending') {
+            ->when($request->filled('approval_status_filter'), function ($q) use ($request) {
+                if ($request->approval_status_filter == 'pending') {
                     return $q->where('approved_status', 'pending');
-                } elseif ($request->approval_status == 'completed') {
+                } elseif ($request->approval_status_filter == 'completed') {
                     return $q->whereIn('approved_status', ['rejected', 'approved', 'resampling']);
                 }
             })
-            ->when(!$request->filled('approval_status'), function ($q) {
+            ->when(!$request->filled('approval_status_filter'), function ($q) {
                 return $q->where(function ($q) {
                     $q->where('approved_status', 'pending')
                         ->orWhere('decision_making', 1);
