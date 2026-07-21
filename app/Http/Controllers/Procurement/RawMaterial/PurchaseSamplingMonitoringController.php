@@ -45,9 +45,20 @@ class PurchaseSamplingMonitoringController extends Controller
             ->when($request->filled('sampling_type'), function ($q) use ($request) {
                 return $q->where('sampling_type', 'like', $request->sampling_type);
             })
-            ->where(function ($q) {
-                $q->where('approved_status', 'pending')
-                    ->orWhere('decision_making', 1);
+            ->when($request->filled('approval_status_filter'), function ($q) use ($request) {
+                if ($request->approval_status_filter == 'pending') {
+                    return $q->where(function ($sq) {
+                        $sq->where('approved_status', 'pending')
+                            ->orWhere('decision_making', 1);
+                    });
+                } else if ($request->approval_status_filter == 'completed') {
+                    return $q->whereIn('approved_status', ['approved', 'rejected', 'resampling']);
+                }
+            }, function ($q) {
+                return $q->where(function ($sq) {
+                    $sq->where('approved_status', 'pending')
+                        ->orWhere('decision_making', 1);
+                });
             })
             ->when($request->filled('company_location_id'), function ($q) use ($request) {
                 return $q->whereHas('purchaseOrder', function ($query) use ($request) {
