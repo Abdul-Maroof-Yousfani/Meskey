@@ -725,15 +725,15 @@ class PaymentVoucherController extends Controller
                             'loading_date' => $request->paymentRequestData && $request->paymentRequestData->loading_date
                                 ? $request->paymentRequestData->loading_date->format('Y-m-d')
                                 : '-',
-                            'no_of_bags' => $request->paymentRequestData->no_of_bags,
-                            'loading_weight' => $request->paymentRequestData->loading_weight,
-                            'module_type' => $request->paymentRequestData->module_type,
+                            'no_of_bags' => $request->paymentRequestData->no_of_bags ?? '',
+                            'loading_weight' => $request->paymentRequestData->loading_weight ?? '',
+                            'module_type' => $request->paymentRequestData->module_type ?? '',
                             'contract_no' => $request->paymentRequestData->purchaseOrder->contract_no ?? 'N/A',
-                            'amount' => $request->amount,
+                            'amount' => $request->amount ?? '',
                             'purpose' => $request->paymentRequestData->notes ?? 'No description',
-                            'status' => $request->approval_status,
+                            'status' => $request->approval_status ?? '',
                             'saudaType' => $request->paymentRequestData->purchaseOrder->saudaType->name ?? '',
-                            'type' => ($request->request_type),
+                            'type' => ($request->request_type) ?? '',
                             'request_date' => $request->created_at
                                 ? $request->created_at->format('Y-m-d')
                                 : '',
