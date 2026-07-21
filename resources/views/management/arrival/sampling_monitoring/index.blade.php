@@ -32,7 +32,7 @@
                                                     <option value="completed" {{ request('approval_status') == 'completed' ? 'selected' : '' }}>Completed
                                                     </option>
                                                 </select>
-                                            </div>div>
+                                            </div>
                                             <div class="col-md-2 text-left">
                                                 <label for="from_date" class="form-label">Sampling Type</label>
                                                 <select class="form-control" name="sampling_type">
