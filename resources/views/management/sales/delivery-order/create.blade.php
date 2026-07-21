@@ -71,6 +71,7 @@
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
+                        {{-- DO date is saving in DB as dispatch date --}}
                         <label class="form-label">Do Date:</label>
                         <input type="date" name="dispatch_date" id="dispatch_date" class="form-control"
                             value="{{ date('Y-m-d') }}" readonly>

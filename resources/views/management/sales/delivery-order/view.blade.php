@@ -53,7 +53,8 @@
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
-                        <label class="form-label">Do Date:</label>
+                        {{-- DO date is saving in DB as dispatch date --}}
+                        <label class="form-label">Do Date:</label> 
                         <input type="date" name="dispatch_date" id="dispatch_date" class="form-control"
                             value="{{ $delivery_order->dispatch_date }}" readonly>
                     </div>
