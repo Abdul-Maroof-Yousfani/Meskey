@@ -57,6 +57,7 @@ class DeliveryChallanController extends Controller
         $items = Product::all();
         $pay_types = PayType::select('name', 'id')->where('status', 'active')->get();
         $delivery_orders = DeliveryOrder::select("delivery_order.id", "delivery_order.reference_no")
+            ->where('delivery_order.do_status', 'active')
             ->join('loading_programs', 'delivery_order.id', '=', 'loading_programs.delivery_order_id')
             ->join('loading_program_items', 'loading_programs.id', '=', 'loading_program_items.loading_program_id')
             ->join('loading_slips', 'loading_program_items.id', '=', 'loading_slips.loading_program_item_id')
@@ -688,6 +689,14 @@ class DeliveryChallanController extends Controller
         $delivery_orders = DeliveryOrder::with("delivery_order_data")
             ->where("customer_id", $customer_id)
             ->where("am_approval_status", "approved")
+            ->where(function ($q) use ($request) {
+                $q->where('do_status', 'active');
+                if ($request->delivery_challan_id) {
+                    $q->orWhereHas('delivery_challans', function ($sq) use ($request) {
+                        $sq->where('delivery_challans.id', $request->delivery_challan_id);
+                    });
+                }
+            })
             ->whereHas('loadingPrograms.loadingProgramItems', function($query) {
                 // Ticket must have a loading slip with second weighbridge
                 $query->whereHas('loadingSlip.secondWeighbridge')

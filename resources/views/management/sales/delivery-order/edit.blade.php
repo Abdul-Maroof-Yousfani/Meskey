@@ -302,10 +302,13 @@
 
     <div class="row form-mar">
         <div class="col-12 text-right mb-2">
-            <button type="button" style="float: right" class="btn btn-sm btn-primary" onclick="addRow()"
-                id="addRowBtn" disabled>
-                <i class="fa fa-plus"></i>&nbsp; Add New Item
-            </button>
+            <div class="form-group" style="float: right; width: 200px; text-align: left;">
+                <label>DO Status:</label>
+                <select name="do_status" id="do_status" class="form-control" onchange="checkDoStatus(this)" {{ $delivery_order->do_status == 'closed' ? 'disabled' : '' }}>
+                    <option value="active" {{ $delivery_order->do_status == 'active' ? 'selected' : '' }}>Active</option>
+                    <option value="closed" {{ $delivery_order->do_status == 'closed' ? 'selected' : '' }}>Closed</option>
+                </select>
+            </div>
         </div>
         <div class="col-md-12">
             <div class="table-responsive" style="overflow-x: auto; white-space: nowrap;">
@@ -1409,4 +1412,23 @@ $('.select2').on('select2:open', function (e) {
     $(window).off('scroll.select2');
     $('*').off('scroll.select2');
 });
+
+function checkDoStatus(selectElement) {
+    if (selectElement.value === 'closed') {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "Closing this Delivery Order will make it inaccessible in all modules. This action cannot be reversed later.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, close it!'
+        }).then((result) => {
+            if (!result.isConfirmed) {
+                // Revert to active
+                selectElement.value = 'active';
+            }
+        });
+    }
+}
     </script>

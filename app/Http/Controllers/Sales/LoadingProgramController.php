@@ -545,6 +545,10 @@ class LoadingProgramController extends Controller
         $locations = [$companyLocations, $factoryLocations, $sectionLocations];
         $deliveryOrders = DeliveryOrder::whereIn('so_id', $currentSaleOrders->pluck('id'))
             ->where('am_approval_status', 'approved')
+            ->where(function ($q) use ($loading_program_dos) {
+                $q->where('do_status', 'active')
+                  ->orWhereIn('id', $loading_program_dos);
+            })
             ->get()
             /* ->reject(function($delivery_order) use ($data, $loading_program_dos) {
                 if(in_array($delivery_order->id, $loading_program_dos)) {
@@ -834,6 +838,14 @@ class LoadingProgramController extends Controller
 
         $DeliveryOrders = DeliveryOrder::whereIn('so_id', $sale_order_ids)
             ->where('am_approval_status', 'approved')
+            ->where(function ($q) use ($request) {
+                $q->where('do_status', 'active');
+                if ($request->loading_program_id) {
+                    $q->orWhereHas('loadingProgramItems', function ($sq) use ($request) {
+                        $sq->where('loading_program_id', $request->loading_program_id);
+                    });
+                }
+            })
             ->when($company_location_id, function($q) use ($company_location_id) {
                 // Filter for strictly matching location_id (prevents multiple locations)
                 return $q->where('location_id', (string)$company_location_id);
@@ -905,6 +917,14 @@ class LoadingProgramController extends Controller
 
         $deliveryOrders = DeliveryOrder::whereIn('so_id', $sale_order_ids)
             ->where('am_approval_status', 'approved')
+            ->where(function ($q) use ($request) {
+                $q->where('do_status', 'active');
+                if ($request->loading_program_id) {
+                    $q->orWhereHas('loadingProgramItems', function ($sq) use ($request) {
+                        $sq->where('loading_program_id', $request->loading_program_id);
+                    });
+                }
+            })
             ->when($company_location_id, function($q) use ($company_location_id) {
                 return $q->whereRaw('FIND_IN_SET(?, location_id)', [(string)$company_location_id]);
             })
@@ -971,6 +991,14 @@ class LoadingProgramController extends Controller
 
         $deliveryOrders = DeliveryOrder::whereIn('so_id', $sale_order_ids)
             ->where('am_approval_status', 'approved')
+            ->where(function ($q) use ($request) {
+                $q->where('do_status', 'active');
+                if ($request->loading_program_id) {
+                    $q->orWhereHas('loadingProgramItems', function ($sq) use ($request) {
+                        $sq->where('loading_program_id', $request->loading_program_id);
+                    });
+                }
+            })
             ->when($company_location_id, function($q) use ($company_location_id) {
                 return $q->whereRaw('FIND_IN_SET(?, location_id)', [(string)$company_location_id]);
             })

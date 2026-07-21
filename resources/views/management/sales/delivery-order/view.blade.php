@@ -256,6 +256,18 @@
 
     </div>
 
+    <div class="row">
+        <div class="col-md-3 offset-md-9 text-end mb-3">
+            <div class="form-group">
+                <label for="do_status" class="form-label">DO Status:</label>
+                <select class="form-control" disabled>
+                    <option value="active" {{ $delivery_order->do_status == 'active' ? 'selected' : '' }}>Active</option>
+                    <option value="closed" {{ $delivery_order->do_status == 'closed' ? 'selected' : '' }}>Closed</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
     <div class="row form-mar">
         <div class="col-md-12">
             <div class="table-responsive" style="overflow-x: auto; white-space: nowrap;">
