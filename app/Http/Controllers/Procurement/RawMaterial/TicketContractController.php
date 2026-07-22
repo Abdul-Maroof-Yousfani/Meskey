@@ -105,7 +105,7 @@ class TicketContractController extends Controller
                 return $q->whereDate('arrival_tickets.created_at', '>=', $startDate)
                     ->whereDate('arrival_tickets.created_at', '<=', $endDate);
             })
-            ->orderBy('arrival_tickets.created_at', 'desc')
+            ->orderBy('arrival_tickets.created_at', 'asc')
             ->paginate(request('per_page', 25));
 
         return view('management.procurement.raw_material.ticket_contracts.getList', compact('tickets'));
@@ -633,7 +633,7 @@ class TicketContractController extends Controller
             });
         }
 
-        $contracts = $query->orderBy('created_at', 'desc')->get()->map(function ($c) use ($arrivalTicket) {
+        $contracts = $query->orderBy('created_at', 'asc')->get()->map(function ($c) use ($arrivalTicket) {
 
             //$totalClosingTrucks = $c->totalClosingTrucksQty->first()->total_closing_trucks_qty ?? 0;
             $totalClosingTrucks = $c->approvedArrivalTickets()->sum('closing_trucks_qty') ?? 0;

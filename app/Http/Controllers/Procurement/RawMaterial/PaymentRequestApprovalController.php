@@ -100,6 +100,13 @@ class PaymentRequestApprovalController extends Controller
                         });
                 });
             })
+            ->when($request->filled('approval_status_filter'), function ($q) use ($request) {
+                if ($request->approval_status_filter == 'pending') {
+                    return $q->where('status', 'pending');
+                } else if ($request->approval_status_filter == 'completed') {
+                    return $q->whereIn('status', ['approved', 'rejected', 'sampling']);
+                }
+            })
             ->when($request->filled('daterange'), function ($q) use ($request) {
                 $dates = explode(' - ', $request->daterange);
                 $startDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[0]))->format('Y-m-d');
@@ -108,7 +115,16 @@ class PaymentRequestApprovalController extends Controller
                 return $q->whereDate('created_at', '>=', $startDate)
                     ->whereDate('created_at', '<=', $endDate);
             })
-            // ->where('payment_type', null)
+            ->when($request->filled('arrival_daterange'), function ($q) use ($request) {
+                $dates = explode(' - ', $request->arrival_daterange);
+                $startDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[0]))->format('Y-m-d');
+                $endDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[1]))->format('Y-m-d');
+
+                return $q->whereHas('paymentRequestData.arrivalTicket', function ($sub) use ($startDate, $endDate) {
+                    $sub->whereDate('arrival_tickets.created_at', '>=', $startDate)
+                        ->whereDate('arrival_tickets.created_at', '<=', $endDate);
+                });
+            })
             ->orderBy('created_at', 'desc')
             ->paginate(25);
 
