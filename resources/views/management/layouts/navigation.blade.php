@@ -451,6 +451,15 @@
                         </a>
                     </li>
                     @endcanAccess
+                    @canAccess('production-machine-plan-setting')
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('machine-plan-setting.index') }}"
+                            onclick="loadPageContent('{{ route('machine-plan-setting.index') }}')" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Machine Plan Setting">Machine Plan Setting</span>
+                        </a>
+                    </li>
+                    @endcanAccess
 
                     @canAccess('production-bag-request')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"

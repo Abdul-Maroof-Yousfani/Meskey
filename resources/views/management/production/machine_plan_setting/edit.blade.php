@@ -59,11 +59,9 @@
                         <table class="table table-bordered" id="machinesTable">
                             <thead>
                                 <tr>
-                                    <th style="width: 5%">#</th>
-                                    <th style="width: 30%">Machine Name</th>
-                                    <th style="width: 15%">Status</th>
-                                    <th style="width: 25%">Hours</th>
-                                    <th style="width: 25%">Remarks</th>
+                                    <th style="width: 10%">#</th>
+                                    <th style="width: 70%">Machine Name</th>
+                                    <th style="width: 20%">Status</th>
                                 </tr>
                             </thead>
                             <tbody id="machinesList">
@@ -74,8 +72,6 @@
                                     @php
                                         $item = $machineItems->get($machine->id);
                                         $isEnabled = $item ? $item->is_enabled : false;
-                                        $hours = $item ? $item->hours : '';
-                                        $remarks = $item ? $item->remarks : '';
                                     @endphp
                                     <tr>
                                         <td class="text-center">{{ $loop->iteration }}</td>
@@ -98,24 +94,6 @@
                                                     </span>
                                                 </label>
                                             </div>
-                                        </td>
-                                        <td>
-                                            <input type="number" 
-                                                   name="machines[{{ $index }}][hours]" 
-                                                   class="form-control hours-input" 
-                                                   step="0.5" 
-                                                   min="0" 
-                                                   max="24"
-                                                   placeholder="Hours"
-                                                   value="{{ $hours }}"
-                                                   {{ !$isEnabled ? 'disabled' : '' }}>
-                                        </td>
-                                        <td>
-                                            <textarea name="machines[{{ $index }}][remarks]" 
-                                                      class="form-control" 
-                                                      rows="1" 
-                                                      placeholder="Remarks"
-                                                      {{ !$isEnabled ? 'disabled' : '' }}>{{ $remarks }}</textarea>
                                         </td>
                                     </tr>
                                 @endforeach
@@ -150,17 +128,11 @@
             $(this).off('change').on('change', function() {
                 var isChecked = $(this).is(':checked');
                 var $row = $(this).closest('tr');
-                var $hoursInput = $row.find('.hours-input');
-                var $remarksTextarea = $row.find('textarea');
                 var $statusLabel = $(this).siblings('label').find('.status-badge');
                 
                 if (isChecked) {
-                    $hoursInput.prop('disabled', false);
-                    $remarksTextarea.prop('disabled', false);
                     $statusLabel.removeClass('badge-secondary').addClass('badge-success').text('On');
                 } else {
-                    $hoursInput.prop('disabled', true).val('');
-                    $remarksTextarea.prop('disabled', true).val('');
                     $statusLabel.removeClass('badge-success').addClass('badge-secondary').text('Off');
                 }
             });
