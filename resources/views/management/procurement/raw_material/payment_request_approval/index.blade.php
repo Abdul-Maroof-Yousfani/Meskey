@@ -17,39 +17,39 @@
                     <div class="card">
                         <div class="card-header">
                             <form id="filterForm" class="form">
-                                <div class="row mx-0">
-                                    <div class="px-1 text-left" style="width: 12%;">
+                                <div class="d-flex mx-0" style="overflow-x: auto; white-space: nowrap; padding-bottom: 10px;">
+                                    <div class="px-1 text-left" style="min-width: 160px;">
                                         <label for="contract_no" class="form-label">Ticket / Contract</label>
                                         <input type="text" class="form-control" id="contract_no"
                                             placeholder="No" name="contract_no"
                                             value="{{ request('contract_no', '') }}">
                                     </div>
-                                    <div class="px-1 text-left" style="width: 12%;">
+                                    <div class="px-1 text-left" style="min-width: 200px;">
                                         <label for="supplier_id_f" class="form-label">Supplier</label>
                                         <select name="supplier_id" id="supplier_id_f"
                                             class="form-control select2">
                                             <option value="">Supplier</option>
                                         </select>
                                     </div>
-                                    <div class="px-1 text-left" style="width: 8%;">
+                                    <div class="px-1 text-left" style="min-width: 160px;">
                                         <label for="sauda_type" class="form-label">Sauda Type</label>
                                         <select name="sauda_type_id" id="sauda_type_id" class="form-control select2">
                                             <option value="">Sauda</option>
                                         </select>
                                     </div>
-                                    <div class="px-1 text-left" style="width: 8%;">
+                                    <div class="px-1 text-left" style="min-width: 160px;">
                                         <label for="truck_no" class="form-label">Truck No</label>
                                         <input type="text" class="form-control" id="truck_no"
                                             placeholder="Truck" name="truck_no"
                                             value="{{ request('truck_no', '') }}">
                                     </div>
-                                    <div class="px-1 text-left" style="width: 8%;">
+                                    <div class="px-1 text-left" style="min-width: 160px;">
                                         <label for="bilty_no" class="form-label">Bilty No</label>
                                         <input type="text" class="form-control" id="bilty_no"
                                             placeholder="Bilty" name="bilty_no"
                                             value="{{ request('bilty_no', '') }}">
                                     </div>
-                                    <div class="px-1 text-left" style="width: 8%;">
+                                    <div class="px-1 text-left" style="min-width: 160px;">
                                         <label for="request_type" class="form-label">Type</label>
                                         <select name="request_type" id="request_type" class="form-control select2">
                                             <option value="">Type</option>
@@ -57,29 +57,33 @@
                                             <option value="freight_payment" {{ request('request_type') == 'freight_payment' ? 'selected' : '' }}>Freight Payment</option>
                                         </select>
                                     </div>
-                                    <div class="px-1 text-left" style="width: 8%;">
+                                    <div class="px-1 text-left" style="min-width: 160px;">
                                         <label for="amount" class="form-label">Amount</label>
                                         <input type="text" class="form-control" id="amount"
                                             placeholder="Amt" name="amount"
                                             value="{{ request('amount', '') }}">
                                     </div>
-                                    <div class="px-1 text-left" style="width: 10%;">
-                                        <label for="status" class="form-label">Status</label>
-                                        <select name="status" id="status" class="form-control select2">
+                                    <div class="px-1 text-left" style="min-width: 180px;">
+                                        <label for="approval_status_filter" class="form-label">Approval. Status</label>
+                                        <select name="approval_status_filter" id="approval_status_filter" class="form-control select2">
                                             <option value="">Status</option>
-                                            <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                                            <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>
-                                            <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
+                                            <option value="pending" {{ request('approval_status_filter', 'pending') == 'pending' ? 'selected' : '' }}>Pending</option>
+                                            <option value="completed" {{ request('approval_status_filter') == 'completed' ? 'selected' : '' }}>Task Completed</option>
                                         </select>
                                     </div>
-                                    <div class="px-1 text-left" style="width: 18%;">
+                                     <div class="px-1 text-left" style="min-width: 250px;">
                                          <label for="daterange" class="form-label">Created Date</label>
                                          <input type="text" name="daterange" id="daterange" class="form-control"
                                              value="{{ request('daterange', \Carbon\Carbon::now()->subMonth()->format('m/d/Y') . ' - ' . \Carbon\Carbon::now()->format('m/d/Y')) }}" />
                                          <input type="hidden" name="page" value="{{ request('page', 1) }}">
                                          <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
                                      </div>
-                                     <div class="px-1 text-left" style="width: 8%;">
+                                     <div class="px-1 text-left" style="min-width: 250px;">
+                                         <label for="arrival_daterange" class="form-label">Arrival Date</label>
+                                         <input type="text" name="arrival_daterange" id="arrival_daterange" class="form-control"
+                                             value="{{ request('arrival_daterange', \Carbon\Carbon::now()->subMonth()->format('m/d/Y') . ' - ' . \Carbon\Carbon::now()->format('m/d/Y')) }}" />
+                                     </div>
+                                     <div class="px-1 text-left" style="min-width: 100px;">
                                         <!-- Actions Column -->
                                      </div>
                                 </div>
@@ -182,11 +186,34 @@
             });
 
             // Ensure static selects are initialized if not handled globally
-            $('#status, #request_type').select2({
+            $('#request_type').select2({
                 allowClear: true,
                 placeholder: "Select",
                 width: '100%'
             });
+            $('#approval_status_filter').select2({
+                allowClear: false,
+                width: '100%'
+            });
+            
+            if ($.fn.daterangepicker) {
+                $('input[name="arrival_daterange"]').daterangepicker({
+                    autoUpdateInput: false,
+                    locale: {
+                        cancelLabel: 'Clear'
+                    }
+                });
+    
+                $('input[name="arrival_daterange"]').on('apply.daterangepicker', function(ev, picker) {
+                    $(this).val(picker.startDate.format('MM/DD/YYYY') + ' - ' + picker.endDate.format('MM/DD/YYYY'));
+                    $(this).trigger('keyup');
+                });
+    
+                $('input[name="arrival_daterange"]').on('cancel.daterangepicker', function(ev, picker) {
+                    $(this).val('');
+                    $(this).trigger('keyup');
+                });
+            }
 
             // Persist current page and per_page for AJAX refreshes
             $(document).on('click', '#paginationLinks a', function() {
