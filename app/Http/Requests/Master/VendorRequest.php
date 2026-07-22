@@ -23,7 +23,7 @@ class VendorRequest extends FormRequest
                 'max:255',
                 Rule::unique('vendors', 'company_name')
                     ->where('company_id', $this->input('company_id'))
-                    ->ignore($this->vendors)
+                    ->ignore($this->vendor)
             ],
             // 'company_name' => 'required|string|max:255',
             // 'account_type' => 'required|in:credit,debit',
