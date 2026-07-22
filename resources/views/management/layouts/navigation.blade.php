@@ -1120,6 +1120,31 @@
                     data-toggle="dropdown"><i class="ft-grid"></i><span data-i18n="Tables">Master
                         Control</span></a>
                 <ul class="dropdown-menu">
+                      @canAccess('mill')
+                      <li class="dropdown dropdown-submenu" data-menu="dropdown-submenu"><a
+                              class="dropdown-item d-flex align-items-center dropdown-toggle" href="javascript:;"
+                              data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                  data-i18n="Mill">Mill</span></a>
+                          <ul class="dropdown-menu">
+                              @canAccess('mill-variable')
+                              <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                      href="{{ route('variable.index') }}"
+                                      onclick="loadPageContent('{{ route('variable.index') }}')"
+                                      data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                          data-i18n="Variable">Variable</span></a>
+                              </li>
+                              @endcanAccess
+                              @canAccess('mill-milling-rate')
+                              <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                      href="{{ route('milling-rate.index') }}"
+                                      onclick="loadPageContent('{{ route('milling-rate.index') }}')"
+                                      data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                          data-i18n="Milling Rate">Milling Rate</span></a>
+                              </li>
+                              @endcanAccess
+                          </ul>
+                      </li>
+                      @endcanAccess
                     @canAccess('product')
                     <li class="dropdown dropdown-submenu" data-menu="dropdown-submenu"><a
                             class="dropdown-item d-flex align-items-center dropdown-toggle" href="javascript:;"
