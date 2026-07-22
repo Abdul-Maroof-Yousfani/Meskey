@@ -35,13 +35,26 @@
         <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group">
                 <label>QC Product:</label>
-                <input type="hidden" name="{{ $isResampling ? 'arrival_product_id' : 'arrival_product_id_display' }}"
+                <!-- <input type="hidden" name="{{ $isResampling ? 'arrival_product_id' : 'arrival_product_id_display' }}"
                     id="product_id" />
 
                 <select @disabled($isResampling)
                     name="{{ $isResampling ? 'arrival_product_id_display' : 'arrival_product_id' }}"
                     id="{{ $isResampling ? 'arrival_product_id_display' : 'arrival_product_id' }}"
                     class="form-control select2">
+                    <option value="">Select Product</option>
+                    @foreach ($products as $product)
+                        <option value="{{ $product->id }}">
+                            {{ $product->name ?? '' }}
+                        </option>
+                    @endforeach
+                </select> -->
+
+
+
+
+
+                <select name="arrival_product_id" id="arrival_product_id" class="form-control select2">
                     <option value="">Select Product</option>
                     @foreach ($products as $product)
                         <option value="{{ $product->id }}">
@@ -67,7 +80,8 @@
                 <select name="sample_taken_by" id="sample_taken_by" class="form-control select2">
                     <option value="">Sample Taken By</option>
                     @foreach ($sampleTakenByUsers as $sampleTakenUser)
-                        <option data-location-id="{{ json_encode($sampleTakenUser->company_location_ids) }}" value="{{ $sampleTakenUser->id }}">{{ $sampleTakenUser->name }}</option>
+                        <option data-location-id="{{ json_encode($sampleTakenUser->company_location_ids) }}"
+                            value="{{ $sampleTakenUser->id }}">{{ $sampleTakenUser->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -90,8 +104,8 @@
 </form>
 
 <script>
-    $(document).ready(function() {
-        $('#arrival_product_id').change(function() {
+    $(document).ready(function () {
+        $('#arrival_product_id').change(function () {
             var samplingRequestId = $(this).val();
 
             if (samplingRequestId) {
@@ -102,7 +116,7 @@
                         product_id: samplingRequestId
                     },
                     dataType: 'json',
-                    beforeSend: function() {
+                    beforeSend: function () {
                         Swal.fire({
                             title: "Processing...",
                             text: "Please wait while fetching slabs.",
@@ -112,7 +126,7 @@
                             }
                         });
                     },
-                    success: function(response) {
+                    success: function (response) {
                         Swal.close();
                         if (response.success) {
                             // Append the rendered HTML to a container element
@@ -122,7 +136,7 @@
                                 "info");
                         }
                     },
-                    error: function() {
+                    error: function () {
                         Swal.close();
                         Swal.fire("Error", "Something went wrong. Please try again.",
                             "error");
@@ -131,19 +145,19 @@
             }
         });
 
-        $('#arrival_sampling_request_id').change(function() {
+        $('#arrival_sampling_request_id').change(function () {
             var selectedTicket = $(this).find(':selected');
             var productId = selectedTicket.data('product-id');
             var ticketId = selectedTicket.data('ticket-id');
             var samplingRequestId = $(this).val();
 
             if (samplingRequestId) {
-                $('#arrival_product_id_display').val(productId).trigger('change');
+                $('#arrival_product_id').val(productId).trigger('change');
                 $('#product_id').val(productId);
 
                 loadSlabs(productId, ticketId, samplingRequestId);
             } else {
-                $('#arrival_product_id_display').val('').trigger('change');
+                $('#arrival_product_id').val('').trigger('change');
                 $('#product_id').val('');
                 $('#slabsContainer').empty();
             }
@@ -161,7 +175,7 @@
                         isInner: true
                     },
                     dataType: 'json',
-                    beforeSend: function() {
+                    beforeSend: function () {
                         Swal.fire({
                             title: "Processing...",
                             text: "Please wait while fetching slabs.",
@@ -171,7 +185,7 @@
                             }
                         });
                     },
-                    success: function(response) {
+                    success: function (response) {
                         Swal.close();
                         if (response.success) {
                             $('#slabsContainer').html(response.html);
@@ -180,7 +194,7 @@
                             $('#slabsContainer').empty();
                         }
                     },
-                    error: function() {
+                    error: function () {
                         Swal.close();
                         Swal.fire("Error", "Something went wrong. Please try again.", "error");
                     }
