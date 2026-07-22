@@ -44,7 +44,9 @@ use App\Http\Controllers\Master\{
     WeighbridgeAmountController,
     DepartmentController,
     RequestByController,
-    TransporterController
+    TransporterController,
+    VariableController,
+    MillingRateController
 };
 
 
@@ -198,3 +200,11 @@ Route::get('/get-request-by-department/{department_id}', [RequestByController::c
 
 Route::resource("labour-rates", LabourRateController::class);
 Route::post("labour-rate/getList", [LabourRateController::class, "getList"])->name("get.labour-rate");
+
+Route::resource('variable', VariableController::class)->except(['destroy']);
+Route::post('/get-variables', [VariableController::class, 'getList'])->name('get.variables');
+
+Route::resource('milling-rate', MillingRateController::class)->except(['destroy']);
+Route::post('/get-milling-rates', [MillingRateController::class, 'getList'])->name('get.milling-rates');
+Route::get('/milling-rate/get-sub-locations/{locationId}', [MillingRateController::class, 'getSubLocations'])->name('milling-rate.get-sub-locations');
+Route::get('/milling-rate/get-plants/{subLocationId}', [MillingRateController::class, 'getPlants'])->name('milling-rate.get-plants');
