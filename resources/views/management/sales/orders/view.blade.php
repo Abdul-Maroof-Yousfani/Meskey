@@ -90,20 +90,11 @@
                             value="{{ $sale_order->so_reference_no }}" class="form-control" readonly>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Transporter used:</label>
                         <input type="text" name="transporter_used" id="transporter_used"
                             value="{{ ucfirst($sale_order->transporter_used) }}" class="form-control" readonly>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label class="form-label">Payment on Kaanta:</label>
-                        <div class="custom-control custom-checkbox mt-2">
-                            <input type="checkbox" class="custom-control-input" id="payment_on_kaanta" name="payment_on_kaanta" value="1" @checked($sale_order->payment_on_kaanta) disabled>
-                            <label class="custom-control-label" for="payment_on_kaanta">Create DO Automatically</label>
-                        </div>
                     </div>
                 </div>
 
@@ -158,6 +149,17 @@
                                 class="form-control" readonly>
                         </div>
                     </div>
+                @endif
+
+                @if($sale_order->pay_type_id != 8 && $sale_order->pay_type_id)
+                <div class="col-md-6">
+                    <div class="form-group mt-4">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="payment_on_kaanta" name="payment_on_kaanta" value="1" @checked($sale_order->payment_on_kaanta) disabled>
+                            <label class="custom-control-label font-weight-bold" for="payment_on_kaanta">Payment on Kaanta</label>
+                        </div>
+                    </div>
+                </div>
                 @endif
 
                 <div class="col-12 mt-3">

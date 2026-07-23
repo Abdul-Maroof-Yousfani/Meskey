@@ -22,7 +22,7 @@
                     <td>{{ optional($voucher->rv_date)->format('d-m-Y') }}</td>
                     <td>{{ $voucher->is_direct ? "Direct RV" : "Via" . (($voucher->is_advance) ? ' Sale Order' : ' Sale Invoice') }}
                     </td>
-                    <td>{{ ucfirst(str_replace('_', ' ', $voucher->voucher_type)) }}</td>
+                    <td>{{ $voucher->voucher_type == 'bank_payment_voucher' ? 'Bank Receipt Voucher' : 'Cash Receipt Voucher'}}</td>
                     <td>{{ $voucher->is_advance ? 'Sale Order' : 'Sale Invoice' }}</td>
                     <td>{{ $voucher->account->account_name ?? $voucher->account->name ?? 'N/A' }}</td>
                     <td>{{ $voucher->ref_bill_no ?? 'N/A' }}</td>

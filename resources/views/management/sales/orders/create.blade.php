@@ -83,22 +83,13 @@
                         <input type="text" name="so_reference_no" id="so_reference_no" class="form-control">
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Transporter used:</label>
                         <select name="transporter_used" id="transporter_used" class="form-control select2">
                             <option value="no">No</option>
                             <option value="yes">Yes</option>
                         </select>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label class="form-label">Payment on Kaanta:</label>
-                        <div class="custom-control custom-checkbox mt-2">
-                            <input type="checkbox" class="custom-control-input" id="payment_on_kaanta" name="payment_on_kaanta" value="1">
-                            <label class="custom-control-label" for="payment_on_kaanta">Create DO Automatically</label>
-                        </div>
                     </div>
                 </div>
 
@@ -189,6 +180,15 @@
                                 <option value="{{ $payment_term->id }}">{{ $payment_term->desc }}</option>
                             @endforeach
                         </select>
+                    </div>
+                </div>
+
+                <div class="col-md-6 d-none" id="kaanta_col">
+                    <div class="form-group mt-4">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="payment_on_kaanta" name="payment_on_kaanta" value="1">
+                            <label class="custom-control-label font-weight-bold" for="payment_on_kaanta">Payment on Kaanta</label>
+                        </div>
                     </div>
                 </div>
 
@@ -445,8 +445,16 @@
 
         if (type == 8) {
             $(".credit").prop('disabled', false);
+            $("#kaanta_col").addClass("d-none");
+            $("#payment_on_kaanta").prop("checked", false);
         } else {
             $(".credit").prop("disabled", true);
+            if (type) {
+                $("#kaanta_col").removeClass("d-none");
+            } else {
+                $("#kaanta_col").addClass("d-none");
+                $("#payment_on_kaanta").prop("checked", false);
+            }
         }
 
         if (type == 10) { // Advanced
