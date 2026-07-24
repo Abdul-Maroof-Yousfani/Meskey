@@ -61,7 +61,7 @@
                     <div class="form-group">
                         <label class="form-label">Inquiry Date: <span class="text-danger">*</span></label>
                         <input type="date" name="inquiry_date" onchange="getNumber(); validateExpiry()" id="inquiry_date"
-                            value="{{ $sales_inquiry->date }}" class="form-control" min="{{ date('Y-m-d') }}">
+                            value="{{ $sales_inquiry->date }}" class="form-control">
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -78,7 +78,7 @@
                     <div class="form-group">
                         <label class="form-label">Delivery Date: <span class="text-danger">*</span></label>
                         <input type="date" name="required_date" id="required_date" onchange="validateExpiry()"
-                            value="{{ $sales_inquiry->required_date }}" class="form-control" min="{{ date('Y-m-d') }}">
+                            value="{{ $sales_inquiry->required_date }}" class="form-control">
                     </div>
                 </div>
 
@@ -469,11 +469,10 @@
         const inquiryDate = $('#inquiry_date').val();
         const requiredDate = $('#required_date').val();
 
-        if (inquiryDate) {
-            $('#required_date').attr('min', inquiryDate);
-        }
-
         if (inquiryDate && requiredDate) {
+            const reqYear = parseInt(requiredDate.split('-')[0]);
+            if (reqYear < 1000) return; // Wait until a full year is entered
+
             if (inquiryDate > requiredDate) {
                 $('#required_date').val('');
                 Swal.fire({

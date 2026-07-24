@@ -29,7 +29,7 @@
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label for="rv_date">Date</label>
-                                        <input type="date" name="rv_date" id="rv_date" class="form-control" required>
+                                        <input type="date" name="rv_date" id="rv_date" value="{{ date('Y-m-d') }}" class="form-control" required>
                                     </div>
                                 </div>
                             </div>
@@ -624,16 +624,19 @@
                 rv_date: $('#rv_date').val() || null
             }, function (resp) {
                 if (resp.success) {
-                    if ($('#rv_date').val()) {
-                        $('#unique_no').val(resp.rv_number);
-                    } else {
-                        const $accountSelect = $('#account_id');
-                        $accountSelect.empty().append('<option value="">Select Account</option>');
-                        resp.accounts.forEach(function (acc) {
-                            $accountSelect.append(`<option value="${acc.id}">${acc.name} (${acc.hierarchy_path ?? acc.unique_no ?? ''})</option>`);
-                        });
-                        $accountSelect.trigger('change');
+                    $('#unique_no').val(resp.rv_number);
+
+                    const $accountSelect = $('#account_id');
+                    const currentValue = $accountSelect.val();
+                    $accountSelect.empty().append('<option value="">Select Account</option>');
+                    resp.accounts.forEach(function (acc) {
+                        $accountSelect.append(`<option value="${acc.id}">${acc.name} (${acc.hierarchy_path ?? acc.unique_no ?? ''})</option>`);
+                    });
+                    
+                    if (currentValue && $accountSelect.find(`option[value="${currentValue}"]`).length > 0) {
+                        $accountSelect.val(currentValue);
                     }
+                    $accountSelect.trigger('change');
                 }
             });
         }

@@ -826,7 +826,7 @@ function change_withhold_amount() {
             }
         }
     } else {
-        let remaining_amount = (totalAmount - withhold) + jv_amount;
+        let remaining_amount = (advance + jv_amount) - withhold;
         if (remaining_amount < 0) remaining_amount = 0;
 
         if (rate > 0) {

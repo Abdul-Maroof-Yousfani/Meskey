@@ -57,16 +57,14 @@
                         <table class="table table-bordered" id="machinesTable">
                             <thead>
                                 <tr>
-                                    <th style="width: 5%">#</th>
-                                    <th style="width: 30%">Machine Name</th>
-                                    <th style="width: 15%">Status</th>
-                                    <th style="width: 25%">Hours</th>
-                                    <th style="width: 25%">Remarks</th>
+                                    <th style="width: 10%">#</th>
+                                    <th style="width: 70%">Machine Name</th>
+                                    <th style="width: 20%">Status</th>
                                 </tr>
                             </thead>
                             <tbody id="machinesList">
                                 <tr>
-                                    <td colspan="5" class="text-center text-muted">
+                                    <td colspan="3" class="text-center text-muted">
                                         Please select a plant to load machines
                                     </td>
                                 </tr>
@@ -99,7 +97,7 @@
             if (plantId) {
                 loadMachines(plantId);
             } else {
-                $('#machinesList').html('<tr><td colspan="5" class="text-center text-muted">Please select a plant to load machines</td></tr>');
+                $('#machinesList').html('<tr><td colspan="3" class="text-center text-muted">Please select a plant to load machines</td></tr>');
             }
         });
     });
@@ -134,28 +132,11 @@
                                                 </label>
                                             </div>
                                         </td>
-                                        <td>
-                                            <input type="number" 
-                                                   name="machines[${index}][hours]" 
-                                                   class="form-control hours-input" 
-                                                   step="0.5" 
-                                                   min="0" 
-                                                   max="24"
-                                                   placeholder="Hours"
-                                                   disabled>
-                                        </td>
-                                        <td>
-                                            <textarea name="machines[${index}][remarks]" 
-                                                      class="form-control" 
-                                                      rows="1" 
-                                                      placeholder="Remarks"
-                                                      disabled></textarea>
-                                        </td>
                                     </tr>
                                 `;
                     });
                 } else {
-                    html = '<tr><td colspan="5" class="text-center text-muted">No machines found for this plant</td></tr>';
+                    html = '<tr><td colspan="3" class="text-center text-muted">No machines found for this plant</td></tr>';
                 }
                 $('#machinesList').html(html);
 
@@ -175,17 +156,11 @@
                 var isChecked = $(this).is(':checked');
                 var index = $(this).data('index');
                 var $row = $(this).closest('tr');
-                var $hoursInput = $row.find('.hours-input');
-                var $remarksTextarea = $row.find('textarea');
                 var $statusLabel = $(this).siblings('label').find('.status-badge');
 
                 if (isChecked) {
-                    $hoursInput.prop('disabled', false);
-                    $remarksTextarea.prop('disabled', false);
                     $statusLabel.removeClass('badge-secondary').addClass('badge-success').text('On');
                 } else {
-                    $hoursInput.prop('disabled', true).val('');
-                    $remarksTextarea.prop('disabled', true).val('');
                     $statusLabel.removeClass('badge-success').addClass('badge-secondary').text('Off');
                 }
             });

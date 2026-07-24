@@ -48,11 +48,11 @@
                                                 @else
                                                     <span class="badge badge-secondary">OFF</span>
                                                 @endif
-                                                <strong>{{ $item->machine->name ?? '--' }}</strong>:
-                                                {{ $item->hours }} hrs
+                                                <strong>{{ $item->machine->name ?? '--' }}</strong>
+                                                {{-- {{ $item->hours }} hrs
                                                 @if($item->remarks)
                                                     <br><em class="text-muted">{{ $item->remarks }}</em>
-                                                @endif
+                                                @endif --}}
                                             </small>
                                         </li>
                                     @endforeach
