@@ -570,7 +570,12 @@ class TicketContractController extends Controller
         $samplingRequestCompulsuryResults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $samplingRequest->id)->get();
         $samplingRequestResults = ArrivalSamplingResult::where('arrival_sampling_request_id', $samplingRequest->id)->get();
 
-        return view('management.procurement.raw_material.ticket_contracts.create', compact('purchaseOrders', 'arrivalTicket', 'samplingRequest', 'samplingRequestCompulsuryResults', 'samplingRequestResults'));
+
+
+        $defaulterAccountsOfSupplier = Supplier::findOrFail($arrivalTicket->accounts_of_id)->where('defaulter', 1)->exists();
+        $defaulterBroker = Supplier::findOrFail($arrivalTicket->broker_id)->where('defaulter', 1)->exists();
+
+        return view('management.procurement.raw_material.ticket_contracts.create', compact('purchaseOrders', 'arrivalTicket', 'samplingRequest', 'samplingRequestCompulsuryResults', 'samplingRequestResults', 'defaulterAccountsOfSupplier', 'defaulterBroker'));
     }
 
     public function updateStatus(Request $request)
