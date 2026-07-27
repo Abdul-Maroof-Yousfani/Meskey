@@ -321,7 +321,7 @@ class UserController extends Controller
             $sheet->setCellValue('A' . $row, $discount->name);
             $sheet->setCellValue('B' . $row, $discount->email);
             $sheet->setCellValue('C' . $row, date('D d M Y', strtotime($discount->created_at)));
-            $row++; 
+            $row++;
         }
 
         $writer = new Xlsx($spreadsheet);
