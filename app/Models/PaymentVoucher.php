@@ -21,6 +21,7 @@ class PaymentVoucher extends Model
         'cheque_no',
         'cheque_date',
         'account_id',
+        'request_account_id',
         'supplier_id',
         'am_approval_status',
         'bank_account_type',
@@ -77,6 +78,11 @@ class PaymentVoucher extends Model
     public function supplier()
     {
         return $this->belongsTo(Supplier::class, 'supplier_id');
+    }
+
+    public function requestAccount()
+    {
+        return $this->belongsTo(Account::class, 'request_account_id');
     }
 
     public function paymentVoucherData()

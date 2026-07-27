@@ -9,7 +9,8 @@
                     <div class="logo">
                         <a class="logo-text" href="https://meskay.inplsoftwares.online">
                             <div class="logo-img">
-                                <img class="logo-img" alt="Apex logo" src="/storage/company_logos/meskay-logo-20250514082251.png">
+                                <img class="logo-img" alt="Apex logo"
+                                    src="/storage/company_logos/meskay-logo-20250514082251.png">
                             </div>
                         </a>
                     </div>
@@ -17,19 +18,20 @@
                 <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 text-right">
                     <div class="addr">
                         <p class="mb-1"><strong>HEAD OFFICE:</strong></p>
-                        <p class="mb-1">10th Floor, Office No. <br> 1008-1013 Salma Trade Tower,<br> Tower-B I-I Chundrigar Road,<br> Karachi-Pakistan</p>
+                        <p class="mb-1">10th Floor, Office No. <br> 1008-1013 Salma Trade Tower,<br> Tower-B I-I
+                            Chundrigar Road,<br> Karachi-Pakistan</p>
                         <p class="mb-1"><strong>T:</strong> +92-21-32275349-51</p>
                         <p class="mb-1"><strong>F:</strong> +92-21-32275352</p>
                     </div>
                 </div>
             </div>
-             <!-- Header Section -->
+            <!-- Header Section -->
             <div class="row" style=" width: 100% !important;">
                 <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
                     <div class="voucher-supp">
                         <h4 class="font-weight-bold">Voucher No.</h4>
                         <h6 class="text-dark font-weight-bold">{{ $paymentVoucher->unique_no }}</h6>
-                     </div>
+                    </div>
                 </div>
                 <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 text-right">
                     <div class="voucher-supp p">
@@ -39,53 +41,54 @@
                 </div>
             </div>
         </div>
-    
+
         <div class="mb-4">
             <div class="row" style=" width: 100% !important;">
                 <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
                     <div class="supp">
                         <h5 class="font-weight-bold">Paid to:</h5>
-                        <p><strong>Supplier:</strong> {{ $paymentVoucher->supplier->name ?? 'N/A' }}</p>
+                        <p><strong>Paid to:</strong> {{ $paymentVoucher->requestAccount->name ?? 'N/A' }}</p>
                     </div>
                 </div>
                 <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
-                     <div class="supp">
-                         <h5 class="font-weight-bold">Reference Information</h5>
-                         <p><strong>Bill/Ref No.:</strong> {{ $paymentVoucher->ref_bill_no ?? 'N/A' }}</p>
-                         <p><strong>Bill Date:</strong>
-                         {{ $paymentVoucher->bill_date ? $paymentVoucher->bill_date->format('d-M-Y') : 'N/A' }}</p>
+                    <div class="supp">
+                        <h5 class="font-weight-bold">Reference Information</h5>
+                        <p><strong>Bill/Ref No.:</strong> {{ $paymentVoucher->ref_bill_no ?? 'N/A' }}</p>
+                        <p><strong>Bill Date:</strong>
+                            {{ $paymentVoucher->bill_date ? $paymentVoucher->bill_date->format('d-M-Y') : 'N/A' }}</p>
                     </div>
                 </div>
             </div>
-    
+
             {{-- @dd($paymentVoucher->voucher_type == 'bank_payment_voucher', $bankAccount) --}}
             @if ($paymentVoucher->voucher_type == 'bank_payment_voucher' && $bankAccount)
-                <div class="row">
-                    <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
-                        <div class="supp">
-                            <h5 class="font-weight-bold">Bank Details</h5>
-                            <p>
-                                <strong>Bank / Branch:</strong>
-                                {{ trim(
-                                    ($bankAccount->bank_name ?? '') .
-                                        ($bankAccount->branch_name ?? '' ? ' / ' . $bankAccount->branch_name : '') .
-                                        ($bankAccount->branch_code ?? '' ? ' / ' . $bankAccount->branch_code : ''),
-                                ) ?:
-                                    'N/A' }}
-                            </p>
-                            <p><strong>Account Title:</strong> {{ $bankAccount->account_title ?? 'N/A' }}</p>
-                            <p><strong>Account Number:</strong> {{ $bankAccount->account_number ?? 'N/A' }}</p>
-                            <p><strong>Cheque No.:</strong> {{ $paymentVoucher->cheque_no ?? 'N/A' }}</p>
-                            <p><strong>Cheque Date:</strong>
-                                {{ $paymentVoucher->cheque_date ? $paymentVoucher->cheque_date->format('d-M-Y') : 'N/A' }}</p>
+                        <div class="row">
+                            <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                                <div class="supp">
+                                    <h5 class="font-weight-bold">Bank Details</h5>
+                                    <p>
+                                        <strong>Bank / Branch:</strong>
+                                        {{ trim(
+                    ($bankAccount->bank_name ?? '') .
+                    ($bankAccount->branch_name ?? '' ? ' / ' . $bankAccount->branch_name : '') .
+                    ($bankAccount->branch_code ?? '' ? ' / ' . $bankAccount->branch_code : ''),
+                ) ?:
+                    'N/A' }}
+                                    </p>
+                                    <p><strong>Account Title:</strong> {{ $bankAccount->account_title ?? 'N/A' }}</p>
+                                    <p><strong>Account Number:</strong> {{ $bankAccount->account_number ?? 'N/A' }}</p>
+                                    <p><strong>Cheque No.:</strong> {{ $paymentVoucher->cheque_no ?? 'N/A' }}</p>
+                                    <p><strong>Cheque Date:</strong>
+                                        {{ $paymentVoucher->cheque_date ? $paymentVoucher->cheque_date->format('d-M-Y') : 'N/A' }}
+                                    </p>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
             @endif
         </div>
 
         <div class="voucher-po mb-4 p-3 border rounded d-none">
-             <div class="supp">
+            <div class="supp">
                 <h5 class=" ">Purchase Order</h5>
                 <p class="mb-0">
                     @if ($paymentVoucher->module_id)
@@ -105,11 +108,12 @@
                 </p>
             </div>
         </div>
-    
+
         <div class="voucher-requests mb-4 d-none">
             <h5 class="  mb-3">Payment Requests</h5>
             <div class="table-responsive">
-                <table class="table  sale_older_tab userlittab table table-bordered sf-table-list sale-list table-hover" style="border-collapse: collapse; ">
+                <table class="table  sale_older_tab userlittab table table-bordered sf-table-list sale-list table-hover"
+                    style="border-collapse: collapse; ">
                     <thead class="thead-light">
                         <tr>
                             <th>#</th>
@@ -124,7 +128,8 @@
                         @foreach ($paymentVoucher->paymentVoucherData as $index => $voucherData)
                             @php
                                 $request = $voucherData->paymentRequest;
-                                if(!$request) continue;
+                                if (!$request)
+                                    continue;
                                 $purchaseOrder = $request->paymentRequestData->purchaseOrder ?? null;
                             @endphp
                             <tr>
@@ -143,7 +148,8 @@
                         @endforeach
                         <tr>
                             <td colspan="3" class="text-right"><strong>Total Amount:</strong></td>
-                            <td class="text-right"><strong>{{ number_format($paymentVoucher->total_amount, 2) }}</strong>
+                            <td class="text-right">
+                                <strong>{{ number_format($paymentVoucher->total_amount, 2) }}</strong>
                             </td>
                             <td colspan="2"></td>
                         </tr>
@@ -151,7 +157,7 @@
                 </table>
             </div>
         </div>
-    
+
         <div class="voucher-transactions mb-4">
             <h5 class="mb-3">Transaction Details</h5>
             <div class="table-responsive">
@@ -171,7 +177,7 @@
                         @php
                             $balance = 0;
                         @endphp
-    
+
                         @foreach ($transactions as $transaction)
                             @php
                                 if ($transaction->type == 'debit') {
@@ -179,10 +185,10 @@
                                 } else {
                                     $balance -= $transaction->amount;
                                 }
-    
+
                                 $parts = explode('-', $transaction->payment_against);
                                 $lastPart = trim(end($parts)) ?? null;
-    
+
                                 if ($lastPart) {
                                     $paymentRequestData = PaymentRequestData::find($lastPart);
                                     $purchaseOrder = $paymentRequestData->purchaseOrder;
@@ -192,7 +198,9 @@
                                 {{-- <td class="text-center">{{ $transaction->voucher_date->format('d-m-Y') }}</td> --}}
                                 <td>
                                     {{-- #{{ $purchaseOrder->contract_no ?? 'N/A' }} --}}
-                                    {{ $transaction->account->name ?? 'N/A' }}
+                                    {{ $transaction->account->name ?? 'N/A' }} <br>
+                                    <small
+                                        class="text-black-50">({{ $transaction->account->hierarchy_path ?? 'N/A' }})</small>
                                 </td>
                                 <td>
                                     {{ $transaction->remarks }}
@@ -206,7 +214,8 @@
                                     @endif
                                 </td>
                                 <td class="text-right">
-                                    {{ $transaction->type == 'debit' ? number_format($transaction->amount, 2) : '-' }}</td>
+                                    {{ $transaction->type == 'debit' ? number_format($transaction->amount, 2) : '-' }}
+                                </td>
                                 <td class="text-right">
                                     {{ $transaction->type == 'credit' ? number_format($transaction->amount, 2) : '-' }}
                                 </td>
@@ -238,12 +247,12 @@
                 </table>
             </div>
         </div>
-    
+
         <div class="voucher-remarkss p-3 border">
             <h5 class="">Remarks</h5>
             <p class="mb-0">{{ $paymentVoucher->remarks ?? 'N/A' }}</p>
         </div>
-    
+
         <div class="voucher-footer mt-4 pt-3 border-top">
             <div class="row">
                 <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4 text-center">
@@ -262,13 +271,13 @@
         </div>
     </div>
     <div class="voucher-footer-absou voucher-footer mt-4 pt-3">
-      
-           
+
+
         <div class="footer-paragargh">
             <p>| NAUSHEHRO FEROZE | LARKANA | SHIKARPUR | TANDO ALLAHYAR | PAKPATTAN</p>
         </div>
-           
-        
+
+
     </div>
 </div>
 
@@ -282,19 +291,73 @@
 </div>
 
 <style>
-body{font-family: "Montserrat", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;}
-.payment-voucher-print{font-family:Arial,sans-serif;color:#333;}
-.voucher-header{border-bottom:2px solid #000000;padding-bottom:15px;}
-.voucher-info,.voucher-po,.voucher-remarks,.voucher-total{background-color:#f8f9fa;}
-.info-item{padding:10px;background-color:white;border-radius:5px;box-shadow:0 1px 3px rgba(0,0,0,0.1);}
-.table thead th{background-color:#e9ecef;font-weight:600;}
-.logo-img img{width:22% !important;}
-.table-bordered{border:1px solid #dee2e6;}
-.table-hover tbody tr:hover{background-color:rgba(0,123,255,0.05);}
-.badge-success{background-color:#28a745;}
-.badge-warning{background-color:#ffc107;color:#212529;}
-p{margin-bottom:0;padding-bottom:2px}
-.footer-paragargh{background:#599364;color:#fff;padding:10px 0px;border-radius:4px;width: 100% !important;text-align: center !important;}
+    body {
+        font-family: "Montserrat", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+    }
+
+    .payment-voucher-print {
+        font-family: Arial, sans-serif;
+        color: #333;
+    }
+
+    .voucher-header {
+        border-bottom: 2px solid #000000;
+        padding-bottom: 15px;
+    }
+
+    .voucher-info,
+    .voucher-po,
+    .voucher-remarks,
+    .voucher-total {
+        background-color: #f8f9fa;
+    }
+
+    .info-item {
+        padding: 10px;
+        background-color: white;
+        border-radius: 5px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .table thead th {
+        background-color: #e9ecef;
+        font-weight: 600;
+    }
+
+    .logo-img img {
+        width: 22% !important;
+    }
+
+    .table-bordered {
+        border: 1px solid #dee2e6;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 123, 255, 0.05);
+    }
+
+    .badge-success {
+        background-color: #28a745;
+    }
+
+    .badge-warning {
+        background-color: #ffc107;
+        color: #212529;
+    }
+
+    p {
+        margin-bottom: 0;
+        padding-bottom: 2px
+    }
+
+    .footer-paragargh {
+        background: #599364;
+        color: #fff;
+        padding: 10px 0px;
+        border-radius: 4px;
+        width: 100% !important;
+        text-align: center !important;
+    }
 </style>
 
 <script>
@@ -367,9 +430,9 @@ p{margin-bottom:0;padding-bottom:2px}
         printWindow.document.close();
         printWindow.focus();
 
-        setTimeout(function() {
+        setTimeout(function () {
             printWindow.print();
-            setTimeout(function() {
+            setTimeout(function () {
                 printWindow.close();
                 if (param3 !== 1) {
                     // location.reload();
@@ -378,11 +441,11 @@ p{margin-bottom:0;padding-bottom:2px}
         }, 500);
     }
 
-    document.getElementById("printButton").addEventListener("click", function() {
+    document.getElementById("printButton").addEventListener("click", function () {
         printView('printSection', 'print-section', 0);
     });
 
-    document.addEventListener('keydown', function(e) {
+    document.addEventListener('keydown', function (e) {
         if (e.ctrlKey && e.key === 'p') {
             e.preventDefault();
             printView('printSection', 'print-section', 0);
