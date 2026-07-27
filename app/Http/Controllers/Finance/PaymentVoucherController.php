@@ -337,8 +337,8 @@ class PaymentVoucherController extends Controller
             'paymentVoucherData.paymentRequest.paymentRequestData.purchaseOrder',
             'account',
             'supplier',
+            'requestAccount',
         ])->findOrFail($id);
-
 
         $transactions = Transaction::where('transaction_voucher_type_id', 1)->where('voucher_no', $paymentVoucher->unique_no)
             ->get();
@@ -809,81 +809,102 @@ class PaymentVoucherController extends Controller
                 'request_account_id' => $request->request_account_id,
                 'model_id' => $request->model_id,
                 'module_id' => $firstRequest->paymentRequestData->purchase_order_id ?? null,
-                // 'module_type' => $firstRequest->paymentRequestData->module_type ?? 'raw_material_purchase',
                 'module_type' => 'raw_material_purchase',
                 'voucher_type' => $request->voucher_type,
                 'remarks' => $request->remarks,
                 'total_amount' => 0,
             ]);
 
-            $totalAmount = 0;
+            $totalAmount       = 0;
+            $allPaymentAgainst = [];
+            $allReferenceNos   = [];
+
+            // Build bank remark base (before loop, needs total — so collect first)
+            $perRequestData = [];
 
             foreach ($request->payment_requests as $requestId) {
                 $paymentRequest = PaymentRequest::findOrFail($requestId);
 
-                $ticketNo = $paymentRequest->paymentRequestData->module_type == 'ticket' || $paymentRequest->paymentRequestData->module_type == 'freight_payment' ? $paymentRequest->paymentRequestData->arrivalTicket->unique_no : $paymentRequest->paymentRequestData->purchaseTicket->unique_no;
+                $ticketNo = ($paymentRequest->paymentRequestData->module_type == 'ticket' || $paymentRequest->paymentRequestData->module_type == 'freight_payment')
+                    ? $paymentRequest->paymentRequestData->arrivalTicket->unique_no
+                    : $paymentRequest->paymentRequestData->purchaseTicket->unique_no;
+
                 $truckNo = $paymentRequest->paymentRequestData->truck_no;
                 $biltyNo = $paymentRequest->paymentRequestData->bilty_no;
-                // $supplierName = $paymentVoucher->supplier->name ?? 'Supplier';
-                $amount = number_format($paymentRequest->amount, 2);
-
-                $remarks = "A payment of Rs. {$amount} has been made.";
-                if ($bankName) {
-                    $remarks .= " against bank '{$bankName}'";
-                }
-                if ($accountNumber) {
-                    $remarks .= " with account number '{$accountNumber}'";
-                }
-                if ($request->voucher_type === 'bank_payment_voucher') {
-                    $remarks .= ' through bank transfer.';
-                } else {
-                    $remarks .= ' in cash.';
-                }
-
                 $paymentRequestDataId = $paymentRequest->paymentRequestData->id;
 
-                createTransaction(
-                    $paymentRequest->amount,
-                    $request->account_id,
-                    1,
-                    $uniqueNo,
-                    'credit',
-                    'no',
-                    [
-                        'purpose' => "$prefix-$paymentVoucher->id-$paymentVoucher->unique_no",
-                        'payment_against' => "$ticketNo-$paymentRequestDataId",
-                        'against_reference_no' => "$truckNo/$biltyNo",
-                        'counter_account_id' => $request->request_account_id,
-                        'remarks' => $remarks,
-                    ]
-                );
+                $allPaymentAgainst[] = "$ticketNo-$paymentRequestDataId";
+                $allReferenceNos[]   = "$truckNo/$biltyNo";
+
+                PaymentVoucherData::create([
+                    'payment_voucher_id' => $paymentVoucher->id,
+                    'payment_request_id' => $requestId,
+                    'amount'             => $paymentRequest->amount,
+                    'description'        => $paymentRequest->paymentRequestData->notes ?? 'No description',
+                ]);
+
+                $totalAmount += $paymentRequest->amount;
+
+                // Store per-request data for individual supplier debit transactions
+                $perRequestData[] = [
+                    'amount'               => $paymentRequest->amount,
+                    'ticketNo'             => $ticketNo,
+                    'paymentRequestDataId' => $paymentRequestDataId,
+                    'truckNo'              => $truckNo,
+                    'biltyNo'              => $biltyNo,
+                    'notes'                => $paymentRequest->paymentRequestData->notes ?? '',
+                ];
+            }
+
+            // Build remark for bank (total amount)
+            $bankRemarks = "A payment of Rs. " . number_format($totalAmount, 2) . " has been made.";
+            if ($bankName)     { $bankRemarks .= " against bank '{$bankName}'"; }
+            if ($accountNumber){ $bankRemarks .= " with account number '{$accountNumber}'"; }
+            $bankRemarks .= $request->voucher_type === 'bank_payment_voucher' ? ' through bank transfer.' : ' in cash.';
+
+            $paymentAgainstStr = implode(', ', $allPaymentAgainst);
+            $referenceNosStr   = implode(', ', $allReferenceNos);
+
+            // --- ONE credit on bank/cash account (total amount) ---
+            createTransaction(
+                $totalAmount,
+                $request->account_id,
+                1,
+                $uniqueNo,
+                'credit',
+                'no',
+                [
+                    'purpose'              => "$prefix-{$paymentVoucher->id}-{$paymentVoucher->unique_no}",
+                    'payment_against'      => $paymentAgainstStr,
+                    'against_reference_no' => $referenceNosStr,
+                    'counter_account_id'   => $request->request_account_id,
+                    'remarks'              => $bankRemarks,
+                ]
+            );
+
+            // --- Per-request DEBIT on supplier/broker account (individual amounts) ---
+            foreach ($perRequestData as $item) {
+                $supplierRemarks = "A payment of Rs. " . number_format($item['amount'], 2) . " has been made.";
+                if ($bankName)     { $supplierRemarks .= " against bank '{$bankName}'"; }
+                if ($accountNumber){ $supplierRemarks .= " with account number '{$accountNumber}'"; }
+                $supplierRemarks .= $request->voucher_type === 'bank_payment_voucher' ? ' through bank transfer.' : ' in cash.';
 
                 createTransaction(
-                    $paymentRequest->amount,
+                    $item['amount'],
                     $request->request_account_id,
                     1,
                     $uniqueNo,
                     'debit',
                     'no',
                     [
-                        'purpose' => "$prefix-$paymentVoucher->id-$paymentVoucher->unique_no",
-                        'payment_against' => "$ticketNo-$paymentRequestDataId",
-                        'counter_account_id' => $request->account_id,
-                        'against_reference_no' => "$truckNo/$biltyNo",
-                        'remarks' => $remarks,
+                        'purpose'              => "$prefix-{$paymentVoucher->id}-{$paymentVoucher->unique_no}",
+                        'payment_against'      => "{$item['ticketNo']}-{$item['paymentRequestDataId']}",
+                        'against_reference_no' => "{$item['truckNo']}/{$item['biltyNo']}",
+                        'counter_account_id'   => $request->account_id,
+                        'remarks'              => $supplierRemarks,
                     ]
                 );
-
-                PaymentVoucherData::create([
-                    'payment_voucher_id' => $paymentVoucher->id,
-                    'payment_request_id' => $requestId,
-                    'amount' => $paymentRequest->amount,
-                    'description' => $paymentRequest->paymentRequestData->notes ?? 'No description',
-                ]);
-
-                $totalAmount += $paymentRequest->amount;
             }
-            // dd($ticketNo);
 
             $paymentVoucher->update(['total_amount' => $totalAmount]);
         });
@@ -1204,28 +1225,30 @@ class PaymentVoucherController extends Controller
         $paymentVoucher = PaymentVoucher::findOrFail($id);
 
         $request->validate([
-            'pv_date' => 'required|date',
-            'account_id' => 'required|exists:accounts,id',
-            'module_id' => 'required|exists:arrival_purchase_orders,id',
-            'payment_requests' => 'required|array',
+            'pv_date'            => 'required|date',
+            'account_id'         => 'required|exists:accounts,id',
+            'request_account_id' => 'required|exists:accounts,id',
+            'payment_requests'   => 'required|array',
             'payment_requests.*' => 'exists:payment_requests,id',
-            'ref_bill_no' => 'nullable|string',
-            'bill_date' => 'nullable|date',
-            'cheque_no' => 'nullable|required_if:voucher_type,bank_payment_voucher|string',
-            'cheque_date' => 'nullable|required_if:voucher_type,bank_payment_voucher|date',
-            'remarks' => 'nullable|string',
+            'ref_bill_no'        => 'nullable|string',
+            'bill_date'          => 'nullable|date',
+            'cheque_no'          => 'nullable|required_if:voucher_type,bank_payment_voucher|string',
+            'cheque_date'        => 'nullable|required_if:voucher_type,bank_payment_voucher|date',
+            'remarks'            => 'nullable|string',
         ]);
 
         DB::transaction(function () use ($request, $paymentVoucher) {
             $paymentVoucher->update([
-                'pv_date' => $request->pv_date,
-                'ref_bill_no' => $request->ref_bill_no,
-                'bill_date' => $request->bill_date,
-                'cheque_no' => $request->cheque_no,
-                'cheque_date' => $request->cheque_date,
-                'account_id' => $request->account_id,
-                'module_id' => $request->module_id,
-                'remarks' => $request->remarks,
+                'pv_date'            => $request->pv_date,
+                'ref_bill_no'        => $request->ref_bill_no,
+                'bill_date'          => $request->bill_date,
+                'cheque_no'          => $request->cheque_no,
+                'cheque_date'        => $request->cheque_date,
+                'account_id'         => $request->account_id,
+                'request_account_id' => $request->request_account_id,
+                'bank_account_id'    => $request->bank_account_id,
+                'bank_account_type'  => $request->bank_account_type,
+                'remarks'            => $request->remarks,
             ]);
 
             PaymentVoucherData::where('payment_voucher_id', $paymentVoucher->id)->delete();
@@ -1238,8 +1261,8 @@ class PaymentVoucherController extends Controller
                 PaymentVoucherData::create([
                     'payment_voucher_id' => $paymentVoucher->id,
                     'payment_request_id' => $requestId,
-                    'amount' => $paymentRequest->amount,
-                    'description' => $paymentRequest->paymentRequestData->notes ?? 'No description',
+                    'amount'             => $paymentRequest->amount,
+                    'description'        => $paymentRequest->paymentRequestData->notes ?? 'No description',
                 ]);
 
                 $totalAmount += $paymentRequest->amount;
