@@ -4,7 +4,7 @@
             <th class="col-sm-1">S No. </th>
             <th class="col-sm-2">Customer </th>
             <th class="col-sm-2">Company </th>
-            <th class="col-sm-1">Nature </th>
+            <th class="col-sm-1">Type </th>
             <th class="col-sm-3">Address</th>
             <th class="col-sm-2">Created</th>
             <th class="col-sm-1">Action</th>
@@ -34,7 +34,7 @@
                     </td>
                     <td>
                         <p class="m-0">
-                            {{ ucfirst($row->nature ?? '--') }}
+                            {{ ucfirst($row->type ?? '--') }}
                         </p>
                     </td>
                     <td>

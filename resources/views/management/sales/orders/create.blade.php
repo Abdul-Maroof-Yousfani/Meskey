@@ -1150,10 +1150,9 @@
         }
 
         const ratePerKg = getFirstItemRate();
-        const qty = getFirstItemQty();
 
-        if (ratePerKg > 0 && qty > 0) {
-            const commissionInRs = (percent / 100) * (ratePerKg * qty);
+        if (ratePerKg > 0) {
+            const commissionInRs = (percent / 100) * ratePerKg;
             $('#commission_per_kg').val(commissionInRs.toFixed(4));
         } else {
             $('#commission_per_kg').val('0');
@@ -1163,13 +1162,12 @@
     function calculateCommissionFromRs() {
         let commissionInRs = parseFloat($('#commission_per_kg').val()) || 0;
         const ratePerKg = getFirstItemRate();
-        const qty = getFirstItemQty();
 
-        if (ratePerKg > 0 && qty > 0) {
-            let percent = (commissionInRs / (ratePerKg * qty)) * 100;
+        if (ratePerKg > 0) {
+            let percent = (commissionInRs / ratePerKg) * 100;
             if (percent > 100) {
                 percent = 100;
-                commissionInRs = (100 / 100) * (ratePerKg * qty);
+                commissionInRs = (100 / 100) * ratePerKg;
                 $('#commission_per_kg').val(commissionInRs.toFixed(4));
             }
             $('#commission_percent_per_kg').val(percent.toFixed(2));
