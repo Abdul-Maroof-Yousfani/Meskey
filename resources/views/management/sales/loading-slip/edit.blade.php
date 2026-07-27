@@ -228,10 +228,16 @@
         @endif
     </div>
     <div class="row">
-        <div class="col-xs-12 col-sm-6 col-md-6">
+        <div class="col-xs-12 col-sm-6 col-md-4">
             <div class="form-group">
                 <label>No. of Bags: <span class="text-danger">*</span></label>
                 <input type="number" name="no_of_bags" id="no_of_bags" value="{{ $loadingSlip->no_of_bags }}" class="form-control" min="1" required {{ (isset($canEdit) && !$canEdit) ? 'readonly' : '' }}>
+            </div>
+        </div>
+        <div class="col-xs-12 col-sm-6 col-md-4">
+            <div class="form-group">
+                <label>Suggested Qty: <span class="text-danger">*</span></label>
+                <input type="number" name="suggested_qty" id="suggested_qty" value="{{ $loadingSlip->loadingProgramItem->qty ?? '' }}" class="form-control" readonly required step="0.01" />
             </div>
         </div>
         @php
@@ -240,7 +246,7 @@
             $is_xmill = (strtolower($sauda_type) == 'x-mill' || strtolower($sauda_type) == 'xmill');
             $labour_editable = $is_xmill && !(isset($canEdit) && !$canEdit);
         @endphp
-        <div class="col-xs-12 col-sm-6 col-md-6">
+        <div class="col-xs-12 col-sm-6 col-md-4">
             <div class="form-group">
                 <label>Labour</label>
                 <select name='labour' id='labour' class='form-control select2'>
