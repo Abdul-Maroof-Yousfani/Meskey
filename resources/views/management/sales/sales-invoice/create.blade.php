@@ -488,24 +488,36 @@
 
         // Calculate based on what changed
         if ($(el).hasClass("qty")) {
-            // When qty changes, calculate no_of_bags (if packing > 0)
-            if (packing > 0) {
+            // When qty changes, calculate no_of_bags
+            let ratio = parseFloat(noOfBagsInput.attr("data-ratio")) || 0;
+            if (ratio > 0) {
+                noOfBags = qty / ratio;
+            } else if (packing > 0) {
                 noOfBags = qty / packing;
-                const maxBalance = parseFloat(row.find(".max_balance").val()) || 0;
-                if (maxBalance > 0 && noOfBags > maxBalance) {
-                    noOfBags = maxBalance;
-                    qty = noOfBags * packing;
-                    qtyInput.val(round(qty));
-                    if (typeof toastr !== 'undefined') {
-                        toastr.warning(`Cannot exceed available balance of ${maxBalance} bags`);
-                    }
-                }
-                noOfBagsInput.val(Math.round(noOfBags));
             }
+            const maxBalance = parseFloat(row.find(".max_balance").val()) || 0;
+            if (maxBalance > 0 && noOfBags > maxBalance) {
+                noOfBags = maxBalance;
+                if (ratio > 0) {
+                    qty = noOfBags * ratio;
+                } else {
+                    qty = noOfBags * packing;
+                }
+                qtyInput.val(round(qty, 3));
+                if (typeof toastr !== 'undefined') {
+                    toastr.warning(`Cannot exceed available balance of ${maxBalance} bags`);
+                }
+            }
+            noOfBagsInput.val(Math.round(noOfBags));
         } else if ($(el).hasClass("packing") || $(el).hasClass("no_of_bags")) {
             // When packing or no_of_bags changes, calculate qty
-            qty = packing * noOfBags;
-            qtyInput.val(round(qty));
+            let ratio = parseFloat(noOfBagsInput.attr("data-ratio")) || 0;
+            if (ratio > 0) {
+                qty = noOfBags * ratio;
+            } else {
+                qty = packing * noOfBags;
+            }
+            qtyInput.val(round(qty, 3));
         }
 
         // Always recalculate amounts based on current values

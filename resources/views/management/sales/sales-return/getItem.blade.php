@@ -25,14 +25,8 @@
         @endphp
         <tr id="row_{{ $rowIndex }}">
             <td style="min-width: 200px;">
-                <select name="item_id[]" id="item_id_{{ $rowIndex }}" class="form-control select2">
-                    <option value="">Select Item</option>
-                    @foreach ($items ?? [] as $item)
-                        <option value="{{ $item->id }}" {{ $data->item_id == $item->id ? 'selected' : '' }}>{{ $item->name }}</option>
-                    @endforeach
-                </select>
-                <input type="hidden" class="form-control" value="{{ getItem($data->item_id)?->name ?? '' }}"  readonly/>
-                <input type="hidden" class="form-control" value="{{ $data->item_id }}"  readonly/>
+                <input type="text" class="form-control" value="{{ getItem($data->item_id)?->name ?? '' }}" readonly />
+                <input type="hidden" name="item_id[]" id="item_id_{{ $rowIndex }}" class="form-control" value="{{ $data->item_id }}" readonly />
                 <input type="hidden" name="si_data_id[]" value="{{ $data->id }}">
                 <input type="hidden" name="si_id[]" value="{{ $sale_invoice->id }}">
                 {{-- <input type="hidden" class="max_balance" value="{{ $balance }}"> --}}

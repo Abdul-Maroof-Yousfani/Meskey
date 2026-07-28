@@ -213,18 +213,12 @@
                             @endphp
                             <tr id="row_{{ $rowIndex }}">
                                 <td style="min-width: 200px;">
-                                    <select name="item_id[]" id="item_id_{{ $rowIndex }}"
-                                        class="form-control select2">
-                                        <option value="">Select Item</option>
-                                        @foreach ($items ?? [] as $item)
-                                            <option value="{{ $item->id }}"
-                                                {{ $data->item_id == $item->id ? 'selected' : '' }}>
-                                                {{ $item->name }}</option>
-                                        @endforeach
-                                    </select>
+                                    <input type="text" class="form-control" value="{{ getItem($data->sale_invoice_data->item_id)?->name ?? '' }}" readonly />
+                                    <input type="hidden" name="item_id[]" id="item_id_{{ $rowIndex }}" class="form-control" value="{{ $data->sale_invoice_data->item_id }}" readonly />
                                     {{-- <input type="hidden" class="max_balance" value="{{ $balance }}"> --}}
 
                                     <input type="hidden" name="si_data_id[]" value="{{ $data->sale_invoice_data_id }}">
+                                    <input type="hidden" name="si_id[]" value="{{ $data->sale_invoice_data->sales_invoice_id }}">
          
                                 </td>
                                 <td style="min-width: 100px;">

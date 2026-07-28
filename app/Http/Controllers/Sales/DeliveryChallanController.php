@@ -187,20 +187,29 @@ class DeliveryChallanController extends Controller
             
             
 
-            // dd($do_ids);
-            // foreach ($do_ids as $index => $id) {
-            //     $syncData[$id] = [
-            //         'qty' => $request->qty[$index],
-            //     ];
-            // }
-
-
-
+            $do_ids = explode(',', $do_id);
             $syncData = [];
 
-            $syncData[$do_id] = [
-                'qty' => $request->qty[0],
-            ];
+            foreach ($do_ids as $id) {
+                if (empty($id)) continue;
+                
+                // Calculate total qty for this DO from the grid items
+                $total_qty_for_do = 0;
+                if ($request->has('do_data_id')) {
+                    foreach ($request->do_data_id as $index => $do_data_id) {
+                        $do_data = \App\Models\Sales\DeliveryOrderData::find($do_data_id);
+                        if ($do_data && $do_data->delivery_order_id == $id) {
+                            $total_qty_for_do += $request->qty[$index];
+                        }
+                    }
+                } else {
+                    $total_qty_for_do = $request->qty[0] ?? 0;
+                }
+
+                $syncData[$id] = [
+                    'qty' => $total_qty_for_do,
+                ];
+            }
 
             $delivery_challan->delivery_order()->sync($syncData);
 
@@ -391,7 +400,7 @@ class DeliveryChallanController extends Controller
                 "dispatch_date" => $request->date,
                 "dc_no" => $request->dc_no,
                 "sauda_type" => $request->sauda_type,
-                "labour_status" => $request->labour_status ?? 'paid',
+                "labour_status" => $request->labour_status ?? $delivery_challan->labour_status,
                 "company_id" => $request->company_id,
                 "labour" => $request->labour,
                 "labour_amount" => $labour_amount,
@@ -408,7 +417,31 @@ class DeliveryChallanController extends Controller
                 "am_change_made" => 1
             ]);
 
-            $delivery_challan->delivery_order()->sync($do_id);
+            $do_ids = explode(',', $do_id);
+            $syncData = [];
+
+            foreach ($do_ids as $id) {
+                if (empty($id)) continue;
+                
+                // Calculate total qty for this DO from the grid items
+                $total_qty_for_do = 0;
+                if ($request->has('do_data_id')) {
+                    foreach ($request->do_data_id as $index => $do_data_id) {
+                        $do_data = \App\Models\Sales\DeliveryOrderData::find($do_data_id);
+                        if ($do_data && $do_data->delivery_order_id == $id) {
+                            $total_qty_for_do += $request->qty[$index];
+                        }
+                    }
+                } else {
+                    $total_qty_for_do = $request->qty[0] ?? 0;
+                }
+
+                $syncData[$id] = [
+                    'qty' => $total_qty_for_do,
+                ];
+            }
+
+            $delivery_challan->delivery_order()->sync($syncData);
             $delivery_challan->delivery_challan_data()->delete();
 
             $createdItems = [];
@@ -969,7 +1002,24 @@ class DeliveryChallanController extends Controller
 
 
         // Get loading slip labour
-        $loadingSlipLabour = $ticket->loadingSlip?->labour ?? null;
+        $loadingSlipLabour = $loadingSlip?->labour ?? null;
+
+        $deliveryOrders = collect();
+        if ($ticket->deliveryOrders->isNotEmpty()) {
+            $deliveryOrders = $ticket->deliveryOrders;
+        } elseif ($deliveryOrder) {
+            $deliveryOrders->push($deliveryOrder);
+        }
+
+        $dos = [];
+        foreach ($deliveryOrders as $d) {
+            $dos[] = [
+                'id' => $d->id,
+                'reference_no' => $d->reference_no,
+                'sauda_type' => strtolower($d->sauda_type ?? ''),
+                'remarks' => $d->remarks ?? '',
+            ];
+        }
 
         $data = [
             'success' => true,
@@ -979,6 +1029,7 @@ class DeliveryChallanController extends Controller
                 'transaction_number' => $ticket->transaction_number,
                 'truck_number' => $ticket->truck_number,
             ],
+            'delivery_orders' => $dos,
             'delivery_order' => [
                 'id' => $deliveryOrder->id,
                 'reference_no' => $deliveryOrder->reference_no,

@@ -14,7 +14,16 @@
             $packing = (float)trim(explode(',', $packing_raw)[0]);
             
             $noOfBags = $balance; // Use available balance as default
-            $qty = $balance * $packing; // Calculate qty based on available bags and packing
+            $originalBags = (float)($data->no_of_bags ?? 0);
+            $originalQty = (float)($data->qty ?? 0);
+            
+            if ($originalBags > 0) {
+                $ratio = $originalQty / $originalBags;
+                $qty = $balance * $ratio;
+            } else {
+                $ratio = 0;
+                $qty = $originalQty;
+            }
             $rate = (float)($data->rate ?? 0);
             $grossAmount = $qty * $rate;
             $discountPercent = 0;
@@ -46,7 +55,7 @@
                 <input type="number" name="packing[]" id="packing_{{ $rowIndex }}" onkeyup="" class="form-control packing" step="0.01" min="0" value="{{ $packing }}" readonly>
             </td>
             <td style="min-width: 100px;">
-                <input type="number" name="no_of_bags[]" id="no_of_bags_{{ $rowIndex }}" onkeyup="validateBalance(this)" class="form-control no_of_bags" readonly min="0" max="{{ $balance }}" value="{{ $noOfBags }}">
+                <input type="number" name="no_of_bags[]" id="no_of_bags_{{ $rowIndex }}" onkeyup="validateBalance(this)" class="form-control no_of_bags" data-ratio="{{ $ratio }}" min="0" max="{{ $balance }}" value="{{ $noOfBags }}" readonly>
                 
                 <span style="font-size: 14px;;">Used:
                     {{ sales_invoice_bags_used($data->id) }}</span>
@@ -55,7 +64,7 @@
                     {{ sales_invoice_balance($data->id) }}</span>
             </td>
             <td style="min-width: 100px;">
-                <input type="number" name="qty[]" id="qty_{{ $rowIndex }}" data-balance="{{ sales_invoice_balance($data->id) }}" class="form-control qty" onkeyup="calculateRow(this); check_balance(this, 'no_of_bags_{{ $rowIndex }}')" step="0.01" min="0" value="{{ round($qty) }}" readonly>
+                <input type="number" name="qty[]" id="qty_{{ $rowIndex }}" data-balance="{{ sales_invoice_balance($data->id) }}" class="form-control qty" onkeyup="calculateRow(this); check_balance(this, 'no_of_bags_{{ $rowIndex }}')" step="0.01" min="0" value="{{ round($qty, 3) }}" readonly>
             </td>
             <td style="min-width: 100px;">
                 <input type="number" name="rate[]" id="rate_{{ $rowIndex }}" onkeyup="calculateRow(this)" class="form-control rate" step="0.01" min="0" value="{{ $rate }}" readonly>
@@ -110,17 +119,26 @@
         let qtyVal = parseFloat(qty_input.val()) || 0;
 
         if (packingVal > 0) {
-            let bagsResult = Math.round(qtyVal / packingVal);
+            let ratio = parseFloat(no_of_bags.attr("data-ratio")) || 0;
+            let bagsResult = 0;
+            if (ratio > 0) {
+                bagsResult = Math.round(qtyVal / ratio);
+            } else {
+                bagsResult = Math.round(qtyVal / packingVal);
+            }
             
             if (maxBalance > 0 && bagsResult > maxBalance) {
                 bagsResult = maxBalance;
-                qtyVal = bagsResult * packingVal;
-                qty_input.val(qtyVal.toFixed(2));
                 if (typeof toastr !== 'undefined') {
                     toastr.warning(`Cannot exceed available balance of ${maxBalance} bags`);
                 }
             }
             no_of_bags.val(bagsResult);
+            
+            let ratio = parseFloat(no_of_bags.attr("data-ratio")) || 0;
+            if (ratio > 0) {
+                qty_input.val((bagsResult * ratio).toFixed(3));
+            }
         }
         
         if (typeof calculateRow === 'function') {

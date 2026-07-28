@@ -197,32 +197,23 @@
                                 // }
                                 $sale_return_data = $data;
                                 $data = $data->sale_invoice_data;
-                                $packing = $data->packing ?? 0;
+                                $packing = $sale_return_data->packing ?? 0;
                                 $noOfBags = $sale_return_data->no_of_bags; // Use available balance as default
-                                $qty = $data->qty;
-                                $rate = $data->rate ?? 0;
-                                $grossAmount = $data->gross_amount;
-                                $discountPercent = $data->discount_percent;
-                                $discountAmount = $data->discount_amount;
-                                $amount = $grossAmount - $discountAmount;
-                                $gstPercent = $data->gst_percent;
-                                $gstAmount = $data->gst_amount;
-                                $netAmount = $amount + $gstAmount;
-                                $lineDesc = $data->line_desc ?? '';
-                                $truckNo = $data->truck_no ?? '';
+                                $qty = $sale_return_data->quantity;
+                                $rate = $sale_return_data->rate ?? 0;
+                                $grossAmount = $sale_return_data->gross_amount;
+                                $discountPercent = $sale_return_data->discount_percent;
+                                $discountAmount = $sale_return_data->discount_amount;
+                                $amount = $sale_return_data->amount;
+                                $gstPercent = $sale_return_data->gst_percentage;
+                                $gstAmount = $sale_return_data->gst_amount;
+                                $netAmount = $sale_return_data->net_amount;
+                                $lineDesc = $sale_return_data->line_desc ?? '';
+                                $truckNo = $sale_return_data->truck_no ?? '';
                             @endphp
                             <tr id="row_{{ $rowIndex }}">
                                 <td style="min-width: 200px;">
-                                    <select name="item_id[]" id="item_id_{{ $rowIndex }}"
-                                        class="form-control select2">
-                                        <option value="">Select Item</option>
-                                        @foreach ($items ?? [] as $item)
-                                            <option value="{{ $item->id }}"
-                                                {{ $data->item_id == $item->id ? 'selected' : '' }}>
-                                                {{ $item->name }}</option>
-                                        @endforeach
-                                    </select>
-                                    {{-- <input type="hidden" class="max_balance" value="{{ $balance }}"> --}}
+                                    <input type="text" class="form-control" value="{{ getItem($data->item_id)?->name ?? '' }}" readonly />
                                 </td>
                                 <td style="min-width: 100px;">
                                     <input readonly type="number" name="packing[]" id="packing_{{ $rowIndex }}"
