@@ -97,7 +97,7 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">DO Number:</label>
-                        <select name="do_no[]" id="do_no" class="form-control select2" disabled>
+                        <select name="do_no[]" id="do_no" class="form-control select2" multiple disabled>
                             <option value="">Select Delivery Order</option>
                             @foreach ($delivery_orders as $delivery_order)
                                 <option value="{{ $delivery_order->id }}" @selected(in_array($delivery_order->id, $delivery_challan->delivery_order->pluck('id')->toArray()))>
@@ -106,7 +106,7 @@
                             @endforeach
                         </select>
                         <input type='hidden' name="delivery_order_id" id="delivery_order_id"
-                            value="{{ $delivery_challan->delivery_order->pluck('id')->toArray()[0] }}" />
+                            value="{{ implode(',', $delivery_challan->delivery_order->pluck('id')->toArray()) }}" />
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -128,26 +128,7 @@
                             value="{{ $delivery_challan->reference_number }}" class="form-control">
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label class="form-label">Ticket Labour Status:</label>
-                        @php
-                            $firstTicketData = $delivery_challan->delivery_challan_data->first();
-                            $ticketLabour = $delivery_challan->labour_status;
-                            if (!$ticketLabour && $firstTicketData && $firstTicketData->ticket_id) {
-                                $loadingSlip = \App\Models\Sales\LoadingProgramItem::find($firstTicketData->ticket_id)?->loadingSlip;
-                                $ticketLabour = $loadingSlip?->labour;
-                            }
 
-                            $sauda_type = strtolower($delivery_challan->sauda_type ?? '');
-                            $is_labour_editable = ($sauda_type == 'x-mill' || $sauda_type == 'xmill');
-                        @endphp
-                        <select name="labour_status" id="labour_status" class="form-control select2" {{ !$is_labour_editable ? 'disabled' : '' }}>
-                            <option value="paid" @selected($ticketLabour == 'paid')>Paid</option>
-                            <option value="not_paid" @selected($ticketLabour == 'not_paid')>Not Paid</option>
-                        </select>
-                    </div>
-                </div>
 
                 <div class="col-12 mt-3">
                     <h6 class="header-heading-sepration">Location Details</h6>
@@ -216,10 +197,11 @@
                     }
                     $transporterId = $delivery_challan->transporter;
                 @endphp
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Labour:</label>
                         <select name="labour" id="labour" class="form-control select2">
+                            <option value="">Select Labour</option>
                             @if($delivery_challan->labour)
                                 @php $v = \App\Models\Master\Vendor::find($delivery_challan->labour); @endphp
                                 @if($v)
@@ -229,7 +211,25 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-6" id="transporter_col" @if(!$hasTicketTransporter && !$delivery_challan->transporter) style="display: none;" @endif>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Labour Status:</label>
+                        @php
+                            $firstTicketData = $delivery_challan->delivery_challan_data->first();
+                            $ticketLabour = $delivery_challan->labour_status;
+                            if (!$ticketLabour && $firstTicketData && $firstTicketData->ticket_id) {
+                                $loadingSlip = \App\Models\Sales\LoadingProgramItem::find($firstTicketData->ticket_id)?->loadingSlip;
+                                $ticketLabour = $loadingSlip?->labour;
+                            }
+                        @endphp
+                        <select name="labour_status" id="labour_status" class="form-control select2">
+                            <option value="">Select Labour status</option>
+                            <option value="paid" @selected($ticketLabour == 'paid')>Paid</option>
+                            <option value="not_paid" @selected($ticketLabour == 'not_paid')>Not Paid</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4" id="transporter_col">
                     <div class="form-group">
                         <label class="form-label">Transporter:</label>
                         <select id="transporter_display" class="form-control select2"
@@ -277,7 +277,7 @@
                         <small class="text-muted">(Rate * Total Bags)</small>
                     </div>
                 </div>
-                <div class="col-md-4" id="transporter_amount_col" @if(!$hasTicketTransporter && !$delivery_challan->transporter) style="display: none;" @endif>
+                <div class="col-md-4" id="transporter_amount_col">
                     <div class="form-group">
                         <label class="form-label">Transporter Amount:</label>
                         <input type="number" name="transporter_amount"
@@ -326,9 +326,10 @@
         </div>
         <div class="col-md-12">
             <div class="table-responsive">
-                <table class="table table-bordered table-striped" id="salesInquiryTable" style="min-width:1800px;">
+                <table class="table table-bordered table-striped" id="salesInquiryTable" style="min-width:2000px;">
                     <thead class="bg-light">
                         <tr>
+                            <th>DO No</th>
                             <th>Item</th>
                             <th>Bag Type</th>
                             <th style="min-width: 130px; width: 130px;">Packing</th>
@@ -351,6 +352,9 @@
                                 $index = "TICKET-" . $data->ticket_id;
                             @endphp
                             <tr id="row_{{ $index }}">
+                                <td>
+                                    <input type="text" class="form-control" value="{{ $data->deliveryOrderData?->delivery_order?->reference_no }}" readonly>
+                                </td>
                                 <td>
                                     <input type="text" name="" id="item_id_read_only{{ $index }}"
                                         value="{{ getItem($data->item_id)?->name }}" onkeyup="calc(this)"
@@ -540,13 +544,8 @@
 
                 if (response.success) {
                     // Update Ticket Labour Status
-                    // Update Ticket Labour Status
-                    $("#labour_status").val(response.loading_slip_labour || 'paid').trigger('change');
-
-                    if (response.is_labour_editable) {
-                        $("#labour_status").prop('disabled', false);
-                    } else {
-                        $("#labour_status").prop('disabled', true);
+                    if(response.loading_slip_labour) {
+                        $("#labour_status").val(response.loading_slip_labour).trigger('change');
                     }
 
                     // Set Labour Rate
@@ -562,10 +561,20 @@
 
                     // Set DO Number
                     const doSelect = $("#do_no");
-                    doSelect.empty().append('<option value="">Select Delivery Order</option>');
-                    doSelect.append(`<option value="${response.delivery_order.id}" selected>${response.delivery_order.reference_no}</option>`);
+                    doSelect.empty();
+                    
+                    const doIds = [];
+                    if (response.delivery_orders && response.delivery_orders.length > 0) {
+                        response.delivery_orders.forEach(function(d) {
+                            doSelect.append(`<option value="${d.id}" selected>${d.reference_no}</option>`);
+                            doIds.push(d.id);
+                        });
+                    } else if (response.delivery_order) {
+                        doSelect.append(`<option value="${response.delivery_order.id}" selected>${response.delivery_order.reference_no}</option>`);
+                        doIds.push(response.delivery_order.id);
+                    }
+                    $("#delivery_order_id").val(doIds.join(','));
                     doSelect.trigger('change');
-                    $("#delivery_order_id").val(response.delivery_order.id);
 
                     // Set Locations
                     const locSelect = $("#locations");
@@ -609,8 +618,8 @@
                         transSelect.val('').trigger('change');
                         transSelect.prop('disabled', false);
                         $("#transporter").val('');
-                        $("#transporter_col").hide();
-                        $("#transporter_amount_col").hide();
+                        // $("#transporter_col").hide();
+                        // $("#transporter_amount_col").hide();
                     }
 
                     // Set Remarks
@@ -645,7 +654,7 @@
     }
 
     function resetFormFields() {
-        $("#labour_status").val('paid').trigger('change').prop('disabled', true);
+        $("#labour_status").val('').trigger('change');
         $("#standard_labour_rate, #customer_id, #delivery_order_id, #arrival_location_csv, #storage_location_csv").val('');
         $("#customer_id_display, #do_no, #sauda_type, #locations, #arrivals, #storages").val('').trigger('change');
         $("#transporter_display").empty().append('<option value="">Select Transporter</option>').trigger('change');

@@ -71,7 +71,7 @@
             <div class="col-md-6">
                 <div class="form-group">
                     <label class="form-label">DO Number:</label>
-                    <select class="form-control select2" disabled>
+                    <select class="form-control select2" multiple disabled>
                         <option value="">Select Delivery Order</option>
                         @foreach ($delivery_orders as $delivery_order)
                             <option value="{{ $delivery_order->id }}" @selected(in_array($delivery_order->id, $delivery_challan->delivery_order->pluck('id')->toArray()))>
@@ -95,21 +95,6 @@
                 <div class="form-group">
                     <label class="form-label">Reference Number:</label>
                     <input type="text" value="{{ $delivery_challan->reference_number }}" class="form-control" readonly>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label class="form-label">Ticket Labour Status:</label>
-                    @php
-                        $firstTicketData = $delivery_challan->delivery_challan_data->first();
-                        $ticketLabour = $delivery_challan->labour_status;
-                        if (!$ticketLabour && $firstTicketData && $firstTicketData->ticket_id) {
-                            $loadingSlip = \App\Models\Sales\LoadingProgramItem::find($firstTicketData->ticket_id)?->loadingSlip;
-                            $ticketLabour = $loadingSlip?->labour;
-                        }
-                    @endphp
-                    <input type="text" class="form-control"
-                        value="{{ $ticketLabour ? ($ticketLabour === 'paid' ? 'Paid' : 'Not Paid') : 'N/A' }}" readonly>
                 </div>
             </div>
 
@@ -159,7 +144,7 @@
             <div class="col-12 mt-3">
                 <h6 class="header-heading-sepration">Service Providers</h6>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
                 <div class="form-group">
                     <label class="form-label">Labour:</label>
                     <select class="form-control select2" disabled>
@@ -172,7 +157,22 @@
                     </select>
                 </div>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label class="form-label">Ticket Labour Status:</label>
+                    @php
+                        $firstTicketData = $delivery_challan->delivery_challan_data->first();
+                        $ticketLabour = $delivery_challan->labour_status;
+                        if (!$ticketLabour && $firstTicketData && $firstTicketData->ticket_id) {
+                            $loadingSlip = \App\Models\Sales\LoadingProgramItem::find($firstTicketData->ticket_id)?->loadingSlip;
+                            $ticketLabour = $loadingSlip?->labour;
+                        }
+                    @endphp
+                    <input type="text" class="form-control"
+                        value="{{ $ticketLabour ? ($ticketLabour === 'paid' ? 'Paid' : 'Not Paid') : 'N/A' }}" readonly>
+                </div>
+            </div>
+            <div class="col-md-4">
                 <div class="form-group">
                     <label class="form-label">Transporter:</label>
                     <select class="form-control select2" disabled>
@@ -245,6 +245,7 @@
             <table class="table table-bordered" id="salesInquiryTable" style="min-width:2000px;">
                 <thead>
                     <tr>
+                        <th>DO No</th>
                         <th>Item</th>
                         <th>Bag Type</th>
                         <th style="width: 250px;">Packing</th>
@@ -265,6 +266,9 @@
                             $index = "TICKET-" . $data->ticket_id;
                         @endphp
                         <tr id="row_{{ $index }}">
+                            <td>
+                                <input type="text" class="form-control" value="{{ $data->deliveryOrderData?->delivery_order?->reference_no }}" readonly>
+                            </td>
                             <td>
                                 <input type="text" value="{{ getItem($data->item_id)?->name }}" class="form-control"
                                     readonly>

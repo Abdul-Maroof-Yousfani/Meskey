@@ -31,7 +31,9 @@ class SaleReturnRequest extends FormRequest
             "arrival_location_id" => "required|numeric",
             "storage_location_id" => "required|numeric",
             "remarks" => "nullable",
-            "company_id" => "required|numeric"
+            "company_id" => "required|numeric",
+            "si_no" => "required|array",
+            "item_id" => "required|array",
         ];
     }
 }

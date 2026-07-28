@@ -84,7 +84,7 @@
                     <div class="form-group">
                         <label class="form-label">DO Number:</label>
                         <select name="do_no[]" id="do_no" onchange="get_items(this)" class="form-control select2"
-                            disabled>
+                            multiple disabled>
                             <option value="">Select Delivery Order</option>
                         </select>
                         <input type='hidden' name="delivery_order_id" id="delivery_order_id" />
@@ -106,15 +106,7 @@
                         <input type="text" name="reference_number" id="reference_number" class="form-control" disabled>
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label class="form-label">Ticket Labour Status:</label>
-                        <select name="labour_status" id="labour_status" class="form-control select2" disabled>
-                            <option value="paid">Paid</option>
-                            <option value="not_paid">Not Paid</option>
-                        </select>
-                    </div>
-                </div>
+
 
                 <div class="col-12 mt-3">
                     <h6 class="header-heading-sepration">Location Details</h6>
@@ -156,17 +148,28 @@
                 <div class="col-12 mt-3">
                     <h6 class="header-heading-sepration">Service Providers</h6>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Labour:</label>
                         <select name="labour" id="labour" onchange="" class="form-control select2">
+                            <option value="">Select Labour</option>
                             @foreach ($labours ?? [] as $labour)
                                 <option value="{{ $labour->id }}">{{ $labour->name }}</option>
                             @endforeach
                         </select>
                     </div>
                 </div>
-                <div class="col-md-6" id="transporter_col">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Labour Status:</label>
+                        <select name="labour_status" id="labour_status" class="form-control select2">
+                            <option value="">Select Labour status</option>
+                            <option value="paid">Paid</option>
+                            <option value="not_paid">Not Paid</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4" id="transporter_col">
                     <div class="form-group">
                         <label class="form-label">Transporter:</label>
                         <select id="transporter_display" class="form-control select2"
@@ -248,6 +251,7 @@
                 <table class="table table-bordered" id="salesInquiryTable" style="min-width:2000px;">
                     <thead>
                         <tr>
+                            <th>DO No</th>
                             <th>Item</th>
                             <th>Bag Type</th>
                             <th style="min-width: 130px; width: 130px;">Packing</th>
@@ -346,16 +350,9 @@
                 Swal.close();
 
                 if (response.success) {
-                    // Set Ticket Labour (readonly)
                     // Set Ticket Labour
                     if (response.loading_slip_labour) {
                         $("#labour_status").val(response.loading_slip_labour).trigger('change');
-                    }
-
-                    if (response.is_labour_editable) {
-                        $("#labour_status").prop('disabled', false);
-                    } else {
-                        $("#labour_status").prop('disabled', true);
                     }
 
                     // Set Standard Labour Rate
@@ -383,8 +380,19 @@
 
                     // Set DO Number (readonly)
                     const doSelect = $("#do_no");
-                    doSelect.empty().append('<option value="">Select Delivery Order</option>');
-                    doSelect.append(`<option value="${response.delivery_order.id}" selected>${response.delivery_order.reference_no}</option>`);
+                    doSelect.empty();
+                    
+                    const doIds = [];
+                    if (response.delivery_orders && response.delivery_orders.length > 0) {
+                        response.delivery_orders.forEach(function(d) {
+                            doSelect.append(`<option value="${d.id}" selected>${d.reference_no}</option>`);
+                            doIds.push(d.id);
+                        });
+                    } else if (response.delivery_order) {
+                        doSelect.append(`<option value="${response.delivery_order.id}" selected>${response.delivery_order.reference_no}</option>`);
+                        doIds.push(response.delivery_order.id);
+                    }
+                    $("#delivery_order_id").val(doIds.join(','));
                     doSelect.trigger('change');
 
                     // Enable Reference Number field (don't auto-populate, leave it editable)
@@ -431,8 +439,8 @@
                         transSelect.val('').trigger('change');
                         transSelect.prop('disabled', false);
                         $("#transporter").val('');
-                        $("#transporter_col").hide();
-                        $("#transporter_amount_col").hide();
+                        // $("#transporter_col").hide();
+                        // $("#transporter_amount_col").hide();
                     }
 
                     // Set Remarks
@@ -494,7 +502,7 @@
         $("#dcTableBody").empty();
         $("#addTicketContainer").hide();
         $("#add_ticket_id").empty().append('<option value="">Select Ticket to Add</option>');
-        $("#labour_status").val('paid').trigger('change').prop('disabled', true);
+        $("#labour_status").val('').trigger('change');
         $("#standard_labour_rate").val('');
         $("#transporter_display").empty().append('<option value="">Select Transporter</option>').trigger('change');
         $("#transporter").val('');

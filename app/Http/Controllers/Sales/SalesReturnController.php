@@ -82,6 +82,17 @@ class SalesReturnController extends Controller
                 ]);
             }
 
+            $syncData = [];
+            foreach($request->item_id as $index => $item_id) {
+                $si_id = $request->si_id[$index];
+                if (!isset($syncData[$si_id])) {
+                    $syncData[$si_id] = ["qty" => 0];
+                }
+                $syncData[$si_id]["qty"] += $request->qty[$index];
+            }
+
+            $saleReturn->sale_invoices()->sync($syncData);
+
             
             DB::commit();
             return response()->json("Sale Return has been updated");
@@ -246,6 +257,10 @@ class SalesReturnController extends Controller
         try {
 
             $sale_invoices = $request->si_no;
+
+            if (empty($sale_invoices)) {
+                return response()->json("Please select at least one Sale Invoice.", 422);
+            }
            
             // Sale Return's date should not be previous than sale invoices's date, and also tell that which sale invoice is breaking it along with its date and transaction number
             $sale_invoices_data = SalesInvoice::whereIn("id", $sale_invoices)->get();
@@ -289,18 +304,16 @@ class SalesReturnController extends Controller
                 ]);
             }
 
-            foreach($sale_invoices as $sale_invoice) {
-                
-                $sale_return->sale_invoices()->sync([
-                    $sale_invoice => [
-                        "qty" => $request->qty[$index]
-                    ]
-                ]);
+            $syncData = [];
+            foreach($request->item_id as $index => $item_id) {
+                $si_id = $request->si_id[$index];
+                if (!isset($syncData[$si_id])) {
+                    $syncData[$si_id] = ["qty" => 0];
+                }
+                $syncData[$si_id]["qty"] += $request->qty[$index];
             }
 
-            // $sale_return->sale_invoices()->sync([
-            //     $request->
-            // ]);
+            $sale_return->sale_invoices()->sync($syncData);
 
             
             DB::commit();

@@ -233,6 +233,16 @@ class LoadingProgramController extends Controller
             }
         }
 
+        // Check for sauda_type pohanch and logistics requirement
+        foreach ($saleOrders as $so) {
+            if (strtolower(trim($so->sauda_type)) === 'pohanch') {
+                $logisticsCount = \App\Models\Sales\Logistics::where('sale_order_id', $so->id)->count();
+                if ($logisticsCount === 0) {
+                    return response()->json(['errors' => ['logistics' => ['Logistics is required for Sale Order (' . $so->reference_no . ') because sauda type is Pohanch.']]], 422);
+                }
+            }
+        }
+
         $validator = Validator::make($request->all(), $validationRules);
 
         if ($validator->fails()) {
@@ -628,6 +638,16 @@ class LoadingProgramController extends Controller
                     $validationRules["loading_program_items.$index.delivery_order_id"] = 'nullable|array';
                 }
                 $validationRules["loading_program_items.$index.delivery_order_id.*"] = 'exists:delivery_order,id';
+            }
+        }
+
+        // Check for sauda_type pohanch and logistics requirement
+        foreach ($saleOrders as $so) {
+            if (strtolower(trim($so->sauda_type)) === 'pohanch') {
+                $logisticsCount = \App\Models\Sales\Logistics::where('sale_order_id', $so->id)->count();
+                if ($logisticsCount === 0) {
+                    return response()->json(['errors' => ['logistics' => ['Logistics is required for Sale Order (' . $so->reference_no . ') because sauda type is Pohanch.']]], 422);
+                }
             }
         }
 

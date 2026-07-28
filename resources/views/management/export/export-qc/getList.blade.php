@@ -37,12 +37,12 @@
                         @if($exportQc->status === 'reject')
                             @php
                                 $apprStatus = $exportQc->am_approval_status ?? 'pending';
-                                $apprBadge = match(strtolower((string)$apprStatus)) {
+                                $apprBadge = match (strtolower((string) $apprStatus)) {
                                     'approved' => 'badge-success',
                                     'rejected' => 'badge-danger',
                                     'reverted' => 'badge-secondary',
-                                    'pending'  => 'badge-warning',
-                                    default    => 'badge-warning',
+                                    'pending' => 'badge-warning',
+                                    default => 'badge-warning',
                                 };
                             @endphp
                             <span class="badge {{ $apprBadge }} px-2 py-1">
@@ -57,7 +57,8 @@
                     </td>
                     <td>
                         @if(!optional($exportQc->loadingProgramItem)->loadingSlip && $exportQc->status === 'accept')
-                            {{-- <a onclick="openModal(this,'{{ route('export.export-qc.edit', $exportQc->id) }}','Edit Export QC', false)"
+                            {{-- <a
+                                onclick="openModal(this,'{{ route('export.export-qc.edit', $exportQc->id) }}','Edit Export QC', false)"
                                 class="warning p-1 text-center mr-2 position-relative">
                                 <i class="ft-edit font-medium-3"></i>
                             </a>
@@ -70,7 +71,7 @@
                             class="info p-1 text-center mr-2 position-relative">
                             <i class="ft-eye font-medium-3"></i>
                         </a>
-                         
+
                     </td>
                 </tr>
             @endforeach

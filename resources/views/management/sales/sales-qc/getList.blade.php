@@ -27,11 +27,20 @@
                         {{ $salesQc->commodity ?? 'N/A' }}
                     </td>
                     <td>
-                        <span
-                            class="badge badge-{{ $salesQc->status == 'accept' || $salesQc->am_approval_status === 'approved' ? 'success' : 'danger' }}">
-                            {{ $salesQc->status === 'accept' || $salesQc->am_approval_status === 'approved' ? 'Approved' : 'Rejected' }}
-                        </span>
-
+                        @if($salesQc->status === 'reject')
+                            @php
+                                $apprStatus = $salesQc->am_approval_status ?? 'pending';
+                            @endphp
+                            @if($apprStatus === 'pending')
+                                <span class="badge badge-warning px-2 py-1">Pending for Approval</span>
+                            @elseif($apprStatus === 'approved')
+                                <span class="badge badge-danger px-2 py-1">Rejected</span>
+                            @else
+                                <span class="badge badge-danger px-2 py-1">Rejected</span>
+                            @endif
+                        @else
+                            <span class="badge badge-success px-2 py-1">Accepted</span>
+                        @endif
                     </td>
                     <td>
                         {{ $salesQc->created_at->format('d-m-Y H:i') }}
