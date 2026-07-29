@@ -275,7 +275,7 @@
 
 
         <div class="footer-paragargh">
-            <p>| NAUSHEHRO FEROZE | LARKANA | SHIKARPUR | TANDO ALLAHYAR | PAKPATTAN</p>
+            <p> NAUSHEHRO FEROZE | LARKANA | SHIKARPUR | TANDO ALLAHYAR | PAKPATTAN</p>
         </div>
 
 
