@@ -65,7 +65,7 @@
                  Broker 1
              </h6>
          </div>
-         <div class="col-xs-8 col-sm-8 col-md-8">
+         <div class="col-xs-4 col-sm-4 col-md-4">
              <div class="form-group ">
                  <label>Broker:</label>
                  <select name="broker_one_id" id="broker_one_id" class="form-control" disabled>
@@ -73,12 +73,20 @@
                  </select>
              </div>
          </div>
+         <div class="col-xs-4 col-sm-4 col-md-4">
+             <div class="form-group">
+                 <label>Type:</label>
+                 <select class="form-control" disabled>
+                     <option value="">{{ $arrivalPurchaseOrder->broker_one_calculation_type ? ucfirst($arrivalPurchaseOrder->broker_one_calculation_type) . ' Wise' : 'N/A' }}</option>
+                 </select>
+             </div>
+         </div>
 
          <div class="col-xs-4 col-sm-4 col-md-4">
              <div class="form-group ">
-                 <label>Commission (per KG):</label>
+                 <label>Commission:</label>
                  <input type="number" value="{{ $arrivalPurchaseOrder->broker_one_commission }}"
-                     id="broker_one_commission" name="broker_one_commission" placeholder="Commission (per KG)"
+                     id="broker_one_commission" name="broker_one_commission" placeholder="Commission"
                      class="form-control" step="any" readonly />
              </div>
          </div>
@@ -89,7 +97,7 @@
                  Broker 2
              </h6>
          </div>
-         <div class="col-xs-8 col-sm-8 col-md-8">
+         <div class="col-xs-4 col-sm-4 col-md-4">
              <div class="form-group ">
                  <label>Broker:</label>
                  <select name="broker_two_id" id="broker_two_id" class="form-control" disabled>
@@ -98,10 +106,18 @@
              </div>
          </div>
          <div class="col-xs-4 col-sm-4 col-md-4">
+             <div class="form-group">
+                 <label>Type:</label>
+                 <select class="form-control" disabled>
+                     <option value="">{{ $arrivalPurchaseOrder->broker_two_calculation_type ? ucfirst($arrivalPurchaseOrder->broker_two_calculation_type) . ' Wise' : 'N/A' }}</option>
+                 </select>
+             </div>
+         </div>
+         <div class="col-xs-4 col-sm-4 col-md-4">
              <div class="form-group ">
-                 <label>Commission (per KG):</label>
+                 <label>Commission:</label>
                  <input type="number" value="{{ $arrivalPurchaseOrder->broker_two_commission }}"
-                     id="broker_two_commission" name="broker_two_commission" placeholder="Commission (per KG)"
+                     id="broker_two_commission" name="broker_two_commission" placeholder="Commission"
                      class="form-control" step="any" readonly />
 
              </div>
@@ -113,7 +129,7 @@
                  Broker 3
              </h6>
          </div>
-         <div class="col-xs-8 col-sm-8 col-md-8">
+         <div class="col-xs-4 col-sm-4 col-md-4">
              <div class="form-group ">
                  <label>Broker:</label>
                  <select name="broker_three_id" id="broker_three_id" class="form-control" disabled>
@@ -122,10 +138,18 @@
              </div>
          </div>
          <div class="col-xs-4 col-sm-4 col-md-4">
+             <div class="form-group">
+                 <label>Type:</label>
+                 <select class="form-control" disabled>
+                     <option value="">{{ $arrivalPurchaseOrder->broker_three_calculation_type ? ucfirst($arrivalPurchaseOrder->broker_three_calculation_type) . ' Wise' : 'N/A' }}</option>
+                 </select>
+             </div>
+         </div>
+         <div class="col-xs-4 col-sm-4 col-md-4">
              <div class="form-group ">
-                 <label>Commission (per KG):</label>
+                 <label>Commission:</label>
                  <input type="number" value="{{ $arrivalPurchaseOrder->broker_three_commission }}"
-                     id="broker_three_commission" name="broker_three_commission" placeholder="Commission (per KG)"
+                     id="broker_three_commission" name="broker_three_commission" placeholder="Commission"
                      class="form-control" step="any" readonly />
 
              </div>

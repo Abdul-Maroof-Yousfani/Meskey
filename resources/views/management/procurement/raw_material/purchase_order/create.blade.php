@@ -68,7 +68,7 @@
                 Broker 1
             </h6>
         </div>
-        <div class="col-xs-8 col-sm-8 col-md-8">
+        <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group ">
                 <label>Broker:</label>
                 <select name="broker_one_id" id="broker_one_id" class="form-control select22 broker-select"
@@ -82,10 +82,21 @@
         </div>
 
         <div class="col-xs-4 col-sm-4 col-md-4">
+            <div class="form-group">
+                <label>Type:</label>
+                <select name="broker_one_calculation_type" id="broker_one_calculation_type" class="form-control select2">
+                    <option value="">Select Type</option>
+                    <option value="trucks">Trucks Wise</option>
+                    <option value="quantity">Quantity Wise</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group ">
-                <label>Commission (per KG):</label>
+                <label>Commission:</label>
                 <input type="number" id="broker_one_commission" name="broker_one_commission"
-                    placeholder="Commission (per KG)" class="form-control" step="any" min="0"
+                    placeholder="Commission" class="form-control" step="any" min="0"
                     max="999999" />
             </div>
         </div>
@@ -96,23 +107,35 @@
                 Broker 2
             </h6>
         </div>
-        <div class="col-xs-8 col-sm-8 col-md-8">
+        <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group ">
                 <label>Broker:</label>
                 <select name="broker_two_id" id="broker_two_id" class="form-control select22 broker-select"
                     data-commission="#broker_two_commission">
-                    <option value="">N/A</option>
+                    <option value="">Select Broker</option>
                     @foreach ($brokers as $broker)
                         <option value="{{ $broker->id }}">{{ $broker->name }}</option>
                     @endforeach
                 </select>
             </div>
         </div>
+
+        <div class="col-xs-4 col-sm-4 col-md-4">
+            <div class="form-group">
+                <label>Type:</label>
+                <select name="broker_two_calculation_type" id="broker_two_calculation_type" class="form-control select2">
+                    <option value="">Select Type</option>
+                    <option value="trucks">Trucks Wise</option>
+                    <option value="quantity">Quantity Wise</option>
+                </select>
+            </div>
+        </div>
+
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group ">
-                <label>Commission (per KG):</label>
+                <label>Commission:</label>
                 <input type="number" id="broker_two_commission" name="broker_two_commission"
-                    placeholder="Commission (per KG)" class="form-control" step="any" min="0"
+                    placeholder="Commission" class="form-control" step="any" min="0"
                     max="999999" />
 
             </div>
@@ -124,7 +147,7 @@
                 Broker 3
             </h6>
         </div>
-        <div class="col-xs-8 col-sm-8 col-md-8">
+        <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group ">
                 <label>Broker:</label>
                 <select name="broker_three_id" id="broker_three_id" class="form-control select22 broker-select"
@@ -136,11 +159,23 @@
                 </select>
             </div>
         </div>
+
+        <div class="col-xs-4 col-sm-4 col-md-4">
+            <div class="form-group">
+                <label>Type:</label>
+                <select name="broker_three_calculation_type" id="broker_three_calculation_type" class="form-control select2">
+                    <option value="">Select Type</option>
+                    <option value="trucks">Trucks Wise</option>
+                    <option value="quantity">Quantity Wise</option>
+                </select>
+            </div>
+        </div>
+
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group ">
-                <label>Commission (per KG):</label>
+                <label>Commission:</label>
                 <input type="number" id="broker_three_commission" name="broker_three_commission"
-                    placeholder="Commission (per KG)" class="form-control" step="any" min="0"
+                    placeholder="Commission" class="form-control" step="any" min="0"
                     max="999999" />
 
             </div>
