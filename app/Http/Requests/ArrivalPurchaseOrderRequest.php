@@ -29,10 +29,13 @@ class ArrivalPurchaseOrderRequest extends FormRequest
             'supplier_commission'     => 'nullable|numeric',
             'broker_one_id'           => 'nullable|integer|exists:brokers,id',
             'broker_one_commission'   => 'nullable|numeric',
+            'broker_one_calculation_type' => 'nullable|in:trucks,quantity',
             'broker_two_id'           => 'nullable|integer|exists:brokers,id',
             'broker_two_commission'   => 'nullable|numeric',
+            'broker_two_calculation_type' => 'nullable|in:trucks,quantity',
             'broker_three_id'         => 'nullable|integer|exists:brokers,id',
             'broker_three_commission' => 'nullable|numeric',
+            'broker_three_calculation_type' => 'nullable|in:trucks,quantity',
             'product_id'              => 'required|integer|exists:products,id',
             'division_id'             => 'required|integer|exists:divisions,id',
             'line_type'               => 'nullable|in:bari,choti',
@@ -54,7 +57,7 @@ class ArrivalPurchaseOrderRequest extends FormRequest
             'weighbridge_from'        => 'nullable|string',
             'remarks'                 => 'nullable|string',
             'status'                  => 'in:draft,confirmed,completed,cancelled',
-            "contract_status"         => 'nullable'
+            "contract_status"         => 'nullable',
         ];
 
         if (isset($data['calculation_type']) && $data['calculation_type'] === 'quantity') {
@@ -74,37 +77,55 @@ class ArrivalPurchaseOrderRequest extends FormRequest
         $validator->after(function (Validator $validator) {
             $data = $this->all();
 
-            if (
-                (!empty($data['broker_one_commission']) && $data['broker_one_commission'] != 0 && (empty($data['broker_one_id']) || $data['broker_one_id'] == null))
-            ) {
-                $validator->errors()->add('broker_one_id', 'Broker 1 is required if commission is entered.');
-            }
-            if (
-                (!empty($data['broker_one_id']) && (empty($data['broker_one_commission']) && $data['broker_one_commission'] !== "0" && $data['broker_one_commission'] !== 0))
-            ) {
-                $validator->errors()->add('broker_one_commission', 'Broker 1 commission is required if broker is selected.');
+            // Broker 1 Validation
+            $hasBroker1 = !empty($data['broker_one_id']);
+            $hasComm1 = (!empty($data['broker_one_commission']) || (isset($data['broker_one_commission']) && (string)$data['broker_one_commission'] === "0"));
+            $hasType1 = !empty($data['broker_one_calculation_type']);
+
+            if ($hasBroker1 || $hasComm1 || $hasType1) {
+                if (!$hasBroker1) {
+                    $validator->errors()->add('broker_one_id', 'Broker 1 is required if commission or type is entered.');
+                }
+                if (!$hasComm1) {
+                    $validator->errors()->add('broker_one_commission', 'Broker 1 commission is required if broker or type is selected.');
+                }
+                if (!$hasType1) {
+                    $validator->errors()->add('broker_one_calculation_type', 'Broker 1 calculation type is required if broker or commission is entered.');
+                }
             }
 
-            if (
-                (!empty($data['broker_two_commission']) && $data['broker_two_commission'] != 0 && (empty($data['broker_two_id']) || $data['broker_two_id'] == null))
-            ) {
-                $validator->errors()->add('broker_two_id', 'Broker 2 is required if commission is entered.');
-            }
-            if (
-                (!empty($data['broker_two_id']) && (empty($data['broker_two_commission']) && $data['broker_two_commission'] !== "0" && $data['broker_two_commission'] !== 0))
-            ) {
-                $validator->errors()->add('broker_two_commission', 'Broker 2 commission is required if broker is selected.');
+            // Broker 2 Validation
+            $hasBroker2 = !empty($data['broker_two_id']);
+            $hasComm2 = (!empty($data['broker_two_commission']) || (isset($data['broker_two_commission']) && (string)$data['broker_two_commission'] === "0"));
+            $hasType2 = !empty($data['broker_two_calculation_type']);
+
+            if ($hasBroker2 || $hasComm2 || $hasType2) {
+                if (!$hasBroker2) {
+                    $validator->errors()->add('broker_two_id', 'Broker 2 is required if commission or type is entered.');
+                }
+                if (!$hasComm2) {
+                    $validator->errors()->add('broker_two_commission', 'Broker 2 commission is required if broker or type is selected.');
+                }
+                if (!$hasType2) {
+                    $validator->errors()->add('broker_two_calculation_type', 'Broker 2 calculation type is required if broker or commission is entered.');
+                }
             }
 
-            if (
-                (!empty($data['broker_three_commission']) && $data['broker_three_commission'] != 0 && (empty($data['broker_three_id']) || $data['broker_three_id'] == null))
-            ) {
-                $validator->errors()->add('broker_three_id', 'Broker 3 is required if commission is entered.');
-            }
-            if (
-                (!empty($data['broker_three_id']) && (empty($data['broker_three_commission']) && $data['broker_three_commission'] !== "0" && $data['broker_three_commission'] !== 0))
-            ) {
-                $validator->errors()->add('broker_three_commission', 'Broker 3 commission is required if broker is selected.');
+            // Broker 3 Validation
+            $hasBroker3 = !empty($data['broker_three_id']);
+            $hasComm3 = (!empty($data['broker_three_commission']) || (isset($data['broker_three_commission']) && (string)$data['broker_three_commission'] === "0"));
+            $hasType3 = !empty($data['broker_three_calculation_type']);
+
+            if ($hasBroker3 || $hasComm3 || $hasType3) {
+                if (!$hasBroker3) {
+                    $validator->errors()->add('broker_three_id', 'Broker 3 is required if commission or type is entered.');
+                }
+                if (!$hasComm3) {
+                    $validator->errors()->add('broker_three_commission', 'Broker 3 commission is required if broker or type is selected.');
+                }
+                if (!$hasType3) {
+                    $validator->errors()->add('broker_three_calculation_type', 'Broker 3 calculation type is required if broker or commission is entered.');
+                }
             }
         });
     }
