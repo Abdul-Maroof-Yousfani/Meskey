@@ -28,15 +28,16 @@
             <!-- Header Section -->
             <div class="row" style=" width: 100% !important;">
                 <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
-                    <div class="voucher-supp">
+                    <!-- <div class="voucher-supp">
                         <h4 class="font-weight-bold">Voucher No.</h4>
                         <h6 class="text-dark font-weight-bold">{{ $paymentVoucher->unique_no }}</h6>
-                    </div>
+                    </div> -->
                 </div>
                 <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 text-right">
                     <div class="voucher-supp p">
                         <p class="mb-1"><strong>Date:</strong> {{ $paymentVoucher->pv_date->format('d-M-Y') }}</p>
                         <p class="mb-1"><strong>Type:</strong> {{ formatEnumValue($paymentVoucher->voucher_type) }}</p>
+                        <h6 class="mb-1"><strong>Voucher No.:</strong> {{ $paymentVoucher->unique_no }}</h6>
                     </div>
                 </div>
             </div>
@@ -50,7 +51,7 @@
                         <p><strong>Paid to:</strong> {{ $paymentVoucher->requestAccount->name ?? 'N/A' }}</p>
                     </div>
                 </div>
-                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
+                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 text-right">
                     <div class="supp">
                         <h5 class="font-weight-bold">Reference Information</h5>
                         <p><strong>Bill/Ref No.:</strong> {{ $paymentVoucher->ref_bill_no ?? 'N/A' }}</p>
@@ -87,7 +88,7 @@
             @endif
         </div>
 
-        <div class="voucher-po mb-4 p-3 border rounded d-none">
+        <!-- <div class="voucher-po mb-4 p-3 border rounded d-none">
             <div class="supp">
                 <h5 class=" ">Purchase Order</h5>
                 <p class="mb-0">
@@ -107,9 +108,9 @@
                     @endif
                 </p>
             </div>
-        </div>
+        </div> -->
 
-        <div class="voucher-requests mb-4 d-none">
+        <!-- <div class="voucher-requests mb-4 d-none">
             <h5 class="  mb-3">Payment Requests</h5>
             <div class="table-responsive">
                 <table class="table  sale_older_tab userlittab table table-bordered sf-table-list sale-list table-hover"
@@ -156,7 +157,7 @@
                     </tbody>
                 </table>
             </div>
-        </div>
+        </div> -->
 
         <div class="voucher-transactions mb-4">
             <h5 class="mb-3">Transaction Details</h5>
