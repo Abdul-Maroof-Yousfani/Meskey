@@ -167,7 +167,7 @@
                     <thead class="thead-light">
                         <tr>
                             {{-- <th class="text-center">Date</th> --}}
-                            <th>Contract No</th>
+                            <th>Account</th>
                             <th>Description</th>
                             <th class="text-right">Debit</th>
                             <th class="text-right">Credit</th>
@@ -192,7 +192,8 @@
 
                                 if ($lastPart) {
                                     $paymentRequestData = PaymentRequestData::find($lastPart);
-                                    $purchaseOrder = $paymentRequestData->purchaseOrder;
+                                    // dd($paymentRequestData->purchaseOrder);
+                                    $purchaseOrder = $paymentRequestData->purchaseOrder ?? null;
                                 }
                             @endphp
                             <tr>
@@ -204,15 +205,10 @@
                                         class="text-black-50">({{ $transaction->account->hierarchy_path ?? 'N/A' }})</small>
                                 </td>
                                 <td>
+
                                     {{ $transaction->remarks }}
-                                    @if ($transaction->payment_against)
-                                        <br><small class="text-muted">Against: {{ $transaction->payment_against }}
-                                            @if ($transaction->against_reference_no)
-                                                ({{ $transaction->against_reference_no }})
-                                            @endif
-                                            ({{ formatEnumValue($transaction->purpose) }})
-                                        </small>
-                                    @endif
+
+
                                 </td>
                                 <td class="text-right">
                                     {{ $transaction->type == 'debit' ? number_format($transaction->amount, 2) : '-' }}

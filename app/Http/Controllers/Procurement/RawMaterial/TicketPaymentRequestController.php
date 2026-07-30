@@ -233,6 +233,8 @@ class TicketPaymentRequestController extends Controller
             $accountId = $purchaseOrder->supplier->account_id ?? null;
 
             $requestData['account_id'] = $accountId;
+            $requestData['arrival_ticket_id'] = $ticket->id ?? null;
+            $requestData['grn_no'] = $ticket->arrivalSlip->unique_no ?? null;
 
             $paymentRequestData = PaymentRequestData::create($requestData);
 
