@@ -49,9 +49,9 @@ class PaymentRequestApprovalController extends Controller
                     $query->where('company_location_id', $request->company_location_id);
                 });
             })
-            ->whereHas('paymentRequestData.purchaseOrder', function ($query) {
-                $query->whereIn('company_location_id', getUserCurrentCompanyLocations());
-            })
+            // ->whereHas('paymentRequestData.purchaseOrder', function ($query) {
+            //     $query->whereIn('company_location_id', getUserCurrentCompanyLocations());
+            // })
             ->when($request->filled('supplier_id'), function ($q) use ($request) {
                 return $q->whereHas('paymentRequestData.purchaseOrder', function ($query) use ($request) {
                     $query->where('supplier_id', $request->supplier_id);
@@ -68,14 +68,41 @@ class PaymentRequestApprovalController extends Controller
             ->when($request->filled('request_type'), function ($q) use ($request) {
                 return $q->where('request_type', $request->request_type);
             })
+            // ->when($request->filled('truck_no'), function ($q) use ($request) {
+            //     return $q->whereHas('paymentRequestData', function ($query) use ($request) {
+            //         $query->where('truck_no', 'like', "%{$request->truck_no}%");
+            //     });
+            // })
             ->when($request->filled('truck_no'), function ($q) use ($request) {
-                return $q->whereHas('paymentRequestData', function ($query) use ($request) {
-                    $query->where('truck_no', 'like', "%{$request->truck_no}%");
+                return $q->where(function ($query) use ($request) {
+                    $query->whereHas('paymentRequestData.arrivalTicket', function ($subQuery) use ($request) {
+                        $subQuery->where('truck_no', 'like', "%{$request->truck_no}%");
+                    })
+                        ->orWhereHas('paymentRequestData.purchaseTicket', function ($subQuery) use ($request) {
+                            $subQuery->where('truck_no', 'like', "%{$request->truck_no}%");
+                        })
+                        ->orWhereHas('paymentRequestData.purchaseTicket.purchaseFreight', function ($subQuery) use ($request) {
+                            $subQuery->where('truck_no', 'like', "%{$request->truck_no}%");
+                        });
                 });
             })
+            // ->when($request->filled('bilty_no'), function ($q) use ($request) {
+            //     return $q->whereHas('paymentRequestData', function ($query) use ($request) {
+            //         $query->where('bilty_no', 'like', "%{$request->bilty_no}%");
+            //     });
+            // })
+
             ->when($request->filled('bilty_no'), function ($q) use ($request) {
-                return $q->whereHas('paymentRequestData', function ($query) use ($request) {
-                    $query->where('bilty_no', 'like', "%{$request->bilty_no}%");
+                return $q->where(function ($query) use ($request) {
+                    $query->whereHas('paymentRequestData.arrivalTicket', function ($subQuery) use ($request) {
+                        $subQuery->where('bilty_no', 'like', "%{$request->bilty_no}%");
+                    })
+                        ->orWhereHas('paymentRequestData.purchaseTicket', function ($subQuery) use ($request) {
+                            $subQuery->where('bilty_no', 'like', "%{$request->bilty_no}%");
+                        })
+                        ->orWhereHas('paymentRequestData.purchaseTicket.purchaseFreight', function ($subQuery) use ($request) {
+                            $subQuery->where('bilty_no', 'like', "%{$request->bilty_no}%");
+                        });
                 });
             })
             ->when($request->filled('amount'), function ($q) use ($request) {

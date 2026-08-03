@@ -248,6 +248,7 @@ class PaymentRequestController extends Controller
                 ->first();
 
             $requestData['account_id'] = $accountId;
+            $requestData['purchase_ticket_id'] = $requestData['ticket_id'];
             $paymentRequestData = PaymentRequestData::create($requestData);
 
             $this->createPaymentRequests($paymentRequestData, $request, $accountId);

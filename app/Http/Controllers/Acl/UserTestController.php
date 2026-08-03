@@ -111,7 +111,7 @@ class UserTestController extends Controller
         $exists = $query->exists();
 
         return response()->json([
-            'available' => ! $exists,
+            'available' => !$exists,
             'username' => $username,
         ]);
     }
@@ -137,7 +137,7 @@ class UserTestController extends Controller
         try {
             $input = $request->all();
 
-            if (! empty($input['password'])) {
+            if (!empty($input['password'])) {
                 $input['password'] = Hash::make($input['password']);
             } else {
                 $input = Arr::except($input, ['password']);
@@ -166,7 +166,7 @@ class UserTestController extends Controller
                 // 'redirect' => route('users-test.assign', $user->id),
             ]);
         } catch (Exception $e) {
-            Log::error('User update failed: '.$e->getMessage(), [
+            Log::error('User update failed: ' . $e->getMessage(), [
                 'exception' => $e,
                 'user_id' => $id,
                 'input' => $request->all(),
@@ -225,7 +225,7 @@ class UserTestController extends Controller
             $permissions = $request->permission ?? [];
 
             // If any permission is selected, dashboard must be present
-            if (! empty($permissions) && ! in_array('dashboard', $permissions)) {
+            if (!empty($permissions) && !in_array('dashboard', $permissions)) {
                 $validator->errors()->add('permission', 'Dashboard permission is required.');
             }
         });
@@ -248,7 +248,7 @@ class UserTestController extends Controller
             $company = Company::findOrFail($companyId);
             $prefix = substr(strtoupper($company->name), 0, 3);
 
-            $autoRoleName = $user->username.'-company'.$prefix.$companyId;
+            $autoRoleName = $user->username . '-company' . $prefix . $companyId;
 
             $role = Role::firstOrCreate(['name' => $autoRoleName]);
 
@@ -295,7 +295,7 @@ class UserTestController extends Controller
                     ->pluck('id')
                     ->toArray();
 
-                if (! empty($locArrivals)) {
+                if (!empty($locArrivals)) {
 
                     // Add in final mapping output
                     $newArrivalLocationMap[$locId] = $locArrivals;
@@ -381,11 +381,11 @@ class UserTestController extends Controller
 
         $company = $user->companies->where('id', $companyId)->first();
 
-        if ($company && ! empty($company->pivot->locations)) {
+        if ($company && !empty($company->pivot->locations)) {
             $selectedLocations = json_decode($company->pivot->locations, true) ?? [];
         }
 
-        if ($company && ! empty($company->pivot->arrival_locations)) {
+        if ($company && !empty($company->pivot->arrival_locations)) {
             $selectedArrivals = json_decode($company->pivot->arrival_locations, true) ?? [];
         }
 
@@ -436,7 +436,7 @@ class UserTestController extends Controller
             $permissions = $request->permission ?? [];
 
             // If any permission is selected, dashboard must be present
-            if (! empty($permissions) && ! in_array('dashboard', $permissions)) {
+            if (!empty($permissions) && !in_array('dashboard', $permissions)) {
                 $validator->errors()->add('permission', 'Dashboard permission is required.');
             }
         });
@@ -458,7 +458,7 @@ class UserTestController extends Controller
                 ->pluck('id')
                 ->toArray();
 
-            if (! empty($locArrivals)) {
+            if (!empty($locArrivals)) {
                 $flatArrivalData = array_merge($flatArrivalData, $locArrivals);
                 $mapArrivalData[$locId] = $locArrivals;
             }
@@ -507,7 +507,7 @@ class UserTestController extends Controller
 
         foreach ($allCompanies as $comp) {
 
-            if (! empty($comp->pivot->locations)) {
+            if (!empty($comp->pivot->locations)) {
                 $locs = json_decode($comp->pivot->locations, true) ?? [];
 
                 foreach ($locs as $locId) {
@@ -515,7 +515,7 @@ class UserTestController extends Controller
                 }
             }
 
-            if (! empty($comp->pivot->arrival_locations)) {
+            if (!empty($comp->pivot->arrival_locations)) {
 
                 if ($comp->id == $companyId) {
                     foreach ($mapArrivalData as $locId => $arrs) {
@@ -622,7 +622,7 @@ class UserTestController extends Controller
         $validator = Validator::make($request->all(), [
             'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'name' => 'required',
-            'email' => 'required|email|unique:users,email,'.$id,
+            'email' => 'required|email|unique:users,email,' . $id,
         ]);
 
         if ($validator->fails()) {
@@ -650,10 +650,10 @@ class UserTestController extends Controller
         try {
             $user = User::findOrFail($id);
 
-            if (! Hash::check($request->old_password, $user->password)) {
+            if (!Hash::check($request->old_password, $user->password)) {
                 $customErrors['old_password'] = ['The provided old password does not match.'];
             }
-            if (! empty($customErrors)) {
+            if (!empty($customErrors)) {
                 return response()->json(['errors' => $customErrors], 422);
             }
 
@@ -672,7 +672,7 @@ class UserTestController extends Controller
     public function getTable(Request $request)
     {
         $users = User::with(['companies'])->when($request->filled('search'), function ($q) use ($request) {
-            $searchTerm = '%'.$request->search.'%';
+            $searchTerm = '%' . $request->search . '%';
 
             return $q->where(function ($sq) use ($searchTerm) {
                 $sq->where('name', 'like', $searchTerm);
@@ -680,7 +680,9 @@ class UserTestController extends Controller
             });
         })
             ->latest()
-            ->paginate(10);
+            // ->paginate(10);
+            ->paginate($request->get('per_page', 25));
+
 
         return view('management.acl.users-test.getList', compact('users'));
     }
@@ -697,9 +699,9 @@ class UserTestController extends Controller
 
         $row = 2;
         foreach ($discounts as $discount) {
-            $sheet->setCellValue('A'.$row, $discount->name);
-            $sheet->setCellValue('B'.$row, $discount->email);
-            $sheet->setCellValue('C'.$row, date('D d M Y', strtotime($discount->created_at)));
+            $sheet->setCellValue('A' . $row, $discount->name);
+            $sheet->setCellValue('B' . $row, $discount->email);
+            $sheet->setCellValue('C' . $row, date('D d M Y', strtotime($discount->created_at)));
             $row++;
         }
 

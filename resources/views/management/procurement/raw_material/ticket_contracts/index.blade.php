@@ -83,6 +83,10 @@
                                                     <select name="supplier_id" id="supplier_id_f"
                                                         class="form-control select2">
                                                         <option value="">Accounts Of</option>
+                                                        @if($selectedsupplier)
+                                                            <option value="{{ $selectedsupplier->id }}"
+                                                                selected>{{ $selectedsupplier->name }}</option>
+                                                        @endif
                                                     </select>
                                                 </div>
                                             </div>
@@ -107,6 +111,10 @@
                                                     <select name="sauda_type_id" id="sauda_type"
                                                         class="form-control select2">
                                                         <option value="">Sauda Type Name</option>
+                                                        @if($selectedSaudaType)
+                                                            <option value="{{ $selectedSaudaType->id }}"
+                                                                selected>{{ $selectedSaudaType->name }}</option>
+                                                        @endif
                                                     </select>
                                                 </div>
                                             </div>

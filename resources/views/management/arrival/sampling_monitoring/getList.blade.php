@@ -23,8 +23,8 @@
                 } else {
                     $color = 'grey';
                 }
-                
-                ?>
+
+                                                ?>
                 <tr class="bg-{{ $color }}">
                     <td>
                         <p class="m-0">
@@ -48,7 +48,7 @@
                     </td>
                     <td>
                         {{-- @if ($row->is_auto_approved == 'no')
-                            <div class="badge badge-danger">Approval Required</div>
+                        <div class="badge badge-danger">Approval Required</div>
                         @endif --}}
 
                         @if ($row->approved_status == 'pending')
@@ -87,7 +87,7 @@
                             </div>
                         </div> --}}
                         {{-- @else
-                       <p style="font-size: 12px;margin:0;font-weight:bold;"><small> No Action Available</small></p> --}}
+                        <p style="font-size: 12px;margin:0;font-weight:bold;"><small> No Action Available</small></p> --}}
                         {{-- @endif --}}
 
 
@@ -166,7 +166,7 @@
                         request_id: requestId,
                         status: status
                     },
-                    beforeSend: function() {
+                    beforeSend: function () {
                         Swal.fire({
                             title: "Processing...",
                             text: "Please wait",
@@ -177,7 +177,7 @@
                             }
                         });
                     },
-                    success: function(response) {
+                    success: function (response) {
                         Swal.fire({
                             title: "Success!",
                             text: response.message,
@@ -186,7 +186,7 @@
                             location.reload();
                         });
                     },
-                    error: function(xhr) {
+                    error: function (xhr) {
                         Swal.fire({
                             title: "Error!",
                             text: xhr.responseJSON.message || "Something went wrong!",

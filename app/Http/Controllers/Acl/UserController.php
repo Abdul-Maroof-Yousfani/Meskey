@@ -301,7 +301,7 @@ class UserController extends Controller
             });
         })
             ->latest()
-            ->paginate(10);
+            ->paginate($request->get('per_page', 25));
 
         return view('management.acl.users.getList', compact('users'));
     }
