@@ -67,6 +67,8 @@ class ArrivalTicket extends Model
         'lumpsum_deduction',
         'lumpsum_deduction_kgs',
         'is_lumpsum_deduction',
+        'lumpsum_deduction_maund',
+        'lumpsum_deduction_kgs_maund',
         'first_qc_status',
         'bilty_return_confirmation',
         'location_transfer_status',
@@ -243,3 +245,4 @@ class ArrivalTicket extends Model
     }
 
 }
+

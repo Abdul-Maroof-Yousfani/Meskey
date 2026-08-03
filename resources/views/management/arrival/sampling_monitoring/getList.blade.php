@@ -96,6 +96,12 @@
                             class="info p-1 text-center mr-2 position-relative ">
                             <i class="ft-eye font-medium-3"></i>
                         </a>
+                        @if (auth()->user()->user_type == 'super-admin')
+                            <a onclick="openModal(this,'{{ route('sampling-monitoring.edit-test', $row->id) }}','Test Edit Approval Requests',false,'90%')"
+                                class="warning p-1 text-center mr-2 position-relative " title="Test Edit">
+                                <i class="fa fa-check font-medium-3">Test</i>
+                            </a>
+                        @endif
                         {{-- @endcan --}}
                         {{-- @can('role-delete')
                         <a onclick="deletemodal('{{ route('ticket.destroy', $row->id) }}','{{ route('get.ticket') }}')"

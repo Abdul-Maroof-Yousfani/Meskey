@@ -19,6 +19,7 @@ class ArrivalSamplingResult extends Model
         'checklist_value',
         'remark',
         'applied_deduction',
+        'applied_deduction_maund',
         'relief_deduction',
     ];
 
@@ -32,3 +33,4 @@ class ArrivalSamplingResult extends Model
         return $this->hasOne(ProductSlab::class, 'product_slab_type_id', 'product_slab_type_id');
     }
 }
+
