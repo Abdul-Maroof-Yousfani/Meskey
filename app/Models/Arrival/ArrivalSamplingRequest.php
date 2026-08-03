@@ -28,6 +28,8 @@ class ArrivalSamplingRequest extends Model
         'is_resampling_made',
         'arrival_product_id',
         'is_lumpsum_deduction',
+        'lumpsum_deduction_maund',
+        'lumpsum_deduction_kgs_maund',
         'lumpsum_deduction_kgs',
     ];
 
@@ -57,3 +59,4 @@ class ArrivalSamplingRequest extends Model
         return $this->belongsTo(User::class, 'sample_taken_by');
     }
 }
+

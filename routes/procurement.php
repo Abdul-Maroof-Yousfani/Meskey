@@ -67,6 +67,8 @@ Route::prefix('raw-material')->name('raw-material.')->group(function () {
     Route::post('get-purchase-sampling', [PurchaseSamplingController::class, 'getList'])->name('get.purchase-sampling');
     Route::post('get-purchase-resampling', [PurchaseSamplingController::class, 'getList'])->name('get.purchase-resampling');
 
+    Route::get('sampling-monitoring/{id}/edit-test', [PurchaseSamplingMonitoringController::class, 'editTest'])->name('sampling-monitoring.edit-test');
+    Route::put('sampling-monitoring/{id}/update-test', [PurchaseSamplingMonitoringController::class, 'updateTest'])->name('sampling-monitoring.update-test');
     Route::resource('sampling-monitoring', PurchaseSamplingMonitoringController::class);
     Route::post('/get-sampling-monitoring', [PurchaseSamplingMonitoringController::class, 'getList'])->name('get.sampling-monitoring');
 
@@ -273,3 +275,6 @@ Route::prefix('indicative-prices')->group(function () {
 Route::middleware(['web'])->prefix('procurement/store')->name('store.')->group(function () {
     Route::get('purchase-return/get-bills-by-supplier', [App\Http\Controllers\Procurement\Store\PurchaseReturnController::class, 'getPurchaseBillsBySupplier'])->name('purchase-return.get-bills-by-supplier');
 });
+
+
+

@@ -20,6 +20,7 @@ class PurchaseSamplingResultForCompulsury extends Model
         'arrival_compulsory_qc_param_id',
         'compulsory_checklist_value',
         'applied_deduction',
+        'applied_deduction_maund',
         'remark',
     ];
 
@@ -39,3 +40,4 @@ class PurchaseSamplingResultForCompulsury extends Model
         return $this->belongsTo(ArrivalCompulsoryQcParam::class, 'arrival_compulsory_qc_param_id');
     }
 }
+
