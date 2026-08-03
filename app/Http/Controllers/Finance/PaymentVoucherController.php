@@ -1123,12 +1123,12 @@ class PaymentVoucherController extends Controller
             // dd($perRequestData);
             // Build bank remark
             $bankRemarks = "A payment of Rs. " . number_format($totalAmount, 2) . " has been made.";
-            if ($bankName) {
-                $bankRemarks .= " against bank '{$bankName}'";
-            }
-            if ($accountNumber) {
-                $bankRemarks .= " with account number '{$accountNumber}'";
-            }
+            // if ($bankName) {
+            //     $bankRemarks .= " against bank '{$bankName}'";
+            // }
+            // if ($accountNumber) {
+            //     $bankRemarks .= " with account number '{$accountNumber}'";
+            // }
             $bankRemarks .= $request->voucher_type === 'bank_payment_voucher' ? ' through bank transfer.' : ' in cash ' . count($perRequestData) . ' bills';
 
             // Create credit transaction
