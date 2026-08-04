@@ -471,6 +471,8 @@
                 }, function (no) {
                     $('input[name="prod_no"]').val(no);
                 });
+                
+                loadMachinesByPlant();
             });
 
             // Generate production number on page load
@@ -633,10 +635,12 @@
 
         function loadMachinesByPlant() {
             const plantId = $('#plant_id').val();
+            const date = $('input[name="prod_date"]').val();
             const container = $('#productionMachinesContainer');
             const section = $('#productionMachinesSection');
+            const header = $('#productionMachinesSectionHeader');
 
-            if (!plantId) {
+            if (!plantId || !date) {
                 container.empty();
                 section.hide();
                 return;
@@ -647,41 +651,76 @@
                 method: 'POST',
                 data: {
                     plant_id: plantId,
+                    date: date,
                     _token: '{{ csrf_token() }}'
                 },
                 success: function (response) {
                     container.empty();
                     if (response.machines && response.machines.length > 0) {
                         section.show();
-                        let html = `
-                            <table class="table table-bordered table-sm">
-                                <thead style="background-color: #f8f9fa;">
-                                    <tr>
-                                        <th width="10%">S.No</th>
-                                        <th>Machine Name</th>
-                                        <th width="20%" class="text-center">Select</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                        `;
+                        let html = `<div class="row">`;
                         $.each(response.machines, function (index, machine) {
+                            const isEnabled = machine.is_enabled;
+                            const headerBg = isEnabled ? '#e8f3fc' : '#f5f5f5';
+                            const statusLabel = isEnabled ? 'Active' : 'Inactive';
+                            const statusColor = isEnabled ? '#007bff' : '#6c757d';
+                            const cardBorder = isEnabled ? '#93c3f2' : '#e0e0e0';
                             html += `
-                                <tr>
-                                    <td>${index + 1}</td>
-                                    <td>${machine.name}</td>
-                                    <td class="text-center">
-                                        <div class="custom-control custom-switch">
-                                            <input type="checkbox" class="custom-control-input" name="production_machine_id[]" value="${machine.id}" id="machine_${machine.id}" checked>
-                                            <label class="custom-control-label" for="machine_${machine.id}"></label>
+                                <div class="col-md-12 mb-3">
+                                    <div class="machine-card" id="machine_card_${machine.id}" style="border: 1px solid ${cardBorder}; border-radius: 4px; overflow: hidden; transition: all 0.3s;">
+                                        <div class="machine-card-header d-flex align-items-center justify-content-between px-3 py-2" id="machine_card_header_${machine.id}" style="background: ${headerBg}; border-bottom: 1px solid ${cardBorder};">
+                                            <div class="d-flex align-items-center">
+                                                <div>
+                                                    <div style="font-weight:bold; font-size:14px; color: #333;">${machine.name}</div>
+                                                    <div style="font-size:12px; color: #666;">Machine #${index + 1}</div>
+                                                </div>
+                                            </div>
+                                            <div class="d-flex align-items-center">
+                                                <label class="machine-toggle-label mb-0" for="machine_${machine.id}" style="cursor:pointer; display:flex; align-items:center; gap:6px;">
+                                                    <span id="machine_status_${machine.id}" style="font-size:12px; font-weight:bold; color:${statusColor};">${statusLabel}</span>
+                                                    <div class="custom-control custom-switch mb-0">
+                                                        <input type="checkbox" class="custom-control-input machine-toggle" name="production_machine_id[]" value="${machine.id}" id="machine_${machine.id}" ${isEnabled ? 'checked' : ''} onchange="updateMachineCardStyle(this, ${machine.id})">
+                                                        <label class="custom-control-label" for="machine_${machine.id}"></label>
+                                                    </div>
+                                                </label>
+                                            </div>
                                         </div>
-                                    </td>
-                                </tr>
+                                        <div class="machine-card-body px-3 pt-2 pb-2" style="background:#fff;">
+                                            <div style="font-size:14px; font-weight:bold; color:#333; margin-bottom:12px;">Time Slots</div>
+                                            <div id="machine_time_table_${machine.id}">
+                                                <div class="row time-row align-items-end mb-3">
+                                                    <div class="col-md-3">
+                                                        <label style="font-size:14px; color:#555; font-weight:500; margin-bottom:4px;">Start Time</label>
+                                                        <input type="time" name="machine_start_time[${machine.id}][]" class="form-control start-time" onchange="calculateMachineTime(${machine.id})" style="font-size:14px; height:42px;">
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <label style="font-size:14px; color:#555; font-weight:500; margin-bottom:4px;">End Time</label>
+                                                        <input type="time" name="machine_end_time[${machine.id}][]" class="form-control end-time" onchange="calculateMachineTime(${machine.id})" style="font-size:14px; height:42px;">
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <label style="font-size:14px; color:#555; font-weight:500; margin-bottom:4px;">Duration</label>
+                                                        <input type="text" class="form-control duration-display" readonly style="background:#f8f9fa; font-weight:bold; font-size:14px; text-align:center; height:42px;">
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <button type="button" class="btn btn-danger remove-time-row" onclick="removeMachineTimeRow(this, ${machine.id})" style="height:42px; width:42px; display:flex; align-items:center; justify-content:center; margin: 0;"><i class="fa fa-trash"></i></button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="d-flex justify-content-between align-items-center mt-3 pt-3" style="border-top: 1px solid #dee2e6;">
+                                                <div class="d-flex align-items-center" style="gap:10px;">
+                                                    <span style="font-size:15px; font-weight:bold; color:#333;">Grand Total Time:</span>
+                                                    <input type="text" class="grand-total-display form-control" readonly style="width:120px; font-weight:bold; text-align:center; font-size:15px; height:42px;">
+                                                </div>
+                                                <button type="button" class="btn btn-primary" onclick="addMachineTimeRow(${machine.id})" style="height:42px; padding:0 20px;">
+                                                    <i class="fa fa-plus mr-1"></i> Add Time Slot
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             `;
                         });
-                        html += `
-                                </tbody>
-                            </table>
-                        `;
+                        html += `</div>`;
                         container.append(html);
                     } else {
                         section.hide();
@@ -1358,6 +1397,83 @@
         if (typeof originalFetchDynamicHTML === 'function') {
             // If fetchDynamicHTML returns a promise, we can hook into it
             // Otherwise, we'll use the DOMNodeInserted event above
+        }
+
+        function addMachineTimeRow(machineId) {
+            const container = $(`#machine_time_table_${machineId}`);
+            const tr = `
+            <div class="row time-row align-items-end mb-3">
+                <div class="col-md-3">
+                    <label style="font-size:14px; color:#555; font-weight:500; margin-bottom:4px;">Start Time</label>
+                    <input type="time" name="machine_start_time[${machineId}][]" class="form-control start-time" onchange="calculateMachineTime(${machineId})" style="font-size:14px; height:42px;">
+                </div>
+                <div class="col-md-3">
+                    <label style="font-size:14px; color:#555; font-weight:500; margin-bottom:4px;">End Time</label>
+                    <input type="time" name="machine_end_time[${machineId}][]" class="form-control end-time" onchange="calculateMachineTime(${machineId})" style="font-size:14px; height:42px;">
+                </div>
+                <div class="col-md-3">
+                    <label style="font-size:14px; color:#555; font-weight:500; margin-bottom:4px;">Duration</label>
+                    <input type="text" class="form-control duration-display" readonly style="background:#f8f9fa; font-weight:bold; font-size:14px; text-align:center; height:42px;">
+                </div>
+                <div class="col-md-3">
+                    <button type="button" class="btn btn-danger remove-time-row" onclick="removeMachineTimeRow(this, ${machineId})" style="height:42px; width:42px; display:flex; align-items:center; justify-content:center; margin: 0;"><i class="fa fa-trash"></i></button>
+                </div>
+            </div>
+            `;
+            container.append(tr);
+        }
+
+        function removeMachineTimeRow(btn, machineId) {
+            $(btn).closest('.time-row').remove();
+            calculateMachineTime(machineId);
+        }
+
+        function calculateMachineTime(machineId) {
+            let totalMinutes = 0;
+            $(`#machine_time_table_${machineId} .time-row`).each(function() {
+                const startTime = $(this).find('.start-time').val();
+                const endTime = $(this).find('.end-time').val();
+                let durationInput = $(this).find('.duration-display');
+
+                if (startTime && endTime) {
+                    const start = new Date(`1970-01-01T${startTime}:00`);
+                    let end = new Date(`1970-01-01T${endTime}:00`);
+                    if (end < start) {
+                        end.setDate(end.getDate() + 1);
+                    }
+                    const diffMs = end - start;
+                    const diffMins = Math.floor(diffMs / 60000);
+                    totalMinutes += diffMins;
+                    
+                    const hours = Math.floor(diffMins / 60);
+                    const mins = diffMins % 60;
+                    durationInput.val(`${hours}h ${mins}m`);
+                } else {
+                    durationInput.val('');
+                }
+            });
+
+            const grandTotalHours = Math.floor(totalMinutes / 60);
+            const grandTotalMins = totalMinutes % 60;
+            $(`#machine_time_table_${machineId}`).closest('.machine-card-body').find('.grand-total-display').val(`${grandTotalHours}h ${grandTotalMins}m`);
+        }
+
+        function updateMachineCardStyle(checkbox, machineId) {
+            const isChecked = $(checkbox).is(':checked');
+            const card = $(`#machine_card_${machineId}`);
+            const header = $(`#machine_card_header_${machineId}`);
+            const statusLabel = $(`#machine_status_${machineId}`);
+            if (isChecked) {
+                card.css('border-color', '#93c3f2');
+                header.css('background', '#e8f3fc');
+                header.css('border-bottom', '1px solid #93c3f2');
+                statusLabel.text('Active').css('color', '#007bff');
+            } else {
+                card.css('border-color', '#e0e0e0');
+                header.css('background', '#f5f5f5');
+                header.css('border-bottom', '1px solid #e0e0e0');
+                statusLabel.text('Inactive').css('color', '#6c757d');
+            }
         }
     </script>
 @endsection

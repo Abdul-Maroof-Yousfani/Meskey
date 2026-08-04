@@ -110,4 +110,9 @@ class ProductionVoucher extends Model
     {
         return $this->belongsToMany(\App\Models\Master\ProductionMachine::class, 'production_voucher_machines', 'production_voucher_id', 'production_machine_id')->withTimestamps();
     }
+
+    public function productionVoucherMachineTimes()
+    {
+        return $this->hasMany(ProductionVoucherMachineTime::class, 'production_voucher_id');
+    }
 }
