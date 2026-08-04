@@ -747,13 +747,28 @@ class ProductionVoucherController extends Controller
     public function getMachinesByPlant(Request $request)
     {
         $plantId = $request->plant_id;
-        if (!$plantId) {
+        $date = $request->date;
+
+        if (!$plantId || !$date) {
             return response()->json(['machines' => []]);
         }
 
-        $machines = ProductionMachine::where('plant_id', $plantId)
-            ->where('status', 'active')
-            ->get();
+        // Fetch from MachinePlanSetting
+        $machinePlanSetting = \App\Models\Production\MachinePlanSetting::with(['items.machine'])
+            ->where('plant_id', $plantId)
+            ->whereDate('date', $date)
+            ->first();
+
+        $machines = [];
+        if ($machinePlanSetting && $machinePlanSetting->items) {
+            foreach ($machinePlanSetting->items as $item) {
+                if ($item->machine && $item->machine->status === 'active') {
+                    $machine = $item->machine;
+                    $machine->is_enabled = $item->is_enabled;
+                    $machines[] = $machine;
+                }
+            }
+        }
 
         return response()->json(['machines' => $machines]);
     }
@@ -812,6 +827,33 @@ class ProductionVoucherController extends Controller
             // Sync production machines
             if ($request->has('production_machine_id')) {
                 $productionVoucher->productionMachines()->sync($request->production_machine_id);
+
+                // Save Machine Timings
+                if ($request->has('machine_start_time') && is_array($request->machine_start_time)) {
+                    foreach ($request->machine_start_time as $machineId => $startTimes) {
+                        $endTimes = $request->machine_end_time[$machineId] ?? [];
+                        
+                        foreach ($startTimes as $index => $startTime) {
+                            $endTime = $endTimes[$index] ?? null;
+                            if ($startTime && $endTime) {
+                                $start = \Carbon\Carbon::parse($startTime);
+                                $end = \Carbon\Carbon::parse($endTime);
+                                if ($end->lt($start)) {
+                                    $end->addDay();
+                                }
+                                $durationMinutes = $start->diffInMinutes($end);
+
+                                \App\Models\Production\ProductionVoucherMachineTime::create([
+                                    'production_voucher_id' => $productionVoucher->id,
+                                    'production_machine_id' => $machineId,
+                                    'start_time' => $startTime,
+                                    'end_time' => $endTime,
+                                    'duration_minutes' => $durationMinutes
+                                ]);
+                            }
+                        }
+                    }
+                }
             }
 
             // Save Production Inputs
@@ -1169,8 +1211,38 @@ class ProductionVoucherController extends Controller
             // Sync production machines
             if ($request->has('production_machine_id')) {
                 $productionVoucher->productionMachines()->sync($request->production_machine_id);
+
+                // Save Machine Timings
+                \App\Models\Production\ProductionVoucherMachineTime::where('production_voucher_id', $productionVoucher->id)->delete();
+                
+                if ($request->has('machine_start_time') && is_array($request->machine_start_time)) {
+                    foreach ($request->machine_start_time as $machineId => $startTimes) {
+                        $endTimes = $request->machine_end_time[$machineId] ?? [];
+                        
+                        foreach ($startTimes as $index => $startTime) {
+                            $endTime = $endTimes[$index] ?? null;
+                            if ($startTime && $endTime) {
+                                $start = \Carbon\Carbon::parse($startTime);
+                                $end = \Carbon\Carbon::parse($endTime);
+                                if ($end->lt($start)) {
+                                    $end->addDay();
+                                }
+                                $durationMinutes = $start->diffInMinutes($end);
+
+                                \App\Models\Production\ProductionVoucherMachineTime::create([
+                                    'production_voucher_id' => $productionVoucher->id,
+                                    'production_machine_id' => $machineId,
+                                    'start_time' => $startTime,
+                                    'end_time' => $endTime,
+                                    'duration_minutes' => $durationMinutes
+                                ]);
+                            }
+                        }
+                    }
+                }
             } else {
                 $productionVoucher->productionMachines()->sync([]);
+                \App\Models\Production\ProductionVoucherMachineTime::where('production_voucher_id', $productionVoucher->id)->delete();
             }
 
             // Delete existing inputs and outputs (always delete and recreate from form data)
