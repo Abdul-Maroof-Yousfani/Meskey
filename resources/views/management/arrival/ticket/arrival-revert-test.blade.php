@@ -2499,6 +2499,22 @@
             let value = parseFloat($(this).val()) || 0;
             $('#lumpsum-kgs-value').val((value / 40).toFixed(2));
         });
+
+        // Auto-calculate on page load if values exist
+        setTimeout(function() {
+            $('.deduction-field, #lumpsum-value, #lumpsum-kgs-value').each(function() {
+                if ($(this).val() && parseFloat($(this).val()) > 0) {
+                    $(this).trigger('input');
+                }
+            });
+        }, 500);
+
+        // Ensure lumpsum maund fields update when normal deduction fields calculate the total
+        $(document).on('input', '.deduction-field, .maund-field', function() {
+            setTimeout(function() {
+                $('#lumpsum-value, #lumpsum-kgs-value').trigger('input');
+            }, 50);
+        });
     });
 </script>
 @if (!isset($source) || $source != 'contract')
