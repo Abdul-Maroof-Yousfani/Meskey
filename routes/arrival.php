@@ -36,6 +36,8 @@ Route::get('/get-contracts/{locationId}', [TicketController::class, 'getContract
 Route::get('/get-suppliers/{locationId}', [TicketController::class, 'getSuppliersByLocation']);
 
 Route::resource('sampling-monitoring', SamplingMonitoringController::class);
+Route::get('sampling-monitoring/{sampling_monitoring}/edit-test', [SamplingMonitoringController::class, 'editTest'])->name('sampling-monitoring.edit-test');
+Route::put('sampling-monitoring/{sampling_monitoring}/update-test', [SamplingMonitoringController::class, 'updateTest'])->name('sampling-monitoring.update-test');
 Route::post('/get-sampling-monitoring', [SamplingMonitoringController::class, 'getList'])->name('get.sampling-monitoring');
 
 Route::resource('location-transfer', ArrivalLocationTransferController::class);
@@ -78,3 +80,7 @@ Route::get('/get-freight-form', [FreightController::class, 'getFreightForm'])->n
 
 Route::resource('arrival-slip', ArrivalSlipController::class);
 Route::post('/get-arrival-slip', [ArrivalSlipController::class, 'getList'])->name('get.arrival-slip');
+
+use App\Http\Controllers\MasterControl\ArrivalMasterRevertTestController;
+Route::get('/ticket-revert-test/{ticket}', [ArrivalMasterRevertTestController::class, 'arrivalRevert'])->name('ticket.arrival-revert-test');
+Route::post('/ticket-revert-test/{ticket}', [ArrivalMasterRevertTestController::class, 'update'])->name('ticket.arrival-revert-test.update');

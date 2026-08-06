@@ -33,6 +33,8 @@ class PurchaseSamplingRequest extends Model
         'lumpsum_deduction',
         'lumpsum_deduction_kgs',
         'is_lumpsum_deduction',
+        'lumpsum_deduction_maund',
+        'lumpsum_deduction_kgs_maund',
     ];
 
     public function company()
@@ -70,3 +72,4 @@ class PurchaseSamplingRequest extends Model
         return $this->belongsTo(User::class, 'sample_taken_by');
     }
 }
+

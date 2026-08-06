@@ -72,6 +72,11 @@
                     <a href="{{ route('ticket.arrival-revert', $row->id) }}" class="badge badge-danger border-0 mr-2">
                         Master Control
                     </a>
+                    @if (auth()->user()->user_type == 'super-admin')
+                    <a href="{{ route('ticket.arrival-revert-test', $row->id) }}" class="badge badge-danger border-0 mr-2">
+                        Master Control Test
+                    </a>
+                    @endif
                     @endcanAccess
 
                     @if ($row->first_qc_status == 'rejected' && $row->bilty_return_confirmation == 0)

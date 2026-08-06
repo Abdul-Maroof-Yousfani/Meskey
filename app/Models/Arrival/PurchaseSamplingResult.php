@@ -20,6 +20,7 @@ class PurchaseSamplingResult extends Model
         'remark',
         'product_slab_type_id',
         'applied_deduction',
+        'applied_deduction_maund',
         'relief_deduction',
     ];
 
@@ -33,3 +34,4 @@ class PurchaseSamplingResult extends Model
         return $this->hasOne(ProductSlabType::class, 'id', 'product_slab_type_id');
     }
 }
+
