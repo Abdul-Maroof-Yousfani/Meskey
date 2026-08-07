@@ -9,6 +9,7 @@ use App\Models\BagType;
 use App\Helpers\ApiResponse;
 use App\Models\Master\ArrivalSubLocation;
 use App\Models\Master\LocationType;
+use Request;
 
 class MasterController extends Controller
 {
@@ -50,12 +51,15 @@ class MasterController extends Controller
             return ApiResponse::error('Failed to retrieve bag packings: ' . $e->getMessage(), 500);
         }
     }
-    public function getGala()
+    public function getGala(Request $request)
     {
         try {
             $gala = ArrivalSubLocation::with('arrivalLocation') // ✅ Relation include
                 ->when(auth()->user()->user_type != 'super-admin', function ($q) {
                     return $q->where('arrival_location_id', auth()->user()->arrival_location_id);
+                })
+                ->when($request->arrival_location_id, function ($q) use ($request) {
+                    return $q->where('arrival_location_id', $request->arrival_location_id);
                 })
                 ->get(['id', 'name', 'status', 'arrival_location_id']); // arrival_location_id bhi chahiye hoga
 
