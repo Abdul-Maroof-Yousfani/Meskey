@@ -9,6 +9,7 @@ use App\Models\BagType;
 use App\Helpers\ApiResponse;
 use App\Models\Master\ArrivalSubLocation;
 use App\Models\Master\LocationType;
+use Illuminate\Http\Request;
 
 class MasterController extends Controller
 {
@@ -50,19 +51,32 @@ class MasterController extends Controller
             return ApiResponse::error('Failed to retrieve bag packings: ' . $e->getMessage(), 500);
         }
     }
-    public function getGala()
+    public function getGala(Request $request)
     {
+
         try {
-            $gala = ArrivalSubLocation::with('arrivalLocation') // ✅ Relation include
+            $gala = ArrivalSubLocation::with('arrivalLocation')
                 ->when(auth()->user()->user_type != 'super-admin', function ($q) {
-                    return $q->where('arrival_location_id', auth()->user()->arrival_location_id);
+                    // Ensure arrival_location_id is not null
+                    if (auth()->user()->arrival_location_id) {
+                        return $q->where('arrival_location_id', auth()->user()->arrival_location_id);
+                    }
+                    return $q;
                 })
-                ->get(['id', 'name', 'status', 'arrival_location_id']); // arrival_location_id bhi chahiye hoga
+                ->when($request->filled('arrival_location_id'), function ($q) use ($request) {
+                    // Use filled() instead of checking directly
+                    return $q->where('arrival_location_id', $request->arrival_location_id);
+                })
+                ->get(['id', 'name', 'status', 'arrival_location_id']);
 
             return ApiResponse::success($gala, 'Gala retrieved successfully');
         } catch (\Exception $e) {
             return ApiResponse::error('Failed to retrieve Gala: ' . $e->getMessage(), 500);
         }
+
+
+
+
     }
 
 }
