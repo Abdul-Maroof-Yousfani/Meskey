@@ -29,6 +29,7 @@ class ArrivalApproveController extends Controller
                         ->where('sampling_type', 'inner')
                         ->where('approved_status', 'pending');
                 })
+                ->leftJoin('arrival_locations', 'arrival_locations.id', '=', 'arrival_location_transfers.arrival_location_id')
                 ->whereNull('arrival_sampling_requests.id')
                 // ->when(!$isSuperAdmin, function ($q) use ($authUser) {
                 //     return $q->whereHas('unloadingLocation', function ($query) use ($authUser) {
@@ -38,7 +39,11 @@ class ArrivalApproveController extends Controller
                 ->whereHas('unloadingLocation', function ($query) {
                     $query->whereIn('arrival_location_id', getUserCurrentCompanyArrivalLocations());
                 })
-                ->select('arrival_tickets.*');
+                ->select(
+                    'arrival_tickets.*',
+                    'arrival_locations.id as arrival_location_id',
+                    'arrival_locations.name as arrival_location_name'
+                );
             if ($request->has('paginate')) {
                 $tickets = $tickets->paginate(10);
             } else {
