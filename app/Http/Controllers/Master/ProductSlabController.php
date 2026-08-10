@@ -91,7 +91,76 @@ class ProductSlabController extends Controller
         }
     }
 
+
+
     public function updateMultiple(Request $request)
+    {
+        $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'slabs' => 'required|array',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            ProductSlab::where('product_id', $request->product_id)->delete();
+
+            foreach ($request->slabs as $slabTypeId => $slabData) {
+                if (isset($slabData['is_enabled']) && $slabData['is_enabled'] == 1) {
+                    $deductionType = $slabData['deduction_type'] ?? 'kg';
+                    $isTiered = ($slabData['is_tiered'] ?? 'off') == 'on' ? 1 : 0;
+
+                    if (isset($slabData['ranges'])) {
+                        $validRanges = collect($slabData['ranges'])
+                            ->filter(function ($range) {
+                                return !is_null($range['from'] ?? null) &&
+                                    !is_null($range['to'] ?? null) &&
+                                    !is_null($range['deduction_value'] ?? null);
+                            })
+                            ->sortBy('from')
+                            ->values()
+                            ->all();
+
+                        foreach ($validRanges as $range) {
+                            if ($range['from'] >= $range['to']) {
+                                throw new \Exception("Invalid range: 'From' value must be less than 'To' value for slab type $slabTypeId");
+                            }
+
+                            ProductSlab::create([
+                                'company_id' => $request->company_id,
+                                'product_id' => $request->product_id,
+                                'product_slab_type_id' => $slabTypeId,
+                                'from' => $range['from'],
+                                'to' => $range['to'],
+                                'is_tiered' => $isTiered,
+                                'deduction_type' => $deductionType,
+                                'deduction_value' => $range['deduction_value'],
+                                'is_enabled' => true,
+                                'status' => 'active'
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => 'Product slabs updated successfully.',
+                // 'redirect' => route('get.product-slab')
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'error' => 'Failed to update product slabs: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+
+
+
+    public function updateMultiplebk(Request $request)
     {
         $request->validate([
             'product_id' => 'required|exists:products,id',
