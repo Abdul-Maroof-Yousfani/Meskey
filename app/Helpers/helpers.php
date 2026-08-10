@@ -925,10 +925,10 @@ function get_storage_name_by_id($storage_id)
 function delivery_order_balance($sale_order_data_id)
 {
     $spent = DeliveryOrderData::where("so_data_id", $sale_order_data_id)
-        ->whereHas('delivery_order', function($q) {
-            $q->where(function($query) {
+        ->whereHas('delivery_order', function ($q) {
+            $q->where(function ($query) {
                 $query->whereNull('is_auto_created_from_so')
-                      ->orWhere('is_auto_created_from_so', '!=', 1);
+                    ->orWhere('is_auto_created_from_so', '!=', 1);
             });
             $q->where('am_approval_status', '!=', 'rejected');
         })
@@ -1328,7 +1328,7 @@ if (!function_exists('getDeductionSuggestion')) {
 if (!function_exists('getTableData')) {
     function getTableData($table, $columns = ['*'])
     {
-        return DB::table($table)->select($columns)->get();
+        return DB::table($table)->select($columns)->where('deleted_at', null)->get();
     }
 }
 
@@ -2320,7 +2320,7 @@ function delivery_order_qty_balance($sale_order_data_id)
         $query->where("am_approval_status", "!=", "rejected");
         $query->where(function ($q) {
             $q->whereNull('is_auto_created_from_so')
-              ->orWhere('is_auto_created_from_so', '!=', 1);
+                ->orWhere('is_auto_created_from_so', '!=', 1);
         });
     })->where("so_data_id", $sale_order_data_id)->get();
 
@@ -2337,7 +2337,7 @@ function delivery_order_qty_used($sale_order_data_id)
         $query->where("am_approval_status", "!=", "rejected");
         $query->where(function ($q) {
             $q->whereNull('is_auto_created_from_so')
-              ->orWhere('is_auto_created_from_so', '!=', 1);
+                ->orWhere('is_auto_created_from_so', '!=', 1);
         });
     })->where("so_data_id", $sale_order_data_id)->get();
 
