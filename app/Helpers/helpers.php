@@ -1325,10 +1325,26 @@ if (!function_exists('getDeductionSuggestion')) {
     }
 }
 
-if (!function_exists('getTableData')) {
+if (!function_exists('getTableDataBk')) {
     function getTableData($table, $columns = ['*'])
     {
         return DB::table($table)->select($columns)->where('deleted_at', null)->get();
+    }
+}
+
+
+
+if (!function_exists('getTableData')) {
+    function getTableData($table, $columns = ['*'])
+    {
+        $query = DB::table($table)->select($columns);
+
+        // Check if deleted_at column exists
+        if (Schema::hasColumn($table, 'deleted_at')) {
+            $query->whereNull('deleted_at');
+        }
+
+        return $query->get();
     }
 }
 
