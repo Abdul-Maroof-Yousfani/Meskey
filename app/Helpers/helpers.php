@@ -1325,12 +1325,7 @@ if (!function_exists('getDeductionSuggestion')) {
     }
 }
 
-if (!function_exists('getTableDataBk')) {
-    function getTableData($table, $columns = ['*'])
-    {
-        return DB::table($table)->select($columns)->where('deleted_at', null)->get();
-    }
-}
+
 
 
 
