@@ -35,7 +35,7 @@
 <div class="col-xs-6 col-sm-6 col-md-6">
     <div class="form-group ">
         <label>Truck Type:</label>
-        <input type="text" placeholder="Truck Type" value="{{ $ArrivalTicket->truckType->name }}" disabled
+        <input type="text" placeholder="Truck Type" value="{{ $ArrivalTicket->truckType->name ?? 'N/A' }}" disabled
             class="form-control" autocomplete="off" />
     </div>
 </div>
@@ -44,8 +44,8 @@
     <div class="form-group ">
         <label>Weighbridge Money:</label>
         <input type="text" placeholder="Weighbridge Money"
-            value="{{ getTruckWeighbridgeAmount($ArrivalTicket->truck_type_id, $ArrivalTicket->location_id) }}" disabled class="form-control"
-            autocomplete="off" />
+            value="{{ getTruckWeighbridgeAmount($ArrivalTicket->truck_type_id, $ArrivalTicket->location_id) }}" disabled
+            class="form-control" autocomplete="off" />
     </div>
 </div>
 

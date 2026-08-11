@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\DB;
 
 class ArrivalApproveController extends Controller
 {
-    public function getAvailableTickets(Request $request)
+    public function getAvailableTicketsbk(Request $request)
     {
         try {
             $authUser = auth()->user();
@@ -57,6 +57,58 @@ class ArrivalApproveController extends Controller
                 return $ticket;
             });
 
+
+            return ApiResponse::success($tickets, 'Available tickets retrieved successfully');
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to retrieve available tickets: ' . $e->getMessage(), 500);
+        }
+    }
+
+
+
+    public function getAvailableTickets(Request $request)
+    {
+        try {
+            $authUser = auth()->user();
+            $isSuperAdmin = $authUser->user_type === 'super-admin';
+
+            $tickets = ArrivalTicket::where('first_weighbridge_status', 'completed')
+                ->whereNull('document_approval_status')
+                ->leftJoin('arrival_sampling_requests', function ($join) {
+                    $join->on('arrival_tickets.id', '=', 'arrival_sampling_requests.arrival_ticket_id')
+                        ->where('sampling_type', 'inner')
+                        ->where('approved_status', 'pending');
+                })
+                ->leftJoin('arrival_location_transfers', 'arrival_tickets.id', '=', 'arrival_location_transfers.arrival_ticket_id')
+                ->leftJoin('arrival_locations', 'arrival_location_transfers.arrival_location_id', '=', 'arrival_locations.id')
+                ->whereNull('arrival_sampling_requests.id')
+                ->when(!$isSuperAdmin, function ($q) use ($authUser) {
+                    return $q->where('arrival_location_transfers.arrival_location_id', $authUser->arrival_location_id);
+                })
+                ->select(
+                    'arrival_tickets.*',
+                    'arrival_locations.id as arrival_location_id',
+                    'arrival_locations.name as arrival_location_name'
+                );
+
+            if ($request->has('paginate')) {
+                $tickets = $tickets->paginate(10);
+            } else {
+                $tickets = $tickets->get();
+            }
+
+            $tickets = $tickets->map(function ($ticket) {
+                if ($ticket->second_qc_status === 'rejected') {
+                    $ticket->unloading_approval_status = 'Half Approved';
+                } elseif ($ticket->second_qc_status === 'approved') {
+                    $ticket->unloading_approval_status = 'Full Approved';
+                } elseif (is_null($ticket->second_qc_status) && $ticket->first_qc_status === 'approved') {
+                    $ticket->unloading_approval_status = 'Full Approved';
+                } else {
+                    $ticket->unloading_approval_status = null;
+                }
+                return $ticket;
+            });
 
             return ApiResponse::success($tickets, 'Available tickets retrieved successfully');
         } catch (\Exception $e) {

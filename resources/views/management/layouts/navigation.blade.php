@@ -454,8 +454,8 @@
                     @canAccess('production-machine-plan-setting')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('machine-plan-setting.index') }}"
-                            onclick="loadPageContent('{{ route('machine-plan-setting.index') }}')" data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i>
+                            onclick="loadPageContent('{{ route('machine-plan-setting.index') }}')"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
                             <span data-i18n="Machine Plan Setting">Machine Plan Setting</span>
                         </a>
                     </li>
@@ -1129,31 +1129,31 @@
                     data-toggle="dropdown"><i class="ft-grid"></i><span data-i18n="Tables">Master
                         Control</span></a>
                 <ul class="dropdown-menu">
-                      @canAccess('mill')
-                      <li class="dropdown dropdown-submenu" data-menu="dropdown-submenu"><a
-                              class="dropdown-item d-flex align-items-center dropdown-toggle" href="javascript:;"
-                              data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
-                                  data-i18n="Mill">Mill</span></a>
-                          <ul class="dropdown-menu">
-                              @canAccess('mill-variable')
-                              <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                                      href="{{ route('variable.index') }}"
-                                      onclick="loadPageContent('{{ route('variable.index') }}')"
-                                      data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
-                                          data-i18n="Variable">Variable</span></a>
-                              </li>
-                              @endcanAccess
-                              @canAccess('mill-milling-rate')
-                              <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                                      href="{{ route('milling-rate.index') }}"
-                                      onclick="loadPageContent('{{ route('milling-rate.index') }}')"
-                                      data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
-                                          data-i18n="Milling Rate">Milling Rate</span></a>
-                              </li>
-                              @endcanAccess
-                          </ul>
-                      </li>
-                      @endcanAccess
+                    @canAccess('mill')
+                    <li class="dropdown dropdown-submenu" data-menu="dropdown-submenu"><a
+                            class="dropdown-item d-flex align-items-center dropdown-toggle" href="javascript:;"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                data-i18n="Mill">Mill</span></a>
+                        <ul class="dropdown-menu">
+                            @canAccess('mill-variable')
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('variable.index') }}"
+                                    onclick="loadPageContent('{{ route('variable.index') }}')" data-toggle="dropdown"><i
+                                        class="ft-arrow-right submenu-icon"></i><span
+                                        data-i18n="Variable">Variable</span></a>
+                            </li>
+                            @endcanAccess
+                            @canAccess('mill-milling-rate')
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('milling-rate.index') }}"
+                                    onclick="loadPageContent('{{ route('milling-rate.index') }}')"
+                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                        data-i18n="Milling Rate">Milling Rate</span></a>
+                            </li>
+                            @endcanAccess
+                        </ul>
+                    </li>
+                    @endcanAccess
                     @canAccess('product')
                     <li class="dropdown dropdown-submenu" data-menu="dropdown-submenu"><a
                             class="dropdown-item d-flex align-items-center dropdown-toggle" href="javascript:;"
@@ -1419,7 +1419,7 @@
                     </li>
                     @endcanAccess
 
-                    @canAccess('transporter')
+                    @canAccess('transporters')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('transporter.index') }}"
                             onclick="loadPageContent('{{ route('transporter.index') }}')" data-toggle="dropdown"><i
@@ -1428,7 +1428,7 @@
                         </a>
                     </li>
                     @endcanAccess
-
+                    @canAccess('labour-rates')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('labour-rates.index') }}"
                             onclick="loadPageContent('{{ route('labour-rates.index') }}')" data-toggle="dropdown"><i
@@ -1436,8 +1436,9 @@
                             <span data-i18n="Task Board">Manage Labour Rates</span>
                         </a>
                     </li>
+                    @endcanAccess
 
-                    @canAccess('raw-material-customer')
+                    @canAccess('customers')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('customer.index') }}"
                             onclick="loadPageContent('{{ route('customer.index') }}')" data-toggle="dropdown"><i
@@ -1446,7 +1447,7 @@
                         </a>
                     </li>
                     @endcanAccess
-
+                    @canAccess('pay-type')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('pay-type.index') }}"
                             onclick="loadPageContent('{{ route('pay-type.index') }}')" data-toggle="dropdown"><i
@@ -1454,6 +1455,7 @@
                             <span data-i18n="Task Board">Manage Pay Types</span>
                         </a>
                     </li>
+                    @endcanAccess
 
                     @canAccess('bank')
                     <li data-menu="">
@@ -1562,7 +1564,7 @@
                         </a>
                     </li>
                     @endcanAccess
-
+                    @canAccess('clearing-agent')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('clearing-agent.index') }}"
                             onclick="loadPageContent('{{ route('clearing-agent.index') }}')" data-toggle="dropdown"><i
@@ -1570,6 +1572,7 @@
                             <span data-i18n="Task Board">Manage Clearing Agents</span>
                         </a>
                     </li>
+                    @endcanAccess
 
 
                 </ul>

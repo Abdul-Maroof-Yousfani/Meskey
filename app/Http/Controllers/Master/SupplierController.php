@@ -353,11 +353,12 @@ class SupplierController extends Controller
                 foreach ($locationNames as $name) {
                     $lowerName = strtolower($name);
                     if (isset($locationMap[$lowerName])) {
-                        $locationIds[] = $locationMap[$lowerName];
+                        $locationIds[] = (string) $locationMap[$lowerName];
                     }
                 }
 
                 $locationIds = array_values(array_unique($locationIds));
+
 
                 // If names are provided but none matched, you might want to throw an error or fallback
                 if (empty($locationIds)) {
@@ -366,6 +367,7 @@ class SupplierController extends Controller
             } else {
                 $locationIds = getUserCurrentCompanyLocations();
             }
+
 
             if (empty($rowData) || count($rowData) < 6) {
                 throw new \Exception("Insufficient data in row.");
