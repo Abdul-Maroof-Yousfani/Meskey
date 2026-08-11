@@ -1419,7 +1419,7 @@
                     </li>
                     @endcanAccess
 
-                    @canAccess('transporter')
+                    @canAccess('transporters')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('transporter.index') }}"
                             onclick="loadPageContent('{{ route('transporter.index') }}')" data-toggle="dropdown"><i
@@ -1438,7 +1438,7 @@
                     </li>
                     @endcanAccess
 
-                    @canAccess('raw-material-customer')
+                    @canAccess('customers')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('customer.index') }}"
                             onclick="loadPageContent('{{ route('customer.index') }}')" data-toggle="dropdown"><i
