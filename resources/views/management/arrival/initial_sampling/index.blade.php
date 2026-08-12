@@ -6,11 +6,11 @@
     <div class="content-wrapper">
 
         <section id="extended">
-            <div class="row w-100 mx-auto">
-                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-                    <h2 class="page-title"> {{ $isResampling ? 'Initial Re-Sampling' : 'Initial Sampling' }} </h2>
+            <div class="row w-100 mx-auto align-items-center">
+                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 col-6">
+                    <h2 class="page-title mb-0"> {{ $isResampling ? 'Initial Re-Sampling' : 'Initial Sampling' }} </h2>
                 </div>
-                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
+                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right col-6">
                     <button
                         onclick="openModal(this,'{{ route($isResampling ? 'initial-resampling.create' : 'initialsampling.create') }}','{{ $isResampling ? 'Create Initial Re-Sampling' : 'Create Initial Sampling' }}')"
                         type="button" class="btn btn-primary position-relative ">
@@ -23,7 +23,8 @@
                     <div class="card">
                         <div class="card-header">
                             <form id="filterForm" class="form">
-                                <div class="row mx-0 align-items-end flex-nowrap" style="overflow-x: auto; padding-bottom: 10px;">
+                                <div class="row mx-0 align-items-end flex-nowrap"
+                                    style="overflow-x: auto; padding-bottom: 10px;">
                                     <div class="px-1 text-left" style="min-width: 180px; flex: 1 1 180px;">
                                         <label for="daterange" class="form-label text-nowrap">Date Range</label>
                                         <input type="text" name="daterange" class="form-control"
@@ -31,7 +32,8 @@
                                     </div>
                                     <div class="px-1 text-left" style="min-width: 180px; flex: 1 1 180px;">
                                         <label for="unique_no" class="form-label text-nowrap">Ticket No</label>
-                                        <input type="text" class="form-control" name="unique_no" id="unique_no" placeholder="Ticket No">
+                                        <input type="text" class="form-control" name="unique_no" id="unique_no"
+                                            placeholder="Ticket No">
                                     </div>
                                     <div class="px-1 text-left" style="min-width: 180px; flex: 1 1 180px;">
                                         <label for="commodity_f" class="form-label text-nowrap">Commodity</label>
@@ -39,11 +41,12 @@
                                             <option value="">All Commodities</option>
                                         </select>
                                     </div>
-                       
-    
+
+
                                     <div class="px-1 text-left" style="min-width: 180px; flex: 1 1 180px;">
                                         <label for="remark" class="form-label text-nowrap">Remark</label>
-                                        <input type="text" class="form-control" name="remark" id="remark" placeholder="Remark">
+                                        <input type="text" class="form-control" name="remark" id="remark"
+                                            placeholder="Remark">
                                     </div>
                                 </div>
                             </form>
@@ -74,7 +77,7 @@
 @endsection
 @section('script')
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             filterationCommon(`{{ route($isResampling ? 'get.initial-resampling' : 'get.initialsampling') }}`)
             initializeDynamicSelect2('#commodity_f', 'products', 'name', 'id', true, false, true, true);
             initializeDynamicSelect2('#supplier_id_f', 'suppliers', 'name', 'id', true, false, true, true);

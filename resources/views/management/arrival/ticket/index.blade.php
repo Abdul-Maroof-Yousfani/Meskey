@@ -5,11 +5,11 @@
 @section('content')
     <div class="content-wrapper ">
         <section id="extended">
-            <div class="row w-100 mx-auto">
-                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-                    <h2 class="page-title"> Ticket List</h2>
+            <div class="row w-100 mx-auto align-items-center">
+                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 col-6">
+                    <h2 class="page-title mb-0"> Ticket List</h2>
                 </div>
-                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
+                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 col-6 text-right">
                     <button onclick="openModal(this,'{{ route('ticket.create') }}','Add Ticket')" type="button"
                         class="btn btn-primary position-relative ">
                         Create Ticket
@@ -26,16 +26,19 @@
                                     $oneMonthAgo = \Carbon\Carbon::today()->subMonth()->format('Y-m-d');
                                 @endphp
 
-                                <div class="row mx-0 align-items-end flex-nowrap" style="overflow-x: auto; padding-bottom: 10px;">
+                                <div class="row mx-0 align-items-end flex-nowrap"
+                                    style="overflow-x: auto; padding-bottom: 10px;">
                                     <div class="px-1 text-left" style="min-width: 180px; flex: 1 1 180px;">
                                         <label>Location:</label>
-                                        <select name="company_location_id" id="company_location" class="form-control select22">
+                                        <select name="company_location_id" id="company_location"
+                                            class="form-control select22">
                                             <option value="">Location</option>
                                         </select>
                                     </div>
                                     <div class="px-1 text-left" style="min-width: 180px; flex: 1 1 180px;">
                                         <label>Date Range:</label>
-                                        <input type="text" name="daterange" class="form-control" value="{{ request('daterange', \Carbon\Carbon::now()->subMonth()->format('m/d/Y') . ' - ' . \Carbon\Carbon::now()->format('m/d/Y')) }}" />
+                                        <input type="text" name="daterange" class="form-control"
+                                            value="{{ request('daterange', \Carbon\Carbon::now()->subMonth()->format('m/d/Y') . ' - ' . \Carbon\Carbon::now()->format('m/d/Y')) }}" />
                                     </div>
                                     <div class="px-1 text-left" style="min-width: 180px; flex: 1 1 180px;">
                                         <label>Accounts Of:</label>
@@ -54,7 +57,8 @@
                                     </div>
                                     <div class="px-1 text-left" style="min-width: 180px; flex: 1 1 180px;">
                                         <label class="form-label">Ticket No.</label>
-                                        <input type="text" class="form-control" placeholder="Ticket#" name="unique_no" value="{{ request('unique_no') }}">
+                                        <input type="text" class="form-control" placeholder="Ticket#" name="unique_no"
+                                            value="{{ request('unique_no') }}">
                                     </div>
                                     <div class="px-1 text-left" style="min-width: 180px; flex: 1 1 180px;">
                                         <label class="form-label">Commodity</label>
@@ -70,13 +74,15 @@
                                     </div>
                                     <div class="px-1 text-left" style="min-width: 180px; flex: 1 1 180px;">
                                         <label class="form-label">Truck No</label>
-                                        <input type="text" class="form-control" placeholder="Truck#" name="truck_no" value="{{ request('truck_no') }}">
+                                        <input type="text" class="form-control" placeholder="Truck#" name="truck_no"
+                                            value="{{ request('truck_no') }}">
                                     </div>
                                     <div class="px-1 text-left" style="min-width: 180px; flex: 1 1 180px;">
                                         <label class="form-label">Bilty No</label>
-                                        <input type="text" class="form-control" placeholder="Bilty#" name="bilty_no" value="{{ request('bilty_no') }}">
+                                        <input type="text" class="form-control" placeholder="Bilty#" name="bilty_no"
+                                            value="{{ request('bilty_no') }}">
                                     </div>
-                                    
+
                                     <input type="hidden" name="page" value="{{ request('page', 1) }}">
                                     <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
                                 </div>
@@ -108,12 +114,12 @@
 @endsection
 @section('script')
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             $('#qc_status_f').select2();
             filterationCommon(`{{ route('get.ticket') }}`);
             initializeDynamicSelect2('#commodity_f', 'products', 'name', 'id', true, false, true, true);
             initializeDynamicSelect2('#miller_id_f', 'millers', 'name', 'id', true, false, true, true);
-            
+
             // Custom Dependent Select for Arrival Ticket to include "All Accounts"
             const $locationEl = $('#company_location');
             const $supplierEl = $('#supplier_id_f');
