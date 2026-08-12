@@ -4596,6 +4596,10 @@ input[type="button"].btn-block {
     font-size: 1rem;
   }
 
+  .header-navbar.navbar-horizontal.navbar-fixed {
+    display: none;
+  }
+
   .btn {
     padding: 4px 10px;
     font-size: 12px;
