@@ -4340,6 +4340,10 @@ body[data-menu="horizontal-menu"] .app-sidebar .navigation li.active>a:before {
 }
 
 @media (max-width: 575px) {
+  .color-mode-switch span {
+    display: none !important;
+  }
+
   .timeline-wrapper {
     padding: 0;
   }
