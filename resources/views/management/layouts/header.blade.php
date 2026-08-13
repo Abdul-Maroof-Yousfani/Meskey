@@ -305,7 +305,7 @@
         // Use setTimeout so that it runs after jQuery is loaded
         setTimeout(function() {
             fetchUnreadCount();
-            setInterval(fetchUnreadCount, 6000);
+            setInterval(fetchUnreadCount, 60000);
 
             // 2. Fetch dropdown items on click
             $('#dropdownBasic1').on('click', function(e) {
