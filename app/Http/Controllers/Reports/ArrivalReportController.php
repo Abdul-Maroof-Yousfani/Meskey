@@ -21,7 +21,7 @@ class ArrivalReportController extends Controller
         $commodities = Product::all();
         $millers = Miller::all();
         $locations = CompanyLocation::when(auth()->user()->user_type != 'super-admin', function ($q) {
-            return $q->where('id', auth()->user()->company_location_id);
+            return $q->whereIn('id', getUserCurrentCompanyLocations());
         })->get();
 
 
