@@ -84,7 +84,7 @@ class ArrivalReportController extends Controller
                     ->whereDate('arrival_tickets.created_at', '<=', $endDate);
             })
             ->when(auth()->user()->user_type != 'super-admin', function ($q) {
-                return $q->where('arrival_tickets.location_id', auth()->user()->company_location_id);
+                return $q->whereIn('arrival_tickets.location_id', getUserCurrentCompanyLocations());
             })
             ->orderBy('arrival_tickets.created_at', 'asc')
             ->get();
