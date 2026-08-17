@@ -174,7 +174,7 @@
         samplingResults: [
             @foreach ($samplingRequestResults as $slab)
                 @if ($slab->applied_deduction)
-                                                                                            {
+                                                                                                                                                                                                                    {
                         id: {{ $slab->id }},
                         applied_deduction: {{ $slab->applied_deduction ?? 0 }},
                         deduction_type: '{{ $slab->deduction_type ?? 'amount' }}',
@@ -188,10 +188,10 @@
         compulsoryResults: [
             @foreach ($samplingRequestCompulsuryResults as $slab)
                 @if ($slab->applied_deduction)
-                                                        {
+                                                                                                                    {
                     id: {{ $slab->id }},
                     applied_deduction: {{ $slab->applied_deduction ?? 0 }}
-                                                        },
+                                                                                                                    },
                 @endif
             @endforeach
         ],
@@ -811,7 +811,7 @@
     @endif
 
     @php
-        $totalSupplierCommission = $purchaseOrder->supplier_commission * $loadingWeight;
+        $totalSupplierCommission = $purchaseOrder->supplier_commission * $arrivedWeight;
         $totalAmount = $ratePerKg * $loadingWeight - ($totalAmount ?? 0) + ($bagsRateSum ?? 0);
         $totalwithCommisio = $totalAmount + $totalSupplierCommission;
         $totalwithCommision = $paymentDetails['calculations']['supplier_net_amount'] ?? $totalwithCommisio
@@ -1092,7 +1092,23 @@
                 const grossAmount = ratePerKg * loadingWeight;
                 const totalDeductionsForFormula = totalSamplingDeductions + bagWeightAmount +
                     loadingWeighbridgeAmount + deduction_on_access_weight_amount;
+
+
+
                 const totalAmount = grossAmount - totalDeductionsForFormula + bagRateAmount - parseInt({{ $grossFreightAmount ?? 0 }}) + {{ $totalSupplierCommission }};
+
+                console.log('totalSamplingDeductions: ' + totalSamplingDeductions);
+                console.log('bagWeightAmount: ' + bagWeightAmount);
+                console.log('loadingWeighbridgeAmount: ' + loadingWeighbridgeAmount);
+                console.log('deduction_on_access_weight_amount: ' + deduction_on_access_weight_amount);
+                console.log('grossAmount: ' + grossAmount);
+                console.log('grossFreightAmount: ' + parseInt({{ $grossFreightAmount ?? 0 }}));
+                console.log('totalSupplierCommission: ' + {{ $totalSupplierCommission }});
+
+
+
+
+
 
                 $('#total_amount').val(totalAmount);
                 $('#total_amount_display').val(totalAmount.toFixed(2));
