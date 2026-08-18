@@ -2,11 +2,13 @@
     <thead class="bg-light">
         <tr>
             <th>#</th>
-            <th>DC No</th>
-            <th>DC Date</th>
-            <th>Items Count</th>
+            <th>Party (Customer)</th>
+            <th>DO#</th>
+            <th>DC#</th>
+            <th>Commodity Name</th>
+            <th>Truck#</th>
+            <th>Dispatch Date</th>
             <th>Status</th>
-            <th>Created At</th>
             <th>Action</th>
         </tr>
     </thead>
@@ -15,12 +17,26 @@
             <tr>
                 <td>{{ $receivingRequests->firstItem() + $index }}</td>
                 <td>
+                    <strong>{{ $request->deliveryChallan->customer->name ?? 'N/A' }}</strong>
+                </td>
+                <td>
+                    {{ $request->deliveryChallan && $request->deliveryChallan->delivery_order->count() > 0 ? $request->deliveryChallan->delivery_order->pluck('reference_no')->implode(', ') : ($request->deliveryChallan->reference_number ?? 'N/A') }}
+                </td>
+                <td>
                     <strong>{{ $request->dc_no ?? 'N/A' }}</strong>
                 </td>
-                <td>{{ $request->dc_date ? $request->dc_date->format('d M Y') : 'N/A' }}</td>
                 <td>
-                    <span class="badge badge-info px-2 py-1">{{ $request->items->count() }} items</span>
+                    @php
+                        $uniqueCommodities = $request->items->map(function($item) {
+                            return $item->product?->name ?? $item->item_name ?? 'Unknown';
+                        })->unique()->filter()->implode(', ');
+                    @endphp
+                    {{ $uniqueCommodities ?: 'N/A' }}
                 </td>
+                <td>
+                    {{ $request->truck_number ?? 'N/A' }}
+                </td>
+                <td>{{ $request->dc_date ? $request->dc_date->format('d M Y') : 'N/A' }}</td>
                 <td>
                     @php
                         $status = $request->am_approval_status;
@@ -35,7 +51,6 @@
                         {{ ucfirst($status) }}
                     </span>
                 </td>
-                <td>{{ $request->created_at->format('d M Y H:i') }}</td>
                 <td>
                     <div class="btn-group" role="group">
                         @if($request->am_approval_status !== "approved")
@@ -53,7 +68,7 @@
             </tr>
         @empty
             <tr>
-                <td colspan="12" class="text-center py-4">
+                <td colspan="9" class="text-center py-4">
                     <div class="text-muted">
                         <i class="fa fa-inbox fa-3x mb-2"></i>
                         <p>No receiving requests found</p>

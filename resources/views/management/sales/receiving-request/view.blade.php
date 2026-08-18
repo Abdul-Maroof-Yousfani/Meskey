@@ -1,4 +1,4 @@
-<div class="p-2">
+<div>
     <!-- DC Information Section -->
     <div class="row">
         <div class="col-12">
@@ -6,41 +6,78 @@
                 DC Information
             </h6>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">DC No</label>
                 <input type="text" class="form-control bg-light" value="{{ $receivingRequest->dc_no }}" readonly placeholder="DC No">
             </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Date</label>
                 <input type="text" class="form-control bg-light" value="{{ $receivingRequest->dc_date?->format('d-M-Y') ?? 'N/A' }}" readonly placeholder="Date">
             </div>
         </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label class="font-weight-bold">Party (Customer)</label>
+                <input type="text" class="form-control bg-light" value="{{ $receivingRequest->deliveryChallan?->customer?->name ?? 'N/A' }}" readonly>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label class="font-weight-bold">Truck No</label>
+                <input type="text" class="form-control bg-light" value="{{ $receivingRequest->truck_number ?? 'N/A' }}" readonly>
+            </div>
+        </div>
     </div>
 
-    <!-- DC Details Section -->
+    <!-- Details Section -->
     <div class="row">
         <div class="col-12">
             <h6 class="header-heading-sepration">
-                DC Details
+                Other Details
             </h6>
         </div>
-        @php
-            $labourOptions = ['1' => 'Labour 1', '2' => 'Labour 2'];
-            $transporterOptions = ['1' => 'Transporter 1', '2' => 'Transporter 2'];
-            $weighbridgeOptions = ['1' => 'Weighbridge 1', '2' => 'Weighbridge 2'];
-        @endphp
+        
+        <div class="col-md-3">
+            <div class="form-group">
+                <label class="font-weight-bold">Total Dispatch Weight</label>
+                <input type="text" class="form-control bg-light font-weight-bold" value="{{ number_format($receivingRequest->items->sum('dispatch_weight'), 2, '.', '') }}" readonly>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label class="font-weight-bold">Receiving Weight (Total)</label>
+                <input type="number" class="form-control bg-light" value="{{ $receivingRequest->arrived_weight }}" readonly>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label class="font-weight-bold">Weight Difference</label>
+                <input type="text" class="form-control bg-light font-weight-bold text-danger" value="{{ number_format(floatval($receivingRequest->items->sum('dispatch_weight')) - floatval($receivingRequest->arrived_weight), 2) }}" readonly>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label class="font-weight-bold">Exempted Weight</label>
+                <input type="number" class="form-control bg-light" value="{{ $receivingRequest->exempted_weight }}" readonly>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label class="font-weight-bold">Payment Weight</label>
+                <input type="number" class="form-control bg-light font-weight-bold" value="{{ $receivingRequest->payment_weight }}" readonly>
+            </div>
+        </div>
+        
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Labour</label>
-                <select name="labour" id="labour" class="form-control select2" disabled>
-                    <option value="">Select Labour</option>
-                    @foreach ($labours ?? [] as $labour)
-                        <option value="{{ $labour->id }}" @selected($receivingRequest->labour == $labour->id)>{{ $labour->name }}</option>
-                    @endforeach
-                </select>
+                @php
+                    $labourName = \App\Models\Master\Vendor::find($receivingRequest->labour)?->name ?? 'N/A';
+                @endphp
+                <input type="text" class="form-control bg-light" value="{{ $labourName }}" readonly>
             </div>
         </div>
         <div class="col-md-3">
@@ -54,120 +91,100 @@
         </div>
         <div class="col-md-3">
             <div class="form-group">
-                <label class="font-weight-bold">In-house Weighbridge</label>
-                <input type="text" class="form-control bg-light" value="{{ $weighbridgeOptions[$receivingRequest->inhouse_weighbridge] ?? 'N/A' }}" readonly>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="form-group">
-                <label class="font-weight-bold">Weighbridge Amount</label>
-                <input type="text" class="form-control bg-light" value="{{ number_format($receivingRequest->weighbridge_amount, 2) }}" readonly>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="font-weight-bold">Labour Amount</label>
-                <input type="text" class="form-control bg-light" value="{{ number_format($receivingRequest->labour_amount, 2) }}" readonly>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="form-group">
                 <label class="font-weight-bold">Transporter Amount</label>
-                <input type="text" class="form-control bg-light" value="{{ number_format($receivingRequest->transporter_amount, 2) }}" readonly>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="font-weight-bold">Inhouse Weighbridge Amount</label>
-                <input type="text" class="form-control bg-light" value="{{ number_format($receivingRequest->inhouse_weighbridge_amount, 2) }}" readonly>
+                <input type="number" class="form-control bg-light" value="{{ $receivingRequest->transporter_amount }}" readonly>
             </div>
         </div>
     </div>
 
-    <!-- Weight Information Section -->
-    <div class="row">
+    <!-- Item Information Section -->
+    <div class="row mt-3">
         <div class="col-12">
             <h6 class="header-heading-sepration">
-                Weight Information
+                Item Information
             </h6>
         </div>
     </div>
 
-    <!-- Repeated rows for each item -->
-    @foreach($receivingRequest->items as $index => $item)
-        <div class="row">
-            <div class="col-md-2">
-                <div class="form-group">
-                    <label class="font-weight-bold">Item Name</label>
-                    <input type="text" value="{{ $item->item_name }}" class="form-control bg-light" readonly>
-                </div>
-            </div>
-            <div class="col-md-2">
-                <div class="form-group">
-                    <label class="font-weight-bold">Dispatch Weight</label>
-                    <input type="text" value="{{ number_format($item->dispatch_weight, 2) }}" class="form-control bg-light" readonly>
-                </div>
-            </div>
-            <div class="col-md-2">
-                <div class="form-group">
-                    <label class="font-weight-bold">Receiving Weight</label>
-                    <input type="text" value="{{ number_format($item->receiving_weight, 2) }}" class="form-control bg-light" readonly>
-                </div>
-            </div>
-            <div class="col-md-2">
-                <div class="form-group">
-                    <label class="font-weight-bold">Difference Weight</label>
-                    <input type="text" value="{{ number_format($item->difference_weight, 2) }}" class="form-control bg-light" readonly>
-                </div>
-            </div>
-            <div class="col-md-2">
-                <div class="form-group">
-                    <label class="font-weight-bold">Seller Portion</label>
-                    <input type="text" value="{{ number_format($item->seller_portion, 2) }}" class="form-control bg-light" readonly>
-                </div>
-            </div>
-            <div class="col-md-2">
-                <div class="form-group">
-                    <label class="font-weight-bold">Transporter Amount</label>
-                    <input type="text" value="{{ number_format($item->remaining_amount, 2) }}" class="form-control bg-light font-weight-bold" readonly>
-                </div>
-            </div>
-        </div>
-    @endforeach
+    <div class="table-responsive">
+        <table class="table table-bordered table-sm">
+            <thead class="bg-light">
+                <tr>
+                    <th>DO#</th>
+                    <th>Item Name</th>
+                    <th>Dispatch Weight</th>
+                    <th>No. of Bags</th>
+                    <th>Bag Size</th>
+                    <th>Unloading Labour Rate</th>
+                    <th>Total Labour Amt</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($receivingRequest->items as $index => $item)
+                    @php
+                        $bags = $item->deliveryChallanData?->no_of_bags ?? 0;
+                        $doNo = $item->deliveryChallanData?->deliveryOrderData?->delivery_order?->reference_no ?? 'N/A';
+                    @endphp
+                    <tr>
+                        <td>
+                            <input type="text" value="{{ $doNo }}" class="form-control form-control-sm bg-light" readonly>
+                        </td>
+                        <td>
+                            <input type="text" value="{{ $item->item_name }}" class="form-control form-control-sm bg-light" readonly>
+                        </td>
+                        <td>
+                            <input type="number" value="{{ $item->dispatch_weight }}" class="form-control form-control-sm bg-light" readonly>
+                        </td>
+                        <td>
+                            <input type="number" value="{{ $bags }}" class="form-control form-control-sm bg-light" readonly>
+                        </td>
+                        <td>
+                            <input type="text" value="{{ $item->deliveryChallanData?->bag_size ?? 'N/A' }}" class="form-control form-control-sm bg-light" readonly>
+                        </td>
+                        <td>
+                            <input type="number" value="{{ $item->unloading_labour_rate }}" class="form-control form-control-sm bg-light" readonly>
+                        </td>
+                        <td>
+                            <input type="number" value="{{ number_format(floatval($bags) * floatval($item->unloading_labour_rate), 2) }}" class="form-control form-control-sm bg-light font-weight-bold" readonly>
+                        </td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
 
-    <!-- Summary Section -->
-    <div class="row">
+    <!-- Weighbridges Section -->
+    <div class="row mt-3">
         <div class="col-12">
-            <h6 class="header-heading-sepration">
-                Summary
-            </h6>
-        </div>
-        <div class="col-md-3">
-            <div class="form-group">
-                <label class="font-weight-bold">Total Dispatch Weight</label>
-                <input type="text" class="form-control bg-light font-weight-bold" value="{{ number_format($receivingRequest->items->sum('dispatch_weight'), 2) }}" readonly>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="form-group">
-                <label class="font-weight-bold">Total Receiving Weight</label>
-                <input type="text" class="form-control bg-light font-weight-bold" value="{{ number_format($receivingRequest->items->sum('receiving_weight'), 2) }}" readonly>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="form-group">
-                <label class="font-weight-bold">Total Difference</label>
-                <input type="text" class="form-control bg-light font-weight-bold" value="{{ number_format($receivingRequest->items->sum('difference_weight'), 2) }}" readonly>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="form-group">
-                <label class="font-weight-bold">Total Transporter Amount</label>
-                <input type="text" class="form-control bg-light font-weight-bold text-danger" value="{{ number_format($receivingRequest->items->sum('remaining_amount'), 2) }}" readonly>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="header-heading-sepration mb-0" style="flex:1;">Weighbridges</h6>
             </div>
         </div>
     </div>
+    <div>
+        @if($receivingRequest->weighbridges->count() > 0)
+            @foreach($receivingRequest->weighbridges as $index => $wb)
+            <div class="row mb-2">
+                <div class="col-md-6">
+                    <label class="font-weight-bold">Weighbridge Name</label>
+                    <input type="text" value="{{ $wb->name }}" class="form-control bg-light" readonly>
+                </div>
+                <div class="col-md-6">
+                    <label class="font-weight-bold">Amount</label>
+                    <input type="text" value="{{ number_format($wb->amount, 2) }}" class="form-control bg-light" readonly>
+                </div>
+            </div>
+            @endforeach
+        @else
+            <div class="row">
+                <div class="col-12">
+                    <p class="text-muted">No Weighbridges recorded.</p>
+                </div>
+            </div>
+        @endif
+    </div>
 
-    <x-approval-status :model="$receivingRequest" :list-refresh="route('sales.get.receiving-request.list')"/>
-
+    <div class="mt-3">
+        <x-approval-status :model="$receivingRequest" :list-refresh="route('sales.get.receiving-request.list')"/>
+    </div>
 </div>

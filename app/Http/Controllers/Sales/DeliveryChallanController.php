@@ -239,42 +239,6 @@ class DeliveryChallanController extends Controller
                 $createdItems[] = $dcData;
             }
 
-            // Create Receiving Request after DC data is created
-            if (strtolower($delivery_challan->sauda_type) == 'pohanch') {
-                $receivingRequest = ReceivingRequest::create([
-                    'delivery_challan_id' => $delivery_challan->id,
-                    'dc_no' => $delivery_challan->dc_no,
-                    'dc_date' => $delivery_challan->dispatch_date,
-                    'truck_number' => $request->truck_no[0] ?? null,
-                    'bilty' => $request->bilty_no[0] ?? null,
-                    'labour' => $delivery_challan->labour,
-                    'transporter' => $delivery_challan->transporter,
-                    'inhouse_weighbridge' => $delivery_challan->{'inhouse-weighbridge'} ?? null,
-                    'labour_amount' => $delivery_challan->labour_amount ?? 0,
-                    'transporter_amount' => $delivery_challan->transporter_amount ?? 0,
-                    'inhouse_weighbridge_amount' => $delivery_challan->{'weighbridge-amount'} ?? 0,
-                    'company_id' => $delivery_challan->company_id,
-                    'created_by_id' => $delivery_challan->created_by_id,
-                ]);
-
-                // Create Receiving Request Items for each DC item
-                foreach ($createdItems as $dcData) {
-                    $product = Product::find($dcData->item_id);
-                    
-                    ReceivingRequestItem::create([
-                        'receiving_request_id' => $receivingRequest->id,
-                        'delivery_challan_data_id' => $dcData->id,
-                        'item_id' => $dcData->item_id,
-                        'item_name' => $product?->name ?? 'N/A',
-                        'dispatch_weight' => $dcData->qty ?? 0,
-                        'receiving_weight' => 0,
-                        'difference_weight' => $dcData->qty ?? 0,
-                        'seller_portion' => 0,
-                        'remaining_amount' => $dcData->qty ?? 0,
-                    ]);
-                }
-            }
-
             DB::commit();
         } catch(\Exception $e) {
             DB::rollBack();
@@ -461,64 +425,6 @@ class DeliveryChallanController extends Controller
                     "bag_type" => $request->bag_type[$index]
                 ]);
                 $createdItems[] = $dcData;
-            }
-
-            // Sync Receiving Request
-            if (strtolower($delivery_challan->sauda_type) == 'pohanch') {
-                $receivingRequest = $delivery_challan->receivingRequest;
-                if ($receivingRequest) {
-                    $receivingRequest->update([
-                        'dc_no' => $delivery_challan->dc_no,
-                        'dc_date' => $delivery_challan->dispatch_date,
-                        'truck_number' => $request->truck_no[0] ?? null,
-                        'bilty' => $request->bilty_no[0] ?? null,
-                        'labour' => $delivery_challan->labour,
-                        'transporter' => $delivery_challan->transporter,
-                        'inhouse_weighbridge' => $delivery_challan->{'inhouse-weighbridge'} ?? null,
-                        'labour_amount' => $delivery_challan->labour_amount ?? 0,
-                        'transporter_amount' => $delivery_challan->transporter_amount ?? 0,
-                        'inhouse_weighbridge_amount' => $delivery_challan->{'weighbridge-amount'} ?? 0,
-                    ]);
-                } else {
-                    $receivingRequest = ReceivingRequest::create([
-                        'delivery_challan_id' => $delivery_challan->id,
-                        'dc_no' => $delivery_challan->dc_no,
-                        'dc_date' => $delivery_challan->dispatch_date,
-                        'truck_number' => $request->truck_no[0] ?? null,
-                        'bilty' => $request->bilty_no[0] ?? null,
-                        'labour' => $delivery_challan->labour,
-                        'transporter' => $delivery_challan->transporter,
-                        'inhouse_weighbridge' => $delivery_challan->{'inhouse-weighbridge'} ?? null,
-                        'labour_amount' => $delivery_challan->labour_amount ?? 0,
-                        'transporter_amount' => $delivery_challan->transporter_amount ?? 0,
-                        'inhouse_weighbridge_amount' => $delivery_challan->{'weighbridge-amount'} ?? 0,
-                        'company_id' => $delivery_challan->company_id,
-                        'created_by_id' => $delivery_challan->created_by_id,
-                    ]);
-                }
-
-                // Sync Receiving Request Items
-                $receivingRequest->items()->delete();
-                foreach ($createdItems as $dcData) {
-                    $product = Product::find($dcData->item_id);
-                    ReceivingRequestItem::create([
-                        'receiving_request_id' => $receivingRequest->id,
-                        'delivery_challan_data_id' => $dcData->id,
-                        'item_id' => $dcData->item_id,
-                        'item_name' => $product?->name ?? 'N/A',
-                        'dispatch_weight' => $dcData->qty ?? 0,
-                        'receiving_weight' => 0,
-                        'difference_weight' => $dcData->qty ?? 0,
-                        'seller_portion' => 0,
-                        'remaining_amount' => $dcData->qty ?? 0,
-                    ]);
-                }
-            } else {
-                $receivingRequest = $delivery_challan->receivingRequest;
-                if ($receivingRequest) {
-                    $receivingRequest->items()->delete();
-                    $receivingRequest->delete();
-                }
             }
 
             DB::commit();
