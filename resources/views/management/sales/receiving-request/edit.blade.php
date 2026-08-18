@@ -11,27 +11,71 @@
                 DC Information
             </h6>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">DC No</label>
                 <input type="text" class="form-control bg-light" value="{{ $receivingRequest->dc_no }}" readonly placeholder="DC No">
             </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Date</label>
                 <input type="text" class="form-control bg-light" value="{{ $receivingRequest->dc_date?->format('d-M-Y') ?? 'N/A' }}" readonly placeholder="Date">
             </div>
         </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label class="font-weight-bold">Party (Customer)</label>
+                <input type="text" class="form-control bg-light" value="{{ $receivingRequest->deliveryChallan?->customer?->name ?? 'N/A' }}" readonly>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label class="font-weight-bold">Truck No</label>
+                <input type="text" class="form-control bg-light" value="{{ $receivingRequest->truck_number ?? 'N/A' }}" readonly>
+            </div>
+        </div>
     </div>
 
-    <!-- DC Details Section -->
+    <!-- Details Section -->
     <div class="row">
         <div class="col-12">
             <h6 class="header-heading-sepration">
-                DC Details
+                Other Details
             </h6>
         </div>
+        
+        <div class="col-md-3">
+            <div class="form-group">
+                <label class="font-weight-bold">Total Dispatch Weight</label>
+                <input type="text" class="form-control bg-light font-weight-bold" id="summary_dispatch" value="{{ number_format($receivingRequest->items->sum('dispatch_weight'), 2, '.', '') }}" readonly>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label class="font-weight-bold">Receiving Weight (Total)</label>
+                <input type="number" class="form-control editable-field" name="arrived_weight" id="arrived_weight" value="{{ $receivingRequest->arrived_weight }}" step="0.01" min="0" placeholder="Receiving Weight">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label class="font-weight-bold">Weight Difference</label>
+                <input type="text" class="form-control bg-light font-weight-bold text-danger" id="overall_weight_difference" value="0.00" readonly>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label class="font-weight-bold">Exempted Weight</label>
+                <input type="number" class="form-control editable-field" name="exempted_weight" id="exempted_weight" value="{{ $receivingRequest->exempted_weight }}" step="0.01" min="0" placeholder="Exempted Weight">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label class="font-weight-bold">Payment Weight</label>
+                <input type="number" class="form-control bg-light font-weight-bold" id="payment_weight" value="{{ $receivingRequest->payment_weight }}" readonly placeholder="Payment Weight">
+            </div>
+        </div>
+        
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Labour</label>
@@ -58,136 +102,113 @@
         </div>
         <div class="col-md-3">
             <div class="form-group">
-                <label class="font-weight-bold">In-house Weighbridge</label>
-                <select name="inhouse_weighbridge" id="inhouse_weighbridge" class="form-control select2">
-                    <option value="">Select Weighbridge</option>
-                    <option value="1" @selected($receivingRequest->inhouse_weighbridge == '1')>Weighbridge 1</option>
-                    <option value="2" @selected($receivingRequest->inhouse_weighbridge == '2')>Weighbridge 2</option>
-                </select>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="form-group">
-                <label class="font-weight-bold">Inhouse Weighbridge Amount</label>
-                <input type="number" class="form-control editable-field" name="inhouse_weighbridge_amount" value="{{ $receivingRequest->weighbridge_amount }}" step="0.01" min="0" placeholder="Inhouse Weighbridge Amount">
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="form-group">
-                <label class="font-weight-bold">Labour Amount</label>
-                <input type="number" class="form-control editable-field" name="labour_amount" value="{{ $receivingRequest->labour_amount }}" step="0.01" min="0" placeholder="Labour Amount">
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="form-group">
                 <label class="font-weight-bold">Transporter Amount</label>
                 <input type="number" class="form-control editable-field" name="transporter_amount" value="{{ $receivingRequest->transporter_amount }}" step="0.01" min="0" placeholder="Transporter Amount">
             </div>
         </div>
-        <div class="col-md-3">
-            
-            <div class="form-group">
-                <label class="font-weight-bold">Weighbridge Amount</label>
-                <input type="number" class="form-control editable-field" name="weighbridge_amount" value="{{ $receivingRequest->inhouse_weighbridge_amount }}" step="0.01" min="0" placeholder="Weighbridge Amount">
-            </div>
-        </div>
     </div>
 
-    <!-- Weight Information Section -->
-    <div class="row">
+    <!-- Item Information Section -->
+    <div class="row mt-3">
         <div class="col-12">
             <h6 class="header-heading-sepration">
-                Weight Information
+                Item Information
             </h6>
         </div>
     </div>
 
-    <!-- Repeated rows for each item -->
-    @foreach($receivingRequest->items as $index => $item)
-        <div class="row item-row" data-item-id="{{ $item->id }}">
-            <div class="col-md-2">
-                <div class="form-group">
-                    <label class="font-weight-bold">Item Name</label>
-                    <input type="text" value="{{ $item->item_name }}" class="form-control bg-light" readonly>
-                </div>
-            </div>
-            <div class="col-md-2">
-                <div class="form-group">
-                    <label class="font-weight-bold">Dispatch Weight</label>
-                    <input type="number" value="{{ $item->dispatch_weight }}" class="form-control bg-light dispatch-weight" readonly>
-                </div>
-            </div>
-            <div class="col-md-2">
-                <div class="form-group">
-                    <label class="font-weight-bold">Receiving Weight</label>
-                    <input type="number" name="items[{{ $item->id }}][receiving_weight]" 
-                           value="{{ $item->receiving_weight }}" 
-                           class="form-control editable-field receiving-weight" 
-                           step="0.01" min="0"
-                           onchange="calculateWeights(this)"
-                           onkeyup="calculateWeights(this)">
-                </div>
-            </div>
-            <div class="col-md-2">
-                <div class="form-group">
-                    <label class="font-weight-bold">Difference Weight</label>
-                    <input type="number" value="{{ $item->difference_weight }}" class="form-control bg-light difference-weight" readonly>
-                </div>
-            </div>
-            <div class="col-md-2">
-                <div class="form-group">
-                    <label class="font-weight-bold">Seller Portion</label>
-                    <input type="number" name="items[{{ $item->id }}][seller_portion]" 
-                           value="{{ $item->seller_portion }}" 
-                           class="form-control editable-field seller-portion" 
-                           step="0.01" min="0"
-                           onchange="calculateWeights(this)"
-                           onkeyup="calculateWeights(this)">
-                </div>
-            </div>
-            <div class="col-md-2">
-                <div class="form-group">
-                    <label class="font-weight-bold">Transporter Amount</label>
-                    <input type="number" value="{{ $item->remaining_amount }}" class="form-control bg-light remaining-amount font-weight-bold" readonly>
-                </div>
-            </div>
-        </div>
-    @endforeach
+    <div class="table-responsive">
+        <table class="table table-bordered table-sm">
+            <thead class="bg-light">
+                <tr>
+                    <th>DO#</th>
+                    <th>Item Name</th>
+                    <th>Dispatch Weight</th>
+                    <th>No. of Bags</th>
+                    <th>Bag Size</th>
+                    <th>Unloading Labour Rate</th>
+                    <th>Total Labour Amt</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($receivingRequest->items as $index => $item)
+                    @php
+                        $bags = $item->deliveryChallanData?->no_of_bags ?? 0;
+                        $doNo = $item->deliveryChallanData?->deliveryOrderData?->delivery_order?->reference_no ?? 'N/A';
+                    @endphp
+                    <tr class="item-row" data-item-id="{{ $item->id }}">
+                        <td>
+                            <input type="text" value="{{ $doNo }}" class="form-control form-control-sm bg-light" readonly>
+                        </td>
+                        <td>
+                            <input type="text" value="{{ $item->item_name }}" class="form-control form-control-sm bg-light" readonly>
+                        </td>
+                        <td>
+                            <input type="number" value="{{ $item->dispatch_weight }}" class="form-control form-control-sm bg-light dispatch-weight" readonly>
+                        </td>
+                        <td>
+                            <input type="number" value="{{ $bags }}" class="form-control form-control-sm bg-light no-of-bags" readonly>
+                        </td>
+                        <td>
+                            <input type="text" value="{{ $item->deliveryChallanData?->bag_size ?? 'N/A' }}" class="form-control form-control-sm bg-light" readonly>
+                        </td>
+                        <td>
+                            <input type="number" name="items[{{ $item->id }}][unloading_labour_rate]" 
+                                value="{{ $item->unloading_labour_rate }}" 
+                                class="form-control form-control-sm editable-field unloading-labour-rate" 
+                                step="0.01" min="0"
+                                onchange="calculateWeights(this)"
+                                onkeyup="calculateWeights(this)">
+                        </td>
+                        <td>
+                            <input type="number" value="{{ floatval($bags) * floatval($item->unloading_labour_rate) }}" class="form-control form-control-sm bg-light total-labour-amount font-weight-bold" readonly>
+                        </td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
 
-    <!-- Summary Section -->
-    <div class="row">
+    <!-- Weighbridges Section -->
+    <div class="row mt-3">
         <div class="col-12">
-            <h6 class="header-heading-sepration">
-                Summary
-            </h6>
-        </div>
-        <div class="col-md-3">
-            <div class="form-group">
-                <label class="font-weight-bold">Total Dispatch Weight</label>
-                <input type="text" class="form-control bg-light font-weight-bold" id="summary_dispatch" value="{{ number_format($receivingRequest->items->sum('dispatch_weight'), 2) }}" readonly>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="form-group">
-                <label class="font-weight-bold">Total Receiving Weight</label>
-                <input type="text" class="form-control bg-light font-weight-bold" id="summary_receiving" value="{{ number_format($receivingRequest->items->sum('receiving_weight'), 2) }}" readonly>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="form-group">
-                <label class="font-weight-bold">Total Difference</label>
-                <input type="text" class="form-control bg-light font-weight-bold" id="summary_difference" value="{{ number_format($receivingRequest->items->sum('difference_weight'), 2) }}" readonly>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="form-group">
-                <label class="font-weight-bold">Total Transporter Amount</label>
-                <input type="text" class="form-control bg-light font-weight-bold text-danger" id="summary_remaining" value="{{ number_format($receivingRequest->items->sum('remaining_amount'), 2) }}" readonly>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="header-heading-sepration mb-0" style="flex:1;">Weighbridges</h6>
+                <button type="button" class="btn btn-sm btn-success" id="addWeighbridgeBtn"><i class="fa fa-plus"></i> Add More</button>
             </div>
         </div>
     </div>
+    <div id="weighbridges-container">
+        @if($receivingRequest->weighbridges->count() > 0)
+            @foreach($receivingRequest->weighbridges as $index => $wb)
+            <div class="row weighbridge-row mb-2">
+                <div class="col-md-5">
+                    <input type="text" name="weighbridges[{{ $index }}][name]" value="{{ $wb->name }}" class="form-control editable-field" placeholder="Weighbridge Name">
+                </div>
+                <div class="col-md-5">
+                    <input type="number" name="weighbridges[{{ $index }}][amount]" value="{{ $wb->amount }}" class="form-control editable-field" step="0.01" min="0" placeholder="Weighbridge Amount">
+                </div>
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-danger btn-sm remove-wb-btn"><i class="fa fa-trash"></i></button>
+                </div>
+            </div>
+            @endforeach
+        @else
+            <div class="row weighbridge-row mb-2">
+                <div class="col-md-5">
+                    <input type="text" name="weighbridges[0][name]" class="form-control editable-field" placeholder="Weighbridge Name">
+                </div>
+                <div class="col-md-5">
+                    <input type="number" name="weighbridges[0][amount]" class="form-control editable-field" step="0.01" min="0" placeholder="Weighbridge Amount">
+                </div>
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-danger btn-sm remove-wb-btn"><i class="fa fa-trash"></i></button>
+                </div>
+            </div>
+        @endif
+    </div>
 
-    <div class="row bottom-button-bar">
+    <div class="row bottom-button-bar mt-3">
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
             <button type="submit" class="btn btn-primary submitbutton">Save</button>
@@ -197,67 +218,55 @@
 
 <script>
     $(document).ready(function() {
-        // Initialize select2 if needed
         $('.select2').select2();
+
+        $('#arrived_weight, #exempted_weight').on('input change', function() {
+            calculateOverallWeights();
+        });
+
+        let wbIndex = {{ max($receivingRequest->weighbridges->count(), 1) }};
+        $('#addWeighbridgeBtn').on('click', function() {
+            let rowHtml = `
+            <div class="row weighbridge-row mb-2">
+                <div class="col-md-5">
+                    <input type="text" name="weighbridges[${wbIndex}][name]" class="form-control editable-field" placeholder="Weighbridge Name">
+                </div>
+                <div class="col-md-5">
+                    <input type="number" name="weighbridges[${wbIndex}][amount]" class="form-control editable-field" step="0.01" min="0" placeholder="Weighbridge Amount">
+                </div>
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-danger btn-sm remove-wb-btn"><i class="fa fa-trash"></i></button>
+                </div>
+            </div>`;
+            $('#weighbridges-container').append(rowHtml);
+            wbIndex++;
+        });
+
+        $(document).on('click', '.remove-wb-btn', function() {
+            $(this).closest('.weighbridge-row').remove();
+        });
+
+        calculateOverallWeights();
     });
+
+    function calculateOverallWeights() {
+        let arrivedWeight = parseFloat($('#arrived_weight').val()) || 0;
+        let exemptedWeight = parseFloat($('#exempted_weight').val()) || 0;
+        let dispatchTotal = parseFloat($('#summary_dispatch').val().replace(/,/g, '')) || 0;
+        
+        let paymentWeight = arrivedWeight - exemptedWeight;
+        $('#payment_weight').val(paymentWeight.toFixed(2));
+
+        let overallDifference = dispatchTotal - arrivedWeight;
+        $('#overall_weight_difference').val(overallDifference.toFixed(2));
+    }
 
     function calculateWeights(element) {
         const row = $(element).closest('.item-row');
-        const dispatchWeight = parseFloat(row.find('.dispatch-weight').val()) || 0;
-        let receivingWeight = parseFloat(row.find('.receiving-weight').val()) || 0;
-        let sellerPortion = parseFloat(row.find('.seller-portion').val()) || 0;
+        let noOfBags = parseFloat(row.find('.no-of-bags').val()) || 0;
+        let rate = parseFloat(row.find('.unloading-labour-rate').val()) || 0;
 
-        // Validate receiving weight cannot be greater than dispatch weight
-        if (receivingWeight > dispatchWeight) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Invalid Input',
-                text: 'Receiving weight cannot be greater than dispatch weight!'
-            });
-            receivingWeight = dispatchWeight;
-            row.find('.receiving-weight').val(dispatchWeight.toFixed(2));
-        }
-
-        // Calculate difference weight = dispatch - receiving
-        const differenceWeight = dispatchWeight - receivingWeight;
-        row.find('.difference-weight').val(differenceWeight.toFixed(2));
-
-        // Validate seller portion cannot be greater than difference weight
-        if (sellerPortion > differenceWeight) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Invalid Input',
-                text: 'Seller portion cannot be greater than difference weight!'
-            });
-            sellerPortion = differenceWeight;
-            row.find('.seller-portion').val(differenceWeight.toFixed(2));
-        }
-
-        // Calculate remaining amount = difference - seller portion
-        const remainingAmount = differenceWeight - sellerPortion;
-        row.find('.remaining-amount').val(remainingAmount.toFixed(2));
-
-        // Update totals
-        updateTotals();
-    }
-
-    function updateTotals() {
-        let totalDispatch = 0;
-        let totalReceiving = 0;
-        let totalDifference = 0;
-        let totalRemaining = 0;
-
-        $('.item-row').each(function() {
-            totalDispatch += parseFloat($(this).find('.dispatch-weight').val()) || 0;
-            totalReceiving += parseFloat($(this).find('.receiving-weight').val()) || 0;
-            totalDifference += parseFloat($(this).find('.difference-weight').val()) || 0;
-            totalRemaining += parseFloat($(this).find('.remaining-amount').val()) || 0;
-        });
-
-        // Update summary section
-        $('#summary_dispatch').val(totalDispatch.toFixed(2));
-        $('#summary_receiving').val(totalReceiving.toFixed(2));
-        $('#summary_difference').val(totalDifference.toFixed(2));
-        $('#summary_remaining').val(totalRemaining.toFixed(2));
+        const totalLabour = noOfBags * rate;
+        row.find('.total-labour-amount').val(totalLabour.toFixed(2));
     }
 </script>

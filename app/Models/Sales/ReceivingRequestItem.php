@@ -20,6 +20,8 @@ class ReceivingRequestItem extends Model
         'difference_weight',
         'seller_portion',
         'remaining_amount',
+        'no_of_bags',
+        'unloading_labour_rate',
     ];
 
     protected $casts = [
