@@ -174,7 +174,7 @@
         samplingResults: [
             @foreach ($samplingRequestResults as $slab)
                 @if ($slab->applied_deduction)
-                                                                                                                                                                                                                    {
+                                                                                                                                                                                                                                                    {
                         id: {{ $slab->id }},
                         applied_deduction: {{ $slab->applied_deduction ?? 0 }},
                         deduction_type: '{{ $slab->deduction_type ?? 'amount' }}',
@@ -188,10 +188,10 @@
         compulsoryResults: [
             @foreach ($samplingRequestCompulsuryResults as $slab)
                 @if ($slab->applied_deduction)
-                                                                                                                    {
+                                                                                                                                    {
                     id: {{ $slab->id }},
                     applied_deduction: {{ $slab->applied_deduction ?? 0 }}
-                                                                                                                    },
+                                                                                                                                    },
                 @endif
             @endforeach
         ],
@@ -889,6 +889,7 @@
             const loadingWeight = parseFloat($('input[name="billing_weight"]').val()) || 0;
             const noOfBags = parseFloat($('#no_of_bags').val()) || 0;
             const ratePerKg = parseFloat($('#rate_per_kg').val()) || 0;
+
             const bagRate = parseFloat($('#bag_rate').val()) || 0;
             const kantaCharges = parseFloat($('#kanta_charges').val()) || 0;
             const paidAmount = parseFloat({{ $requestedAmount }});
@@ -1089,7 +1090,10 @@
                 const deduction_on_access_weight_amount = deduction_on_access_weight_rate * deduction_on_access_weight_kg;
                 $('#rerate_on_access_weight_amount').val(deduction_on_access_weight_amount.toFixed(2) || 0);
 
+                const loadingWeight = document.querySelector('input[name="billing_weight"]').value;
+
                 const grossAmount = ratePerKg * loadingWeight;
+
                 const totalDeductionsForFormula = totalSamplingDeductions + bagWeightAmount +
                     loadingWeighbridgeAmount + deduction_on_access_weight_amount;
 
@@ -1103,6 +1107,7 @@
                 console.log('deduction_on_access_weight_amount: ' + deduction_on_access_weight_amount);
                 console.log('grossAmount: ' + grossAmount);
                 console.log('grossFreightAmount: ' + parseInt({{ $grossFreightAmount ?? 0 }}));
+                console.log('loadingWeight: ' + parseInt(loadingWeight));
                 console.log('totalSupplierCommission: ' + {{ $totalSupplierCommission }});
 
 
