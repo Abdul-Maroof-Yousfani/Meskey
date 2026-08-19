@@ -222,7 +222,11 @@ class FreightController extends Controller
                         );
 
                         if ($ticket->purchaseOrder->broker_one_id && $ticket->purchaseOrder->broker_one_commission && $loadingWeight) {
-                            $amount = ($loadingWeight * $ticket->purchaseOrder->broker_one_commission);
+                            if ($ticket->purchaseOrder->broker_one_calculation_type == 'quantity') {
+                                $amount = ($loadingWeight * $ticket->purchaseOrder->broker_one_commission);
+                            } else {
+                                $amount = $ticket->purchaseOrder->broker_one_commission;
+                            }
 
                             createTransaction(
                                 $amount,
@@ -243,7 +247,11 @@ class FreightController extends Controller
                         }
 
                         if ($ticket->purchaseOrder->broker_two_id && $ticket->purchaseOrder->broker_two_commission && $loadingWeight) {
-                            $amount = ($loadingWeight * $ticket->purchaseOrder->broker_two_commission);
+                            if ($ticket->purchaseOrder->broker_two_calculation_type == 'quantity') {
+                                $amount = ($loadingWeight * $ticket->purchaseOrder->broker_two_commission);
+                            } else {
+                                $amount = $ticket->purchaseOrder->broker_two_commission;
+                            }
 
                             createTransaction(
                                 $amount,
@@ -264,7 +272,11 @@ class FreightController extends Controller
                         }
 
                         if ($ticket->purchaseOrder->broker_three_id && $ticket->purchaseOrder->broker_three_commission && $loadingWeight) {
-                            $amount = ($loadingWeight * $ticket->purchaseOrder->broker_three_commission);
+                            if ($ticket->purchaseOrder->broker_three_calculation_type == 'quantity') {
+                                $amount = ($loadingWeight * $ticket->purchaseOrder->broker_three_commission);
+                            } else {
+                                $amount = $ticket->purchaseOrder->broker_three_commission;
+                            }
 
                             createTransaction(
                                 $amount,
