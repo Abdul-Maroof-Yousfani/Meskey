@@ -5,8 +5,8 @@
 
     if (
         isset($samplingRequest->is_lumpsum_deduction) &&
-        $samplingRequest->is_lumpsum_deduction &&
-        $samplingRequest->lumpsum_deduction > 0
+        $samplingRequest->is_lumpsum_deduction 
+        // && $samplingRequest->lumpsum_deduction > 0
     ) {
         $showLumpSum = true;
     }
