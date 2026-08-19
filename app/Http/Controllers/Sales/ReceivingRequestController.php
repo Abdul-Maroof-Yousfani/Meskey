@@ -26,7 +26,7 @@ class ReceivingRequestController extends Controller
     {
         $perPage = $request->get('per_page', 25);
 
-        $receivingRequests = ReceivingRequest::with(['deliveryChallan', 'items.product'])
+        $receivingRequests = ReceivingRequest::with(['deliveryChallan.customer', 'deliveryChallan.delivery_order', 'items.product'])
             ->when($request->filled('dc_id_for_filter') && $request->dc_id_for_filter != 'all', function ($q) use ($request) {
                 $q->where('id', $request->dc_id_for_filter);
             })
@@ -52,6 +52,14 @@ class ReceivingRequestController extends Controller
                       ->orWhereRaw('LOWER(`truck_number`) LIKE ?', [$searchTerm]);
                 });
             })
+            ->where(function($q) {
+                $q->where('am_approval_status', '!=', 'draft')
+                  ->orWhereNull('am_approval_status')
+                  ->orWhere(function($sq) {
+                      $sq->where('am_approval_status', 'draft')
+                         ->where('created_by_id', auth()->user()->id ?? null);
+                  });
+            })
             ->latest()
             ->paginate($perPage);
 
@@ -63,7 +71,7 @@ class ReceivingRequestController extends Controller
      */
     public function edit(int $id)
     {
-        $receivingRequest = ReceivingRequest::with(['deliveryChallan.delivery_challan_data', 'items.product'])->findOrFail($id);
+        $receivingRequest = ReceivingRequest::with(['deliveryChallan.delivery_challan_data', 'items.product', 'weighbridges'])->findOrFail($id);
         
         $transporters = \App\Models\Master\Transporter::all();
         $labours = \App\Models\Master\Vendor::all();
@@ -84,26 +92,59 @@ class ReceivingRequestController extends Controller
                 return response()->json("Receiving Request has been approved/rejected and cannot be updated.", 400);
             }
 
+            // Calculate total labour amount
+            $totalLabourAmount = 0;
+            if ($request->has('items')) {
+                foreach ($request->items as $itemId => $itemData) {
+                    $item = ReceivingRequestItem::find($itemId);
+                    if ($item) {
+                        $bags = floatval($item->deliveryChallanData?->no_of_bags ?? 0);
+                        $rate = floatval($itemData['unloading_labour_rate'] ?? 0);
+                        $totalLabourAmount += ($bags * $rate);
+                    }
+                }
+            }
+
+            $arrivedWeight = $request->arrived_weight ?? 0;
+            $exemptedWeight = $request->exempted_weight ?? 0;
+            $paymentWeight = floatval($arrivedWeight) - floatval($exemptedWeight);
+
             // Update main receiving request
             $receivingRequest->update([
                 'labour' => $request->labour,
                 'transporter' => $request->transporter,
-                'inhouse_weighbridge' => $request->inhouse_weighbridge,
-                'labour_amount' => $request->labour_amount ?? 0,
+                'labour_amount' => $totalLabourAmount,
                 'transporter_amount' => $request->transporter_amount ?? 0,
-                'weighbridge_amount' => $request->inhouse_weighbridge_amount ?? 0,
-                'inhouse_weighbridge_amount' => $request->weighbridge_amount ?? 0,
+                'arrived_date' => $request->arrived_date,
+                'arrived_weight' => $arrivedWeight,
+                'exempted_weight' => $exemptedWeight,
+                'payment_weight' => $paymentWeight,
                 "am_approval_status" => "pending",
                 "am_change_made" => 1
             ]);
 
+            // Sync weighbridges
+            $receivingRequest->weighbridges()->delete();
+            $totalWeighbridgeAmount = 0;
+            if ($request->has('weighbridges')) {
+                foreach ($request->weighbridges as $wb) {
+                    if (!empty($wb['name'])) {
+                        $amt = floatval($wb['amount'] ?? 0);
+                        $receivingRequest->weighbridges()->create([
+                            'name' => $wb['name'],
+                            'amount' => $amt
+                        ]);
+                        $totalWeighbridgeAmount += $amt;
+                    }
+                }
+            }
+
             $receivingRequest->deliveryChallan()->update([
                 "labour" => $request->labour,
-                "labour_amount" => $request->labour_amount ?? 0,
+                "labour_amount" => $totalLabourAmount,
                 "transporter" => $request->transporter,
                 "transporter_amount" => $request->transporter_amount ?? 0,
-                "inhouse-weighbridge" => $request->inhouse_weighbridge,
-                "weighbridge-amount" => $request->weighbridge_amount ?? 0
+                "weighbridge-amount" => $totalWeighbridgeAmount
             ]);
 
             // Update items
@@ -111,18 +152,8 @@ class ReceivingRequestController extends Controller
                 foreach ($request->items as $itemId => $itemData) {
                     $item = ReceivingRequestItem::find($itemId);
                     if ($item) {
-                        $receivingWeight = floatval($itemData['receiving_weight'] ?? 0);
-                        $sellerPortion = floatval($itemData['seller_portion'] ?? 0);
-                        $dispatchWeight = floatval($item->dispatch_weight);
-                        
-                        $differenceWeight = $dispatchWeight - $receivingWeight;
-                        $remainingAmount = $differenceWeight - $sellerPortion;
-
                         $item->update([
-                            'receiving_weight' => $receivingWeight,
-                            'seller_portion' => $sellerPortion,
-                            'difference_weight' => $differenceWeight,
-                            'remaining_amount' => $remainingAmount,
+                            'unloading_labour_rate' => $itemData['unloading_labour_rate'] ?? 0,
                         ]);
                     }
                 }
@@ -141,7 +172,7 @@ class ReceivingRequestController extends Controller
      */
     public function view(int $id)
     {
-        $receivingRequest = ReceivingRequest::with(['deliveryChallan.delivery_challan_data', 'items.product'])->findOrFail($id);
+        $receivingRequest = ReceivingRequest::with(['deliveryChallan.delivery_challan_data', 'items.product', 'weighbridges'])->findOrFail($id);
         
         $transporters = \App\Models\Master\Transporter::all();
         $labours = \App\Models\Master\Vendor::all();

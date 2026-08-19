@@ -27,7 +27,11 @@ class ReceivingRequest extends Model
         'company_id',
         'created_by_id',
         'am_approval_status',
-        'am_change_made'
+        'am_change_made',
+        'arrived_date',
+        'arrived_weight',
+        'exempted_weight',
+        'payment_weight'
     ];
 
     protected $casts = [
@@ -46,6 +50,11 @@ class ReceivingRequest extends Model
     public function items()
     {
         return $this->hasMany(ReceivingRequestItem::class, 'receiving_request_id');
+    }
+
+    public function weighbridges()
+    {
+        return $this->hasMany(ReceivingRequestWeighbridge::class, 'receiving_request_id');
     }
 
     public function createdBy()

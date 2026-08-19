@@ -64,6 +64,10 @@ class DeliveryChallan extends Model
         return $this->hasMany(DeliveryChallanData::class, "delivery_challan_id", "id");
     }
 
+    public function customer() {
+        return $this->belongsTo(\App\Models\Master\Customer::class, 'customer_id');
+    }
+
     public function delivery_order() {
         return $this->belongsToMany(DeliveryOrder::class, "delivery_challan_delivery_order", "delivery_challan_id", "delivery_order_id");
     }
@@ -91,6 +95,67 @@ class DeliveryChallan extends Model
                 if ($ticket) {
                     $ticket->update(['process_status' => 'DC Generated']);
                 }
+            }
+        }
+
+        // Create Receiving Request upon DC Approval
+        if (strtolower($this->sauda_type) == 'pohanch') {
+            $receivingRequest = $this->receivingRequest;
+            $dcDataFirst = $this->delivery_challan_data->first();
+            
+            if (!$receivingRequest) {
+                $receivingRequest = \App\Models\Sales\ReceivingRequest::create([
+                    'delivery_challan_id' => $this->id,
+                    'dc_no' => $this->dc_no,
+                    'dc_date' => $this->dispatch_date,
+                    'truck_number' => $dcDataFirst?->truck_no ?? null,
+                    'labour' => $this->labour,
+                    'transporter' => $this->transporter,
+                    'inhouse_weighbridge' => $this->{'inhouse-weighbridge'} ?? null,
+                    'labour_amount' => $this->labour_amount ?? 0,
+                    'transporter_amount' => $this->transporter_amount ?? 0,
+                    'inhouse_weighbridge_amount' => $this->{'weighbridge-amount'} ?? 0,
+                    'company_id' => $this->company_id,
+                    'created_by_id' => $this->created_by_id,
+                    'am_approval_status' => 'draft',
+                ]);
+            } else {
+                $receivingRequest->update([
+                    'dc_no' => $this->dc_no,
+                    'dc_date' => $this->dispatch_date,
+                    'truck_number' => $dcDataFirst?->truck_no ?? null,
+                    'labour' => $this->labour,
+                    'transporter' => $this->transporter,
+                    'inhouse_weighbridge' => $this->{'inhouse-weighbridge'} ?? null,
+                    'labour_amount' => $this->labour_amount ?? 0,
+                    'transporter_amount' => $this->transporter_amount ?? 0,
+                    'inhouse_weighbridge_amount' => $this->{'weighbridge-amount'} ?? 0,
+                    'am_approval_status' => 'draft',
+                    'created_by_id' => $this->created_by_id,
+                ]);
+            }
+
+            // Sync Receiving Request Items
+            $receivingRequest->items()->delete();
+            foreach ($this->delivery_challan_data as $dcData) {
+                $product = $dcData->product;
+                \App\Models\Sales\ReceivingRequestItem::create([
+                    'receiving_request_id' => $receivingRequest->id,
+                    'delivery_challan_data_id' => $dcData->id,
+                    'item_id' => $dcData->item_id,
+                    'item_name' => $product?->name ?? 'N/A',
+                    'dispatch_weight' => $dcData->qty ?? 0,
+                    'receiving_weight' => 0,
+                    'difference_weight' => $dcData->qty ?? 0,
+                    'seller_portion' => 0,
+                    'remaining_amount' => $dcData->qty ?? 0,
+                ]);
+            }
+        } else {
+            $receivingRequest = $this->receivingRequest;
+            if ($receivingRequest) {
+                $receivingRequest->items()->delete();
+                $receivingRequest->delete();
             }
         }
     }
