@@ -11,11 +11,11 @@
     $showLumpSum = false;
     $totalAmount = 0;
     $remaining = 0;
-
+    // dd($samplingRequest->is_lumpsum_deduction);
     if (
         isset($samplingRequest->is_lumpsum_deduction) &&
-        $samplingRequest->is_lumpsum_deduction &&
-        $samplingRequest->lumpsum_deduction > 0
+        $samplingRequest->is_lumpsum_deduction
+        // && $samplingRequest->lumpsum_deduction > 0
     ) {
         $showLumpSum = true;
     }
@@ -174,7 +174,7 @@
         samplingResults: [
             @foreach ($samplingRequestResults as $slab)
                 @if ($slab->applied_deduction)
-                                                                                                                                                                                                                                                    {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    {
                         id: {{ $slab->id }},
                         applied_deduction: {{ $slab->applied_deduction ?? 0 }},
                         deduction_type: '{{ $slab->deduction_type ?? 'amount' }}',
@@ -188,10 +188,10 @@
         compulsoryResults: [
             @foreach ($samplingRequestCompulsuryResults as $slab)
                 @if ($slab->applied_deduction)
-                                                                                                                                    {
+                                                                                                                                                                                                                                                                                                                                                                                    {
                     id: {{ $slab->id }},
                     applied_deduction: {{ $slab->applied_deduction ?? 0 }}
-                                                                                                                                    },
+                                                                                                                                                                                                                                                                                                                                                                                    },
                 @endif
             @endforeach
         ],
@@ -323,7 +323,7 @@
                     <label>Exempted Weight</label>
                     <input type="number" class="form-control" name="exempted_weight" id="exempted_weight"
                         value="{{ $exemptedWeight }}" {{ $exemptedWeight == 0 ? 'readonly' : ''}}
-                        max="{{ $exemptedWeight != 0 ? $accessWeight : ''}}">
+                        max="{{ $exemptedWeight != 0 ? $accessWeight : ''}}" {{ $isApprovalPage ? 'readonly' : ''}}>
                 </div>
             </div>
             <div class="col-md-3">
@@ -377,6 +377,9 @@
                 </div>
             @endif
 
+
+
+
             @if ($showLumpSum && !$isSlabs && !$isCompulsury)
                 <div class="col-12">
                     <div class="table-responsive">
@@ -392,16 +395,57 @@
                                 <tr
                                     data-lumpsum-amount="{{ number_format($Deductionfromhelperfunction['lumpsum']['amount_deduction'] ?? 0, 2) }}">
                                     <td>Lumpsum Deduction Rupees</td>
-                                    <td>{{ number_format($samplingRequest->lumpsum_deduction, 2) }} Rs./KG </td>
-                                    <td>{{ number_format($Deductionfromhelperfunction['lumpsum']['amount_deduction'] ?? 0, 2) }}
-                                        Rs.</td>
+                                    <td>
+                                        <div class="input-group mb-0">
+                                            <input type="number" step="any" class="form-control editable-field"
+                                                name="lump_sum_deduction_rupees" id="lump_sum_deduction_rupees"
+                                                value="{{ $samplingRequest->lumpsum_deduction }}" readonly
+                                                placeholder="Enter Rs./KG">
+                                            <div class="input-group-append">
+                                                <span class="input-group-text text-sm">Rs.</span>
+                                            </div>
+                                        </div>
+
+                                        {{-- {{ number_format($samplingRequest->lumpsum_deduction, 2) }} Rs./KG --}}
+                                    </td>
+                                    <td>
+                                        <div class="input-group mb-0">
+                                            <input type="text" class="form-control" name="lump_sum_deduction_rupees_total"
+                                                id="lump_sum_deduction_rupees_total"
+                                                value="{{ number_format($Deductionfromhelperfunction['lumpsum']['amount_deduction'] ?? 0, 2) }}"
+                                                readonly>
+
+                                            <!-- {{ number_format($Deductionfromhelperfunction['lumpsum']['amount_deduction'] ?? 0, 2) }}Rs. -->
+                                    </td>
                                 </tr>
                                 <tr
                                     data-lumpsum-kgamount="{{ number_format($Deductionfromhelperfunction['lumpsum']['kgs_deduction'] ?? 0, 2) }}">
                                     <td>Lumpsum Deduction KG's</td>
-                                    <td>{{ number_format($samplingRequest->lumpsum_deduction_kgs, 2) }} KG's </td>
-                                    <td>{{ number_format($Deductionfromhelperfunction['lumpsum']['kgs_deduction'] ?? 0, 2) }}
-                                        Rs.</td>
+                                    <td>
+                                        <div class="input-group mb-0">
+                                            <input type="number" step="any" readonly class="form-control editable-field"
+                                                name="lump_sum_deduction_kgs" id="lump_sum_deduction_kgs"
+                                                value="{{ $samplingRequest->lumpsum_deduction_kgs }}"
+                                                placeholder="Enter Rs./KG">
+                                            <div class="input-group-append">
+                                                <span class="input-group-text text-sm">KG's</span>
+                                            </div>
+                                        </div>
+
+                                        <!-- {{ number_format($samplingRequest->lumpsum_deduction_kgs, 2) }} KG's -->
+                                    </td>
+                                    <td>
+
+
+                                        <div class="input-group mb-0">
+                                            <input type="text" class="form-control" name="lump_sum_deduction_kgs_total"
+                                                id="lump_sum_deduction_kgs_total"
+                                                value="{{ number_format($Deductionfromhelperfunction['lumpsum']['kgs_deduction'] ?? 0, 2) }}"
+                                                readonly>
+
+                                            <!-- {{ number_format($Deductionfromhelperfunction['lumpsum']['kgs_deduction'] ?? 0, 2) }} -->
+                                            <!-- Rs. -->
+                                    </td>
                                 </tr>
                                 <tr class="other-deduction-row" data-other-deduction="true">
                                     <td>Other Deduction (if any)
@@ -651,7 +695,7 @@
 
                                 <!-- Re-rate on Access weight Row -->
                                 <tr class="other-deduction-row" data-other-deduction="true">
-                                    <td><strong>Re-rate on Access weight</strong>
+                                    <td><strong>Re-rate on Excess weight</strong>
                                         <input type="hidden" name="other_deduction[slab_name]" value="Other Deduction">
                                     </td>
                                     <td>N/A</td>
@@ -986,15 +1030,33 @@
                 });
 
                 if (showLumpSum && !isSlabs && !isCompulsury) {
+                    // console.log('show lump sum');
+
                     var lumpsumAmount = $('tr[data-lumpsum-amount]').data('lumpsum-amount') || 0;
                     var lumpsumKgAmount = $('tr[data-lumpsum-kgamount]').data('lumpsum-kgamount') || 0;
+                    var lump_sum_deduction_rupees = $('input[name="lump_sum_deduction_rupees"]').val() || 0;
+                    var lump_sum_deduction_kgs = $('input[name="lump_sum_deduction_kgs"]').val() || 0;
+                    const loadingWeight = document.querySelector('input[name="billing_weight"]').value;
 
+                    var lumpsumKgsCalculatedValue = parseFloat(lump_sum_deduction_kgs) * parseFloat(loadingWeight);
+                    lumpsumKgsCalculatedValue = (lumpsumKgsCalculatedValue / 100) * ratePerKg;
+                    var lumpsumRupeesCalculatedValue = parseFloat(lump_sum_deduction_rupees) * parseFloat(loadingWeight);
+
+                    $('#lump_sum_deduction_kgs_total').val(lumpsumKgsCalculatedValue.toFixed(2));
+                    $('#lump_sum_deduction_rupees_total').val(lumpsumRupeesCalculatedValue.toFixed(2));
+
+
+                    // totalSamplingAmount += parseFloat(lumpsumAmount.replace(/,/g, '')) || 0;
+                    // totalSamplingAmount += parseFloat(lumpsumKgAmount.replace(/,/g, '')) || 0;
                     totalSamplingAmount += parseFloat(lumpsumAmount.replace(/,/g, '')) || 0;
-                    totalSamplingAmount += parseFloat(lumpsumKgAmount.replace(/,/g, '')) || 0;
+                    totalSamplingAmount += parseFloat(lumpsumKgsCalculatedValue) || 0;
+                    // totalSamplingAmount += parseFloat(lump_sum_deduction_kgs.replace(/,/g, '')) || 0;
                 }
+
 
                 const otherDeductionAmount = updateOtherDeduction();
                 totalSamplingAmount += otherDeductionAmount;
+                console.log('dddddd:', lumpsumKgsCalculatedValue, loadingWeight, lump_sum_deduction_kgs, ratePerKg, totalSamplingAmount);
 
                 return totalSamplingAmount;
             }

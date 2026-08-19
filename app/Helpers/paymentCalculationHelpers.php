@@ -110,9 +110,30 @@ function calculatePohaunchPayment($ticketId)
     $finalAmount = $supplierValue;
 
     $brokeryamount = 0;
-    $brokeryamount += ($loadingWeight * ($purchaseOrder->broker_one_commission ?? 0));
-    $brokeryamount += ($loadingWeight * ($purchaseOrder->broker_two_commission ?? 0));
-    $brokeryamount += ($loadingWeight * ($purchaseOrder->broker_three_commission ?? 0));
+    if ($purchaseOrder->broker_one_calculation_type == 'quantity') {
+        $brokeryamount += ($loadingWeight * ($purchaseOrder->broker_one_commission ?? 0));
+    } else {
+        $brokeryamount += ($purchaseOrder->broker_one_commission ?? 0);
+    }
+    if ($purchaseOrder->broker_two_calculation_type == 'quantity') {
+        $brokeryamount += ($loadingWeight * ($purchaseOrder->broker_two_commission ?? 0));
+    } else {
+        $brokeryamount += ($purchaseOrder->broker_two_commission ?? 0);
+    }
+    if ($purchaseOrder->broker_three_calculation_type == 'quantity') {
+        $brokeryamount += ($loadingWeight * ($purchaseOrder->broker_three_commission ?? 0));
+    } else {
+        $brokeryamount += ($purchaseOrder->broker_three_commission ?? 0);
+    }
+
+
+
+
+
+
+    // $brokeryamount += ($loadingWeight * ($purchaseOrder->broker_one_commission ?? 0));
+    // $brokeryamount += ($loadingWeight * ($purchaseOrder->broker_two_commission ?? 0));
+    // $brokeryamount += ($loadingWeight * ($purchaseOrder->broker_three_commission ?? 0));
     $finalAmount += $brokeryamount;
 
     return [
@@ -171,17 +192,11 @@ function freightcalc($arrivalTicket)
 function calculateThaddaPayment($ticketId)
 {
 
-
-
-
     $purchaseTicket = PurchaseTicket::with([
         'purchaseOrder',
         'purchaseFreight',
         'paymentRequestData.paymentRequests'
     ])->findOrFail($ticketId);
-
-
-
 
     $purchaseOrder = $purchaseTicket->purchaseOrder;
 
@@ -306,7 +321,8 @@ function getPohaunchSamplingResults($ticketId, $netWeight, $ratePerKg)
         ];
     }
 
-    $showLumpSum = $samplingRequest->is_lumpsum_deduction && $samplingRequest->lumpsum_deduction > 0;
+    $showLumpSum = $samplingRequest->is_lumpsum_deduction;
+    //  && $samplingRequest->lumpsum_deduction > 0;
 
     $samplingResults = collect();
     $compulsoryResults = collect();
@@ -439,6 +455,7 @@ function calculatePohaunchDeductions($loadingInfo, $samplingData, $ratePerKg, $t
         $lumpsumKgsCalculatedValue = 0;
 
         if ($samplingData['lumpsum_deduction'] > 0) {
+
             $lumpsumCalculatedValue = $samplingData['lumpsum_deduction'] * $loadingInfo['net_weight'];
             $totalSamplingDeductions += $lumpsumCalculatedValue;
         }
