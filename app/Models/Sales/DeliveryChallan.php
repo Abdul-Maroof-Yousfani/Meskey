@@ -171,8 +171,8 @@ class DeliveryChallan extends Model
             DB::transaction(function () use ($salesOrder) {
                 $dc_no = $this->dc_no;
                 $company_id = $this->company_id ?? (auth()->check() ? auth()->user()->current_company_id : 1);
-
-                $handleTransaction = function($amount, $accountId, $companyId, $voucherNo, $type, $isOpening, $additionalData) {
+                $voucherTypeId = 3;
+                $handleTransaction = function($amount, $accountId, $voucherTypeId, $voucherNo, $type, $isOpening, $additionalData) {
                     $tx = \App\Models\Master\Account\Transaction::where('voucher_no', $voucherNo)
                             ->where('purpose', $additionalData['purpose'])
                             ->where('type', $type)
@@ -181,14 +181,13 @@ class DeliveryChallan extends Model
                         $tx->update([
                             'amount' => $amount,
                             'account_id' => $accountId,
-                            'company_id' => $companyId,
                             'counter_account_id' => $additionalData['counter_account_id'] ?? null,
                             'payment_against' => $additionalData['payment_against'] ?? null,
                             'against_reference_no' => $additionalData['against_reference_no'] ?? null,
                             'remarks' => $additionalData['remarks'] ?? null,
                         ]);
                     } else {
-                        createTransaction($amount, $accountId, $companyId, $voucherNo, $type, $isOpening, $additionalData);
+                        createTransaction($amount, $accountId, $voucherTypeId, $voucherNo, $type, $isOpening, $additionalData);
                     }
                 };
 
@@ -217,7 +216,7 @@ class DeliveryChallan extends Model
 
                 if ($totalSaleAmount > 0 && $customerAccountId && $inventoryAccountId) {
                     // Sale Entry - Customer Debit
-                    $handleTransaction($totalSaleAmount, $customerAccountId, $company_id, $dc_no, 'debit', 'no', [
+                    $handleTransaction($totalSaleAmount, $customerAccountId, $voucherTypeId, $dc_no, 'debit', 'no', [
                         'counter_account_id' => $inventoryAccountId,
                         'purpose' => "delivery-challan-sale",
                         'payment_against' => "pohanch-sale",
@@ -226,7 +225,7 @@ class DeliveryChallan extends Model
                     ]);
 
                     // Sale Entry - Sales Revenue Credit
-                    $handleTransaction($totalSaleAmount, $inventoryAccountId, $company_id, $dc_no, 'credit', 'no', [
+                    $handleTransaction($totalSaleAmount, $inventoryAccountId, $voucherTypeId, $dc_no, 'credit', 'no', [
                         'counter_account_id' => $customerAccountId,
                         'purpose' => "delivery-challan-sale",
                         'payment_against' => "pohanch-sale",
@@ -237,7 +236,7 @@ class DeliveryChallan extends Model
 
                 if ($this->transporter_amount > 0 && $transporterExpenseAccount && $transporterAccountId) {
                     // Transporter Expense Debit
-                    $handleTransaction($this->transporter_amount, $transporterExpenseAccount->id, $company_id, $dc_no, 'debit', 'no', [
+                    $handleTransaction($this->transporter_amount, $transporterExpenseAccount->id, $voucherTypeId, $dc_no, 'debit', 'no', [
                         'counter_account_id' => $transporterAccountId,
                         'purpose' => "transporter-expense",
                         'payment_against' => "pohanch-sale-expense",
@@ -246,7 +245,7 @@ class DeliveryChallan extends Model
                     ]);
 
                     // Transporter Payable Credit
-                    $handleTransaction($this->transporter_amount, $transporterAccountId, $company_id, $dc_no, 'credit', 'no', [
+                    $handleTransaction($this->transporter_amount, $transporterAccountId, $voucherTypeId, $dc_no, 'credit', 'no', [
                         'counter_account_id' => $transporterExpenseAccount->id,
                         'purpose' => "transporter-payable",
                         'payment_against' => "pohanch-sale-payable",
@@ -257,7 +256,7 @@ class DeliveryChallan extends Model
 
                 if ($this->labour_amount > 0 && $labourExpenseAccount && $labourAccountId) {
                     // Labour Expense Debit
-                    $handleTransaction($this->labour_amount, $labourExpenseAccount->id, $company_id, $dc_no, 'debit', 'no', [
+                    $handleTransaction($this->labour_amount, $labourExpenseAccount->id, $voucherTypeId, $dc_no, 'debit', 'no', [
                         'counter_account_id' => $labourAccountId,
                         'purpose' => "labour-expense",
                         'payment_against' => "pohanch-sale-expense",
@@ -266,7 +265,7 @@ class DeliveryChallan extends Model
                     ]);
 
                     // Labour Payable Credit
-                    $handleTransaction($this->labour_amount, $labourAccountId, $company_id, $dc_no, 'credit', 'no', [
+                    $handleTransaction($this->labour_amount, $labourAccountId, $voucherTypeId, $dc_no, 'credit', 'no', [
                         'counter_account_id' => $labourExpenseAccount->id,
                         'purpose' => "labour-payable",
                         'payment_against' => "pohanch-sale-payable",
@@ -279,7 +278,7 @@ class DeliveryChallan extends Model
                     $commissionAmount = $totalQty * $salesOrder->commission_per_kg;
 
                     // Commission Expense Debit
-                    $handleTransaction($commissionAmount, $commissionExpenseAccount->id, $company_id, $dc_no, 'debit', 'no', [
+                    $handleTransaction($commissionAmount, $commissionExpenseAccount->id, $voucherTypeId, $dc_no, 'debit', 'no', [
                         'counter_account_id' => $brokerAccountId,
                         'purpose' => "commission-expense",
                         'payment_against' => "pohanch-sale-expense",
@@ -288,7 +287,7 @@ class DeliveryChallan extends Model
                     ]);
 
                     // Broker Payable Credit
-                    $handleTransaction($commissionAmount, $brokerAccountId, $company_id, $dc_no, 'credit', 'no', [
+                    $handleTransaction($commissionAmount, $brokerAccountId, $voucherTypeId, $dc_no, 'credit', 'no', [
                         'counter_account_id' => $commissionExpenseAccount->id,
                         'purpose' => "broker-payable",
                         'payment_against' => "pohanch-sale-payable",

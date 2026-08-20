@@ -81,11 +81,12 @@ class ReceivingRequest extends Model
         $dc_no = $this->dc_no;
         $company_id = $this->company_id ?? (auth()->check() ? auth()->user()->current_company_id : 1);
         $salesOrder = $dc->delivery_order->first()?->salesOrder;
+        $voucherTypeId = 3;
 
         // if ($salesOrder && strtolower($salesOrder->transporter_used) == 'yes') {
-            DB::transaction(function () use ($dc, $dc_no, $company_id, $salesOrder) {
-                $handleTransaction = function($amount, $accountId, $companyId, $voucherNo, $type, $isOpening, $additionalData) {
-                    $tx = \App\Models\Master\Account\Transaction::where('voucher_no', $voucherNo)
+            DB::transaction(function () use ($dc, $dc_no, $voucherTypeId, $salesOrder) {
+                $handleTransaction = function($amount, $accountId, $voucherTypeId, $voucherNo, $type, $isOpening, $additionalData) {
+                    $tx = Transaction::where('voucher_no', $voucherNo)
                             ->where('purpose', $additionalData['purpose'])
                             ->where('type', $type)
                             ->first();
@@ -93,14 +94,13 @@ class ReceivingRequest extends Model
                         $tx->update([
                             'amount' => $amount,
                             'account_id' => $accountId,
-                            'company_id' => $companyId,
                             'counter_account_id' => $additionalData['counter_account_id'] ?? null,
                             'payment_against' => $additionalData['payment_against'] ?? null,
                             'against_reference_no' => $additionalData['against_reference_no'] ?? null,
                             'remarks' => $additionalData['remarks'] ?? null,
                         ]);
                     } else {
-                        createTransaction($amount, $accountId, $companyId, $voucherNo, $type, $isOpening, $additionalData);
+                        createTransaction($amount, $accountId, $voucherTypeId, $voucherNo, $type, $isOpening, $additionalData);
                     }
                 };
 
@@ -123,7 +123,7 @@ class ReceivingRequest extends Model
                         $customerAccountId = $dc->customer?->account_id;
                         if ($unloadingLabourExpAccount && $customerAccountId) {
                             // Debit Unloading Labour Expense
-                            $handleTransaction($unloadingLabourAmount, $unloadingLabourExpAccount->id, $company_id, $dc_no, 'debit', 'no', [
+                            $handleTransaction($unloadingLabourAmount, $unloadingLabourExpAccount->id, $voucherTypeId, $dc_no, 'debit', 'no', [
                                 'counter_account_id' => $customerAccountId,
                                 'purpose' => "unloading-labour-expense",
                                 'payment_against' => "pohanch-sale-expense",
@@ -132,7 +132,7 @@ class ReceivingRequest extends Model
                             ]);
 
                             // Credit Customer
-                            $handleTransaction($unloadingLabourAmount, $customerAccountId, $company_id, $dc_no, 'credit', 'no', [
+                            $handleTransaction($unloadingLabourAmount, $customerAccountId, $voucherTypeId, $dc_no, 'credit', 'no', [
                                 'counter_account_id' => $unloadingLabourExpAccount->id,
                                 'purpose' => "unloading-labour-payable",
                                 'payment_against' => "pohanch-sale-payable",
@@ -146,7 +146,7 @@ class ReceivingRequest extends Model
 
                         if ($unloadingLabourExpAccount && $transporterAccountId) {
                             // Debit Unloading Labour Expense
-                            $handleTransaction($unloadingLabourAmount, $unloadingLabourExpAccount->id, $company_id, $dc_no, 'debit', 'no', [
+                            $handleTransaction($unloadingLabourAmount, $unloadingLabourExpAccount->id, $voucherTypeId, $dc_no, 'debit', 'no', [
                                 'counter_account_id' => $transporterAccountId,
                                 'purpose' => "unloading-labour-expense",
                                 'payment_against' => "pohanch-sale-expense",
@@ -155,7 +155,7 @@ class ReceivingRequest extends Model
                             ]);
 
                             // Credit Transporter
-                            $handleTransaction($unloadingLabourAmount, $transporterAccountId, $company_id, $dc_no, 'credit', 'no', [
+                            $handleTransaction($unloadingLabourAmount, $transporterAccountId, $voucherTypeId, $dc_no, 'credit', 'no', [
                                 'counter_account_id' => $unloadingLabourExpAccount->id,
                                 'purpose' => "unloading-labour-payable",
                                 'payment_against' => "pohanch-sale-payable",
@@ -183,7 +183,7 @@ class ReceivingRequest extends Model
                         $customerAccountId = $dc->customer?->account_id;
                         if ($weighbridgeExpAccount && $customerAccountId) {
                             // Debit Weighbridges Expense
-                            $handleTransaction($totalWeighbridgeAmount, $weighbridgeExpAccount->id, $company_id, $dc_no, 'debit', 'no', [
+                            $handleTransaction($totalWeighbridgeAmount, $weighbridgeExpAccount->id, $voucherTypeId, $dc_no, 'debit', 'no', [
                                 'counter_account_id' => $customerAccountId,
                                 'purpose' => "weighbridge-expense",
                                 'payment_against' => "pohanch-sale-expense",
@@ -192,7 +192,7 @@ class ReceivingRequest extends Model
                             ]);
 
                             // Credit Customer
-                            $handleTransaction($totalWeighbridgeAmount, $customerAccountId, $company_id, $dc_no, 'credit', 'no', [
+                            $handleTransaction($totalWeighbridgeAmount, $customerAccountId, $voucherTypeId, $dc_no, 'credit', 'no', [
                                 'counter_account_id' => $weighbridgeExpAccount->id,
                                 'purpose' => "weighbridge-payable",
                                 'payment_against' => "pohanch-sale-payable",
@@ -206,7 +206,7 @@ class ReceivingRequest extends Model
 
                         if ($weighbridgeExpAccount && $transporterAccountId) {
                             // Debit Weighbridges Expense
-                            $handleTransaction($totalWeighbridgeAmount, $weighbridgeExpAccount->id, $company_id, $dc_no, 'debit', 'no', [
+                            $handleTransaction($totalWeighbridgeAmount, $weighbridgeExpAccount->id, $voucherTypeId, $dc_no, 'debit', 'no', [
                                 'counter_account_id' => $transporterAccountId,
                                 'purpose' => "weighbridge-expense",
                                 'payment_against' => "pohanch-sale-expense",
@@ -215,7 +215,7 @@ class ReceivingRequest extends Model
                             ]);
 
                             // Credit Transporter
-                            $handleTransaction($totalWeighbridgeAmount, $transporterAccountId, $company_id, $dc_no, 'credit', 'no', [
+                            $handleTransaction($totalWeighbridgeAmount, $transporterAccountId, $voucherTypeId, $dc_no, 'credit', 'no', [
                                 'counter_account_id' => $weighbridgeExpAccount->id,
                                 'purpose' => "weighbridge-payable",
                                 'payment_against' => "pohanch-sale-payable",
@@ -256,7 +256,7 @@ class ReceivingRequest extends Model
                         if ($exemptedLossAmount > 0) {
                             $lossAccount = Account::where('hierarchy_path', '4-1-4')->first();
                             if ($lossAccount) {
-                                $handleTransaction($exemptedLossAmount, $lossAccount->id, $company_id, $dc_no, 'debit', 'no', [
+                                $handleTransaction($exemptedLossAmount, $lossAccount->id, $voucherTypeId, $dc_no, 'debit', 'no', [
                                     'counter_account_id' => $customerAccountId,
                                     'purpose' => "receiving-request-short-loss",
                                     'remarks' => "Short weight loss (Exempted {$exemptedWeight} kg) on Receiving Request for DC: {$dc_no}",
@@ -270,7 +270,7 @@ class ReceivingRequest extends Model
                             $transporterAccountId = $transporterObj?->account_id;
                             
                             if ($transporterAccountId) {
-                                $handleTransaction($penaltyAmount, $transporterAccountId, $company_id, $dc_no, 'debit', 'no', [
+                                $handleTransaction($penaltyAmount, $transporterAccountId, $voucherTypeId, $dc_no, 'debit', 'no', [
                                     'counter_account_id' => $customerAccountId,
                                     'purpose' => "receiving-request-short-penalty",
                                     'remarks' => "Short weight penalty ({$penaltyWeight} kg) charged to Transporter on Receiving Request for DC: {$dc_no}",
@@ -279,7 +279,7 @@ class ReceivingRequest extends Model
                         }
 
                         // Create a new Credit entry for the customer to adjust for the short amount
-                        $handleTransaction($totalShortAmount, $customerAccountId, $company_id, $dc_no, 'credit', 'no', [
+                        $handleTransaction($totalShortAmount, $customerAccountId, $voucherTypeId, $dc_no, 'credit', 'no', [
                             'purpose' => "receiving-request-short-weight-adjustment",
                             'remarks' => "Short weight adjustment ({$shortWeight} kg) on Receiving Request for DC: {$dc_no}",
                         ]);
