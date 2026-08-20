@@ -119,6 +119,8 @@ class ReceivingRequestController extends Controller
                 'arrived_weight' => $arrivedWeight,
                 'exempted_weight' => $exemptedWeight,
                 'payment_weight' => $paymentWeight,
+                'unloading_paid_by' => $request->unloading_paid_by,
+                'weighbridge_paid_by' => $request->weighbridge_paid_by,
                 "am_approval_status" => "pending",
                 "am_change_made" => 1
             ]);
@@ -138,6 +140,11 @@ class ReceivingRequestController extends Controller
                     }
                 }
             }
+            
+            // Now update the amount in ReceivingRequest itself too
+            $receivingRequest->update([
+                'weighbridge_amount' => $totalWeighbridgeAmount
+            ]);
 
             $receivingRequest->deliveryChallan()->update([
                 "labour" => $request->labour,
