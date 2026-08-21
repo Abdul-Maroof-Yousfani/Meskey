@@ -172,6 +172,16 @@
                         value="{{ $ticketLabour ? ($ticketLabour === 'paid' ? 'Paid' : 'Not Paid') : 'N/A' }}" readonly>
                 </div>
             </div>
+            @php
+                $isXmillNoTransporter = false;
+                if (strtolower($delivery_challan->sauda_type) === 'x-mill') {
+                    $salesOrder = $delivery_challan->delivery_order->first()?->salesOrder;
+                    if ($salesOrder && strtolower($salesOrder->transporter_used) === 'no') {
+                        $isXmillNoTransporter = true;
+                    }
+                }
+            @endphp
+            @if(!$isXmillNoTransporter)
             <div class="col-md-4">
                 <div class="form-group">
                     <label class="form-label">Transporter:</label>
@@ -182,6 +192,7 @@
                     </select>
                 </div>
             </div>
+            @endif
             <div class="col-md-4" style="display: none;">
                 <div class="form-group">
                     <label class="form-label">In-house Weighbridge:</label>
