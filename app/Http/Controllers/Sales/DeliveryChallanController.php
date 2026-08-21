@@ -112,14 +112,18 @@ class DeliveryChallanController extends Controller
                               ->orWhere("name", $clean_packing . "KG")
                               ->orWhere("name", "like", $clean_packing . "%");
                         })
-                        ->where("status", 1)
+                        ->where(function($q) {
+                            $q->where("status", 1)->orWhere("status", 'active');
+                        })
                         ->first();
                     
                     if ($category_id && $bag_packing) {
                         $rateObj = \App\Models\Master\LabourRate::where("category_id", $category_id)
                             ->where("factory_id", $arrival_id)
                             ->where("bag_packing_id", $bag_packing->id)
-                            ->where("status", 'active')
+                            ->where(function($q) {
+                                $q->where("status", 1)->orWhere("status", 'active');
+                            })
                             ->first();
                             
                         if ($rateObj) {
@@ -307,14 +311,18 @@ class DeliveryChallanController extends Controller
                               ->orWhere("name", $clean_packing . "KG")
                               ->orWhere("name", "like", $clean_packing . "%");
                         })
-                        ->where("status", 1)
+                        ->where(function($q) {
+                            $q->where("status", 1)->orWhere("status", 'active');
+                        })
                         ->first();
                     
                     if ($category_id && $bag_packing) {
                         $rateObj = \App\Models\Master\LabourRate::where("category_id", $category_id)
                             ->where("factory_id", $arrival_id)
                             ->where("bag_packing_id", $bag_packing->id)
-                            ->where("status", 'active')
+                            ->where(function($q) {
+                                $q->where("status", 1)->orWhere("status", 'active');
+                            })
                             ->first();
                             
                         if ($rateObj) {
@@ -871,14 +879,17 @@ class DeliveryChallanController extends Controller
         $bag_packing = \App\Models\BagPacking::select("id")
                                     ->where(function($q) use ($clean_packing) {
                                         $q->where("name", $clean_packing . " kg")
-                                          ->orWhere("name", $clean_packing . "KG");
+                                          ->orWhere("name", $clean_packing . "KG")
+                                          ->orWhere("name", "like", $clean_packing . "%");
                                     })
-                                    ->where("status", 1)
+                                    ->where(function($q) {
+                                        $q->where("status", 1)->orWhere("status", 'active');
+                                    })
                                     ->first();
 
         $arrival_location_id = $ticket->arrival_location_id;
-        $delivery_order_id = $ticket->delivery_order_id;
-        $delivery_order = DeliveryOrder::find($delivery_order_id);
+        $delivery_order_id = $ticket->delivery_order_id ?? ($deliveryOrder ? $deliveryOrder->id : null);
+        $delivery_order = $delivery_order_id ? DeliveryOrder::find($delivery_order_id) : $deliveryOrder;
         
         $category_id = null;
         if ($delivery_order && $delivery_order->delivery_order_data->isNotEmpty()) {
@@ -892,7 +903,9 @@ class DeliveryChallanController extends Controller
                                         ->where("category_id", $category_id)
                                         ->where("factory_id", $arrival_location_id)
                                         ->where("bag_packing_id", $bag_packing->id)
-                                        ->where("status", 1)
+                                        ->where(function($q) {
+                                            $q->where("status", 1)->orWhere("status", 'active');
+                                        })
                                         ->first();
         }
        
@@ -924,6 +937,7 @@ class DeliveryChallanController extends Controller
                 'reference_no' => $d->reference_no,
                 'sauda_type' => strtolower($d->sauda_type ?? ''),
                 'remarks' => $d->remarks ?? '',
+                'transporter_used' => strtolower($d->salesOrder->transporter_used ?? ''),
             ];
         }
 
@@ -941,6 +955,7 @@ class DeliveryChallanController extends Controller
                 'reference_no' => $deliveryOrder->reference_no,
                 'sauda_type' => strtolower($deliveryOrder->sauda_type ?? ''),
                 'remarks' => $deliveryOrder->remarks ?? '',
+                'transporter_used' => strtolower($deliveryOrder->salesOrder->transporter_used ?? ''),
             ],
             'customer' => [
                 'id' => $deliveryOrder->customer->id ?? null,

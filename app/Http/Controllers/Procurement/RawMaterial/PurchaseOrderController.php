@@ -384,11 +384,11 @@ class PurchaseOrderController extends Controller
                 'division_id' => $data['division_id'] ?? null,
                 'supplier_commission' => $data['supplier_commission'] ?? null,
                 'broker_one_id' => $data['broker_one_id'] ?? null,
-                'broker_one_commission' => $data['broker_one_commission'] ?? 0,
+                'broker_one_commission' => $data['broker_one_commission'] ?? null,
                 'broker_two_id' => $data['broker_two_id'] ?? null,
-                'broker_two_commission' => $data['broker_two_commission'] ?? 0,
+                'broker_two_commission' => $data['broker_two_commission'] ?? null,
                 'broker_three_id' => $data['broker_three_id'] ?? null,
-                'broker_three_commission' => $data['broker_three_commission'] ?? 0,
+                'broker_three_commission' => $data['broker_three_commission'] ?? null,
                 'product_id' => $data['product_id'] ?? null,
                 'line_type' => $data['line_type'] ?? null,
                 'bag_weight' => $data['bag_weight'] ?? null,
@@ -833,13 +833,13 @@ class PurchaseOrderController extends Controller
 
         $brokerDetails = '';
         if (isset($row->broker_one_id)) {
-            $brokerDetails = 'Broker 1: ' . ($row->broker_one_name ?? 'N/A') . ' (' . ($row->broker_one_commission ?? 0) . '%)';
+            $brokerDetails = 'Broker 1: ' . ($row->broker_one_name ?? 'N/A') . ' (' . ($row->broker_one_commission ?? null) . '%)';
         }
         if (isset($row->broker_two_id)) {
-            $brokerDetails .= ($brokerDetails ? "\n" : '') . 'Broker 2: ' . ($row->brokerTwo->name ?? 'N/A') . ' (' . ($row->brokerTwo->broker_one_commission ?? 0) . '%)';
+            $brokerDetails .= ($brokerDetails ? "\n" : '') . 'Broker 2: ' . ($row->brokerTwo->name ?? 'N/A') . ' (' . ($row->brokerTwo->broker_one_commission ?? null) . '%)';
         }
         if (isset($row->broker_three_id)) {
-            $brokerDetails .= ($brokerDetails ? "\n" : '') . 'Broker 3: ' . ($row->brokerThree->name ?? 'N/A') . ' (' . ($row->brokerThree->broker_one_commission ?? 0) . '%)';
+            $brokerDetails .= ($brokerDetails ? "\n" : '') . 'Broker 3: ' . ($row->brokerThree->name ?? 'N/A') . ' (' . ($row->brokerThree->broker_one_commission ?? null) . '%)';
         }
 
         // If no broker
