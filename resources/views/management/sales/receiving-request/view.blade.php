@@ -133,8 +133,23 @@
         </div>
         <div class="col-md-3">
             <div class="form-group">
+                <label class="font-weight-bold">Deduction</label>
+                <input type="number" class="form-control bg-light" value="{{ $receivingRequest->transporter_deduction ?? 0 }}" readonly>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
                 <label class="font-weight-bold">Transporter Amount</label>
                 <input type="number" class="form-control bg-light" value="{{ $receivingRequest->transporter_amount }}" readonly>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label class="font-weight-bold">Total Amount</label>
+                @php
+                    $netTransporterAmount = floatval($receivingRequest->transporter_amount ?? 0) - floatval($receivingRequest->transporter_deduction ?? 0);
+                @endphp
+                <input type="number" class="form-control bg-light font-weight-bold" value="{{ number_format($netTransporterAmount, 2, '.', '') }}" readonly>
             </div>
         </div>
     </div>

@@ -30,6 +30,7 @@ class ReceivingRequest extends Model
         'inhouse_weighbridge',
         'labour_amount',
         'transporter_amount',
+        'transporter_deduction',
         'weighbridge_amount',
         'inhouse_weighbridge_amount',
         'company_id',
@@ -48,6 +49,7 @@ class ReceivingRequest extends Model
         'dc_date' => 'date',
         'labour_amount' => 'decimal:2',
         'transporter_amount' => 'decimal:2',
+        'transporter_deduction' => 'decimal:2',
         'weighbridge_amount' => 'decimal:2',
         'inhouse_weighbridge_amount' => 'decimal:2',
     ];
@@ -226,6 +228,36 @@ class ReceivingRequest extends Model
                     }
                 }
 
+                // ==========================================
+                // 3. Transporter Deduction Entry
+                // ==========================================
+                $deductionAmount = floatval($this->transporter_deduction ?? 0);
+                if ($deductionAmount > 0) {
+                    $transporterObj = Transporter::find($this->transporter);
+                    $transporterAccountId = $transporterObj?->account_id;
+                    $customerAccountId = $dc->customer?->account_id;
+
+                    if ($customerAccountId && $transporterAccountId) {
+                        // Debit Transporter (Decreases Transporter Payable)
+                        $handleTransaction($deductionAmount, $transporterAccountId, $voucherTypeId, $dc_no, 'debit', 'no', [
+                            'counter_account_id' => $customerAccountId,
+                            'purpose' => "receiving-request-transporter-deduction",
+                            'payment_against' => "pohanch-sale-payable",
+                            'against_reference_no' => $dc_no,
+                            'remarks' => "Transporter deduction charged on Receiving Request for DC: {$dc_no}",
+                        ]);
+
+                        // Credit Customer (Decreases Customer Receivable)
+                        $handleTransaction($deductionAmount, $customerAccountId, $voucherTypeId, $dc_no, 'credit', 'no', [
+                            'counter_account_id' => $transporterAccountId,
+                            'purpose' => "receiving-request-customer-deduction",
+                            'payment_against' => "pohanch-sale-receivable",
+                            'against_reference_no' => $dc_no,
+                            'remarks' => "Transporter deduction adjusted for customer on Receiving Request for DC: {$dc_no}",
+                        ]);
+                    }
+                }
+
                 // weight difference entries
                 $totalSaleAmount = 0;
                 $totalQty = 0;
@@ -283,6 +315,36 @@ class ReceivingRequest extends Model
                             'purpose' => "receiving-request-short-weight-adjustment",
                             'remarks' => "Short weight adjustment ({$shortWeight} kg) on Receiving Request for DC: {$dc_no}",
                         ]);
+                    }
+                } elseif ($arrivedWeight > $dispatchedWeight && $dispatchedWeight > 0) {
+                    // Excess Weight (Arrived > Dispatched) -> Profit
+                    $excessWeight = $arrivedWeight - $dispatchedWeight;
+                    $totalExcessAmount = $excessWeight * $averageRate;
+                    
+                    $customerAccountId = $dc->customer?->account_id;
+                    
+                    if ($totalExcessAmount > 0 && $customerAccountId) {
+                        $profitAccount = Account::where('hierarchy_path', '4-1-4')->first();
+                        
+                        if ($profitAccount) {
+                            // 1. Debit Customer (Customer got extra goods, so receivable increases)
+                            $handleTransaction($totalExcessAmount, $customerAccountId, $voucherTypeId, $dc_no, 'debit', 'no', [
+                                'counter_account_id' => $profitAccount->id,
+                                'purpose' => "receiving-request-excess-weight-adjustment",
+                                'payment_against' => "pohanch-sale-receivable",
+                                'against_reference_no' => $dc_no,
+                                'remarks' => "Excess weight adjustment (+{$excessWeight} kg) on Receiving Request for DC: {$dc_no}",
+                            ]);
+
+                            // 2. Credit Gain/Profit Account (hierarchy 4-1-4)
+                            $handleTransaction($totalExcessAmount, $profitAccount->id, $voucherTypeId, $dc_no, 'credit', 'no', [
+                                'counter_account_id' => $customerAccountId,
+                                'purpose' => "receiving-request-excess-profit",
+                                'payment_against' => "pohanch-sale-profit",
+                                'against_reference_no' => $dc_no,
+                                'remarks' => "Excess weight gain/profit (+{$excessWeight} kg) on Receiving Request for DC: {$dc_no}",
+                            ]);
+                        }
                     }
                 }
             });
