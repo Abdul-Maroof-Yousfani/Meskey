@@ -115,6 +115,7 @@ class ReceivingRequestController extends Controller
                 'transporter' => $request->transporter,
                 'labour_amount' => $totalLabourAmount,
                 'transporter_amount' => $request->transporter_amount ?? 0,
+                'transporter_deduction' => $request->transporter_deduction ?? 0,
                 'arrived_date' => $request->arrived_date,
                 'arrived_weight' => $arrivedWeight,
                 'exempted_weight' => $exemptedWeight,

@@ -144,8 +144,23 @@
         </div>
         <div class="col-md-3">
             <div class="form-group">
+                <label class="font-weight-bold">Deduction</label>
+                <input type="number" class="form-control editable-field" id="transporter_deduction" name="transporter_deduction" value="{{ $receivingRequest->transporter_deduction ?? 0 }}" step="0.01" min="0" placeholder="Deduction">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
                 <label class="font-weight-bold">Transporter Amount</label>
-                <input type="number" class="form-control editable-field" name="transporter_amount" value="{{ $receivingRequest->transporter_amount }}" step="0.01" min="0" placeholder="Transporter Amount">
+                <input type="number" class="form-control editable-field" id="transporter_amount" name="transporter_amount" value="{{ $receivingRequest->transporter_amount }}" step="0.01" min="0" placeholder="Transporter Amount">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label class="font-weight-bold">Total Amount</label>
+                @php
+                    $netTransporterAmount = floatval($receivingRequest->transporter_amount ?? 0) - floatval($receivingRequest->transporter_deduction ?? 0);
+                @endphp
+                <input type="number" class="form-control bg-light font-weight-bold" id="transporter_total_amount" value="{{ number_format($netTransporterAmount, 2, '.', '') }}" readonly placeholder="Total Amount">
             </div>
         </div>
     </div>
@@ -320,6 +335,10 @@
             calculateOverallWeights();
         });
 
+        $('#transporter_amount, #transporter_deduction').on('input change keyup', function() {
+            calculateTransporterTotal();
+        });
+
         let wbIndex = {{ max($receivingRequest->weighbridges->count(), 1) }};
         $('#addWeighbridgeBtn').on('click', function() {
             let rowHtml = `
@@ -345,7 +364,15 @@
 
         calculateOverallWeights();
         calculateWeighbridgeTotal();
+        calculateTransporterTotal();
     });
+
+    function calculateTransporterTotal() {
+        let amount = parseFloat($('#transporter_amount').val()) || 0;
+        let deduction = parseFloat($('#transporter_deduction').val()) || 0;
+        let total = amount - deduction;
+        $('#transporter_total_amount').val(total.toFixed(2));
+    }
 
     function calculateOverallWeights() {
         let arrivedWeight = parseFloat($('#arrived_weight').val()) || 0;
