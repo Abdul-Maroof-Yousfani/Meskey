@@ -176,7 +176,7 @@ $userLocation = $authUser->companyLocation ?? null;
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group ">
                 <label>No of bags: </label>
-                <input type="text" name="bags" placeholder="No of bags" class="form-control" autocomplete="off" />
+                <input type="number" name="bags" placeholder="No of bags" class="form-control" autocomplete="off" />
             </div>
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
