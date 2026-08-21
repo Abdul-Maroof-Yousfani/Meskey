@@ -83,7 +83,7 @@ class ArrivalApproveController extends Controller
                 ->leftJoin('arrival_locations', 'arrival_location_transfers.arrival_location_id', '=', 'arrival_locations.id')
                 ->whereNull('arrival_sampling_requests.id')
                 ->when(!$isSuperAdmin, function ($q) use ($authUser) {
-                    return $q->where('arrival_location_transfers.arrival_location_id', $authUser->arrival_location_id);
+                    return $q->whereIn('arrival_location_transfers.arrival_location_id', getUserCurrentCompanyArrivalLocations());
                 })
                 ->select(
                     'arrival_tickets.*',
