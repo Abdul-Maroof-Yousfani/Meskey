@@ -452,6 +452,19 @@
 
     <input type="hidden" id="rowCount" value="0">
 
+    <div class="row my-2" id="labour_slab_error_row" style="display: none;">
+        <div class="col-12">
+            <div class="alert alert-danger border-start border-danger border-3 mb-0" role="alert">
+                <div class="d-flex align-items-center">
+                    <div>
+                        <strong class="text-white" style="font-size: 14px;">Labour Rate Slab Not Found!</strong><br>
+                        <span class="text-white">No matching labour rate slab was found. Labour Amount cannot be 0. Please configure the labour rate slab.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="row bottom-button-bar text-right">
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close me-2">Close</a>
@@ -608,18 +621,34 @@
 
                     // Set Transporter
                     const transSelect = $("#transporter_display");
-                    if (response.transporter && response.transporter.id) {
-                        transSelect.val(response.transporter.id).trigger('change');
-                        transSelect.prop('disabled', true);
-                        $("#transporter").val(response.transporter.id);
-                        $("#transporter_col").show();
-                        $("#transporter_amount_col").show();
-                    } else {
+
+                    let isXmillNoTransporter = false;
+                    if (response.delivery_order && response.delivery_order.sauda_type === 'x-mill') {
+                        if (response.delivery_order.transporter_used === 'no') {
+                            isXmillNoTransporter = true;
+                        }
+                    }
+
+                    if (isXmillNoTransporter) {
                         transSelect.val('').trigger('change');
-                        transSelect.prop('disabled', false);
+                        transSelect.prop('disabled', true);
                         $("#transporter").val('');
-                        // $("#transporter_col").hide();
-                        // $("#transporter_amount_col").hide();
+                        $("#transporter_col").hide();
+                        $("#transporter_amount_col").hide();
+                    } else {
+                        if (response.transporter && response.transporter.id) {
+                            transSelect.val(response.transporter.id).trigger('change');
+                            transSelect.prop('disabled', true);
+                            $("#transporter").val(response.transporter.id);
+                            $("#transporter_col").show();
+                            $("#transporter_amount_col").show();
+                        } else {
+                            transSelect.val('').trigger('change');
+                            transSelect.prop('disabled', false);
+                            $("#transporter").val('');
+                            $("#transporter_col").show();
+                            $("#transporter_amount_col").show();
+                        }
                     }
 
                     // Set Remarks
@@ -848,9 +877,30 @@
             totalBags += bags;
         });
 
-        let rate = parseFloat($("#standard_labour_rate").val()) || 0;
+        let rateVal = $("#standard_labour_rate").val();
+        let rate = (rateVal === 'N/A' || !rateVal) ? 0 : (parseFloat(rateVal) || 0);
         let amount = totalBags * rate;
         $("#labour_amount").val(amount.toFixed(2));
+        validateLabourSlab();
+    }
+
+    function validateLabourSlab() {
+        const labourVal = $("#labour").val();
+        const labourRateVal = $("#standard_labour_rate").val();
+        const labourRate = (labourRateVal === 'N/A' || !labourRateVal) ? 0 : (parseFloat(labourRateVal) || 0);
+        const labourAmount = parseFloat($("#labour_amount").val()) || 0;
+        const isRateNA = (labourRateVal === 'N/A' || !labourRateVal || labourRate <= 0);
+        const hasItems = $("#dcTableBody tr").length > 0;
+
+        if (labourVal && hasItems && (isRateNA || labourAmount <= 0)) {
+            $("#labour_slab_error_row").slideDown(200);
+            $(".submitbutton").prop("disabled", true).addClass("disabled");
+            return false;
+        } else {
+            $("#labour_slab_error_row").slideUp(200);
+            $(".submitbutton").prop("disabled", false).removeClass("disabled");
+            return true;
+        }
     }
 
     // Override the existing calc function or ensure it calls calculateLabourAmount
@@ -887,10 +937,28 @@
                     labourSelect.val(vendors[0].id).trigger('change');
                 }
                 labourSelect.trigger('change.select2');
+                validateLabourSlab();
             },
             error: function (error) {
                 console.error('Error fetching vendors by locations:', error);
             }
         });
     }
+
+    $(document).on("input change", ".no_of_bags, #standard_labour_rate, .qty, #labour", function () {
+        calculateLabourAmount();
+    });
+
+    $("form").on("submit", function (e) {
+        calculateLabourAmount();
+        if (!validateLabourSlab()) {
+            e.preventDefault();
+            Swal.fire({
+                icon: 'error',
+                title: 'Labour Rate Slab Not Found',
+                text: 'No matching labour rate slab was found for the selected Factory, Category and Bag Packing. Labour Amount cannot be 0.',
+            });
+            return false;
+        }
+    });
 </script>

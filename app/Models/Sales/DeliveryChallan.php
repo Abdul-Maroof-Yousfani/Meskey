@@ -3,6 +3,7 @@
 namespace App\Models\Sales;
 
 use App\Models\Master\Account\Account;
+use App\Models\Master\Account\Stock;
 use App\Models\Master\Customer;
 use App\Models\Master\Transporter;
 use App\Models\Master\Vendor;
@@ -105,6 +106,29 @@ class DeliveryChallan extends Model
                 $ticket = LoadingProgramItem::find($data->ticket_id);
                 if ($ticket) {
                     $ticket->update(['process_status' => 'DC Generated']);
+                }
+            }
+        }
+
+        // Stock Out Transaction upon DC Approval
+        foreach ($this->delivery_challan_data as $dcData) {
+            $itemId = $dcData->item_id ?? $dcData->product_id;
+            if ($itemId && $dcData->qty > 0) {
+                $existingStock = Stock::where('voucher_no', $this->dc_no)
+                    ->where('voucher_type', 'delivery_challan')
+                    ->where('product_id', $itemId)
+                    ->first();
+                if (!$existingStock) {
+                    createStockTransaction(
+                        $itemId,
+                        'delivery_challan',
+                        $this->dc_no,
+                        $dcData->qty,
+                        'stock-out',
+                        $dcData->qty * $dcData->rate,
+                        $dcData->rate,
+                        $this->remarks ?? "DC Stock Out: {$this->dc_no}"
+                    );
                 }
             }
         }
@@ -297,6 +321,153 @@ class DeliveryChallan extends Model
                 }
             });
             // }
+        } elseif (in_array(strtolower(str_replace(['-', ' ', '_'], '', $this->sauda_type ?? '')), ['xmill'])) {
+
+            $deliveryOrder = $this->delivery_order->first() ?? $this->delivery_order()->first();
+            $salesOrder = $deliveryOrder?->salesOrder;
+            if ($salesOrder && in_array(strtolower($salesOrder->transporter_used ?? ''), ['no', '0', 'false', 'yes', '1', 'true'])) {
+                DB::transaction(function () use ($salesOrder) {
+                    $dc_no = $this->dc_no;
+                    $company_id = $this->company_id ?? (auth()->check() ? auth()->user()->current_company_id : 1);
+                    $voucherTypeId = 3;
+
+                    $handleTransaction = function($amount, $accountId, $voucherTypeId, $voucherNo, $type, $isOpening, $additionalData) {
+                        $tx = \App\Models\Master\Account\Transaction::where('voucher_no', $voucherNo)
+                                ->where('purpose', $additionalData['purpose'])
+                                ->where('type', $type)
+                                ->first();
+                        if ($tx) {
+                            $tx->update([
+                                'amount' => $amount,
+                                'account_id' => $accountId,
+                                'counter_account_id' => $additionalData['counter_account_id'] ?? null,
+                                'payment_against' => $additionalData['payment_against'] ?? null,
+                                'against_reference_no' => $additionalData['against_reference_no'] ?? null,
+                                'remarks' => $additionalData['remarks'] ?? null,
+                            ]);
+                        } else {
+                            $companyId = auth()->check() ? auth()->user()->current_company_id : 1;
+                            createTransaction($amount, $accountId, $voucherTypeId, $voucherNo, $type, $isOpening, $additionalData);
+                        }
+                    };
+
+                    $customerAccountId = $this->customer?->account_id ?? Customer::find($this->customer_id)?->account_id;
+                    $salesRevenueAccount = Account::where('hierarchy_path', '4-2')->first();
+                    $inventoryAccountId = $salesRevenueAccount?->id;
+
+                    $labourObj = Vendor::find($this->labour);
+                    $labourAccountId = $labourObj?->account_id;
+
+                    $brokerAccountId = $salesOrder?->broker?->account_id;
+                    $commissionExpenseAccount = Account::where('hierarchy_path', '5-5')->first();
+
+                    $totalSaleAmount = 0;
+                    $totalQty = 0;
+                    foreach ($this->delivery_challan_data as $data) {
+                        $totalSaleAmount += ($data->qty * $data->rate);
+                        $totalQty += $data->qty;
+                    }
+
+                    // 1. Sale Entry
+                    if ($totalSaleAmount > 0 && $customerAccountId && $inventoryAccountId) {
+                        // Sale Entry - Customer Debit
+                        $handleTransaction($totalSaleAmount, $customerAccountId, $voucherTypeId, $dc_no, 'debit', 'no', [
+                            'counter_account_id' => $inventoryAccountId,
+                            'purpose' => "delivery-challan-sale",
+                            'payment_against' => "x-mill-sale",
+                            'against_reference_no' => $dc_no,
+                            'remarks' => "X-Mill Sale booked against DC: {$dc_no}.",
+                        ]);
+
+                        // Sale Entry - Sales Revenue Credit
+                        $handleTransaction($totalSaleAmount, $inventoryAccountId, $voucherTypeId, $dc_no, 'credit', 'no', [
+                            'counter_account_id' => $customerAccountId,
+                            'purpose' => "delivery-challan-sale",
+                            'payment_against' => "x-mill-sale",
+                            'against_reference_no' => $dc_no,
+                            'remarks' => "X-Mill Sale booked against DC: {$dc_no}.",
+                        ]);
+                    }
+
+                    // 2. Transporter Entry
+                    $isTransporterYes = in_array(strtolower($salesOrder->transporter_used ?? ''), ['yes', '1', 'true']);
+                    $transporterAmount = (float)($this->transporter_amount ?? 0);
+                    $transporterObj = \App\Models\Master\Vendor::find($this->transporter);
+                    $transporterAccountId = $transporterObj?->account_id;
+
+                    if ($isTransporterYes && $transporterAmount > 0 && $customerAccountId && $transporterAccountId) {
+                        // Customer Debit
+                        $handleTransaction($transporterAmount, $customerAccountId, $voucherTypeId, $dc_no, 'debit', 'no', [
+                            'counter_account_id' => $transporterAccountId,
+                            'purpose' => "x-mill-transporter-receivable",
+                            'payment_against' => "x-mill-sale-transporter",
+                            'against_reference_no' => $dc_no,
+                            'remarks' => "Transporter expense charged to Customer for DC: {$dc_no}.",
+                        ]);
+
+                        // Transporter Payable Credit
+                        $handleTransaction($transporterAmount, $transporterAccountId, $voucherTypeId, $dc_no, 'credit', 'no', [
+                            'counter_account_id' => $customerAccountId,
+                            'purpose' => "transporter-payable",
+                            'payment_against' => "x-mill-sale-transporter",
+                            'against_reference_no' => $dc_no,
+                            'remarks' => "Transporter payable booked for DC: {$dc_no}.",
+                        ]);
+                    }
+
+                    // 3. Labour Entry only if UnPaid
+                    $labourAmount = (float)($this->labour_amount ?? 0);
+                    if ($labourAmount <= 0 && (float)($this->labour_rate ?? 0) > 0) {
+                        $totalBags = (float)$this->delivery_challan_data->sum('no_of_bags');
+                        $labourAmount = $totalBags > 0 ? ($totalBags * (float)$this->labour_rate) : ($totalQty * (float)$this->labour_rate);
+                    }
+
+                    $isUnpaid = in_array(strtolower(trim($this->labour_status ?? '')), ['not_paid', 'unpaid', 'not paid', 'not-paid']);
+
+                    if ($isUnpaid && $labourAmount > 0 && $customerAccountId && $labourAccountId) {
+                        // Customer Debit (Since it's their expense but company is paying on their behalf)
+                        $handleTransaction($labourAmount, $customerAccountId, $voucherTypeId, $dc_no, 'debit', 'no', [
+                            'counter_account_id' => $labourAccountId,
+                            'purpose' => "x-mill-labour-receivable",
+                            'payment_against' => "x-mill-sale-labour",
+                            'against_reference_no' => $dc_no,
+                            'remarks' => "Labour expense charged to Customer for DC: {$dc_no} (Status: UnPaid).",
+                        ]);
+
+                        // Labour Payable Credit
+                        $handleTransaction($labourAmount, $labourAccountId, $voucherTypeId, $dc_no, 'credit', 'no', [
+                            'counter_account_id' => $customerAccountId,
+                            'purpose' => "labour-payable",
+                            'payment_against' => "x-mill-sale-labour",
+                            'against_reference_no' => $dc_no,
+                            'remarks' => "Labour payable booked for DC: {$dc_no}.",
+                        ]);
+                    }
+
+                    // 4. Broker Entry
+                    if ($salesOrder && $salesOrder->commission_per_kg > 0 && $commissionExpenseAccount && $brokerAccountId && $totalQty > 0) {
+                        $commissionAmount = $totalQty * $salesOrder->commission_per_kg;
+
+                        // Commission Expense Debit
+                        $handleTransaction($commissionAmount, $commissionExpenseAccount->id, $voucherTypeId, $dc_no, 'debit', 'no', [
+                            'counter_account_id' => $brokerAccountId,
+                            'purpose' => "commission-expense",
+                            'payment_against' => "x-mill-sale-expense",
+                            'against_reference_no' => $dc_no,
+                            'remarks' => "Commission expense booked for DC: {$dc_no}.",
+                        ]);
+
+                        // Broker Payable Credit
+                        $handleTransaction($commissionAmount, $brokerAccountId, $voucherTypeId, $dc_no, 'credit', 'no', [
+                            'counter_account_id' => $commissionExpenseAccount->id,
+                            'purpose' => "broker-payable",
+                            'payment_against' => "x-mill-sale-payable",
+                            'against_reference_no' => $dc_no,
+                            'remarks' => "Broker payable booked for DC: {$dc_no}.",
+                        ]);
+                    }
+                });
+            }
         } else {
             $receivingRequest = $this->receivingRequest;
             if ($receivingRequest) {
@@ -318,6 +489,11 @@ class DeliveryChallan extends Model
                 }
             }
         }
+
+        // Delete stock transaction if rejected
+        Stock::where('voucher_no', $this->dc_no)
+            ->where('voucher_type', 'delivery_challan')
+            ->delete();
     }
 
 }
