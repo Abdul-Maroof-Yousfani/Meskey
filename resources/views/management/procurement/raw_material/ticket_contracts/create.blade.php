@@ -557,7 +557,7 @@
 
             loadInitialContracts();
 
-            const remainingTruckRow = 14;
+            const remainingTruckRow = 15;
             const remainingQtyRow = 15;
 
             $('#contract_search, #search_contract_btn').on('input click', function() {
