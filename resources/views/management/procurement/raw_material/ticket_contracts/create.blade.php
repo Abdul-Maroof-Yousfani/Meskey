@@ -640,8 +640,8 @@
                         ' - ')[1] ||
                     contractRow.find(`td:eq(${remainingQtyRow})`).text().split(' - ')[0]) || 0;
                 const ticketWeight = parseFloat('{{ $arrivalTicket->net_weight ?? 0 }}');
-                const remainingTrucks = parseInt(contractRow.find(`td.balancetruck span`)
-                    .text()) || 0;
+                const remainingTrucks = contractRow.find(`td.balancetruck span`)
+                    .text() || 0;
 
 
                     console.log(remainingTrucks);
