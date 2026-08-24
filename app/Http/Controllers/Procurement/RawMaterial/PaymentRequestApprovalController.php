@@ -197,6 +197,7 @@ class PaymentRequestApprovalController extends Controller
 
     public function store(PaymentRequestApprovalRequest $request)
     {
+        // dd($request);
         return DB::transaction(function () use ($request) {
             $paymentRequest = PaymentRequest::findOrFail($request->payment_request_id);
             if ($paymentRequest->status == 'approved' || $paymentRequest->status == 'rejected') {

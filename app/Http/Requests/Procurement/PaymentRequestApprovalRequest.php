@@ -75,8 +75,9 @@ class PaymentRequestApprovalRequest extends FormRequest
         ];
     }
 
-    protected function validateMaximumAmount($attribute, $value, $fail)
+    protected function validateMaximumAmountbk($attribute, $value, $fail)
     {
+
         $paymentRequest = \App\Models\Procurement\PaymentRequest::find($this->payment_request_id);
 
         if (!$paymentRequest) {
@@ -102,10 +103,13 @@ class PaymentRequestApprovalRequest extends FormRequest
             ->where('id', '!=', $paymentRequest->id)
             ->sum('amount');
 
+
+
+
         // $totalAmountAfterApproval = $totalApprovedPayments + $value;
 
         $value = number_format((float) $value, 2, '.', '');
-        $totalAmountAfterApproval = bcadd((string)$totalApprovedPayments, (string)$value, 2);
+        $totalAmountAfterApproval = bcadd((string) $totalApprovedPayments, (string) $value, 2);
 
         $maxAllowedAmount = $this->total_amount ?? $paymentRequestData->total_amount;
         $remainingAmount = $maxAllowedAmount - $totalApprovedPayments;
@@ -117,12 +121,76 @@ class PaymentRequestApprovalRequest extends FormRequest
         // $remainingAmount = $maxAllowedAmount - $totalApprovedPayments;
         // dd($totalApprovedPayments, $value, $maxAllowedAmount, bccomp((string)$totalAmountAfterApproval, (string)$maxAllowedAmount, 2), $remainingAmount, bccomp((string)$remainingAmount, '0.00', 2));
 
-        if (bccomp((string)$totalAmountAfterApproval, (string)$maxAllowedAmount, 2) === 1) {
+        if (bccomp((string) $totalAmountAfterApproval, (string) $maxAllowedAmount, 2) === 1) {
             $remainingAmount = $maxAllowedAmount - $totalApprovedPayments;
-            if (bccomp((string)$remainingAmount, '0.00', 2) === 0) {
+            if (bccomp((string) $remainingAmount, '0.00', 2) === 0) {
+
+
                 $fail("No further payment requests can be approved for this ticket as the full allowed amount has already been approved.");
             } else {
+                dd($remainingAmount);
                 $fail("Maximum amount exceeded. You can only approve up to " . number_format($remainingAmount, 2) . " for this ticket.");
+            }
+        }
+    }
+
+
+    protected function validateMaximumAmount($attribute, $value, $fail)
+    {
+        $paymentRequest = \App\Models\Procurement\PaymentRequest::find($this->payment_request_id);
+
+        if (!$paymentRequest) {
+            $fail('Invalid payment request.');
+            return;
+        }
+
+        $paymentRequestData = $paymentRequest->paymentRequestData;
+        $moduleType = $paymentRequestData->module_type;
+        $ticket = $paymentRequestData->purchaseTicket ?? $paymentRequestData->arrivalTicket;
+
+        if (!$ticket) {
+            $fail('Invalid ticket associated with payment request.');
+            return;
+        }
+
+        // Get total approved payments
+        $totalApprovedPayments = \App\Models\Procurement\PaymentRequest::whereHas('paymentRequestData', function ($query) use ($ticket) {
+            $query->where('ticket_id', $ticket->id);
+        })
+            ->where('request_type', 'payment')
+            ->where('status', 'approved')
+            ->where('module_type', $moduleType)
+            ->where('id', '!=', $paymentRequest->id)
+            ->sum('amount');
+
+        // Round all values to 2 decimal places first (to match JavaScript rounding)
+        $totalApprovedPayments = round($totalApprovedPayments, 2);
+        $value = round($value, 2);
+        $maxAllowedAmount = round($this->total_amount ?? $paymentRequestData->total_amount, 2);
+
+        // Calculate total after approval
+        $totalAmountAfterApproval = $totalApprovedPayments + $value;
+        $remainingAmount = $maxAllowedAmount - $totalApprovedPayments;
+
+        // Debug line - remove after testing
+        // dd([
+        //     'totalApprovedPayments' => $totalApprovedPayments,
+        //     'value' => $value,
+        //     'maxAllowedAmount' => $maxAllowedAmount,
+        //     'totalAmountAfterApproval' => $totalAmountAfterApproval,
+        //     'remainingAmount' => $remainingAmount,
+        //     'exceeds' => $totalAmountAfterApproval > $maxAllowedAmount
+        // ]);
+
+        // Check if total exceeds max allowed amount
+        if ($totalAmountAfterApproval > $maxAllowedAmount) {
+            // Check if remaining amount is zero or less
+            if ($remainingAmount <= 0) {
+                $fail("No further payment requests can be approved for this ticket as the full allowed amount has already been approved.");
+            } else {
+                // Format remaining amount with proper rounding
+                $formattedRemaining = number_format($remainingAmount, 2);
+                $fail("Maximum amount exceeded. You can only approve up to " . $formattedRemaining . " for this ticket.");
             }
         }
     }
@@ -162,9 +230,9 @@ class PaymentRequestApprovalRequest extends FormRequest
             return;
         }
 
-        if (bccomp((string)$totalAmountAfterApproval, (string)$maxAllowedAmount, 2) === 1) {
+        if (bccomp((string) $totalAmountAfterApproval, (string) $maxAllowedAmount, 2) === 1) {
             $remainingAmount = $maxAllowedAmount - $totalApprovedPayments;
-            if (bccomp((string)$remainingAmount, '0.00', 2) === 0) {
+            if (bccomp((string) $remainingAmount, '0.00', 2) === 0) {
                 $fail("No further freight requests can be approved for this ticket as the full advance freight amount has already been approved.");
             } else {
                 $fail("Maximum freight amount exceeded. You can only approve up to " . number_format($remainingAmount, 2) . " for this ticket's freight payment.");
