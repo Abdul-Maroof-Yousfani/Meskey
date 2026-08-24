@@ -710,6 +710,14 @@
                     </li>
 
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('sales.logistics-bill.index') }}"
+                            onclick="loadPageContent('{{ route('sales.logistics-bill.index') }}')"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Task Board">Logistics Bill</span>
+                        </a>
+                    </li>
+
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('sales.sales-invoice.index') }}"
                             onclick="loadPageContent('{{ route('sales.sales-invoice.index') }}')"
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>

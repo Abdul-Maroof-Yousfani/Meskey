@@ -6,18 +6,14 @@ use App\Models\Master\Account\Account;
 use App\Models\Master\Account\Transaction;
 use App\Models\Master\Transporter;
 use App\Models\User;
-use App\Traits\HasApproval;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
 
-class ReceivingRequest extends Model
+class LogisticsBill extends Model
 {
     use HasFactory;
-    use HasApproval {
-        onApprovalComplete as traitOnApprovalComplete;
-        onApprovalRejected as traitOnApprovalRejected;
-    }
+
+    protected $table = 'receiving_requests';
 
     protected $fillable = [
         'delivery_challan_id',
@@ -73,16 +69,4 @@ class ReceivingRequest extends Model
     {
         return $this->belongsTo(User::class, 'created_by_id');
     }
-
-    protected function onApprovalComplete()
-    {
-        $this->traitOnApprovalComplete();
-        app(\App\Services\SalesLedgerService::class)->handleReceivingRequestApproval($this);
-    }
-
-    protected function onApprovalRejected()
-    {
-        $this->traitOnApprovalRejected();
-    }
 }
-

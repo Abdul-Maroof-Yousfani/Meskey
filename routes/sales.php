@@ -4,6 +4,7 @@ use App\Http\Controllers\Sales\DeliveryChallanController;
 use App\Http\Controllers\Sales\DeliveryOrderController;
 use App\Http\Controllers\Sales\FirstWeighBridgeController;
 use App\Http\Controllers\Sales\LoadingProgramController;
+use App\Http\Controllers\Sales\LogisticsBillController;
 use App\Http\Controllers\Sales\SecondWeighBridgeController;
 use App\Http\Controllers\Sales\ReceivingRequestController;
 use App\Http\Controllers\Sales\SaleOrderController;
@@ -69,12 +70,12 @@ Route::name("sales.")->group(function () {
     Route::get('/get-second-weighbridge-related-data', [SecondWeighBridgeController::class, 'getSecondWeighbridgeRelatedData'])->name('getSecondWeighbridgeRelatedData');
     Route::get('/get-delivery-orders-by-sale-order-second', [SecondWeighBridgeController::class, 'getDeliveryOrdersBySaleOrder'])->name('getDeliveryOrdersBySaleOrderSecond');
 
-    Route::resource("loading-program", \App\Http\Controllers\Sales\LoadingProgramController::class);
-    Route::post("get-loading-program", [\App\Http\Controllers\Sales\LoadingProgramController::class, "getList"])->name("get.loading-program");
-    Route::get('/get-sale-order-related-data', [\App\Http\Controllers\Sales\LoadingProgramController::class, 'getSaleOrderRelatedData'])->name('getSaleOrderRelatedData');
-    Route::get('/get-delivery-orders-by-sale-order-loading', [\App\Http\Controllers\Sales\LoadingProgramController::class, 'getDeliveryOrdersBySaleOrder'])->name('getDeliveryOrdersBySaleOrderLoading');
-    Route::get('/get-delivery-orders-by-sale-order-loading-edit', [\App\Http\Controllers\Sales\LoadingProgramController::class, 'getDeliveryOrdersBySaleOrderEdit'])->name('getDeliveryOrdersBySaleOrderLoadingEdit');
-    Route::get('/fetch-sale-orders-by-location', [\App\Http\Controllers\Sales\LoadingProgramController::class, 'fetchSaleOrdersByLocation'])->name('fetchSaleOrdersByLocation');
+    Route::resource("loading-program", LoadingProgramController::class);
+    Route::post("get-loading-program", [LoadingProgramController::class, "getList"])->name("get.loading-program");
+    Route::get('/get-sale-order-related-data', [LoadingProgramController::class, 'getSaleOrderRelatedData'])->name('getSaleOrderRelatedData');
+    Route::get('/get-delivery-orders-by-sale-order-loading', [LoadingProgramController::class, 'getDeliveryOrdersBySaleOrder'])->name('getDeliveryOrdersBySaleOrderLoading');
+    Route::get('/get-delivery-orders-by-sale-order-loading-edit', [LoadingProgramController::class, 'getDeliveryOrdersBySaleOrderEdit'])->name('getDeliveryOrdersBySaleOrderLoadingEdit');
+    Route::get('/fetch-sale-orders-by-location', [LoadingProgramController::class, 'fetchSaleOrdersByLocation'])->name('fetchSaleOrdersByLocation');
     Route::get("/get-do-qty", [LoadingProgramController::class, "getDo"])->name("getDoQty");
     Route::get("/get-sale-order-locations", [LoadingProgramController::class, 'getLocations'])->name("so.locations");
     
@@ -82,6 +83,11 @@ Route::name("sales.")->group(function () {
     Route::resource("receiving-request", ReceivingRequestController::class)->only(['index', 'edit', 'update']);
     Route::post("get-receiving-request", [ReceivingRequestController::class, "getList"])->name("get.receiving-request.list");
     Route::get("/receiving-request/{id}/view", [ReceivingRequestController::class, "view"])->name("receiving-request.view");
+
+    // Logistics Bill Routes
+    Route::resource("logistics-bill", LogisticsBillController::class)->only(['index', 'edit', 'update']);
+    Route::post("get-logistics-bill", [LogisticsBillController::class, "getList"])->name("get.logistics-bill.list");
+    Route::get("/logistics-bill/{id}/view", [LogisticsBillController::class, "view"])->name("logistics-bill.view");
 
     // Sales Invoice Routes
     Route::resource("sales-invoice", SalesInvoiceController::class);
