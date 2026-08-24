@@ -1521,7 +1521,7 @@ if (!function_exists('getTicketDeductions')) {
             return $result;
         }
 
-        if ($samplingRequest->is_lumpsum_deduction && $samplingRequest->lumpsum_deduction > 0) {
+        if ($samplingRequest->is_lumpsum_deduction) {
             $result['is_lumpsum'] = true;
             $result['lumpsum_deduction'] = $samplingRequest->lumpsum_deduction;
             $result['lumpsum_deduction_kgs'] = $samplingRequest->lumpsum_deduction_kgs;
