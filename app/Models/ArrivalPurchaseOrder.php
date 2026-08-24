@@ -149,6 +149,10 @@ class ArrivalPurchaseOrder extends Model
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
     public function decisionOfUser()
     {
         return $this->belongsTo(User::class, 'decision_of_id');
