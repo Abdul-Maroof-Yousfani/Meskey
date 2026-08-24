@@ -4,7 +4,14 @@
     $paymentDetails = calculatePaymentDetails($arrivalTicket->id, $arrivalTicket->sauda_type_id);
     $Deductionfromhelperfunction = $paymentDetails['deductions']['sampling_deduction_details'];
 
-    $hasLoadingWeight = true;
+
+
+    // Filling Bags Calculation
+    $fillingBagsNo = isset($otherDeduction) ? $otherDeduction->no_of_filling_bags : $arrivalTicket->approvals->filling_bags_no ?? 0;
+    $fillingBagsRate = isset($otherDeduction) ? $otherDeduction->filling_bag_rate : $fillingBagsRate ?? 10;
+    $fillingBagsAmount = $fillingBagsNo * $fillingBagsRate;
+
+    $hasLoadingWeight = true; 
 
     $isSlabs = false;
     $isCompulsury = false;
@@ -174,7 +181,7 @@
         samplingResults: [
             @foreach ($samplingRequestResults as $slab)
                 @if ($slab->applied_deduction)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            {
                         id: {{ $slab->id }},
                         applied_deduction: {{ $slab->applied_deduction ?? 0 }},
                         deduction_type: '{{ $slab->deduction_type ?? 'amount' }}',
@@ -188,10 +195,10 @@
         compulsoryResults: [
             @foreach ($samplingRequestCompulsuryResults as $slab)
                 @if ($slab->applied_deduction)
-                                                                                                                                                                                                                                                                                                                                                                                    {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                {
                     id: {{ $slab->id }},
                     applied_deduction: {{ $slab->applied_deduction ?? 0 }}
-                                                                                                                                                                                                                                                                                                                                                                                    },
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                },
                 @endif
             @endforeach
         ],
@@ -471,6 +478,79 @@
                                         </div>
                                     </td>
                                 </tr>
+                                <!-- Re-rate on Access weight Row -->
+                                <tr class="other-deduction-row" data-other-deduction="true">
+                                    <td><strong>Re-rate on Excess weight</strong>
+                                        <input type="hidden" name="other_deduction[slab_name]" value="Other Deduction">
+                                    </td>
+                                    <td>N/A</td>
+                                    <td>
+                                        <div class="input-group mb-0">
+                                            <input type="number" step="any" class="form-control editable-field"
+                                                name="rerate_on_access_weight_kg" id="rerate_on_access_weight_kg"
+                                                value="{{ $existingRerateOnAccessWeightKg }}" placeholder="Enter KG value">
+                                            <div class="input-group-append">
+                                                <span class="input-group-text text-sm">Kg</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="input-group mb-0">
+                                            <input type="number" step="any" class="form-control editable-field"
+                                                name="rerate_on_access_weight_rate" id="rerate_on_access_weight_rate"
+                                                value="{{ $existingRerateOnAccessWeightRate }}" placeholder="Enter KG value">
+                                            <div class="input-group-append">
+                                                <span class="input-group-text text-sm">Rs</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="input-group mb-0">
+                                            <input type="text" class="form-control" name="rerate_on_access_weight_amount"
+                                                readonly id="rerate_on_access_weight_amount"
+                                                value="{{ $existingRerateOnAccessWeightAmount }}">
+                                        </div>
+                                    </td>
+                                </tr>
+
+
+                                <tr class="other-deduction-row" data-other-deduction="true">
+                                    <td><strong>Filling Bags</strong>
+                                        <input type="hidden" name="filling_bags[slab_name]" value="Filling Bags">
+                                    </td>
+                                    <td>N/A</td>
+                                    <td>
+                                        <div class="input-group mb-0">
+                                            <input type="number" step="any"
+                                                class="form-control editable-field filling-bags-input"
+                                                name="filling_bags_no" id="filling_bags_no"
+                                                value="{{ $fillingBagsNo ?? 0 }}" placeholder="Enter number of bags">
+                                            <div class="input-group-append">
+                                                <span class="input-group-text text-sm">Bags</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="input-group mb-0">
+                                            <input type="number" step="any"
+                                                class="form-control editable-field filling-bags-rate" name="filling_bags_rate"
+                                                id="filling_bags_rate" value="{{ $fillingBagsRate ?? 10 }}"
+                                                placeholder="Enter rate per bag">
+                                            <div class="input-group-append">
+                                                <span class="input-group-text text-sm">Rs</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="input-group mb-0">
+                                            <input type="text" class="form-control" name="filling_bags_amount" readonly
+                                                id="filling_bags_amount"
+                                                value="{{ number_format($fillingBagsAmount ?? 0, 2) }}">
+                                            <input type="hidden" class="form-control" name="filling_bags_amount_hidden"
+                                                id="filling_bags_amount_hidden" value="{{ $fillingBagsAmount ?? 0 }}">
+                                        </div>
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -727,6 +807,45 @@
                                         </div>
                                     </td>
                                 </tr>
+
+
+                                <tr class="other-deduction-row" data-other-deduction="true">
+                                    <td><strong>Filling Bags</strong>
+                                        <input type="hidden" name="filling_bags[slab_name]" value="Filling Bags">
+                                    </td>
+                                    <td>N/A</td>
+                                    <td>
+                                        <div class="input-group mb-0">
+                                            <input type="number" step="any"
+                                                class="form-control editable-field filling-bags-input"
+                                                name="filling_bags_no" id="filling_bags_no"
+                                                value="{{ $fillingBagsNo ?? 0 }}" placeholder="Enter number of bags">
+                                            <div class="input-group-append">
+                                                <span class="input-group-text text-sm">Bags</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="input-group mb-0">
+                                            <input type="number" step="any"
+                                                class="form-control editable-field filling-bags-rate" name="filling_bags_rate"
+                                                id="filling_bags_rate" value="{{ $fillingBagsRate ?? 10 }}"
+                                                placeholder="Enter rate per bag">
+                                            <div class="input-group-append">
+                                                <span class="input-group-text text-sm">Rs</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="input-group mb-0">
+                                            <input type="text" class="form-control" name="filling_bags_amount" readonly
+                                                id="filling_bags_amount"
+                                                value="{{ number_format($fillingBagsAmount ?? 0, 2) }}">
+                                            <input type="hidden" class="form-control" name="filling_bags[amount_hidden]"
+                                                id="filling_bags_amount_hidden" value="{{ $fillingBagsAmount ?? 0 }}">
+                                        </div>
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -920,7 +1039,9 @@
         var isSlabs = <?= $isSlabs ? 'true' : 'false' ?>;
         var isCompulsury = <?= $isCompulsury ? 'true' : 'false' ?>;
 
+
         $(document).ready(function () {
+
             $('[data-toggle="tooltip"]').tooltip();
             $('.select_b').select2();
 
@@ -938,6 +1059,18 @@
             const kantaCharges = parseFloat($('#kanta_charges').val()) || 0;
             const paidAmount = parseFloat({{ $requestedAmount }});
             const originalRequested = {{ $currentPaymentAmount }};
+
+            // Add this function to calculate filling bags deduction
+            function calculateFillingBags() {
+                const noOfBags = parseFloat($('#filling_bags_no').val()) || 0;
+                const rate = parseFloat($('#filling_bags_rate').val()) || 0;
+                const amount = noOfBags * rate;
+
+                $('#filling_bags_amount').val(amount.toFixed(2));
+                $('#filling_bags_amount_hidden').val(amount);
+
+                return amount;
+            }
 
             function calculateNetWeight() {
                 const loadingWeight = parseFloat($('input[name="billing_weight"]').val()) || 0;
@@ -1152,14 +1285,18 @@
                 const deduction_on_access_weight_amount = deduction_on_access_weight_rate * deduction_on_access_weight_kg;
                 $('#rerate_on_access_weight_amount').val(deduction_on_access_weight_amount.toFixed(2) || 0);
 
+
+                //     Calculate filling bags deduction
+                const fillingBagsAmount = calculateFillingBags();
                 const loadingWeight = document.querySelector('input[name="billing_weight"]').value;
 
                 const grossAmount = ratePerKg * loadingWeight;
 
+                // const totalDeductionsForFormula = totalSamplingDeductions + bagWeightAmount +
+                //     loadingWeighbridgeAmount + deduction_on_access_weight_amount;
+
                 const totalDeductionsForFormula = totalSamplingDeductions + bagWeightAmount +
-                    loadingWeighbridgeAmount + deduction_on_access_weight_amount;
-
-
+                    loadingWeighbridgeAmount + deduction_on_access_weight_amount + fillingBagsAmount;
 
                 const totalAmount = grossAmount - totalDeductionsForFormula + bagRateAmount - parseInt({{ $grossFreightAmount ?? 0 }}) + {{ $totalSupplierCommission }};
 
@@ -1167,6 +1304,7 @@
                 console.log('bagWeightAmount: ' + bagWeightAmount);
                 console.log('loadingWeighbridgeAmount: ' + loadingWeighbridgeAmount);
                 console.log('deduction_on_access_weight_amount: ' + deduction_on_access_weight_amount);
+                console.log('fillingBagsAmount: ' + fillingBagsAmount);
                 console.log('grossAmount: ' + grossAmount);
                 console.log('grossFreightAmount: ' + parseInt({{ $grossFreightAmount ?? 0 }}));
                 console.log('loadingWeight: ' + parseInt(loadingWeight));
@@ -1300,6 +1438,10 @@
             $(document).on('input', '#rerate_on_access_weight_kg, #rerate_on_access_weight_rate', function () {
                 updateAllCalculations();
             });
+            $(document).on('input', '#filling_bags_no, #filling_bags_rate', function () {
+                updateAllCalculations();
+            });
+
 
             $(".togglehistory").click(function () {
                 $(".togglehistorytable").slideToggle(400);

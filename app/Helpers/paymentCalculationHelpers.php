@@ -527,12 +527,13 @@ function calculatePohaunchDeductions($loadingInfo, $samplingData, $ratePerKg, $t
             $query->where('ticket_id', $ticketId)
                 ->where('module_type', 'ticket');
         })
-            ->select('other_deduction_kg', 'other_deduction_value', 'rerate_on_access_weight_amount')
+            ->select('other_deduction_kg', 'other_deduction_value', 'rerate_on_access_weight_amount', 'filling_bag_amount')
             ->latest()
             ->first();
 
         $otherDeductionValue = (float) ($otherDeduction->other_deduction_value ?? 0);
         $rerateOnAccessWeightAmount = (float) ($otherDeduction->rerate_on_access_weight_amount ?? 0);
+        $fillingBagAmount = (float) ($otherDeduction->filling_bag_amount ?? 0);
     }
 
     return [
@@ -542,6 +543,7 @@ function calculatePohaunchDeductions($loadingInfo, $samplingData, $ratePerKg, $t
         'bag_weight_in_kg_sum' => $bagWeightInKgSum,
         'other_deduction_calculated' => $otherDeductionValue,
         'rerate_on_access_weight_deduction' => $rerateOnAccessWeightAmount,
+        'filling_bag_amount' => $fillingBagAmount,
         'loading_weighbridge_sum' => $loadingWeighbridgeSum,
         'bags_rate_sum' => $bagsRateSum,
         'total_deductions' => $totalSamplingDeductions + $bagWeightInKgSum + $loadingWeighbridgeSum + $bagsRateSum,
@@ -662,7 +664,8 @@ function calculatePohaunchAmounts($loadingInfo, $deductions, $ratePerKg, $grossF
         $deductions['bag_weight_in_kg_sum'] +
         $deductions['loading_weighbridge_sum'] +
         $deductions['other_deduction_calculated'] +
-        $deductions['rerate_on_access_weight_deduction'];
+        $deductions['rerate_on_access_weight_deduction'] +
+        $deductions['filling_bag_amount'];
     ;
 
     // $totalAmount = $grossAmount - $totalDeductionsForFormula + $deductions['bags_rate_sum'] - $grossFreightAmount;
