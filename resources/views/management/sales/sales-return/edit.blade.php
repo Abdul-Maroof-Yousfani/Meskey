@@ -130,12 +130,14 @@
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
-                        <label class="form-label">SI Numbers:</label>
-                        <select name="si_no[]" id="si_no" onchange="get_items(this)" class="form-control select2"
-                            multiple>
+                        <label class="form-label">SI Number:<span class="text-danger">*</span></label>
+                        <select name="si_no" id="si_no" onchange="get_items(this)" class="form-control select2">
                             <option value="">Select Sale Invoice</option>
+                            @php
+                                $selectedSiId = $saleReturn->sale_invoices->first()?->id;
+                            @endphp
                             @foreach($saleReturn->sale_invoices as $sale_invoice)
-                                <option value="{{ $sale_invoice->id }}" selected>{{ $sale_invoice->si_no }}</option>
+                                <option value="{{ $sale_invoice->id }}" @selected($selectedSiId == $sale_invoice->id)>{{ $sale_invoice->si_no }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -447,7 +449,7 @@
             url: "{{ route('sales.get.invoice-items') }}",
             method: "GET",
             data: {
-                sale_invoice_ids: $(el).val(),
+                sale_invoice_ids: Array.isArray(delivery_challans) ? delivery_challans : [delivery_challans],
             },
             dataType: "html",
             success: function(res) {

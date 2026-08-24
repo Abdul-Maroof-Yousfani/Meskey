@@ -53,9 +53,11 @@ class SalesReturnController extends Controller
         }
 
         try {
+            $validatedData = $request->validated();
+            unset($validatedData['si_no']);
 
             $saleReturn->update([
-                ...$request->validated(),
+                ...$validatedData,
                 "am_approval_status" => "pending",
                 "am_change_made" => 1
             ]);
@@ -202,22 +204,16 @@ class SalesReturnController extends Controller
     }
 
     public function getitems(Request $request) {
-        $sale_invoice_ids = $request->sale_invoice_ids;
+        $sale_invoice_ids = is_array($request->sale_invoice_ids) ? $request->sale_invoice_ids : [$request->sale_invoice_ids];
         
         $sale_invoices = SalesInvoice::with("sales_invoice_data")
-                            ->whereIn("id", $sale_invoice_ids)
+                            ->whereIn("id", array_filter($sale_invoice_ids))
                             ->get();
         $items = Product::select("id", "name")->get();
 
         $balances = [];
-        // foreach ($sales_invoices as $si) {
-        //     foreach ($si->delivery_challan_data as $dcData) {
-        //         $balances[$dcData->id] = $this->getAvailableBalance($dcData->id, $exclude_sales_invoice_id);
-        //     }
-        // }
 
         return view("management.sales.sales-return.getItem", compact("sale_invoices", "items", "balances"));
-    
     }
 
     public function getNumber(Request $request, $locationId = null, $invoiceDate = null)
@@ -255,8 +251,8 @@ class SalesReturnController extends Controller
     public function store(SaleReturnRequest $request) {
         DB::beginTransaction();
         try {
-
-            $sale_invoices = $request->si_no;
+            $sale_invoices = is_array($request->si_no) ? $request->si_no : [$request->si_no];
+            $sale_invoices = array_filter($sale_invoices);
 
             if (empty($sale_invoices)) {
                 return response()->json("Please select at least one Sale Invoice.", 422);
@@ -270,10 +266,11 @@ class SalesReturnController extends Controller
                 }
             }
 
-
+            $validatedData = $request->validated();
+            unset($validatedData['si_no']);
 
             $sale_return = SalesReturn::create([
-                ...$request->validated(),
+                ...$validatedData,
                 "created_by" => auth()->user()->id
             ]);
 
