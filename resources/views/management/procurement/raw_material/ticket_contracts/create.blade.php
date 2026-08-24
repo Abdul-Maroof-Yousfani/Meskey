@@ -557,7 +557,7 @@
 
             loadInitialContracts();
 
-            const remainingTruckRow = 15;
+            const remainingTruckRow = 14;
             const remainingQtyRow = 15;
 
             $('#contract_search, #search_contract_btn').on('input click', function() {
@@ -640,7 +640,7 @@
                         ' - ')[1] ||
                     contractRow.find(`td:eq(${remainingQtyRow})`).text().split(' - ')[0]) || 0;
                 const ticketWeight = parseFloat('{{ $arrivalTicket->net_weight ?? 0 }}');
-                const remainingTrucks = parseInt(contractRow.find(`td:eq(${remainingTruckRow}) span`)
+                const remainingTrucks = parseInt(contractRow.find(`td.balancetruck span`)
                     .text()) || 0;
 
 
