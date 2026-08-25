@@ -32,7 +32,7 @@ class SaleReturnRequest extends FormRequest
             "storage_location_id" => "required|numeric",
             "remarks" => "nullable",
             "company_id" => "required|numeric",
-            "si_no" => "required|array",
+            "si_no" => "required",
             "item_id" => "required|array",
         ];
     }

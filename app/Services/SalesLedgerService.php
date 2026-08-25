@@ -11,6 +11,7 @@ use App\Models\Master\Vendor;
 use App\Models\Sales\DeliveryChallan;
 use App\Models\Sales\ReceivingRequest;
 use App\Models\Sales\ReceivingRequestItem;
+use App\Models\Sales\SalesReturn;
 use Illuminate\Support\Facades\DB;
 
 class SalesLedgerService
@@ -664,6 +665,112 @@ class SalesLedgerService
                         ]);
                     }
                 }
+            }
+        });
+    }
+
+    /**
+     * Handle Sales Return Approval: Stock In & Ledger Transactions
+     */
+    public function handleSalesReturnApproval(SalesReturn $salesReturn): void
+    {
+        $sr_no = $salesReturn->sr_no;
+        $voucherTypeId = 10;
+
+        // 1. Stock In Transaction for each returned item
+        foreach ($salesReturn->sale_return_data as $returnData) {
+            $itemId = $returnData->sale_invoice_data?->item_id;
+            if ($itemId && $returnData->quantity > 0) {
+                $existingStock = Stock::where('voucher_no', $sr_no)
+                    ->where('voucher_type', 'sale_return')
+                    ->where('product_id', $itemId)
+                    ->first();
+
+                $rate = (float)($returnData->rate ?? 0);
+                $netAmount = (float)($returnData->net_amount ?? 0);
+                if ($netAmount <= 0) {
+                    $netAmount = (float)($returnData->amount ?? 0);
+                }
+                if ($netAmount <= 0) {
+                    $netAmount = (float)($returnData->quantity * $rate);
+                }
+
+                if (!$existingStock) {
+                    createStockTransaction(
+                        $itemId,
+                        'sale_return',
+                        $sr_no,
+                        $returnData->quantity,
+                        'stock-in',
+                        $netAmount,
+                        $rate,
+                        $salesReturn->remarks ?? "Sales Return Stock-In: {$sr_no}"
+                    );
+                } else {
+                    $existingStock->update([
+                        'qty' => $returnData->quantity,
+                        'rate' => $rate,
+                        'total_amount' => $netAmount,
+                        'remarks' => $salesReturn->remarks ?? "Sales Return Stock-In: {$sr_no}"
+                    ]);
+                }
+            }
+        }
+
+        // 2. Balanced Ledger Entries in DB Transaction
+        DB::transaction(function () use ($salesReturn, $sr_no, $voucherTypeId) {
+            $handleTransaction = function($amount, $accountId, $voucherTypeId, $voucherNo, $type, $isOpening, $additionalData) {
+                $tx = Transaction::where('voucher_no', $voucherNo)
+                        ->where('purpose', $additionalData['purpose'])
+                        ->where('type', $type)
+                        ->first();
+                if ($tx) {
+                    $tx->update([
+                        'amount' => $amount,
+                        'account_id' => $accountId,
+                        'counter_account_id' => $additionalData['counter_account_id'] ?? null,
+                        'payment_against' => $additionalData['payment_against'] ?? null,
+                        'against_reference_no' => $additionalData['against_reference_no'] ?? null,
+                        'remarks' => $additionalData['remarks'] ?? null,
+                    ]);
+                } else {
+                    createTransaction($amount, $accountId, $voucherTypeId, $voucherNo, $type, $isOpening, $additionalData);
+                }
+            };
+
+            $totalReturnAmount = 0;
+            foreach ($salesReturn->sale_return_data as $data) {
+                $net = (float)($data->net_amount ?? 0);
+                if ($net <= 0) {
+                    $net = (float)($data->amount ?? 0);
+                }
+                if ($net <= 0) {
+                    $net = (float)($data->quantity * $data->rate);
+                }
+                $totalReturnAmount += $net;
+            }
+
+            $customerAccountId = $salesReturn->customer?->account_id ?? Customer::find($salesReturn->customer_id)?->account_id;
+            $salesReturnAccount = Account::where('hierarchy_path', '4-3')->first();
+
+            if ($totalReturnAmount > 0 && $customerAccountId && $salesReturnAccount) {
+                // Entry 1: Sales Return Account Debit (DR)
+                $handleTransaction($totalReturnAmount, $salesReturnAccount->id, $voucherTypeId, $sr_no, 'debit', 'no', [
+                    'counter_account_id' => $customerAccountId,
+                    'purpose' => "sales-return",
+                    'payment_against' => "sale-return",
+                    'against_reference_no' => $sr_no,
+                    'remarks' => "Sales Return booked against SR: {$sr_no}.",
+                ]);
+
+                // Entry 2: Customer Account Credit (CR)
+                $handleTransaction($totalReturnAmount, $customerAccountId, $voucherTypeId, $sr_no, 'credit', 'no', [
+                    'counter_account_id' => $salesReturnAccount->id,
+                    'purpose' => "sales-return",
+                    'payment_against' => "sale-return",
+                    'against_reference_no' => $sr_no,
+                    'remarks' => "Sales Return credited to Customer against SR: {$sr_no}.",
+                ]);
             }
         });
     }
