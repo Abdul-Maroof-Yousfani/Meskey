@@ -666,6 +666,113 @@ class SalesLedgerService
                     }
                 }
             }
+
+            // ==========================================
+            // 5. Transporter Other Amount Entry
+            // ==========================================
+            $otherAmount = floatval($receivingRequest->transporter_other_amount ?? 0);
+            if ($otherAmount > 0) {
+                $transporterObj = Transporter::find($receivingRequest->transporter);
+                $transporterAccountId = $transporterObj?->account_id;
+                $transporterExpAccount = Account::where('hierarchy_path', '5-3')->first();
+
+                if ($transporterAccountId && $transporterExpAccount) {
+                    // Debit Transporter Expense
+                    $handleTransaction($otherAmount, $transporterExpAccount->id, $voucherTypeId, $dc_no, 'debit', 'no', [
+                        'counter_account_id' => $transporterAccountId,
+                        'purpose' => "logistics-bill-transporter-other-expense",
+                        'payment_against' => "pohanch-sale-expense",
+                        'against_reference_no' => $dc_no,
+                        'remarks' => "Transporter other expense booked for Logistics Bill / RR: {$dc_no}.",
+                    ]);
+
+                    // Credit Transporter Payable
+                    $handleTransaction($otherAmount, $transporterAccountId, $voucherTypeId, $dc_no, 'credit', 'no', [
+                        'counter_account_id' => $transporterExpAccount->id,
+                        'purpose' => "logistics-bill-transporter-other-payable",
+                        'payment_against' => "pohanch-sale-payable",
+                        'against_reference_no' => $dc_no,
+                        'remarks' => "Transporter other payable booked for Logistics Bill / RR: {$dc_no}.",
+                    ]);
+                }
+            } else {
+                Transaction::where('voucher_no', $dc_no)->whereIn('purpose', [
+                    'logistics-bill-transporter-other-expense',
+                    'logistics-bill-transporter-other-payable'
+                ])->delete();
+            }
+
+            // ==========================================
+            // 6. Demurrage & Detention Expense Entry
+            // ==========================================
+            $demurrageAmount = floatval($receivingRequest->demurrage_detention_amount ?? 0);
+            if ($demurrageAmount > 0) {
+                $transporterObj = Transporter::find($receivingRequest->transporter);
+                $transporterAccountId = $transporterObj?->account_id;
+                $demurrageExpAccount = Account::where('hierarchy_path', '5-8')->first();
+
+                if ($transporterAccountId && $demurrageExpAccount) {
+                    // Debit Demurrage & Detention Expense
+                    $handleTransaction($demurrageAmount, $demurrageExpAccount->id, $voucherTypeId, $dc_no, 'debit', 'no', [
+                        'counter_account_id' => $transporterAccountId,
+                        'purpose' => "demurrage-detention-expense",
+                        'payment_against' => "pohanch-sale-expense",
+                        'against_reference_no' => $dc_no,
+                        'remarks' => "Demurrage & Detention expense booked for Logistics Bill / RR: {$dc_no}.",
+                    ]);
+
+                    // Credit Transporter Payable
+                    $handleTransaction($demurrageAmount, $transporterAccountId, $voucherTypeId, $dc_no, 'credit', 'no', [
+                        'counter_account_id' => $demurrageExpAccount->id,
+                        'purpose' => "demurrage-detention-payable",
+                        'payment_against' => "pohanch-sale-payable",
+                        'against_reference_no' => $dc_no,
+                        'remarks' => "Demurrage & Detention payable booked to transporter for Logistics Bill / RR: {$dc_no}.",
+                    ]);
+                }
+            } else {
+                Transaction::where('voucher_no', $dc_no)->whereIn('purpose', [
+                    'demurrage-detention-expense',
+                    'demurrage-detention-payable'
+                ])->delete();
+            }
+
+            // ==========================================
+            // 7. Sales Return Transporter Expense Entry
+            // ==========================================
+            $srTransporterAmount = floatval($receivingRequest->sales_return_transporter_amount ?? 0);
+            if ($srTransporterAmount > 0) {
+                $transporterObj = Transporter::find($receivingRequest->transporter);
+                $transporterAccountId = $transporterObj?->account_id;
+                $transporterExpAccount = Account::where('hierarchy_path', '5-3')->first();
+
+                if ($transporterAccountId && $transporterExpAccount) {
+                    $srNo = $receivingRequest->salesReturn?->sr_no ?? "SR";
+
+                    // Debit Transporter Expense
+                    $handleTransaction($srTransporterAmount, $transporterExpAccount->id, $voucherTypeId, $dc_no, 'debit', 'no', [
+                        'counter_account_id' => $transporterAccountId,
+                        'purpose' => "sales-return-transporter-expense",
+                        'payment_against' => "pohanch-sale-expense",
+                        'against_reference_no' => $dc_no,
+                        'remarks' => "Sales Return Transporter expense booked for Logistics Bill / RR: {$dc_no} ({$srNo}).",
+                    ]);
+
+                    // Credit Transporter Payable
+                    $handleTransaction($srTransporterAmount, $transporterAccountId, $voucherTypeId, $dc_no, 'credit', 'no', [
+                        'counter_account_id' => $transporterExpAccount->id,
+                        'purpose' => "sales-return-transporter-payable",
+                        'payment_against' => "pohanch-sale-payable",
+                        'against_reference_no' => $dc_no,
+                        'remarks' => "Sales Return Transporter payable booked for Logistics Bill / RR: {$dc_no} ({$srNo}).",
+                    ]);
+                }
+            } else {
+                Transaction::where('voucher_no', $dc_no)->whereIn('purpose', [
+                    'sales-return-transporter-expense',
+                    'sales-return-transporter-payable'
+                ])->delete();
+            }
         });
     }
 
@@ -679,7 +786,7 @@ class SalesLedgerService
 
         // 1. Stock In Transaction for each returned item
         foreach ($salesReturn->sale_return_data as $returnData) {
-            $itemId = $returnData->sale_invoice_data?->item_id;
+            $itemId = $returnData->item_id ?? $returnData->item?->id ?? $returnData->sale_invoice_data?->item_id;
             if ($itemId && $returnData->quantity > 0) {
                 $existingStock = Stock::where('voucher_no', $sr_no)
                     ->where('voucher_type', 'sale_return')

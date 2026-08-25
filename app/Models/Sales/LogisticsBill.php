@@ -38,7 +38,12 @@ class LogisticsBill extends Model
         'exempted_weight',
         'payment_weight',
         'unloading_paid_by',
-        'weighbridge_paid_by'
+        'weighbridge_paid_by',
+        'transporter_other_amount',
+        'demurrage_detention_amount',
+        'sales_return_id',
+        'sales_return_qty',
+        'sales_return_transporter_amount'
     ];
 
     protected $casts = [
@@ -46,6 +51,10 @@ class LogisticsBill extends Model
         'labour_amount' => 'decimal:2',
         'transporter_amount' => 'decimal:2',
         'transporter_deduction' => 'decimal:2',
+        'transporter_other_amount' => 'decimal:2',
+        'demurrage_detention_amount' => 'decimal:2',
+        'sales_return_qty' => 'decimal:2',
+        'sales_return_transporter_amount' => 'decimal:2',
         'weighbridge_amount' => 'decimal:2',
         'inhouse_weighbridge_amount' => 'decimal:2',
     ];
@@ -53,6 +62,11 @@ class LogisticsBill extends Model
     public function deliveryChallan()
     {
         return $this->belongsTo(DeliveryChallan::class, 'delivery_challan_id');
+    }
+
+    public function salesReturn()
+    {
+        return $this->belongsTo(SalesReturn::class, 'sales_return_id');
     }
 
     public function items()

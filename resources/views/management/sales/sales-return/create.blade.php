@@ -122,18 +122,14 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Contract Type:<span class="text-danger">*</span></label>
-                        <select name="contract_type" id="sauda_type" class="form-control select2">
-                            <option value="">Select Sauda Type</option>
-                            <option value="pohanch">Pohanch</option>
-                            <option value="x-mill">X-mill</option>
-                        </select>
+                        <input type="text" name="contract_type" id="sauda_type" class="form-control" value="pohanch" readonly style="font-weight: 600; text-transform: capitalize;">
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
-                        <label class="form-label">SI Number:<span class="text-danger">*</span></label>
+                        <label class="form-label">Receiving Request:<span class="text-danger">*</span></label>
                         <select name="si_no" id="si_no" onchange="get_items(this)" class="form-control select2">
-                            <option value="">Select Sale Invoice</option>
+                            <option value="">Select Receiving Request</option>
                         </select>
                     </div>
                 </div>
@@ -282,7 +278,12 @@
         const arrival_location_id = $("#arrivals").val();
         const storage_id = $("#storages").val();
 
-        // if (!customer_id || !location_id || !arrival_location_id) return;
+        if (!customer_id || !location_id || !arrival_location_id) {
+            $("#si_no").empty().append(`<option value=''>Select Receiving Request</option>`);
+            $("#si_no").select2();
+            $("#siTableBody").empty();
+            return;
+        }
 
         $.ajax({
             url: "{{ route('sales.get.invoice-numbers') }}",
@@ -297,7 +298,7 @@
             success: function(res) {
                 console.log(res);
                 $("#si_no").empty();
-                $("#si_no").append(`<option value=''>Select Sale Invoices</option>`)
+                $("#si_no").append(`<option value=''>Select Receiving Request</option>`)
 
                 res.forEach(sale_invoice => {
                     $("#si_no").append(`

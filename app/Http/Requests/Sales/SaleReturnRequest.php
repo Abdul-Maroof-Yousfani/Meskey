@@ -26,7 +26,7 @@ class SaleReturnRequest extends FormRequest
             "sr_no" => "required",
             "date" => "required|date",
             "reference_number" => "nullable",
-            "contract_type" => "required|in:x-mill,pohanch",
+            "contract_type" => "required|in:pohanch",
             "company_location_id" => "required|numeric",
             "arrival_location_id" => "required|numeric",
             "storage_location_id" => "required|numeric",
