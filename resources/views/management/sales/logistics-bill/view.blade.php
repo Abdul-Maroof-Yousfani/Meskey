@@ -118,6 +118,18 @@
         </div>
         <div class="col-md-3">
             <div class="form-group">
+                <label class="font-weight-bold">Other Amount</label>
+                <input type="number" class="form-control bg-light font-weight-bold" value="{{ $logisticsBill->transporter_other_amount ?? 0 }}" readonly>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label class="font-weight-bold">Demurrage & Detention Amount</label>
+                <input type="number" class="form-control bg-light font-weight-bold" value="{{ $logisticsBill->demurrage_detention_amount ?? 0 }}" readonly>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
                 <label class="font-weight-bold">Transporter Amount</label>
                 <input type="number" class="form-control bg-light font-weight-bold" value="{{ $logisticsBill->transporter_amount }}" readonly>
             </div>
@@ -126,7 +138,11 @@
             <div class="form-group">
                 <label class="font-weight-bold">Total Amount</label>
                 @php
-                    $netTransporterAmount = floatval($logisticsBill->transporter_amount ?? 0) - floatval($logisticsBill->transporter_deduction ?? 0);
+                    $netTransporterAmount = floatval($logisticsBill->transporter_amount ?? 0) 
+                        - floatval($logisticsBill->transporter_deduction ?? 0) 
+                        + floatval($logisticsBill->transporter_other_amount ?? 0) 
+                        + floatval($logisticsBill->demurrage_detention_amount ?? 0) 
+                        + floatval($logisticsBill->sales_return_transporter_amount ?? 0);
                 @endphp
                 <input type="number" class="form-control bg-light font-weight-bold text-primary" value="{{ number_format($netTransporterAmount, 2, '.', '') }}" readonly>
             </div>
@@ -254,6 +270,31 @@
             <div class="form-group">
                 <label class="font-weight-bold">Total Weighbridge Amt</label>
                 <input type="number" class="form-control bg-light font-weight-bold" value="{{ $logisticsBill->weighbridge_amount }}" readonly placeholder="Total Weighbridge Amount">
+            </div>
+        </div>
+    </div>
+
+    <!-- Sales Return Section -->
+    <div class="row mt-3">
+        <div class="col-12">
+            <h6 class="header-heading-sepration mb-2">Sales Return Details</h6>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="font-weight-bold">Sales Return</label>
+                <input type="text" class="form-control bg-light font-weight-bold" value="{{ $logisticsBill->salesReturn?->sr_no ?? 'N/A' }}" readonly placeholder="Sales Return">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="font-weight-bold">Return Qty</label>
+                <input type="number" class="form-control bg-light font-weight-bold" value="{{ $logisticsBill->sales_return_qty ?? 0 }}" readonly placeholder="Return Qty">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="font-weight-bold">Transporter Amount</label>
+                <input type="number" class="form-control bg-light font-weight-bold" value="{{ $logisticsBill->sales_return_transporter_amount ?? 0 }}" readonly placeholder="Transporter Amount">
             </div>
         </div>
     </div>

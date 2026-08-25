@@ -45,6 +45,10 @@ class SalesReturn extends Model
         return $this->belongsToMany(SalesInvoice::class, "sale_return_sale_invoice", "sale_return_id", "sale_invoice_id");
     }
 
+    public function receiving_requests() {
+        return $this->belongsToMany(ReceivingRequest::class, "sale_return_sale_invoice", "sale_return_id", "sale_invoice_id");
+    }
+
     protected function onApprovalComplete()
     {
         $this->traitOnApprovalComplete();

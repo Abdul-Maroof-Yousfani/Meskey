@@ -121,24 +121,26 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Contract Type:<span class="text-danger">*</span></label>
-                        <select name="contract_type" id="sauda_type" class="form-control select2">
-                            <option value="">Select Contract Type</option>
-                            <option value="pohanch" @selected($saleReturn->contract_type == 'pohanch')>Pohanch</option>
-                            <option value="x-mill" @selected($saleReturn->contract_type == 'x-mill')>X-mill</option>
-                        </select>
+                        <input type="text" name="contract_type" id="sauda_type" class="form-control" value="pohanch" readonly style="font-weight: 600; text-transform: capitalize;">
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
-                        <label class="form-label">SI Number:<span class="text-danger">*</span></label>
+                        <label class="form-label">Receiving Request:<span class="text-danger">*</span></label>
                         <select name="si_no" id="si_no" onchange="get_items(this)" class="form-control select2">
-                            <option value="">Select Sale Invoice</option>
+                            <option value="">Select Receiving Request</option>
                             @php
-                                $selectedSiId = $saleReturn->sale_invoices->first()?->id;
+                                $selectedRr = $saleReturn->receiving_requests->first() ?? $saleReturn->sale_invoices->first();
+                                $selectedRrId = $selectedRr?->id;
                             @endphp
-                            @foreach($saleReturn->sale_invoices as $sale_invoice)
-                                <option value="{{ $sale_invoice->id }}" @selected($selectedSiId == $sale_invoice->id)>{{ $sale_invoice->si_no }}</option>
-                            @endforeach
+                            @if($selectedRr)
+                                @php
+                                    $truckInfo = $selectedRr->truck_number ? " ({$selectedRr->truck_number})" : "";
+                                    $dateInfo = $selectedRr->dc_date ? " - " . \Carbon\Carbon::parse($selectedRr->dc_date)->format('d M Y') : ($selectedRr->invoice_date ? " - " . \Carbon\Carbon::parse($selectedRr->invoice_date)->format('d M Y') : "");
+                                    $displayText = ($selectedRr->dc_no ?? $selectedRr->si_no ?? 'N/A') . $truckInfo . $dateInfo;
+                                @endphp
+                                <option value="{{ $selectedRr->id }}" selected>{{ $displayText }}</option>
+                            @endif
                         </select>
                     </div>
                 </div>
@@ -215,13 +217,10 @@
                             @endphp
                             <tr id="row_{{ $rowIndex }}">
                                 <td style="min-width: 200px;">
-                                    <input type="text" class="form-control" value="{{ getItem($data->sale_invoice_data->item_id)?->name ?? '' }}" readonly />
-                                    <input type="hidden" name="item_id[]" id="item_id_{{ $rowIndex }}" class="form-control" value="{{ $data->sale_invoice_data->item_id }}" readonly />
-                                    {{-- <input type="hidden" class="max_balance" value="{{ $balance }}"> --}}
-
+                                    <input type="text" class="form-control" value="{{ $data->item_name }}" readonly />
+                                    <input type="hidden" name="item_id[]" id="item_id_{{ $rowIndex }}" class="form-control" value="{{ $data->item_id }}" readonly />
                                     <input type="hidden" name="si_data_id[]" value="{{ $data->sale_invoice_data_id }}">
-                                    <input type="hidden" name="si_id[]" value="{{ $data->sale_invoice_data->sales_invoice_id }}">
-         
+                                    <input type="hidden" name="si_id[]" value="{{ $data->sale_invoice_data?->sales_invoice_id ?? $saleReturn->receiving_requests->first()?->id ?? $saleReturn->sale_invoices->first()?->id }}">
                                 </td>
                                 <td style="min-width: 100px;">
                                     <input readonly type="number" name="packing[]" id="packing_{{ $rowIndex }}"
@@ -463,13 +462,18 @@
         });
     }
 
-    function get_sale_invoices() {
+    function get_sale_invoices(selectedId = null) {
         const customer_id = $("#customer_id").val();
         const location_id = $("#locations").val();
         const arrival_location_id = $("#arrivals").val();
         const storage_id = $("#storages").val();
+        const currentSelectedId = selectedId !== null ? selectedId : $("#si_no").val();
 
-        // if (!customer_id || !location_id || !arrival_location_id) return;
+        if (!customer_id || !location_id || !arrival_location_id) {
+            $("#si_no").empty().append(`<option value=''>Select Receiving Request</option>`);
+            $("#si_no").select2();
+            return;
+        }
 
         $.ajax({
             url: "{{ route('sales.get.invoice-numbers') }}",
@@ -478,17 +482,19 @@
                 customer_id,
                 location_id,
                 arrival_location_id,
-                storage_id
+                storage_id,
+                sales_return_id: '{{ $saleReturn->id }}'
             },
             dataType: "json",
             success: function(res) {
                 console.log(res);
                 $("#si_no").empty();
-                $("#si_no").append(`<option value=''>Select Sale Invoices</option>`)
+                $("#si_no").append(`<option value=''>Select Receiving Request</option>`);
 
                 res.forEach(sale_invoice => {
+                    const isSelected = (currentSelectedId && sale_invoice.id == currentSelectedId) ? 'selected' : '';
                     $("#si_no").append(`
-                        <option value="${sale_invoice.id}">
+                        <option value="${sale_invoice.id}" ${isSelected}>
                             ${sale_invoice.text}
                         </option>
                     `);
@@ -614,5 +620,12 @@
             calculateRow(el);
         }
     }
+
+    $(document).ready(function() {
+        const initialRrId = '{{ $selectedRrId ?? '' }}';
+        if (initialRrId) {
+            get_sale_invoices(initialRrId);
+        }
+    });
 </script>
 

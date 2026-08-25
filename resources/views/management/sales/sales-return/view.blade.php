@@ -121,22 +121,26 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Contract Type:<span class="text-danger">*</span></label>
-                        <select name="contract_type" id="sauda_type" class="form-control select2" disabled>
-                            <option value="">Select Contract Type</option>
-                            <option value="pohanch" @selected($saleReturn->contract_type == 'pohanch')>Pohanch</option>
-                            <option value="x-mill" @selected($saleReturn->contract_type == 'x-mill')>X-mill</option>
-                        </select>
+                        <input type="text" name="contract_type" id="sauda_type" class="form-control" value="Pohanch" readonly style="font-weight: 600;">
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
-                        <label class="form-label">SI Numbers:</label>
-                        <select name="si_no[]" id="si_no" onchange="get_items(this)" class="form-control select2"
-                            multiple disabled>
-                            <option value="">Select Sale Invoice</option>
-                            @foreach($saleReturn->sale_invoices as $sale_invoice)
-                                <option value="{{ $sale_invoice->id }}" selected>{{ $sale_invoice->si_no }}</option>
-                            @endforeach
+                        <label class="form-label">Receiving Request:</label>
+                        <select name="si_no" id="si_no" class="form-control select2" disabled>
+                            @php
+                                $selectedRr = $saleReturn->receiving_requests->first() ?? $saleReturn->sale_invoices->first();
+                            @endphp
+                            @if($selectedRr)
+                                @php
+                                    $truckInfo = $selectedRr->truck_number ? " ({$selectedRr->truck_number})" : "";
+                                    $dateInfo = $selectedRr->dc_date ? " - " . \Carbon\Carbon::parse($selectedRr->dc_date)->format('d M Y') : ($selectedRr->invoice_date ? " - " . \Carbon\Carbon::parse($selectedRr->invoice_date)->format('d M Y') : "");
+                                    $displayText = ($selectedRr->dc_no ?? $selectedRr->si_no ?? 'N/A') . $truckInfo . $dateInfo;
+                                @endphp
+                                <option value="{{ $selectedRr->id }}" selected>{{ $displayText }}</option>
+                            @else
+                                <option value="">N/A</option>
+                            @endif
                         </select>
                     </div>
                 </div>
@@ -195,25 +199,23 @@
                                 // if ($balance <= 0) {
                                 //     continue;
                                 // }
-                                $sale_return_data = $data;
-                                $data = $data->sale_invoice_data;
-                                $packing = $sale_return_data->packing ?? 0;
-                                $noOfBags = $sale_return_data->no_of_bags; // Use available balance as default
-                                $qty = $sale_return_data->quantity;
-                                $rate = $sale_return_data->rate ?? 0;
-                                $grossAmount = $sale_return_data->gross_amount;
-                                $discountPercent = $sale_return_data->discount_percent;
-                                $discountAmount = $sale_return_data->discount_amount;
-                                $amount = $sale_return_data->amount;
-                                $gstPercent = $sale_return_data->gst_percentage;
-                                $gstAmount = $sale_return_data->gst_amount;
-                                $netAmount = $sale_return_data->net_amount;
-                                $lineDesc = $sale_return_data->line_desc ?? '';
-                                $truckNo = $sale_return_data->truck_no ?? '';
+                                $packing = $data->packing ?? 0;
+                                $noOfBags = $data->no_of_bags;
+                                $qty = $data->quantity;
+                                $rate = $data->rate ?? 0;
+                                $grossAmount = $data->gross_amount;
+                                $discountPercent = $data->discount_percent;
+                                $discountAmount = $data->discount_amount;
+                                $amount = $data->amount;
+                                $gstPercent = $data->gst_percentage;
+                                $gstAmount = $data->gst_amount;
+                                $netAmount = $data->net_amount;
+                                $lineDesc = $data->line_desc ?? '';
+                                $truckNo = $data->truck_no ?? '';
                             @endphp
                             <tr id="row_{{ $rowIndex }}">
                                 <td style="min-width: 200px;">
-                                    <input type="text" class="form-control" value="{{ getItem($data->item_id)?->name ?? '' }}" readonly />
+                                    <input type="text" class="form-control" value="{{ $data->item_name }}" readonly />
                                 </td>
                                 <td style="min-width: 100px;">
                                     <input readonly type="number" name="packing[]" id="packing_{{ $rowIndex }}"
