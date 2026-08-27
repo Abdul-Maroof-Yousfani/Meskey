@@ -15,6 +15,7 @@ class Stock extends Model
         'narration',
         'price',
         'avg_price_per_kg',
+        'avg_cost_price',
         'parent_id',
         'company_location_id',
         'arrival_id',

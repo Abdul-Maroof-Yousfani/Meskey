@@ -1446,7 +1446,8 @@ if (!function_exists('createStockTransaction')) {
         ?float $price = null,
         ?float $avgPricePerKg = null,
         ?string $narration = null,
-        array $additionalData = []
+        array $additionalData = [],
+        ?float $avgCostPrice = null
     ) {
         try {
             $validVoucherTypes = ['grn', 'gdn', 'sale_return', 'purchase_return', 'delivery_challan'];
@@ -1472,6 +1473,7 @@ if (!function_exists('createStockTransaction')) {
                 'type' => $type,
                 'price' => $price,
                 'avg_price_per_kg' => $avgPricePerKg,
+                'avg_cost_price' => $avgCostPrice ?? ($additionalData['avg_cost_price'] ?? 0),
                 'narration' => $narration,
                 'created_at' => now(),
                 'updated_at' => now(),

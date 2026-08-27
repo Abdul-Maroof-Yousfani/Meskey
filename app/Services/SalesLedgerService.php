@@ -35,10 +35,32 @@ class SalesLedgerService
         foreach ($deliveryChallan->delivery_challan_data as $dcData) {
             $itemId = $dcData->item_id ?? $dcData->product_id;
             if ($itemId && $dcData->qty > 0) {
+                // TODO: Cost price will be derived from Production module once completed. Currently set to 0 as instructed.
+                $currentCostPrice = 0.00;
+
+                // Calculate average cost price across previous sales + current sale
+                $previousStocks = Stock::where('product_id', $itemId)
+                    ->where('voucher_type', 'delivery_challan')
+                    ->where('voucher_no', '!=', $deliveryChallan->dc_no)
+                    ->whereNotNull('avg_cost_price')
+                    ->where('avg_cost_price', '>', 0)
+                    ->get();
+
+                if ($previousStocks->count() > 0) {
+                    $totalPrevCost = $previousStocks->sum('avg_cost_price');
+                    $count = $previousStocks->count();
+                    $avgCostPrice = ($currentCostPrice > 0)
+                        ? round(($totalPrevCost + $currentCostPrice) / ($count + 1), 2)
+                        : round($totalPrevCost / $count, 2);
+                } else {
+                    $avgCostPrice = $currentCostPrice;
+                }
+
                 $existingStock = Stock::where('voucher_no', $deliveryChallan->dc_no)
                     ->where('voucher_type', 'delivery_challan')
                     ->where('product_id', $itemId)
                     ->first();
+
                 if (!$existingStock) {
                     createStockTransaction(
                         $itemId,
@@ -48,8 +70,18 @@ class SalesLedgerService
                         'stock-out',
                         $dcData->qty * $dcData->rate,
                         $dcData->rate,
-                        $deliveryChallan->remarks ?? "DC Stock Out: {$deliveryChallan->dc_no}"
+                        $deliveryChallan->remarks ?? "DC Stock Out: {$deliveryChallan->dc_no}",
+                        ['avg_cost_price' => $avgCostPrice],
+                        $avgCostPrice
                     );
+                } else {
+                    $existingStock->update([
+                        'qty' => $dcData->qty,
+                        'price' => $dcData->qty * $dcData->rate,
+                        'avg_price_per_kg' => $dcData->rate,
+                        'avg_cost_price' => $avgCostPrice,
+                        'narration' => $deliveryChallan->remarks ?? "DC Stock Out: {$deliveryChallan->dc_no}"
+                    ]);
                 }
             }
         }
@@ -175,6 +207,42 @@ class SalesLedgerService
                         'against_reference_no' => $dc_no,
                         'remarks' => "Sales revenue credited for sale against DC: {$dc_no}.",
                     ]);
+                }
+
+                // 1.1 Cost of Goods Sold (COGS) & Inventory Asset Entry
+                $cogsAccount = Account::where('hierarchy_path', '6-2')->first();
+                foreach ($deliveryChallan->delivery_challan_data as $dcData) {
+                    $itemId = $dcData->item_id ?? $dcData->product_id;
+                    $stock = Stock::where('voucher_no', $dc_no)
+                        ->where('voucher_type', 'delivery_challan')
+                        ->where('product_id', $itemId)
+                        ->first();
+
+                    $costRate = (float)($stock?->avg_cost_price ?? 0);
+                    $itemCogsAmount = (float)$dcData->qty * $costRate;
+
+                    $product = \App\Models\Product::find($itemId);
+                    $productInventoryAccountId = $product?->account_id ?? Account::where('hierarchy_path', '1-2')->first()?->id;
+
+                    if ($cogsAccount && $productInventoryAccountId) {
+                        // Debit COGS (6-2)
+                        $handleTransaction(round($itemCogsAmount, 2), $cogsAccount->id, $voucherTypeId, $dc_no, 'debit', 'no', [
+                            'counter_account_id' => $productInventoryAccountId,
+                            'purpose' => "delivery-challan-cogs-item-{$itemId}",
+                            'payment_against' => "cogs-expense",
+                            'against_reference_no' => $dc_no,
+                            'remarks' => "Cost of Goods Sold for item {$product?->name} on DC: {$dc_no}.",
+                        ]);
+
+                        // Credit Inventory Asset
+                        $handleTransaction(round($itemCogsAmount, 2), $productInventoryAccountId, $voucherTypeId, $dc_no, 'credit', 'no', [
+                            'counter_account_id' => $cogsAccount->id,
+                            'purpose' => "delivery-challan-inventory-item-{$itemId}",
+                            'payment_against' => "inventory-asset",
+                            'against_reference_no' => $dc_no,
+                            'remarks' => "Inventory asset reduced for item {$product?->name} on DC: {$dc_no}.",
+                        ]);
+                    }
                 }
 
                 if ($deliveryChallan->transporter_amount > 0 && $transporterExpenseAccount && $transporterAccountId) {
@@ -304,6 +372,42 @@ class SalesLedgerService
                             'against_reference_no' => $dc_no,
                             'remarks' => "X-Mill Sale booked against DC: {$dc_no}.",
                         ]);
+                    }
+
+                    // 1.1 Cost of Goods Sold (COGS) & Inventory Asset Entry
+                    $cogsAccount = Account::where('hierarchy_path', '6-2')->first();
+                    foreach ($deliveryChallan->delivery_challan_data as $dcData) {
+                        $itemId = $dcData->item_id ?? $dcData->product_id;
+                        $stock = Stock::where('voucher_no', $dc_no)
+                            ->where('voucher_type', 'delivery_challan')
+                            ->where('product_id', $itemId)
+                            ->first();
+
+                        $costRate = (float)($stock?->avg_cost_price ?? 0);
+                        $itemCogsAmount = (float)$dcData->qty * $costRate;
+
+                        $product = \App\Models\Product::find($itemId);
+                        $productInventoryAccountId = $product?->account_id ?? Account::where('hierarchy_path', '1-2')->first()?->id;
+
+                        if ($cogsAccount && $productInventoryAccountId) {
+                            // Debit COGS (6-2)
+                            $handleTransaction(round($itemCogsAmount, 2), $cogsAccount->id, $voucherTypeId, $dc_no, 'debit', 'no', [
+                                'counter_account_id' => $productInventoryAccountId,
+                                'purpose' => "delivery-challan-cogs-item-{$itemId}",
+                                'payment_against' => "cogs-expense",
+                                'against_reference_no' => $dc_no,
+                                'remarks' => "Cost of Goods Sold for item {$product?->name} on DC: {$dc_no}.",
+                            ]);
+
+                            // Credit Inventory Asset
+                            $handleTransaction(round($itemCogsAmount, 2), $productInventoryAccountId, $voucherTypeId, $dc_no, 'credit', 'no', [
+                                'counter_account_id' => $cogsAccount->id,
+                                'purpose' => "delivery-challan-inventory-item-{$itemId}",
+                                'payment_against' => "inventory-asset",
+                                'against_reference_no' => $dc_no,
+                                'remarks' => "Inventory asset reduced for item {$product?->name} on DC: {$dc_no}.",
+                            ]);
+                        }
                     }
 
                     // 2. Transporter Entry (if Transporter = Yes)
