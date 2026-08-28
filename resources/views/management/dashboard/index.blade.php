@@ -6,7 +6,75 @@
 @section('content')
     <div class="content-wrapper">
         @if(canAccess('no-stats') && auth()->user()->user_type != 'super-admin')
-No stats
+<div class="row">
+     <div class="no-stats-container">
+        <div class="no-stats-card">
+            <!-- Logo Section -->
+            <div class="no-stats-logo-wrapper">
+        
+                <img src="{{ image_path(auth()->user()->profile_image) }}" alt="Company Logo" class="no-stats-logo">
+                {{-- OR if you have SVG logo --}}
+                {{-- <svg class="no-stats-logo" viewBox="0 0 200 60">
+                    <rect width="200" height="60" rx="8" fill="#26499b"/>
+                    <text x="20" y="38" fill="white" font-size="24" font-weight="bold">COMPANY</text>
+                    <text x="140" y="38" fill="#6b8fd4" font-size="16">Logo</text>
+                </svg> --}}
+            </div>
+
+            <!-- Welcome Section -->
+            <div class="no-stats-welcome">
+                <div class="welcome-badge">
+                    <i class="ft-user"></i>
+                    <span>Welcome Back</span>
+                </div>
+                <h2 class="no-stats-title">
+                    Hello, {{ auth()->user()->name ?? 'User' }}! 👋
+                </h2>
+                <p class="no-stats-subtitle">
+                    We're glad to see you again. Your dashboard is ready when you are.
+                </p>
+            </div>
+
+            <!-- Divider -->
+            <div class="no-stats-divider">
+                <span></span>
+                <div class="divider-content">
+                    <i class="ft-info"></i>
+                </div>
+                <span></span>
+            </div>
+
+            <!-- Access Restricted Message -->
+            <div class="no-stats-message-wrapper">
+                <div class="access-icon">
+                    <i class="ft-lock"></i>
+                </div>
+                <div class="access-text">
+                    <h4>Statistics Access Restricted</h4>
+                    <p>You currently don't have permission to view analytics data for this dashboard.</p>
+                </div>
+            </div>
+
+            <!-- Contact Admin -->
+            <!-- <div class="no-stats-contact">
+                <button class="contact-admin-btn" onclick="window.location.href='mailto:admin@company.com'">
+                    <i class="ft-mail"></i> Contact Administrator
+                </button>
+                <span class="or-text">or</span>
+                <button class="refresh-btn-small" onclick="location.reload()">
+                    <i class="ft-refresh-cw"></i> Refresh
+                </button>
+            </div> -->
+
+            <!-- Footer -->
+            <div class="no-stats-footer">
+                <span class="footer-dot"></span>
+                <span class="footer-text">Restricted Access</span>
+                <span class="footer-dot"></span>
+            </div>
+        </div>
+    </div>
+</div>
 
         @else
         <div class="row">
@@ -1007,5 +1075,410 @@ console.log("Realtime Arrival Stats Updated ✅", stats);
                 font-size: 16px;
             }
         }
+
+
+
+
+
+
+
+
+
+
+        /* No Stats Container */
+.no-stats-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 500px;
+    padding: 20px;
+    width: 100%;
+    background: transparent;
+}
+
+/* Main Card */
+.no-stats-card {
+    background: #ffffff;
+    border-radius: 24px;
+    padding: 50px 60px 40px;
+    text-align: center;
+    max-width: 75%;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+    border: 1px solid #eef2f7;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.no-stats-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #26499b, #6b8fd4, #26499b);
+    background-size: 200% 100%;
+    animation: gradientMove 3s ease infinite;
+}
+
+@keyframes gradientMove {
+    0% { background-position: 0% 0%; }
+    50% { background-position: 100% 0%; }
+    100% { background-position: 0% 0%; }
+}
+
+/* Logo Section */
+.no-stats-logo-wrapper {
+    margin-bottom: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.no-stats-logo {
+    height: 60px;
+    width: auto;
+    max-width: 200px;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.05));
+    transition: transform 0.3s ease;
+}
+
+.no-stats-logo:hover {
+    transform: scale(1.02);
+}
+
+/* Welcome Section */
+.no-stats-welcome {
+    margin-bottom: 25px;
+}
+
+.welcome-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #f0f4ff;
+    padding: 6px 16px;
+    border-radius: 50px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #26499b;
+    margin-bottom: 15px;
+    border: 1px solid #dbe4f5;
+}
+
+.welcome-badge i {
+    font-size: 14px;
+}
+
+.no-stats-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 10px;
+    letter-spacing: -0.5px;
+}
+
+.no-stats-subtitle {
+    font-size: 16px;
+    color: #6b7280;
+    line-height: 1.6;
+    margin-bottom: 5px;
+}
+
+/* Divider */
+.no-stats-divider {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin: 30px 0 25px;
+}
+
+.no-stats-divider span {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #d1d5db, transparent);
+}
+
+.divider-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: #f8faff;
+    border-radius: 50%;
+    border: 1px solid #dbe4f5;
+    color: #26499b;
+}
+
+.divider-content i {
+    font-size: 16px;
+}
+
+/* Access Message */
+.no-stats-message-wrapper {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    background: #f8faff;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 30px;
+    text-align: left;
+    border: 1px solid #e8edf8;
+}
+
+.access-icon {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    background: #eef4ff;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #26499b;
+    font-size: 18px;
+}
+
+.access-text h4 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 4px;
+    margin-top: 0;
+}
+
+.access-text p {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* Contact Buttons */
+.no-stats-contact {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+}
+
+.contact-admin-btn {
+    background: #26499b;
+    color: white;
+    border: none;
+    padding: 11px 24px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.contact-admin-btn:hover {
+    background: #1e3a7a;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(38, 73, 155, 0.3);
+}
+
+.or-text {
+    color: #9ca3af;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.refresh-btn-small {
+    background: #f3f4f6;
+    color: #4b5563;
+    border: 1px solid #e5e7eb;
+    padding: 11px 24px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.refresh-btn-small:hover {
+    background: #e5e7eb;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Footer */
+.no-stats-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding-top: 20px;
+    border-top: 1px solid #f0f2f5;
+}
+
+.footer-dot {
+    width: 4px;
+    height: 4px;
+    background: #d1d5db;
+    border-radius: 50%;
+}
+
+.footer-text {
+    font-size: 12px;
+    font-weight: 500;
+    color: #9ca3af;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+/* Dark Mode Support */
+body.layout-dark .no-stats-card {
+    background: #2d2d2d;
+    border-color: #404040;
+}
+
+body.layout-dark .no-stats-title {
+    color: #ffffff;
+}
+
+body.layout-dark .no-stats-subtitle {
+    color: #b0b0b0;
+}
+
+body.layout-dark .welcome-badge {
+    background: #1a1a2e;
+    border-color: #333355;
+    color: #6b8fd4;
+}
+
+body.layout-dark .divider-content {
+    background: #1a1a2e;
+    border-color: #333355;
+    color: #6b8fd4;
+}
+
+body.layout-dark .no-stats-divider span {
+    background: linear-gradient(90deg, transparent, #555, transparent);
+}
+
+body.layout-dark .no-stats-message-wrapper {
+    background: #1a1a2e;
+    border-color: #333355;
+}
+
+body.layout-dark .access-icon {
+    background: #1a1a2e;
+    color: #6b8fd4;
+}
+
+body.layout-dark .access-text h4 {
+    color: #ffffff;
+}
+
+body.layout-dark .access-text p {
+    color: #b0b0b0;
+}
+
+body.layout-dark .refresh-btn-small {
+    background: #404040;
+    color: #b0b0b0;
+    border-color: #555;
+}
+
+body.layout-dark .refresh-btn-small:hover {
+    background: #555;
+}
+
+body.layout-dark .no-stats-footer {
+    border-top-color: #404040;
+}
+
+body.layout-dark .footer-text {
+    color: #6b7280;
+}
+
+body.layout-dark .footer-dot {
+    background: #555;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .no-stats-card {
+        padding: 35px 25px 30px;
+        max-width: 100%;
+    }
+
+    .no-stats-title {
+        font-size: 22px;
+    }
+
+    .no-stats-logo {
+        height: 45px;
+        max-width: 150px;
+    }
+
+    .no-stats-message-wrapper {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 15px;
+    }
+
+    .access-text {
+        text-align: center;
+    }
+
+    .no-stats-contact {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .contact-admin-btn,
+    .refresh-btn-small {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .no-stats-container {
+        min-height: 400px;
+        padding: 15px;
+    }
+
+    .no-stats-card {
+        padding: 25px 18px 25px;
+        border-radius: 16px;
+    }
+
+    .no-stats-title {
+        font-size: 19px;
+    }
+
+    .no-stats-subtitle {
+        font-size: 14px;
+    }
+
+    .no-stats-logo {
+        height: 40px;
+        max-width: 130px;
+    }
+
+    .welcome-badge {
+        font-size: 11px;
+        padding: 5px 12px;
+    }
+}
     </style>
 @endsection
