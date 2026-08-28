@@ -5,6 +5,10 @@
 
 @section('content')
     <div class="content-wrapper">
+        @if(canAccess('no-stats') && auth()->user()->user_type != 'super-admin')
+No stats
+
+        @else
         <div class="row">
             <div class="col-12 dd-none">
                 <div class="dashboard-filters">
@@ -42,6 +46,7 @@
             </div>
 
             @if ($module === 'arrival')
+            @canAccess('arrival-stats')
                 <div class="col-12">
                     <div class="dashboard-cards-grid" >
  <div class="dashboard-card" onclick="openModal(this,'{{ route('dashboard.list-data') }}?type=old_pending_trucks&from_date={{ $fromDate }}&to_date={{ $toDate }}&location_id={{ $location_id ?? '' }}','Old Pending Trucks', true, '85%')">
@@ -599,6 +604,8 @@
                         </div>
                     </div>
                 </div>
+            @endcanAccess
+            
             @else
                 <div class="col-12">
                     <div class="empty-module">
@@ -610,6 +617,7 @@
                 </div>
             @endif
         </div>
+        @endif
     </div>
 
     <script>

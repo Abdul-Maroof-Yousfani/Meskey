@@ -512,21 +512,26 @@ trait HasApprovalPurchaseOrder
     protected function createNewApprovalCycle()
     {
         $module = $this->getApprovalModule();
+
         if (!$module) {
             return;
         }
 
         $currentCycle = $this->getCurrentApprovalCycle();
+
         $newCycle = $currentCycle + 1;
 
         // Get the role from the current cycle to ensure consistency after revert
         $role_id = $this->approvalRows()
             ->where('module_id', $module->id)
-            ->where('approval_cycle', $currentCycle)
-            ->value('role_id');
+            ->where('approval_cycle', $currentCycle)->get();
+        // ->value('role_id');
+
+
 
         // Fallback to original logic if no previous row exists
         if (!$role_id) {
+            dd($role_id, 'yahan nhaugnga');
             if (!auth()->user()->parent_user_id) {
                 $role_id = auth()->user()->roles()->latest()->first()->id;
             } else {
@@ -536,15 +541,21 @@ trait HasApprovalPurchaseOrder
             }
         }
 
-        ApprovalRow::create([
-            'module_id' => $module->id,
-            'record_id' => $this->id,
-            'role_id' => $role_id,
-            'required_count' => 1,
-            'current_count' => 0,
-            'approval_cycle' => $newCycle,
-            'status' => 'pending'
-        ]);
+        foreach ($role_id as $key => $role) {
+            ApprovalRow::create([
+                'module_id' => $module->id,
+                'record_id' => $this->id,
+                'role_id' => $role->role_id,
+                'required_count' => 1,
+                'current_count' => 0,
+                'approval_cycle' => $newCycle,
+                'status' => 'pending'
+            ]);
+        }
+
+
+
+
     }
 
 
