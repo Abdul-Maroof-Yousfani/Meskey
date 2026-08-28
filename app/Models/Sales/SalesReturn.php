@@ -8,7 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class SalesReturn extends Model
 {
-    use HasFactory, HasApproval;
+    use HasFactory;
+    use HasApproval {
+        onApprovalComplete as traitOnApprovalComplete;
+        onApprovalRejected as traitOnApprovalRejected;
+    }
 
     protected $fillable = [
         "customer_id",
@@ -28,6 +32,11 @@ class SalesReturn extends Model
 
     protected $table = "sales_return";
 
+    public function customer()
+    {
+        return $this->belongsTo(\App\Models\Master\Customer::class, 'customer_id');
+    }
+
     public function sale_return_data() {
         return $this->hasMany(SaleReturnData::class, "sale_return_id");
     }
@@ -35,6 +44,23 @@ class SalesReturn extends Model
     public function sale_invoices() {
         return $this->belongsToMany(SalesInvoice::class, "sale_return_sale_invoice", "sale_return_id", "sale_invoice_id");
     }
-   
 
+    public function receiving_requests() {
+        return $this->belongsToMany(ReceivingRequest::class, "sale_return_sale_invoice", "sale_return_id", "sale_invoice_id");
+    }
+
+    protected function onApprovalComplete()
+    {
+        $this->traitOnApprovalComplete();
+        app(\App\Services\SalesLedgerService::class)->handleSalesReturnApproval($this);
+    }
+
+    protected function onApprovalRejected()
+    {
+        $this->traitOnApprovalRejected();
+
+        \App\Models\Master\Account\Stock::where('voucher_no', $this->sr_no)
+            ->where('voucher_type', 'sale_return')
+            ->delete();
+    }
 }

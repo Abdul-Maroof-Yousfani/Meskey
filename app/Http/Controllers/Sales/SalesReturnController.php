@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Sales\SaleReturnRequest;
 use App\Models\Master\Customer;
 use App\Models\Product;
+use App\Models\Sales\ReceivingRequest;
 use App\Models\Sales\SalesInvoice;
 use App\Models\Sales\SalesReturn;
 use Carbon\Carbon;
@@ -26,9 +27,7 @@ class SalesReturnController extends Controller
     }
 
     public function view(int $id) {
-        $saleReturn = SalesReturn::with("sale_return_data", "sale_invoices:id,si_no")->find($id);
-        
-
+        $saleReturn = SalesReturn::with(["sale_return_data", "receiving_requests.deliveryChallan", "sale_invoices"])->findOrFail($id);
         $customers = Customer::where("type", "local")->get();
         $items = Product::all();
 
@@ -36,7 +35,7 @@ class SalesReturnController extends Controller
     }
 
     public function edit(int $id) {
-        $saleReturn  = SalesReturn::with("sale_invoices:id,si_no")->find($id);
+        $saleReturn = SalesReturn::with(["sale_return_data", "receiving_requests.deliveryChallan", "sale_invoices"])->findOrFail($id);
         $customers = Customer::where("type", "local")->get();
         $items = Product::all();
 
@@ -53,9 +52,28 @@ class SalesReturnController extends Controller
         }
 
         try {
+            $sale_invoices = is_array($request->si_no) ? $request->si_no : [$request->si_no];
+            $sale_invoices = array_filter($sale_invoices);
+
+            if (!empty($sale_invoices)) {
+                $alreadyUsed = DB::table('sale_return_sale_invoice')
+                    ->join('sales_return', 'sale_return_sale_invoice.sale_return_id', '=', 'sales_return.id')
+                    ->where('sales_return.am_approval_status', '!=', 'rejected')
+                    ->where('sales_return.id', '!=', $saleReturn->id)
+                    ->whereIn('sale_return_sale_invoice.sale_invoice_id', $sale_invoices)
+                    ->exists();
+
+                if ($alreadyUsed) {
+                    return response()->json("A Sales Return has already been created for this Receiving Request.", 422);
+                }
+            }
+
+            $validatedData = $request->validated();
+            unset($validatedData['si_no']);
 
             $saleReturn->update([
-                ...$request->validated(),
+                ...$validatedData,
+                "contract_type" => "pohanch",
                 "am_approval_status" => "pending",
                 "am_change_made" => 1
             ]);
@@ -63,37 +81,47 @@ class SalesReturnController extends Controller
 
             foreach($request->item_id as $index => $item_id) {
                 $saleReturn->sale_return_data()->create([
-                    
                     "quantity" => $request->qty[$index],
                     "sale_return_id" => $saleReturn->id,
                     "sale_invoice_data_id" => $request->si_data_id[$index],
-                    "packing" => $request->packing[$index],
-                    "no_of_bags" => $request->no_of_bags[$index],
-                    "rate" => $request->rate[$index],
-                    "gross_amount" => $request->gross_amount[$index],
-                    "discount_percent" => $request->discount_percent[$index],
-                    "discount_amount" => $request->discount_amount[$index],
-                    "amount" => $request->amount[$index],
-                    "gst_percentage" => $request->gst_percent[$index],
-                    "gst_amount" => $request->gst_amount[$index],
-                    "net_amount"  => $request->net_amount[$index],
-                    "line_desc" => $request->line_desc[$index],
-                    "truck_no" => $request->truck_no[$index],
+                    "packing" => $request->packing[$index] ?? 0,
+                    "no_of_bags" => $request->no_of_bags[$index] ?? 0,
+                    "rate" => $request->rate[$index] ?? 0,
+                    "gross_amount" => $request->gross_amount[$index] ?? 0,
+                    "discount_percent" => $request->discount_percent[$index] ?? 0,
+                    "discount_amount" => $request->discount_amount[$index] ?? 0,
+                    "amount" => $request->amount[$index] ?? 0,
+                    "gst_percentage" => $request->gst_percent[$index] ?? 0,
+                    "gst_amount" => $request->gst_amount[$index] ?? 0,
+                    "net_amount"  => $request->net_amount[$index] ?? 0,
+                    "line_desc" => $request->line_desc[$index] ?? null,
+                    "truck_no" => $request->truck_no[$index] ?? null,
                 ]);
             }
 
             $syncData = [];
+            $mainRrId = is_array($request->si_no) ? ($request->si_no[0] ?? null) : $request->si_no;
+
             foreach($request->item_id as $index => $item_id) {
-                $si_id = $request->si_id[$index];
-                if (!isset($syncData[$si_id])) {
-                    $syncData[$si_id] = ["qty" => 0];
+                $si_id = $request->si_id[$index] ?? null;
+                if (empty($si_id)) {
+                    $si_id = $mainRrId;
                 }
-                $syncData[$si_id]["qty"] += $request->qty[$index];
+                if (!empty($si_id)) {
+                    if (!isset($syncData[$si_id])) {
+                        $syncData[$si_id] = ["qty" => 0];
+                    }
+                    $syncData[$si_id]["qty"] += $request->qty[$index];
+                }
+            }
+
+            if (empty($syncData) && !empty($mainRrId)) {
+                $totalQty = array_sum($request->qty ?? [0]);
+                $syncData[$mainRrId] = ["qty" => $totalQty];
             }
 
             $saleReturn->sale_invoices()->sync($syncData);
 
-            
             DB::commit();
             return response()->json("Sale Return has been updated");
         } catch(\Exception $e) {
@@ -103,46 +131,52 @@ class SalesReturnController extends Controller
         }
     }
 
-  
-
     public function get_sale_invoices(Request $request) {
         $customer_id = $request->customer_id;
         $locations_id = $request->location_id;
         $arrival_location_id = $request->arrival_location_id;
         $storage_id = $request->storage_id;
+        $sales_return_id = $request->sales_return_id;
 
-        $sale_invoices = SalesInvoice::approved()
-                                ->select("id", "si_no")
-                                ->where("location_id", $locations_id)
-                                ->get();
+        // If Customer, Company Location, or Arrival Location is missing, return empty
+        if (!$customer_id || !$locations_id || !$arrival_location_id) {
+            return [];
+        }
+
+        // Get RR IDs that already have an active/approved Sales Return (excluding current SR if on edit)
+        $usedRrIds = DB::table('sale_return_sale_invoice')
+            ->join('sales_return', 'sale_return_sale_invoice.sale_return_id', '=', 'sales_return.id')
+            ->where('sales_return.am_approval_status', '!=', 'rejected')
+            ->when($sales_return_id, function ($q) use ($sales_return_id) {
+                $q->where('sales_return.id', '!=', $sales_return_id);
+            })
+            ->pluck('sale_return_sale_invoice.sale_invoice_id')
+            ->toArray();
+
+        $receiving_requests = ReceivingRequest::with(['deliveryChallan', 'items.deliveryChallanData'])
+            ->where('am_approval_status', 'approved')
+            ->whereNotIn('id', $usedRrIds)
+            ->whereHas('deliveryChallan', function($q) use ($customer_id, $locations_id, $arrival_location_id) {
+                $q->where('sauda_type', 'pohanch')
+                  ->where('customer_id', $customer_id)
+                  ->where('location_id', $locations_id)
+                  ->where('arrival_id', $arrival_location_id);
+            })
+            ->latest()
+            ->get();
 
         $data = [];
 
-        foreach ($sale_invoices as $sale_invoice) {
-            // Check if DC has any items with available balance
-            $hasAvailableItems = false;
-            
-            foreach ($sale_invoice->sales_invoice_data as $siData) {
-                $balance = sale_return_balance($siData->id);
-                if ($balance > 0) {
-                    $hasAvailableItems = true;
-                    break;
-                }
-            }
-
-            // Only include DCs with available items
-            if ($hasAvailableItems) {
-                $data[] = [
-                    "id" => $sale_invoice->id,
-                    "text" => $sale_invoice->si_no
-                ];
-            }
+        foreach ($receiving_requests as $rr) {
+            $truckInfo = $rr->truck_number ? " ({$rr->truck_number})" : "";
+            $dateInfo = $rr->dc_date ? " - " . Carbon::parse($rr->dc_date)->format('d M Y') : "";
+            $data[] = [
+                "id" => $rr->id,
+                "text" => "{$rr->dc_no}{$truckInfo}{$dateInfo}"
+            ];
         }
 
-     
-
         return $data;
-
     }
 
     public function getList(Request $request) {
@@ -173,10 +207,14 @@ class SalesReturnController extends Controller
                 ];
             } else {
                 foreach ($items as $itemData) {
+                    $item = $itemData->item ?? (object)[
+                        'name' => 'N/A',
+                        'unitOfMeasure' => (object)['name' => '']
+                    ];
                     $itemRows[] = [
                         'item_data' => $itemData,
-                        "si_data" => $itemData->sale_invoice_data,
-                        'item' => $itemData->sale_invoice_data->item,
+                        'si_data' => $itemData->sale_invoice_data,
+                        'item' => $item,
                     ];
                 }
             }
@@ -202,22 +240,18 @@ class SalesReturnController extends Controller
     }
 
     public function getitems(Request $request) {
-        $sale_invoice_ids = $request->sale_invoice_ids;
-        
-        $sale_invoices = SalesInvoice::with("sales_invoice_data")
-                            ->whereIn("id", $sale_invoice_ids)
-                            ->get();
+        $rr_ids = is_array($request->sale_invoice_ids) ? $request->sale_invoice_ids : [$request->sale_invoice_ids];
+        $rr_ids = array_filter($rr_ids);
+
+        $receiving_requests = ReceivingRequest::with(['items.deliveryChallanData', 'items.product', 'deliveryChallan'])
+            ->whereIn('id', $rr_ids)
+            ->get();
+
         $items = Product::select("id", "name")->get();
 
         $balances = [];
-        // foreach ($sales_invoices as $si) {
-        //     foreach ($si->delivery_challan_data as $dcData) {
-        //         $balances[$dcData->id] = $this->getAvailableBalance($dcData->id, $exclude_sales_invoice_id);
-        //     }
-        // }
 
-        return view("management.sales.sales-return.getItem", compact("sale_invoices", "items", "balances"));
-    
+        return view("management.sales.sales-return.getItem", compact("receiving_requests", "items", "balances"));
     }
 
     public function getNumber(Request $request, $locationId = null, $invoiceDate = null)
@@ -255,67 +289,93 @@ class SalesReturnController extends Controller
     public function store(SaleReturnRequest $request) {
         DB::beginTransaction();
         try {
+            if (strtolower($request->contract_type) !== 'pohanch') {
+                return response()->json("Sales Return is only allowed for Pohanch contracts.", 422);
+            }
 
-            $sale_invoices = $request->si_no;
+            $sale_invoices = is_array($request->si_no) ? $request->si_no : [$request->si_no];
+            $sale_invoices = array_filter($sale_invoices);
 
             if (empty($sale_invoices)) {
-                return response()->json("Please select at least one Sale Invoice.", 422);
+                return response()->json("Please select a Receiving Request.", 422);
             }
            
-            // Sale Return's date should not be previous than sale invoices's date, and also tell that which sale invoice is breaking it along with its date and transaction number
-            $sale_invoices_data = SalesInvoice::whereIn("id", $sale_invoices)->get();
-            foreach ($sale_invoices_data as $sale_invoice) {
-                 if(strtotime($sale_invoice->invoice_date) > strtotime($request->date)) {
-                    return response()->json("Backward date is not allowed. Sale invoice: " . $sale_invoice->si_no . " Date: " . $sale_invoice->invoice_date, 422);
+            // Check if a Sales Return has already been created for this Receiving Request
+            $alreadyUsed = DB::table('sale_return_sale_invoice')
+                ->join('sales_return', 'sale_return_sale_invoice.sale_return_id', '=', 'sales_return.id')
+                ->where('sales_return.am_approval_status', '!=', 'rejected')
+                ->whereIn('sale_return_sale_invoice.sale_invoice_id', $sale_invoices)
+                ->exists();
+
+            if ($alreadyUsed) {
+                return response()->json("A Sales Return has already been created for this Receiving Request.", 422);
+            }
+
+            // Check receiving request date
+            $receiving_requests = ReceivingRequest::whereIn("id", $sale_invoices)->get();
+            foreach ($receiving_requests as $rr) {
+                if($rr->dc_date && strtotime($rr->dc_date) > strtotime($request->date)) {
+                    return response()->json("Backward date is not allowed. DC: " . $rr->dc_no . " Date: " . $rr->dc_date->format('Y-m-d'), 422);
                 }
             }
 
-
+            $validatedData = $request->validated();
+            unset($validatedData['si_no']);
 
             $sale_return = SalesReturn::create([
-                ...$request->validated(),
+                ...$validatedData,
+                "contract_type" => "pohanch",
                 "created_by" => auth()->user()->id
             ]);
-
-            
 
             foreach($request->item_id as $index => $item_id) {
                 $balance = sale_return_balance($request->si_data_id[$index]);
 
-                if($request->no_of_bags[$index] > $balance) {
-                    return response()->json("Total balance is $balance. you can not exceed this balance", 422);
+                if($balance > 0 && $request->no_of_bags[$index] > $balance) {
+                    return response()->json("Total balance is $balance. You cannot exceed this balance.", 422);
                 }
                 
                 $sale_return->sale_return_data()->create([
                     "quantity" => $request->qty[$index],
                     "sale_invoice_data_id" => $request->si_data_id[$index],
-                    "packing" => $request->packing[$index],
-                    "no_of_bags" => $request->no_of_bags[$index],
-                    "rate" => $request->rate[$index],
-                    "gross_amount" => $request->gross_amount[$index],
-                    "discount_percent" => $request->discount_percent[$index],
-                    "discount_amount" => $request->discount_amount[$index],
-                    "amount" => $request->amount[$index],
-                    "gst_percentage" => $request->gst_percent[$index],
-                    "gst_amount" => $request->gst_amount[$index],
-                    "net_amount"  => $request->net_amount[$index],
-                    "line_desc" => $request->line_desc[$index],
-                    "truck_no" => $request->truck_no[$index]
+                    "packing" => $request->packing[$index] ?? 0,
+                    "no_of_bags" => $request->no_of_bags[$index] ?? 0,
+                    "rate" => $request->rate[$index] ?? 0,
+                    "gross_amount" => $request->gross_amount[$index] ?? 0,
+                    "discount_percent" => $request->discount_percent[$index] ?? 0,
+                    "discount_amount" => $request->discount_amount[$index] ?? 0,
+                    "amount" => $request->amount[$index] ?? 0,
+                    "gst_percentage" => $request->gst_percent[$index] ?? 0,
+                    "gst_amount" => $request->gst_amount[$index] ?? 0,
+                    "net_amount"  => $request->net_amount[$index] ?? 0,
+                    "line_desc" => $request->line_desc[$index] ?? null,
+                    "truck_no" => $request->truck_no[$index] ?? null
                 ]);
             }
 
             $syncData = [];
+            $mainRrId = is_array($request->si_no) ? ($request->si_no[0] ?? null) : $request->si_no;
+
             foreach($request->item_id as $index => $item_id) {
-                $si_id = $request->si_id[$index];
-                if (!isset($syncData[$si_id])) {
-                    $syncData[$si_id] = ["qty" => 0];
+                $si_id = $request->si_id[$index] ?? null;
+                if (empty($si_id)) {
+                    $si_id = $mainRrId;
                 }
-                $syncData[$si_id]["qty"] += $request->qty[$index];
+                if (!empty($si_id)) {
+                    if (!isset($syncData[$si_id])) {
+                        $syncData[$si_id] = ["qty" => 0];
+                    }
+                    $syncData[$si_id]["qty"] += $request->qty[$index];
+                }
+            }
+
+            if (empty($syncData) && !empty($mainRrId)) {
+                $totalQty = array_sum($request->qty ?? [0]);
+                $syncData[$mainRrId] = ["qty" => $totalQty];
             }
 
             $sale_return->sale_invoices()->sync($syncData);
 
-            
             DB::commit();
             return response()->json("Sale Return has been created");
         } catch(\Exception $e) {

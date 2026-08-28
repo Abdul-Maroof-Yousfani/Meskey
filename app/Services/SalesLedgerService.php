@@ -11,6 +11,7 @@ use App\Models\Master\Vendor;
 use App\Models\Sales\DeliveryChallan;
 use App\Models\Sales\ReceivingRequest;
 use App\Models\Sales\ReceivingRequestItem;
+use App\Models\Sales\SalesReturn;
 use Illuminate\Support\Facades\DB;
 
 class SalesLedgerService
@@ -34,10 +35,32 @@ class SalesLedgerService
         foreach ($deliveryChallan->delivery_challan_data as $dcData) {
             $itemId = $dcData->item_id ?? $dcData->product_id;
             if ($itemId && $dcData->qty > 0) {
+                // TODO: Cost price will be derived from Production module once completed. Currently set to 0 as instructed.
+                $currentCostPrice = 0.00;
+
+                // Calculate average cost price across previous sales + current sale
+                $previousStocks = Stock::where('product_id', $itemId)
+                    ->where('voucher_type', 'delivery_challan')
+                    ->where('voucher_no', '!=', $deliveryChallan->dc_no)
+                    ->whereNotNull('avg_cost_price')
+                    ->where('avg_cost_price', '>', 0)
+                    ->get();
+
+                if ($previousStocks->count() > 0) {
+                    $totalPrevCost = $previousStocks->sum('avg_cost_price');
+                    $count = $previousStocks->count();
+                    $avgCostPrice = ($currentCostPrice > 0)
+                        ? round(($totalPrevCost + $currentCostPrice) / ($count + 1), 2)
+                        : round($totalPrevCost / $count, 2);
+                } else {
+                    $avgCostPrice = $currentCostPrice;
+                }
+
                 $existingStock = Stock::where('voucher_no', $deliveryChallan->dc_no)
                     ->where('voucher_type', 'delivery_challan')
                     ->where('product_id', $itemId)
                     ->first();
+
                 if (!$existingStock) {
                     createStockTransaction(
                         $itemId,
@@ -47,8 +70,18 @@ class SalesLedgerService
                         'stock-out',
                         $dcData->qty * $dcData->rate,
                         $dcData->rate,
-                        $deliveryChallan->remarks ?? "DC Stock Out: {$deliveryChallan->dc_no}"
+                        $deliveryChallan->remarks ?? "DC Stock Out: {$deliveryChallan->dc_no}",
+                        ['avg_cost_price' => $avgCostPrice],
+                        $avgCostPrice
                     );
+                } else {
+                    $existingStock->update([
+                        'qty' => $dcData->qty,
+                        'price' => $dcData->qty * $dcData->rate,
+                        'avg_price_per_kg' => $dcData->rate,
+                        'avg_cost_price' => $avgCostPrice,
+                        'narration' => $deliveryChallan->remarks ?? "DC Stock Out: {$deliveryChallan->dc_no}"
+                    ]);
                 }
             }
         }
@@ -174,6 +207,42 @@ class SalesLedgerService
                         'against_reference_no' => $dc_no,
                         'remarks' => "Sales revenue credited for sale against DC: {$dc_no}.",
                     ]);
+                }
+
+                // 1.1 Cost of Goods Sold (COGS) & Inventory Asset Entry
+                $cogsAccount = Account::where('hierarchy_path', '6-2')->first();
+                foreach ($deliveryChallan->delivery_challan_data as $dcData) {
+                    $itemId = $dcData->item_id ?? $dcData->product_id;
+                    $stock = Stock::where('voucher_no', $dc_no)
+                        ->where('voucher_type', 'delivery_challan')
+                        ->where('product_id', $itemId)
+                        ->first();
+
+                    $costRate = (float)($stock?->avg_cost_price ?? 0);
+                    $itemCogsAmount = (float)$dcData->qty * $costRate;
+
+                    $product = \App\Models\Product::find($itemId);
+                    $productInventoryAccountId = $product?->account_id ?? Account::where('hierarchy_path', '1-2')->first()?->id;
+
+                    if ($cogsAccount && $productInventoryAccountId) {
+                        // Debit COGS (6-2)
+                        $handleTransaction(round($itemCogsAmount, 2), $cogsAccount->id, $voucherTypeId, $dc_no, 'debit', 'no', [
+                            'counter_account_id' => $productInventoryAccountId,
+                            'purpose' => "delivery-challan-cogs-item-{$itemId}",
+                            'payment_against' => "cogs-expense",
+                            'against_reference_no' => $dc_no,
+                            'remarks' => "Cost of Goods Sold for item {$product?->name} on DC: {$dc_no}.",
+                        ]);
+
+                        // Credit Inventory Asset
+                        $handleTransaction(round($itemCogsAmount, 2), $productInventoryAccountId, $voucherTypeId, $dc_no, 'credit', 'no', [
+                            'counter_account_id' => $cogsAccount->id,
+                            'purpose' => "delivery-challan-inventory-item-{$itemId}",
+                            'payment_against' => "inventory-asset",
+                            'against_reference_no' => $dc_no,
+                            'remarks' => "Inventory asset reduced for item {$product?->name} on DC: {$dc_no}.",
+                        ]);
+                    }
                 }
 
                 if ($deliveryChallan->transporter_amount > 0 && $transporterExpenseAccount && $transporterAccountId) {
@@ -303,6 +372,42 @@ class SalesLedgerService
                             'against_reference_no' => $dc_no,
                             'remarks' => "X-Mill Sale booked against DC: {$dc_no}.",
                         ]);
+                    }
+
+                    // 1.1 Cost of Goods Sold (COGS) & Inventory Asset Entry
+                    $cogsAccount = Account::where('hierarchy_path', '6-2')->first();
+                    foreach ($deliveryChallan->delivery_challan_data as $dcData) {
+                        $itemId = $dcData->item_id ?? $dcData->product_id;
+                        $stock = Stock::where('voucher_no', $dc_no)
+                            ->where('voucher_type', 'delivery_challan')
+                            ->where('product_id', $itemId)
+                            ->first();
+
+                        $costRate = (float)($stock?->avg_cost_price ?? 0);
+                        $itemCogsAmount = (float)$dcData->qty * $costRate;
+
+                        $product = \App\Models\Product::find($itemId);
+                        $productInventoryAccountId = $product?->account_id ?? Account::where('hierarchy_path', '1-2')->first()?->id;
+
+                        if ($cogsAccount && $productInventoryAccountId) {
+                            // Debit COGS (6-2)
+                            $handleTransaction(round($itemCogsAmount, 2), $cogsAccount->id, $voucherTypeId, $dc_no, 'debit', 'no', [
+                                'counter_account_id' => $productInventoryAccountId,
+                                'purpose' => "delivery-challan-cogs-item-{$itemId}",
+                                'payment_against' => "cogs-expense",
+                                'against_reference_no' => $dc_no,
+                                'remarks' => "Cost of Goods Sold for item {$product?->name} on DC: {$dc_no}.",
+                            ]);
+
+                            // Credit Inventory Asset
+                            $handleTransaction(round($itemCogsAmount, 2), $productInventoryAccountId, $voucherTypeId, $dc_no, 'credit', 'no', [
+                                'counter_account_id' => $cogsAccount->id,
+                                'purpose' => "delivery-challan-inventory-item-{$itemId}",
+                                'payment_against' => "inventory-asset",
+                                'against_reference_no' => $dc_no,
+                                'remarks' => "Inventory asset reduced for item {$product?->name} on DC: {$dc_no}.",
+                            ]);
+                        }
                     }
 
                     // 2. Transporter Entry (if Transporter = Yes)
@@ -664,6 +769,219 @@ class SalesLedgerService
                         ]);
                     }
                 }
+            }
+
+            // ==========================================
+            // 5. Transporter Other Amount Entry
+            // ==========================================
+            $otherAmount = floatval($receivingRequest->transporter_other_amount ?? 0);
+            if ($otherAmount > 0) {
+                $transporterObj = Transporter::find($receivingRequest->transporter);
+                $transporterAccountId = $transporterObj?->account_id;
+                $transporterExpAccount = Account::where('hierarchy_path', '5-3')->first();
+
+                if ($transporterAccountId && $transporterExpAccount) {
+                    // Debit Transporter Expense
+                    $handleTransaction($otherAmount, $transporterExpAccount->id, $voucherTypeId, $dc_no, 'debit', 'no', [
+                        'counter_account_id' => $transporterAccountId,
+                        'purpose' => "logistics-bill-transporter-other-expense",
+                        'payment_against' => "pohanch-sale-expense",
+                        'against_reference_no' => $dc_no,
+                        'remarks' => "Transporter other expense booked for Logistics Bill / RR: {$dc_no}.",
+                    ]);
+
+                    // Credit Transporter Payable
+                    $handleTransaction($otherAmount, $transporterAccountId, $voucherTypeId, $dc_no, 'credit', 'no', [
+                        'counter_account_id' => $transporterExpAccount->id,
+                        'purpose' => "logistics-bill-transporter-other-payable",
+                        'payment_against' => "pohanch-sale-payable",
+                        'against_reference_no' => $dc_no,
+                        'remarks' => "Transporter other payable booked for Logistics Bill / RR: {$dc_no}.",
+                    ]);
+                }
+            } else {
+                Transaction::where('voucher_no', $dc_no)->whereIn('purpose', [
+                    'logistics-bill-transporter-other-expense',
+                    'logistics-bill-transporter-other-payable'
+                ])->delete();
+            }
+
+            // ==========================================
+            // 6. Demurrage & Detention Expense Entry
+            // ==========================================
+            $demurrageAmount = floatval($receivingRequest->demurrage_detention_amount ?? 0);
+            if ($demurrageAmount > 0) {
+                $transporterObj = Transporter::find($receivingRequest->transporter);
+                $transporterAccountId = $transporterObj?->account_id;
+                $demurrageExpAccount = Account::where('hierarchy_path', '5-8')->first();
+
+                if ($transporterAccountId && $demurrageExpAccount) {
+                    // Debit Demurrage & Detention Expense
+                    $handleTransaction($demurrageAmount, $demurrageExpAccount->id, $voucherTypeId, $dc_no, 'debit', 'no', [
+                        'counter_account_id' => $transporterAccountId,
+                        'purpose' => "demurrage-detention-expense",
+                        'payment_against' => "pohanch-sale-expense",
+                        'against_reference_no' => $dc_no,
+                        'remarks' => "Demurrage & Detention expense booked for Logistics Bill / RR: {$dc_no}.",
+                    ]);
+
+                    // Credit Transporter Payable
+                    $handleTransaction($demurrageAmount, $transporterAccountId, $voucherTypeId, $dc_no, 'credit', 'no', [
+                        'counter_account_id' => $demurrageExpAccount->id,
+                        'purpose' => "demurrage-detention-payable",
+                        'payment_against' => "pohanch-sale-payable",
+                        'against_reference_no' => $dc_no,
+                        'remarks' => "Demurrage & Detention payable booked to transporter for Logistics Bill / RR: {$dc_no}.",
+                    ]);
+                }
+            } else {
+                Transaction::where('voucher_no', $dc_no)->whereIn('purpose', [
+                    'demurrage-detention-expense',
+                    'demurrage-detention-payable'
+                ])->delete();
+            }
+
+            // ==========================================
+            // 7. Sales Return Transporter Expense Entry
+            // ==========================================
+            $srTransporterAmount = floatval($receivingRequest->sales_return_transporter_amount ?? 0);
+            if ($srTransporterAmount > 0) {
+                $transporterObj = Transporter::find($receivingRequest->transporter);
+                $transporterAccountId = $transporterObj?->account_id;
+                $transporterExpAccount = Account::where('hierarchy_path', '5-3')->first();
+
+                if ($transporterAccountId && $transporterExpAccount) {
+                    $srNo = $receivingRequest->salesReturn?->sr_no ?? "SR";
+
+                    // Debit Transporter Expense
+                    $handleTransaction($srTransporterAmount, $transporterExpAccount->id, $voucherTypeId, $dc_no, 'debit', 'no', [
+                        'counter_account_id' => $transporterAccountId,
+                        'purpose' => "sales-return-transporter-expense",
+                        'payment_against' => "pohanch-sale-expense",
+                        'against_reference_no' => $dc_no,
+                        'remarks' => "Sales Return Transporter expense booked for Logistics Bill / RR: {$dc_no} ({$srNo}).",
+                    ]);
+
+                    // Credit Transporter Payable
+                    $handleTransaction($srTransporterAmount, $transporterAccountId, $voucherTypeId, $dc_no, 'credit', 'no', [
+                        'counter_account_id' => $transporterExpAccount->id,
+                        'purpose' => "sales-return-transporter-payable",
+                        'payment_against' => "pohanch-sale-payable",
+                        'against_reference_no' => $dc_no,
+                        'remarks' => "Sales Return Transporter payable booked for Logistics Bill / RR: {$dc_no} ({$srNo}).",
+                    ]);
+                }
+            } else {
+                Transaction::where('voucher_no', $dc_no)->whereIn('purpose', [
+                    'sales-return-transporter-expense',
+                    'sales-return-transporter-payable'
+                ])->delete();
+            }
+        });
+    }
+
+    /**
+     * Handle Sales Return Approval: Stock In & Ledger Transactions
+     */
+    public function handleSalesReturnApproval(SalesReturn $salesReturn): void
+    {
+        $sr_no = $salesReturn->sr_no;
+        $voucherTypeId = 10;
+
+        // 1. Stock In Transaction for each returned item
+        foreach ($salesReturn->sale_return_data as $returnData) {
+            $itemId = $returnData->item_id ?? $returnData->item?->id ?? $returnData->sale_invoice_data?->item_id;
+            if ($itemId && $returnData->quantity > 0) {
+                $existingStock = Stock::where('voucher_no', $sr_no)
+                    ->where('voucher_type', 'sale_return')
+                    ->where('product_id', $itemId)
+                    ->first();
+
+                $rate = (float)($returnData->rate ?? 0);
+                $netAmount = (float)($returnData->net_amount ?? 0);
+                if ($netAmount <= 0) {
+                    $netAmount = (float)($returnData->amount ?? 0);
+                }
+                if ($netAmount <= 0) {
+                    $netAmount = (float)($returnData->quantity * $rate);
+                }
+
+                if (!$existingStock) {
+                    createStockTransaction(
+                        $itemId,
+                        'sale_return',
+                        $sr_no,
+                        $returnData->quantity,
+                        'stock-in',
+                        $netAmount,
+                        $rate,
+                        $salesReturn->remarks ?? "Sales Return Stock-In: {$sr_no}"
+                    );
+                } else {
+                    $existingStock->update([
+                        'qty' => $returnData->quantity,
+                        'rate' => $rate,
+                        'total_amount' => $netAmount,
+                        'remarks' => $salesReturn->remarks ?? "Sales Return Stock-In: {$sr_no}"
+                    ]);
+                }
+            }
+        }
+
+        // 2. Balanced Ledger Entries in DB Transaction
+        DB::transaction(function () use ($salesReturn, $sr_no, $voucherTypeId) {
+            $handleTransaction = function($amount, $accountId, $voucherTypeId, $voucherNo, $type, $isOpening, $additionalData) {
+                $tx = Transaction::where('voucher_no', $voucherNo)
+                        ->where('purpose', $additionalData['purpose'])
+                        ->where('type', $type)
+                        ->first();
+                if ($tx) {
+                    $tx->update([
+                        'amount' => $amount,
+                        'account_id' => $accountId,
+                        'counter_account_id' => $additionalData['counter_account_id'] ?? null,
+                        'payment_against' => $additionalData['payment_against'] ?? null,
+                        'against_reference_no' => $additionalData['against_reference_no'] ?? null,
+                        'remarks' => $additionalData['remarks'] ?? null,
+                    ]);
+                } else {
+                    createTransaction($amount, $accountId, $voucherTypeId, $voucherNo, $type, $isOpening, $additionalData);
+                }
+            };
+
+            $totalReturnAmount = 0;
+            foreach ($salesReturn->sale_return_data as $data) {
+                $net = (float)($data->net_amount ?? 0);
+                if ($net <= 0) {
+                    $net = (float)($data->amount ?? 0);
+                }
+                if ($net <= 0) {
+                    $net = (float)($data->quantity * $data->rate);
+                }
+                $totalReturnAmount += $net;
+            }
+
+            $customerAccountId = $salesReturn->customer?->account_id ?? Customer::find($salesReturn->customer_id)?->account_id;
+            $salesReturnAccount = Account::where('hierarchy_path', '4-3')->first();
+
+            if ($totalReturnAmount > 0 && $customerAccountId && $salesReturnAccount) {
+                // Entry 1: Sales Return Account Debit (DR)
+                $handleTransaction($totalReturnAmount, $salesReturnAccount->id, $voucherTypeId, $sr_no, 'debit', 'no', [
+                    'counter_account_id' => $customerAccountId,
+                    'purpose' => "sales-return",
+                    'payment_against' => "sale-return",
+                    'against_reference_no' => $sr_no,
+                    'remarks' => "Sales Return booked against SR: {$sr_no}.",
+                ]);
+
+                // Entry 2: Customer Account Credit (CR)
+                $handleTransaction($totalReturnAmount, $customerAccountId, $voucherTypeId, $sr_no, 'credit', 'no', [
+                    'counter_account_id' => $salesReturnAccount->id,
+                    'purpose' => "sales-return",
+                    'payment_against' => "sale-return",
+                    'against_reference_no' => $sr_no,
+                    'remarks' => "Sales Return credited to Customer against SR: {$sr_no}.",
+                ]);
             }
         });
     }

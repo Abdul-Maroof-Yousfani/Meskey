@@ -123,6 +123,18 @@
         </div>
         <div class="col-md-3">
             <div class="form-group">
+                <label class="font-weight-bold">Other Amount</label>
+                <input type="number" class="form-control editable-field font-weight-bold" id="transporter_other_amount" name="transporter_other_amount" value="{{ $logisticsBill->transporter_other_amount ?? 0 }}" step="0.01" min="0" placeholder="Other Amount">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label class="font-weight-bold">Demurrage & Detention Amount</label>
+                <input type="number" class="form-control editable-field font-weight-bold" id="demurrage_detention_amount" name="demurrage_detention_amount" value="{{ $logisticsBill->demurrage_detention_amount ?? 0 }}" step="0.01" min="0" placeholder="Demurrage & Detention Amount">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
                 <label class="font-weight-bold">Transporter Amount</label>
                 <input type="number" class="form-control bg-light font-weight-bold" id="transporter_amount" value="{{ $logisticsBill->transporter_amount }}" readonly placeholder="Transporter Amount">
             </div>
@@ -131,7 +143,11 @@
             <div class="form-group">
                 <label class="font-weight-bold">Total Amount</label>
                 @php
-                    $netTransporterAmount = floatval($logisticsBill->transporter_amount ?? 0) - floatval($logisticsBill->transporter_deduction ?? 0);
+                    $netTransporterAmount = floatval($logisticsBill->transporter_amount ?? 0) 
+                        - floatval($logisticsBill->transporter_deduction ?? 0) 
+                        + floatval($logisticsBill->transporter_other_amount ?? 0) 
+                        + floatval($logisticsBill->demurrage_detention_amount ?? 0) 
+                        + floatval($logisticsBill->sales_return_transporter_amount ?? 0);
                 @endphp
                 <input type="number" class="form-control bg-light font-weight-bold text-primary" id="transporter_total_amount" value="{{ number_format($netTransporterAmount, 2, '.', '') }}" readonly placeholder="Total Amount">
             </div>
@@ -280,6 +296,45 @@
         </div>
     </div>
 
+    <!-- Sales Return Section -->
+    <div class="row mt-3">
+        <div class="col-12">
+            <h6 class="header-heading-sepration mb-2">Sales Return Details</h6>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="font-weight-bold">Sales Return</label>
+                <select name="sales_return_id" id="sales_return_id" class="form-control select2">
+                    @if(isset($salesReturns) && $salesReturns->count() > 0)
+                        <option value="">Select Sales Return</option>
+                        @foreach($salesReturns as $sr)
+                            @php
+                                $srQty = $sr->sale_return_data->sum('quantity');
+                            @endphp
+                            <option value="{{ $sr->id }}" data-qty="{{ $srQty }}" @selected($logisticsBill->sales_return_id == $sr->id)>
+                                {{ $sr->sr_no }} (Return Qty: {{ number_format($srQty, 2) }})
+                            </option>
+                        @endforeach
+                    @else
+                        <option value="" disabled selected>No Sales Return found for this DC/RR</option>
+                    @endif
+                </select>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="font-weight-bold">Return Qty</label>
+                <input type="number" class="form-control bg-light font-weight-bold" name="sales_return_qty" id="sales_return_qty" value="{{ $logisticsBill->sales_return_qty ?? 0 }}" readonly placeholder="Return Qty">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="font-weight-bold">Transporter Amount</label>
+                <input type="number" class="form-control font-weight-bold {{ $logisticsBill->sales_return_id ? 'editable-field' : 'bg-light' }}" name="sales_return_transporter_amount" id="sales_return_transporter_amount" value="{{ $logisticsBill->sales_return_transporter_amount ?? 0 }}" step="0.01" min="0" placeholder="Transporter Amount" {{ $logisticsBill->sales_return_id ? '' : 'readonly' }}>
+            </div>
+        </div>
+    </div>
+
     <div class="row bottom-button-bar mt-3">
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
@@ -296,18 +351,41 @@
             calculateOverallWeights();
         });
 
-        $('#transporter_deduction').on('input change keyup', function() {
+        $('#transporter_deduction, #transporter_other_amount, #demurrage_detention_amount, #sales_return_transporter_amount').on('input change keyup', function() {
             calculateTransporterTotal();
         });
 
+        $('#sales_return_id').on('change', function() {
+            toggleSalesReturnFields();
+        });
+
+        toggleSalesReturnFields();
         calculateOverallWeights();
         calculateTransporterTotal();
     });
 
+    function toggleSalesReturnFields() {
+        let srId = $('#sales_return_id').val();
+        if (srId) {
+            let selectedOption = $('#sales_return_id').find('option:selected');
+            let qty = parseFloat(selectedOption.data('qty')) || 0;
+            $('#sales_return_qty').val(qty.toFixed(2));
+            $('#sales_return_transporter_amount').prop('readonly', false).removeClass('bg-light').addClass('editable-field');
+        } else {
+            $('#sales_return_qty').val('0.00');
+            $('#sales_return_transporter_amount').val('0.00').prop('readonly', true).addClass('bg-light').removeClass('editable-field');
+        }
+        calculateTransporterTotal();
+    }
+
     function calculateTransporterTotal() {
         let amount = parseFloat($('#transporter_amount').val()) || 0;
         let deduction = parseFloat($('#transporter_deduction').val()) || 0;
-        let total = amount - deduction;
+        let otherAmount = parseFloat($('#transporter_other_amount').val()) || 0;
+        let demurrageAmount = parseFloat($('#demurrage_detention_amount').val()) || 0;
+        let srTransporterAmount = parseFloat($('#sales_return_transporter_amount').val()) || 0;
+
+        let total = amount - deduction + otherAmount + demurrageAmount + srTransporterAmount;
         $('#transporter_total_amount').val(total.toFixed(2));
     }
 

@@ -67,6 +67,9 @@ class LogisticsBillController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
+    /**
+     * Show the form for editing the specified resource.
+     */
     public function edit(int $id)
     {
         $logisticsBill = LogisticsBill::with([
@@ -75,13 +78,25 @@ class LogisticsBillController extends Controller
             'deliveryChallan.delivery_order.salesOrder.logistics.items',
             'items.product',
             'items.deliveryChallanData',
-            'weighbridges'
+            'weighbridges',
+            'salesReturn.sale_return_data'
         ])->findOrFail($id);
+
+        // Fetch any SalesReturn created for this RR / DC (from sale_return_sale_invoice pivot or sales_return_id)
+        $salesReturns = \App\Models\Sales\SalesReturn::with('sale_return_data')
+            ->where('am_approval_status', '!=', 'rejected')
+            ->where(function($q) use ($logisticsBill) {
+                $q->whereHas('receiving_requests', function($rrQ) use ($logisticsBill) {
+                    $rrQ->where('receiving_requests.id', $logisticsBill->id);
+                })
+                ->orWhere('id', $logisticsBill->sales_return_id);
+            })
+            ->get();
         
         $transporters = Transporter::all();
         $labours = Vendor::all();
 
-        return view('management.sales.logistics-bill.edit', compact('logisticsBill', 'transporters', 'labours'));
+        return view('management.sales.logistics-bill.edit', compact('logisticsBill', 'transporters', 'labours', 'salesReturns'));
     }
 
     /**
@@ -114,11 +129,28 @@ class LogisticsBillController extends Controller
             $exemptedWeight = floatval($request->exempted_weight ?? 0);
             $paymentWeight = floatval($logisticsBill->arrived_weight ?? 0) - $exemptedWeight;
 
+            $salesReturnId = $request->filled('sales_return_id') ? $request->sales_return_id : null;
+            $salesReturnQty = floatval($request->sales_return_qty ?? 0);
+            $salesReturnTransporterAmount = floatval($request->sales_return_transporter_amount ?? 0);
+            $transporterOtherAmount = floatval($request->transporter_other_amount ?? 0);
+            $demurrageDetentionAmount = floatval($request->demurrage_detention_amount ?? 0);
+
+            // If salesReturnId is selected and salesReturnQty is 0, auto-fill it from the SalesReturn model
+            if ($salesReturnId && $salesReturnQty <= 0) {
+                $sr = \App\Models\Sales\SalesReturn::with('sale_return_data')->find($salesReturnId);
+                $salesReturnQty = floatval($sr?->sale_return_data->sum('quantity') ?? 0);
+            }
+
             // Update main receiving request / logistics bill record
             $logisticsBill->update([
                 'exempted_weight' => $exemptedWeight,
                 'payment_weight' => $paymentWeight,
                 'transporter_deduction' => $request->transporter_deduction ?? 0,
+                'transporter_other_amount' => $transporterOtherAmount,
+                'demurrage_detention_amount' => $demurrageDetentionAmount,
+                'sales_return_id' => $salesReturnId,
+                'sales_return_qty' => $salesReturnQty,
+                'sales_return_transporter_amount' => $salesReturnTransporterAmount,
                 'unloading_paid_by' => $request->unloading_paid_by,
                 'weighbridge_paid_by' => $request->weighbridge_paid_by,
                 'labour_amount' => $totalLabourAmount,
@@ -152,7 +184,8 @@ class LogisticsBillController extends Controller
             'deliveryChallan.delivery_order.salesOrder.logistics.items',
             'items.product',
             'items.deliveryChallanData',
-            'weighbridges'
+            'weighbridges',
+            'salesReturn.sale_return_data'
         ])->findOrFail($id);
         
         $transporters = Transporter::all();

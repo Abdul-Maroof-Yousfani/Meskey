@@ -1152,7 +1152,18 @@ function sale_return_balance($sale_invoice_data_id)
     $data = SaleReturnData::where("sale_invoice_data_id", $sale_invoice_data_id)->get();
 
     $spent = $data->sum("no_of_bags");
-    $able_to_spend = (SalesInvoiceData::where("id", $sale_invoice_data_id)->first())->no_of_bags;
+    $siData = SalesInvoiceData::where("id", $sale_invoice_data_id)->first();
+    if ($siData) {
+        $able_to_spend = $siData->no_of_bags;
+    } else {
+        $dcData = \App\Models\Sales\DeliveryChallanData::where("id", $sale_invoice_data_id)->first();
+        if ($dcData) {
+            $able_to_spend = $dcData->no_of_bags;
+        } else {
+            $rrItem = \App\Models\Sales\ReceivingRequestItem::where("id", $sale_invoice_data_id)->first();
+            $able_to_spend = $rrItem?->no_of_bags ?? 0;
+        }
+    }
     $balance = (int) $able_to_spend - (int) $spent;
 
     return $balance;
@@ -1435,7 +1446,8 @@ if (!function_exists('createStockTransaction')) {
         ?float $price = null,
         ?float $avgPricePerKg = null,
         ?string $narration = null,
-        array $additionalData = []
+        array $additionalData = [],
+        ?float $avgCostPrice = null
     ) {
         try {
             $validVoucherTypes = ['grn', 'gdn', 'sale_return', 'purchase_return', 'delivery_challan'];
@@ -1461,6 +1473,7 @@ if (!function_exists('createStockTransaction')) {
                 'type' => $type,
                 'price' => $price,
                 'avg_price_per_kg' => $avgPricePerKg,
+                'avg_cost_price' => $avgCostPrice ?? ($additionalData['avg_cost_price'] ?? 0),
                 'narration' => $narration,
                 'created_at' => now(),
                 'updated_at' => now(),
