@@ -171,7 +171,7 @@
         samplingResults: [
             @foreach ($samplingRequestResults as $slab)
                 @if ($slab->applied_deduction)
-                                                                                                                                                                            {
+                                                                                                                                                                                                                            {
                         id: {{ $slab->id }},
                         applied_deduction: {{ $slab->applied_deduction ?? 0 }},
                         deduction_type: '{{ $slab->deduction_type ?? 'amount' }}',
@@ -185,10 +185,10 @@
         compulsoryResults: [
             @foreach ($samplingRequestCompulsuryResults as $slab)
                 @if ($slab->applied_deduction)
-                                                                                                {
+                                                                                                                        {
                     id: {{ $slab->id }},
                     applied_deduction: {{ $slab->applied_deduction ?? 0 }}
-                                                                                                },
+                                                                                                                        },
                 @endif
             @endforeach
         ],
@@ -927,6 +927,74 @@
                 </div>
             @endif
         </div>
+
+
+
+
+
+
+
+        <div class="col-12">
+            <div class="row">
+                <div class="col-md-12">
+                    <h6 class="header-heading-sepration toggleFreight" style="background: #0059ff26;">
+
+                        @php
+                            $arrivalTicket = $ticket;
+                        @endphp
+                        {{ $arrivalTicket->purchaseOrder?->saudaType?->name }} Freight Details
+                    </h6>
+                </div>
+            </div>
+
+
+
+            @if($arrivalTicket?->purchaseOrder?->saudaType?->name == 'Thadda')
+
+
+                <div class="row toggleFreightBox" style="display:none;">
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label>Attach Bilty</label>
+                            @if ($arrivalTicket->purchaseOrder?->purchaseFreight?->bilty_slip)
+                                <a href="{{ asset($arrivalTicket->purchaseOrder?->purchaseFreight?->bilty_slip) }}"
+                                    target="_blank">
+                                    <img src="{{ asset($arrivalTicket->purchaseOrder?->purchaseFreight?->bilty_slip) }}"
+                                        class="d-block w-100" />
+                                </a>
+                            @endif
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label>Attach Weighbridge Slip</label>
+                            @if ($arrivalTicket->purchaseOrder?->purchaseFreight?->weighbridge_slip)
+                                <a href="{{ asset($arrivalTicket->purchaseOrder?->purchaseFreight?->weighbridge_slip) }}"
+                                    target="_blank">
+                                    <img src="{{ asset($arrivalTicket->purchaseOrder?->purchaseFreight?->weighbridge_slip) }}"
+                                        class="d-block w-100" />
+                                </a>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label>Supplier Bill</label>
+                            @if ($arrivalTicket->purchaseOrder?->purchaseFreight?->supplier_bill)
+                                <a href="{{ asset($arrivalTicket->purchaseOrder?->purchaseFreight?->supplier_bill) }}"
+                                    target="_blank">
+                                    <img src="{{ asset($arrivalTicket->purchaseOrder?->purchaseFreight?->supplier_bill) }}"
+                                        class="d-block w-100" />
+                                </a>
+                            @endif
+                        </div>
+                    </div>
+
+
+                </div>
+            @endif
+        </div>
     </div>
 </div>
 
@@ -1258,7 +1326,7 @@
                 const totalDeductionsForFormula = totalSamplingDeductions + bagWeightAmount +
                     loadingWeighbridgeAmount + deduction_on_access_weight_amount;
                 const totalAmount = grossAmount - totalDeductionsForFormula + bagRateAmount +
-                                                                                                {{ $totalSupplierCommission }};
+                                                                                                                        {{ $totalSupplierCommission }};
 
                 $('#modal_total_amount').val(totalAmount);
                 $('#modal_total_amount_display').val(totalAmount.toFixed(2));
