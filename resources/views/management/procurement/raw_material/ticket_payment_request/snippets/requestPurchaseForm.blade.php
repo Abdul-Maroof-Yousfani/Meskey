@@ -321,7 +321,7 @@
 
             <div class="col-md-3">
                 <div class="form-group">
-                    <label>Access Weight</label>
+                    <label>Excess Weight</label>
                     <input type="text" class="form-control" name="access_weight" value="{{ $accessWeight }}" readonly>
                 </div>
             </div>
@@ -1435,7 +1435,7 @@
                 $(this).next('.error-message').remove();
 
                 if (exemptedWeight > access_weight) {
-                    $(this).after('<small class="error-message text-danger">Exempted weight cannot be greater than access weight.</small>');
+                    $(this).after('<small class="error-message text-danger">Exempted weight cannot be greater than Excess weight.</small>');
                     setBillingWeight(loadingweight);
                     updateSamplingResultsDeductions();
                     updateAllCalculations();
