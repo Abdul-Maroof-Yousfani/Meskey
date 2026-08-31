@@ -1341,8 +1341,8 @@
                 }
             });
 
-            $('#lumpsum-value').val(total.toFixed(2));
-            $('#lumpsum-kgs-value').val(totalKgs.toFixed(2));
+            $('#lumpsum-value').val(total.toFixed(4));
+            $('#lumpsum-kgs-value').val(totalKgs.toFixed(4));
         }
 
 
@@ -1449,12 +1449,12 @@
             });
 
             console.log('\n================== FINAL RESULTS ==================');
-            console.log('💰 Total Amount:', total.toFixed(2));
-            console.log('💰 Total KGs:', totalKgs.toFixed(2));
+            console.log('💰 Total Amount:', total.toFixed(4));
+            console.log('💰 Total KGs:', totalKgs.toFixed(4));
             console.log('================== CALCULATE TOTAL END ==================\n');
 
-            $('#lumpsum-value').val(total.toFixed(2));
-            $('#lumpsum-kgs-value').val(totalKgs.toFixed(2));
+            $('#lumpsum-value').val(total.toFixed(4));
+            $('#lumpsum-kgs-value').val(totalKgs.toFixed(4));
 
             return { total, totalKgs };
         }
