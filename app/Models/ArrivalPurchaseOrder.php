@@ -114,6 +114,10 @@ class ArrivalPurchaseOrder extends Model
     {
         return $this->hasOne(PurchaseFreight::class, 'arrival_purchase_order_id');
     }
+    public function truckSizeRange()
+    {
+        return $this->belongsTo(TruckSizeRange::class, 'truck_size_range_id');
+    }
 
     public function arrivalTickets()
     {

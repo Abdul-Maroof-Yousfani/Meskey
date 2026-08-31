@@ -284,7 +284,7 @@
                     class="form-control" readonly />
             </div>
         </div>
-        <div class="col-xs-4 col-sm-4 col-md-4" id="quantity-field"
+        <!-- <div class="col-xs-4 col-sm-4 col-md-4" id="quantity-field"
             style="{{ $arrivalPurchaseOrder->calculation_type == 'trucks' ? 'display:none;' : '' }}">
             <div class="form-group">
                 <label>Total Quantity (kg):</label>
@@ -292,7 +292,26 @@
                     value="{{ $arrivalPurchaseOrder->total_quantity }}" placeholder="Total Quantity"
                     class="form-control" readonly />
             </div>
+        </div> -->
+        <div class="col-xs-4 col-sm-4 col-md-4" id="quantity-field"
+            style="{{ $arrivalPurchaseOrder->calculation_type == 'trucks' ? 'display:none;' : '' }}">
+            <div class="form-group">
+                <label>Min Quantity (kg):</label>
+                <input type="number" name="min_quantity" id="min_quantity"
+                    value="{{ $arrivalPurchaseOrder->min_quantity }}" placeholder="Min Quantity" class="form-control"
+                    readonly />
+            </div>
         </div>
+        <div class="col-xs-4 col-sm-4 col-md-4" id="quantity-field"
+            style="{{ $arrivalPurchaseOrder->calculation_type == 'trucks' ? 'display:none;' : '' }}">
+            <div class="form-group">
+                <label>Max Quantity (kg):</label>
+                <input type="number" name="max_quantity" id="max_quantity"
+                    value="{{ $arrivalPurchaseOrder->max_quantity }}" placeholder="Max Quantity" class="form-control"
+                    readonly />
+            </div>
+        </div>
+
 
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group">
