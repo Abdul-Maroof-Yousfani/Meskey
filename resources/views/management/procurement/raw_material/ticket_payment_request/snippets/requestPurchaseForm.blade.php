@@ -1008,7 +1008,8 @@
             </div>
             <div class="col-md-6">
                 <div class="form-group">
-                    <label>Remaining {{ $totalAmount - $requestedAmount }}</label>
+                    <label>Remaining </label>
+                    <!-- {{ $totalAmount - $requestedAmount }} -->
                     <input type="text" class="form-control" name="remaining_amount" id="remaining_amount"
                         value="{{ number_format($totalAmount - $requestedAmount, 4) }}" readonly>
                 </div>
