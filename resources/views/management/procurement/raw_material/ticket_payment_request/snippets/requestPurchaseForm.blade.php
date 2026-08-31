@@ -345,7 +345,7 @@
             <div class="col-md-3">
                 <div class="form-group">
                     <label>Average Bag Weight</label>
-                    <input type="text" class="form-control" name="avg_rate" value="{{ round($avgRate, 2) }}" readonly>
+                    <input type="text" class="form-control" name="avg_rate" value="{{ round($avgRate, 4) }}" readonly>
                 </div>
             </div>
 
@@ -401,7 +401,7 @@
                             </thead>
                             <tbody id="sampling-results-tbody">
                                 <tr
-                                    data-lumpsum-amount="{{ number_format($Deductionfromhelperfunction['lumpsum']['amount_deduction'] ?? 0, 2) }}">
+                                    data-lumpsum-amount="{{ number_format($Deductionfromhelperfunction['lumpsum']['amount_deduction'] ?? 0, 4) }}">
                                     <td>Lumpsum Deduction Rupees</td>
                                     <td>
                                         <div class="input-group mb-0">
@@ -420,14 +420,14 @@
                                         <div class="input-group mb-0">
                                             <input type="text" class="form-control" name="lump_sum_deduction_rupees_total"
                                                 id="lump_sum_deduction_rupees_total"
-                                                value="{{ number_format($Deductionfromhelperfunction['lumpsum']['amount_deduction'] ?? 0, 2) }}"
+                                                value="{{ number_format($Deductionfromhelperfunction['lumpsum']['amount_deduction'] ?? 0, 4) }}"
                                                 readonly>
 
                                             <!-- {{ number_format($Deductionfromhelperfunction['lumpsum']['amount_deduction'] ?? 0, 2) }}Rs. -->
                                     </td>
                                 </tr>
                                 <tr
-                                    data-lumpsum-kgamount="{{ number_format($Deductionfromhelperfunction['lumpsum']['kgs_deduction'] ?? 0, 2) }}">
+                                    data-lumpsum-kgamount="{{ number_format($Deductionfromhelperfunction['lumpsum']['kgs_deduction'] ?? 0, 4) }}">
                                     <td>Lumpsum Deduction KG's</td>
                                     <td>
                                         <div class="input-group mb-0">
@@ -448,7 +448,7 @@
                                         <div class="input-group mb-0">
                                             <input type="text" class="form-control" name="lump_sum_deduction_kgs_total"
                                                 id="lump_sum_deduction_kgs_total"
-                                                value="{{ number_format($Deductionfromhelperfunction['lumpsum']['kgs_deduction'] ?? 0, 2) }}"
+                                                value="{{ number_format($Deductionfromhelperfunction['lumpsum']['kgs_deduction'] ?? 0, 4) }}"
                                                 readonly>
 
                                             <!-- {{ number_format($Deductionfromhelperfunction['lumpsum']['kgs_deduction'] ?? 0, 2) }} -->
@@ -473,7 +473,7 @@
                                         <div class="input-group mb-0">
                                             <input type="text" class="form-control" name="other_deduction[kg_amount]"
                                                 id="other_deduction_amount_display"
-                                                value="{{ number_format($existingOtherDeductionAmount, 2) }}" readonly>
+                                                value="{{ number_format($existingOtherDeductionAmount, 4) }}" readonly>
                                             <input type="hidden" class="form-control" name="other_deduction[deduction_amount]"
                                                 id="other_deduction_amount" value="{{ $existingOtherDeductionAmount }}">
                                         </div>
@@ -546,7 +546,7 @@
                                         <div class="input-group mb-0">
                                             <input type="text" class="form-control" name="filling_bags_amount" readonly
                                                 id="filling_bags_amount"
-                                                value="{{ number_format($fillingBagsAmount ?? 0, 2) }}">
+                                                value="{{ number_format($fillingBagsAmount ?? 0, 4) }}">
                                             <input type="hidden" class="form-control" name="filling_bags_amount_hidden"
                                                 id="filling_bags_amount_hidden" value="{{ $fillingBagsAmount ?? 0 }}">
                                         </div>
@@ -690,7 +690,7 @@
                                                 <div class="input-group mb-0">
                                                     <input type="text" class="form-control deduction-amount-display"
                                                         name="sampling_results[{{ $slab->id }}][deduction_amount_display]"
-                                                        value="{{ number_format($calculatedValue, 2) }}" placeholder="deduction_amount"
+                                                        value="{{ number_format($calculatedValue, 4) }}" placeholder="deduction_amount"
                                                         readonly data-slab-id="{{ $slab->id }}">
                                                     <input type="hidden" class="form-control deduction-amount-hidden"
                                                         name="sampling_results[{{ $slab->id }}][deduction_amount]"
@@ -738,7 +738,7 @@
                                                 <div class="input-group mb-0">
                                                     <input type="text" class="form-control compulsory-deduction-amount"
                                                         name="compulsory_results[{{ $slab->id }}][deduction_amount]"
-                                                        value="{{ number_format($compulsoryCalculatedValue, 2) }}"
+                                                        value="{{ number_format($compulsoryCalculatedValue, 4) }}"
                                                         placeholder="deduction_amount" readonly data-compulsory-id="{{ $slab->id }}">
                                                 </div>
                                             </td>
@@ -767,7 +767,7 @@
                                         <div class="input-group mb-0">
                                             <input type="text" class="form-control" name="other_deduction[kg_amount]"
                                                 id="other_deduction_amount_display"
-                                                value="{{ number_format($existingOtherDeductionAmount, 2) }}" readonly>
+                                                value="{{ number_format($existingOtherDeductionAmount, 4) }}" readonly>
                                             <input type="hidden" class="form-control" name="other_deduction[deduction_amount]"
                                                 id="other_deduction_amount" value="{{ $existingOtherDeductionAmount }}">
                                         </div>
@@ -841,7 +841,7 @@
                                         <div class="input-group mb-0">
                                             <input type="text" class="form-control" name="filling_bags_amount" readonly
                                                 id="filling_bags_amount"
-                                                value="{{ number_format($fillingBagsAmount ?? 0, 2) }}">
+                                                value="{{ number_format($fillingBagsAmount ?? 0, 4) }}">
                                             <input type="hidden" class="form-control" name="filling_bags[amount_hidden]"
                                                 id="filling_bags_amount_hidden" value="{{ $fillingBagsAmount ?? 0 }}">
                                         </div>
@@ -870,19 +870,19 @@
                                 <input type="number" step="0.01" class="form-control editable-field"
                                     name="bag_weight_amount" id="bag_weight_amount" value="{{ $bagWeightInKgSum }}">
                                 <input type="hidden" class="form-control" name="bag_weight_amount_display"
-                                    id="bag_weight_amount_display" value="{{ number_format($bagWeightInKgSum, 2) }}">
+                                    id="bag_weight_amount_display" value="{{ number_format($bagWeightInKgSum, 4) }}">
                             </td>
                         </tr>
                         <tr class="d-none">
                             <td><strong>Bags Rate</strong></td>
                             <td>
                                 <input type="text" class="form-control" name="bag_rate"
-                                    value="{{ number_format($bagRate, 2) }}" readonly>
+                                    value="{{ number_format($bagRate, 4) }}" readonly>
                             </td>
                             <td>N/A</td>
                             <td>
                                 <input type="text" class="form-control" name="bag_rate_amount_display"
-                                    id="bag_rate_amount_display" value="{{ number_format($bagsRateSum, 2) }}" readonly>
+                                    id="bag_rate_amount_display" value="{{ number_format($bagsRateSum, 4) }}" readonly>
                                 <input type="hidden" class="form-control" name="bag_rate_amount" id="bag_rate_amount"
                                     value="{{ $bagsRateSum }}" readonly>
                             </td>
@@ -894,7 +894,7 @@
                             <td>
                                 <input type="text" class="form-control" name="loading_weighbridge_amount_display"
                                     id="loading_weighbridge_amount_display"
-                                    value="{{ number_format($loadingWeighbridgeSum, 2) }}" readonly>
+                                    value="{{ number_format($loadingWeighbridgeSum, 4) }}" readonly>
                                 <input type="hidden" class="form-control" name="loading_weighbridge_amount"
                                     id="loading_weighbridge_amount" value="{{ $loadingWeighbridgeSum }}" readonly>
                             </td>
@@ -906,7 +906,7 @@
                             <td>
                                 <input type="text" class="form-control" name="freight_deduction_amount_display"
                                     id="freight_deduction_amount_display"
-                                    value="{{ number_format($grossFreightAmount, 2) }}" readonly>
+                                    value="{{ number_format($grossFreightAmount, 4) }}" readonly>
                                 <input type="hidden" class="form-control" name="loading_weighbridge_amount1"
                                     id="freight_deduction_amount" value="{{ $grossFreightAmount }}" readonly>
                             </td>
@@ -927,7 +927,7 @@
                             <td>
                                 <input type="text" class="form-control" name="supplier_commission_display"
                                     id="supplier_commission_display"
-                                    value="{{ number_format($purchaseOrder->supplier_commission * $arrivedWeight, 2) }}"
+                                    value="{{ number_format($purchaseOrder->supplier_commission * $arrivedWeight, 4) }}"
                                     readonly>
                                 <input type="hidden" class="form-control" name="supplier_commission"
                                     id="supplier_commission"
@@ -961,7 +961,7 @@
                                 <td>
                                     <input type="text" class="form-control" name="brokery_amount_display"
                                         id="brokery_amount_display"
-                                        value="{{ number_format($purchaseOrder->supplier_commission * $arrivedWeight, 2) }}"
+                                        value="{{ number_format($purchaseOrder->supplier_commission * $arrivedWeight, 4) }}"
                                         readonly>
                                     <input type="hidden" class="form-control" name="brokery_amount" id="brokery_amount"
                                         value="{{ $purchaseOrder->supplier_commission * $arrivedWeight }}" readonly>
@@ -987,7 +987,7 @@
                 <div class="form-group">
                     <label>Amount</label>
                     <input type="text" class="form-control" name="total_amount_display" id="total_amount_display"
-                        value="{{ number_format($totalwithCommision, 2) }}" readonly>
+                        value="{{ number_format($totalwithCommision, 4) }}" readonly>
                     <input type="hidden" class="form-control" name="total_amount" id="total_amount"
                         value="{{ $totalwithCommision }}" readonly>
                 </div>
@@ -1010,7 +1010,7 @@
                 <div class="form-group">
                     <label>Remaining {{ $totalAmount - $requestedAmount }}</label>
                     <input type="text" class="form-control" name="remaining_amount" id="remaining_amount"
-                        value="{{ number_format($totalAmount - $requestedAmount, 2) }}" readonly>
+                        value="{{ number_format($totalAmount - $requestedAmount, 4) }}" readonly>
                 </div>
             </div>
             @if (!$isApprovalPage)
@@ -1170,7 +1170,7 @@
                 const rate = parseFloat($('#filling_bags_rate').val()) || 0;
                 const amount = noOfBags * rate;
 
-                $('#filling_bags_amount').val(amount.toFixed(2));
+                $('#filling_bags_amount').val(amount.toFixed(4));
                 $('#filling_bags_amount_hidden').val(amount);
 
                 return amount;
@@ -1242,7 +1242,7 @@
                 const otherDeductionAmount = otherDeductionKg * (loadingWeight - bagWeightTotal);
                 console.log('other deductioh: ' + loadingWeight);
                 $('#other_deduction_amount').val(otherDeductionAmount);
-                $('#other_deduction_amount_display').val(otherDeductionAmount.toFixed(2));
+                $('#other_deduction_amount_display').val(otherDeductionAmount.toFixed(4));
 
                 return otherDeductionAmount;
             }
@@ -1255,7 +1255,7 @@
                     const calculatedValue = calculateSlabDeduction(slabData, netWeight);
                     totalSamplingAmount += calculatedValue;
 
-                    $(`.deduction-amount-display[data-slab-id="${slabData.id}"]`).val(calculatedValue.toFixed(2));
+                    $(`.deduction-amount-display[data-slab-id="${slabData.id}"]`).val(calculatedValue.toFixed(4));
                     $(`.deduction-amount-hidden[data-slab-id="${slabData.id}"]`).val(calculatedValue);
                 });
 
@@ -1263,7 +1263,7 @@
                     const calculatedValue = slabData.applied_deduction * netWeight;
                     totalSamplingAmount += calculatedValue;
 
-                    $(`.compulsory-deduction-amount[data-compulsory-id="${slabData.id}"]`).val(calculatedValue.toFixed(2));
+                    $(`.compulsory-deduction-amount[data-compulsory-id="${slabData.id}"]`).val(calculatedValue.toFixed(4));
                 });
 
                 if (showLumpSum && !isSlabs && !isCompulsury) {
@@ -1279,8 +1279,8 @@
                     lumpsumKgsCalculatedValue = (lumpsumKgsCalculatedValue / 100) * ratePerKg;
                     var lumpsumRupeesCalculatedValue = parseFloat(lump_sum_deduction_rupees) * parseFloat(loadingWeight);
 
-                    $('#lump_sum_deduction_kgs_total').val(lumpsumKgsCalculatedValue.toFixed(2));
-                    $('#lump_sum_deduction_rupees_total').val(lumpsumRupeesCalculatedValue.toFixed(2));
+                    $('#lump_sum_deduction_kgs_total').val(lumpsumKgsCalculatedValue.toFixed(4));
+                    $('#lump_sum_deduction_rupees_total').val(lumpsumRupeesCalculatedValue.toFixed(4));
 
 
                     // totalSamplingAmount += parseFloat(lumpsumAmount.replace(/,/g, '')) || 0;
@@ -1303,7 +1303,7 @@
                 const bagWeightAmount = parseFloat($('#bag_weight_amount').val()) || 0;
 
                 const bagWeightTotal = currentBagWeight * noOfBags;
-                $('#bag_weight_total').val(bagWeightTotal.toFixed(2));
+                $('#bag_weight_total').val(bagWeightTotal.toFixed(4));
 
                 const calculatedBagWeightAmount = ratePerKg * bagWeightTotal;
 
@@ -1311,7 +1311,7 @@
                     const newBagWeight = bagWeightAmount / (ratePerKg * noOfBags);
                     if (!isNaN(newBagWeight) && isFinite(newBagWeight)) {
                         $('#bag_weight_input').val(newBagWeight.toFixed(4));
-                        $('#bag_weight_total').val((newBagWeight * noOfBags).toFixed(2));
+                        $('#bag_weight_total').val((newBagWeight * noOfBags).toFixed(4));
                     }
                 }
             }
@@ -1326,17 +1326,17 @@
                 const currentPaymentRequest = parseFloat(paymentRequestInput.val()) || 0;
                 const remainingAmount = totalAmount - requested_amount;
 
-                $('#remaining_amount').val(remainingAmount.toFixed(2));
+                $('#remaining_amount').val(remainingAmount.toFixed(4));
 
                 if (currentPaymentRequest > 0) {
                     const percentage = remainingAmount > 0 ? (currentPaymentRequest / remainingAmount) * 100 : 0;
-                    percentageInput.val(percentage.toFixed(2));
+                    percentageInput.val(percentage.toFixed(4));
                 } else {
                     percentageInput.val('0');
                 }
 
                 if (currentPaymentRequest > remainingAmount) {
-                    paymentRequestInput.val(remainingAmount.toFixed(2));
+                    paymentRequestInput.val(remainingAmount.toFixed(4));
                     percentageInput.val('100');
                 }
             }
@@ -1376,18 +1376,18 @@
 
                 const bagRateAmount = bagRate * noOfBags;
                 $('#bag_rate_amount').val(bagRateAmount);
-                $('#bag_rate_amount_display').val(bagRateAmount.toFixed(2));
+                $('#bag_rate_amount_display').val(bagRateAmount.toFixed(4));
 
                 const loadingWeighbridgeAmount = kantaCharges / 2;
                 $('#loading_weighbridge_amount').val(loadingWeighbridgeAmount);
-                $('#loading_weighbridge_amount_display').val(loadingWeighbridgeAmount.toFixed(2));
+                $('#loading_weighbridge_amount_display').val(loadingWeighbridgeAmount.toFixed(4));
 
                 const totalSamplingDeductions = updateSamplingResultsDeductions();
 
                 const deduction_on_access_weight_kg = parseFloat($('#rerate_on_access_weight_kg').val()) || 0;
                 const deduction_on_access_weight_rate = parseFloat($('#rerate_on_access_weight_rate').val()) || 0;
                 const deduction_on_access_weight_amount = deduction_on_access_weight_rate * deduction_on_access_weight_kg;
-                $('#rerate_on_access_weight_amount').val(deduction_on_access_weight_amount.toFixed(2) || 0);
+                $('#rerate_on_access_weight_amount').val(deduction_on_access_weight_amount.toFixed(4) || 0);
 
 
                 //     Calculate filling bags deduction
@@ -1420,10 +1420,10 @@
 
 
                 $('#total_amount').val(totalAmount);
-                $('#total_amount_display').val(totalAmount.toFixed(2));
+                $('#total_amount_display').val(totalAmount.toFixed(4));
 
                 updatePaymentRequestCalculations();
-                $('#bag_weight_amount_display').val(bagWeightAmount.toFixed(2));
+                $('#bag_weight_amount_display').val(bagWeightAmount.toFixed(4));
             }
 
             // ================ FIXED: Exempted weight handler ================
@@ -1459,7 +1459,7 @@
             $('#bag_weight_input').on('input', function () {
                 const currentBagWeight = parseFloat($(this).val()) || 0;
                 const bagWeightAmount = ratePerKg * currentBagWeight * noOfBags;
-                $('#bag_weight_amount').val(bagWeightAmount.toFixed(2));
+                $('#bag_weight_amount').val(bagWeightAmount.toFixed(4));
                 updateAllCalculations();
             });
 
@@ -1475,16 +1475,16 @@
                 const remainingAmount = totalAmount - requested_amount;
 
                 if (newRequested > remainingAmount) {
-                    $(this).val(remainingAmount.toFixed(2));
+                    $(this).val(remainingAmount.toFixed(4));
                 }
 
                 const percentageInput = $('.percentage-input');
                 const finalRequested = parseFloat($(this).val()) || 0;
                 const percentage = remainingAmount > 0 ? (finalRequested / remainingAmount) * 100 : 0;
-                percentageInput.val(percentage.toFixed(2));
+                percentageInput.val(percentage.toFixed(4));
 
                 const finalRemaining = totalAmount - (paidAmount + finalRequested);
-                $('#remaining_amount').val(finalRemaining.toFixed(2));
+                $('#remaining_amount').val(finalRemaining.toFixed(4));
             });
 
             $('.percentage-input').on('input', function () {
@@ -1500,10 +1500,10 @@
                 const remainingAmount = totalAmount - requested_amount;
 
                 const amount = (remainingAmount * percentage) / 100;
-                $('.payment-request-input').val(amount.toFixed(2));
+                $('.payment-request-input').val(amount.toFixed(4));
 
                 const finalRemaining = totalAmount - (requested_amount + amount);
-                $('#remaining_amount').val(finalRemaining.toFixed(2));
+                $('#remaining_amount').val(finalRemaining.toFixed(4));
             });
 
             $('input[name="freight_pay_request_amount"]').on('input', function () {
@@ -1511,7 +1511,7 @@
                 const paidAmount = parseFloat({{ $pRsSumForFreight }});
                 const paymentRequest = parseFloat($(this).val()) || 0;
                 const remaining = (amount - paymentRequest - paidAmount);
-                $('input[name="remaining_freight"]').val(remaining.toFixed(2));
+                $('input[name="remaining_freight"]').val(remaining.toFixed(4));
             });
 
             const remainingAmountF = parseFloat($('input[name="remaining_freight"]').val()) || 0;
@@ -1525,17 +1525,17 @@
                     $(this).val(100);
                 }
                 const amount = (remainingAmountF * percentage) / 100;
-                paymentRequestInputF.val(amount.toFixed(2));
+                paymentRequestInputF.val(amount.toFixed(4));
             });
 
             paymentRequestInputF.on('input', function () {
                 let amount = parseFloat($(this).val()) || 0;
                 if (amount > remainingAmountF) {
                     amount = remainingAmountF;
-                    $(this).val(remainingAmountF.toFixed(2));
+                    $(this).val(remainingAmountF.toFixed(4));
                 }
                 const percentage = remainingAmountF > 0 ? (amount / remainingAmountF) * 100 : 0;
-                percentageInputF.val(percentage.toFixed(2));
+                percentageInputF.val(percentage.toFixed(4));
             });
 
             // Other handlers
