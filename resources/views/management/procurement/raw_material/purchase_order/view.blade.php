@@ -326,7 +326,7 @@
             <div class="form-group">
                 <label>No of Bags Range:</label>
                 <input type="text" name="bags_range" id="bags_range"
-                    value="{{ $arrivalPurchaseOrder->min_bags }} - {{ $arrivalPurchaseOrder->max_bags }} bags"
+                    value="{{ $arrivalPurchaseOrder->min_quantity / ($arrivalPurchaseOrder->product->bag_weight_for_purchasing ?? 1) }} - {{ $arrivalPurchaseOrder->max_quantity / ($arrivalPurchaseOrder->product->bag_weight_for_purchasing ?? 1) }} bags"
                     placeholder="Bags Range" class="form-control" readonly />
             </div>
         </div>
