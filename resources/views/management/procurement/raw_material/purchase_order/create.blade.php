@@ -48,7 +48,7 @@
                 <select name="supplier_id" id="supplier_id" class="form-control select22">
                     <option value="">Supplier</option>
                     {{-- @foreach ($suppliers as $supplier)
-                        <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
+                    <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
                     @endforeach --}}
                 </select>
             </div>
@@ -84,7 +84,8 @@
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group">
                 <label>Type:</label>
-                <select name="broker_one_calculation_type" id="broker_one_calculation_type" class="form-control select2">
+                <select name="broker_one_calculation_type" id="broker_one_calculation_type"
+                    class="form-control select2">
                     <option value="">Select Type</option>
                     <option value="trucks">Trucks Wise</option>
                     <option value="quantity">Quantity Wise</option>
@@ -95,9 +96,8 @@
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group ">
                 <label>Commission:</label>
-                <input type="number" id="broker_one_commission" name="broker_one_commission"
-                    placeholder="Commission" class="form-control" step="any" min="0"
-                    max="999999" />
+                <input type="number" id="broker_one_commission" name="broker_one_commission" placeholder="Commission"
+                    class="form-control" step="any" min="0" max="999999" />
             </div>
         </div>
     </div>
@@ -123,7 +123,8 @@
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group">
                 <label>Type:</label>
-                <select name="broker_two_calculation_type" id="broker_two_calculation_type" class="form-control select2">
+                <select name="broker_two_calculation_type" id="broker_two_calculation_type"
+                    class="form-control select2">
                     <option value="">Select Type</option>
                     <option value="trucks">Trucks Wise</option>
                     <option value="quantity">Quantity Wise</option>
@@ -134,9 +135,8 @@
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group ">
                 <label>Commission:</label>
-                <input type="number" id="broker_two_commission" name="broker_two_commission"
-                    placeholder="Commission" class="form-control" step="any" min="0"
-                    max="999999" />
+                <input type="number" id="broker_two_commission" name="broker_two_commission" placeholder="Commission"
+                    class="form-control" step="any" min="0" max="999999" />
 
             </div>
         </div>
@@ -163,7 +163,8 @@
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group">
                 <label>Type:</label>
-                <select name="broker_three_calculation_type" id="broker_three_calculation_type" class="form-control select2">
+                <select name="broker_three_calculation_type" id="broker_three_calculation_type"
+                    class="form-control select2">
                     <option value="">Select Type</option>
                     <option value="trucks">Trucks Wise</option>
                     <option value="quantity">Quantity Wise</option>
@@ -175,8 +176,7 @@
             <div class="form-group ">
                 <label>Commission:</label>
                 <input type="number" id="broker_three_commission" name="broker_three_commission"
-                    placeholder="Commission" class="form-control" step="any" min="0"
-                    max="999999" />
+                    placeholder="Commission" class="form-control" step="any" min="0" max="999999" />
 
             </div>
         </div>
@@ -188,8 +188,7 @@
                 <select name="product_id" id="product_id" class="form-control select22">
                     <option value="">Commodity</option>
                     @foreach ($products as $product)
-                        <option value="{{ $product->id }}"
-                            data-bag-weight="{{ $product->bag_weight_for_purchasing }}">
+                        <option value="{{ $product->id }}" data-bag-weight="{{ $product->bag_weight_for_purchasing }}">
                             {{ $product->name }}
                         </option>
                     @endforeach
@@ -246,22 +245,23 @@
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group ">
                 <label>Rate Per KG:</label>
-                <input type="number" step="0.01" name="rate_per_kg" placeholder="Rate Per KG"
-                    class="form-control" />
+                <input type="number" step="0.01" name="rate_per_kg" placeholder="Rate Per KG" class="form-control" />
 
             </div>
         </div>
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group ">
                 <label>Rate Per Mound:</label>
-                <input type="number" step="0.01" name="rate_per_mound" placeholder="Rate Per Mound" class="form-control" />
+                <input type="number" step="0.01" name="rate_per_mound" placeholder="Rate Per Mound"
+                    class="form-control" />
 
             </div>
         </div>
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group ">
                 <label>Rate Per 100KG:</label>
-                <input type="number" step="0.01" name="rate_per_100kg" placeholder="Rate Per 100KG" class="form-control" />
+                <input type="number" step="0.01" name="rate_per_100kg" placeholder="Rate Per 100KG"
+                    class="form-control" />
             </div>
         </div>
     </div>
@@ -327,8 +327,8 @@
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group">
                 <label>No of Bags Range:</label>
-                <input type="text" name="bags_range" id="bags_range" placeholder="Bags Range"
-                    class="form-control" readonly />
+                <input type="text" name="bags_range" id="bags_range" placeholder="Bags Range" class="form-control"
+                    readonly />
             </div>
         </div>
     </div>
@@ -357,8 +357,7 @@
         <div class="col-xs-4 col-sm-4 col-md-4">
             <div class="form-group ">
                 <label>Weighbridge only From:</label>
-                <input type="text" name="weighbridge_from" placeholder="Weighbridge only From"
-                    class="form-control" />
+                <input type="text" name="weighbridge_from" placeholder="Weighbridge only From" class="form-control" />
             </div>
         </div>
         <div class="col-xs-4 col-sm-4 col-md-4">
@@ -383,10 +382,8 @@
         </div>
         <div class="col-xs-12 col-sm-12 col-md-12 d-none">
             <div class="form-group">
-                <input type="text" name="min_bags" id="minBags" placeholder="Bags Range"
-                    class="form-control" />
-                <input type="text" name="max_bags" id="maxBags" placeholder="Bags Range"
-                    class="form-control" />
+                <input type="text" name="min_bags" id="minBags" placeholder="Bags Range" class="form-control" />
+                <input type="text" name="max_bags" id="maxBags" placeholder="Bags Range" class="form-control" />
                 <input name="min_quantity" id="minQty" placeholder="minQty" class="form-control">
                 <input name="max_quantity" id="maxQty" placeholder="maxQty" class="form-control">
             </div>
@@ -402,17 +399,17 @@
 </form>
 
 <script>
-    $(document).ready(function() {
+    $(document).ready(function () {
         $('.select22').select2();
 
-        $('.broker-select').on('change', function() {
+        $('.broker-select').on('change', function () {
             var commissionInput = $($(this).data('commission'));
             if ($(this).val() === '') {
                 commissionInput.val('');
             }
         });
 
-        $('#contract_date').change(function() {
+        $('#contract_date').change(function () {
             const contractDate = $(this).val();
             if (contractDate) {
                 $('#delivery_date').attr('min', contractDate);
@@ -425,7 +422,7 @@
             }
         });
 
-        $('#company_location_id').change(function() {
+        $('#company_location_id').change(function () {
             var locationId = $(this).val();
 
             if (locationId) {
@@ -435,13 +432,13 @@
                     data: {
                         location_id: locationId
                     },
-                    beforeSend: function() {
+                    beforeSend: function () {
                         $('#supplier_id').html('<option value="">Loading...</option>');
                     },
-                    success: function(response) {
+                    success: function (response) {
                         if (response.success && response.suppliers.length > 0) {
                             var options = '<option value="">Select Supplier</option>';
-                            $.each(response.suppliers, function(key, supplier) {
+                            $.each(response.suppliers, function (key, supplier) {
                                 options += '<option value="' + supplier.id + '">' +
                                     supplier.name + '</option>';
                             });
@@ -451,7 +448,7 @@
                                 '<option value="">No suppliers found</option>');
                         }
                     },
-                    error: function() {
+                    error: function () {
                         $('#supplier_id').html(
                             '<option value="">Error loading suppliers</option>');
                     }
@@ -461,7 +458,7 @@
             }
         });
 
-        $('#company_location_id, #contract_date').change(function() {
+        $('#company_location_id, #contract_date').change(function () {
             generateContractNumber();
         });
 
@@ -482,20 +479,20 @@
                         location_id: locationId,
                         contract_date: contractDate
                     },
-                    beforeSend: function() {},
-                    success: function(response) {
+                    beforeSend: function () { },
+                    success: function (response) {
                         if (response.success) {
                             $('[name="contract_no"]').val(response.contract_no);
                         }
                     },
-                    error: function(xhr) {
+                    error: function (xhr) {
                         console.error(xhr.responseText);
                     }
                 });
             }
         }
 
-        $('#product_id').change(function() {
+        $('#product_id').change(function () {
             var selectedOption = $(this).find('option:selected');
 
             var product_id = $(this).val();
@@ -507,7 +504,7 @@
                         product_id: product_id
                     },
                     dataType: 'json',
-                    beforeSend: function() {
+                    beforeSend: function () {
                         Swal.fire({
                             title: "Processing...",
                             text: "Please wait while fetching slabs.",
@@ -517,7 +514,7 @@
                             }
                         });
                     },
-                    success: function(response) {
+                    success: function (response) {
                         Swal.close();
                         if (response.success) {
                             $('#slabsContainer').html(response.html);
@@ -526,7 +523,7 @@
                                 "info");
                         }
                     },
-                    error: function() {
+                    error: function () {
                         Swal.close();
                         Swal.fire("Error", "Something went wrong. Please try again.",
                             "error");
@@ -537,7 +534,7 @@
             }
         });
 
-        $(document).on('input change', '#no_of_trucks, #min_quantity_input, #max_quantity_input', function() {
+        $(document).on('input change', '#no_of_trucks, #min_quantity_input, #max_quantity_input', function () {
 
             calculateQuantityAndBags();
         });
@@ -568,25 +565,25 @@
             }
         }
 
-        $('[name="rate_per_kg"]').on('input', function() {
+        $('[name="rate_per_kg"]').on('input', function () {
             calculateRates('rate_per_kg');
         });
 
-        $('[name="rate_per_mound"]').on('input', function() {
+        $('[name="rate_per_mound"]').on('input', function () {
             calculateRates('rate_per_mound');
         });
 
-        $('[name="rate_per_100kg"]').on('input', function() {
+        $('[name="rate_per_100kg"]').on('input', function () {
             calculateRates('rate_per_100kg');
         });
 
         $('#truck_size_range').trigger('change')
 
-        $(document).ready(function() {
+        $(document).ready(function () {
             let TRUCK_MIN = {{ $truckSizeRanges->first()->min_number ?? 0 }};
             let TRUCK_MAX = {{ $truckSizeRanges->first()->max_number ?? 0 }};
 
-            $('#truck_size_range').on('change', function() {
+            $('#truck_size_range').on('change', function () {
                 const selectedOption = $(this).find('option:selected');
                 const min = selectedOption.data('min');
                 const max = selectedOption.data('max');
@@ -610,7 +607,7 @@
             // Initialize calculation type
             updateCalculationFields();
 
-            $('#calculation_type').change(function() {
+            $('#calculation_type').change(function () {
                 updateCalculationFields();
                 calculateQuantityAndBags();
             });
@@ -649,14 +646,14 @@
                     </div>
                 `);
 
-                    $('#min_quantity_input, #max_quantity_input').on('input change', function() {
+                    $('#min_quantity_input, #max_quantity_input').on('input change', function () {
                         calculateQuantityAndBags();
                     });
                 }
             }
 
             $('#no_of_trucks, #total_quantity, #bag_weight, #product_id').on('input change',
-                function() {
+                function () {
                     calculateQuantityAndBags();
                 });
 
@@ -677,7 +674,7 @@
                         // $('#no_of_trucks').val(Math.ceil(MIN_QTY / TRUCK_MIN));
                         $('#no_of_trucks').val(Math.ceil(1));
                     }
-                    
+
 
                 } else {
                     minQuantity = parseInt($('#min_quantity_input').val()) || MIN_QTY;
@@ -715,6 +712,9 @@
                     $('#bags_range').val(minBags.toLocaleString() + ' - ' + maxBags.toLocaleString() +
                         ' bags');
                 }
+
+                $('#minBags').val(minBags);
+                $('#maxBags').val(maxBags);
             }
             calculateQuantityAndBags();
         });
