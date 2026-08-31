@@ -1017,14 +1017,14 @@
                 <div class="col">
                     <div class="form-group">
                         <label>Percentage</label>
-                        <input type="number" min="0" max="100" step="0.01" class="form-control percentage-input" value="0"
+                        <input type="number" min="0" max="100" step="0.0001" class="form-control percentage-input" value="0"
                             placeholder="Enter percentage">
                     </div>
                 </div>
                 <div class="col">
                     <div class="form-group">
                         <label>Payment Request</label>
-                        <input type="number" step="0.01" class="form-control payment-request-input"
+                        <input type="number" step="0.0001" class="form-control payment-request-input"
                             name="{{ $isApprovalPage ? '' : 'payment_request_amount' }}" value="{{ $currentPaymentAmount }}"
                             placeholder="Enter payment request">
                     </div>
