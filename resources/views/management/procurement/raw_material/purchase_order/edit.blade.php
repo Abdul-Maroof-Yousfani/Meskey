@@ -560,6 +560,10 @@
              const min = selectedOption.data('min');
              const max = selectedOption.data('max');
 
+
+
+                         
+
              if (min && max) {
                  TRUCK_MIN = min;
                  TRUCK_MAX = max;
@@ -632,16 +636,16 @@
 
              switch (changedField) {
                  case 'rate_per_kg':
-                     $('[name="rate_per_mound"]').val((ratePerKg * KG_PER_MOUND).toFixed(2));
-                     $('[name="rate_per_100kg"]').val((ratePerKg * KG_PER_100KG).toFixed(2));
+                     $('[name="rate_per_mound"]').val((ratePerKg * KG_PER_MOUND).toFixed(4));
+                     $('[name="rate_per_100kg"]').val((ratePerKg * KG_PER_100KG).toFixed(4));
                      break;
                  case 'rate_per_mound':
-                     $('[name="rate_per_kg"]').val((ratePerMound / KG_PER_MOUND).toFixed(2));
-                     $('[name="rate_per_100kg"]').val((ratePerMound / KG_PER_MOUND * KG_PER_100KG).toFixed(2));
+                     $('[name="rate_per_kg"]').val((ratePerMound / KG_PER_MOUND).toFixed(4));
+                     $('[name="rate_per_100kg"]').val((ratePerMound / KG_PER_MOUND * KG_PER_100KG).toFixed(4));
                      break;
                  case 'rate_per_100kg':
-                     $('[name="rate_per_kg"]').val((ratePer100kg / KG_PER_100KG).toFixed(2));
-                     $('[name="rate_per_mound"]').val((ratePer100kg / KG_PER_100KG * KG_PER_MOUND).toFixed(2));
+                     $('[name="rate_per_kg"]').val((ratePer100kg / KG_PER_100KG).toFixed(4));
+                     $('[name="rate_per_mound"]').val((ratePer100kg / KG_PER_100KG * KG_PER_MOUND).toFixed(4));
                      break;
              }
          }
@@ -672,8 +676,12 @@
 
              if ($('#calculation_type').val() === 'trucks') {
                  const trucks = parseInt($('#no_of_trucks').val()) || 0;
-                 minQuantity = trucks * TRUCK_MIN;
-                 maxQuantity = trucks * TRUCK_MAX;
+
+                  const truck_size_range = $('#truck_size_range').find('option:selected');
+             const min = truck_size_range.data('min');
+             const max = truck_size_range.data('max');
+                 minQuantity = trucks * min;
+                 maxQuantity = trucks * max;
 
                  if (minQuantity < MIN_QTY) {
                      minQuantity = MIN_QTY;

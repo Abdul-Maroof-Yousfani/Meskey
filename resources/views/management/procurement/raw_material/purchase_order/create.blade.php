@@ -549,18 +549,18 @@
 
             switch (changedField) {
                 case 'rate_per_kg':
-                    $('[name="rate_per_mound"]').val((ratePerKg * KG_PER_MOUND).toFixed(2));
-                    $('[name="rate_per_100kg"]').val((ratePerKg * KG_PER_100KG).toFixed(2));
+                    $('[name="rate_per_mound"]').val((ratePerKg * KG_PER_MOUND).toFixed(4));
+                    $('[name="rate_per_100kg"]').val((ratePerKg * KG_PER_100KG).toFixed(4));
                     break;
 
                 case 'rate_per_mound':
-                    $('[name="rate_per_kg"]').val((ratePerMound / KG_PER_MOUND).toFixed(2));
-                    $('[name="rate_per_100kg"]').val((ratePerMound / KG_PER_MOUND * KG_PER_100KG).toFixed(2));
+                    $('[name="rate_per_kg"]').val((ratePerMound / KG_PER_MOUND).toFixed(4));
+                    $('[name="rate_per_100kg"]').val((ratePerMound / KG_PER_MOUND * KG_PER_100KG).toFixed(4));
                     break;
 
                 case 'rate_per_100kg':
-                    $('[name="rate_per_kg"]').val((ratePer100kg / KG_PER_100KG).toFixed(2));
-                    $('[name="rate_per_mound"]').val((ratePer100kg / KG_PER_100KG * KG_PER_MOUND).toFixed(2));
+                    $('[name="rate_per_kg"]').val((ratePer100kg / KG_PER_100KG).toFixed(4));
+                    $('[name="rate_per_mound"]').val((ratePer100kg / KG_PER_100KG * KG_PER_MOUND).toFixed(4));
                     break;
             }
         }
