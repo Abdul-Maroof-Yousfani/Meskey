@@ -394,7 +394,7 @@
                         <table class="table table-sm table-bordered table-hover">
                             <thead class="thead-light">
                                 <tr>
-                                    <th width="20%">Lump Sum Deduction</th>
+                                    <th colspan="3" width="20%">Lump Sum Deduction</th>
                                     <th width="20%">Tabaar Deduction</th>
                                     <th width="20%">Deduction Amount</th>
                                 </tr>
@@ -402,7 +402,7 @@
                             <tbody id="sampling-results-tbody">
                                 <tr
                                     data-lumpsum-amount="{{ number_format($Deductionfromhelperfunction['lumpsum']['amount_deduction'] ?? 0, 4) }}">
-                                    <td>Lumpsum Deduction Rupees</td>
+                                    <td colspan="3">Lumpsum Deduction Rupees</td>
                                     <td>
                                         <div class="input-group mb-0">
                                             <input type="number" step="any" class="form-control editable-field"
@@ -428,7 +428,7 @@
                                 </tr>
                                 <tr
                                     data-lumpsum-kgamount="{{ number_format($Deductionfromhelperfunction['lumpsum']['kgs_deduction'] ?? 0, 4) }}">
-                                    <td>Lumpsum Deduction KG's</td>
+                                    <td colspan="3">Lumpsum Deduction KG's</td>
                                     <td>
                                         <div class="input-group mb-0">
                                             <input type="number" step="any" readonly class="form-control editable-field"
@@ -456,7 +456,7 @@
                                     </td>
                                 </tr>
                                 <tr class="other-deduction-row" data-other-deduction="true">
-                                    <td>Other Deduction (if any)
+                                    <td colspan="3" >Other Deduction (if any)
                                         <input type="hidden" name="other_deduction[slab_name]" value="Other Deduction">
                                     </td>
                                     <td>
@@ -481,10 +481,10 @@
                                 </tr>
                                 <!-- Re-rate on Access weight Row -->
                                 <tr class="other-deduction-row" data-other-deduction="true">
-                                    <td><strong>Re-rate on Excess weight</strong>
+                                    <td colspan="2" width="35%"><strong>Re-rate on Excess weight</strong>
                                         <input type="hidden" name="other_deduction[slab_name]" value="Other Deduction">
                                     </td>
-                                    <td>N/A</td>
+                                    <!-- <td>N/A</td> -->
                                     <td>
                                         <div class="input-group mb-0">
                                             <input type="number" step="any" class="form-control editable-field"
@@ -516,10 +516,10 @@
 
 
                                 <tr class="other-deduction-row" data-other-deduction="true">
-                                    <td><strong>Filling Bags</strong>
+                                    <td colspan="2" width="35%"><strong>Filling Bags</strong>
                                         <input type="hidden" name="filling_bags[slab_name]" value="Filling Bags">
                                     </td>
-                                    <td>N/A</td>
+                                    <!-- <td>N/A</td> -->
                                     <td>
                                         <div class="input-group mb-0">
                                             <input type="number" step="any"
