@@ -1,4 +1,4 @@
-<div class="mb-2">
+<!-- <div class="mb-2">
     <span>
         <strong>Date Range:</strong> {{ $daterange }}
     </span>
@@ -8,7 +8,7 @@
             <strong>Account:</strong> {{ ucwords($accountName) }}
         </span>
     @endif
-</div>
+</div> -->
 
 <div class="table-responsive" style="max-height: 65vh; overflow-y: auto;">
     <table class="table table-striped table-bordered mb-0">
@@ -23,6 +23,22 @@
                 <th class="text-right">Debit</th>
                 <th class="text-right">Credit</th>
                 <th class="text-right">Balance</th>
+            </tr>
+            <tr style="background: darkseagreen;">
+                <th colspan="8" class="text-center" style="background: darkseagreen;font-size: 14px;">
+                    Filter:
+                    <span>
+                        <strong>Date Range:</strong> {{ $daterange }}
+                    </span>
+                    @if ($accountName)
+                        &nbsp;&nbsp;&nbsp; | &nbsp;&nbsp;&nbsp;
+                        <span>
+                            <strong>Account:</strong> {{ ucwords($accountName) }}
+                        </span>
+                    @endif
+
+                </th>
+
             </tr>
         </thead>
         <tbody>
