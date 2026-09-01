@@ -858,7 +858,7 @@
             const deductionRate = parseFloat(document.getElementById('deduction_rate').value) || 0;
 
             // Calculate and round properly to 2 decimals
-            const netDeduction = (deductionRate * netShortage).toFixed(2);
+            const netDeduction = (deductionRate * netShortage).toFixed(4);
 
             document.getElementById('over_weight_ded').value = netDeduction;
         }
@@ -873,7 +873,7 @@
 
             if (loadingWeight > 0) {
                 const freightPerTon = (freightRs / loadingWeight) * 1000;
-                $('.freight-per-ton').val(freightPerTon.toFixed(2));
+                $('.freight-per-ton').val(freightPerTon.toFixed(4));
             }
 
             calculatePaymentSummary();
@@ -885,7 +885,7 @@
 
             if (loadingWeight > 0) {
                 const freightRs = (freightPerTon * loadingWeight) / 1000;
-                $('.freight-rs').val(freightRs.toFixed(2));
+                $('.freight-rs').val(freightRs.toFixed(4));
             }
 
             calculatePaymentSummary();
@@ -938,8 +938,8 @@
 
             if (commissionPercent > 0) {
                 const commissionAmount = (grossAfterDeductAmount * commissionPercent) / 100;
-                $('.commission-amount').val(commissionAmount.toFixed(2));
-                $(".total_commision").val(commissionAmount.toFixed(2));
+                $('.commission-amount').val(commissionAmount.toFixed(4));
+                $(".total_commision").val(commissionAmount.toFixed(4));
 
             } else {
                 $('.commission-amount').val('0');
@@ -950,20 +950,20 @@
             let netAmount = grossAmount - godownPenalty - commissionAmountttt - totalLabour;
             console.log(grossAmount, godownPenalty, commissionAmountttt, totalLabour, netAmount);
 
-            $('[name="gross_amount"]').val(grossAmount.toFixed(2));
-            $('[name="total_deductions"]').val(totalDeductions.toFixed(2));
-            $('[name="total_labour"]').val(totalLabour.toFixed(2));
+            $('[name="gross_amount"]').val(grossAmount.toFixed(4));
+            $('[name="total_deductions"]').val(totalDeductions.toFixed(4));
+            $('[name="total_labour"]').val(totalLabour.toFixed(4));
             // $('[name="total_commision"]').val(totalCommision.toFixed(2));
-            $('[name="net_amount"]').val(netAmount.toFixed(2));
-            $('[name="penalty"]').val(godownPenalty.toFixed(2));
+            $('[name="net_amount"]').val(netAmount.toFixed(4));
+            $('[name="penalty"]').val(godownPenalty.toFixed(4));
 
             let paidAmount = parseFloat($('[name="paid_amount"]').val()) || 0;
             let requestAmount = parseFloat($('[name="request_amount"]').val()) || 0;
             let remainingAmount = netAmount - paidAmount - requestAmount;
-            $('[name="remaining_amount"]').val(remainingAmount.toFixed(2));
+            $('[name="remaining_amount"]').val(remainingAmount.toFixed(4));
 
             // Set maximum limit for request amount
-            $('[name="request_amount"]').attr('max', Math.max(0, netAmount - paidAmount).toFixed(2));
+            $('[name="request_amount"]').attr('max', Math.max(0, netAmount - paidAmount).toFixed(4));
             CalPercentageINput();
         }
 
@@ -984,11 +984,11 @@
             const remainingAmount = netAmount - paidAmount;
             const amount = (remainingAmount * percentage) / 100;
 
-            $('[name="request_amount"]').val(amount.toFixed(2));
+            $('[name="request_amount"]').val(amount.toFixed(4));
 
             // Update remaining amount
             const finalRemaining = netAmount - (paidAmount + amount);
-            $('[name="remaining_amount"]').val(finalRemaining.toFixed(2));
+            $('[name="remaining_amount"]').val(finalRemaining.toFixed(4));
         }
 
         // Percentage input handler for multiple requests
@@ -1003,18 +1003,18 @@
 
             // Ensure payment request doesn't exceed remaining amount
             if (newRequested > remainingAmount) {
-                $(this).val(remainingAmount.toFixed(2));
+                $(this).val(remainingAmount.toFixed(4));
             }
 
             // Update percentage
             const percentageInput = $('.percentage-input');
             const finalRequested = parseFloat($(this).val()) || 0;
             const percentage = remainingAmount > 0 ? (finalRequested / remainingAmount) * 100 : 0;
-            percentageInput.val(percentage.toFixed(2));
+            percentageInput.val(percentage.toFixed(4));
 
             // Update remaining amount display
             const finalRemaining = netAmount - (paidAmount + finalRequested);
-            $('[name="remaining_amount"]').val(finalRemaining.toFixed(2));
+            $('[name="remaining_amount"]').val(finalRemaining.toFixed(4));
         });
 
         document.getElementById('exemptedWeight').addEventListener('input', function () {
