@@ -190,17 +190,17 @@
                         {{ number_format($balance, 2) }}
                     </td>
                 </tr>
-                @if (!$isBalanced)
-                    <tr style="background-color: #f8d7da;">
-                        <td colspan="8" class="text-center" style="color: #721c24; font-weight: bold; padding: 5px;">
-                            <span style="font-size: 1.1em;">
-                                ⚠ IMBALANCE DETECTED: Debits ({{ number_format($totalDebit, 2) }}) ≠ Credits
-                                ({{ number_format($totalCredit, 2) }})
-                                | Difference: {{ number_format(abs($difference), 2) }}
-                            </span>
-                        </td>
-                    </tr>
-                @endif
+                <!-- @if (!$isBalanced)
+                        <tr style="background-color: #f8d7da;">
+                            <td colspan="8" class="text-center" style="color: #721c24; font-weight: bold; padding: 5px;">
+                                <span style="font-size: 1.1em;">
+                                    ⚠ IMBALANCE DETECTED: Debits ({{ number_format($totalDebit, 2) }}) ≠ Credits
+                                    ({{ number_format($totalCredit, 2) }})
+                                    | Difference: {{ number_format(abs($difference), 2) }}
+                                </span>
+                            </td>
+                        </tr>
+                    @endif -->
             </tfoot>
         @endif
     </table>
