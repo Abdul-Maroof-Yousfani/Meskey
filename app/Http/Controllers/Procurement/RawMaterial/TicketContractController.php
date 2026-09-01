@@ -651,7 +651,7 @@ class TicketContractController extends Controller
         }
 
         if ($request->initial) {
-            $query->limit(10);
+            $query->limit(100);
         } elseif ($request->search) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
