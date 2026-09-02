@@ -153,27 +153,27 @@
                                             <div class="">
                                                 <!-- Header with company info -->
                                                 <!-- <div style="display: none; margin-bottom: 15px;">
-                                                                                <div style="width: 120px; padding-right: 15px;">
-                                                                                    <img src="{{ asset('images/logo.png') }}" alt="Company Logo" style="max-">
-                                                                                </div>
-                                                                                <div style="flex: 1;">
-                                                                                    <div style="font-size: 12px; line-height: 1.4;">
-                                                                                        <p><strong>Head office:</strong> Saima Trade Tower, Tower B, Room # 1511,1512 & 1513, I.
-                                                                                            I.
-                                                                                            Chundrigar Road, Karachi.</p>
-                                                                                        <p><strong>Factory:</strong> Plot No A-43, A-45 & A-46, Eastern, Industrial Zone, Port
-                                                                                            Qasim, Karachi, Pakistan.</p>
-                                                                                        <p><strong>Retail Outlet:</strong> Shop No. 4, K.A.I Center, Opp City Court, Dandia
-                                                                                            Bazar,
-                                                                                            Karachi Ph. + 92 21 32733369, 3370</p>
-                                                                                        <p><strong>Tel: = 03012740216, 0 Fax:</strong></p>
-                                                                                        <p><strong>Email: info@m6.com.pk, web: www.m6.com.pk</strong></p>
+                                                                                    <div style="width: 120px; padding-right: 15px;">
+                                                                                        <img src="{{ asset('images/logo.png') }}" alt="Company Logo" style="max-">
                                                                                     </div>
-                                                                                </div>
-                                                                                <div style="text-align: right; padding-left: 15px; white-space: nowrap;">
-                                                                                    <strong>Arrival Slip</strong>
-                                                                                </div>
-                                                                            </div> -->
+                                                                                    <div style="flex: 1;">
+                                                                                        <div style="font-size: 12px; line-height: 1.4;">
+                                                                                            <p><strong>Head office:</strong> Saima Trade Tower, Tower B, Room # 1511,1512 & 1513, I.
+                                                                                                I.
+                                                                                                Chundrigar Road, Karachi.</p>
+                                                                                            <p><strong>Factory:</strong> Plot No A-43, A-45 & A-46, Eastern, Industrial Zone, Port
+                                                                                                Qasim, Karachi, Pakistan.</p>
+                                                                                            <p><strong>Retail Outlet:</strong> Shop No. 4, K.A.I Center, Opp City Court, Dandia
+                                                                                                Bazar,
+                                                                                                Karachi Ph. + 92 21 32733369, 3370</p>
+                                                                                            <p><strong>Tel: = 03012740216, 0 Fax:</strong></p>
+                                                                                            <p><strong>Email: info@m6.com.pk, web: www.m6.com.pk</strong></p>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <div style="text-align: right; padding-left: 15px; white-space: nowrap;">
+                                                                                        <strong>Arrival Slip</strong>
+                                                                                    </div>
+                                                                                </div> -->
                                                 <!-- Main form table -->
                                                 <table style="border-collapse: collapse; ">
                                                     <tr>
@@ -695,10 +695,12 @@
                                                     </table>
                                                 </div>
 
-                                                <div class="text-center mt-3" style="text-align: center;">
-                                                    <img src="{{ asset('/arrival_slip_stamp.jpeg') }}" alt=""
-                                                        style="margin: auto !important;width: 33%;">
-                                                </div>
+                                                @if($arrivalTicket->location_id == 1)
+                                                    <div class="text-center mt-3" style="text-align: center;">
+                                                        <img src="{{ asset('/arrival_slip_stamp.jpeg') }}" alt=""
+                                                            style="margin: auto !important;width: 33%;">
+                                                    </div>
+                                                @endif
 
                                                 @if ($isNotGeneratable)
                                                     <div
@@ -764,27 +766,27 @@
 
                                     // Define print styles
                                     var printStyles = `
-                                                              <style>
-                                                                @media print{
-                                                                    @page{margin:2mm !important;margin-top:1mm !important;}
-                                                                    .flex-head{display:flex !important;align-items:center !important;justify-content:left !important;}
-                                                                    .add-main1 ul{display:flex !important;align-items:center !important;justify-content:space-evenly !important;padding:0 !important;list-style:none !important;}
-                                                                    .logo img{width:67% !important;}
-                                                                    .head-add1 h5{font-size:15px !important;font-weight:700 !important;margin-bottom:6px !important;}
-                                                                    .head-add1 p{font-size:12px !important;margin-bottom:8px !important;}
-                                                                    .add-main2{display:flex !important;align-items:center !important;justify-content:space-between !important;}
-                                                                    a.btn.btn-a{border:2px solid #ddd;color:#000;}
-                                                                    a.btn.btn-a:hover{box-shadow:0 2px 7px rgba(0,0,0,0.28) !important;cursor:pointer !important;background:#008749 !important;color:#fff !important;}
-                                                                    .logo p{font-weight:bold !important;}
-                                                                    #modal-sidebar.open{width:100% !important;}
-                                                                    table td input{padding:8px 8px !important;}
-                                                                    table tbody tr td{white-space:nowrap !important;}
-                                                                    .row{display:flex !important;flex-wrap:nowrap !important;}
-                                                                    [class*="col-"]{float:left !important;display:block !important;}
-                                                                    table td{padding:5px 5px !important;}
-                                                                }
-                                                              </style>
-                                                            `;
+                                                                  <style>
+                                                                    @media print{
+                                                                        @page{margin:2mm !important;margin-top:1mm !important;}
+                                                                        .flex-head{display:flex !important;align-items:center !important;justify-content:left !important;}
+                                                                        .add-main1 ul{display:flex !important;align-items:center !important;justify-content:space-evenly !important;padding:0 !important;list-style:none !important;}
+                                                                        .logo img{width:67% !important;}
+                                                                        .head-add1 h5{font-size:15px !important;font-weight:700 !important;margin-bottom:6px !important;}
+                                                                        .head-add1 p{font-size:12px !important;margin-bottom:8px !important;}
+                                                                        .add-main2{display:flex !important;align-items:center !important;justify-content:space-between !important;}
+                                                                        a.btn.btn-a{border:2px solid #ddd;color:#000;}
+                                                                        a.btn.btn-a:hover{box-shadow:0 2px 7px rgba(0,0,0,0.28) !important;cursor:pointer !important;background:#008749 !important;color:#fff !important;}
+                                                                        .logo p{font-weight:bold !important;}
+                                                                        #modal-sidebar.open{width:100% !important;}
+                                                                        table td input{padding:8px 8px !important;}
+                                                                        table tbody tr td{white-space:nowrap !important;}
+                                                                        .row{display:flex !important;flex-wrap:nowrap !important;}
+                                                                        [class*="col-"]{float:left !important;display:block !important;}
+                                                                        table td{padding:5px 5px !important;}
+                                                                    }
+                                                                  </style>
+                                                                `;
 
                                     printWindow.document.write('<html><head><title>Print</title>');
                                     printWindow.document.write(printStyles);

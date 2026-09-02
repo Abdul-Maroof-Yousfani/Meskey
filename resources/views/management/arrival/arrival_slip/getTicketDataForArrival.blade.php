@@ -355,9 +355,11 @@
             </div>
         </div>
     </div>
-    <div class="text-center mt-3" style="text-align: center;">
-        <img src="{{ asset('/arrival_slip_stamp.jpeg') }}" alt="" style="margin: auto !important;width: 33%;">
-    </div>
+    @if($arrivalTicket->location_id == 1)
+        <div class="text-center mt-3" style="text-align: center;">
+            <img src="{{ asset('/arrival_slip_stamp.jpeg') }}" alt="" style="margin: auto !important;width: 33%;">
+        </div>
+    @endif
     @if ($isNotGeneratable)
         <div class="col-12 mt-4">
             <div class="alert alert-danger">
