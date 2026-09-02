@@ -99,7 +99,7 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Labour Amount</label>
-                <input type="number" class="form-control bg-light" id="labour_details_amount" value="{{ $receivingRequest->labour_amount }}" readonly placeholder="Labour Amount">
+                <input type="number" class="form-control bg-light" id="labour_details_amount" value="{{ $receivingRequest->deliveryChallan?->labour_amount ?? $receivingRequest->labour_amount }}" readonly placeholder="Labour Amount">
             </div>
         </div>
     </div>
@@ -256,7 +256,15 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Total Labour Amt</label>
-                <input type="number" class="form-control bg-light font-weight-bold" id="grand_total_labour_amount" value="{{ $receivingRequest->labour_amount }}" readonly placeholder="Total Labour Amount">
+                @php
+                    $unloadingLabourTotal = 0;
+                    foreach ($receivingRequest->items as $item) {
+                        $bags = floatval($item->deliveryChallanData?->no_of_bags ?? 0);
+                        $rate = floatval($item->unloading_labour_rate ?? 0);
+                        $unloadingLabourTotal += ($bags * $rate);
+                    }
+                @endphp
+                <input type="number" class="form-control bg-light font-weight-bold" id="grand_total_labour_amount" value="{{ number_format($unloadingLabourTotal, 2, '.', '') }}" readonly placeholder="Total Labour Amount">
             </div>
         </div>
     </div>
@@ -400,7 +408,6 @@
             grandTotal += parseFloat($(this).val()) || 0;
         });
         $('#grand_total_labour_amount').val(grandTotal.toFixed(2));
-        $('#labour_details_amount').val(grandTotal.toFixed(2));
     }
 
     function calculateWeighbridgeTotal() {
