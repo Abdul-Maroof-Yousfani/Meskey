@@ -97,9 +97,9 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Storage:<span class="text-danger">*</span></label>
-                        <select name="storage_location_id" id="storages" onchange="get_sale_invoices()"
+                        <select name="storage_location_id" id="storages"
                             class="form-control select2" disabled>
-                            <option value="">Select Arrival Location</option>
+                            <option value="">Select Storage Location</option>
                             @foreach (get_sub_arrival_locations() as $sub_arrival_location)
                                 <option value="{{ $sub_arrival_location->id }}" @selected($saleReturn->storage_location_id == $sub_arrival_location->id)>
                                     {{ $sub_arrival_location->name }}</option>

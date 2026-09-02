@@ -113,7 +113,7 @@ class ReceivingRequestController extends Controller
             $receivingRequest->update([
                 'labour' => $request->labour,
                 'transporter' => $request->transporter,
-                'labour_amount' => $totalLabourAmount,
+                'labour_amount' => $receivingRequest->deliveryChallan?->labour_amount ?? $receivingRequest->labour_amount,
                 'transporter_amount' => $request->transporter_amount ?? 0,
                 'transporter_deduction' => $request->transporter_deduction ?? 0,
                 'arrived_date' => $request->arrived_date,
@@ -149,7 +149,6 @@ class ReceivingRequestController extends Controller
 
             $receivingRequest->deliveryChallan()->update([
                 "labour" => $request->labour,
-                "labour_amount" => $totalLabourAmount,
                 "transporter" => $request->transporter,
                 "transporter_amount" => $request->transporter_amount ?? 0,
                 "weighbridge-amount" => $totalWeighbridgeAmount

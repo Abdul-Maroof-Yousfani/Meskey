@@ -156,10 +156,6 @@ class LogisticsBillController extends Controller
                 'labour_amount' => $totalLabourAmount,
             ]);
 
-            // Sync delivery challan labour amount
-            $logisticsBill->deliveryChallan()->update([
-                'labour_amount' => $totalLabourAmount,
-            ]);
 
             // Re-sync ledgers via SalesLedgerService
             $receivingRequest->refresh();
