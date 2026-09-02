@@ -91,7 +91,7 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Labour Amount</label>
-                <input type="number" class="form-control bg-light" value="{{ $receivingRequest->labour_amount }}" readonly>
+                <input type="number" class="form-control bg-light" value="{{ $receivingRequest->deliveryChallan?->labour_amount ?? $receivingRequest->labour_amount }}" readonly>
             </div>
         </div>
     </div>
@@ -232,7 +232,15 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label class="font-weight-bold">Total Labour Amt</label>
-                <input type="number" class="form-control bg-light font-weight-bold" value="{{ $receivingRequest->labour_amount }}" readonly>
+                @php
+                    $unloadingLabourTotal = 0;
+                    foreach ($receivingRequest->items as $item) {
+                        $bags = floatval($item->deliveryChallanData?->no_of_bags ?? 0);
+                        $rate = floatval($item->unloading_labour_rate ?? 0);
+                        $unloadingLabourTotal += ($bags * $rate);
+                    }
+                @endphp
+                <input type="number" class="form-control bg-light font-weight-bold" value="{{ number_format($unloadingLabourTotal, 2, '.', '') }}" readonly>
             </div>
         </div>
     </div>

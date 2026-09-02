@@ -182,13 +182,26 @@
                 }
             @endphp
             @if(!$isXmillNoTransporter)
+            @php
+                $firstTicketData = $delivery_challan->delivery_challan_data->first();
+                $transporterId = $delivery_challan->transporter ?? $delivery_challan->transporter_id;
+                if (!$transporterId && $firstTicketData && $firstTicketData->ticket_id) {
+                    $ticket = \App\Models\Sales\LoadingProgramItem::find($firstTicketData->ticket_id);
+                    if ($ticket && $ticket->transporter_id) {
+                        $transporterId = $ticket->transporter_id;
+                    }
+                }
+            @endphp
             <div class="col-md-4">
                 <div class="form-group">
                     <label class="form-label">Transporter:</label>
                     <select class="form-control select2" disabled>
                         <option value="">Select Transporter</option>
-                        <option value="1" @selected($delivery_challan->transporter == 1)>Transporter 1</option>
-                        <option value="2" @selected($delivery_challan->transporter == 2)>Transporter 2</option>
+                        @foreach (($transporters ?? \App\Models\Master\Transporter::all()) as $transporter)
+                            <option value="{{ $transporter->id }}" @selected($transporterId == $transporter->id)>
+                                {{ $transporter->name }}
+                            </option>
+                        @endforeach
                     </select>
                 </div>
             </div>

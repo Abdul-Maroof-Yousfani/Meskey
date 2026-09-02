@@ -100,9 +100,9 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Storage:<span class="text-danger">*</span></label>
-                        <select name="storage_location_id" id="storages" onchange="get_sale_invoices()"
+                        <select name="storage_location_id" id="storages"
                             class="form-control select2">
-                            <option value="">Select Arrival Location</option>
+                            <option value="">Select Storage Location</option>
                             @foreach(get_sub_arrival_locations() as $sub_arrival_location)
                                 <option value="{{ $sub_arrival_location->id }}">{{ $sub_arrival_location->name }}</option>
                             @endforeach
@@ -285,6 +285,8 @@
             return;
         }
 
+        const currentSelected = $("#si_no").val();
+
         $.ajax({
             url: "{{ route('sales.get.invoice-numbers') }}",
             method: "GET",
@@ -298,17 +300,24 @@
             success: function(res) {
                 console.log(res);
                 $("#si_no").empty();
-                $("#si_no").append(`<option value=''>Select Receiving Request</option>`)
+                $("#si_no").append(`<option value=''>Select Receiving Request</option>`);
 
+                let foundCurrent = false;
                 res.forEach(sale_invoice => {
+                    const isSelected = currentSelected && (currentSelected == sale_invoice.id);
+                    if (isSelected) foundCurrent = true;
                     $("#si_no").append(`
-                        <option value="${sale_invoice.id}">
+                        <option value="${sale_invoice.id}" ${isSelected ? 'selected' : ''}>
                             ${sale_invoice.text}
                         </option>
                     `);
                 });
 
                 $("#si_no").select2();
+
+                if (!foundCurrent && currentSelected) {
+                    $("#siTableBody").empty();
+                }
             },
             error: function(error) {
                 console.error("Error:", error);

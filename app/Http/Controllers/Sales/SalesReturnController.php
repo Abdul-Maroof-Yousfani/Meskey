@@ -120,7 +120,7 @@ class SalesReturnController extends Controller
                 $syncData[$mainRrId] = ["qty" => $totalQty];
             }
 
-            $saleReturn->sale_invoices()->sync($syncData);
+            $saleReturn->receiving_requests()->sync($syncData);
 
             DB::commit();
             return response()->json("Sale Return has been updated");
@@ -374,7 +374,7 @@ class SalesReturnController extends Controller
                 $syncData[$mainRrId] = ["qty" => $totalQty];
             }
 
-            $sale_return->sale_invoices()->sync($syncData);
+            $sale_return->receiving_requests()->sync($syncData);
 
             DB::commit();
             return response()->json("Sale Return has been created");

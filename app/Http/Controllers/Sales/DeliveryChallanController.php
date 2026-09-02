@@ -503,6 +503,7 @@ class DeliveryChallanController extends Controller
             "locationIds" => $locationIds,
             "arrivalLocationIds" => $arrivalLocationIds,
             "sectionIds" => $sectionIds,
+            "transporters" => \App\Models\Master\Transporter::all(),
         ]);
     }
 
