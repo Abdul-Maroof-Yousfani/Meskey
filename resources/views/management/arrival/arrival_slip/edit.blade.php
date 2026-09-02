@@ -5,7 +5,7 @@
 
     if (
         isset($samplingRequest->is_lumpsum_deduction) &&
-        $samplingRequest->is_lumpsum_deduction 
+        $samplingRequest->is_lumpsum_deduction
         // && $samplingRequest->lumpsum_deduction > 0
     ) {
         $showLumpSum = true;
@@ -35,19 +35,22 @@
         #printSection {
             color: #222 !important;
         }
-        #printSection p, 
-        #printSection td, 
-        #printSection th, 
+
+        #printSection p,
+        #printSection td,
+        #printSection th,
         #printSection div {
             color: #222 !important;
             font-weight: 500 !important;
         }
+
         #printSection h5 {
             font-size: 1.25rem !important;
             font-weight: 700 !important;
             color: #000 !important;
         }
-        #printSection input[type="text"], 
+
+        #printSection input[type="text"],
         #printSection input[type="number"] {
             color: #000 !important;
             font-weight: 600 !important;
@@ -59,9 +62,10 @@
             <div class=" col-lg-12 col-md-12 col-sm-12 col-xs-12 auth-img-bg p-3">
                 <div class="flex-head">
                     <div class="logo">
-                        <img src="{{ asset('management/app-assets/img/meskay-logo.png') }}"
-                            alt=""class="img-fluid">
-                        <p style="margin-top: 20px; margin-bottom: 5px; font-weight: 600 !important;color: #000 !important;font-size: 1.25rem !important;">Original / Duplicate</p>
+                        <img src="{{ asset('management/app-assets/img/meskay-logo.png') }}" alt="" class="img-fluid">
+                        <p
+                            style="margin-top: 20px; margin-bottom: 5px; font-weight: 600 !important;color: #000 !important;font-size: 1.25rem !important;">
+                            Original / Duplicate</p>
                     </div>
                     <div class="logo-cont">
                         <div class="add-main1">
@@ -148,7 +152,8 @@
                             <td style=" padding: 8px; border: none;">
                                 <input type="text"
                                     style=" border: 1px solid #ddd; padding: 10px 10px; background: transparent;"
-                                    value="{{ \Carbon\Carbon::parse($arrivalTicket->created_at)->format('Y-m-d') ?? 'N/A' }}" readonly>
+                                    value="{{ \Carbon\Carbon::parse($arrivalTicket->created_at)->format('Y-m-d') ?? 'N/A' }}"
+                                    readonly>
                             </td>
                             <td style=" padding: 8px;border: none;">Truck No.</td>
                             <td style=" padding: 8px; border: none;">
@@ -187,8 +192,8 @@
                             <td style=" padding: 8px;border: none;">Bill/T No.</td>
                             <td style="padding: 8px; border: none;" colspan="2">
                                 <input type="text"
-                                    style=" border: 1px solid #ddd; padding: 10px 10px; background: transparent;width: 100%;"value="{{ $arrivalTicket->bilty_no }}"
-                                    readonly>
+                                    style=" border: 1px solid #ddd; padding: 10px 10px; background: transparent;width: 100%;"
+                                    value="{{ $arrivalTicket->bilty_no }}" readonly>
                             </td>
                         </tr>
                         <tr>
@@ -199,7 +204,7 @@
                                     value="{{ $arrivalTicket->miller->name ?? 'N/A' }}" readonly>
                             </td>
                             <td style=" padding: 8px;border: none;">Broker Name</td>
-                            <td style="padding: 8px; border: none;"colspan="4">
+                            <td style="padding: 8px; border: none;" colspan="4">
                                 <input type="text"
                                     style="width:100%; border: 1px solid #ddd; padding: 10px 10px;background: transparent;"
                                     value="{{ $arrivalTicket->broker_name ?? 'N/A' }}" readonly>
@@ -214,7 +219,7 @@
                                     value="" readonly>
                             </td>
                             <td style=" padding: 8px;border: none;">Broker 3 Name</td>
-                            <td style="padding: 8px; border: none;"colspan="4">
+                            <td style="padding: 8px; border: none;" colspan="4">
                                 <input type="text"
                                     style=" border: 1px solid #ddd; padding: 10px 10px; background: transparent;"
                                     value="" readonly>
@@ -223,7 +228,7 @@
                         </tr> --}}
                         <tr>
                             <td style=" padding: 8px;border: none;">On A/C of</td>
-                            <td style="padding: 8px;border: none;"colspan="3">
+                            <td style="padding: 8px;border: none;" colspan="3">
                                 <input type="text"
                                     style="width:100%; border: 1px solid #ddd; padding: 10px 10px; background: transparent;"
                                     value="{{ $arrivalTicket->accounts_of_name ?? 'N/A' }}" readonly>
@@ -237,7 +242,7 @@
                         </tr>
                         <tr>
                             <td style=" padding: 8px;border: none;">Commodity</td>
-                            <td style="padding: 8px; border: none;"colspan="3">
+                            <td style="padding: 8px; border: none;" colspan="3">
                                 <input type="text"
                                     style="width:100%; border: 1px solid #ddd; padding: 10px 10px; background: transparent;"
                                     value="{{ $arrivalTicket->qcProduct->name }}" readonly>
@@ -245,29 +250,27 @@
                             <td style=" padding: 8px;border: none;">Status</td>
                             <td style="padding: 8px;border: none;" colspan="1">
                                 <input type="text"
-                                    style=" border: 1px solid #ddd; padding: 10px 10px; background: transparent;"
-                                    value="{{ isset($arrivalTicket->saudaType->id)
-                                        ? ($arrivalTicket->saudaType->id == 1
-                                            ? ($arrivalTicket->document_approval_status == 'fully_approved'
-                                                ? 'OK'
-                                                : ($arrivalTicket->document_approval_status == 'half_approved'
-                                                    ? 'P-RH'
-                                                    : 'RF'))
-                                            : ($arrivalTicket->saudaType->id == 2
-                                                ? ($arrivalTicket->document_approval_status == 'fully_approved'
-                                                    ? 'TS'
-                                                    : ($arrivalTicket->document_approval_status == 'half_approved'
-                                                        ? 'TS-RH'
-                                                        : 'RF'))
-                                                : 'RF'))
-                                        : 'RF' }}"
-                                    readonly>
+                                    style=" border: 1px solid #ddd; padding: 10px 10px; background: transparent;" value="{{ isset($arrivalTicket->saudaType->id)
+    ? ($arrivalTicket->saudaType->id == 1
+        ? ($arrivalTicket->document_approval_status == 'fully_approved'
+            ? 'OK'
+            : ($arrivalTicket->document_approval_status == 'half_approved'
+                ? 'P-RH'
+                : 'RF'))
+        : ($arrivalTicket->saudaType->id == 2
+            ? ($arrivalTicket->document_approval_status == 'fully_approved'
+                ? 'TS'
+                : ($arrivalTicket->document_approval_status == 'half_approved'
+                    ? 'TS-RH'
+                    : 'RF'))
+            : 'RF'))
+    : 'RF' }}" readonly>
                             </td>
                             <td style=" padding: 8px;border: none; ">U/L Slip #</td>
                             <td style="padding: 8px; border: none;" colspan="2">
                                 <input type="text"
-                                    style=" border: 1px solid #ddd; padding: 10px 10px; background: transparent;width: 100%;"value="{{ $arrivalTicket->unique_no ?? 'N/A' }}"
-                                    readonly>
+                                    style=" border: 1px solid #ddd; padding: 10px 10px; background: transparent;width: 100%;"
+                                    value="{{ $arrivalTicket->unique_no ?? 'N/A' }}" readonly>
                             </td>
                         </tr>
 
@@ -298,7 +301,9 @@
                     <div class="row">
                         <div class=" col-lg-8 col-md-8 col-sm-8 col-xs-8">
                             <!-- Freight Section -->
-                            <div style="margin-top: 5px; font-weight: 600 !important; font-size: 1.25rem !important; color: #000 !important; padding: 5px 0;">Freight</div>
+                            <div
+                                style="margin-top: 5px; font-weight: 600 !important; font-size: 1.25rem !important; color: #000 !important; padding: 5px 0;">
+                                Freight</div>
                             <hr style="border: 1px solid #ddd; margin-bottom: 0;margin-top: 0;">
                             <table style="border-collapse: collapse; ">
                                 <tr>
@@ -311,23 +316,23 @@
                                                 readonly> <span style="padding: 0 5px;">× 10 =</span>
                                             <input type="text"
                                                 style="width:75px;border:1px solid #ddd;padding:10px 10px;text-align:center;"
-                                                value="{{ isset($arrivalTicket->approvals->filling_bags_no) ? $arrivalTicket->approvals->filling_bags_no * 10 : '0' }}"readonly>
+                                                value="{{ isset($arrivalTicket->approvals->filling_bags_no) ? $arrivalTicket->approvals->filling_bags_no * 10 : '0' }}"
+                                                readonly>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td style="padding:8px;border:none;"> Freight (Rs.)</td>
                                     <td style=" padding: 8px;">
-                                        <input type="text"
-                                            style="width:100%;border:1px solid #ddd;padding:10px 10px;"
-                                            value="{{ empty($arrivalTicket->freight->freight_written_on_bilty) || (int)$arrivalTicket->freight->freight_written_on_bilty == 0 ? '-' : (int)$arrivalTicket->freight->freight_written_on_bilty }}"
+                                        <input type="text" style="width:100%;border:1px solid #ddd;padding:10px 10px;"
+                                            value="{{ empty($arrivalTicket->freight->freight_written_on_bilty) || (int) $arrivalTicket->freight->freight_written_on_bilty == 0 ? '-' : (int) $arrivalTicket->freight->freight_written_on_bilty }}"
                                             readonly>
                                     </td>
                                     <td style="padding:8px;border:none;"> Freight per Ton</td>
                                     <td style=" padding: 8px;">
-                                        <input type="text"
-                                            style="width:100%;border:1px solid #ddd;padding:10px 10px;"
-                                            value="{{ empty($arrivalTicket->freight->freight_per_ton) || (int)$arrivalTicket->freight->freight_per_ton == 0 ? '-' : (int)$arrivalTicket->freight->freight_per_ton }}" readonly>
+                                        <input type="text" style="width:100%;border:1px solid #ddd;padding:10px 10px;"
+                                            value="{{ empty($arrivalTicket->freight->freight_per_ton) || (int) $arrivalTicket->freight->freight_per_ton == 0 ? '-' : (int) $arrivalTicket->freight->freight_per_ton }}"
+                                            readonly>
                                     </td>
                                 </tr>
 
@@ -335,14 +340,14 @@
                                     <td style=" padding:8px;border:none;">Arrived Kanta Charges </td>
                                     <td style="padding: 8px;">
                                         <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px;"
-                                            value="{{ empty($arrivalTicket->freight->karachi_kanta_charges) || (int)$arrivalTicket->freight->karachi_kanta_charges == 0 ? '-' : (int)$arrivalTicket->freight->karachi_kanta_charges }}"
+                                            value="{{ empty($arrivalTicket->freight->karachi_kanta_charges) || (int) $arrivalTicket->freight->karachi_kanta_charges == 0 ? '-' : (int) $arrivalTicket->freight->karachi_kanta_charges }}"
                                             readonly>
                                     </td>
                                     <td style=" padding: 8px;border: none;">Kanta Loading Charges
                                     </td>
                                     <td style="padding: 8px;" colspan="3">
                                         <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px;"
-                                            value="{{ empty($arrivalTicket->freight->kanta_golarchi_charges) || (int)$arrivalTicket->freight->kanta_golarchi_charges == 0 ? '-' : (int)$arrivalTicket->freight->kanta_golarchi_charges }}"
+                                            value="{{ empty($arrivalTicket->freight->kanta_golarchi_charges) || (int) $arrivalTicket->freight->kanta_golarchi_charges == 0 ? '-' : (int) $arrivalTicket->freight->kanta_golarchi_charges }}"
                                             readonly>
                                     </td>
                                 </tr>
@@ -352,13 +357,13 @@
                                     <td style=" padding: 8px;border: none;">Other (+)/ Labour Charges</td>
                                     <td style="padding: 8px;" colspan="1">
                                         <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px;"
-                                            value="{{ empty($arrivalTicket->freight->other_labour_charges) || (int)$arrivalTicket->freight->other_labour_charges == 0 ? '-' : (int)$arrivalTicket->freight->other_labour_charges }}"
+                                            value="{{ empty($arrivalTicket->freight->other_labour_charges) || (int) $arrivalTicket->freight->other_labour_charges == 0 ? '-' : (int) $arrivalTicket->freight->other_labour_charges }}"
                                             readonly>
                                     </td>
                                     <td style="padding: 8px;" colspan="8">
                                         <input type="text"
                                             style="    width: 100%; border: 1px solid #ddd; padding: 10px 10px; font-style: italic;"
-                                            value="{{ empty($arrivalTicket->freight->other_labour_charges) || (int)$arrivalTicket->freight->other_labour_charges == 0 ? '-' : numberToWords((int)$arrivalTicket->freight->other_labour_charges) }}"
+                                            value="{{ empty($arrivalTicket->freight->other_labour_charges) || (int) $arrivalTicket->freight->other_labour_charges == 0 ? '-' : numberToWords((int) $arrivalTicket->freight->other_labour_charges) }}"
                                             readonly>
                                     </td>
                                 </tr>
@@ -368,13 +373,14 @@
                                     </td>
                                     <td style="padding: 8px;" colspan="1">
                                         <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px;"
-                                            value="{{ empty($arrivalTicket->freight->other_deduction) || (int)$arrivalTicket->freight->other_deduction == 0 ? '-' : (int)$arrivalTicket->freight->other_deduction }}" readonly>
+                                            value="{{ empty($arrivalTicket->freight->other_deduction) || (int) $arrivalTicket->freight->other_deduction == 0 ? '-' : (int) $arrivalTicket->freight->other_deduction }}"
+                                            readonly>
                                     </td>
 
                                     <td style="padding: 8px;" colspan="8">
                                         <input type="text"
                                             style="    width: 100%; border: 1px solid #ddd; padding: 10px 10px; font-style: italic;"
-                                            value="{{ empty($arrivalTicket->freight->other_deduction) || (int)$arrivalTicket->freight->other_deduction == 0 ? '-' : numberToWords((int)$arrivalTicket->freight->other_deduction) }}"
+                                            value="{{ empty($arrivalTicket->freight->other_deduction) || (int) $arrivalTicket->freight->other_deduction == 0 ? '-' : numberToWords((int) $arrivalTicket->freight->other_deduction) }}"
                                             readonly>
                                     </td>
                                 </tr>
@@ -390,25 +396,27 @@
                                     <td style=" padding: 8px;border: none;">Total Freight Payable (Rs.)</td>
                                     <td style="padding: 8px;">
                                         <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px;"
-                                            value="{{ empty($payableCharges) || (int)$payableCharges == 0 ? '-' : (int)$payableCharges }}" readonly>
+                                            value="{{ empty($payableCharges) || (int) $payableCharges == 0 ? '-' : (int) $payableCharges }}"
+                                            readonly>
                                     </td>
                                     <td style="padding: 8px;" colspan="8">
                                         <input type="text"
                                             style="     width: 100%; border: 1px solid #ddd; padding: 10px 10px; font-style: italic;"
-                                            value="{{ empty($payableCharges) || (int)$payableCharges == 0 ? '-' : numberToWords((int)$payableCharges) }}" readonly>
+                                            value="{{ empty($payableCharges) || (int) $payableCharges == 0 ? '-' : numberToWords((int) $payableCharges) }}"
+                                            readonly>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td style=" padding: 8px;border: none;">Unpaid Labour Charge</td>
                                     <td style="padding: 8px;">
                                         <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px;"
-                                            value="{{ empty($arrivalTicket->freight->unpaid_labor_charges) || (int)$arrivalTicket->freight->unpaid_labor_charges == 0 ? '-' : (int)$arrivalTicket->freight->unpaid_labor_charges }}"
+                                            value="{{ empty($arrivalTicket->freight->unpaid_labor_charges) || (int) $arrivalTicket->freight->unpaid_labor_charges == 0 ? '-' : (int) $arrivalTicket->freight->unpaid_labor_charges }}"
                                             readonly>
                                     </td>
                                     <td style="padding: 8px;" colspan="8">
                                         <input type="text"
                                             style="    width: 100%; border: 1px solid #ddd; padding: 10px 10px; font-style: italic;"
-                                            value="{{ empty($arrivalTicket->freight->unpaid_labor_charges) || (int)$arrivalTicket->freight->unpaid_labor_charges == 0 ? '-' : numberToWords((int)$arrivalTicket->freight->unpaid_labor_charges) }}"
+                                            value="{{ empty($arrivalTicket->freight->unpaid_labor_charges) || (int) $arrivalTicket->freight->unpaid_labor_charges == 0 ? '-' : numberToWords((int) $arrivalTicket->freight->unpaid_labor_charges) }}"
                                             readonly>
                                     </td>
                                 </tr>
@@ -416,12 +424,13 @@
                                     <td style=" padding: 8px;border: none;">Final Figure</td>
                                     <td style="padding: 8px;">
                                         <input type="text" style=" border: 1px solid #ddd; padding: 10px 10px;"
-                                            value="{{ empty($arrivalTicket->freight->net_freight) || (int)$arrivalTicket->freight->net_freight == 0 ? '-' : (int)$arrivalTicket->freight->net_freight }}" readonly>
+                                            value="{{ empty($arrivalTicket->freight->net_freight) || (int) $arrivalTicket->freight->net_freight == 0 ? '-' : (int) $arrivalTicket->freight->net_freight }}"
+                                            readonly>
                                     </td>
                                     <td style="padding: 8px;" colspan="8">
                                         <input type="text"
                                             style="     width: 100%; border: 1px solid #ddd; padding: 10px 10px; font-style: italic;"
-                                            value="{{ empty($arrivalTicket->freight->net_freight) || (int)$arrivalTicket->freight->net_freight == 0 ? '-' : numberToWords((int)$arrivalTicket->freight->net_freight) }}"
+                                            value="{{ empty($arrivalTicket->freight->net_freight) || (int) $arrivalTicket->freight->net_freight == 0 ? '-' : numberToWords((int) $arrivalTicket->freight->net_freight) }}"
                                             readonly>
                                     </td>
                                 </tr>
@@ -430,7 +439,9 @@
                         </div>
                         <div class=" col-lg-4 col-md-4 col-sm-4 col-xs-4">
                             <!-- Weights Section -->
-                            <div style="margin-top:5px; font-weight:600 !important; font-size: 1.25rem !important; color: #000 !important; padding:5px 0;"> Weights</div>
+                            <div
+                                style="margin-top:5px; font-weight:600 !important; font-size: 1.25rem !important; color: #000 !important; padding:5px 0;">
+                                Weights</div>
                             <hr style="border: 1px solid #ddd; margin-bottom: 0;margin-top: 0;">
                             <table style="border-collapse: collapse;">
                                 {{-- <tr>
@@ -471,7 +482,9 @@
                             <div>
                                 @if ($isCompulsury || $isSlabs || $showLumpSum)
                                     <!-- Sampling Results Section -->
-                                    <div style="margin-top:15px; font-weight: 600 !important; font-size: 1.25rem !important; color: #000 !important; padding:5px 0;"> Sampling Results
+                                    <div
+                                        style="margin-top:15px; font-weight: 600 !important; font-size: 1.25rem !important; color: #000 !important; padding:5px 0;">
+                                        Sampling Results
                                     </div>
                                     <hr style="border: 1px solid #ddd; margin-bottom: 0;margin-top: 0;">
                                     <table
@@ -490,8 +503,7 @@
                                                     <td style="padding: 8px;border: 1px solid #ddd;">
                                                         Lumpsum Deduction (₨)
                                                     </td>
-                                                    <td
-                                                        style="padding: 8px;border: 1px solid #ddd; text-align: center;">
+                                                    <td style="padding: 8px;border: 1px solid #ddd; text-align: center;">
                                                         {{ $samplingRequest->lumpsum_deduction ?? 0 }} ₨
                                                     </td>
                                                 </tr>
@@ -499,8 +511,7 @@
                                                     <td style="padding: 8px;border: 1px solid #ddd;">
                                                         Lumpsum Deduction (KG)
                                                     </td>
-                                                    <td
-                                                        style="padding: 8px;border: 1px solid #ddd; text-align: center;">
+                                                    <td style="padding: 8px;border: 1px solid #ddd; text-align: center;">
                                                         {{ $samplingRequest->lumpsum_deduction_kgs ?? 0 }} kg
                                                     </td>
                                                 </tr>
@@ -516,8 +527,7 @@
                                                             <td style="padding: 8px;border: 1px solid #ddd;">
                                                                 {{ $slab->slabType->name }}
                                                             </td>
-                                                            <td
-                                                                style="padding: 8px; border: 1px solid #ddd;  text-align: center;">
+                                                            <td style="padding: 8px; border: 1px solid #ddd;  text-align: center;">
                                                                 {{ $slab->applied_deduction }} <span
                                                                     class="text-sm">{{ SLAB_TYPES_CALCULATED_ON[$slab->slabType->calculation_base_type ?? 1] }}</span>
                                                             </td>
@@ -541,9 +551,9 @@
                                                             @endphp
                                                             <tr>
                                                                 <td style="padding: 8px; border: 1px solid #ddd;">
-                                                                    {{ $slab->qcParam->name }}</td>
-                                                                <td
-                                                                    style="padding: 8px;border: 1px solid #ddd;text-align: center;">
+                                                                    {{ $slab->qcParam->name }}
+                                                                </td>
+                                                                <td style="padding: 8px;border: 1px solid #ddd;text-align: center;">
                                                                     {{ $slab->applied_deduction }} <span
                                                                         class="text-sm">{{ SLAB_TYPES_CALCULATED_ON[3] }}</span>
                                                                 </td>
@@ -575,25 +585,33 @@
                         <table style="width: 100%; border-collapse: collapse; margin-top: 30px;">
                             <tr>
                                 <td style="width: 33%; text-align: center; padding: 8px; vertical-align: top;">
-                                    <div style="font-weight: 800; color: #000; font-size: 1.1rem; margin-bottom: 5px;">Confirmed Form</div>
+                                    <div style="font-weight: 800; color: #000; font-size: 1.1rem; margin-bottom: 5px;">
+                                        Confirmed Form</div>
                                     <div style="margin-top: 30px; border-top: 1px solid #000; padding-top: 5px;">
                                         {{ $arrivalTicket->purchaseOrder->unique_no ?? 'N/A' }}
                                     </div>
                                 </td>
                                 <td style="width: 33%; text-align: center; padding: 8px; vertical-align: top;">
-                                    <div style="font-weight: 800; color: #000; font-size: 1.1rem; margin-bottom: 5px;">Contact Number</div>
+                                    <div style="font-weight: 800; color: #000; font-size: 1.1rem; margin-bottom: 5px;">
+                                        Contact Number</div>
                                     <div style="margin-top: 30px; border-top: 1px solid #000; padding-top: 5px;">
                                         {{ $arrivalTicket->purchaseOrder->unique_no ?? 'N/A' }}
                                     </div>
                                 </td>
                                 <td style="width: 33%; text-align: center; padding: 8px; vertical-align: top;">
-                                    <div style="font-weight: 800; color: #000; font-size: 1.1rem; margin-bottom: 5px;">Prepared By:</div>
+                                    <div style="font-weight: 800; color: #000; font-size: 1.1rem; margin-bottom: 5px;">
+                                        Prepared By:</div>
                                     <div style="margin-top: 30px; border-top: 1px solid #000; padding-top: 5px;">
                                         {{ auth()->user()->name }}
                                     </div>
                                 </td>
                             </tr>
                         </table>
+                    </div>
+
+                    <div class="text-center mt-3" style="text-align: center;">
+                        <img src="{{ asset('/arrival_slip_stamp.jpeg') }}" alt=""
+                            style="margin: auto !important;width: 33%;">
                     </div>
 
                     @if ($isNotGeneratable)
@@ -622,7 +640,7 @@
     function readURL(input) {
         if (input.files && input.files[0]) {
             var reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = function (e) {
                 $('#imagePreview').css('background-image', 'url(' + e.target.result + ')');
                 $('#imagePreview').hide();
                 $('#imagePreview').fadeIn(650);
@@ -630,11 +648,11 @@
             reader.readAsDataURL(input.files[0]);
         }
     }
-    $("#imageUpload").change(function() {
+    $("#imageUpload").change(function () {
         readURL(this);
     });
     $('.submenu').hide();
-    $('li.menu-items').on('click', function() {
+    $('li.menu-items').on('click', function () {
 
         $(this).find('.submenu').slideToggle('slow');
         $(this).find('.menu-items-link').toggleClass('active');
@@ -687,9 +705,9 @@
         printWindow.document.close();
         printWindow.focus();
 
-        setTimeout(function() {
+        setTimeout(function () {
             printWindow.print();
-            setTimeout(function() {
+            setTimeout(function () {
                 printWindow.close();
                 if (param3 !== 1) {
                     // location.reload();
@@ -699,11 +717,11 @@
     }
 
     // Bind the function to the button
-    document.getElementById("printButton").addEventListener("click", function() {
+    document.getElementById("printButton").addEventListener("click", function () {
         printView('printSection', 'print-section', 0);
     });
 
-    document.addEventListener('keydown', function(e) {
+    document.addEventListener('keydown', function (e) {
         if (e.ctrlKey && e.key === 'p') {
             e.preventDefault();
             printView('printSection', 'print-section', 0);
