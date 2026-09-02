@@ -127,8 +127,7 @@
             <div class="form-group">
                 <label>Arrived Kanta Charges</label>
                 <input type="number" step="0.01" name="karachi_kanta_charges" readonly
-                    class="form-control calculate-final" min="0"
-                    value="{{ $weighbridgeAmount ?? 0 }}" />
+                    class="form-control calculate-final" min="0" value="{{ $weighbridgeAmount ?? 0 }}" />
             </div>
         </div>
 
@@ -185,8 +184,8 @@
         <div class="col-md-3">
             <div class="form-group">
                 <label>Labor Charges</label>
-                <input type="number" step="0.01" disabled name="labor_charges" class="form-control "
-                    value="0" min="0" />
+                <input type="number" step="0.01" disabled name="labor_charges" class="form-control " value="0"
+                    min="0" />
             </div>
         </div>
         <div class="col-md-3">
@@ -233,7 +232,7 @@
 
         <div class="col-md-3">
             <div class="form-group">
-                <label>Other Document (Optional)</label>
+                <label>Arrival Weighbridge Slip</label>
                 <input type="file" name="other_document" class="form-control-file" />
             </div>
         </div>
