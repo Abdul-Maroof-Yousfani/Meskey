@@ -195,6 +195,48 @@ class ArrivalSlipController extends Controller
         return view('management.arrival.arrival_slip.edit', compact('ArrivalTickets', 'arrival_slip', 'arrivalTicket', 'isNotGeneratable', 'samplingRequest', 'samplingRequestCompulsuryResults', 'samplingRequestResults'));
     }
 
+    public function show($id)
+    {
+        $ArrivalTickets = ArrivalTicket::where('second_weighbridge_status', 'completed')->get();
+        $arrival_slip = ArrivalSlip::findOrFail($id);
+
+        $arrivalTicket = ArrivalTicket::with([
+            'product',
+            'unloadingLocation.arrivalLocation',
+            'arrivalSlip',
+            'firstWeighbridge',
+            'purchaseOrder'
+        ])->findOrFail($arrival_slip->arrival_ticket_id);
+        // dd(1);
+        $samplingRequest = ArrivalSamplingRequest::where('arrival_ticket_id', $arrivalTicket->id)
+            // ->where('sampling_type', 'initial')
+            ->whereIn('approved_status', ['approved', 'rejected'])
+            ->get()->last();
+
+        $samplingRequestCompulsuryResults = ArrivalSamplingResultForCompulsury::where('arrival_sampling_request_id', $samplingRequest->id)->get();
+        $samplingRequestResults = ArrivalSamplingResult::where('arrival_sampling_request_id', $samplingRequest->id)->get();
+
+        $slabs = ProductSlab::where('product_id', $samplingRequest->arrival_product_id)
+            ->get()
+            ->groupBy('product_slab_type_id')
+            ->map(function ($group) {
+                return $group->sortBy('from')->first();
+            });
+
+        $samplingRequestResults->map(function ($item) use ($slabs) {
+            $slab = $slabs->get($item->product_slab_type_id);
+            $item->max_range = $slab ? $slab->to : null;
+            $item->deduction_type = $slab ? $slab->deduction_type : null;
+            return $item;
+        });
+
+        $isNotGeneratable = false;
+
+        $isNotGeneratable = $arrivalTicket->decision_making == 1;
+
+        return view('management.arrival.arrival_slip.show', compact('ArrivalTickets', 'arrival_slip', 'arrivalTicket', 'isNotGeneratable', 'samplingRequest', 'samplingRequestCompulsuryResults', 'samplingRequestResults'));
+    }
+
     /**
      * Update the specified resource in storage.
      */

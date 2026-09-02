@@ -171,7 +171,7 @@
         samplingResults: [
             @foreach ($samplingRequestResults as $slab)
                 @if ($slab->applied_deduction)
-                                                                                                                                                                                                                            {
+                                                                                                                                                                                                                                                                                                                                                                            {
                         id: {{ $slab->id }},
                         applied_deduction: {{ $slab->applied_deduction ?? 0 }},
                         deduction_type: '{{ $slab->deduction_type ?? 'amount' }}',
@@ -185,10 +185,10 @@
         compulsoryResults: [
             @foreach ($samplingRequestCompulsuryResults as $slab)
                 @if ($slab->applied_deduction)
-                                                                                                                        {
+                                                                                                                                                                                                {
                     id: {{ $slab->id }},
                     applied_deduction: {{ $slab->applied_deduction ?? 0 }}
-                                                                                                                        },
+                                                                                                                                                                                                },
                 @endif
             @endforeach
         ],
@@ -938,7 +938,6 @@
             <div class="row">
                 <div class="col-md-12">
                     <h6 class="header-heading-sepration toggleFreight" style="background: #0059ff26;">
-
                         @php
                             $arrivalTicket = $ticket;
                         @endphp
@@ -946,7 +945,6 @@
                     </h6>
                 </div>
             </div>
-
 
 
             @if($arrivalTicket?->purchaseOrder?->saudaType?->name == 'Thadda')
@@ -987,6 +985,23 @@
                                     <img src="{{ asset($arrivalTicket->purchaseOrder?->purchaseFreight?->supplier_bill) }}"
                                         class="d-block w-100" />
                                 </a>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label>Arrival Slip</label>
+                            @if($arrivalTicket?->purchaseFreight?->arrivalTicket?->id)
+                                <a class="btn btn-primary btn-block"
+                                    href="{{ route('arrival-slip.show', $arrivalTicket?->purchaseFreight?->arrivalTicket?->id) }}"
+                                    target="_blank">
+                                    View Arrival Slip
+                                </a>
+                            @else
+                                <p class="text-danger d-block">
+                                    No Arrival Slip
+                                </p>
                             @endif
                         </div>
                     </div>
@@ -1326,7 +1341,7 @@
                 const totalDeductionsForFormula = totalSamplingDeductions + bagWeightAmount +
                     loadingWeighbridgeAmount + deduction_on_access_weight_amount;
                 const totalAmount = grossAmount - totalDeductionsForFormula + bagRateAmount +
-                                                                                                                        {{ $totalSupplierCommission }};
+                                                                                                                                                                                                {{ $totalSupplierCommission }};
 
                 $('#modal_total_amount').val(totalAmount);
                 $('#modal_total_amount_display').val(totalAmount.toFixed(2));

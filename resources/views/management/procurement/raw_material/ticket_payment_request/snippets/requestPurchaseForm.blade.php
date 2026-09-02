@@ -1086,6 +1086,14 @@
                     @endif
                 </div>
             </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label>Arrival Slip</label>
+                        <a class="btn btn-primary btn-block" href="{{ route('arrival-slip.show', $arrivalTicket?->arrivalSlip->id) }}" target="_blank">
+                           View Arrival Slip
+                        </a>
+                </div>
+            </div>
 
         </div>
     @endif

@@ -1,4 +1,5 @@
 @php
+
     $param = isset($isRequestApprovalPage) && $isRequestApprovalPage ? 'readonly' : '';
     //  $param0 = isset($isRequestApprovalPage) && $isRequestApprovalPage ? 'disabled' : '';
     $param0 = (isset($paymentRequestData) && $paymentRequestData->payment_to && !isset($isCreateFlow)) ? 'disabled' : '';
@@ -653,6 +654,7 @@
             </h6>
         </div>
     </div>
+
     @if($ticket->saudaType?->name == 'Pohanch')
         <div class="row toggleFreightBox" style="display:none;">
             <div class="col-md-3">
@@ -697,6 +699,16 @@
                 </div>
             </div>
 
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label>Arrival Slip</label>
+                    <a class="btn btn-primary btn-block"
+                        href="{{ route('arrival-slip.show', $arrivalTicket?->arrivalSlip->id) }}" target="_blank">
+                        View Arrival Slip
+                    </a>
+                </div>
+            </div>
+
         </div>
     @endif
 
@@ -704,7 +716,9 @@
 
 
     @if($ticket->saudaType?->name == 'Thadda')
-
+        @php
+            $arrivalTicket = $ticket;
+        @endphp
 
         <div class="row toggleFreightBox" style="display:none;">
             <div class="col-md-3">
@@ -743,13 +757,29 @@
                 </div>
             </div>
 
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label>Arrival Slip</label>
+                    @if($arrivalTicket?->purchaseFreight?->arrivalTicket?->id)
+                        <a class="btn btn-primary btn-block"
+                            href="{{ route('arrival-slip.show', $arrivalTicket?->purchaseFreight?->arrivalTicket?->id) }}"
+                            target="_blank">
+                            View Arrival Slip
+                        </a>
+                    @else
+                        <p class="text-danger d-block">
+                            No Arrival Slip
+                        </p>
+                    @endif
+                </div>
+            </div>
+
 
         </div>
     @endif
 
 
-    @php
-        $is_pending = isset($isRequestApprovalPage) && $isRequestApprovalPage && $paymentRequest && $paymentRequest->status == "pending";
+    @php $is_pending = isset($isRequestApprovalPage) && $isRequestApprovalPage && $paymentRequest && $paymentRequest->status == "pending";
     @endphp
 
     @if (!($has_pendings > 0 && isset($paymentRequestData) && $paymentRequestData->is_paid_by_supplier))
