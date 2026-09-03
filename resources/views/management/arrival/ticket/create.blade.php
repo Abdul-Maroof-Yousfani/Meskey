@@ -105,12 +105,14 @@ $userLocation = $authUser->companyLocation ?? null;
         <div class="col-xs-6 col-sm-6 col-md-6">
             <div class="form-group ">
                 <label>Decision Of:</label>
-                <select name="decision_id" id="decision_id" class="form-control select2">
+                <select name="decision_id_display" id="decision_id" class="form-control select2">
                     <option value="" hidden>Decision Of</option>
                     @foreach ($accountsOf as $account)
                         <option value="{{ $account->id }}">{{ $account->name }}</option>
                     @endforeach
                 </select>
+                <input type="hidden" name="decision_id" id="decision_id_hidden">
+
             </div>
         </div>
         <div class="col-xs-6 col-sm-6 col-md-6">
@@ -382,7 +384,7 @@ $userLocation = $authUser->companyLocation ?? null;
         //  initializeDynamicSelect2('#broker_name', 'suppliers', 'name', 'name', true, false);
         initializeDynamicSelect2('#station_id', 'stations', 'name', 'name', true, false);
 
-        $('[name="arrival_truck_type_id"], [name="decision_id"], [name="accounts_of_display"], [name="broker_name"], [name="arrival_purchase_order_id"], [name="product_id_display"], #company_location_id')
+        $('[name="arrival_truck_type_id"], [name="decision_id_display"], [name="accounts_of_display"], [name="broker_name"], [name="arrival_purchase_order_id"], [name="product_id_display"], #company_location_id')
             .select2();
 
         function calculateNetWeight() {
@@ -410,6 +412,9 @@ $userLocation = $authUser->companyLocation ?? null;
         $(document).on('change', '#accounts_of', function () {
             $('#accounts_of_hidden').val($(this).val());
         });
+        $(document).on('change', '#decision_id', function () {
+            $('#decision_id_hidden').val($(this).val());
+        });
 
         //   $(document).on('change', '[name="arrival_truck_type_id"]', function () {
         //  let sampleMoney = $(this).find(':selected').data('samplemoney');
@@ -432,6 +437,8 @@ $userLocation = $authUser->companyLocation ?? null;
             var saudaTypeName = selectedOption.data('sauda-type-name');
             var saudaTypeId = selectedOption.data('sauda-type-id');
             var createdAt = selectedOption.data('created-at');
+            var decisionId = selectedOption.data('decision-id'); // Get decision ID
+
 
             // Set product selection
             if (productId) {
@@ -448,6 +455,13 @@ $userLocation = $authUser->companyLocation ?? null;
                 $('#accounts_of').prop('disabled', true).addClass('disabled-field');
             }
 
+            // Set decision of - THIS WILL AUTO-SELECT IT
+            if (decisionId) {
+                $('#decision_id').val(decisionId).trigger('change');
+                $('#decision_id').prop('disabled', true).addClass('disabled-field'); // Optional: disable it
+                $('#decision_id_hidden').val(decisionId);
+
+            }
             // Set decision maker selection
             if (createdById) {
                 $('#decision_id').val(createdById).trigger('change');
@@ -538,6 +552,7 @@ $userLocation = $authUser->companyLocation ?? null;
                         `<option value="${contract.id}"
                         data-product-id="${contract.product_id}"
                         data-supplier-id="${contract.supplier.company_name}"
+                        data-decision-id="${contract.decision_of_id}"
                         data-sauda-type-id="${contract.sauda_type_id}"
                         data-sauda-type-name="${contract.sauda_type?.name ?? 'N/A'}"
                         >

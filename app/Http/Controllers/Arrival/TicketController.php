@@ -52,8 +52,8 @@ class TicketController extends Controller
                         ->orWhere('bilty_no', 'like', $searchTerm);
                 });
             })
-            ->when($request->filled('unique_no'), function ($q) use ($request) {
-                $q->where('unique_no', 'like', '%' . $request->unique_no . '%');
+            ->when($request->filled('unique_no_filter'), function ($q) use ($request) {
+                $q->where('unique_no', 'like', '%' . $request->unique_no_filter . '%');
             })
             ->when($request->filled('product_id'), function ($q) use ($request) {
                 $q->where('product_id', $request->product_id);

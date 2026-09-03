@@ -57,8 +57,8 @@
                                     </div>
                                     <div class="px-1 text-left" style="min-width: 180px; flex: 1 1 180px;">
                                         <label class="form-label">Ticket No.</label>
-                                        <input type="text" class="form-control" placeholder="Ticket#" name="unique_no"
-                                            value="{{ request('unique_no') }}">
+                                        <input type="text" class="form-control" placeholder="Ticket#"
+                                            name="unique_no_filter" value="{{ request('unique_no_filter') }}">
                                     </div>
                                     <div class="px-1 text-left" style="min-width: 180px; flex: 1 1 180px;">
                                         <label class="form-label">Commodity</label>
