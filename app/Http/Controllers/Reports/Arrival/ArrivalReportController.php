@@ -54,7 +54,21 @@ class ArrivalReportController extends Controller
                 'purchaseOrder',
                 'firstWeighbridge',
                 'secondWeighbridge',
-                'approvals'
+                'approvals',
+                // Load initial sampling
+                'initialSampling' => function ($q) {
+                    $q->where('sampling_type', 'initial')
+                        ->whereIn('approved_status', ['approved', 'rejected'])
+                        ->with(['slabResults.slabType', 'compulsoryResults.qcParam'])
+                        ->latest();
+                },
+                // Load inner sampling
+                'innerSampling' => function ($q) {
+                    $q->where('sampling_type', 'inner')
+                        ->whereIn('approved_status', ['approved', 'rejected'])
+                        ->with(['slabResults.slabType', 'compulsoryResults.qcParam'])
+                        ->latest();
+                }
             ])
             //->where('is_ticket_verified', '=', $isOnlyVerified ? 1 : 0)
             // ->where(function ($query) {

@@ -244,5 +244,29 @@ class ArrivalTicket extends Model
             ->latestOfMany();
     }
 
+
+    // In ArrivalTicket.php model
+
+    /**
+     * Get initial sampling request (latest)
+     */
+    public function initialSampling()
+    {
+        return $this->hasOne(ArrivalSamplingRequest::class, 'arrival_ticket_id', 'id')
+            ->where('sampling_type', 'initial')
+            ->whereIn('approved_status', ['approved', 'rejected'])
+            ->latest();
+    }
+
+    /**
+     * Get inner sampling request (latest)
+     */
+    public function innerSampling()
+    {
+        return $this->hasOne(ArrivalSamplingRequest::class, 'arrival_ticket_id', 'id')
+            ->where('sampling_type', 'inner')
+            ->whereIn('approved_status', ['approved', 'rejected'])
+            ->latest();
+    }
 }
 
