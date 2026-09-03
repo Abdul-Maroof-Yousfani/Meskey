@@ -103,6 +103,7 @@
                             <select name="location" id="location" class="form-control select2" required style="width: 100%;">
                                 <option value="">Select From Location</option>
                             </select>
+                            <input type="hidden" name="hidden_location" id="hidden_location">
                         </div>
                     </div>
 
@@ -273,10 +274,17 @@
         }
 
         $('#location').on('change', function() {
+            if ($(this).val()) {
+                $('#hidden_location').val($(this).val());
+            }
             // Only update if it wasn't triggered programmatically with a specific value we want to preserve
             if (!$(this).data('setting-value')) {
                 updateFactoryDropdown();
             }
+        });
+
+        $('#ajaxSubmit').on('submit', function() {
+            $('#location').prop('disabled', false);
         });
 
         function initTransporterSelect(selector) {
@@ -406,11 +414,12 @@
             const savedFromLocation = selectedLogistics && selectedLogistics.location ? selectedLogistics.location : '';
             const savedToLocation = selectedLogistics && selectedLogistics.to_location ? selectedLogistics.to_location : '';
             const savedFactory = selectedLogistics && selectedLogistics.factory ? selectedLogistics.factory : '';
-            const fromLocationValue = /^\d+$/.test(String(savedFromLocation)) ? savedFromLocation : (data.from_location_id || '');
+            let fromLocationValue = /^\d+$/.test(String(savedFromLocation)) ? savedFromLocation : (data.from_location_id || '');
             const toLocationValue = /^\d+$/.test(String(savedToLocation)) ? savedToLocation : (data.to_location_id || '');
-            const fromLocationOptions = isExport ? (data.from_location_options || []) : (data.from_location_options || []).filter(function(option) {
-                return fromLocationValue && option.id.toString() === fromLocationValue.toString();
-            });
+            const fromLocationOptions = data.from_location_options && data.from_location_options.length > 0 ? data.from_location_options : (saleToLocationOptions || []);
+            if (!fromLocationValue && fromLocationOptions.length > 0) {
+                fromLocationValue = fromLocationOptions[0].id;
+            }
 
             $('#to_location_label').text(isExport ? 'Port of Loading' : 'To Location');
             populateSelectOptions(
@@ -419,6 +428,7 @@
                 fromLocationValue,
                 'Select From Location'
             );
+            $('#hidden_location').val(fromLocationValue);
             $('#location').prop('disabled', !isExport);
             populateSelectOptions(
                 $('#to_location'),
