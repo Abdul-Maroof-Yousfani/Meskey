@@ -279,6 +279,15 @@ class LogisticsController extends Controller
             $logistics->am_approval_status = 'pending';
             $logistics->am_change_made = 1;
 
+            $fromLocation = $request->location ?: $request->hidden_location;
+            if (empty($fromLocation) && $request->type === 'sale_order' && $request->sale_order_id) {
+                $so = \App\Models\Sales\SalesOrder::with('locations')->find($request->sale_order_id);
+                $fromLocation = $so?->locations?->first()?->location_id;
+            } elseif (empty($fromLocation) && $request->type === 'export_order' && $request->export_order_id) {
+                $eo = ExportOrder::find($request->export_order_id);
+                $fromLocation = collect($eo?->company_location_ids ?? [])->first();
+            }
+
             $logistics->fill([
                 'date' => $request->date,
                 'type' => $request->type,
@@ -288,7 +297,7 @@ class LogisticsController extends Controller
                 'commodity' => $request->commodity,
                 'sauda_type' => $request->sauda_type,
                 'delivery_address' => $request->delivery_address,
-                'location' => $request->location,
+                'location' => $fromLocation,
                 'customer' => $request->customer,
                 'job_order' => $request->job_order,
                 'return_port' => $request->return_port,
@@ -413,6 +422,15 @@ class LogisticsController extends Controller
             $logistics->am_approval_status = 'pending';
             $logistics->am_change_made = 1;
 
+            $fromLocation = $request->location ?: $request->hidden_location;
+            if (empty($fromLocation) && $request->type === 'sale_order' && $request->sale_order_id) {
+                $so = \App\Models\Sales\SalesOrder::with('locations')->find($request->sale_order_id);
+                $fromLocation = $so?->locations?->first()?->location_id;
+            } elseif (empty($fromLocation) && $request->type === 'export_order' && $request->export_order_id) {
+                $eo = ExportOrder::find($request->export_order_id);
+                $fromLocation = collect($eo?->company_location_ids ?? [])->first();
+            }
+
             $logistics->fill([
                 'date' => $request->date,
                 'type' => $request->type,
@@ -422,7 +440,7 @@ class LogisticsController extends Controller
                 'commodity' => $request->commodity,
                 'sauda_type' => $request->sauda_type,
                 'delivery_address' => $request->delivery_address,
-                'location' => $request->location,
+                'location' => $fromLocation,
                 'customer' => $request->customer,
                 'job_order' => $request->job_order,
                 'return_port' => $request->return_port,

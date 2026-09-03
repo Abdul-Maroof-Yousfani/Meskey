@@ -1,3 +1,24 @@
+@php
+    $isExport = ($logistics->type ?? 'sale_order') === 'export_order';
+    $fromLocationId = $logistics->location;
+    $fromLocationName = '';
+    if ($fromLocationId && is_numeric($fromLocationId)) {
+        $fromLocationName = \App\Models\Master\CompanyLocation::find($fromLocationId)?->name;
+    }
+    if (!$fromLocationName && ($logistics->type ?? 'sale_order') === 'sale_order' && $logistics->saleOrder) {
+        $firstLoc = $logistics->saleOrder->locations->first();
+        if ($firstLoc) {
+            $fromLocationId = $firstLoc->location_id;
+            $fromLocationName = $firstLoc->companyLocation?->name;
+        }
+    } elseif (!$fromLocationName && ($logistics->type ?? 'sale_order') === 'export_order' && $logistics->exportOrder) {
+        $firstLocId = collect($logistics->exportOrder->company_location_ids ?? [])->first();
+        if ($firstLocId) {
+            $fromLocationId = $firstLocId;
+            $fromLocationName = \App\Models\Master\CompanyLocation::find($firstLocId)?->name;
+        }
+    }
+@endphp
 <form action="{{ route('sales.logistics.update', $logistics->id) }}" method="POST" id="ajaxSubmit" autocomplete="off">
     @csrf
     @method('PUT')
@@ -103,7 +124,16 @@
                             <label for="location" class="text-uppercase">From Location</label>
                             <select name="location" id="location" class="form-control select2" required style="width: 100%;">
                                 <option value="">Select From Location</option>
+                                @if($fromLocationId && $fromLocationName)
+                                    <option value="{{ $fromLocationId }}" selected>{{ $fromLocationName }}</option>
+                                @endif
+                                @foreach($companyLocations as $loc)
+                                    @if($loc->id != $fromLocationId)
+                                        <option value="{{ $loc->id }}">{{ $loc->name }}</option>
+                                    @endif
+                                @endforeach
                             </select>
+                            <input type="hidden" name="hidden_location" id="hidden_location" value="{{ $fromLocationId }}">
                         </div>
                     </div>
 
@@ -247,6 +277,107 @@
         </div>
     </div>
 
+    @php
+        $logisticsModule = $logistics->getApprovalModule();
+        $logisticsApprovalLogs = $logisticsModule ? \App\Models\ApprovalsModule\ApprovalLog::where('record_id', $logistics->id)->where('module_id', $logisticsModule->id)->with(['user', 'role'])->orderBy('created_at', 'desc')->get() : collect();
+    @endphp
+
+    @if ($logisticsApprovalLogs->isNotEmpty())
+        <style>
+            .current-status-tag {
+                display: inline-flex;
+                align-items: center;
+                gap: 3px;
+                font-size: 9px;
+                font-weight: 700;
+                color: #047857;
+                background-color: #ecfdf5;
+                border: 1px solid #a7f3d0;
+                padding: 1px 7px;
+                border-radius: 10px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                line-height: 1.4;
+            }
+            .current-status-dot {
+                width: 5px;
+                height: 5px;
+                background-color: #10b981;
+                border-radius: 50%;
+                display: inline-block;
+            }
+        </style>
+        <div class="approval-table-wrapper mx-2" style="margin-top: 15px; margin-bottom: 25px;">
+            <div class="card border" style="box-shadow: none; margin-bottom: 0 !important;">
+                <div class="card-header bg-light py-2 d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 text-dark fw-bold" style="font-size: 14px;">
+                        Approval History & Comments
+                    </h6>
+                    <span class="badge badge-info">{{ $logisticsApprovalLogs->count() }} {{ \Illuminate\Support\Str::plural('Action', $logisticsApprovalLogs->count()) }}</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped table-hover mb-0" style="font-size: 13px;">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 50px;" class="text-center">#</th>
+                                    <th style="min-width: 160px; width: 22%;">User</th>
+                                    <th style="min-width: 150px; width: 18%;" class="text-center">Action</th>
+                                    <th style="min-width: 160px; width: 20%;">Date & Time</th>
+                                    <th style="min-width: 300px; width: 40%;">Comments</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($logisticsApprovalLogs as $index => $log)
+                                    @php
+                                        $badgeClass = match($log->action) {
+                                            'approved' => 'badge-success',
+                                            'rejected' => 'badge-danger',
+                                            'reverted' => 'badge-warning',
+                                            'partial_approved' => 'badge-info',
+                                            default => 'badge-secondary'
+                                        };
+                                    @endphp
+                                    <tr>
+                                        <td class="text-center align-middle">{{ $index + 1 }}</td>
+                                        <td class="align-middle">
+                                            <strong>{{ $log->user->name ?? 'N/A' }}</strong>
+                                            @if ($log->user_id === auth()->id())
+                                                <span class="badge badge-primary ms-1" style="font-size: 10px;">You</span>
+                                            @endif
+                                        </td>
+                                        <td class="text-center align-middle">
+                                            <span class="badge {{ $badgeClass }} text-uppercase px-2 py-1" style="font-size: 11px;">
+                                                {{ str_replace('_', ' ', $log->action) }}
+                                            </span>
+                                            @if ($loop->first)
+                                                <div class="mt-1">
+                                                    <span class="current-status-tag">
+                                                        <span class="current-status-dot"></span> Current
+                                                    </span>
+                                                </div>
+                                            @endif
+                                        </td>
+                                        <td class="align-middle">
+                                            {{ $log->created_at ? $log->created_at->format('d M, Y h:i A') : 'N/A' }}
+                                        </td>
+                                        <td class="align-middle">
+                                            @if (!empty(trim($log->comments ?? '')))
+                                                <span class="text-dark">{{ $log->comments }}</span>
+                                            @else
+                                                <span class="text-muted fst-italic">No comments</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <div class="row bottom-button-bar">
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
@@ -274,10 +405,17 @@
         }
 
         $('#location').on('change', function() {
+            if ($(this).val()) {
+                $('#hidden_location').val($(this).val());
+            }
             // Only update if it wasn't triggered programmatically with a specific value we want to preserve
             if (!$(this).data('setting-value')) {
                 updateFactoryDropdown();
             }
+        });
+
+        $('#ajaxSubmit').on('submit', function() {
+            $('#location').prop('disabled', false);
         });
 
         function initTransporterSelect(selector) {
@@ -404,14 +542,15 @@
 
         function updateLocationFields(type, data, selectedLogistics = null) {
             const isExport = type === 'export_order';
-            const savedFromLocation = selectedLogistics && selectedLogistics.location ? selectedLogistics.location : '';
+            const savedFromLocation = selectedLogistics && selectedLogistics.location ? selectedLogistics.location : ($('#hidden_location').val() || '');
             const savedToLocation = selectedLogistics && selectedLogistics.to_location ? selectedLogistics.to_location : '';
             const savedFactory = selectedLogistics && selectedLogistics.factory ? selectedLogistics.factory : '';
-            const fromLocationValue = /^\d+$/.test(String(savedFromLocation)) ? savedFromLocation : (data.from_location_id || '');
+            let fromLocationValue = /^\d+$/.test(String(savedFromLocation)) ? savedFromLocation : (data.from_location_id || '');
             const toLocationValue = /^\d+$/.test(String(savedToLocation)) ? savedToLocation : (data.to_location_id || '');
-            const fromLocationOptions = isExport ? (data.from_location_options || []) : (data.from_location_options || []).filter(function(option) {
-                return fromLocationValue && option.id.toString() === fromLocationValue.toString();
-            });
+            const fromLocationOptions = data.from_location_options && data.from_location_options.length > 0 ? data.from_location_options : (saleToLocationOptions || []);
+            if (!fromLocationValue && fromLocationOptions.length > 0) {
+                fromLocationValue = fromLocationOptions[0].id;
+            }
 
             $('#to_location_label').text(isExport ? 'Port of Loading' : 'To Location');
             populateSelectOptions(
@@ -420,6 +559,7 @@
                 fromLocationValue,
                 'Select From Location'
             );
+            $('#hidden_location').val(fromLocationValue);
             $('#location').prop('disabled', !isExport);
             populateSelectOptions(
                 $('#to_location'),
@@ -432,7 +572,7 @@
             $('#location').data('setting-value', false);
         }
 
-        function updateTypeUI(type) {
+        function updateTypeUI(type, isInit = false) {
             const isExport = type === 'export_order';
 
             $('#document_select_label').text(isExport ? 'Loading Request (Export Order)' : 'Loading Request (Sale Order)');
@@ -465,14 +605,16 @@
                 }
             });
 
-            populateSelectOptions($('#location'), [], '', 'Select From Location');
-            $('#location').prop('disabled', !isExport);
-            populateSelectOptions(
-                $('#to_location'),
-                isExport ? [] : saleToLocationOptions,
-                '',
-                isExport ? 'Select Port of Loading' : 'Select To Location'
-            );
+            if (!isInit) {
+                populateSelectOptions($('#location'), [], '', 'Select From Location');
+                $('#location').prop('disabled', !isExport);
+                populateSelectOptions(
+                    $('#to_location'),
+                    isExport ? [] : saleToLocationOptions,
+                    '',
+                    isExport ? 'Select Port of Loading' : 'Select To Location'
+                );
+            }
             initTransporterSelect('.transporter-select');
         }
 
@@ -481,7 +623,7 @@
             let type = $(this).val();
             if (type === 'sale_order' || type === 'export_order') {
                 $('#document_info_container').show();
-                updateTypeUI(type);
+                updateTypeUI(type, isInit);
                 
                 if (!isInit) {
                     $('#customer_id').val('').trigger('change', [true]);
