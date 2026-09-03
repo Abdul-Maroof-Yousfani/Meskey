@@ -30,6 +30,11 @@ class ArrivalReportController extends Controller
 
     public function getArrivalReport(Request $request)
     {
+
+        // Increase memory and execution time
+        ini_set('memory_limit', '512M');
+        ini_set('max_execution_time', 300); // 5 minutes
+
         $isOnlyVerified = str()->contains($request->route()->getName(), 'verified');
         $tickets = ArrivalTicket::select('arrival_tickets.*', 'grn_numbers.unique_no as grn_unique_no')
             ->leftJoin('arrival_slips', 'arrival_tickets.id', '=', 'arrival_slips.arrival_ticket_id')
