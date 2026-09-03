@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Reports\Arrival;
 
 use App\Http\Controllers\Controller;
 use App\Models\Master\Account\Account;
+use App\Models\Master\ArrivalCompulsoryQcParam;
 use App\Models\Master\ArrivalLocation;
 use App\Models\Master\CompanyLocation;
 use App\Models\Master\Miller;
@@ -33,6 +34,7 @@ class ArrivalReportController extends Controller
     {
 
         $product_slab_types = ProductSlabType::get();
+        $arrival_compulsory_qc_params = ArrivalCompulsoryQcParam::get();
         // Increase memory and execution time
         ini_set('memory_limit', '512M');
         ini_set('max_execution_time', 300); // 5 minutes
@@ -128,7 +130,7 @@ class ArrivalReportController extends Controller
             })
             ->orderBy('arrival_tickets.created_at', 'asc')
             ->get();
-        return view('management.reports.arrival.arrival-history.getArrivalReport', compact('tickets', 'product_slab_types'));
+        return view('management.reports.arrival.arrival-history.getArrivalReport', compact('tickets', 'product_slab_types', 'arrival_compulsory_qc_params'));
     }
 
 
