@@ -171,12 +171,12 @@
                                             <th>Bag Condition</th>
                                             <th>Bag Packing</th>
                                             <th>No. Bag</th>
-                                            @foreach (getTableData('product_slab_types') as $slab)
+                                            <!-- @foreach (getTableData('product_slab_types') as $slab)
                                                 <th>{{ $slab->name }}</th>
                                             @endforeach
                                             @foreach (getTableData('arrival_compulsory_qc_params') as $compulsory_slab_type)
                                                 <th>{{ $compulsory_slab_type->name }}</th>
-                                            @endforeach
+                                            @endforeach -->
                                             <th>Warehouse</th>
                                             <th>Gala</th>
                                             {{-- <th>Tabaar Remarks</th> --}}
