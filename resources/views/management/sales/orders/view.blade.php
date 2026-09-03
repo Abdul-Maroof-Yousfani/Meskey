@@ -319,11 +319,11 @@
                                 </td>
                                 <td>
                                     <input type="number" name="rate[]" id="rate_{{ $index }}" value="{{ $data->rate }}"
-                                        onkeyup="calc(this)" class="form-control rate" step="0.01" min="0" readonly>
+                                        onkeyup="calc(this)" class="form-control rate rate_per_kg" step="0.01" min="0" readonly>
                                 </td>
                                 <td>
-                                    <input type="number" name="rate[]" id="rate_{{ $index }}"
-                                        value="{{ $data->rate_per_mond }}" onkeyup="calc(this)" class="form-control rate"
+                                    <input type="number" name="rate_per_mond[]" id="rate_per_mond_{{ $index }}"
+                                        value="{{ $data->rate_per_mond }}" onkeyup="calc(this)" class="form-control rate rate_per_mond"
                                         step="0.01" min="0" readonly>
                                 </td>
                                 <td>
@@ -377,14 +377,19 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Comission RS per KG:</label>
-                        <input type="text" value="{{ $sale_order->commission_per_kg ?? 0 }}" class="form-control"
-                            readonly>
+                        <input type="number" name="commission_per_kg" id="commission_per_kg" class="form-control" step="0.0001" min="0" value="{{ $sale_order->commission_per_kg ?? 0 }}" readonly>
                     </div>
                 </div>
-                  <div class="col-md-3">
+                <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Comission in % per KG:</label>
-                        <input type="text" value="{{ number_format(($sale_order->commission_per_kg ?? 0) / ((($sale_order->sales_order_data->first()->rate ?? 1) * ($sale_order->sales_order_data->first()->qty ?? 1)) ?: 1) * 100, 4) }}" class="form-control" readonly>
+                        @php
+                            $firstRate = floatval($sale_order->sales_order_data->first()?->rate ?? 0);
+                            $commRs = floatval($sale_order->commission_per_kg ?? 0);
+                            $initialPercent = ($firstRate > 0) ? number_format(($commRs / $firstRate) * 100, 2, '.', '') : '0';
+                        @endphp
+                        <input type="number" name="commission_percent_per_kg" id="commission_percent_per_kg"
+                            class="form-control" step="0.01" min="0" value="{{ $initialPercent }}" readonly>
                     </div>
                 </div>
     </div>
@@ -401,18 +406,157 @@
         </div>
     </div>
 </form>
-<div class="row">
-    <div class="col-12">
-        <x-approval-status :model="$sale_order" :list-refresh="route('sales.get.sales-order.list')" />
+@php
+    $soModule = $sale_order->getApprovalModule();
+    $soApprovalLogs = $soModule ? \App\Models\ApprovalsModule\ApprovalLog::where('record_id', $sale_order->id)->where('module_id', $soModule->id)->with(['user', 'role'])->orderBy('created_at', 'desc')->get() : collect();
+@endphp
+
+<div class="approval-view-wrapper">
+    <div class="row">
+        <div class="col-12">
+            <x-approval-status :model="$sale_order" :list-refresh="route('sales.get.sales-order.list')" />
+        </div>
     </div>
 </div>
+
+<style>
+    .approval-view-wrapper .alert-primary,
+    .approval-view-wrapper .alert-warning {
+        display: none !important;
+    }
+    .current-status-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        font-size: 9px;
+        font-weight: 700;
+        color: #047857;
+        background-color: #ecfdf5;
+        border: 1px solid #a7f3d0;
+        padding: 1px 7px;
+        border-radius: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        line-height: 1.4;
+    }
+    .current-status-dot {
+        width: 5px;
+        height: 5px;
+        background-color: #10b981;
+        border-radius: 50%;
+        display: inline-block;
+    }
+</style>
+
+@if ($soApprovalLogs->isNotEmpty())
+    <div class="approval-table-wrapper" style="margin-top: 25px; padding-bottom: 10px !important;">
+        <div class="card border" style="box-shadow: none; margin-bottom: 0 !important;">
+            <div class="card-header bg-light py-2 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 text-dark fw-bold" style="font-size: 14px;">
+                    Approval History & Comments
+                </h6>
+                <span class="badge badge-info">{{ $soApprovalLogs->count() }} {{ \Illuminate\Support\Str::plural('Action', $soApprovalLogs->count()) }}</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped table-hover mb-0" style="font-size: 13px;">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 50px;" class="text-center">#</th>
+                                <th style="min-width: 160px; width: 22%;">User</th>
+                                <th style="min-width: 150px; width: 18%;" class="text-center">Action</th>
+                                <th style="min-width: 160px; width: 20%;">Date & Time</th>
+                                <th style="min-width: 300px; width: 40%;">Comments</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($soApprovalLogs as $index => $log)
+                                @php
+                                    $badgeClass = match($log->action) {
+                                        'approved' => 'badge-success',
+                                        'rejected' => 'badge-danger',
+                                        'reverted' => 'badge-warning',
+                                        'partial_approved' => 'badge-info',
+                                        default => 'badge-secondary'
+                                    };
+                                @endphp
+                                <tr>
+                                    <td class="text-center align-middle">{{ $index + 1 }}</td>
+                                    <td class="align-middle">
+                                        <strong>{{ $log->user->name ?? 'N/A' }}</strong>
+                                        @if ($log->user_id === auth()->id())
+                                            <span class="badge badge-primary ms-1" style="font-size: 10px;">You</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-center align-middle">
+                                        <span class="badge {{ $badgeClass }} text-uppercase px-2 py-1" style="font-size: 11px;">
+                                            {{ str_replace('_', ' ', $log->action) }}
+                                        </span>
+                                        @if ($loop->first)
+                                            <div class="mt-1">
+                                                <span class="current-status-tag">
+                                                    <span class="current-status-dot"></span> Current
+                                                </span>
+                                            </div>
+                                        @endif
+                                    </td>
+                                    <td class="align-middle">
+                                        {{ $log->created_at ? $log->created_at->format('d M, Y h:i A') : 'N/A' }}
+                                    </td>
+                                    <td class="align-middle">
+                                        @if (!empty(trim($log->comments ?? '')))
+                                            <span class="text-dark">{{ $log->comments }}</span>
+                                        @else
+                                            <span class="text-muted fst-italic">No comments</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div style="height: 60px; width: 100%; clear: both;"></div>
+    </div>
+@endif
 
 <script>
     salesInquiryRowIndex = 1;
 
     $(document).ready(function () {
         $('.select2').select2();
+        calculateCommissionFromRs();
     });
+
+    // Run immediately and on slight delay for AJAX modal injection
+    calculateCommissionFromRs();
+    setTimeout(calculateCommissionFromRs, 150);
+
+    function calculateCommissionFromRs() {
+        let commissionInRs = parseFloat($('#commission_per_kg').val()) || 0;
+        const ratePerKg = getFirstItemRate();
+
+        if (ratePerKg > 0) {
+            let percent = (commissionInRs / ratePerKg) * 100;
+            if (percent > 100) {
+                percent = 100;
+                commissionInRs = (100 / 100) * ratePerKg;
+                $('#commission_per_kg').val(commissionInRs.toFixed(4));
+            }
+            $('#commission_percent_per_kg').val(percent.toFixed(2));
+        } else {
+            $('#commission_percent_per_kg').val('0');
+        }
+    }
+
+    function getFirstItemRate() {
+        let rate = $('#salesInquiryBody tr:first input[name="rate[]"]').val();
+        if (!rate || parseFloat(rate) === 0) {
+            rate = '{{ $firstRate }}';
+        }
+        return parseFloat(rate) || 0;
+    }
 
     function addRow() {
         let index = salesInquiryRowIndex++;
