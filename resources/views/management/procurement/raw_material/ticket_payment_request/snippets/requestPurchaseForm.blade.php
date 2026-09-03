@@ -859,7 +859,7 @@
                         <tr>
                             <td><strong>Bags weight in Kg</strong></td>
                             <td>
-                                <input type="number" step="0.01" class="form-control editable-field" name="bag_weight"
+                                <input type="number" step="0.0001" class="form-control editable-field" name="bag_weight"
                                     id="bag_weight_input" value="{{ $bagWeight }}">
                             </td>
                             <td>
@@ -867,7 +867,7 @@
                                     value="{{ $bagWeight * $noOfBags }}" readonly>
                             </td>
                             <td>
-                                <input type="number" step="0.01" class="form-control editable-field"
+                                <input type="number" step="0.0001" class="form-control editable-field"
                                     name="bag_weight_amount" id="bag_weight_amount" value="{{ $bagWeightInKgSum }}">
                                 <input type="hidden" class="form-control" name="bag_weight_amount_display"
                                     id="bag_weight_amount_display" value="{{ number_format($bagWeightInKgSum, 4) }}">
