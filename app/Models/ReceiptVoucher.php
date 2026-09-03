@@ -143,23 +143,23 @@ class ReceiptVoucher extends Model
         }
 
         // Excess Amount Logic (not-allocated)
-        $notAllocatedItems = $this->items()->where('reference_type', 'not-allocated')->get();
-        foreach ($notAllocatedItems as $notAllocatedItem) {
-            createTransaction(
-                $notAllocatedItem->net_amount,
-                $customerAccountId,
-                $this->company_id,
-                "-",
-                "credit",
-                "no",
-                [
-                    "purpose" => "Extra Amount Received (Item #{$notAllocatedItem->id}) for the customer " . ($this->customer->name ?? ''),
-                    "payment_against" => $this->unique_no,
-                    "counter_account_id" => $this->account_id,
-                    "remarks" => "Customer advance created from excess payment against Receipt Voucher " . $this->unique_no,
-                    "receipt_voucher_item_id" => $notAllocatedItem->id
-                ]
-            );
-        }
+        // $notAllocatedItems = $this->items()->where('reference_type', 'not-allocated')->get();
+        // foreach ($notAllocatedItems as $notAllocatedItem) {
+        //     createTransaction(
+        //         $notAllocatedItem->net_amount,
+        //         $customerAccountId,
+        //         $this->company_id,
+        //         "-",
+        //         "credit",
+        //         "no",
+        //         [
+        //             "purpose" => "Extra Amount Received (Item #{$notAllocatedItem->id}) for the customer " . ($this->customer->name ?? ''),
+        //             "payment_against" => $this->unique_no,
+        //             "counter_account_id" => $this->account_id,
+        //             "remarks" => "Customer advance created from excess payment against Receipt Voucher " . $this->unique_no,
+        //             "receipt_voucher_item_id" => $notAllocatedItem->id
+        //         ]
+        //     );
+        // }
     }
 }
