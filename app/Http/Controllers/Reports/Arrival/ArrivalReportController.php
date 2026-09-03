@@ -7,6 +7,7 @@ use App\Models\Master\Account\Account;
 use App\Models\Master\ArrivalLocation;
 use App\Models\Master\CompanyLocation;
 use App\Models\Master\Miller;
+use App\Models\Master\ProductSlabType;
 use App\Models\Product;
 use App\Models\Arrival\ArrivalTicket;
 use App\Models\Master\Account\Transaction;
@@ -31,6 +32,7 @@ class ArrivalReportController extends Controller
     public function getArrivalReport(Request $request)
     {
 
+        $product_slab_types = ProductSlabType::get();
         // Increase memory and execution time
         ini_set('memory_limit', '512M');
         ini_set('max_execution_time', 300); // 5 minutes
@@ -126,7 +128,7 @@ class ArrivalReportController extends Controller
             })
             ->orderBy('arrival_tickets.created_at', 'asc')
             ->get();
-        return view('management.reports.arrival.arrival-history.getArrivalReport', compact('tickets'));
+        return view('management.reports.arrival.arrival-history.getArrivalReport', compact('tickets', 'product_slab_types'));
     }
 
 

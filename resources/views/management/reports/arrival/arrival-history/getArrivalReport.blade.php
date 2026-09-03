@@ -248,7 +248,7 @@
             <!-- ========================================== -->
             <!-- INITIAL & INNER SLAB DEDUCTIONS - SIDE BY SIDE -->
             <!-- ========================================== -->
-            @foreach (getTableData('product_slab_types') as $slab)
+            @foreach ($product_slab_types as $slab)
                 @php
                     $initialValue = $deductionValueSlabinitial[$slab->id]['checklist_value'] ?? 0;
                     $innerValue = $deductionValueSlabInner[$slab->id]['checklist_value'] ?? 0;
