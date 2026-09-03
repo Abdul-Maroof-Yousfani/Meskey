@@ -166,7 +166,7 @@ class DeliveryOrderController extends Controller
                         if ($adv) {
                             $spent = DB::table('delivery_order_receipt_voucher')
                                 ->where('receipt_voucher_advance_id', $adv->id)
-                                ->sum(DB::raw('amount + coalesce(withhold_amount, 0)'));
+                                ->sum(DB::raw('amount'));
                             $remaining = doubleval($adv->net_amount) - doubleval($spent);
 
                             $withhold_amount = ($rv_val == $request->withhold_for_rv) ? ($request->withhold_amount ?? 0) : 0;
