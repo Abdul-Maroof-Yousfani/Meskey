@@ -165,8 +165,10 @@ class DeliveryOrderController extends Controller
                         $adv = \App\Models\ReceiptVoucherAdvance::find($adv_id);
                         if ($adv) {
                             $spent = DB::table('delivery_order_receipt_voucher')
-                                ->where('receipt_voucher_advance_id', $adv->id)
-                                ->sum(DB::raw('amount'));
+                                ->join('delivery_order', 'delivery_order.id', '=', 'delivery_order_receipt_voucher.delivery_order_id')
+                                ->where('delivery_order_receipt_voucher.receipt_voucher_advance_id', $adv->id)
+                                ->where('delivery_order.am_approval_status', '!=', 'rejected')
+                                ->sum('delivery_order_receipt_voucher.amount');
                             $remaining = doubleval($adv->net_amount) - doubleval($spent);
 
                             $withhold_amount = ($rv_val == $request->withhold_for_rv) ? ($request->withhold_amount ?? 0) : 0;
@@ -195,7 +197,8 @@ class DeliveryOrderController extends Controller
                                 ->where('delivery_order_receipt_voucher.receipt_voucher_id', $rv->id)
                                 ->where('delivery_order.so_id', $request->sale_order_id)
                                 ->whereNull('delivery_order_receipt_voucher.receipt_voucher_advance_id')
-                                ->sum(DB::raw('delivery_order_receipt_voucher.amount + coalesce(delivery_order_receipt_voucher.withhold_amount, 0)'));
+                                ->where('delivery_order.am_approval_status', '!=', 'rejected')
+                                ->sum('delivery_order_receipt_voucher.amount');
 
 
 
@@ -607,8 +610,10 @@ class DeliveryOrderController extends Controller
             ->map(function ($adv) {
                 // Calculate spent amount for this specific advance
                 $spent = DB::table('delivery_order_receipt_voucher')
-                    ->where('receipt_voucher_advance_id', $adv->id)
-                    ->sum(DB::raw('amount + coalesce(withhold_amount, 0)'));
+                    ->join('delivery_order', 'delivery_order.id', '=', 'delivery_order_receipt_voucher.delivery_order_id')
+                    ->where('delivery_order_receipt_voucher.receipt_voucher_advance_id', $adv->id)
+                    ->where('delivery_order.am_approval_status', '!=', 'rejected')
+                    ->sum('delivery_order_receipt_voucher.amount');
                 $adv->remaining_amount = doubleval($adv->net_amount) - doubleval($spent);
                 return $adv;
             })
@@ -651,7 +656,8 @@ class DeliveryOrderController extends Controller
                     ->where('delivery_order_receipt_voucher.receipt_voucher_id', $rv->id)
                     ->where('delivery_order.so_id', $sale_order_id)
                     ->whereNull('delivery_order_receipt_voucher.receipt_voucher_advance_id')
-                    ->sum(DB::raw('delivery_order_receipt_voucher.amount + coalesce(delivery_order_receipt_voucher.withhold_amount, 0)'));
+                    ->where('delivery_order.am_approval_status', '!=', 'rejected')
+                    ->sum('delivery_order_receipt_voucher.amount');
 
 
 
@@ -781,9 +787,11 @@ class DeliveryOrderController extends Controller
             ->get()
             ->map(function ($adv) use ($delivery_order) {
                 $spent = DB::table('delivery_order_receipt_voucher')
-                    ->where('receipt_voucher_advance_id', $adv->id)
-                    ->where('delivery_order_id', '!=', $delivery_order->id)
-                    ->sum(DB::raw('amount + coalesce(withhold_amount, 0)'));
+                    ->join('delivery_order', 'delivery_order.id', '=', 'delivery_order_receipt_voucher.delivery_order_id')
+                    ->where('delivery_order_receipt_voucher.receipt_voucher_advance_id', $adv->id)
+                    ->where('delivery_order_receipt_voucher.delivery_order_id', '!=', $delivery_order->id)
+                    ->where('delivery_order.am_approval_status', '!=', 'rejected')
+                    ->sum('delivery_order_receipt_voucher.amount');
                 $adv->remaining_amount = doubleval($adv->net_amount) - doubleval($spent);
                 $adv->unified_id = "adv_{$adv->id}";
                 $adv->unified_text = "advance ({$adv->net_amount})";
@@ -819,7 +827,8 @@ class DeliveryOrderController extends Controller
                         ->where('delivery_order.so_id', $delivery_order->so_id)
                         ->whereNull('delivery_order_receipt_voucher.receipt_voucher_advance_id')
                         ->where('delivery_order_receipt_voucher.delivery_order_id', '!=', $delivery_order->id)
-                        ->sum(DB::raw('delivery_order_receipt_voucher.amount + coalesce(delivery_order_receipt_voucher.withhold_amount, 0)'));
+                        ->where('delivery_order.am_approval_status', '!=', 'rejected')
+                        ->sum('delivery_order_receipt_voucher.amount');
 
                     $jv_spent = DB::table('journal_voucher_details')
                         ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
@@ -960,9 +969,11 @@ class DeliveryOrderController extends Controller
                         $adv = \App\Models\ReceiptVoucherAdvance::find($adv_id);
                         if ($adv) {
                             $spent = DB::table('delivery_order_receipt_voucher')
-                                ->where('receipt_voucher_advance_id', $adv->id)
-                                ->where('delivery_order_id', '!=', $delivery_order->id)
-                                ->sum(DB::raw('amount + coalesce(withhold_amount, 0)'));
+                                ->join('delivery_order', 'delivery_order.id', '=', 'delivery_order_receipt_voucher.delivery_order_id')
+                                ->where('delivery_order_receipt_voucher.receipt_voucher_advance_id', $adv->id)
+                                ->where('delivery_order_receipt_voucher.delivery_order_id', '!=', $delivery_order->id)
+                                ->where('delivery_order.am_approval_status', '!=', 'rejected')
+                                ->sum('delivery_order_receipt_voucher.amount');
                             $remaining = doubleval($adv->net_amount) - doubleval($spent);
 
                             $withhold_amount = ($rv_val == $request->withhold_for_rv) ? ($request->withhold_amount ?? 0) : 0;
@@ -992,7 +1003,8 @@ class DeliveryOrderController extends Controller
                                 ->where('delivery_order.so_id', $request->sale_order_id)
                                 ->whereNull('delivery_order_receipt_voucher.receipt_voucher_advance_id')
                                 ->where('delivery_order_receipt_voucher.delivery_order_id', '!=', $delivery_order->id)
-                                ->sum(DB::raw('delivery_order_receipt_voucher.amount + coalesce(delivery_order_receipt_voucher.withhold_amount, 0)'));
+                                ->where('delivery_order.am_approval_status', '!=', 'rejected')
+                                ->sum('delivery_order_receipt_voucher.amount');
 
                             $jv_spent = DB::table('journal_voucher_details')
                                 ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
