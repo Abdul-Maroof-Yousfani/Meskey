@@ -501,6 +501,8 @@ $userLocation = $authUser->companyLocation ?? null;
 
             // Reset decision field
             $('#decision_id').val('').trigger('change');
+            $('#decision_id').prop('disabled', false).removeClass('disabled-field');
+
 
             // Reset loading date
             $('input[name="loading_date"]').val('');
