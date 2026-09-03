@@ -277,7 +277,7 @@
             <!-- ========================================== -->
             <!-- COMPULSORY QC DEDUCTIONS -->
             <!-- ========================================== -->
-            @foreach (getTableData('arrival_compulsory_qc_params') as $compulsory_slab_type)
+            @foreach ($arrival_compulsory_qc_params as $compulsory_slab_type)
                 <td>
                     @php
                         $compulsoryValue = $compulsoryDeductionValueSlab[$compulsory_slab_type->id]['checklist_value'] ?? null;
