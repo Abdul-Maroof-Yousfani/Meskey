@@ -24,12 +24,29 @@
                 </td>
                 <td>
                     <strong>{{ $bill->dc_no ?? 'N/A' }}</strong>
+                    @php
+                        $saudaType = strtolower($bill->deliveryChallan->sauda_type ?? '');
+                        $isXmill = in_array(str_replace(['-', ' ', '_'], '', $saudaType), ['xmill']);
+                    @endphp
+                    <div class="mt-1">
+                        @if($isXmill)
+                            <span class="badge badge-info px-2 py-1" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">X-Mill</span>
+                        @else
+                            <span class="badge badge-primary px-2 py-1" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Pohanch</span>
+                        @endif
+                    </div>
                 </td>
                 <td>
                     @php
                         $uniqueCommodities = $bill->items->map(function($item) {
                             return $item->product?->name ?? $item->item_name ?? 'Unknown';
                         })->unique()->filter()->implode(', ');
+
+                        if (!$uniqueCommodities && $bill->deliveryChallan) {
+                            $uniqueCommodities = $bill->deliveryChallan->delivery_challan_data->map(function($data) {
+                                return $data->item?->name ?? $data->product?->name ?? 'Unknown';
+                            })->unique()->filter()->implode(', ');
+                        }
                     @endphp
                     {{ $uniqueCommodities ?: 'N/A' }}
                 </td>

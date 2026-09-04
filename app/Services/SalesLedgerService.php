@@ -413,7 +413,7 @@ class SalesLedgerService
                     // 2. Transporter Entry (if Transporter = Yes)
                     $isTransporterYes = in_array(strtolower($salesOrder->transporter_used ?? ''), ['yes', '1', 'true']);
                     $transporterAmount = (float)($deliveryChallan->transporter_amount ?? 0);
-                    $transporterObj = Vendor::find($deliveryChallan->transporter);
+                    $transporterObj = Transporter::find($deliveryChallan->transporter) ?? Vendor::find($deliveryChallan->transporter);
                     $transporterAccountId = $transporterObj?->account_id;
 
                     if ($isTransporterYes && $transporterAmount > 0 && $customerAccountId && $transporterAccountId) {
@@ -434,6 +434,36 @@ class SalesLedgerService
                             'against_reference_no' => $dc_no,
                             'remarks' => "Transporter payable booked for DC: {$dc_no}.",
                         ]);
+                    }
+
+                    // 2.1 Create / Sync Receiving Request record for X-Mill (so it appears as Logistics Bill)
+                    if ($isTransporterYes) {
+                        $receivingRequest = $deliveryChallan->receivingRequest;
+                        $dcDataFirst = $deliveryChallan->delivery_challan_data->first();
+                        if (!$receivingRequest) {
+                            ReceivingRequest::create([
+                                'delivery_challan_id' => $deliveryChallan->id,
+                                'dc_no' => $deliveryChallan->dc_no,
+                                'dc_date' => $deliveryChallan->dispatch_date,
+                                'truck_number' => $dcDataFirst?->truck_no ?? null,
+                                'transporter' => $deliveryChallan->transporter,
+                                'transporter_amount' => $deliveryChallan->transporter_amount ?? 0,
+                                'company_id' => $deliveryChallan->company_id,
+                                'created_by_id' => $deliveryChallan->created_by_id,
+                                'am_approval_status' => 'approved',
+                                'am_change_made' => 1,
+                            ]);
+                        } else {
+                            $receivingRequest->update([
+                                'dc_no' => $deliveryChallan->dc_no,
+                                'dc_date' => $deliveryChallan->dispatch_date,
+                                'truck_number' => $dcDataFirst?->truck_no ?? null,
+                                'transporter' => $deliveryChallan->transporter,
+                                'transporter_amount' => $deliveryChallan->transporter_amount ?? 0,
+                                'company_id' => $deliveryChallan->company_id,
+                                'am_approval_status' => 'approved',
+                            ]);
+                        }
                     }
 
                     // 3. Labour Entry only if UnPaid
@@ -508,7 +538,8 @@ class SalesLedgerService
         $voucherTypeId = 3;
 
         DB::transaction(function () use ($receivingRequest, $dc, $dc_no, $voucherTypeId) {
-            $handleTransaction = function($amount, $accountId, $voucherTypeId, $voucherNo, $type, $isOpening, $additionalData) {
+            $handleTransaction = function($amount, $accountId, $voucherTypeId, $voucherNo, $type, $isOpening, $additionalData) use ($receivingRequest, $dc) {
+                $additionalData['company_id'] = $additionalData['company_id'] ?? $receivingRequest->company_id ?? $dc?->company_id ?? 1;
                 $tx = Transaction::where('voucher_no', $voucherNo)
                         ->where('purpose', $additionalData['purpose'])
                         ->where('type', $type)
@@ -677,6 +708,11 @@ class SalesLedgerService
                         'remarks' => "Transporter deduction adjusted for customer on Receiving Request for DC: {$dc_no}",
                     ]);
                 }
+            } else {
+                Transaction::where('voucher_no', $dc_no)->whereIn('purpose', [
+                    'receiving-request-transporter-deduction',
+                    'receiving-request-customer-deduction'
+                ])->delete();
             }
 
             // ==========================================
@@ -696,6 +732,17 @@ class SalesLedgerService
             
             // Case 1: Shortage (Arrived < Dispatched)
             if ($arrivedWeight > 0 && $arrivedWeight < $dispatchedWeight) {
+                // Delete excess entries if any
+                Transaction::where('voucher_no', $dc_no)->whereIn('purpose', [
+                    'receiving-request-excess-weight-adjustment',
+                    'receiving-request-excess-profit'
+                ])->delete();
+
+                // Delete legacy single customer credit entry
+                Transaction::where('voucher_no', $dc_no)
+                    ->where('purpose', 'receiving-request-short-weight-adjustment')
+                    ->delete();
+
                 $shortWeight = $dispatchedWeight - $arrivedWeight;
                 $exemptedWeight = $receivingRequest->exempted_weight ?? 0;
                 $penaltyWeight = max(0, $shortWeight - $exemptedWeight);
@@ -707,39 +754,76 @@ class SalesLedgerService
                 $customerAccountId = $dc->customer?->account_id;
                 
                 if ($customerAccountId) {
-                    // Debit Short Weight Loss (Exempted)
+                    // Pair 1: Short Weight Loss (Exempted) - Loss Debit & Customer Credit
                     if ($exemptedLossAmount > 0) {
                         $lossAccount = Account::where('hierarchy_path', '4-1-4')->first();
                         if ($lossAccount) {
+                            // Debit Loss Account
                             $handleTransaction($exemptedLossAmount, $lossAccount->id, $voucherTypeId, $dc_no, 'debit', 'no', [
                                 'counter_account_id' => $customerAccountId,
                                 'purpose' => "receiving-request-short-loss",
+                                'payment_against' => "pohanch-sale-loss",
+                                'against_reference_no' => $dc_no,
                                 'remarks' => "Short weight loss (Exempted {$exemptedWeight} kg) on Receiving Request for DC: {$dc_no}",
                             ]);
+
+                            // Credit Customer Account (Counter = Loss Account)
+                            $handleTransaction($exemptedLossAmount, $customerAccountId, $voucherTypeId, $dc_no, 'credit', 'no', [
+                                'counter_account_id' => $lossAccount->id,
+                                'purpose' => "receiving-request-short-loss-customer",
+                                'payment_against' => "pohanch-sale-receivable",
+                                'against_reference_no' => $dc_no,
+                                'remarks' => "Short weight loss (Exempted {$exemptedWeight} kg) adjusted for customer on Receiving Request for DC: {$dc_no}",
+                            ]);
                         }
+                    } else {
+                        Transaction::where('voucher_no', $dc_no)->whereIn('purpose', [
+                            'receiving-request-short-loss',
+                            'receiving-request-short-loss-customer',
+                        ])->delete();
                     }
                     
-                    // Debit Transporter (Penalty)
+                    // Pair 2: Transporter Penalty - Transporter Debit & Customer Credit
                     if ($penaltyAmount > 0) {
                         $transporterObj = Transporter::find($receivingRequest->transporter);
                         $transporterAccountId = $transporterObj?->account_id;
                         
                         if ($transporterAccountId) {
+                            // Debit Transporter Account
                             $handleTransaction($penaltyAmount, $transporterAccountId, $voucherTypeId, $dc_no, 'debit', 'no', [
                                 'counter_account_id' => $customerAccountId,
                                 'purpose' => "receiving-request-short-penalty",
+                                'payment_against' => "pohanch-sale-payable",
+                                'against_reference_no' => $dc_no,
                                 'remarks' => "Short weight penalty ({$penaltyWeight} kg) charged to Transporter on Receiving Request for DC: {$dc_no}",
                             ]);
-                        }
-                    }
 
-                    // Create a new Credit entry for the customer to adjust for the short amount
-                    $handleTransaction($totalShortAmount, $customerAccountId, $voucherTypeId, $dc_no, 'credit', 'no', [
-                        'purpose' => "receiving-request-short-weight-adjustment",
-                        'remarks' => "Short weight adjustment ({$shortWeight} kg) on Receiving Request for DC: {$dc_no}",
-                    ]);
+                            // Credit Customer Account (Counter = Transporter Account)
+                            $handleTransaction($penaltyAmount, $customerAccountId, $voucherTypeId, $dc_no, 'credit', 'no', [
+                                'counter_account_id' => $transporterAccountId,
+                                'purpose' => "receiving-request-short-penalty-customer",
+                                'payment_against' => "pohanch-sale-receivable",
+                                'against_reference_no' => $dc_no,
+                                'remarks' => "Short weight penalty ({$penaltyWeight} kg) charged to Transporter adjusted for customer on Receiving Request for DC: {$dc_no}",
+                            ]);
+                        }
+                    } else {
+                        Transaction::where('voucher_no', $dc_no)->whereIn('purpose', [
+                            'receiving-request-short-penalty',
+                            'receiving-request-short-penalty-customer',
+                        ])->delete();
+                    }
                 }
             } elseif ($arrivedWeight > $dispatchedWeight && $dispatchedWeight > 0) {
+                // Delete short entries if any
+                Transaction::where('voucher_no', $dc_no)->whereIn('purpose', [
+                    'receiving-request-short-loss',
+                    'receiving-request-short-loss-customer',
+                    'receiving-request-short-penalty',
+                    'receiving-request-short-penalty-customer',
+                    'receiving-request-short-weight-adjustment',
+                ])->delete();
+
                 // Case 2: Excess Weight (Arrived > Dispatched) -> Profit
                 $excessWeight = $arrivedWeight - $dispatchedWeight;
                 $totalExcessAmount = $excessWeight * $averageRate;
@@ -769,6 +853,17 @@ class SalesLedgerService
                         ]);
                     }
                 }
+            } else {
+                // Arrived == Dispatched or no weight diff -> delete both short and excess
+                Transaction::where('voucher_no', $dc_no)->whereIn('purpose', [
+                    'receiving-request-short-loss',
+                    'receiving-request-short-loss-customer',
+                    'receiving-request-short-penalty',
+                    'receiving-request-short-penalty-customer',
+                    'receiving-request-short-weight-adjustment',
+                    'receiving-request-excess-weight-adjustment',
+                    'receiving-request-excess-profit',
+                ])->delete();
             }
 
             // ==========================================

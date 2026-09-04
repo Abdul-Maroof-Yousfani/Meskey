@@ -15,7 +15,12 @@ class ReceivingRequestController extends Controller
      */
     public function index()
     {
-        $deliveryChallans = ReceivingRequest::select('id', 'dc_no')->distinct()->get();
+        $deliveryChallans = ReceivingRequest::whereHas('deliveryChallan', function ($q) {
+                $q->where('sauda_type', 'pohanch');
+            })
+            ->select('id', 'dc_no')
+            ->distinct()
+            ->get();
         return view('management.sales.receiving-request.index', compact('deliveryChallans'));
     }
 
@@ -27,6 +32,9 @@ class ReceivingRequestController extends Controller
         $perPage = $request->get('per_page', 25);
 
         $receivingRequests = ReceivingRequest::with(['deliveryChallan.customer', 'deliveryChallan.delivery_order', 'items.product'])
+            ->whereHas('deliveryChallan', function ($q) {
+                $q->where('sauda_type', 'pohanch');
+            })
             ->when($request->filled('dc_id_for_filter') && $request->dc_id_for_filter != 'all', function ($q) use ($request) {
                 $q->where('id', $request->dc_id_for_filter);
             })

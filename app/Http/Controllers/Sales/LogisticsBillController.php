@@ -19,8 +19,23 @@ class LogisticsBillController extends Controller
      */
     public function index()
     {
-        $deliveryChallans = LogisticsBill::select('id', 'dc_no')
-            ->where('am_approval_status', 'approved')
+        $deliveryChallans = LogisticsBill::where('am_approval_status', 'approved')
+            ->where(function ($q) {
+                // 1. Pohanch sauda (has RR)
+                $q->whereHas('deliveryChallan', function ($dcQ) {
+                    $dcQ->where('sauda_type', 'pohanch');
+                })
+                // 2. X-mill sauda where transporter_used == 'yes'
+                ->orWhere(function ($xQ) {
+                    $xQ->whereHas('deliveryChallan', function ($dcQ) {
+                        $dcQ->where('sauda_type', '!=', 'pohanch')
+                            ->whereHas('delivery_order.salesOrder', function ($soQ) {
+                                $soQ->where('transporter_used', 'yes');
+                            });
+                    });
+                });
+            })
+            ->select('id', 'dc_no')
             ->distinct()
             ->get();
 
@@ -34,8 +49,23 @@ class LogisticsBillController extends Controller
     {
         $perPage = $request->get('per_page', 25);
 
-        $logisticsBills = LogisticsBill::with(['deliveryChallan.customer', 'deliveryChallan.delivery_order', 'items.product'])
+        $logisticsBills = LogisticsBill::with(['deliveryChallan.customer', 'deliveryChallan.delivery_order.salesOrder', 'items.product'])
             ->where('am_approval_status', 'approved')
+            ->where(function ($q) {
+                // 1. Pohanch sauda (has RR)
+                $q->whereHas('deliveryChallan', function ($dcQ) {
+                    $dcQ->where('sauda_type', 'pohanch');
+                })
+                // 2. X-mill sauda where transporter_used == 'yes'
+                ->orWhere(function ($xQ) {
+                    $xQ->whereHas('deliveryChallan', function ($dcQ) {
+                        $dcQ->where('sauda_type', '!=', 'pohanch')
+                            ->whereHas('delivery_order.salesOrder', function ($soQ) {
+                                $soQ->where('transporter_used', 'yes');
+                            });
+                    });
+                });
+            })
             ->when($request->filled('dc_id_for_filter') && $request->dc_id_for_filter != 'all', function ($q) use ($request) {
                 $q->where('id', $request->dc_id_for_filter);
             })
@@ -82,21 +112,26 @@ class LogisticsBillController extends Controller
             'salesReturn.sale_return_data'
         ])->findOrFail($id);
 
+        $isXmill = in_array(strtolower(str_replace(['-', ' ', '_'], '', $logisticsBill->deliveryChallan?->sauda_type ?? '')), ['xmill']);
+
         // Fetch any SalesReturn created for this RR / DC (from sale_return_sale_invoice pivot or sales_return_id)
-        $salesReturns = \App\Models\Sales\SalesReturn::with('sale_return_data')
-            ->where('am_approval_status', '!=', 'rejected')
-            ->where(function($q) use ($logisticsBill) {
-                $q->whereHas('receiving_requests', function($rrQ) use ($logisticsBill) {
-                    $rrQ->where('receiving_requests.id', $logisticsBill->id);
+        $salesReturns = collect();
+        if (!$isXmill) {
+            $salesReturns = \App\Models\Sales\SalesReturn::with('sale_return_data')
+                ->where('am_approval_status', '!=', 'rejected')
+                ->where(function($q) use ($logisticsBill) {
+                    $q->whereHas('receiving_requests', function($rrQ) use ($logisticsBill) {
+                        $rrQ->where('receiving_requests.id', $logisticsBill->id);
+                    })
+                    ->orWhere('id', $logisticsBill->sales_return_id);
                 })
-                ->orWhere('id', $logisticsBill->sales_return_id);
-            })
-            ->get();
+                ->get();
+        }
         
         $transporters = Transporter::all();
         $labours = Vendor::all();
 
-        return view('management.sales.logistics-bill.edit', compact('logisticsBill', 'transporters', 'labours', 'salesReturns'));
+        return view('management.sales.logistics-bill.edit', compact('logisticsBill', 'isXmill', 'transporters', 'labours', 'salesReturns'));
     }
 
     /**
@@ -109,55 +144,67 @@ class LogisticsBillController extends Controller
             $logisticsBill = LogisticsBill::findOrFail($id);
             $receivingRequest = ReceivingRequest::findOrFail($id);
 
-            // Calculate total unloading labour amount
-            $totalLabourAmount = 0;
-            if ($request->has('items')) {
-                foreach ($request->items as $itemId => $itemData) {
-                    $item = ReceivingRequestItem::find($itemId);
-                    if ($item && $item->receiving_request_id == $logisticsBill->id) {
-                        $bags = floatval($item->deliveryChallanData?->no_of_bags ?? 0);
-                        $rate = floatval($itemData['unloading_labour_rate'] ?? 0);
-                        $totalLabourAmount += ($bags * $rate);
+            $isXmill = in_array(strtolower(str_replace(['-', ' ', '_'], '', $logisticsBill->deliveryChallan?->sauda_type ?? '')), ['xmill']);
 
-                        $item->update([
-                            'unloading_labour_rate' => $rate,
-                        ]);
+            if ($isXmill) {
+                $transporterOtherAmount = floatval($request->transporter_other_amount ?? 0);
+                $demurrageDetentionAmount = floatval($request->demurrage_detention_amount ?? 0);
+
+                $logisticsBill->update([
+                    'transporter_deduction' => $request->transporter_deduction ?? 0,
+                    'transporter_other_amount' => $transporterOtherAmount,
+                    'demurrage_detention_amount' => $demurrageDetentionAmount,
+                ]);
+            } else {
+                // Calculate total unloading labour amount
+                $totalLabourAmount = 0;
+                if ($request->has('items')) {
+                    foreach ($request->items as $itemId => $itemData) {
+                        $item = ReceivingRequestItem::find($itemId);
+                        if ($item && $item->receiving_request_id == $logisticsBill->id) {
+                            $bags = floatval($item->deliveryChallanData?->no_of_bags ?? 0);
+                            $rate = floatval($itemData['unloading_labour_rate'] ?? 0);
+                            $totalLabourAmount += ($bags * $rate);
+
+                            $item->update([
+                                'unloading_labour_rate' => $rate,
+                            ]);
+                        }
                     }
                 }
+
+                $exemptedWeight = floatval($request->exempted_weight ?? 0);
+                $paymentWeight = floatval($logisticsBill->arrived_weight ?? 0) - $exemptedWeight;
+
+                $salesReturnId = $request->filled('sales_return_id') ? $request->sales_return_id : null;
+                $salesReturnQty = floatval($request->sales_return_qty ?? 0);
+                $salesReturnTransporterAmount = floatval($request->sales_return_transporter_amount ?? 0);
+                $transporterOtherAmount = floatval($request->transporter_other_amount ?? 0);
+                $demurrageDetentionAmount = floatval($request->demurrage_detention_amount ?? 0);
+
+                // If salesReturnId is selected and salesReturnQty is 0, auto-fill it from the SalesReturn model
+                if ($salesReturnId && $salesReturnQty <= 0) {
+                    $sr = \App\Models\Sales\SalesReturn::with('sale_return_data')->find($salesReturnId);
+                    $salesReturnQty = floatval($sr?->sale_return_data->sum('quantity') ?? 0);
+                }
+
+                // Update main receiving request / logistics bill record
+                $logisticsBill->update([
+                    'exempted_weight' => $exemptedWeight,
+                    'payment_weight' => $paymentWeight,
+                    'transporter_deduction' => $request->transporter_deduction ?? 0,
+                    'transporter_other_amount' => $transporterOtherAmount,
+                    'demurrage_detention_amount' => $demurrageDetentionAmount,
+                    'sales_return_id' => $salesReturnId,
+                    'sales_return_qty' => $salesReturnQty,
+                    'sales_return_transporter_amount' => $salesReturnTransporterAmount,
+                    'unloading_paid_by' => $request->unloading_paid_by,
+                    'weighbridge_paid_by' => $request->weighbridge_paid_by,
+                    'labour_amount' => $totalLabourAmount,
+                ]);
             }
 
-            $exemptedWeight = floatval($request->exempted_weight ?? 0);
-            $paymentWeight = floatval($logisticsBill->arrived_weight ?? 0) - $exemptedWeight;
-
-            $salesReturnId = $request->filled('sales_return_id') ? $request->sales_return_id : null;
-            $salesReturnQty = floatval($request->sales_return_qty ?? 0);
-            $salesReturnTransporterAmount = floatval($request->sales_return_transporter_amount ?? 0);
-            $transporterOtherAmount = floatval($request->transporter_other_amount ?? 0);
-            $demurrageDetentionAmount = floatval($request->demurrage_detention_amount ?? 0);
-
-            // If salesReturnId is selected and salesReturnQty is 0, auto-fill it from the SalesReturn model
-            if ($salesReturnId && $salesReturnQty <= 0) {
-                $sr = \App\Models\Sales\SalesReturn::with('sale_return_data')->find($salesReturnId);
-                $salesReturnQty = floatval($sr?->sale_return_data->sum('quantity') ?? 0);
-            }
-
-            // Update main receiving request / logistics bill record
-            $logisticsBill->update([
-                'exempted_weight' => $exemptedWeight,
-                'payment_weight' => $paymentWeight,
-                'transporter_deduction' => $request->transporter_deduction ?? 0,
-                'transporter_other_amount' => $transporterOtherAmount,
-                'demurrage_detention_amount' => $demurrageDetentionAmount,
-                'sales_return_id' => $salesReturnId,
-                'sales_return_qty' => $salesReturnQty,
-                'sales_return_transporter_amount' => $salesReturnTransporterAmount,
-                'unloading_paid_by' => $request->unloading_paid_by,
-                'weighbridge_paid_by' => $request->weighbridge_paid_by,
-                'labour_amount' => $totalLabourAmount,
-            ]);
-
-
-            // Re-sync ledgers via SalesLedgerService
+            // Re-sync ledgers via SalesLedgerService (SAME METHOD FOR BOTH!)
             $receivingRequest->refresh();
             app(SalesLedgerService::class)->handleReceivingRequestApproval($receivingRequest);
 
@@ -183,10 +230,12 @@ class LogisticsBillController extends Controller
             'weighbridges',
             'salesReturn.sale_return_data'
         ])->findOrFail($id);
+
+        $isXmill = in_array(strtolower(str_replace(['-', ' ', '_'], '', $logisticsBill->deliveryChallan?->sauda_type ?? '')), ['xmill']);
         
         $transporters = Transporter::all();
         $labours = Vendor::all();
 
-        return view('management.sales.logistics-bill.view', compact('logisticsBill', 'transporters', 'labours'));
+        return view('management.sales.logistics-bill.view', compact('logisticsBill', 'isXmill', 'transporters', 'labours'));
     }
 }
