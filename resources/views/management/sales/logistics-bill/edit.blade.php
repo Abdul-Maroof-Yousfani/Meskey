@@ -37,6 +37,7 @@
         </div>
     </div>
 
+    @if(!$isXmill)
     <!-- Other Details Section -->
     <div class="row">
         <div class="col-12">
@@ -79,6 +80,7 @@
             </div>
         </div>
     </div>
+    @endif
 
     <!-- Transporter Details Section -->
     <div class="row mt-3">
@@ -154,6 +156,7 @@
         </div>
     </div>
 
+    @if(!$isXmill)
     <!-- Unloading Labour Section -->
     <div class="row mt-3">
         <div class="col-12">
@@ -334,6 +337,7 @@
             </div>
         </div>
     </div>
+    @endif
 
     <div class="row bottom-button-bar mt-3">
         <div class="col-12">
@@ -347,12 +351,9 @@
     $(document).ready(function() {
         $('.select2').select2();
 
+        @if(!$isXmill)
         $('#exempted_weight').on('input change', function() {
             calculateOverallWeights();
-        });
-
-        $('#transporter_deduction, #transporter_other_amount, #demurrage_detention_amount, #sales_return_transporter_amount').on('input change keyup', function() {
-            calculateTransporterTotal();
         });
 
         $('#sales_return_id').on('change', function() {
@@ -361,6 +362,12 @@
 
         toggleSalesReturnFields();
         calculateOverallWeights();
+        @endif
+
+        $('#transporter_deduction, #transporter_other_amount, #demurrage_detention_amount, #sales_return_transporter_amount').on('input change keyup', function() {
+            calculateTransporterTotal();
+        });
+
         calculateTransporterTotal();
     });
 
