@@ -17,5 +17,5 @@ jobs:
           username: ${{ secrets.FTPD_USERNAME }}
           password: ${{ secrets.FTPD_PASSWORD }}
           port: 21
-          server-dir: /
+          server-dir: ./
           dangerous-clean-slate: false
