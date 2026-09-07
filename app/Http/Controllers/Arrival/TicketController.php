@@ -164,6 +164,7 @@ class TicketController extends Controller
         $contracts = ArrivalPurchaseOrder::with(['product', 'supplier', 'saudaType'])
             ->where('company_location_id', $locationId)
             ->where("am_approval_status", "approved")
+            ->where("status", '!=', "completed")
             ->where(function ($q) {
                 $q->where('purchase_type', 'regular')
                     ->orWhere(function ($q2) {
