@@ -28,4 +28,13 @@ class ArrivalSlip extends Model
     {
         return $this->morphOne(GrnNumber::class, 'model');
     }
+    public function creator()
+    {
+        return $this->belongsTo(\App\Models\User::class, 'creator_id');
+    }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(\App\Models\User::class, 'creator_id');
+    }
 }

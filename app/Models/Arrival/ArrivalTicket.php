@@ -268,5 +268,15 @@ class ArrivalTicket extends Model
             ->whereIn('approved_status', ['approved', 'rejected'])
             ->latest();
     }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'creator_id');
+    }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'creator_id');
+    }
 }
 
