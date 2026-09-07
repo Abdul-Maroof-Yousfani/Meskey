@@ -8,9 +8,12 @@ use App\Models\Master\Account\Transaction;
 use App\Models\Master\Customer;
 use App\Models\Master\Transporter;
 use App\Models\Master\Vendor;
+use App\Models\Product;
 use App\Models\Sales\DeliveryChallan;
+use App\Models\Sales\DeliveryChallanData;
 use App\Models\Sales\ReceivingRequest;
 use App\Models\Sales\ReceivingRequestItem;
+use App\Models\Sales\SalesInvoiceData;
 use App\Models\Sales\SalesReturn;
 use Illuminate\Support\Facades\DB;
 
@@ -35,26 +38,16 @@ class SalesLedgerService
         foreach ($deliveryChallan->delivery_challan_data as $dcData) {
             $itemId = $dcData->item_id ?? $dcData->product_id;
             if ($itemId && $dcData->qty > 0) {
-                // TODO: Cost price will be derived from Production module once completed. Currently set to 0 as instructed.
-                $currentCostPrice = 0.00;
-
-                // Calculate average cost price across previous sales + current sale
-                $previousStocks = Stock::where('product_id', $itemId)
-                    ->where('voucher_type', 'delivery_challan')
-                    ->where('voucher_no', '!=', $deliveryChallan->dc_no)
+                // 1. Current cost price of product from latest Stock-In (Warehouse Inventory Weighted Average Cost)
+                $latestStockIn = Stock::where('product_id', $itemId)
+                    ->where('type', 'stock-in')
                     ->whereNotNull('avg_cost_price')
                     ->where('avg_cost_price', '>', 0)
-                    ->get();
+                    ->latest('id')
+                    ->first();
 
-                if ($previousStocks->count() > 0) {
-                    $totalPrevCost = $previousStocks->sum('avg_cost_price');
-                    $count = $previousStocks->count();
-                    $avgCostPrice = ($currentCostPrice > 0)
-                        ? round(($totalPrevCost + $currentCostPrice) / ($count + 1), 2)
-                        : round($totalPrevCost / $count, 2);
-                } else {
-                    $avgCostPrice = $currentCostPrice;
-                }
+                // Tareeqa 1: Sale is valued at the current warehouse stock's Weighted Average Cost
+                $avgCostPrice = $latestStockIn ? (float)$latestStockIn->avg_cost_price : 0;
 
                 $existingStock = Stock::where('voucher_no', $deliveryChallan->dc_no)
                     ->where('voucher_type', 'delivery_challan')
@@ -983,48 +976,123 @@ class SalesLedgerService
         $sr_no = $salesReturn->sr_no;
         $voucherTypeId = 10;
 
-        // 1. Stock In Transaction for each returned item
+        // 1. Stock In Transaction & WAC Recalculation for each returned item
+        $returnedItemCosts = [];
+
         foreach ($salesReturn->sale_return_data as $returnData) {
             $itemId = $returnData->item_id ?? $returnData->item?->id ?? $returnData->sale_invoice_data?->item_id;
             if ($itemId && $returnData->quantity > 0) {
-                $existingStock = Stock::where('voucher_no', $sr_no)
-                    ->where('voucher_type', 'sale_return')
-                    ->where('product_id', $itemId)
-                    ->first();
+                // A. Find original Delivery Challan's cost price (Tareeqa A)
+                $originalCostRate = 0;
+                $dcNo = null;
 
+                $siData = SalesInvoiceData::find($returnData->sale_invoice_data_id);
+                if ($siData) {
+                    if ($siData->dc_data_id) {
+                        $dcData = DeliveryChallanData::with('deliveryChallan')->find($siData->dc_data_id);
+                        $dcNo = $dcData?->deliveryChallan?->dc_no;
+                    }
+                } elseif ($dcData = DeliveryChallanData::with('deliveryChallan')->find($returnData->sale_invoice_data_id)) {
+                    $dcNo = $dcData?->deliveryChallan?->dc_no;
+                } elseif ($rrItem = ReceivingRequestItem::with('receiving_request.deliveryChallan')->find($returnData->sale_invoice_data_id)) {
+                    $dcNo = $rrItem->receiving_request?->deliveryChallan?->dc_no;
+                }
+
+                if ($dcNo) {
+                    $dcStock = Stock::where('voucher_no', $dcNo)
+                        ->where('voucher_type', 'delivery_challan')
+                        ->where('product_id', $itemId)
+                        ->first();
+                    if ($dcStock && $dcStock->avg_cost_price > 0) {
+                        $originalCostRate = (float)$dcStock->avg_cost_price;
+                    }
+                }
+
+                // Fallback: If original DC cost not found (e.g. historical data), use latest warehouse stock-in avg_cost_price
+                if ($originalCostRate <= 0) {
+                    $latestStockIn = Stock::where('product_id', $itemId)
+                        ->where('type', 'stock-in')
+                        ->where('voucher_no', '!=', $sr_no)
+                        ->whereNotNull('avg_cost_price')
+                        ->where('avg_cost_price', '>', 0)
+                        ->latest('id')
+                        ->first();
+                    $originalCostRate = $latestStockIn ? (float)$latestStockIn->avg_cost_price : 0;
+                }
+
+                $returnQty = (float)$returnData->quantity;
+                $returnedItemCosts[] = [
+                    'item_id' => $itemId,
+                    'quantity' => $returnQty,
+                    'cost_rate' => $originalCostRate,
+                    'cost_amount' => $returnQty * $originalCostRate,
+                ];
+
+                // B. Recalculate Warehouse Weighted Average Cost (WAC) including this returned stock
+                $previousStocks = Stock::where('product_id', $itemId)
+                    ->where('type', 'stock-in')
+                    ->where('voucher_no', '!=', $sr_no)
+                    ->whereNotNull('avg_cost_price')
+                    ->where('avg_cost_price', '>', 0)
+                    ->get();
+
+                $returnCostValue = $returnQty * $originalCostRate;
+
+                if ($previousStocks->count() > 0) {
+                    $prevTotalQty = $previousStocks->sum('qty');
+                    $prevTotalValue = $previousStocks->sum(function ($s) {
+                        return (float)($s->price > 0 ? $s->price : ($s->qty * ($s->avg_price_per_kg ?: $s->avg_cost_price)));
+                    });
+
+                    $combinedQty = $prevTotalQty + $returnQty;
+                    $combinedValue = $prevTotalValue + $returnCostValue;
+                    $newWac = $combinedQty > 0 ? ($combinedValue / $combinedQty) : $originalCostRate;
+                } else {
+                    $newWac = $originalCostRate;
+                }
+
+                // C. Save / Update Stock Record
                 $rate = (float)($returnData->rate ?? 0);
                 $netAmount = (float)($returnData->net_amount ?? 0);
                 if ($netAmount <= 0) {
                     $netAmount = (float)($returnData->amount ?? 0);
                 }
                 if ($netAmount <= 0) {
-                    $netAmount = (float)($returnData->quantity * $rate);
+                    $netAmount = (float)($returnQty * $rate);
                 }
+
+                $existingStock = Stock::where('voucher_no', $sr_no)
+                    ->where('voucher_type', 'sale_return')
+                    ->where('product_id', $itemId)
+                    ->first();
 
                 if (!$existingStock) {
                     createStockTransaction(
                         $itemId,
                         'sale_return',
                         $sr_no,
-                        $returnData->quantity,
+                        $returnQty,
                         'stock-in',
                         $netAmount,
                         $rate,
-                        $salesReturn->remarks ?? "Sales Return Stock-In: {$sr_no}"
+                        $salesReturn->remarks ?? "Sales Return Stock-In: {$sr_no}",
+                        ['avg_cost_price' => $newWac],
+                        $newWac
                     );
                 } else {
                     $existingStock->update([
-                        'qty' => $returnData->quantity,
-                        'rate' => $rate,
-                        'total_amount' => $netAmount,
-                        'remarks' => $salesReturn->remarks ?? "Sales Return Stock-In: {$sr_no}"
+                        'qty' => $returnQty,
+                        'price' => $netAmount,
+                        'avg_price_per_kg' => $rate,
+                        'avg_cost_price' => $newWac,
+                        'narration' => $salesReturn->remarks ?? "Sales Return Stock-In: {$sr_no}"
                     ]);
                 }
             }
         }
 
         // 2. Balanced Ledger Entries in DB Transaction
-        DB::transaction(function () use ($salesReturn, $sr_no, $voucherTypeId) {
+        DB::transaction(function () use ($salesReturn, $sr_no, $voucherTypeId, $returnedItemCosts) {
             $handleTransaction = function($amount, $accountId, $voucherTypeId, $voucherNo, $type, $isOpening, $additionalData) {
                 $tx = Transaction::where('voucher_no', $voucherNo)
                         ->where('purpose', $additionalData['purpose'])
@@ -1044,6 +1112,7 @@ class SalesLedgerService
                 }
             };
 
+            // 2.1 Revenue Reversal: Debit Sales Return (4-3), Credit Customer
             $totalReturnAmount = 0;
             foreach ($salesReturn->sale_return_data as $data) {
                 $net = (float)($data->net_amount ?? 0);
@@ -1077,6 +1146,39 @@ class SalesLedgerService
                     'against_reference_no' => $sr_no,
                     'remarks' => "Sales Return credited to Customer against SR: {$sr_no}.",
                 ]);
+            }
+
+            // 2.2 Inventory & COGS Reversal: Debit Inventory Asset (1-2), Credit COGS (6-2)
+            $cogsAccount = Account::where('hierarchy_path', '6-2')->first();
+
+            foreach ($returnedItemCosts as $costInfo) {
+                $itemId = $costInfo['item_id'];
+                $itemCostAmount = $costInfo['cost_amount'];
+
+                if ($itemCostAmount > 0 && $cogsAccount) {
+                    $product = Product::find($itemId);
+                    $productInventoryAccountId = $product?->account_id ?? Account::where('hierarchy_path', '1-2')->first()?->id;
+
+                    if ($productInventoryAccountId) {
+                        // Entry 3: Debit Inventory Asset (1-2) - Restores inventory value
+                        $handleTransaction(round($itemCostAmount, 2), $productInventoryAccountId, $voucherTypeId, $sr_no, 'debit', 'no', [
+                            'counter_account_id' => $cogsAccount->id,
+                            'purpose' => "sales-return-inventory-item-{$itemId}",
+                            'payment_against' => "inventory-asset",
+                            'against_reference_no' => $sr_no,
+                            'remarks' => "Inventory asset restored for returned item {$product?->name} on SR: {$sr_no}.",
+                        ]);
+
+                        // Entry 4: Credit COGS (6-2) - Reverses cost of goods sold
+                        $handleTransaction(round($itemCostAmount, 2), $cogsAccount->id, $voucherTypeId, $sr_no, 'credit', 'no', [
+                            'counter_account_id' => $productInventoryAccountId,
+                            'purpose' => "sales-return-cogs-item-{$itemId}",
+                            'payment_against' => "cogs-expense",
+                            'against_reference_no' => $sr_no,
+                            'remarks' => "Cost of Goods Sold reversed for returned item {$product?->name} on SR: {$sr_no}.",
+                        ]);
+                    }
+                }
             }
         });
     }
