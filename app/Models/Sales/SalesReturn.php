@@ -62,5 +62,8 @@ class SalesReturn extends Model
         \App\Models\Master\Account\Stock::where('voucher_no', $this->sr_no)
             ->where('voucher_type', 'sale_return')
             ->delete();
+
+        \App\Models\Master\Account\Transaction::where('voucher_no', $this->sr_no)
+            ->delete();
     }
 }
