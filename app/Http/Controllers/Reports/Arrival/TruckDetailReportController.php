@@ -7,6 +7,7 @@ use App\Models\Master\CompanyLocation;
 use App\Models\Master\Miller;
 use App\Models\Product;
 use App\Models\Arrival\ArrivalTicket;
+use App\Models\Master\ProductSlabType;
 use Illuminate\Http\Request;
 
 class TruckDetailReportController extends Controller
@@ -28,6 +29,7 @@ class TruckDetailReportController extends Controller
         ini_set('memory_limit', '512M');
         ini_set('max_execution_time', 300);
 
+        $product_slab_types = ProductSlabType::get();
         $tickets = ArrivalTicket::select('arrival_tickets.*', 'grn_numbers.unique_no as grn_unique_no')
             ->leftJoin('arrival_slips', 'arrival_tickets.id', '=', 'arrival_slips.arrival_ticket_id')
             ->leftJoin('grn_numbers', function ($join) {
@@ -56,6 +58,7 @@ class TruckDetailReportController extends Controller
                 'purchaseOrder',
                 'firstWeighbridge',
                 'secondWeighbridge',
+                'lastInitialSampling',
                 'initialSampling' => function ($q) {
                     $q->where('sampling_type', 'initial')
                         ->whereIn('approved_status', ['approved', 'rejected'])
@@ -117,7 +120,8 @@ class TruckDetailReportController extends Controller
             })
             ->orderBy('arrival_tickets.created_at', 'asc')
             ->get();
+        // dd($tickets);
 
-        return view('management.reports.arrival.truck-detail.getTruckDetail', compact('tickets'));
+        return view('management.reports.arrival.truck-detail.getTruckDetail', compact('tickets', 'product_slab_types'));
     }
 }

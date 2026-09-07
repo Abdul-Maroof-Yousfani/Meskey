@@ -16,10 +16,13 @@
         <th>Loaded Weight (KG)</th>
         <th>Truck #</th>
         <th>Amanat</th>
-        <th>Avg. Broken</th>
+        @foreach ($product_slab_types as $slab)
+            <th>Avg. {{ $slab->name }} </th>
+        @endforeach
+        {{-- <th>Avg. Broken</th>
         <th>Avg. Moisture</th>
         <th>Avg. Paddy</th>
-        <th>Avg. Damage</th>
+        <th>Avg. Damage</th> --}}
         <th>QC Advice</th>
         <th>QC Remarks</th>
         <th>Unloading Instruction</th>
@@ -73,7 +76,7 @@
     @slot('body')
         @foreach ($tickets as $row)
             @php
-                $sampling = $row->initialSampling ?? $row->innerSampling;
+                $sampling = $row->lastInitialSampling;
                 $avgBroken = '';
                 $avgMoisture = '';
                 $avgPaddy = '';
@@ -93,6 +96,45 @@
                     }
                 }
                 $innerSampleCount = $row->arrivalSamplingRequests ? $row->arrivalSamplingRequests->where('sampling_type', 'inner')->count() : 0;
+
+                // Use for foreach :)
+                // ==========================================
+                // 1. GET INITIAL SAMPLING
+                // ==========================================
+                $initialRequest = $row->lastInitialSampling;
+                $deductionValueSlabinitial = [];
+
+                if ($initialRequest) {
+                    foreach ($initialRequest->slabResults as $result) {
+                        if ($result->slabType) {
+                            $deductionValueSlabinitial[$result->slabType->id] = [
+                                'checklist_value' => $result->checklist_value,
+                                'name' => $result->slabType->name,
+                                'deduction' => $result->applied_deduction,
+                                'symbol' => $result->slabType->qc_symbol ?? '',
+                            ];
+                        }
+                    }
+                }
+
+                // ==========================================
+                // 2. GET INNER SAMPLING
+                // ==========================================
+                $innerRequest = $row->innerSampling;
+                $deductionValueSlabInner = [];
+
+                if ($innerRequest) {
+                    foreach ($innerRequest->slabResults as $result) {
+                        if ($result->slabType) {
+                            $deductionValueSlabInner[$result->slabType->id] = [
+                                'checklist_value' => $result->checklist_value,
+                                'name' => $result->slabType->name,
+                                'deduction' => $result->applied_deduction,
+                                'symbol' => $result->slabType->qc_symbol ?? '',
+                            ];
+                        }
+                    }
+                }
             @endphp
             <tr>
                 <td>#{{ $row->unique_no ?? 'N/A' }}</td>
@@ -111,10 +153,35 @@
                 <td>{{ $row->loading_weight }}</td>
                 <td>{{ $row->truck_no }}</td>
                 <td>{{ $row->approvals?->amanat ?? 'No' }}</td>
-                <td>{{ $avgBroken }}</td>
+                @foreach ($product_slab_types as $slab)
+                    @php
+                        $initialValue = $deductionValueSlabinitial[$slab->id]['checklist_value'] ?? 0;
+                        $innerValue = $deductionValueSlabInner[$slab->id]['checklist_value'] ?? 0;
+                        $slabSymbol = $slab->qc_symbol ?? '';
+                    @endphp
+
+                    <!-- INITIAL Column -->
+                    <td>
+                        @if($initialValue != 0)
+                            {{ $initialValue }}{{ $slabSymbol }}
+                        @else
+                            0
+                        @endif
+                    </td>
+
+                    <!-- INNER Column -->
+                    {{-- <td>
+                        @if($innerValue != 0)
+                            {{ $innerValue }}{{ $slabSymbol }}
+                        @else
+                            0
+                        @endif
+                    </td> --}}
+                @endforeach
+                {{-- <td>{{ $avgBroken }}</td>
                 <td>{{ $avgMoisture }}</td>
                 <td>{{ $avgPaddy }}</td>
-                <td>{{ $avgDamage }}</td>
+                <td>{{ $avgDamage }}</td> --}}
                 <td>{{ $row->approvals?->qc_advice ?? ($row->initialSampling?->approved_status ?? ($row->first_qc_status ?? 'N/A')) }}</td>
                 <td>{{ $row->initialSampling?->approved_remarks ?? ($row->remarks ?? 'N/A') }}</td>
                 <td>{{ $row->unloading_instruction ?? ($row->unloadingLocation?->remark ?? 'N/A') }}</td>
