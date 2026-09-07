@@ -1092,14 +1092,14 @@
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-file-text"></i><span data-i18n="Apps">Reports</span></a>
                 <ul class="dropdown-menu">
-                    @canAccess('report-arrival-master')
+                    @canAccess('report-arrival-report')
                     <li class="dropdown dropdown-submenu" data-menu="dropdown-submenu">
                         <a class="dropdown-item d-flex align-items-center dropdown-toggle" href="javascript:;"
                             data-toggle="dropdown">
                             <i class="ft-arrow-right submenu-icon"></i><span data-i18n="Bootstrap Tables">Arrival</span>
                         </a>
                         <ul class="dropdown-menu">
-                            @canAccess('report-arrival-history')
+                            @canAccess('master-arrival-report')
                             <li data-menu="">
                                 <a class="dropdown-item d-flex align-items-center"
                                     href="{{ route('arrival-history.index') }}"
@@ -1110,7 +1110,7 @@
                                 </a>
                             </li>
                             @endcanAccess
-                            @canAccess('report-arrival-truck-detail')
+                            @canAccess('arrival-truck-detail-report')
                             <li data-menu="">
                                 <a class="dropdown-item d-flex align-items-center"
                                     href="{{ route('truck-detail.index') }}"
