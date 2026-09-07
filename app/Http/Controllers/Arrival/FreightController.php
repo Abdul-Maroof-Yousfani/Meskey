@@ -9,6 +9,7 @@ use App\Models\Arrival\ArrivalTicket;
 use App\Models\Arrival\ArrivalSlip;
 use App\Models\Arrival\Freight;
 use App\Models\Master\Account\Account;
+use App\Models\Master\Account\Stock;
 use App\Models\Master\ArrivalLocation;
 use App\Models\Master\GrnNumber;
 use App\Models\Procurement\PurchaseFreight;
@@ -120,6 +121,7 @@ class FreightController extends Controller
                 $truckNo = $ticket->truck_no ?? 'N/A';
                 $biltyNo = $ticket->bilty_no ?? 'N/A';
                 $purchaseOrder = $ticket->purchaseOrder ?? 'N/A';
+                $inventoryAmount = 0;
 
                 if ($ticket->arrival_purchase_order_id) {
                     $stockInTransitAccount = Account::where('name', 'Stock in Transit')->first();
@@ -366,14 +368,41 @@ class FreightController extends Controller
                     }
                 }
 
+                $productId = $ticket->qc_product ?? $ticket->product_id ?? null;
+                $qty = $request->arrived_weight ?? 0;
+                $price = $inventoryAmount ?? 0;
+                $avgPricePerKg = $qty > 0 ? ($price / $qty) : 0;
+
+                // Calculate Weighted Average Cost (WAC) across previous Stock-In records (Arrival, Production, etc.) + current Stock-In
+                $previousStocks = Stock::where('product_id', $productId)
+                    ->where('type', 'stock-in')
+                    ->where('voucher_no', '!=', $grnNumber->unique_no)
+                    ->whereNotNull('avg_cost_price')
+                    ->where('avg_cost_price', '>', 0)
+                    ->get();
+
+                if ($previousStocks->count() > 0) {
+                    $prevTotalQty = $previousStocks->sum('qty');
+                    $prevTotalValue = $previousStocks->sum(function ($s) {
+                        return (float)($s->price > 0 ? $s->price : ($s->qty * ($s->avg_price_per_kg ?: $s->avg_cost_price)));
+                    });
+
+                    $combinedTotalQty = $prevTotalQty + $qty;
+                    $combinedTotalValue = $prevTotalValue + $price;
+
+                    $avgCostPrice = $combinedTotalQty > 0 ? ($combinedTotalValue / $combinedTotalQty) : $avgPricePerKg;
+                } else {
+                    $avgCostPrice = $avgPricePerKg;
+                }
+
                 createStockTransaction(
-                    $ticket->qc_product ?? $ticket->product_id ?? null,
+                    $productId,
                     'grn',
                     $grnNumber->unique_no,
-                    $request->arrived_weight,
+                    $qty,
                     "stock-in",
-                    null,
-                    null,
+                    $price,
+                    $avgPricePerKg,
                     "Goods Received Note (Arrival)",
                     [
                         "subarrival_id" => $ticket->approvals->gala_id,
@@ -381,8 +410,10 @@ class FreightController extends Controller
                         "arrival_id" => $ticket->unloadingLocation->arrival_location_id,
                         "parentable_id" => $ticket->id,
                         "bag_packing_id" => $ticket->approvals->bag_packing_id,
-                        "parentable_type" => "arrival-ticket"
-                    ]
+                        "parentable_type" => "arrival-ticket",
+                        "avg_cost_price" => $avgCostPrice,
+                    ],
+                    $avgCostPrice
                 );
 
                 return response()->json(['success' => 'Freight created successfully.', 'data' => ['freight' => $freight, 'slip' => $arrivalApprove]], 201);

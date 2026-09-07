@@ -1397,7 +1397,7 @@ if (!function_exists('createTransaction')) {
             $accountUniqueNo = $account->unique_no;
 
             $transactionData = array_merge([
-                'company_id' => auth()->user()->current_company_id ?? null,
+                'company_id' => auth()->user()?->current_company_id ?? session('current_company_id') ?? 1,
                 'voucher_date' => now()->format('Y-m-d'),
                 'amount' => $amount,
                 'account_id' => $accountId,
@@ -1407,7 +1407,7 @@ if (!function_exists('createTransaction')) {
                 'type' => $type,
                 'is_opening_balance' => $isOpening,
                 'status' => 'active',
-                'created_by' => auth()->user()->id,
+                'created_by' => auth()->user()?->id ?? 1,
                 'payment_against' => null,
                 'against_reference_no' => null,
             ], $additionalData);

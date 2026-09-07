@@ -32,6 +32,7 @@
         </div>
     </div>
 
+    @if(!$isXmill)
     <!-- Other Details Section -->
     <div class="row">
         <div class="col-12">
@@ -74,6 +75,7 @@
             </div>
         </div>
     </div>
+    @endif
 
     <!-- Transporter Details Section -->
     <div class="row mt-3">
@@ -149,6 +151,7 @@
         </div>
     </div>
 
+    @if(!$isXmill)
     <!-- Unloading Labour Section -->
     <div class="row mt-3">
         <div class="col-12">
@@ -298,6 +301,7 @@
             </div>
         </div>
     </div>
+    @endif
 
     <div class="row bottom-button-bar mt-3">
         <div class="col-12">

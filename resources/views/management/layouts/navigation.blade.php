@@ -1099,6 +1099,7 @@
                             <i class="ft-arrow-right submenu-icon"></i><span data-i18n="Bootstrap Tables">Arrival</span>
                         </a>
                         <ul class="dropdown-menu">
+                            @canAccess('master-arrival-report')
                             <li data-menu="">
                                 <a class="dropdown-item d-flex align-items-center"
                                     href="{{ route('arrival-history.index') }}"
@@ -1108,6 +1109,18 @@
                                         Report</span>
                                 </a>
                             </li>
+                            @endcanAccess
+                            @canAccess('arrival-truck-detail-report')
+                            <li data-menu="">
+                                <a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('truck-detail.index') }}"
+                                    onclick="loadPageContent('{{ route('truck-detail.index') }}')"
+                                    data-toggle="dropdown">
+                                    <i class="ft-arrow-right submenu-icon"></i><span data-i18n="Basic">Truck Detail
+                                        Report</span>
+                                </a>
+                            </li>
+                            @endcanAccess
                         </ul>
                     </li>
                     @endcanAccess
