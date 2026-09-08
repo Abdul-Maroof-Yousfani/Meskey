@@ -2367,3 +2367,60 @@ function delivery_order_qty_used($sale_order_data_id)
 
     return $data->sum("qty");
 }
+
+if (!function_exists('formatDateTime')) {
+    /**
+     * Format date time safely.
+     *
+     * @param mixed $date
+     * @param string $format
+     * @param string $default
+     * @return string
+     */
+    function formatDateTime($date, string $format = 'd M Y h:i:s A', string $default = '')
+    {
+        if (empty($date)) {
+            return $default;
+        }
+
+        try {
+            if ($date instanceof \Carbon\Carbon || $date instanceof \DateTimeInterface) {
+                return $date->format($format);
+            }
+            return \Carbon\Carbon::parse($date)->format($format);
+        } catch (\Exception $e) {
+            return $default;
+        }
+    }
+}
+
+if (!function_exists('formatDate')) {
+    /**
+     * Format date safely.
+     *
+     * @param mixed $date
+     * @param string $format
+     * @param string $default
+     * @return string
+     */
+    function formatDate($date, string $format = 'd M Y', string $default = '')
+    {
+        return formatDateTime($date, $format, $default);
+    }
+}
+
+if (!function_exists('formatTime')) {
+    /**
+     * Format time safely.
+     *
+     * @param mixed $date
+     * @param string $format
+     * @param string $default
+     * @return string
+     */
+    function formatTime($date, string $format = 'h:i:s A', string $default = '')
+    {
+        return formatDateTime($date, $format, $default);
+    }
+}
+

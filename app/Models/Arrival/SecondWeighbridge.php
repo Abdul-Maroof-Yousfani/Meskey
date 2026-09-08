@@ -21,4 +21,14 @@ class SecondWeighbridge extends Model
     {
         return $this->belongsTo(ArrivalTicket::class, 'arrival_ticket_id');
     }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(\App\Models\User::class, 'created_by');
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(\App\Models\User::class, 'created_by');
+    }
 }

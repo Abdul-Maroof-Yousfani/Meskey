@@ -59,6 +59,16 @@ class ArrivalSamplingRequest extends Model
         return $this->belongsTo(User::class, 'sample_taken_by');
     }
 
+    public function approvedByUser()
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function doneByUser()
+    {
+        return $this->belongsTo(User::class, 'done_by');
+    }
+
     public function compulsoryResults()
     {
         return $this->hasMany(ArrivalSamplingResultForCompulsury::class, 'arrival_sampling_request_id', 'id')
@@ -72,7 +82,3 @@ class ArrivalSamplingRequest extends Model
     }
 
 }
-
-
-
-

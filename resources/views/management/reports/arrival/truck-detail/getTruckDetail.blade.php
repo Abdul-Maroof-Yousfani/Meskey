@@ -137,8 +137,8 @@
             @endphp
             <tr>
                 <td>#{{ $row->unique_no ?? 'N/A' }}</td>
-                <td>{{ $row->created_at ? $row->created_at->format('d-M-Y') : 'N/A' }}</td>
-                <td>{{ $row->created_at ? $row->created_at->format('h:i:s A') : 'N/A' }}</td>
+                <td>{{ formatDate($row->created_at, 'd-M-Y', 'N/A') }}</td>
+                <td>{{ formatTime($row->created_at, 'h:i:s A', 'N/A') }}</td>
                 <td>{{ $row->creator?->name ?? 'Main Gate' }}</td>
                 <td>{{ $row->broker_name ?? ($row->broker?->name ?? '< Not Available >') }}</td>
                 <td>{{ $row->miller?->name ?? ($row->accountsOf?->name ?? '< Not Available >') }}</td>
@@ -147,7 +147,7 @@
                 <td>{{ $row->decisionBy?->name ?? 'N/A' }}</td>
                 <td>{{ $row->bilty_no }}</td>
                 <td>{{ $row->truckType?->name ?? 'N/A' }}</td>
-                <td>{{ $row->loading_date ? \Carbon\Carbon::parse($row->loading_date)->format('d M Y') : 'N/A' }}</td>
+                <td>{{ formatDate($row->loading_date, 'd M Y', 'N/A') }}</td>
                 <td>{{ $row->bags }}</td>
                 <td>{{ $row->loading_weight }}</td>
                 <td>{{ $row->truck_no }}</td>
@@ -201,9 +201,9 @@
                 <td>{{ $row->unloadingLocation?->arrivalLocation?->gala_name ?? ($row->approvals?->gala?->name ?? ($row->approvals?->gala_name ?? 'N/A')) }}</td>
                 <td>{{ $row->unloadingLocation?->location_type ?? ($row->approvals?->locationType?->name ?? 'N/A') }}</td>
                 <td>{{ $row->firstWeighbridge?->gross_weight ?? ($row->first_weight ?? 'N/A') }}</td>
-                <td>{{ $row->firstWeighbridge?->created_at ? \Carbon\Carbon::parse($row->firstWeighbridge->created_at)->format('d M Y h:i:s A') : 'N/A' }}</td>
+                <td>{{ formatDateTime($row->firstWeighbridge?->created_at, 'd M Y h:i:s A', 'N/A') }}</td>
                 <td>{{ $row->secondWeighbridge?->tare_weight ?? ($row->second_weight ?? 'N/A') }}</td>
-                <td>{{ $row->secondWeighbridge?->created_at ? \Carbon\Carbon::parse($row->secondWeighbridge->created_at)->format('d M Y h:i:s A') : 'N/A' }}</td>
+                <td>{{ formatDateTime($row->secondWeighbridge?->created_at, 'd M Y h:i:s A', 'N/A') }}</td>
                 <td>{{ $row->freight?->freight_amount ?? 'N/A' }}</td>
                 <td>{{ $row->freight?->labor_amount ?? 'N/A' }}</td>
                 <td>{{ $row->freight?->unpaid_labor_amount ?? 'N/A' }}</td>
@@ -217,16 +217,16 @@
                 @endphp
                 <td>{{ $isFullReject ? 'Yes' : 'No' }}</td>
                 <td>{{ $isFullReject ? ($row->initialSampling?->takenByUser?->name ?? ($row->decisionBy?->name ?? 'N/A')) : 'N/A' }}</td>
-                <td>{{ $isFullReject && $row->initialSampling?->created_at ? \Carbon\Carbon::parse($row->initialSampling->created_at)->format('d M Y h:i:s A') : 'N/A' }}</td>
+                <td>{{ $isFullReject ? formatDateTime($row->initialSampling?->created_at, 'd M Y h:i:s A', 'N/A') : 'N/A' }}</td>
                 <td>{{ $isFullReject ? ($row->initialSampling?->approved_remarks ?? ($row->remarks ?? 'N/A')) : 'N/A' }}</td>
                 <td>{{ $isHalfReject ? 'Yes' : 'No' }}</td>
                 <td>{{ $isHalfReject ? ($row->approvals?->creator?->name ?? 'N/A') : 'N/A' }}</td>
-                <td>{{ $isHalfReject && $row->approvals?->created_at ? \Carbon\Carbon::parse($row->approvals->created_at)->format('d M Y h:i:s A') : 'N/A' }}</td>
+                <td>{{ $isHalfReject ? formatDateTime($row->approvals?->created_at, 'd M Y h:i:s A', 'N/A') : 'N/A' }}</td>
                 <td>{{ $isHalfReject ? ($row->approvals?->remark ?? 'N/A') : 'N/A' }}</td>
                 
                 <td>{{ $row->approvals ? 'Yes' : 'No' }}</td>
                 <td>{{ $row->approvals?->creator?->name ?? 'N/A' }}</td>
-                <td>{{ $row->approvals?->created_at ? \Carbon\Carbon::parse($row->approvals->created_at)->format('d M Y h:i:s A') : 'N/A' }}</td>
+                <td>{{ formatDateTime($row->approvals?->created_at, 'd M Y h:i:s A', 'N/A') }}</td>
                 <td>{{ $row->approvals?->remark ?? 'N/A' }}</td>
                 
                 <td>{{ $row->approvals?->bagPacking?->name ?? 'N/A' }}</td>

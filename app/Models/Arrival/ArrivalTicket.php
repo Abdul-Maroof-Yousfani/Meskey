@@ -283,5 +283,10 @@ class ArrivalTicket extends Model
     {
         return $this->belongsTo(User::class, 'creator_id');
     }
+
+    public function ticketVerifiedBy()
+    {
+        return $this->belongsTo(User::class, 'ticket_verified_by');
+    }
 }
 
