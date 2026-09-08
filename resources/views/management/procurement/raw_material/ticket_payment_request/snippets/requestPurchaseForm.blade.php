@@ -417,7 +417,8 @@
                                         {{-- {{ number_format($samplingRequest->lumpsum_deduction, 2) }} Rs./KG --}}
                                     </td>
                                     <td>
-                                        <div class="input-group mb-0">
+                                        <div class="input-group mb-0"> 
+                                            {{ number_format($Deductionfromhelperfunction['lumpsum']['amount_deduction'] ?? 0, 4) }}
                                             <input type="text" class="form-control" name="lump_sum_deduction_rupees_total"
                                                 id="lump_sum_deduction_rupees_total"
                                                 value="{{ number_format($Deductionfromhelperfunction['lumpsum']['amount_deduction'] ?? 0, 4) }}"
