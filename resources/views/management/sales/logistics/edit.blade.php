@@ -25,6 +25,16 @@
 
     <input type="hidden" id="listRefresh" value="{{ route('sales.get.logistics.list') }}" data-appenddiv="filteredData" />
 
+    @if(in_array(strtolower($logistics->am_approval_status ?? ''), ['approved', 'rejected']))
+        <div class="alert alert-warning px-3 py-2 mt-2 mb-3">
+            <i class="fa fa-exclamation-triangle"></i> <strong>Note:</strong> This Logistics record has already been <strong>{{ ucfirst($logistics->am_approval_status) }}</strong> and cannot be updated.
+        </div>
+    @elseif(strtolower($logistics->am_approval_status ?? '') === 'reverted')
+        <div class="alert alert-info px-3 py-2 mt-2 mb-3">
+            <i class="fa fa-info-circle"></i> <strong>Notice:</strong> This Logistics record was <strong>Reverted</strong>. Updating and submitting this form will reset its status to <strong>Pending</strong> for re-approval.
+        </div>
+    @endif
+
     <div class="row form-mar">
         <div class="col-md-12">
             <div class="row mb-2">
@@ -381,7 +391,9 @@
     <div class="row bottom-button-bar">
         <div class="col-12">
             <a type="button" class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton">Close</a>
-            <button type="submit" class="btn btn-primary submitbutton">Update</button>
+            @if(!in_array(strtolower($logistics->am_approval_status ?? ''), ['approved', 'rejected']))
+                <button type="submit" class="btn btn-primary submitbutton">Update</button>
+            @endif
         </div>
     </div>
 </form>

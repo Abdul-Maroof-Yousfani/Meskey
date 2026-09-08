@@ -269,6 +269,13 @@ class LogisticsController extends Controller
 
             $logistics = Logistics::firstOrNew($lookup);
 
+            if ($logistics->exists && in_array(strtolower($logistics->am_approval_status ?? ''), ['approved', 'rejected'])) {
+                return response()->json([
+                    'error' => "Logistics record has already been {$logistics->am_approval_status} and cannot be modified.",
+                    'message' => "Logistics record has already been {$logistics->am_approval_status} and cannot be modified."
+                ], 422);
+            }
+
             if (!$logistics->exists) {
                 $logistics->created_by = auth()->user()->id;
             }
@@ -380,7 +387,14 @@ class LogisticsController extends Controller
     {
         $logistics = Logistics::find($id);
         if (!$logistics) {
-            return response()->json(['error' => 'Logistics not found'], 404);
+            return response()->json(['error' => 'Logistics not found', 'message' => 'Logistics not found'], 404);
+        }
+
+        if (in_array(strtolower($logistics->am_approval_status ?? ''), ['approved', 'rejected'])) {
+            return response()->json([
+                'error' => "Logistics record has been {$logistics->am_approval_status} and cannot be updated.",
+                'message' => "Logistics record has been {$logistics->am_approval_status} and cannot be updated."
+            ], 422);
         }
         
         $request->validate([
@@ -512,5 +526,25 @@ class LogisticsController extends Controller
             return response()->json(['error' => 'Logistics not found'], 404);
         }
         return view('management.sales.logistics.view', compact('logistics'));
+    }
+
+    public function destroy($id)
+    {
+        $logistics = Logistics::find($id);
+        if (!$logistics) {
+            return response()->json(['error' => 'Logistics not found', 'message' => 'Logistics not found'], 404);
+        }
+
+        if (in_array(strtolower($logistics->am_approval_status ?? ''), ['approved', 'rejected'])) {
+            return response()->json([
+                'error' => "Logistics record has been {$logistics->am_approval_status} and cannot be deleted.",
+                'message' => "Logistics record has been {$logistics->am_approval_status} and cannot be deleted."
+            ], 422);
+        }
+
+        $logistics->items()->delete();
+        $logistics->delete();
+
+        return response()->json(['data' => 'Logistics record has been deleted', 'success' => 'Logistics record has been deleted']);
     }
 }

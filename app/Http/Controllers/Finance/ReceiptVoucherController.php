@@ -348,6 +348,15 @@ class ReceiptVoucherController extends Controller
 
     public function update_direct(Request $request, $id)
     {
+        $receiptVoucher = ReceiptVoucher::findOrFail($id);
+
+        if (in_array(strtolower($receiptVoucher->am_approval_status ?? ''), ['approved', 'rejected'])) {
+            return response()->json([
+                'error' => "Receipt Voucher has been {$receiptVoucher->am_approval_status} and cannot be updated.",
+                'message' => "Receipt Voucher has been {$receiptVoucher->am_approval_status} and cannot be updated."
+            ], 422);
+        }
+
         // TODO: Create a validation request class if needed, similar to ReceiptVoucherRequest
         // For now, assuming basic validation
         $request->validate([
@@ -366,7 +375,6 @@ class ReceiptVoucherController extends Controller
         ]);
 
         $payload = $request->all();
-        $receiptVoucher = ReceiptVoucher::findOrFail($id);
 
         DB::beginTransaction();
         try {
@@ -424,6 +432,8 @@ class ReceiptVoucherController extends Controller
                 'remarks' => $payload['remarks'] ?? null, // Assuming optional, as in create
                 'total_amount' => $totalNetAmount,
                 'company_id' => $request->company_id, // Assuming same as create
+                'am_approval_status' => 'pending',
+                'am_change_made' => 1,
             ]);
 
             // Delete old items
@@ -871,6 +881,14 @@ class ReceiptVoucherController extends Controller
     public function update(Request $request, $id)
     {
         $receiptVoucher = ReceiptVoucher::findOrFail($id);
+
+        if (in_array(strtolower($receiptVoucher->am_approval_status ?? ''), ['approved', 'rejected'])) {
+            return response()->json([
+                'error' => "Receipt Voucher has been {$receiptVoucher->am_approval_status} and cannot be updated.",
+                'message' => "Receipt Voucher has been {$receiptVoucher->am_approval_status} and cannot be updated."
+            ], 422);
+        }
+
         $payload = app(\App\Http\Requests\Finance\ReceiptVoucherRequest::class)->validated();
 
         $items = collect($payload["items"] ?? [])
@@ -1070,6 +1088,19 @@ class ReceiptVoucherController extends Controller
     
     public function destroy($id)
     {
-        abort(404);
+        $receiptVoucher = ReceiptVoucher::find($id);
+        if (!$receiptVoucher) {
+            return response()->json(['error' => 'Receipt Voucher not found', 'message' => 'Receipt Voucher not found'], 404);
+        }
+
+        if (in_array(strtolower($receiptVoucher->am_approval_status ?? ''), ['approved', 'rejected'])) {
+            return response()->json([
+                'error' => "Receipt Voucher has been {$receiptVoucher->am_approval_status} and cannot be deleted.",
+                'message' => "Receipt Voucher has been {$receiptVoucher->am_approval_status} and cannot be deleted."
+            ], 422);
+        }
+
+        $receiptVoucher->delete();
+        return response()->json(['data' => 'Receipt Voucher has been deleted', 'success' => 'Receipt Voucher has been deleted']);
     }
 }

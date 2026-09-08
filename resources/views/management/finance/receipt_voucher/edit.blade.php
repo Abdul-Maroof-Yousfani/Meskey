@@ -16,6 +16,16 @@
                                 @method('PUT')
                             @csrf
                             {{-- <input type="hidden" id="redirectUrl" value="{{ route('receipt-voucher.index') }}"> --}}
+
+                            @if(in_array(strtolower($receiptVoucher->am_approval_status ?? ''), ['approved', 'rejected']))
+                                <div class="alert alert-warning px-3 py-2 mt-2 mb-3">
+                                    <i class="fa fa-exclamation-triangle"></i> <strong>Note:</strong> This Receipt Voucher has already been <strong>{{ ucfirst($receiptVoucher->am_approval_status) }}</strong> and cannot be updated.
+                                </div>
+                            @elseif(strtolower($receiptVoucher->am_approval_status ?? '') === 'reverted')
+                                <div class="alert alert-info px-3 py-2 mt-2 mb-3">
+                                    <i class="fa fa-info-circle"></i> <strong>Notice:</strong> This Receipt Voucher was <strong>Reverted</strong>. Updating and submitting this form will reset its status to <strong>Pending</strong> for re-approval.
+                                </div>
+                            @endif
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
@@ -178,9 +188,11 @@
                                 </div>
                             </div>
 
-                            <div class="form-group text-right">
-                                <button type="submit" class="btn btn-primary">Edit Receipt Voucher</button>
-                            </div>
+                            @if(!in_array(strtolower($receiptVoucher->am_approval_status ?? ''), ['approved', 'rejected']))
+                                <div class="form-group text-right">
+                                    <button type="submit" class="btn btn-primary">Edit Receipt Voucher</button>
+                                </div>
+                            @endif
                         </form>
                     </div>
                 </div>
