@@ -32,7 +32,7 @@
     {{ method_field('PUT') }}
     <input type="hidden" id="listRefresh" value="{{ route('sales.get.sales-order.list') }}" />
 
-    @if(in_array($sale_order->am_approval_status, ['approved', 'rejected']))
+    @if(in_array(strtolower($sale_order->am_approval_status ?? ''), ['approved', 'rejected']))
         <div class="alert alert-warning px-3 py-2 mt-2">
             <i class="fa fa-exclamation-triangle"></i> <strong>Note:</strong> Since this Sale Order is <strong>{{ ucfirst($sale_order->am_approval_status) }}</strong>, you can only update the <strong>Delivery Date</strong>. Changes to any other fields will be ignored.
         </div>

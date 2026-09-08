@@ -745,8 +745,11 @@ class DeliveryOrderController extends Controller
 
     public function destroy(DeliveryOrder $delivery_order)
     {
-        if ($delivery_order->am_approval_status == "approved" || $delivery_order->am_approval_status == 'rejected') {
-            throw new Exception("Delivery Order has been approved/rejected and cannot be updated.");
+        if (in_array(strtolower($delivery_order->am_approval_status ?? ''), ['approved', 'rejected'])) {
+            return response()->json([
+                'error' => "Delivery Order has been {$delivery_order->am_approval_status} and cannot be deleted.",
+                'message' => "Delivery Order has been {$delivery_order->am_approval_status} and cannot be deleted."
+            ], 422);
         }
 
         if ($delivery_order) {
@@ -905,16 +908,19 @@ class DeliveryOrderController extends Controller
         $withhold_rv_id = null;
 
 
-        if ($delivery_order->am_approval_status == "approved" || $delivery_order->am_approval_status == 'rejected') {
+        if (in_array(strtolower($delivery_order->am_approval_status ?? ''), ['approved', 'rejected'])) {
             if ($request->do_status == $delivery_order->do_status || !$request->has('do_status')) {
-                return response()->json("Delivery Order has been approved/rejected and cannot be updated.", 400);
+                return response()->json([
+                    'error' => "Delivery Order has been {$delivery_order->am_approval_status} and cannot be updated.",
+                    'message' => "Delivery Order has been {$delivery_order->am_approval_status} and cannot be updated."
+                ], 422);
             }
             
             $delivery_order->update([
                 'do_status' => $request->do_status
             ]);
             DB::commit();
-            return response()->json("Delivery Order Status updated successfully.", 200);
+            return response()->json(["message" => "Delivery Order Status updated successfully.", "data" => "Delivery Order Status updated successfully."], 200);
         }
 
         if ($delivery_order->do_status == 'closed' && $request->do_status != 'closed') {

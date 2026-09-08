@@ -96,8 +96,11 @@ class ReceivingRequestController extends Controller
             $receivingRequest = ReceivingRequest::findOrFail($id);
 
 
-            if($receivingRequest->am_approval_status == "approved" || $receivingRequest->am_approval_status == 'rejected') {
-                return response()->json("Receiving Request has been approved/rejected and cannot be updated.", 400);
+            if(in_array(strtolower($receivingRequest->am_approval_status ?? ''), ['approved', 'rejected'])) {
+                return response()->json([
+                    'error' => "Receiving Request has been {$receivingRequest->am_approval_status} and cannot be updated.",
+                    'message' => "This Receiving Request has already been {$receivingRequest->am_approval_status}. Further updates are not allowed from any screen."
+                ], 422);
             }
 
             // Calculate total labour amount

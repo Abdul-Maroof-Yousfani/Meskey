@@ -63,6 +63,29 @@ class ReceivingRequest extends Model
         'inhouse_weighbridge_amount' => 'decimal:2',
     ];
 
+    protected static function booted()
+    {
+        static::updating(function ($model) {
+            $originalStatus = strtolower($model->getOriginal('am_approval_status') ?? '');
+            $newStatus = strtolower($model->am_approval_status ?? '');
+            if ($model->isDirty('am_approval_status')) {
+                if (in_array($originalStatus, ['approved', 'rejected'])) {
+                    throw new \Exception("Receiving Request is already {$originalStatus} and status cannot be changed.");
+                }
+                if ($originalStatus === 'reverted' && $newStatus !== 'pending') {
+                    throw new \Exception("Receiving Request is reverted and cannot be {$newStatus} directly. It must be updated to pending first.");
+                }
+            }
+        });
+
+        static::deleting(function ($model) {
+            $status = strtolower($model->am_approval_status ?? '');
+            if (in_array($status, ['approved', 'rejected'])) {
+                throw new \Exception("Receiving Request is already {$status} and cannot be deleted.");
+            }
+        });
+    }
+
     public function deliveryChallan()
     {
         return $this->belongsTo(DeliveryChallan::class, 'delivery_challan_id');

@@ -63,7 +63,7 @@
                                                     </tr>
                                                 </thead>
                                                 <tbody id="journalEntriesBody">
-                                                     <tr>
+                                                    <tr>
                                                         <td>
                                                             <select name="details[0][acc_id]" class="form-control select2 account-select" required>
                                                                 <option value="">Select Account</option>
@@ -73,11 +73,8 @@
                                                             </select>
                                                         </td>
                                                         <td class="receiving-col" style="display: none;">
-                                                            <select name="details[0][receipt_voucher_id]" class="form-control select2 receipt-voucher-select" style="width: 200px;">
-                                                                <option value="">Select Receipt Voucher</option>
-                                                                @foreach ($receiptVouchers as $rv)
-                                                                    <option value="{{ $rv->id }}" data-remaining-amount="{{ $rv->remaining_amount }}">{{ $rv->unique_no }} (Rem: {{ number_format($rv->remaining_amount, 2) }})</option>
-                                                                @endforeach
+                                                            <select name="details[0][receipt_voucher_id]" class="form-control select2 receipt-voucher-select" style="width: 100%;">
+                                                                <option value="">Select Receipt Voucher (Select Account First)</option>
                                                             </select>
                                                         </td>
                                                         <td class="receiving-col" style="display: none;">
@@ -111,11 +108,8 @@
                                                             {{-- Empty for second row --}}
                                                         </td>
                                                         <td class="receiving-col" style="display: none;">
-                                                            <select name="details[1][sales_order_id]" class="form-control select2 sales-order-select" style="width: 200px;">
-                                                                <option value="">Select Sales Order</option>
-                                                                @foreach ($salesOrders as $so)
-                                                                    <option value="{{ $so->id }}">{{ $so->reference_no }}</option>
-                                                                @endforeach
+                                                            <select name="details[1][sales_order_id]" class="form-control select2 sales-order-select" style="width: 100%;">
+                                                                <option value="">Select Sales Order (Select Account First)</option>
                                                             </select>
                                                         </td>
                                                         <td>
@@ -183,8 +177,11 @@
         $(document).ready(function () {
             let rowCount = $('#journalEntriesBody tr').length;
 
-            // Initialize select2 for existing selects
-            $('.select2').select2();
+            // Global map to store loaded RV remaining balances by RV ID
+            window.rvMap = window.rvMap || {};
+
+            // Initialize select2 with 100% width
+            $('.select2').select2({ width: '100%' });
 
             // Toggle receiving columns
             function toggleReceivingColumns() {
@@ -192,6 +189,13 @@
                     $('.receiving-col').show();
                     $('#journalEntriesTable tfoot td:first-child').attr('colspan', 4);
                     $('#addRow').closest('td').attr('colspan', 7);
+                    // Refresh select2 inside receiving columns so width is 100%
+                    $('.receiving-col .select2').each(function() {
+                        if ($(this).hasClass("select2-hidden-accessible")) {
+                            $(this).select2('destroy');
+                        }
+                        $(this).select2({ width: '100%' });
+                    });
                 } else {
                     $('.receiving-col').hide();
                     $('#journalEntriesTable tfoot td:first-child').attr('colspan', 2);
@@ -203,14 +207,241 @@
                 toggleReceivingColumns();
             });
 
-            // Auto-fill debit amount on RV selection
-            $(document).on('change', '.receipt-voucher-select', function () {
-                const $option = $(this).find('option:selected');
-                const remainingAmount = $option.data('remaining-amount');
-                if (remainingAmount) {
-                    const $row = $(this).closest('tr');
-                    $row.find('.debit-input').val(remainingAmount).trigger('input');
+            // Helper to get RV remaining amount reliably from a select
+            function getRvRemainingForSelect($rvSelect) {
+                if (!$rvSelect || !$rvSelect.length) return null;
+                const rvId = $rvSelect.val();
+                if (!rvId) return null;
+
+                if (window.rvMap && window.rvMap[rvId] && window.rvMap[rvId].remaining_amount !== undefined) {
+                    return parseFloat(window.rvMap[rvId].remaining_amount);
                 }
+
+                const selectElem = $rvSelect[0];
+                if (selectElem && selectElem.selectedIndex >= 0) {
+                    const opt = selectElem.options[selectElem.selectedIndex];
+                    if (opt) {
+                        const attr = opt.getAttribute('data-remaining-amount');
+                        if (attr !== null && attr !== undefined && attr !== '') {
+                            const num = parseFloat(attr);
+                            if (!isNaN(num)) return num;
+                        }
+                    }
+                }
+                return null;
+            }
+
+            // Function to get active RV remaining balance for the row, or across the voucher (for adjusting SO row)
+            function getActiveRvRemainingAmount($row) {
+                // 1. If this row has an RV select with a selected value
+                const $thisRowRv = $row ? $row.find('.receipt-voucher-select') : null;
+                if ($thisRowRv && $thisRowRv.length && $thisRowRv.val()) {
+                    const val = getRvRemainingForSelect($thisRowRv);
+                    if (val !== null && val > 0) return val;
+                }
+
+                // 2. If this row doesn't have an RV (e.g. Row 1 SO row), get the selected RV from the voucher
+                let voucherRvRemaining = null;
+                $('.receipt-voucher-select').each(function() {
+                    if ($(this).val()) {
+                        const val = getRvRemainingForSelect($(this));
+                        if (val !== null && val > 0) {
+                            voucherRvRemaining = val;
+                            return false; // break loop
+                        }
+                    }
+                });
+
+                return voucherRvRemaining;
+            }
+
+            // Standard SweetAlert Warning Popup
+            let warningPopupTimeout = null;
+            function showRvLimitWarning(limit) {
+                if (typeof Swal !== 'undefined' && Swal.isVisible()) {
+                    return; // Avoid multiple overlapping popups
+                }
+                if (warningPopupTimeout) clearTimeout(warningPopupTimeout);
+                warningPopupTimeout = setTimeout(function() {
+                    if (typeof Swal !== 'undefined' && !Swal.isVisible()) {
+                        const formatted = Number(limit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Amount Exceeds RV Balance',
+                            text: 'Amount cannot exceed Receipt Voucher remaining balance of ' + formatted,
+                            confirmButtonColor: '#D95000'
+                        });
+                    }
+                }, 250);
+            }
+
+            // Real-time amount validator & clamper for debit/credit inputs
+            function validateAndClampInput($input) {
+                const $row = $input.closest('tr');
+                const remainingAmount = getActiveRvRemainingAmount($row);
+
+                if (remainingAmount !== null && remainingAmount > 0) {
+                    $input.attr('max', remainingAmount.toFixed(2));
+                    const enteredVal = parseFloat($input.val()) || 0;
+                    if (enteredVal > (remainingAmount + 0.001)) {
+                        $input.val(remainingAmount.toFixed(2));
+                        showRvLimitWarning(remainingAmount);
+                    }
+                }
+            }
+
+            // Cleanly update Select2 options without breaking container
+            function updateSelect2Dropdown($select, items, placeholder, selectedId, isLoading = false) {
+                if ($select.hasClass("select2-hidden-accessible") || $select.data('select2')) {
+                    $select.select2('destroy');
+                }
+                $select.empty();
+                $select.append(new Option(placeholder, '', false, false));
+
+                let hasSelected = false;
+                if (items && items.length > 0) {
+                    items.forEach(function (item) {
+                        const isSel = Boolean(selectedId && selectedId == item.id);
+                        if (isSel) hasSelected = true;
+                        const opt = new Option(item.text, item.id, false, isSel);
+                        if (item.remaining_amount !== undefined) {
+                            $(opt).attr('data-remaining-amount', item.remaining_amount);
+                        }
+                        $select.append(opt);
+                    });
+                }
+
+                if (hasSelected && selectedId) {
+                    $select.val(selectedId);
+                } else {
+                    $select.val('');
+                }
+
+                $select.prop('disabled', isLoading);
+                $select.select2({ width: '100%' });
+
+                if (hasSelected) {
+                    $select.trigger('change');
+                }
+            }
+
+            // Function to load account-specific data for a row
+            function loadAccountData($row, accId, selectedRvId, selectedSoId) {
+                const $rvSelect = $row.find('.receipt-voucher-select');
+                const $soSelect = $row.find('.sales-order-select');
+
+                if (!accId) {
+                    if ($rvSelect.length) {
+                        updateSelect2Dropdown($rvSelect, [], 'Select Receipt Voucher (Select Account First)', null);
+                    }
+                    if ($soSelect.length) {
+                        updateSelect2Dropdown($soSelect, [], 'Select Sales Order (Select Account First)', null);
+                    }
+                    return;
+                }
+
+                if ($rvSelect.length) {
+                    updateSelect2Dropdown($rvSelect, [], 'Loading Receipt Vouchers...', null, true);
+                }
+                if ($soSelect.length) {
+                    updateSelect2Dropdown($soSelect, [], 'Loading Sales Orders...', null, true);
+                }
+
+                $.ajax({
+                    url: '{{ route("journal-voucher.get-account-related-data") }}',
+                    type: 'GET',
+                    data: {
+                        acc_id: accId
+                    },
+                    success: function (res) {
+                        if (res.receipt_vouchers) {
+                            res.receipt_vouchers.forEach(function (rv) {
+                                window.rvMap[rv.id] = rv;
+                            });
+                        }
+
+                        if ($rvSelect.length) {
+                            const rvPlaceholder = (res.receipt_vouchers && res.receipt_vouchers.length > 0)
+                                ? 'Select Receipt Voucher'
+                                : 'No Receipt Vouchers Available';
+                            updateSelect2Dropdown($rvSelect, res.receipt_vouchers || [], rvPlaceholder, selectedRvId);
+                        }
+
+                        if ($soSelect.length) {
+                            const soPlaceholder = (res.sales_orders && res.sales_orders.length > 0)
+                                ? 'Select Sales Order'
+                                : 'No Sales Orders Available';
+                            updateSelect2Dropdown($soSelect, res.sales_orders || [], soPlaceholder, selectedSoId);
+                        }
+                    },
+                    error: function () {
+                        if ($rvSelect.length) {
+                            updateSelect2Dropdown($rvSelect, [], 'Error loading Receipt Vouchers', null);
+                        }
+                        if ($soSelect.length) {
+                            updateSelect2Dropdown($soSelect, [], 'Error loading Sales Orders', null);
+                        }
+                    }
+                });
+            }
+
+            // Handle Account selection change
+            $(document).on('change', '.account-select', function () {
+                const $row = $(this).closest('tr');
+                const accId = $(this).val();
+                loadAccountData($row, accId, null, null);
+            });
+
+            // Receipt Voucher selection handler: auto-fill and enforce max across all rows
+            $(document).on('change', '.receipt-voucher-select', function () {
+                const $rvSelect = $(this);
+                const $row = $rvSelect.closest('tr');
+                const remainingAmount = getRvRemainingForSelect($rvSelect);
+
+                if (remainingAmount !== null && remainingAmount > 0) {
+                    // Set max attribute on all entry rows
+                    $('#journalEntriesBody tr').each(function() {
+                        $(this).find('.debit-input, .credit-input').attr('max', remainingAmount.toFixed(2));
+                    });
+
+                    const currentDebit = parseFloat($row.find('.debit-input').val()) || 0;
+                    const currentCredit = parseFloat($row.find('.credit-input').val()) || 0;
+
+                    if (currentCredit > 0) {
+                        if (currentCredit > remainingAmount) {
+                            $row.find('.credit-input').val(remainingAmount.toFixed(2));
+                            showRvLimitWarning(remainingAmount);
+                        }
+                    } else if (currentDebit > 0) {
+                        if (currentDebit > remainingAmount) {
+                            $row.find('.debit-input').val(remainingAmount.toFixed(2));
+                            showRvLimitWarning(remainingAmount);
+                        }
+                    } else {
+                        // If empty, auto-fill debit with the RV remaining amount
+                        $row.find('.debit-input').val(remainingAmount.toFixed(2));
+                    }
+
+                    // Check other rows (e.g. Row 1 SO credit) if they already have amount exceeding RV balance
+                    $('#journalEntriesBody tr').each(function() {
+                        const $r = $(this);
+                        if ($r[0] !== $row[0]) {
+                            const d = parseFloat($r.find('.debit-input').val()) || 0;
+                            const c = parseFloat($r.find('.credit-input').val()) || 0;
+                            if (d > remainingAmount) {
+                                $r.find('.debit-input').val(remainingAmount.toFixed(2));
+                                showRvLimitWarning(remainingAmount);
+                            }
+                            if (c > remainingAmount) {
+                                $r.find('.credit-input').val(remainingAmount.toFixed(2));
+                                showRvLimitWarning(remainingAmount);
+                            }
+                        }
+                    });
+                } else {
+                    $('.debit-input, .credit-input').removeAttr('max');
+                }
+                calculateTotals();
             });
 
             // Set initial state
@@ -259,22 +490,8 @@
                                 @endforeach
                             </select>
                         </td>
-                        <td class="receiving-col" style="${displayStyle}">
-                            <select name="details[${rowCount}][receipt_voucher_id]" class="form-control select2 receipt-voucher-select" style="width: 200px;">
-                                <option value="">Select Receipt Voucher</option>
-                                @foreach ($receiptVouchers as $rv)
-                                    <option value="{{ $rv->id }}" data-remaining-amount="{{ $rv->remaining_amount }}">{{ $rv->unique_no }} (Rem: {{ number_format($rv->remaining_amount, 2) }})</option>
-                                @endforeach
-                            </select>
-                        </td>
-                        <td class="receiving-col" style="${displayStyle}">
-                            <select name="details[${rowCount}][sales_order_id]" class="form-control select2 sales-order-select" style="width: 200px;">
-                                <option value="">Select Sales Order</option>
-                                @foreach ($salesOrders as $so)
-                                    <option value="{{ $so->id }}">{{ $so->reference_no }}</option>
-                                @endforeach
-                            </select>
-                        </td>
+                        <td class="receiving-col" style="${displayStyle}"></td>
+                        <td class="receiving-col" style="${displayStyle}"></td>
                         <td>
                             <input type="text" name="details[${rowCount}][description]" class="form-control description-input" placeholder="Line description">
                         </td>
@@ -292,7 +509,7 @@
                     </tr>
                 `;
                 $('#journalEntriesBody').append(newRow);
-                $('#journalEntriesBody tr:last .select2').select2();
+                $('#journalEntriesBody tr:last .select2').select2({ width: '100%' });
                 rowCount++;
                 updateRemoveButtons();
                 calculateTotals();
@@ -307,13 +524,14 @@
                 }
             });
 
-            // Force only one of debit/credit to have value
+            // Force only one of debit/credit to have value & clamp against RV limit in real-time
             $(document).on('input', '.debit-input', function () {
                 const $row = $(this).closest('tr');
                 const debitValue = parseFloat($(this).val()) || 0;
                 if (debitValue > 0) {
                     $row.find('.credit-input').val('');
                 }
+                validateAndClampInput($(this));
                 calculateTotals();
             });
 
@@ -323,6 +541,12 @@
                 if (creditValue > 0) {
                     $row.find('.debit-input').val('');
                 }
+                validateAndClampInput($(this));
+                calculateTotals();
+            });
+
+            $(document).on('blur change', '.debit-input, .credit-input', function () {
+                validateAndClampInput($(this));
                 calculateTotals();
             });
 
@@ -398,6 +622,34 @@
                         icon: 'error',
                         title: 'Validation Error',
                         text: 'Total debits must equal total credits. Current difference: ' + (totalDebits - totalCredits).toFixed(2),
+                        confirmButtonColor: '#D95000'
+                    });
+                    return false;
+                }
+
+                // Check that no RV amount exceeds its remaining balance
+                let rvExceeded = false;
+                let rvExceededMsg = '';
+                $('#journalEntriesBody tr').each(function (index) {
+                    const remainingAmount = getActiveRvRemainingAmount($(this));
+                    if (remainingAmount !== null && remainingAmount > 0) {
+                        const debitAmount = parseFloat($(this).find('.debit-input').val()) || 0;
+                        const creditAmount = parseFloat($(this).find('.credit-input').val()) || 0;
+                        const enteredAmount = Math.max(debitAmount, creditAmount);
+                        if (enteredAmount > (remainingAmount + 0.01)) {
+                            rvExceeded = true;
+                            rvExceededMsg = `Line ${index + 1}: Entered amount (${enteredAmount.toFixed(2)}) exceeds Receipt Voucher remaining balance of ${remainingAmount.toFixed(2)}.`;
+                            return false;
+                        }
+                    }
+                });
+
+                if (rvExceeded) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Validation Error',
+                        text: rvExceededMsg,
                         confirmButtonColor: '#D95000'
                     });
                     return false;

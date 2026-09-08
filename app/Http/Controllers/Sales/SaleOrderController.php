@@ -262,18 +262,24 @@ class SaleOrderController extends Controller
         DB::beginTransaction();
         try {
             $sales_order = SalesOrder::find($id);
+            if (!$sales_order) {
+                return response()->json(['error' => 'Sale Order not found.', 'message' => 'Sale Order not found.'], 404);
+            }
 
-            if ($sales_order->am_approval_status == "approved" || $sales_order->am_approval_status == 'rejected') {
+            if (in_array(strtolower($sales_order->am_approval_status ?? ''), ['approved', 'rejected'])) {
                 $oldDeliveryDate = $sales_order->delivery_date ? Carbon::parse($sales_order->delivery_date)->format('Y-m-d') : null;
                 $newDeliveryDate = !empty($request->delivery_date) ? Carbon::parse($request->delivery_date)->format('Y-m-d') : null;
 
                 if ($oldDeliveryDate != $newDeliveryDate) {
                     $sales_order->update(['delivery_date' => $request->delivery_date]);
                     DB::commit();
-                    return response()->json(['data' => 'Sale Order Specific Fields Updated Successfully.']);
+                    return response()->json(['data' => 'Sale Order Specific Fields Updated Successfully.', 'success' => 'Sale Order Delivery Date Updated Successfully.']);
                 }
 
-                return response()->json("Sales Order has been approved/rejected and cannot be updated.", 400);
+                return response()->json([
+                    'error' => "Sales Order has been {$sales_order->am_approval_status} and cannot be updated.",
+                    'message' => "Sales Order has been {$sales_order->am_approval_status} and cannot be updated."
+                ], 422);
             }
 
 
@@ -396,14 +402,19 @@ class SaleOrderController extends Controller
     public function destroy(int $id)
     {
         $sales_order = SalesOrder::find($id);
-        if ($sales_order->am_approval_status == "approved" || $sales_order->am_approval_status == 'rejected') {
-            return response()->json("Sales Order has been approved/rejected and cannot be updated.", 400);
+        if (!$sales_order) {
+            return response()->json(['error' => 'Sale Order not found.', 'message' => 'Sale Order not found.'], 404);
+        }
+        if (in_array(strtolower($sales_order->am_approval_status ?? ''), ['approved', 'rejected'])) {
+            return response()->json([
+                'error' => "Sales Order has been {$sales_order->am_approval_status} and cannot be deleted.",
+                'message' => "Sales Order has been {$sales_order->am_approval_status} and cannot be deleted."
+            ], 422);
         }
         $sales_order->sales_order_data()->delete();
         $sales_order->delete();
 
-
-        return response()->json(['data' => 'Sale Order has been deleted']);
+        return response()->json(['data' => 'Sale Order has been deleted', 'success' => 'Sale Order has been deleted']);
     }
 
     public function getList(Request $request)

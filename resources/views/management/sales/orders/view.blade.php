@@ -30,6 +30,28 @@
     @csrf
 
     <input type="hidden" id="listRefresh" value="{{ route('sales.get.sales-order.list') }}" />
+
+    @if(in_array(strtolower($sale_order->am_approval_status ?? ''), ['approved', 'rejected']))
+        @php
+            $isApproved = strtolower($sale_order->am_approval_status) === 'approved';
+            $alertClass = $isApproved ? 'alert-success' : 'alert-danger';
+            $iconClass = $isApproved ? 'fa-check-circle' : 'fa-times-circle';
+        @endphp
+        <div class="alert {{ $alertClass }} px-3 py-2 mt-2 d-flex align-items-center justify-content-between" style="border-radius: 6px;">
+            <div>
+                <i class="fa {{ $iconClass }} me-2"></i>
+                <strong>Status: {{ ucfirst($sale_order->am_approval_status) }}</strong> - This Sale Order has been finalized. Its status cannot be changed.
+            </div>
+        </div>
+    @elseif(strtolower($sale_order->am_approval_status ?? '') === 'reverted')
+        <div class="alert alert-warning px-3 py-2 mt-2 d-flex align-items-center justify-content-between" style="border-radius: 6px;">
+            <div>
+                <i class="fa fa-undo me-2"></i>
+                <strong>Status: Reverted</strong> - This Sale Order has been reverted. It cannot be approved or rejected until changes are made and resubmitted to pending.
+            </div>
+            <span class="badge badge-warning text-dark px-2 py-1 text-uppercase">Reverted</span>
+        </div>
+    @endif
     <div class="row form-mar">
         <div class="col-md-12">
             <div class="row">
