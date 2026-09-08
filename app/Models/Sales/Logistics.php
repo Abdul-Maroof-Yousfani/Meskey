@@ -13,6 +13,29 @@ class Logistics extends Model
     protected $table = 'logistics';
     protected $guarded = ['id', 'created_at', 'updated_at'];
 
+    protected static function booted()
+    {
+        static::updating(function ($model) {
+            $originalStatus = strtolower($model->getOriginal('am_approval_status') ?? '');
+            $newStatus = strtolower($model->am_approval_status ?? '');
+            if ($model->isDirty('am_approval_status')) {
+                if (in_array($originalStatus, ['approved', 'rejected'])) {
+                    throw new \Exception("Logistics record is already {$originalStatus} and status cannot be changed.");
+                }
+                if ($originalStatus === 'reverted' && !in_array($newStatus, ['pending', 'reverted'])) {
+                    throw new \Exception("Logistics record is reverted and cannot be {$newStatus} directly. It must be updated to pending first.");
+                }
+            }
+        });
+
+        static::deleting(function ($model) {
+            $status = strtolower($model->getOriginal('am_approval_status') ?? $model->am_approval_status ?? '');
+            if (in_array($status, ['approved', 'rejected'])) {
+                throw new \Exception("Logistics record is already {$status} and cannot be deleted.");
+            }
+        });
+    }
+
     public function items()
     {
         return $this->hasMany(LogisticsItem::class, 'logistics_id');

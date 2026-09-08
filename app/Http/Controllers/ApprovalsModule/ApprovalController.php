@@ -438,10 +438,32 @@ class ApprovalController extends Controller
 
         $statusCol = $approvalModule->approval_column ?? 'am_approval_status';
         $currentStatus = strtolower($record->$statusCol ?? '');
+
+        if ($currentStatus === 'reverted') {
+            return response()->json([
+                'error' => "This record has been reverted and cannot be rejected. It must be updated and resubmitted to pending first.",
+                'message' => "This record has been reverted and cannot be rejected. It must be updated and resubmitted to pending first."
+            ], 422);
+        }
+
         if (in_array($currentStatus, ['approved', 'rejected'])) {
             return response()->json([
                 'error' => "This record has already been {$currentStatus} and its status cannot be changed.",
                 'message' => "This record has already been {$currentStatus} and its status cannot be changed."
+            ], 422);
+        }
+
+        if (!in_array($currentStatus, ['pending', 'partial approved', 'partial_approved', ''])) {
+            return response()->json([
+                'error' => "This record cannot be rejected because its status is '{$currentStatus}'. It must be in pending status.",
+                'message' => "This record cannot be rejected because its status is '{$currentStatus}'. It must be in pending status."
+            ], 422);
+        }
+
+        if (isset($record->am_change_made) && $record->am_change_made == 0) {
+            return response()->json([
+                'error' => "This record requires modifications before it can be approved or rejected.",
+                'message' => "This record requires modifications before it can be approved or rejected. Please edit and update the record first."
             ], 422);
         }
 
