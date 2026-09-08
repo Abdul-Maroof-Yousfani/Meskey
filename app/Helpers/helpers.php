@@ -2377,7 +2377,7 @@ if (!function_exists('formatDateTime')) {
      * @param string $default
      * @return string
      */
-    function formatDateTime($date, string $format = 'd M Y h:i:s A', string $default = '')
+    function formatDateTime($date, string $format = 'd M Y h:i:s A', string $default = 'N/A')
     {
         if (empty($date)) {
             return $default;
@@ -2403,7 +2403,7 @@ if (!function_exists('formatDate')) {
      * @param string $default
      * @return string
      */
-    function formatDate($date, string $format = 'd M Y', string $default = '')
+    function formatDate($date, string $format = 'd M Y', string $default = 'N/A')
     {
         return formatDateTime($date, $format, $default);
     }
@@ -2418,7 +2418,7 @@ if (!function_exists('formatTime')) {
      * @param string $default
      * @return string
      */
-    function formatTime($date, string $format = 'h:i:s A', string $default = '')
+    function formatTime($date, string $format = 'h:i:s A', string $default = 'N/A')
     {
         return formatDateTime($date, $format, $default);
     }
