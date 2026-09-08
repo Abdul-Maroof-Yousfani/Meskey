@@ -1154,6 +1154,17 @@
                                 </a>
                             </li>
                             @endcanAccess
+                            @canAccess('arrival-station-wise-qc-analysis-report')
+                            <li data-menu="">
+                                <a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('station-wise-qc-analysis.index') }}"
+                                    onclick="loadPageContent('{{ route('station-wise-qc-analysis.index') }}')"
+                                    data-toggle="dropdown">
+                                    <i class="ft-arrow-right submenu-icon"></i><span data-i18n="Basic">Station Wise QC
+                                        Analysis Report</span>
+                                </a>
+                            </li>
+                            @endcanAccess
                         </ul>
                     </li>
                     @endcanAccess
