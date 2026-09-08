@@ -1288,7 +1288,7 @@
                     var lumpsumKgsCalculatedValue = parseFloat(lump_sum_deduction_kgs) * parseFloat(loadingWeight);
                     lumpsumKgsCalculatedValue = (lumpsumKgsCalculatedValue / 100) * ratePerKg;
                     var lumpsumRupeesCalculatedValue = lump_sum_deduction_rupees * parseFloat(loadingWeight);
-console.log("vs:"lump_sum_deduction_rupees * parseFloat(lump_sum_deduction_rupees)); 
+                    console.log("vs:" + lump_sum_deduction_rupees * parseFloat(lump_sum_deduction_rupees));
                     $('#lump_sum_deduction_kgs_total').val(lumpsumKgsCalculatedValue.toFixed(4));
                     $('#lump_sum_deduction_rupees_total').val(lumpsumRupeesCalculatedValue.toFixed(4));
 
