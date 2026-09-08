@@ -209,6 +209,7 @@ class LogisticsController extends Controller
             'from_location_id' => $companyLocationIds->first() ?: '',
             'from_location_options' => $fromLocationOptions,
             'to_location_id' => $order->port_of_loading_id ?: '',
+            'to_location_name' => $order->portOfLoading?->name ?? '',
             'to_location_options' => $toLocationOptions,
             'logistics' => $logistics,
             'job_order' => $jobOrder->job_order_no ?? '',
@@ -235,7 +236,7 @@ class LogisticsController extends Controller
             'items.*.qty' => 'required|numeric',
             'items.*.brand' => 'nullable|string',
             'items.*.packing_size' => 'nullable|string',
-            'to_location' => 'required',
+            'to_location' => 'required|string|max:255',
             'job_order' => 'nullable|string',
             'return_port' => 'nullable|string',
             'booking_no' => 'nullable|string',
@@ -250,14 +251,6 @@ class LogisticsController extends Controller
 
             if (!Port::whereKey($request->to_location)->exists()) {
                 throw ValidationException::withMessages(['to_location' => 'Selected port of loading is invalid.']);
-            }
-        } else {
-            // if (!CompanyLocation::whereKey($request->location)->exists()) {
-            //     throw ValidationException::withMessages(['location' => 'Selected from location is invalid.']);
-            // }
-
-            if (!CompanyLocation::whereKey($request->to_location)->exists()) {
-                throw ValidationException::withMessages(['to_location' => 'Selected to location is invalid.']);
             }
         }
 
@@ -407,7 +400,7 @@ class LogisticsController extends Controller
             'items.*.rate' => 'required|numeric',
             'items.*.transporter' => 'required|string',
             'items.*.qty' => 'required|numeric',
-            'to_location' => 'required',
+            'to_location' => 'required|string|max:255',
             'job_order' => 'nullable|string',
             'return_port' => 'nullable|string',
             'booking_no' => 'nullable|string',
@@ -421,10 +414,6 @@ class LogisticsController extends Controller
             }
             if (!Port::whereKey($request->to_location)->exists()) {
                 throw ValidationException::withMessages(['to_location' => 'Selected port of loading is invalid.']);
-            }
-        } else {
-            if (!CompanyLocation::whereKey($request->to_location)->exists()) {
-                throw ValidationException::withMessages(['to_location' => 'Selected to location is invalid.']);
             }
         }
 
