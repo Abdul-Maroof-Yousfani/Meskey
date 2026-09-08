@@ -1420,6 +1420,7 @@
                 console.log('deduction_on_access_weight_amount: ' + deduction_on_access_weight_amount);
                 console.log('fillingBagsAmount: ' + fillingBagsAmount);
                 console.log('grossAmount: ' + grossAmount);
+                console.log('totalAmount: ' + totalAmount);
                 console.log('grossFreightAmount: ' + parseInt({{ $grossFreightAmount ?? 0 }}));
                 console.log('loadingWeight: ' + parseInt(loadingWeight));
                 console.log('totalSupplierCommission: ' + {{ $totalSupplierCommission }});
