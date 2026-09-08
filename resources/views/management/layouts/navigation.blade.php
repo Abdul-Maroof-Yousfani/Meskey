@@ -1121,6 +1121,28 @@
                                 </a>
                             </li>
                             @endcanAccess
+                            @canAccess('arrival-truck-timestamp-report')
+                            <li data-menu="">
+                                <a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('truck-timestamp.index') }}"
+                                    onclick="loadPageContent('{{ route('truck-timestamp.index') }}')"
+                                    data-toggle="dropdown">
+                                    <i class="ft-arrow-right submenu-icon"></i><span data-i18n="Basic">Truck Timestamp
+                                        Report</span>
+                                </a>
+                            </li>
+                            @endcanAccess
+                            @canAccess('arrival-weighbridge-sample-money-report')
+                            <li data-menu="">
+                                <a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('weighbridge-sample-money.index') }}"
+                                    onclick="loadPageContent('{{ route('weighbridge-sample-money.index') }}')"
+                                    data-toggle="dropdown">
+                                    <i class="ft-arrow-right submenu-icon"></i><span data-i18n="Basic">Weighbridge and
+                                        Sample Money Report</span>
+                                </a>
+                            </li>
+                            @endcanAccess
                         </ul>
                     </li>
                     @endcanAccess

@@ -4,14 +4,12 @@ namespace App\Http\Controllers\Reports\Arrival;
 
 use App\Http\Controllers\Controller;
 use App\Models\Master\CompanyLocation;
-use App\Models\Master\ArrivalCompulsoryQcParam;
 use App\Models\Master\Miller;
 use App\Models\Product;
 use App\Models\Arrival\ArrivalTicket;
-use App\Models\Master\ProductSlabType;
 use Illuminate\Http\Request;
 
-class TruckDetailReportController extends Controller
+class TruckTimestampReportController extends Controller
 {
     public function index()
     {
@@ -21,17 +19,14 @@ class TruckDetailReportController extends Controller
             return $q->whereIn('id', getUserCurrentCompanyLocations());
         })->get();
 
-        return view('management.reports.arrival.truck-detail.index', compact('commodities', 'millers', 'locations'));
+        return view('management.reports.arrival.truck-timestamp.index', compact('commodities', 'millers', 'locations'));
     }
 
     public function getList(Request $request)
     {
-        // Increase memory and execution time for detailed reports
         ini_set('memory_limit', '512M');
         ini_set('max_execution_time', 300);
 
-        $product_slab_types = ProductSlabType::get();
-        $arrival_compulsory_qc_params = ArrivalCompulsoryQcParam::get();
         $tickets = ArrivalTicket::select('arrival_tickets.*', 'grn_numbers.unique_no as grn_unique_no')
             ->leftJoin('arrival_slips', 'arrival_tickets.id', '=', 'arrival_slips.arrival_ticket_id')
             ->leftJoin('grn_numbers', function ($join) {
@@ -39,42 +34,31 @@ class TruckDetailReportController extends Controller
                     ->where('grn_numbers.model_type', 'arrival-slip');
             })
             ->with([
-                'miller',
-                'qcProduct',
-                'product',
-                'location',
+                'creator',
                 'decisionBy',
-                'saudaType',
+                'location',
                 'station',
-                'truckType',
+                'miller',
+                'saudaType',
                 'accountsOf',
                 'broker',
-                'approvals.bagType',
-                'approvals.bagCondition',
-                'approvals.bagPacking',
-                'approvals.locationType',
-                'approvals.gala',
-                'approvals.creator',
-                'unloadingLocation.arrivalLocation',
-                'freight',
-                'arrivalSlip.createdBy',
                 'purchaseOrder',
-                'firstWeighbridge',
-                'secondWeighbridge',
-                'lastInitialSampling',
+                'ticketVerifiedBy',
+                'freight',
+                'firstWeighbridge.createdBy',
+                'secondWeighbridge.createdBy',
+                'unloadingLocation.createdBy',
+                'arrivalSlip.creator',
+                'approvals.creator',
+                'arrivalSamplingRequests' => function ($q) {
+                    $q->with(['takenByUser', 'approvedByUser', 'doneByUser'])->orderBy('id', 'asc');
+                },
                 'initialSampling' => function ($q) {
                     $q->where('sampling_type', 'initial')
                         ->whereIn('approved_status', ['approved', 'rejected'])
-                        ->with(['takenByUser', 'slabResults.slabType', 'compulsoryResults.qcParam'])
+                        ->with(['takenByUser', 'approvedByUser'])
                         ->latest();
                 },
-                'innerSampling' => function ($q) {
-                    $q->where('sampling_type', 'inner')
-                        ->whereIn('approved_status', ['approved', 'rejected'])
-                        ->with(['takenByUser', 'slabResults.slabType', 'compulsoryResults.qcParam'])
-                        ->latest();
-                },
-                'arrivalSamplingRequests'
             ])
             ->when($request->filled('grn_no'), function ($q) use ($request) {
                 return $q->where('grn_numbers.unique_no', 'like', '%' . $request->grn_no . '%');
@@ -123,8 +107,7 @@ class TruckDetailReportController extends Controller
             })
             ->orderBy('arrival_tickets.created_at', 'asc')
             ->get();
-        // dd($arrival_compulsory_qc_params->pluck('name')->toArray());
 
-        return view('management.reports.arrival.truck-detail.getTruckDetail', compact('tickets', 'product_slab_types', 'arrival_compulsory_qc_params'));
+        return view('management.reports.arrival.truck-timestamp.getTruckTimestamp', compact('tickets'));
     }
 }

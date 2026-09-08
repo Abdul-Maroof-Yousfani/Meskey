@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Reports\Arrival\{ArrivalReportController, TruckDetailReportController};
+use App\Http\Controllers\Reports\Arrival\{ArrivalReportController, TruckDetailReportController, TruckTimestampReportController, WeighbridgeSampleMoneyReportController};
 use Illuminate\Support\Facades\Route;
 
 
@@ -9,6 +9,10 @@ Route::prefix('arrival')->group(function () {
   Route::post('/get-arrival-history', [ArrivalReportController::class, 'getArrivalReport'])->name('reports.arrival.get.arrival-history');
   Route::resource('truck-detail', TruckDetailReportController::class);
   Route::post('/get-truck-detail', [TruckDetailReportController::class, 'getList'])->name('reports.arrival.get.truck-detail');
+  Route::resource('truck-timestamp', TruckTimestampReportController::class);
+  Route::post('/get-truck-timestamp', [TruckTimestampReportController::class, 'getList'])->name('reports.arrival.get.truck-timestamp');
+  Route::resource('weighbridge-sample-money', WeighbridgeSampleMoneyReportController::class);
+  Route::post('/get-weighbridge-sample-money', [WeighbridgeSampleMoneyReportController::class, 'getList'])->name('reports.arrival.get.weighbridge-sample-money');
 });
 
 

@@ -85,4 +85,9 @@ class ArrivalApprove extends Model
     {
         return $this->belongsTo(LocationType::class, 'location_type_id');
     }
+
+    public function creator()
+    {
+        return $this->belongsTo(\App\Models\User::class, 'creator_id');
+    }
 }

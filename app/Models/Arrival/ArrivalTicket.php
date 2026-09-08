@@ -243,6 +243,11 @@ class ArrivalTicket extends Model
             ->where('sampling_type', 'initial')
             ->latestOfMany();
     }
+    public function lastInitialSampling()
+    {
+        return $this->hasOne(ArrivalSamplingRequest::class)
+            ->latestOfMany();
+    }
 
 
     // In ArrivalTicket.php model
@@ -277,6 +282,11 @@ class ArrivalTicket extends Model
     public function createdBy()
     {
         return $this->belongsTo(User::class, 'creator_id');
+    }
+
+    public function ticketVerifiedBy()
+    {
+        return $this->belongsTo(User::class, 'ticket_verified_by');
     }
 }
 
