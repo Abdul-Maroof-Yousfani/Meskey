@@ -2377,7 +2377,7 @@ if (!function_exists('formatDateTime')) {
      * @param string $default
      * @return string
      */
-    function formatDateTime($date, string $format = 'd M Y h:i:s A', string $default = '')
+    function formatDateTime($date, string $format = 'd M Y h:i:s A', string $default = 'N/A')
     {
         if (empty($date)) {
             return $default;
