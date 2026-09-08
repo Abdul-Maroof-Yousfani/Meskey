@@ -164,6 +164,10 @@
                                             <th>Second Weight</th>
                                             <th>Weighbridge Amount</th>
                                             <th>Sample Amount</th>
+                                            <th>Bilty</th>
+                                            <th>Loading Weight</th>
+                                            <th>Arrival Slip</th>
+                                            <th>View Complete Details</th>
                                         </tr>
                                     </thead>
                                 </table>
