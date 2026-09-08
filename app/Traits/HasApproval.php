@@ -148,6 +148,10 @@ trait HasApproval
         if (isset($this->am_change_made) && $this->am_change_made == 0) {
             return false;
         }
+        $statusCol = $module->approval_column ?? 'am_approval_status';
+        if (isset($this->$statusCol) && in_array(strtolower($this->$statusCol), ['approved', 'rejected', 'reverted'])) {
+            return false;
+        }
         $userRoleIds = $user->roles->pluck('id')->toArray();
         $requiredRoles = $module->roles->pluck('role_id')->toArray();
 
@@ -182,8 +186,13 @@ trait HasApproval
         ))) {
             return false;
         }
+
+        $statusCol = $module->approval_column ?? 'am_approval_status';
+        if (isset($this->$statusCol) && in_array(strtolower($this->$statusCol), ['approved', 'rejected', 'reverted'])) {
+            return false;
+        }
         
-        if ($this->getApprovalStatus() === 'approved' || $this->getApprovalStatus() === 'rejected') {
+        if (in_array(strtolower($this->getApprovalStatus()), ['approved', 'rejected', 'reverted'])) {
             return false;
         }
 
@@ -244,8 +253,11 @@ trait HasApproval
             return false;
         }
 
-
         $module = $this->getApprovalModule();
+        $statusCol = $module->approval_column ?? 'am_approval_status';
+        if (isset($this->$statusCol) && in_array(strtolower($this->$statusCol), ['approved', 'rejected', 'reverted'])) {
+            return false;
+        }
         $currentCycle = $this->getCurrentApprovalCycle();
         $userRoleId = $user->roles->first()->id;
 
@@ -293,6 +305,10 @@ trait HasApproval
         }
 
         $module = $this->getApprovalModule();
+        $statusCol = $module->approval_column ?? 'am_approval_status';
+        if (isset($this->$statusCol) && in_array(strtolower($this->$statusCol), ['approved', 'rejected', 'reverted'])) {
+            return false;
+        }
         $currentCycle = $this->getCurrentApprovalCycle();
         $userRoleId = $user->roles->first()->id;
 
@@ -340,6 +356,11 @@ trait HasApproval
             return false;
         }
 
+        $statusCol = $module->approval_column ?? 'am_approval_status';
+        if (isset($this->$statusCol) && in_array(strtolower($this->$statusCol), ['approved', 'rejected', 'reverted'])) {
+            return false;
+        }
+
         $currentCycle = $this->getCurrentApprovalCycle();
         $userRoleId = $user->roles->first()->id;
 
@@ -381,6 +402,11 @@ trait HasApproval
 
         $module = $this->getApprovalModule();
         if (!$module) {
+            return false;
+        }
+
+        $statusCol = $module->approval_column ?? 'am_approval_status';
+        if (isset($this->$statusCol) && in_array(strtolower($this->$statusCol), ['approved', 'rejected', 'reverted'])) {
             return false;
         }
 

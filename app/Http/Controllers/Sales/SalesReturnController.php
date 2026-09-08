@@ -47,8 +47,11 @@ class SalesReturnController extends Controller
         $saleReturn = SalesReturn::find($id);
 
 
-        if($saleReturn->am_approval_status == "approved" || $saleReturn->am_approval_status == 'rejected') {
-            return response()->json("Sales Return has been approved/rejected and cannot be updated.", 400);
+        if(in_array(strtolower($saleReturn->am_approval_status ?? ''), ['approved', 'rejected'])) {
+            return response()->json([
+                'error' => "Sales Return has been {$saleReturn->am_approval_status} and cannot be updated.",
+                'message' => "This Sales Return has already been {$saleReturn->am_approval_status}. Further updates are not allowed from any screen."
+            ], 422);
         }
 
         try {
@@ -387,8 +390,11 @@ class SalesReturnController extends Controller
 
     public function destroy(SalesReturn $sales_return) {
 
-        if($sales_return->am_approval_status == "approved" || $sales_return->am_approval_status == 'rejected') {
-            return response()->json("Sales Return has been approved/rejected and cannot be updated.", 400);
+        if(in_array(strtolower($sales_return->am_approval_status ?? ''), ['approved', 'rejected'])) {
+            return response()->json([
+                'error' => "Sales Return has been {$sales_return->am_approval_status} and cannot be deleted.",
+                'message' => "This Sales Return has already been {$sales_return->am_approval_status}. Changes or deletion are no longer allowed."
+            ], 422);
         }
 
         $sales_return->delete();

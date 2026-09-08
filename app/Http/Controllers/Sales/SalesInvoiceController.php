@@ -153,8 +153,11 @@ class SalesInvoiceController extends Controller
         DB::beginTransaction();
 
 
-        if($sales_invoice->am_approval_status == "approved" || $sales_invoice->am_approval_status == 'rejected') {
-            return response()->json("Sales Invoice has been approved/rejected and cannot be updated.", 400);
+        if(in_array(strtolower($sales_invoice->am_approval_status ?? ''), ['approved', 'rejected'])) {
+            return response()->json([
+                'error' => "Sales Invoice has been {$sales_invoice->am_approval_status} and cannot be updated.",
+                'message' => "This Sales Invoice has already been {$sales_invoice->am_approval_status}. Further updates are not allowed from any screen."
+            ], 422);
         }
         
         $dc_ids = $request->dc_no;
@@ -247,8 +250,11 @@ class SalesInvoiceController extends Controller
 
     public function destroy(SalesInvoice $sales_invoice)
     {
-        if($sales_invoice->am_approval_status == "approved" || $sales_invoice->am_approval_status == 'rejected') {
-            return response()->json("Sales Invoice has been approved/rejected and cannot be updated.", 400);
+        if(in_array(strtolower($sales_invoice->am_approval_status ?? ''), ['approved', 'rejected'])) {
+            return response()->json([
+                'error' => "Sales Invoice has been {$sales_invoice->am_approval_status} and cannot be deleted.",
+                'message' => "This Sales Invoice has already been {$sales_invoice->am_approval_status}. Changes or deletion are no longer allowed."
+            ], 422);
         }
         $sales_invoice->delete();
         $sales_invoice->sales_invoice_data()->delete();

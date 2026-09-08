@@ -253,8 +253,11 @@ class DeliveryChallanController extends Controller
     }
 
     public function destroy(DeliveryChallan $delivery_challan) {
-        if($delivery_challan->am_approval_status == "approved" || $delivery_challan->am_approval_status == 'rejected') {
-            return response()->json("Delivery Challan has been approved/rejected and cannot be updated.", 400);
+        if(in_array(strtolower($delivery_challan->am_approval_status ?? ''), ['approved', 'rejected'])) {
+            return response()->json([
+                'error' => "Delivery Challan has been {$delivery_challan->am_approval_status} and cannot be deleted.",
+                'message' => "This Delivery Challan has already been {$delivery_challan->am_approval_status}. Changes or deletion are no longer allowed."
+            ], 422);
         }
         $delivery_challan->receivingRequest()->delete();
         $delivery_challan->delete();
@@ -275,8 +278,11 @@ class DeliveryChallanController extends Controller
         //     return response()->json("Selected Delivery order is expired. Please select a different Delivery order", 422);
         // }
 
-        if($delivery_challan->am_approval_status == "approved" || $delivery_challan->am_approval_status == 'rejected') {
-            return response()->json("Delivery Challan has been approved/rejected and cannot be updated.", 400);
+        if(in_array(strtolower($delivery_challan->am_approval_status ?? ''), ['approved', 'rejected'])) {
+            return response()->json([
+                'error' => "Delivery Challan has been {$delivery_challan->am_approval_status} and cannot be updated.",
+                'message' => "This Delivery Challan has already been {$delivery_challan->am_approval_status}. Further updates are not allowed from any screen."
+            ], 422);
         }
 
         try {

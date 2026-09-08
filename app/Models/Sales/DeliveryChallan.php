@@ -58,6 +58,23 @@ class DeliveryChallan extends Model
 
         static::updating(function ($model) {
             $model->type = 'sale_delivery_challan';
+            $originalStatus = strtolower($model->getOriginal('am_approval_status') ?? '');
+            $newStatus = strtolower($model->am_approval_status ?? '');
+            if ($model->isDirty('am_approval_status')) {
+                if (in_array($originalStatus, ['approved', 'rejected'])) {
+                    throw new \Exception("Delivery Challan is already {$originalStatus} and status cannot be changed.");
+                }
+                if ($originalStatus === 'reverted' && $newStatus !== 'pending') {
+                    throw new \Exception("Delivery Challan is reverted and cannot be {$newStatus} directly. It must be updated to pending first.");
+                }
+            }
+        });
+
+        static::deleting(function ($model) {
+            $status = strtolower($model->am_approval_status ?? '');
+            if (in_array($status, ['approved', 'rejected'])) {
+                throw new \Exception("Delivery Challan is already {$status} and cannot be deleted.");
+            }
         });
 
         static::addGlobalScope('sale_type', function ($builder) {
