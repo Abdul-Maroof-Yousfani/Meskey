@@ -1295,7 +1295,8 @@
 
                     // totalSamplingAmount += parseFloat(lumpsumAmount.replace(/,/g, '')) || 0;
                     // totalSamplingAmount += parseFloat(lumpsumKgAmount.replace(/,/g, '')) || 0;
-                    totalSamplingAmount += parseFloat(lumpsumAmount.replace(/,/g, '')) || 0;
+                    // totalSamplingAmount += parseFloat(lumpsumAmount.replace(/,/g, '')) || 0;
+                    totalSamplingAmount += parseFloat(lumpsumRupeesCalculatedValue) || 0;
                     totalSamplingAmount += parseFloat(lumpsumKgsCalculatedValue) || 0;
                     // totalSamplingAmount += parseFloat(lump_sum_deduction_kgs.replace(/,/g, '')) || 0;
                 }
