@@ -44,6 +44,17 @@
         $oldFactories = old('arrival_location_id', $selectedFactories);
         $oldSections = old('arrival_sub_location_id', $selectedSections);
     @endphp
+
+    @if(in_array(strtolower($sales_inquiry->am_approval_status ?? ''), ['approved', 'rejected']))
+        <div class="alert alert-warning px-3 py-2 mt-2 mb-3">
+            <i class="fa fa-exclamation-triangle"></i> <strong>Note:</strong> This Sales Inquiry has already been <strong>{{ ucfirst($sales_inquiry->am_approval_status) }}</strong> and cannot be updated.
+        </div>
+    @elseif(strtolower($sales_inquiry->am_approval_status ?? '') === 'reverted')
+        <div class="alert alert-info px-3 py-2 mt-2 mb-3">
+            <i class="fa fa-info-circle"></i> <strong>Notice:</strong> This Sales Inquiry was <strong>Reverted</strong>. Updating and submitting this form will reset its status to <strong>Pending</strong> for re-approval.
+        </div>
+    @endif
+
     <div class="row form-mar">
         <div class="col-md-12">
             <div class="row">
@@ -389,7 +400,9 @@
         <div class="col-12 text-end">
             <a type="button"
                 class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton me-2">Close</a>
-            <button type="submit" class="btn btn-primary submitbutton">Save</button>
+            @if(!in_array(strtolower($sales_inquiry->am_approval_status ?? ''), ['approved', 'rejected']))
+                <button type="submit" class="btn btn-primary submitbutton">Save</button>
+            @endif
         </div>
     </div>
 </form>

@@ -242,8 +242,11 @@ class SalesInquiryController extends Controller
         //     return response()->json("Inquiry date cannot be greater than required date.", 400);
         // }
 
-        if($sales_inquiry->am_approval_status == "approved" || $sales_inquiry->am_approval_status == "rejected") {
-            return response()->json("Sales Inquiry has been approved/rejected and cannot be updated.", 400);
+        if (in_array(strtolower($sales_inquiry->am_approval_status ?? ''), ['approved', 'rejected'])) {
+            return response()->json([
+                'error' => "Sales Inquiry has already been {$sales_inquiry->am_approval_status} and cannot be updated.",
+                'message' => "Sales Inquiry has already been {$sales_inquiry->am_approval_status} and cannot be updated."
+            ], 422);
         }
 
         DB::beginTransaction();
@@ -359,8 +362,11 @@ class SalesInquiryController extends Controller
     }
 
     public function destroy(SalesInquiry $sales_inquiry) {
-        if($sales_inquiry->am_approval_status == "approved" || $sales_inquiry->am_approval_status == "rejected") {
-            return response()->json("Sales Inquiry has been approved/rejected and cannot be updated.", 422);
+        if (in_array(strtolower($sales_inquiry->am_approval_status ?? ''), ['approved', 'rejected'])) {
+            return response()->json([
+                'error' => "Sales Inquiry has been {$sales_inquiry->am_approval_status} and cannot be deleted.",
+                'message' => "Sales Inquiry has been {$sales_inquiry->am_approval_status} and cannot be deleted."
+            ], 422);
         }
 
         $sales_inquiry->sales_inquiry_data()->delete();
