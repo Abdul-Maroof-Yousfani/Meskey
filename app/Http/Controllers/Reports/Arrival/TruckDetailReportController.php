@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Reports\Arrival;
 
 use App\Http\Controllers\Controller;
 use App\Models\Master\CompanyLocation;
+use App\Models\Master\ArrivalCompulsoryQcParam;
 use App\Models\Master\Miller;
 use App\Models\Product;
 use App\Models\Arrival\ArrivalTicket;
@@ -30,6 +31,7 @@ class TruckDetailReportController extends Controller
         ini_set('max_execution_time', 300);
 
         $product_slab_types = ProductSlabType::get();
+        $arrival_compulsory_qc_params = ArrivalCompulsoryQcParam::get();
         $tickets = ArrivalTicket::select('arrival_tickets.*', 'grn_numbers.unique_no as grn_unique_no')
             ->leftJoin('arrival_slips', 'arrival_tickets.id', '=', 'arrival_slips.arrival_ticket_id')
             ->leftJoin('grn_numbers', function ($join) {
@@ -52,6 +54,7 @@ class TruckDetailReportController extends Controller
                 'approvals.bagPacking',
                 'approvals.locationType',
                 'approvals.gala',
+                'approvals.creator',
                 'unloadingLocation.arrivalLocation',
                 'freight',
                 'arrivalSlip.createdBy',
@@ -120,8 +123,8 @@ class TruckDetailReportController extends Controller
             })
             ->orderBy('arrival_tickets.created_at', 'asc')
             ->get();
-        // dd($tickets);
+        // dd($arrival_compulsory_qc_params->pluck('name')->toArray());
 
-        return view('management.reports.arrival.truck-detail.getTruckDetail', compact('tickets', 'product_slab_types'));
+        return view('management.reports.arrival.truck-detail.getTruckDetail', compact('tickets', 'product_slab_types', 'arrival_compulsory_qc_params'));
     }
 }

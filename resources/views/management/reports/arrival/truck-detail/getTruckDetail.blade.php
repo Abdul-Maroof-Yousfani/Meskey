@@ -23,9 +23,12 @@
         <th>Avg. Moisture</th>
         <th>Avg. Paddy</th>
         <th>Avg. Damage</th> --}}
-        <th>QC Advice</th>
+        @foreach ($arrival_compulsory_qc_params as $compulsory_slab_type)
+            <th>{{ $compulsory_slab_type->name }}</th>
+        @endforeach
+        {{-- <th>QC Advice</th>
         <th>QC Remarks</th>
-        <th>Unloading Instruction</th>
+        <th>Unloading Instruction</th> --}}
         <th>QC Analysis By</th>
         <th>Total Inner Samples</th>
         <th>Commodity</th>
@@ -118,19 +121,15 @@
                 }
 
                 // ==========================================
-                // 2. GET INNER SAMPLING
+                // 2. COMPULSORY DEDUCTIONS
                 // ==========================================
-                $innerRequest = $row->innerSampling;
-                $deductionValueSlabInner = [];
-
-                if ($innerRequest) {
-                    foreach ($innerRequest->slabResults as $result) {
-                        if ($result->slabType) {
-                            $deductionValueSlabInner[$result->slabType->id] = [
-                                'checklist_value' => $result->checklist_value,
-                                'name' => $result->slabType->name,
-                                'deduction' => $result->applied_deduction,
-                                'symbol' => $result->slabType->qc_symbol ?? '',
+                $compulsoryDeductionValueSlab = [];
+                if ($initialRequest) {
+                    foreach ($initialRequest->compulsoryResults as $result) {
+                        if ($result->qcParam) {
+                            $compulsoryDeductionValueSlab[$result->qcParam->id] = [
+                                'checklist_value' => $result->compulsory_checklist_value,
+                                'name' => $result->qcParam->name,
                             ];
                         }
                     }
@@ -156,7 +155,6 @@
                 @foreach ($product_slab_types as $slab)
                     @php
                         $initialValue = $deductionValueSlabinitial[$slab->id]['checklist_value'] ?? 0;
-                        $innerValue = $deductionValueSlabInner[$slab->id]['checklist_value'] ?? 0;
                         $slabSymbol = $slab->qc_symbol ?? '';
                     @endphp
 
@@ -168,23 +166,26 @@
                             0
                         @endif
                     </td>
-
-                    <!-- INNER Column -->
-                    {{-- <td>
-                        @if($innerValue != 0)
-                            {{ $innerValue }}{{ $slabSymbol }}
-                        @else
-                            0
-                        @endif
-                    </td> --}}
                 @endforeach
                 {{-- <td>{{ $avgBroken }}</td>
                 <td>{{ $avgMoisture }}</td>
                 <td>{{ $avgPaddy }}</td>
                 <td>{{ $avgDamage }}</td> --}}
-                <td>{{ $row->approvals?->qc_advice ?? ($row->initialSampling?->approved_status ?? ($row->first_qc_status ?? 'N/A')) }}</td>
+                @foreach ($arrival_compulsory_qc_params as $compulsory_slab_type)
+                    <td>
+                        @php
+                            $compulsoryValue = $compulsoryDeductionValueSlab[$compulsory_slab_type->id]['checklist_value'] ?? null;
+                        @endphp
+                        @if($compulsoryValue !== null)
+                            {{ $compulsoryValue }}
+                        @else
+                            {{ $compulsory_slab_type->default_options }}
+                        @endif
+                    </td>
+                @endforeach
+                {{-- <td>{{ $row->approvals?->qc_advice ?? ($row->initialSampling?->approved_status ?? ($row->first_qc_status ?? 'N/A')) }}</td>
                 <td>{{ $row->initialSampling?->approved_remarks ?? ($row->remarks ?? 'N/A') }}</td>
-                <td>{{ $row->unloading_instruction ?? ($row->unloadingLocation?->remark ?? 'N/A') }}</td>
+                <td>{{ $row->unloading_instruction ?? ($row->unloadingLocation?->remark ?? 'N/A') }}</td> --}}
                 <td>{{ $row->initialSampling?->takenByUser?->name ?? ($row->innerSampling?->takenByUser?->name ?? 'N/A') }}</td>
                 <td>{{ $innerSampleCount }}</td>
                 <td>{{ $row->qcProduct?->name ?? ($row->product?->name ?? 'N/A') }}</td>
@@ -209,18 +210,25 @@
                 <td>{{ $row->freight?->other_charges ?? 'N/A' }}</td>
                 <td>{{ $row->freight?->kanta_charges ?? 'N/A' }}</td>
                 <td>{{ $row->freight?->weighbridge_charges ?? 'N/A' }}</td>
-                <td>{{ $row->status == 'Reject Full' ? 'Yes' : 'No' }}</td>
-                <td>{{ $row->full_reject_by ?? 'N/A' }}</td>
-                <td>{{ $row->full_reject_time ?? 'N/A' }}</td>
-                <td>{{ $row->full_reject_comments ?? 'N/A' }}</td>
-                <td>{{ $row->status == 'Reject Half' ? 'Yes' : 'No' }}</td>
-                <td>{{ $row->half_reject_by ?? 'N/A' }}</td>
-                <td>{{ $row->half_reject_time ?? 'N/A' }}</td>
-                <td>{{ $row->half_reject_comments ?? 'N/A' }}</td>
-                <td>{{ $row->confirm_unloading ?? ($row->arrivalSlip ? 'Yes' : 'No') }}</td>
-                <td>{{ $row->arrivalSlip?->createdBy?->name ?? 'N/A' }}</td>
-                <td>{{ $row->arrivalSlip?->created_at ? \Carbon\Carbon::parse($row->arrivalSlip->created_at)->format('d M Y h:i:s A') : 'N/A' }}</td>
-                <td>{{ $row->arrivalSlip?->remark ?? 'N/A' }}</td>
+
+                @php
+                    $isHalfReject = ($row->approvals?->bag_packing_approval == 'Half Approved' || ($row->approvals?->total_rejection > 0) || $row->document_approval_status == 'half_approved');
+                    $isFullReject = ($row->first_qc_status == 'rejected' || $row->status == 'Reject Full');
+                @endphp
+                <td>{{ $isFullReject ? 'Yes' : 'No' }}</td>
+                <td>{{ $isFullReject ? ($row->initialSampling?->takenByUser?->name ?? ($row->decisionBy?->name ?? 'N/A')) : 'N/A' }}</td>
+                <td>{{ $isFullReject && $row->initialSampling?->created_at ? \Carbon\Carbon::parse($row->initialSampling->created_at)->format('d M Y h:i:s A') : 'N/A' }}</td>
+                <td>{{ $isFullReject ? ($row->initialSampling?->approved_remarks ?? ($row->remarks ?? 'N/A')) : 'N/A' }}</td>
+                <td>{{ $isHalfReject ? 'Yes' : 'No' }}</td>
+                <td>{{ $isHalfReject ? ($row->approvals?->creator?->name ?? 'N/A') : 'N/A' }}</td>
+                <td>{{ $isHalfReject && $row->approvals?->created_at ? \Carbon\Carbon::parse($row->approvals->created_at)->format('d M Y h:i:s A') : 'N/A' }}</td>
+                <td>{{ $isHalfReject ? ($row->approvals?->remark ?? 'N/A') : 'N/A' }}</td>
+                
+                <td>{{ $row->approvals ? 'Yes' : 'No' }}</td>
+                <td>{{ $row->approvals?->creator?->name ?? 'N/A' }}</td>
+                <td>{{ $row->approvals?->created_at ? \Carbon\Carbon::parse($row->approvals->created_at)->format('d M Y h:i:s A') : 'N/A' }}</td>
+                <td>{{ $row->approvals?->remark ?? 'N/A' }}</td>
+                
                 <td>{{ $row->approvals?->bagPacking?->name ?? 'N/A' }}</td>
                 <td>{{ $row->approvals?->bagType?->name ?? 'N/A' }}</td>
                 <td>{{ $row->approvals?->filling_bags_no ?? 'N/A' }}</td>
