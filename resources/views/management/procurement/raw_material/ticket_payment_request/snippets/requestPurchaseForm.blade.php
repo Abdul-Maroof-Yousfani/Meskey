@@ -1278,16 +1278,16 @@
 
                 if (showLumpSum && !isSlabs && !isCompulsury) {
                     // console.log('show lump sum');
-
+  const netWeight = calculateNetWeight();
                     var lumpsumAmount = $('tr[data-lumpsum-amount]').data('lumpsum-amount') || 0;
                     var lumpsumKgAmount = $('tr[data-lumpsum-kgamount]').data('lumpsum-kgamount') || 0;
                     var lump_sum_deduction_rupees = $('input[name="lump_sum_deduction_rupees"]').val() || 0;
                     var lump_sum_deduction_kgs = $('input[name="lump_sum_deduction_kgs"]').val() || 0;
                     const loadingWeight = document.querySelector('input[name="billing_weight"]').value;
 
-                    var lumpsumKgsCalculatedValue = parseFloat(lump_sum_deduction_kgs) * parseFloat(loadingWeight);
+                    var lumpsumKgsCalculatedValue = parseFloat(lump_sum_deduction_kgs) * parseFloat(netWeight);
                     lumpsumKgsCalculatedValue = (lumpsumKgsCalculatedValue / 100) * ratePerKg;
-                    var lumpsumRupeesCalculatedValue = lump_sum_deduction_rupees * parseFloat(loadingWeight);
+                    var lumpsumRupeesCalculatedValue = lump_sum_deduction_rupees * parseFloat(netWeight);
                     console.log("vs:" + lump_sum_deduction_rupees + " + " + parseFloat(lump_sum_deduction_rupees));
                     $('#lump_sum_deduction_kgs_total').val(lumpsumKgsCalculatedValue.toFixed(4));
                     $('#lump_sum_deduction_rupees_total').val(lumpsumRupeesCalculatedValue.toFixed(4));
