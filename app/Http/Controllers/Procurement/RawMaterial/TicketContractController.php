@@ -444,7 +444,11 @@ class TicketContractController extends Controller
 
 
                 if ($arrivalTicket->purchaseOrder->broker_one_id && $arrivalTicket->purchaseOrder->broker_one_commission && $loadingWeight) {
-                    $amount = ($loadingWeight * $arrivalTicket->purchaseOrder->broker_one_commission);
+                    if ($arrivalTicket->purchaseOrder->broker_one_calculation_type == 'quantity') {
+                        $amount = ($loadingWeight * $arrivalTicket->purchaseOrder->broker_one_commission);
+                    } else {
+                        $amount = $arrivalTicket->purchaseOrder->broker_one_commission;
+                    }
 
                     createTransaction(
                         $amount,
@@ -466,7 +470,11 @@ class TicketContractController extends Controller
 
 
                 if ($arrivalTicket->purchaseOrder->broker_two_id && $arrivalTicket->purchaseOrder->broker_two_commission && $loadingWeight) {
-                    $amount = ($loadingWeight * $arrivalTicket->purchaseOrder->broker_two_commission);
+                    if ($arrivalTicket->purchaseOrder->broker_two_calculation_type == 'quantity') {
+                        $amount = ($loadingWeight * $arrivalTicket->purchaseOrder->broker_two_commission);
+                    } else {
+                        $amount = $arrivalTicket->purchaseOrder->broker_two_commission;
+                    }
 
                     createTransaction(
                         $amount,
@@ -488,7 +496,11 @@ class TicketContractController extends Controller
                 }
 
                 if ($arrivalTicket->purchaseOrder->broker_three_id && $arrivalTicket->purchaseOrder->broker_three_commission && $loadingWeight) {
-                    $amount = ($loadingWeight * $arrivalTicket->purchaseOrder->broker_three_commission);
+                    if ($arrivalTicket->purchaseOrder->broker_three_calculation_type == 'quantity') {
+                        $amount = ($loadingWeight * $arrivalTicket->purchaseOrder->broker_three_commission);
+                    } else {
+                        $amount = $arrivalTicket->purchaseOrder->broker_three_commission;
+                    }
 
                     createTransaction(
                         $amount,
@@ -639,7 +651,7 @@ class TicketContractController extends Controller
         }
 
         if ($request->initial) {
-            $query->limit(10);
+            $query->limit(100);
         } elseif ($request->search) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {

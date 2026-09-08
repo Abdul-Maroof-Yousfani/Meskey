@@ -6,15 +6,15 @@
     <div class="content-wrapper">
 
         <section id="extended">
-            <div class="row w-100 mx-auto">
-                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-                    <h2 class="page-title"> Inner Sampling Requests</h2>
+            <div class="row w-100 mx-auto align-items-center">
+                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 col-6">
+                    <h2 class="page-title mb-0"> Inner Sampling Requests</h2>
                 </div>
-                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
+                <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right col-6">
                     <button
                         onclick="openModal(this,'{{ route('inner-sampling-request.create') }}','Add Request For Inner Sampling')"
                         type="button" class="btn btn-primary position-relative ">
-                        Create Request For Inner Sampling
+                        Request For Inner Sampling
                     </button>
                 </div>
             </div>
@@ -67,7 +67,7 @@
 @endsection
 @section('script')
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             filterationCommon(`{{ route('get.inner-sampling-request') }}`)
         });
     </script>

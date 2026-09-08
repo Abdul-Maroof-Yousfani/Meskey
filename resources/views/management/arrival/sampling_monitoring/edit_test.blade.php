@@ -1,8 +1,9 @@
 <style>
-    .deduction-maund-field{
+    .deduction-maund-field {
         background-color: #fff;
     }
-    .deduction-maund-field:focus{
+
+    .deduction-maund-field:focus {
         background-color: #fff;
     }
 </style>
@@ -567,9 +568,9 @@
                                                     </div>
                                                     @if(in_array($slab->slabType->calculation_base_type, [2, 3]))
                                                         <div class="input-group mb-0 mt-1">
-                                                            <input type="text"
-                                                                class="form-control bg-white"
-                                                                value="{{ $slab->applied_deduction_maund ?? 0 }}" placeholder="Maund" readonly>
+                                                            <input type="text" class="form-control bg-white"
+                                                                value="{{ $slab->applied_deduction_maund ?? 0 }}" placeholder="Maund"
+                                                                readonly>
                                                             <div class="input-group-append">
                                                                 <span class="input-group-text text-sm">Maund</span>
                                                             </div>
@@ -628,9 +629,9 @@
                                                             value="{{ $slab->applied_deduction ?? 0 }}" disabled>
                                                         @if(in_array($slab->qcParam->calculation_base_type, [2, 3]))
                                                             <div class="input-group mb-0 mt-1">
-                                                                <input type="text"
-                                                                    class="form-control bg-white"
-                                                                    value="{{ $slab->applied_deduction_maund ?? 0 }}" placeholder="Maund" readonly>
+                                                                <input type="text" class="form-control bg-white"
+                                                                    value="{{ $slab->applied_deduction_maund ?? 0 }}" placeholder="Maund"
+                                                                    readonly>
                                                                 <div class="input-group-append">
                                                                     <span class="input-group-text text-sm">Maund</span>
                                                                 </div>
@@ -820,9 +821,9 @@
                                                 </div>
                                                 @if(in_array($slab->slabType->calculation_base_type, [2, 3]))
                                                     <div class="input-group mb-0 mt-1">
-                                                        <input type="text"
-                                                            class="form-control bg-white"
-                                                            value="{{ $slab->applied_deduction_maund ?? 0 }}" placeholder="Maund" readonly>
+                                                        <input type="text" class="form-control bg-white"
+                                                            value="{{ $slab->applied_deduction_maund ?? 0 }}" placeholder="Maund"
+                                                            readonly>
                                                         <div class="input-group-append">
                                                             <span class="input-group-text text-sm">Maund</span>
                                                         </div>
@@ -883,9 +884,9 @@
                                                         value="{{ $slab->applied_deduction }}">
                                                     @if(in_array($slab->qcParam->calculation_base_type, [2, 3]))
                                                         <div class="input-group mb-0 mt-1">
-                                                            <input type="text"
-                                                                class="form-control bg-white"
-                                                                value="{{ $slab->applied_deduction_maund ?? 0 }}" placeholder="Maund" readonly>
+                                                            <input type="text" class="form-control bg-white"
+                                                                value="{{ $slab->applied_deduction_maund ?? 0 }}" placeholder="Maund"
+                                                                readonly>
                                                             <div class="input-group-append">
                                                                 <span class="input-group-text text-sm">Maund</span>
                                                             </div>
@@ -913,32 +914,32 @@
                                     <div class="col">
                                         <div class="input-group mb-2">
                                             <input type="text" id="lumpsum-value-inner-{{ $index }}" class="form-control"
-                                                readonly
-                                                value="{{ $rupeeLumpSum ?? 0 }}" placeholder="Lumpsum Deduction">
+                                                readonly value="{{ $rupeeLumpSum ?? 0 }}" placeholder="Lumpsum Deduction">
                                             <div class="input-group-append">
                                                 <span class="input-group-text text-sm">Rs.</span>
                                             </div>
                                         </div>
                                         <div class="input-group mb-2 mt-1">
                                             <input type="text" id="lumpsum-maund-inner-{{ $index }}" class="form-control"
-                                                readonly
-                                                value="{{ $arrivalSamplingRequest->lumpsum_deduction_maund ?? 0 }}" placeholder="Maund (Rs)">
+                                                readonly value="{{ $arrivalSamplingRequest->lumpsum_deduction_maund ?? 0 }}"
+                                                placeholder="Maund (Rs)">
                                             <div class="input-group-append">
                                                 <span class="input-group-text text-sm">Maund</span>
                                             </div>
                                         </div>
                                         <div class="input-group mb-0">
-                                            <input type="text" id="lumpsum-kgs-value-inner-{{ $index }}" class="form-control"
-                                                readonly
-                                                value="{{ $kgLumpSum ?? 0 }}" placeholder="Lumpsum Deduction">
+                                            <input type="text" id="lumpsum-kgs-value-inner-{{ $index }}"
+                                                class="form-control" readonly value="{{ $kgLumpSum ?? 0 }}"
+                                                placeholder="Lumpsum Deduction">
                                             <div class="input-group-append">
                                                 <span class="input-group-text text-sm">KG's</span>
                                             </div>
                                         </div>
                                         <div class="input-group mb-0 mt-1">
-                                            <input type="text" id="lumpsum-kgs-maund-inner-{{ $index }}" class="form-control"
-                                                readonly
-                                                value="{{ $arrivalSamplingRequest->lumpsum_deduction_kgs_maund ?? 0 }}" placeholder="Maund (KGs)">
+                                            <input type="text" id="lumpsum-kgs-maund-inner-{{ $index }}"
+                                                class="form-control" readonly
+                                                value="{{ $arrivalSamplingRequest->lumpsum_deduction_kgs_maund ?? 0 }}"
+                                                placeholder="Maund (KGs)">
                                             <div class="input-group-append">
                                                 <span class="input-group-text text-sm">Maund</span>
                                             </div>
@@ -1114,7 +1115,8 @@
                                         </div>
                                         <div class="col-md-2 QcResult">
                                             <div class="input-group mb-0">
-                                                <input type="text" id="deduction-{{ $slab->slabType->id }}" data-maund-target="#deduction-maund-{{ $slab->slabType->id }}"
+                                                <input type="text" id="deduction-{{ $slab->slabType->id }}"
+                                                    data-maund-target="#deduction-maund-{{ $slab->slabType->id }}"
                                                     class="form-control bg-white deduction-field" name="applied_deduction[]"
                                                     value="{{ $innerDeductionValue }}" placeholder="Deduction"
                                                     data-matching-slabs="{{ json_encode($slab->matching_slabs) }}"
@@ -1208,7 +1210,8 @@
                                         @if (!checkIfNameExists($slab->qcParam->name))
                                             <div class="col-md-2 QcResult">
                                                 <div class="input-group mb-0">
-                                                    <input type="text" id="inp-{{ $slab->qcParam->id }}" data-maund-target="#comp-deduction-maund-{{ $slab->qcParam->id }}"
+                                                    <input type="text" id="inp-{{ $slab->qcParam->id }}"
+                                                        data-maund-target="#comp-deduction-maund-{{ $slab->qcParam->id }}"
                                                         class="form-control bg-white deduction-field"
                                                         name="compulsory_aapplied_deduction[]" value="{{ $compDeductionValue }}"
                                                         placeholder="Deduction" data-slab-id="{{ $slab->qcParam->id }}"
@@ -1222,7 +1225,8 @@
                                                 @if(in_array($slab->qcParam->calculation_base_type, [2, 3]))
                                                     <div class="input-group mb-0 mt-1">
                                                         <input type="text" id="comp-deduction-maund-{{ $slab->qcParam->id }}"
-                                                            class="form-control deduction-maund-field" name="compulsory_applied_deduction_maund[]"
+                                                            class="form-control deduction-maund-field"
+                                                            name="compulsory_applied_deduction_maund[]"
                                                             value="{{ $slab->applied_deduction_maund ?? 0 }}" placeholder="Maund"
                                                             data-value-target="#inp-{{ $slab->qcParam->id }}">
                                                         <div class="input-group-append">
@@ -1280,9 +1284,8 @@
                                 </div>
                                 <div class="col">
                                     <div class="input-group mb-2">
-                                        <input type="text" id="lumpsum-value" class="form-control" data-maund-target="#lumpsum-maund"
-                                            name="lumpsum_deduction" {{ $isLumpSumEnabledInTicket ? '' : 'readonly' }}
-                                            {{--
+                                        <input type="text" id="lumpsum-value" class="form-control"
+                                            data-maund-target="#lumpsum-maund" name="lumpsum_deduction" {{ $isLumpSumEnabledInTicket ? '' : 'readonly' }} {{--
                                             value="{{ $arrivalSamplingRequest->lumpsum_deduction ?? ($rupeeLumpSum ?? 0) }}"
                                             --}} value="{{ $rupeeLumpSum ?? 0 }}" placeholder="Lumpsum Deduction">
                                         <div class="input-group-append">
@@ -1292,15 +1295,15 @@
                                     <div class="input-group mb-2 mt-1">
                                         <input type="text" id="lumpsum-maund" class="form-control lumpsum-maund-field"
                                             name="lumpsum_deduction_maund" {{ $isLumpSumEnabledInTicket ? '' : 'readonly' }}
-                                            value="{{ $arrivalSamplingRequest->lumpsum_deduction_maund ?? 0 }}" placeholder="Maund (Rs)"
-                                            data-value-target="#lumpsum-value">
+                                            value="{{ $arrivalSamplingRequest->lumpsum_deduction_maund ?? 0 }}"
+                                            placeholder="Maund (Rs)" data-value-target="#lumpsum-value">
                                         <div class="input-group-append">
                                             <span class="input-group-text text-sm">Maund</span>
                                         </div>
                                     </div>
                                     <div class="input-group mb-0">
-                                        <input type="text" id="lumpsum-kgs-value" class="form-control" data-maund-target="#lumpsum-kgs-maund"
-                                            name="lumpsum_deduction_kgs" {{ $isLumpSumEnabledInTicket ? '' : 'readonly' }} {{--
+                                        <input type="text" id="lumpsum-kgs-value" class="form-control"
+                                            data-maund-target="#lumpsum-kgs-maund" name="lumpsum_deduction_kgs" {{ $isLumpSumEnabledInTicket ? '' : 'readonly' }} {{--
                                             value="{{ $arrivalSamplingRequest->lumpsum_deduction_kgs ?? ($kgLumpSum ?? 0) }}"
                                             --}} value="{{ $kgLumpSum ?? 0 }}" placeholder="Lumpsum Deduction">
                                         <div class="input-group-append">
@@ -1308,10 +1311,11 @@
                                         </div>
                                     </div>
                                     <div class="input-group mb-0 mt-1">
-                                        <input type="text" id="lumpsum-kgs-maund" class="form-control lumpsum-maund-field"
-                                            name="lumpsum_deduction_kgs_maund" {{ $isLumpSumEnabledInTicket ? '' : 'readonly' }}
-                                            value="{{ $arrivalSamplingRequest->lumpsum_deduction_kgs_maund ?? 0 }}" placeholder="Maund (KGs)"
-                                            data-value-target="#lumpsum-kgs-value">
+                                        <input type="text" id="lumpsum-kgs-maund"
+                                            class="form-control lumpsum-maund-field" name="lumpsum_deduction_kgs_maund"
+                                            {{ $isLumpSumEnabledInTicket ? '' : 'readonly' }}
+                                            value="{{ $arrivalSamplingRequest->lumpsum_deduction_kgs_maund ?? 0 }}"
+                                            placeholder="Maund (KGs)" data-value-target="#lumpsum-kgs-value">
                                         <div class="input-group-append">
                                             <span class="input-group-text text-sm">Maund</span>
                                         </div>
@@ -1409,8 +1413,8 @@
     $(document).ready(function () {
 
         // Trigger calculation on load to populate Maund fields from saved values
-        setTimeout(function() {
-            $('.deduction-field, #lumpsum-value, #lumpsum-kgs-value').each(function() {
+        setTimeout(function () {
+            $('.deduction-field, #lumpsum-value, #lumpsum-kgs-value').each(function () {
                 if ($(this).val() && parseFloat($(this).val()) > 0) {
                     $(this).trigger('input');
                 }
@@ -1418,22 +1422,22 @@
         }, 500);
 
         // Maund Calculation Logic
-        $(document).on('input', '.deduction-field, #lumpsum-value, #lumpsum-kgs-value', function() {
+        $(document).on('input', '.deduction-field, #lumpsum-value, #lumpsum-kgs-value', function () {
             let value = parseFloat($(this).val()) || 0;
             let maundTarget = $(this).data('maund-target');
             console.log('rs/kg value:', value);
-            if(maundTarget && $(maundTarget).length > 0) {
+            if (maundTarget && $(maundTarget).length > 0) {
                 let maundValue = 40 * value;
-                $(maundTarget).val(maundValue.toFixed(3));
+                $(maundTarget).val(maundValue.toFixed(4));
             }
         });
 
-        $(document).on('input', '.deduction-maund-field, .lumpsum-maund-field', function() {
+        $(document).on('input', '.deduction-maund-field, .lumpsum-maund-field', function () {
             let maundValue = parseFloat($(this).val()) || 0;
             let valueTarget = $(this).data('value-target');
-            if(valueTarget && $(valueTarget).length > 0) {
+            if (valueTarget && $(valueTarget).length > 0) {
                 let value = maundValue / 40;
-                $(valueTarget).val(value.toFixed(2));
+                $(valueTarget).val(value.toFixed(4));
                 if ($(valueTarget).hasClass('deduction-field')) {
                     calculateTotal();
                 }
@@ -1486,8 +1490,8 @@
                 }
             });
 
-            $('#lumpsum-value').val(total.toFixed(2)).trigger('input');
-            $('#lumpsum-kgs-value').val(totalKgs.toFixed(2)).trigger('input');
+            $('#lumpsum-value').val(total.toFixed(4)).trigger('input');
+            $('#lumpsum-kgs-value').val(totalKgs.toFixed(4)).trigger('input');
         }
 
 
@@ -1598,8 +1602,8 @@
             // console.log('💰 Total KGs:', totalKgs.toFixed(2));
             // console.log('================== CALCULATE TOTAL END ==================\n');
 
-            $('#lumpsum-value').val(total.toFixed(2)).trigger('input');
-            $('#lumpsum-kgs-value').val(totalKgs.toFixed(2)).trigger('input');
+            $('#lumpsum-value').val(total.toFixed(4)).trigger('input');
+            $('#lumpsum-kgs-value').val(totalKgs.toFixed(4)).trigger('input');
 
             return { total, totalKgs };
         }
@@ -1733,9 +1737,3 @@
         pointer-events: none;
     }
 </style>
-
-
-
-
-
-

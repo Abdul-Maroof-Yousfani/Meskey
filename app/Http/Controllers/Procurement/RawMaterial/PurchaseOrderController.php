@@ -79,6 +79,9 @@ class PurchaseOrderController extends Controller
             ->when($request->filled('supplier_id_f'), function ($q) use ($request) {
                 return $q->where('supplier_id', $request->supplier_id_f);
             })
+            ->when($request->filled('commodity_id_f'), function ($q) use ($request) {
+                return $q->where('product_id', $request->commodity_id_f);
+            })
             ->when($request->filled('daterange'), function ($q) use ($request) {
                 $dates = explode(' - ', $request->daterange);
                 $startDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[0]))->format('Y-m-d');
@@ -331,19 +334,19 @@ class PurchaseOrderController extends Controller
     public function update(ArrivalPurchaseOrderRequest $request, $id)
     {
         $arrivalPurchaseOrder = ArrivalPurchaseOrder::findOrFail($id);
-        
+
         $data = $request->validated();
         $data = $request->all();
 
         if ($arrivalPurchaseOrder->am_approval_status == "approved" || $arrivalPurchaseOrder->am_approval_status == 'rejected') {
-            
+
             $oldDeliveryDate = $arrivalPurchaseOrder->delivery_date ? \Carbon\Carbon::parse($arrivalPurchaseOrder->delivery_date)->format('Y-m-d') : null;
             $newDeliveryDate = !empty($data['delivery_date']) ? \Carbon\Carbon::parse($data['delivery_date'])->format('Y-m-d') : null;
             $deliveryDateChanged = $oldDeliveryDate != $newDeliveryDate;
-            
+
             $contractStatusChanged = ($data['contract_status'] ?? null) != $arrivalPurchaseOrder->contract_status;
             $remarksChanged = ($data['remarks'] ?? null) != $arrivalPurchaseOrder->remarks;
-            $defaulterChanged = (isset($data['defaulter']) ? (int)$data['defaulter'] : 0) != (int)$arrivalPurchaseOrder->defaulter;
+            $defaulterChanged = (isset($data['defaulter']) ? (int) $data['defaulter'] : 0) != (int) $arrivalPurchaseOrder->defaulter;
 
             if (!$deliveryDateChanged && !$contractStatusChanged && !$remarksChanged && !$defaulterChanged) {
                 return response()->json([

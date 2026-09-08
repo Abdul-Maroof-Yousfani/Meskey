@@ -565,12 +565,12 @@
                                                             value="{{ $arrivalTicket->approvals->total_bags }}"
                                                             autocomplete="off"
                                                             mddax="{{ $arrivalTicket->document_approval_status == 'half_approved' ? $arrivalTicket->bags : '' }}"" required />
-                                                                                                                                                                                                                                        </div>
-                                                                                                                                                                                                                                    </div>
-                                                                                                                                                                                                                                </div>
+                                                                                                                                                                                                                                                        </div>
+                                                                                                                                                                                                                                                    </div>
+                                                                                                                                                                                                                                                </div>
 
-                                                                                                                                                                                                                                <div
-                                                                                                                                                                                                                                    class="
+                                                                                                                                                                                                                                                <div
+                                                                                                                                                                                                                                                    class="
                                                             row total-rejection-section {{ $arrivalTicket->document_approval_status == 'fully_approved' ? 'd-none' : '' }}">
 
                                                         <div class="col-12">
@@ -996,9 +996,9 @@
                                                     <div class="form-group ">
                                                         <label>Status:</label>
                                                         <!-- @if (in_array($arrivalSamplingRequest->approved_status, ['approved', 'resampling', 'rejected']))
-                                                                                    <input type="hidden" name="stage_status"
-                                                                                        value="{{ $arrivalSamplingRequest->approved_status }}">
-                                                                                @endif -->
+                                                                                                    <input type="hidden" name="stage_status"
+                                                                                                        value="{{ $arrivalSamplingRequest->approved_status }}">
+                                                                                                @endif -->
                                                         @if($arrivalSamplingRequest->sampling_type == 'initial' && $arrivalSamplingRequest->approved_status == 'approved' && $arrivalTicket->location_transfer_status == 'transfered')
 
                                                             <input type="hidden" name="stage_status"
@@ -1012,7 +1012,7 @@
                                                             <option {{ $arrivalSamplingRequest->approved_status == 'approved' ? 'selected' : '' }} value="approved">
                                                                 Approved</option>
                                                             <!-- <option {{ $arrivalSamplingRequest->approved_status == 'resampling' ? 'selected' : '' }} value="resampling">Request Resampling
-                                                                                    </option> -->
+                                                                                                    </option> -->
                                                             <option {{ $arrivalSamplingRequest->approved_status == 'rejected' ? 'selected' : '' }} value="rejected">
                                                                 Rejected</option>
                                                         </select>
@@ -1988,13 +1988,13 @@
 
 
                                                                     <!-- @if($arrivalSamplingRequest->is_done == 'yes' && $arrivalSamplingRequest->approved_status == 'pending')
-                                                                                                                                                            <div class="col-12 alert bg-light-danger">Sampling has been
-                                                                                                                                                                completed
-                                                                                                                                                                and
-                                                                                                                                                                is awaiting purchaser approval. Updates are not allowed at
-                                                                                                                                                                this
-                                                                                                                                                                stage.</div>
-                                                                                                                                                        @endif -->
+                                                                                                                                                                                                            <div class="col-12 alert bg-light-danger">Sampling has been
+                                                                                                                                                                                                                completed
+                                                                                                                                                                                                                and
+                                                                                                                                                                                                                is awaiting purchaser approval. Updates are not allowed at
+                                                                                                                                                                                                                this
+                                                                                                                                                                                                                stage.</div>
+                                                                                                                                                                                                        @endif -->
 
                                                                     @if($arrivalTicket->bilty_return_confirmation == 1)
                                                                         <div class="col-12 alert bg-light-danger">Editing is disabled
@@ -2168,8 +2168,8 @@
             }
         });
 
-        $('#lumpsum-value').val(total.toFixed(2));
-        $('#lumpsum-kgs-value').val(totalKgs.toFixed(2));
+        $('#lumpsum-value').val(total.toFixed(4));
+        $('#lumpsum-kgs-value').val(totalKgs.toFixed(4));
     }
 
     if (
@@ -2180,8 +2180,8 @@
 
     if ({{ $arrivalSamplingRequest->is_lumpsum_deduction == 1 ? 'true' : 'false' }}) {
 
-        $('#lumpsum-value').val({{ $arrivalSamplingRequest->lumpsum_deduction ?? 0 }}.toFixed(2));
-        $('#lumpsum-kgs-value').val({{ $arrivalSamplingRequest->lumpsum_deduction_kgs ?? 0 }}.toFixed(2));
+        $('#lumpsum-value').val({{ $arrivalSamplingRequest->lumpsum_deduction ?? 0 }}.toFixed(4));
+        $('#lumpsum-kgs-value').val({{ $arrivalSamplingRequest->lumpsum_deduction_kgs ?? 0 }}.toFixed(4));
     }
 
     $('.deduction-field').on('input', calculateTotal);

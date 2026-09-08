@@ -68,6 +68,7 @@ class PaymentRequestApprovalController extends Controller
             ->when($request->filled('request_type'), function ($q) use ($request) {
                 return $q->where('request_type', $request->request_type);
             })
+
             // ->when($request->filled('truck_no'), function ($q) use ($request) {
             //     return $q->whereHas('paymentRequestData', function ($query) use ($request) {
             //         $query->where('truck_no', 'like', "%{$request->truck_no}%");
@@ -142,16 +143,16 @@ class PaymentRequestApprovalController extends Controller
                 return $q->whereDate('created_at', '>=', $startDate)
                     ->whereDate('created_at', '<=', $endDate);
             })
-            ->when($request->filled('arrival_daterange'), function ($q) use ($request) {
-                $dates = explode(' - ', $request->arrival_daterange);
-                $startDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[0]))->format('Y-m-d');
-                $endDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[1]))->format('Y-m-d');
+            // ->when($request->filled('arrival_daterange'), function ($q) use ($request) {
+            //     $dates = explode(' - ', $request->arrival_daterange);
+            //     $startDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[0]))->format('Y-m-d');
+            //     $endDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[1]))->format('Y-m-d');
 
-                return $q->whereHas('paymentRequestData.arrivalTicket', function ($sub) use ($startDate, $endDate) {
-                    $sub->whereDate('arrival_tickets.created_at', '>=', $startDate)
-                        ->whereDate('arrival_tickets.created_at', '<=', $endDate);
-                });
-            })
+            //     return $q->whereHas('paymentRequestData.arrivalTicket', function ($sub) use ($startDate, $endDate) {
+            //         $sub->whereDate('arrival_tickets.created_at', '>=', $startDate)
+            //             ->whereDate('arrival_tickets.created_at', '<=', $endDate);
+            //     });
+            // })
             ->orderBy('created_at', 'desc')
             ->paginate(25);
 
@@ -196,6 +197,7 @@ class PaymentRequestApprovalController extends Controller
 
     public function store(PaymentRequestApprovalRequest $request)
     {
+        // dd($request);
         return DB::transaction(function () use ($request) {
             $paymentRequest = PaymentRequest::findOrFail($request->payment_request_id);
             if ($paymentRequest->status == 'approved' || $paymentRequest->status == 'rejected') {
@@ -402,7 +404,11 @@ class PaymentRequestApprovalController extends Controller
                     }
 
                     if ($purchaseOrder->broker_one_id && $purchaseOrder->broker_one_commission && $loadingWeight) {
-                        $amount = ($loadingWeight * $purchaseOrder->broker_one_commission);
+                        if ($purchaseOrder->broker_one_calculation_type == 'quantity') {
+                            $amount = ($loadingWeight * $purchaseOrder->broker_one_commission);
+                        } else {
+                            $amount = $purchaseOrder->broker_one_commission;
+                        }
 
                         $existingBrokerTrx = Transaction::where('voucher_no', $contractNo)
                             ->where('payment_against', 'thadda-purchase')
@@ -437,7 +443,11 @@ class PaymentRequestApprovalController extends Controller
                     }
 
                     if ($purchaseOrder->broker_two_id && $purchaseOrder->broker_two_commission && $loadingWeight) {
-                        $amount = ($loadingWeight * $purchaseOrder->broker_two_commission);
+                        if ($purchaseOrder->broker_two_calculation_type == 'quantity') {
+                            $amount = ($loadingWeight * $purchaseOrder->broker_two_commission);
+                        } else {
+                            $amount = $purchaseOrder->broker_two_commission;
+                        }
 
 
                         $existingBrokerTrx = Transaction::where('voucher_no', $contractNo)
@@ -473,7 +483,11 @@ class PaymentRequestApprovalController extends Controller
                     }
 
                     if ($purchaseOrder->broker_three_id && $purchaseOrder->broker_three_commission && $loadingWeight) {
-                        $amount = ($loadingWeight * $purchaseOrder->broker_three_commission);
+                        if ($purchaseOrder->broker_three_calculation_type == 'quantity') {
+                            $amount = ($loadingWeight * $purchaseOrder->broker_three_commission);
+                        } else {
+                            $amount = $purchaseOrder->broker_three_commission;
+                        }
 
                         $existingBrokerTrx = Transaction::where('voucher_no', $contractNo)
                             ->where('payment_against', 'thadda-purchase')
@@ -774,7 +788,7 @@ class PaymentRequestApprovalController extends Controller
                 $otherDeduction = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($ticket, $moduleType) {
                     $query->where('ticket_id', $ticket->id);
                     $query->where('module_type', $moduleType);
-                })->select('other_deduction_kg', 'other_deduction_value', 'rerate_on_access_weight_kg', 'rerate_on_access_weight_rate', 'rerate_on_access_weight_amount')
+                })->select('other_deduction_kg', 'other_deduction_value', 'rerate_on_access_weight_kg', 'rerate_on_access_weight_rate', 'rerate_on_access_weight_amount', 'filling_bag_amount', 'filling_bag_rate', 'no_of_filling_bags')
                     ->latest()
                     ->first();
             }
@@ -847,7 +861,7 @@ class PaymentRequestApprovalController extends Controller
                 $otherDeduction = PaymentRequest::whereHas('paymentRequestData', function ($query) use ($ticket, $moduleType) {
                     $query->where('ticket_id', $ticket->id);
                     $query->where('module_type', $moduleType);
-                })->select('other_deduction_kg', 'other_deduction_value', 'rerate_on_access_weight_kg', 'rerate_on_access_weight_rate', 'rerate_on_access_weight_amount')
+                })->select('other_deduction_kg', 'other_deduction_value', 'rerate_on_access_weight_kg', 'rerate_on_access_weight_rate', 'rerate_on_access_weight_amount', 'filling_bag_amount', 'filling_bag_rate', 'no_of_filling_bags')
                     ->latest()
                     ->first();
             }

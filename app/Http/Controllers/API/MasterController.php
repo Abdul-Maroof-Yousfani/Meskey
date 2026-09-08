@@ -58,10 +58,7 @@ class MasterController extends Controller
             $gala = ArrivalSubLocation::with('arrivalLocation')
                 ->when(auth()->user()->user_type != 'super-admin', function ($q) {
                     // Ensure arrival_location_id is not null
-                    if (auth()->user()->arrival_location_id) {
-                        return $q->where('arrival_location_id', auth()->user()->arrival_location_id);
-                    }
-                    return $q;
+                    return $q->whereIn('arrival_location_id', getUserCurrentCompanyArrivalLocations());
                 })
                 ->when($request->filled('arrival_location_id'), function ($q) use ($request) {
                     // Use filled() instead of checking directly

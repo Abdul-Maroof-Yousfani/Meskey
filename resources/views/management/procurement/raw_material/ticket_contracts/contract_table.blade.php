@@ -100,7 +100,7 @@
                 </td>
                 <td>{{ $arrivedTrucks }}</td>
                 <td>{{ $arrivedQty }}</td>
-                <td>{{ $contract['calculation_type'] != 'quantity' ? $balanceTrucks : 'N/A | Quantity Wise' }} <span class="d-none">{{ $balanceTrucksWithoutOwn }}</span> </td>
+                <td class="balancetruck">{{ $contract['calculation_type'] != 'quantity' ? $balanceTrucks : 'N/A | Quantity Wise' }} <span class="d-none">{{ $balanceTrucksWithoutOwn }}</span> </td>
                 <td>
                     {{ ($minQty ?? 0) - ($arrivedQty ?? 0) . ' - ' . (($maxQty ?? 0) - ($arrivedQty ?? 0)) }}
                     <span class="d-none">{{ $contract['sauda_type']['name']??'' }}</span>

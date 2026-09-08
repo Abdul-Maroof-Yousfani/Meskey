@@ -94,7 +94,7 @@
                             id="navbar-fullscreen" href="javascript:;"><i class="ft-maximize font-medium-3"></i></a>
                     </li>
                     @if (getCurrentCompany())
-                        <li class="nav-item nav-search"><a class="nav-link nav-link-search" href="javascript:"><i
+                        <!-- <li class="nav-item nav-search"><a class="nav-link nav-link-search" href="javascript:"><i
                                     class="ft-search font-medium-3"></i></a>
                             <div class="search-input">
                                 <div class="search-input-icon"><i class="ft-search font-medium-3"></i></div>
@@ -103,7 +103,7 @@
                                 <div class="search-input-close"><i class="ft-x font-medium-3"></i></div>
                                 <ul class="search-list"></ul>
                             </div>
-                        </li>
+                        </li> -->
                     @endif
                 </ul>
                 <div class="navbar-brand-center">
@@ -193,7 +193,7 @@
                             <div class="custom-switch custom-switch-primary custom-control-inline mb-1 mb-xl-0">
                                 <input type="checkbox" class="custom-control-input" id="color-switch-1"
                                     {{ Cookie::get('layout') === 'dark' ? 'checked' : '' }}>
-                                <label class="custom-control-label mr-1" for="color-switch-1">
+                                <label class="custom-control-label mr-1 color-mode-switch" for="color-switch-1">
                                     <span>Dark</span>
                                 </label>
                             </div>
@@ -305,7 +305,7 @@
         // Use setTimeout so that it runs after jQuery is loaded
         setTimeout(function() {
             fetchUnreadCount();
-            setInterval(fetchUnreadCount, 6000);
+            setInterval(fetchUnreadCount, 60000);
 
             // 2. Fetch dropdown items on click
             $('#dropdownBasic1').on('click', function(e) {

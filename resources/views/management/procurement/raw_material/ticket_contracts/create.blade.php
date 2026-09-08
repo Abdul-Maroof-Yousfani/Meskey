@@ -640,8 +640,11 @@
                         ' - ')[1] ||
                     contractRow.find(`td:eq(${remainingQtyRow})`).text().split(' - ')[0]) || 0;
                 const ticketWeight = parseFloat('{{ $arrivalTicket->net_weight ?? 0 }}');
-                const remainingTrucks = parseInt(contractRow.find(`td:eq(${remainingTruckRow}) span`)
+                const remainingTrucks = parseFloat(contractRow.find(`td.balancetruck span`)
                     .text()) || 0;
+
+
+                    console.log(remainingTrucks);
                 const isTicketVerified = @json($arrivalTicket->is_ticket_verified == 1);
                 const isTicketCompleted = @json($arrivalTicket->purchaseOrder?->status ?? '' === 'completed');
 

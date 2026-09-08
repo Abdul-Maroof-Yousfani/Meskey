@@ -606,6 +606,7 @@ class ArrivalMasterRevertController extends Controller
             if (!empty($requestData['arrival_purchase_order_id'])) {
                 $ArrivalPurchaseOrder = ArrivalPurchaseOrder::findOrFail($requestData['arrival_purchase_order_id']);
                 $requestData['sauda_type_id'] = $ArrivalPurchaseOrder->sauda_type_id;
+                $requestData['decision_id'] = $ArrivalPurchaseOrder->decision_of_id;
             }
             if (!empty($requestData['station'])) {
                 $station = Station::firstOrCreate(

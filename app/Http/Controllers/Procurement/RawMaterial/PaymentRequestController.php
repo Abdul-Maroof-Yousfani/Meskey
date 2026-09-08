@@ -346,7 +346,11 @@ class PaymentRequestController extends Controller
         }
 
         if ($purchaseOrder->broker_one_id && $purchaseOrder->broker_one_commission && $loadingWeight) {
-            $amount = ($loadingWeight * $purchaseOrder->broker_one_commission);
+            if ($purchaseOrder->broker_one_calculation_type == 'quantity') {
+                $amount = ($loadingWeight * $purchaseOrder->broker_one_commission);
+            } else {
+                $amount = $purchaseOrder->broker_one_commission;
+            }
 
             $existingBrokerTrx = Transaction::where('voucher_no', $contractNo)
                 ->where('payment_against', 'thadda-purchase')
@@ -381,8 +385,11 @@ class PaymentRequestController extends Controller
         }
 
         if ($purchaseOrder->broker_two_id && $purchaseOrder->broker_two_commission && $loadingWeight) {
-            $amount = ($loadingWeight * $purchaseOrder->broker_two_commission);
-
+            if ($purchaseOrder->broker_two_calculation_type == 'quantity') {
+                $amount = ($loadingWeight * $purchaseOrder->broker_two_commission);
+            } else {
+                $amount = $purchaseOrder->broker_two_commission;
+            }
 
             $existingBrokerTrx = Transaction::where('voucher_no', $contractNo)
                 ->where('payment_against', 'thadda-purchase')
@@ -417,7 +424,11 @@ class PaymentRequestController extends Controller
         }
 
         if ($purchaseOrder->broker_three_id && $purchaseOrder->broker_three_commission && $loadingWeight) {
-            $amount = ($loadingWeight * $purchaseOrder->broker_three_commission);
+            if ($purchaseOrder->broker_three_calculation_type == 'quantity') {
+                $amount = ($loadingWeight * $purchaseOrder->broker_three_commission);
+            } else {
+                $amount = $purchaseOrder->broker_three_commission;
+            }
 
             $existingBrokerTrx = Transaction::where('voucher_no', $contractNo)
                 ->where('payment_against', 'thadda-purchase')

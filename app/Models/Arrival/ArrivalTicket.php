@@ -243,6 +243,50 @@ class ArrivalTicket extends Model
             ->where('sampling_type', 'initial')
             ->latestOfMany();
     }
+    public function lastInitialSampling()
+    {
+        return $this->hasOne(ArrivalSamplingRequest::class)
+            ->latestOfMany();
+    }
 
+
+    // In ArrivalTicket.php model
+
+    /**
+     * Get initial sampling request (latest)
+     */
+    public function initialSampling()
+    {
+        return $this->hasOne(ArrivalSamplingRequest::class, 'arrival_ticket_id', 'id')
+            ->where('sampling_type', 'initial')
+            ->whereIn('approved_status', ['approved', 'rejected'])
+            ->latest();
+    }
+
+    /**
+     * Get inner sampling request (latest)
+     */
+    public function innerSampling()
+    {
+        return $this->hasOne(ArrivalSamplingRequest::class, 'arrival_ticket_id', 'id')
+            ->where('sampling_type', 'inner')
+            ->whereIn('approved_status', ['approved', 'rejected'])
+            ->latest();
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'creator_id');
+    }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'creator_id');
+    }
+
+    public function ticketVerifiedBy()
+    {
+        return $this->belongsTo(User::class, 'ticket_verified_by');
+    }
 }
 

@@ -21,6 +21,14 @@ Route::resource('menu', MenuController::class);
 Route::post('/get-menu', [MenuController::class, 'getList'])->name('get.menu');
 
 
+Route::resource('users', UserController::class);
+Route::post('/get-users', [UserController::class, 'getTable'])->name('get.users');
+Route::get('/export-users', [UserController::class, 'exportToExcel'])->name('export-users');
+
+
+
+
+
 Route::resource('users-test', UserTestController::class);
 Route::post('/get-users-test', [UserTestController::class, 'getTable'])->name('get.users.test');
 Route::get('/export-users-test', [UserTestController::class, 'exportToExcel'])->name('export-users.test');

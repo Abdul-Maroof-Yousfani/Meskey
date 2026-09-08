@@ -52,8 +52,8 @@ class TicketController extends Controller
                         ->orWhere('bilty_no', 'like', $searchTerm);
                 });
             })
-            ->when($request->filled('unique_no'), function ($q) use ($request) {
-                $q->where('unique_no', 'like', '%' . $request->unique_no . '%');
+            ->when($request->filled('unique_no_filter'), function ($q) use ($request) {
+                $q->where('unique_no', 'like', '%' . $request->unique_no_filter . '%');
             })
             ->when($request->filled('product_id'), function ($q) use ($request) {
                 $q->where('product_id', $request->product_id);
@@ -164,6 +164,7 @@ class TicketController extends Controller
         $contracts = ArrivalPurchaseOrder::with(['product', 'supplier', 'saudaType'])
             ->where('company_location_id', $locationId)
             ->where("am_approval_status", "approved")
+            ->where("status", '!=', "completed")
             ->where(function ($q) {
                 $q->where('purchase_type', 'regular')
                     ->orWhere(function ($q2) {
