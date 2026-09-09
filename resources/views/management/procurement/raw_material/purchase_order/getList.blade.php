@@ -108,10 +108,12 @@
             <td>{{ $row->stockInTransitTickets->count() }}</td>
             <td>{{ $totalRejectedTrucks }}</td>
             <td>
-                @if ($row->status == 'completed')
-                    <span class="badge badge-success">Closed</span>
-                @else
+                @if (($row->status == 'completed' || $row->status == 'cancelled' || in_array($row->contract_status, ['close-contract-due-to-market-down', 'close-with-market-rate-penalty'])) && $row->contract_status !== 'reopen-contract-closed-by-mistake')
+                    <span class="badge badge-danger">Closed</span>
+                @elseif (in_array($row->status, ['draft', 'confirmed']) || $row->contract_status === 'reopen-contract-closed-by-mistake')
                     <span class="badge badge-warning">Pending</span>
+                @else
+                    <span class="badge badge-secondary">{{ ucfirst($row->status) }}</span>
                 @endif
             </td>
             <td>

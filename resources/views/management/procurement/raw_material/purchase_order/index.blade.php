@@ -71,8 +71,19 @@
                                                     </select>
                                                 </div>
                                             </div>
+                                            <div class="col-md-2">
+                                                <div class="form-group mb-0">
+                                                    <label>Contract Status:</label>
+                                                    <select name="contract_status_f" id="contract_status_f"
+                                                        class="form-control selectWithoutAjax">
+                                                        <option value="all" {{ request('contract_status_f') == 'all' ? 'selected' : '' }}>All Status</option>
+                                                        <option value="pending" {{ request('contract_status_f', 'pending') == 'pending' ? 'selected' : '' }}>Pending</option>
+                                                        <option value="closed" {{ request('contract_status_f') == 'closed' ? 'selected' : '' }}>Closed</option>
+                                                    </select>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="row justify-content-nd text">
+                                        <div class="row justify-content-nd text mt-2">
                                             <div class="col-md-2">
                                                 <label for="customers" class="form-label">Search</label>
                                                 <input type="hidden" name="page" value="{{ request('page', 1) }}">

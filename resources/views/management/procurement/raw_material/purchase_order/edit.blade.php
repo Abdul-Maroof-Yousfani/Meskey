@@ -418,16 +418,19 @@
              </div>
          </div>
          <div class="col-xs-12 col-sm-12 col-md-12">
-            <div class="form-group ">
-                <label>Contract Status:</label>
-                <select name="contract_status" id="contract_status" class="form-control select22">
-                    <option value="">Select Contract Status</option>
-                    <option @selected($arrivalPurchaseOrder->contract_status == 'close-contract-due-to-market-down') value="close-contract-due-to-market-down">Close Contract (due to market down)</option>
-                    <option @selected($arrivalPurchaseOrder->contract_status == 'continue-contract-due-to-high-market') value="continue-contract-due-to-high-market">Continue Contract (due to high market)</option>
-                    <option @selected($arrivalPurchaseOrder->contract_status == 'close-with-market-rate-penalty') value="close-with-market-rate-penalty">Close with market rate (Penalty)</option>
-                </select>
-            </div>
-        </div>
+             <div class="form-group ">
+                 <label>Contract Status:</label>
+                 <select name="contract_status" id="contract_status" class="form-control select22">
+                     <option value="">Select Contract Status</option>
+                     <option @selected($arrivalPurchaseOrder->contract_status == 'close-contract-due-to-market-down') value="close-contract-due-to-market-down">Close Contract (due to market down)</option>
+                     <option @selected($arrivalPurchaseOrder->contract_status == 'continue-contract-due-to-high-market') value="continue-contract-due-to-high-market">Continue Contract (due to high market)</option>
+                     <option @selected($arrivalPurchaseOrder->contract_status == 'close-with-market-rate-penalty') value="close-with-market-rate-penalty">Close with market rate (Penalty)</option>
+                     @if(($isClosed ?? false) || $arrivalPurchaseOrder->contract_status == 'reopen-contract-closed-by-mistake')
+                         <option @selected($arrivalPurchaseOrder->contract_status == 'reopen-contract-closed-by-mistake') value="reopen-contract-closed-by-mistake">Reopen Contract (Closed by mistake)</option>
+                     @endif
+                 </select>
+             </div>
+         </div>
             <div class="col-xs-12 col-sm-12 col-md-12">
             <div class="form-group ">
                  <div class="checkbox">
@@ -715,23 +718,99 @@
              $('#maxBags').val(maxBags);
          }
 
-         // Form validation
-         $('#ajaxSubmit').on('submit', function(e) {
-             if ($('#calculation_type').val() === 'quantity') {
-                 const minValue = parseInt($('#min_quantity_input').val()) || 0;
-                 const maxValue = parseInt($('#max_quantity_input').val()) || 0;
+          let previousContractStatus = '{{ $arrivalPurchaseOrder->contract_status ?? '' }}';
+          let isRevertingContractStatus = false;
 
-                 if (maxValue < minValue) {
-                     $('#max_quantity_input').addClass('is-invalid');
-                     $('#max_quantity_input').after(
-                         '<div class="invalid-feedback">Max quantity cannot be less than min quantity</div>'
-                     );
-                     e.preventDefault();
-                     return false;
-                 }
-             }
-             return true;
-         });
+          $('#contract_status').on('change', function() {
+              if (isRevertingContractStatus) {
+                  return;
+              }
+
+              let selectedStatus = $(this).val();
+
+              if (selectedStatus === 'reopen-contract-closed-by-mistake' || selectedStatus === 'reopen' || selectedStatus === 'open') {
+                  let calculationType = '{{ $arrivalPurchaseOrder->calculation_type }}';
+                  let balanceTrucks = parseFloat('{{ $balanceTrucks ?? 0 }}') || 0;
+                  let balanceQuantity = parseFloat('{{ $balanceQuantity ?? 0 }}') || 0;
+
+                  let canReopen = false;
+                  let errorMsg = '';
+
+                  if (calculationType === 'trucks') {
+                      if (balanceTrucks > 0) {
+                          canReopen = true;
+                      } else {
+                          errorMsg = 'Remaining balance trucks is 0. Contract cannot be reopened.';
+                      }
+                  } else {
+                      if (balanceQuantity > 0) {
+                          canReopen = true;
+                      } else {
+                          errorMsg = 'Remaining balance quantity is 0. Contract cannot be reopened.';
+                      }
+                  }
+
+                  if (!canReopen) {
+                      isRevertingContractStatus = true;
+                      $(this).val(previousContractStatus).trigger('change');
+                      isRevertingContractStatus = false;
+
+                      Swal.fire({
+                          icon: 'error',
+                          title: 'Cannot Reopen Contract',
+                          text: errorMsg,
+                          confirmButtonColor: '#d33',
+                          confirmButtonText: 'OK'
+                      });
+                      return false;
+                  }
+
+                  previousContractStatus = selectedStatus;
+              } else {
+                  previousContractStatus = selectedStatus;
+              }
+          });
+
+          // Form validation
+          $('#ajaxSubmit').on('submit', function(e) {
+              let contractStatusVal = $('#contract_status').val();
+              if (contractStatusVal === 'reopen-contract-closed-by-mistake' || contractStatusVal === 'reopen' || contractStatusVal === 'open') {
+                  let calculationType = '{{ $arrivalPurchaseOrder->calculation_type }}';
+                  let balanceTrucks = parseFloat('{{ $balanceTrucks ?? 0 }}') || 0;
+                  let balanceQuantity = parseFloat('{{ $balanceQuantity ?? 0 }}') || 0;
+
+                  let canReopen = calculationType === 'trucks' ? (balanceTrucks > 0) : (balanceQuantity > 0);
+
+                  if (!canReopen) {
+                      e.preventDefault();
+                      Swal.fire({
+                          icon: 'error',
+                          title: 'Cannot Reopen Contract',
+                          text: calculationType === 'trucks' 
+                              ? 'Remaining balance trucks is 0. Contract cannot be reopened.' 
+                              : 'Remaining balance quantity is 0. Contract cannot be reopened.',
+                          confirmButtonColor: '#d33',
+                          confirmButtonText: 'OK'
+                      });
+                      return false;
+                  }
+              }
+
+              if ($('#calculation_type').val() === 'quantity') {
+                  const minValue = parseInt($('#min_quantity_input').val()) || 0;
+                  const maxValue = parseInt($('#max_quantity_input').val()) || 0;
+
+                  if (maxValue < minValue) {
+                      $('#max_quantity_input').addClass('is-invalid');
+                      $('#max_quantity_input').after(
+                          '<div class="invalid-feedback">Max quantity cannot be less than min quantity</div>'
+                      );
+                      e.preventDefault();
+                      return false;
+                  }
+              }
+              return true;
+          });
 
          $(document).on('input', '#max_quantity_input', function() {
              $(this).removeClass('is-invalid');
