@@ -1171,6 +1171,9 @@
                                     onclick="loadPageContent('{{ route('bag-wise.index') }}')"
                                     data-toggle="dropdown">
                                     <i class="ft-arrow-right submenu-icon"></i><span data-i18n="Basic">Bag Arrival Report</span>
+                                </a>
+                            </li>
+                            @endcanAccess
                             @canAccess('arrival-station-wise-qc-analysis-report')
                             <li data-menu="">
                                 <a class="dropdown-item d-flex align-items-center"
