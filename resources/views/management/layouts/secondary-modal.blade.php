@@ -312,5 +312,3 @@
             $("#modal2").hide();
         });
     </script>
-
-    @yield('script')
