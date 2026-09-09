@@ -315,6 +315,4 @@
     $('body').on('click', '[data-close="modeel"]', function () {
         $("#modal2").hide();
     });
-</script>
-
-@yield('script')
+</script>

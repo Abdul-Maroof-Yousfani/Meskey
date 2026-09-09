@@ -190,7 +190,6 @@ class StationWiseQCAnalysisReportController extends Controller
         //         'slab_averages' => $slabAverages,
         //     ];
         // }
-
-        return view('management.reports.arrival.station-wise-qc-analysis.getStationWiseQCAnalysis', compact('stationData', 'product_slab_types'));
+        return view('management.reports.arrival.station-wise-qc-analysis.getStationWiseQCAnalysis', compact('stationData', 'product_slab_types', 'overallSlabAverages'));
     }
 }
