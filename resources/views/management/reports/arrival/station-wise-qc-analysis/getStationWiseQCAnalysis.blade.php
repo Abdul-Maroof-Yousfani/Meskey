@@ -45,12 +45,12 @@
 
         @if (count($stationData) > 0)
             <tr class="font-weight-bold bg-light">
-                <td colspan="2" class="text-right"><strong>Total / Avg:</strong></td>
+                <td colspan="2" class="text-right"><strong>Main Total:</strong></td>
                 <td><strong>{{ number_format($grandTotalTrucks) }}</strong></td>
                 <td><strong>{{ number_format($grandTotalKg, 0, '.', '') }}</strong></td>
                 @foreach ($product_slab_types as $slab)
                     @php
-                        $overallAvg = count($slabTotals[$slab->id]) > 0 ? (array_sum($slabTotals[$slab->id]) / count($slabTotals[$slab->id])) : 0;
+                        $overallAvg = $overallSlabAverages[$slab->id] ?? 0;
                     @endphp
                     <td>
                         <strong>{{ $overallAvg > 0 ? (floor($overallAvg) == $overallAvg ? (int)$overallAvg : number_format($overallAvg, 1)) : 0 }}</strong>
