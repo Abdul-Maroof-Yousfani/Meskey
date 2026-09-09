@@ -15,6 +15,7 @@
             $grandTotalKg = 0;
             $slabTotals = [];
             foreach ($product_slab_types as $slab) {
+                // dd($slab, $product_slab_types);
                 $slabTotals[$slab->id] = [];
             }
         @endphp
@@ -32,12 +33,13 @@
                 @foreach ($product_slab_types as $slab)
                     @php
                         $val = $row['slab_averages'][$slab->id] ?? 0;
+                        $slabSymbol = $slab->qc_symbol ?? '';
                         if ($val > 0) {
                             $slabTotals[$slab->id][] = $val;
                         }
                     @endphp
                     <td>
-                        {{ $val > 0 ? (floor($val) == $val ? (int)$val : number_format($val, 1)) : 0 }}
+                        {{ $val > 0 ? (floor($val) == $val ? (int)$val : number_format($val, 1)) . $slabSymbol : 0 }}
                     </td>
                 @endforeach
             </tr>
@@ -51,9 +53,10 @@
                 @foreach ($product_slab_types as $slab)
                     @php
                         $overallAvg = $overallSlabAverages[$slab->id] ?? 0;
+                        $slabSymbol = $slab->qc_symbol ?? '';
                     @endphp
                     <td>
-                        <strong>{{ $overallAvg > 0 ? (floor($overallAvg) == $overallAvg ? (int)$overallAvg : number_format($overallAvg, 1)) : 0 }}</strong>
+                        <strong>{{ $overallAvg > 0 ? (floor($overallAvg) == $overallAvg ? (int)$overallAvg : number_format($overallAvg, 1)) . $slabSymbol : 0 }}</strong>
                     </td>
                 @endforeach
             </tr>

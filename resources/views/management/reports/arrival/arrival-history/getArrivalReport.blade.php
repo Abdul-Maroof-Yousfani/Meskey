@@ -51,7 +51,21 @@
     @endslot
 
     @slot('body')
-    @foreach ($tickets as $row)
+        @php
+            $totalLoadingWeight = 0;
+            $totalFirstWeight = 0;
+            $totalSecondWeight = 0;
+            $totalNetWeight = 0;
+            $totalWeightDiff = 0;
+            $totalBags = 0;
+            $slabInitialTotals = [];
+            $slabInnerTotals = [];
+            foreach ($product_slab_types as $slab) {
+                $slabInitialTotals[$slab->id] = [];
+                $slabInnerTotals[$slab->id] = [];
+            }
+        @endphp
+        @foreach ($tickets as $row)
 
 
         @php
@@ -117,8 +131,8 @@
             //     $tabaar = number_format($initialRequest->applied_deduction, 2) . '%';
             // }
 
-                $tabaar = formatDeductionsAsString(getTicketDeductions($row));
-    $tabaar = $tabaar == '' ? 'N/A' : $tabaar;
+            $tabaar = formatDeductionsAsString(getTicketDeductions($row));
+            $tabaar = $tabaar == '' ? 'N/A' : $tabaar;
 
             // DEBUG - Check if inner exists
             // if($innerRequest) {
@@ -198,6 +212,22 @@
             <!-- Station -->
             <td>{{ $row->station_name ?? 'N/A' }}</td>
 
+            @php
+                $loadingWeight = (float) ($row->net_weight ?? 0);
+                $firstWeight = (float) ($row->firstWeighbridge->weight ?? ($row->first_weight ?? 0));
+                $secondWeight = (float) ($row->secondWeighbridge->weight ?? ($row->second_weight ?? 0));
+                $netWeight = (float) ($row->arrived_net_weight ?? 0);
+                $wtDiff = ($row->arrived_net_weight ?? 0) - ($row->net_weight ?? 0);
+                $bags = (int) ($row->approvals?->total_bags ?? 0);
+
+                $totalLoadingWeight += $loadingWeight;
+                $totalFirstWeight += $firstWeight;
+                $totalSecondWeight += $secondWeight;
+                $totalNetWeight += $netWeight;
+                $totalWeightDiff += $wtDiff;
+                $totalBags += $bags;
+            @endphp
+
             <!-- Bilty # -->
             <td>{{ $row->bilty_no ?? 'N/A' }}</td>
 
@@ -253,6 +283,13 @@
                     $initialValue = $deductionValueSlabinitial[$slab->id]['checklist_value'] ?? 0;
                     $innerValue = $deductionValueSlabInner[$slab->id]['checklist_value'] ?? 0;
                     $slabSymbol = $slab->qc_symbol ?? '';
+
+                    if (is_numeric($initialValue) && (float)$initialValue > 0) {
+                        $slabInitialTotals[$slab->id][] = (float)$initialValue;
+                    }
+                    if (is_numeric($innerValue) && (float)$innerValue > 0) {
+                        $slabInnerTotals[$slab->id][] = (float)$innerValue;
+                    }
                 @endphp
 
                 <!-- INITIAL Column -->
@@ -326,5 +363,42 @@
             </td>
         </tr>
     @endforeach
+
+    @if (count($tickets) > 0)
+        <tr class="font-weight-bold bg-light">
+            <td></td>
+            <td></td>
+            <td colspan="11" class="text-right"><strong>Total:</strong></td>
+            <td><strong>{{ number_format($totalLoadingWeight, 0, '.', '') }}</strong></td>
+            <td><strong>{{ number_format($totalFirstWeight, 0, '.', '') }}</strong></td>
+            <td><strong>{{ number_format($totalSecondWeight, 0, '.', '') }}</strong></td>
+            <td><strong>{{ number_format($totalNetWeight, 0, '.', '') }}</strong></td>
+            <td><strong>{{ number_format($totalWeightDiff, 0, '.', '') }}</strong></td>
+            <td><strong>{{ $totalBags > 0 ? number_format($totalNetWeight / $totalBags, 2) : '0' }}</strong></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td><strong>{{ number_format($totalBags) }}</strong></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            @foreach ($product_slab_types as $slab)
+                @php
+                    $initAvg = count($slabInitialTotals[$slab->id]) > 0 ? (array_sum($slabInitialTotals[$slab->id]) / count($slabInitialTotals[$slab->id])) : 0;
+                    $innerAvg = count($slabInnerTotals[$slab->id]) > 0 ? (array_sum($slabInnerTotals[$slab->id]) / count($slabInnerTotals[$slab->id])) : 0;
+                    $slabSymbol = $slab->qc_symbol ?? '';
+                @endphp
+                <td><strong>{{ $initAvg > 0 ? (floor($initAvg) == $initAvg ? (int)$initAvg : number_format($initAvg, 1)) . $slabSymbol : 0 }}</strong></td>
+                <td><strong>{{ $innerAvg > 0 ? (floor($innerAvg) == $innerAvg ? (int)$innerAvg : number_format($innerAvg, 1)) . $slabSymbol : 0 }}</strong></td>
+            @endforeach
+            @foreach ($arrival_compulsory_qc_params as $compulsory_slab_type)
+                <td></td>
+            @endforeach
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+    @endif
     @endslot
 </x-sticky-table>

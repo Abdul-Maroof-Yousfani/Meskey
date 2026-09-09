@@ -12,11 +12,12 @@
                     </h2>
                 </div>
                 <div class="col-md-6 d-flex align-items-end justify-content-end">
-                                                <div class="form-group mb-0">
-                                                    <button class="btn btn-secondary" onclick="exportToExcel('exportableTable','ArrivalReport')"><i class="fa fa-file-excel-o mr-2"></i> Export to Excel</button>
+                    <div class="form-group mb-0">
+                        <button class="btn btn-secondary" onclick="exportToExcel('exportableTable','ArrivalReport')"><i
+                                class="fa fa-file-excel-o mr-2"></i> Export to Excel</button>
 
-                                                </div>
-                                            </div>
+                    </div>
+                </div>
             </div>
             <div class="row">
                 <div class="col-12">
@@ -26,20 +27,22 @@
                                 <div class="row">
                                     <div class="col-md-12 my-1">
                                         <div class="row justify-content-nd text">
-                                        <div class="col-md-2">
-                                            <div class="form-group mb-0">
-                                                <label>Location:</label>
-                                                <select name="company_location_id[]" id="cmpany_location" {{ count($locations) == 1 ? 'disabled' : 'multiple' }} class="form-control selectWithoutAjax" >
-                                                    <option value="">Location</option>
-                                                    @foreach ($locations as $location)
-                                                        <option value="{{ $location->id }}"
-                                                            {{ (is_array(request('company_location_id')) && in_array($location->id, request('company_location_id'))) || count($locations) == 1 ? 'selected' : '' }}>
-                                                            {{ $location->name }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
+                                            <div class="col-md-2">
+                                                <div class="form-group mb-0">
+                                                    <label>Location:</label>
+                                                    <select name="company_location_id[]" id="cmpany_location"
+                                                        {{ count($locations) == 1 ? 'disabled' : 'multiple' }}
+                                                        class="form-control selectWithoutAjax">
+                                                        <option value="">Location</option>
+                                                        @foreach ($locations as $location)
+                                                            <option value="{{ $location->id }}"
+                                                                {{ (is_array(request('company_location_id')) && in_array($location->id, request('company_location_id'))) || count($locations) == 1 ? 'selected' : '' }}>
+                                                                {{ $location->name }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
                                             </div>
-                                        </div>
                                             <div class="col-md-2">
                                                 <div class="form-group mb-0">
                                                     <label>Date:</label>
@@ -56,6 +59,21 @@
                                                         value="{{ request('arrival_ticket_no', '') }}">
                                                 </div>
                                             </div>
+                                            <div class="col-md-2">
+                                                <div class="form-group mb-0">
+                                                    <label>Station:</label>
+                                                    <select name="station_id" id="station_id"
+                                                        class="form-control selectWithoutAjax">
+                                                        <option value="">Select Station</option>
+                                                        @foreach ($stations as $st)
+                                                            <option value="{{ $st->id }}"
+                                                                {{ request('station_id') == $st->id ? 'selected' : '' }}>
+                                                                {{ $st->name }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                            </div>
                                             {{-- <div class="col-md-2">
                                                 <div class="form-group mb-0">
                                                     <label>GRN No:</label>
@@ -69,7 +87,7 @@
                                             <div class="col-md-2">
                                                 <div class="form-group mb-0">
                                                     <label>Commodity:</label>
-                                                   <select name="commodity_id[]" id="commodity_id" multiple
+                                                    <select name="commodity_id[]" id="commodity_id" multiple
                                                         class="form-control selectWithoutAjax">
                                                         <option value="">Select Commodity</option>
                                                         @foreach ($commodities as $commodity)
@@ -130,7 +148,7 @@
                                                         placeholder="Bilty No" value="{{ request('bilty_no', '') }}">
                                                 </div>
                                             </div>
-                                           
+
                                         </div>
                                         <div class="row justify-content-nd text mt-2">
                                             <input type="hidden" name="page" value="{{ request('page', 1) }}">
@@ -139,17 +157,17 @@
                                     </div>
                                 </div>
                             </form>
-                          
+
                         </div>
                         <div class="card-content">
                             <div class="card-body table-responsive" id="filteredData">
-                          
+
                                 <table class="table m-0" id="exportableTable">
                                     <thead>
                                         <tr>
                                             <th>Ticket #</th>
                                             <th>Status</th>
-                                        
+
                                             <th>Miller</th>
                                             <th>Broker</th>
                                             <th>A/c Of</th>
@@ -172,11 +190,11 @@
                                             <th>Bag Packing</th>
                                             <th>No. Bag</th>
                                             <!-- @foreach (getTableData('product_slab_types') as $slab)
-                                                <th>{{ $slab->name }}</th>
-                                            @endforeach
-                                            @foreach (getTableData('arrival_compulsory_qc_params') as $compulsory_slab_type)
-                                                <th>{{ $compulsory_slab_type->name }}</th>
-                                            @endforeach -->
+    <th>{{ $slab->name }}</th>
+    @endforeach
+                                                @foreach (getTableData('arrival_compulsory_qc_params') as $compulsory_slab_type)
+    <th>{{ $compulsory_slab_type->name }}</th>
+    @endforeach -->
                                             <th>Warehouse</th>
                                             <th>Gala</th>
                                             {{-- <th>Tabaar Remarks</th> --}}

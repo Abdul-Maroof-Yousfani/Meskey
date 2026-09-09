@@ -10,6 +10,7 @@ use App\Models\Master\CompanyLocation;
 use App\Models\Master\Miller;
 use App\Models\Master\ProductSlabType;
 use App\Models\Product;
+use App\Models\Master\Station;
 use App\Models\Arrival\ArrivalTicket;
 use App\Models\Master\Account\Transaction;
 use DB;
@@ -22,12 +23,13 @@ class ArrivalReportController extends Controller
 
         $commodities = Product::all();
         $millers = Miller::all();
+        $stations = Station::all();
         $locations = CompanyLocation::when(auth()->user()->user_type != 'super-admin', function ($q) {
             return $q->whereIn('id', getUserCurrentCompanyLocations());
         })->get();
 
 
-        return view('management.reports.arrival.arrival-history.index', compact('commodities', 'millers', 'locations'));
+        return view('management.reports.arrival.arrival-history.index', compact('commodities', 'millers', 'locations', 'stations'));
     }
 
     public function getArrivalReport(Request $request)
@@ -84,6 +86,9 @@ class ArrivalReportController extends Controller
             //  $query->where('arrival_tickets.freight_status', 'completed')
             //         ->orWhere('arrival_tickets.first_qc_status', 'rejected');
             //   })
+            ->when($request->filled('station_id'), function ($q) use ($request) {
+                return $q->where('arrival_tickets.station_id', $request->station_id);
+            })
             ->when($request->filled('grn_no'), function ($q) use ($request) {
                 return $q->where('grn_numbers.unique_no', 'like', '%' . $request->grn_no . '%');
             })

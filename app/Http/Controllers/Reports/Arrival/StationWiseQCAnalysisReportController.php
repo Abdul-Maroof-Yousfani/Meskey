@@ -93,50 +93,39 @@ class StationWiseQCAnalysisReportController extends Controller
         })->sortKeys();
 
         $stationData = [];
-        $overallSlabPieceQty = [];
-        $overallSlabQty = [];
+        $overallSlabValues = [];
         foreach ($product_slab_types as $slab) {
-            $overallSlabPieceQty[$slab->id] = 0;
-            $overallSlabQty[$slab->id] = 0;
+            $overallSlabValues[$slab->id] = [];
         }
 
         foreach ($grouped as $stationName => $stationTickets) {
             $totalTrucks = $stationTickets->count();
             $kgReceived = $stationTickets->sum(function ($t) {
-                return (float) ($t->arrived_net_weight ?: ($t->net_weight ?: (($t->first_weight && $t->second_weight) ? ($t->first_weight - $t->second_weight) : ($t->loading_weight ?: 0))));
+                return (float) ($t->arrived_net_weight ?: 0);
             });
 
-            // Calculate for each slab type across this station's tickets:
-            // Piece Quantity = Slab Checklist Value * Ticket Quantity
-            // Station Slab Value = Total Piece Quantity / Total Quantity
+            // Calculate average for each slab type across this station's tickets
             $slabAverages = [];
             foreach ($product_slab_types as $slab) {
-                $totalPieceQty = 0;
-                $totalQty = 0;
+                $values = [];
 
                 foreach ($stationTickets as $t) {
-                    $qty = (float) ($t->arrived_net_weight ?: ($t->net_weight ?: (($t->first_weight && $t->second_weight) ? ($t->first_weight - $t->second_weight) : ($t->loading_weight ?: ($t->bags ?: 0)))));
-
-                    if ($t->lastInitialSampling && $t->lastInitialSampling->slabResults) {
-                        foreach ($t->lastInitialSampling->slabResults as $res) {
+                    $sampling = $t->lastInitialSampling;
+                    if ($sampling && $sampling->slabResults) {
+                        foreach ($sampling->slabResults as $res) {
                             if ($res->product_slab_type_id == $slab->id && $res->checklist_value !== null && $res->checklist_value !== '') {
                                 $slabValue = (float) $res->checklist_value;
-                                $effectiveQty = $qty > 0 ? $qty : 1;
-
-                                $pieceQuantity = $slabValue * $effectiveQty;
-                                $totalPieceQty += $pieceQuantity;
-                                $totalQty += $effectiveQty;
-
-                                $overallSlabPieceQty[$slab->id] += $pieceQuantity;
-                                $overallSlabQty[$slab->id] += $effectiveQty;
+                                if ($slabValue > 0) {
+                                    $values[] = $slabValue;
+                                    $overallSlabValues[$slab->id][] = $slabValue;
+                                }
                             }
                         }
                     }
                 }
 
-                // Station slab value = Total Piece Qty / Total Qty
-                $stationSlabValue = $totalQty > 0 ? ($totalPieceQty / $totalQty) : 0;
-                $slabAverages[$slab->id] = round($stationSlabValue, 1);
+                $avg = count($values) > 0 ? (array_sum($values) / count($values)) : 0;
+                $slabAverages[$slab->id] = $avg;
             }
 
             $stationData[] = [
@@ -147,49 +136,14 @@ class StationWiseQCAnalysisReportController extends Controller
             ];
         }
 
-        // Main Totals: Overall Piece Quantity / Overall Quantity
+        // Main Totals: Simple average across all tickets
         $overallSlabAverages = [];
         foreach ($product_slab_types as $slab) {
-            $overallSlabAverages[$slab->id] = $overallSlabQty[$slab->id] > 0
-                ? round($overallSlabPieceQty[$slab->id] / $overallSlabQty[$slab->id], 1)
+            $overallSlabAverages[$slab->id] = count($overallSlabValues[$slab->id]) > 0
+                ? (array_sum($overallSlabValues[$slab->id]) / count($overallSlabValues[$slab->id]))
                 : 0;
         }
 
-        // $grouped = $tickets->groupBy(function ($ticket) {
-        //     return $ticket->station?->name ?? ($ticket->station_name ?? 'Unknown Station');
-        // })->sortKeys();
-
-        // $stationData = [];
-        // foreach ($grouped as $stationName => $stationTickets) {
-        //     $totalTrucks = $stationTickets->count();
-        //     $kgReceived = $stationTickets->sum(function ($t) {
-        //         return (float) ($t->arrived_net_weight ?: ($t->net_weight ?: (($t->first_weight && $t->second_weight) ? ($t->first_weight - $t->second_weight) : 0)));
-        //     });
-
-        //     // Calculate average for each slab type
-        //     $slabAverages = [];
-        //     foreach ($product_slab_types as $slab) {
-        //         $values = [];
-        //         foreach ($stationTickets as $t) {
-        //             if ($t->lastInitialSampling && $t->lastInitialSampling->slabResults) {
-        //                 foreach ($t->lastInitialSampling->slabResults as $res) {
-        //                     if ($res->product_slab_type_id == $slab->id && $res->checklist_value !== null && $res->checklist_value !== '') {
-        //                         $values[] = (float) $res->checklist_value;
-        //                     }
-        //                 }
-        //             }
-        //         }
-        //         $avg = count($values) > 0 ? (array_sum($values) / count($values)) : 0;
-        //         $slabAverages[$slab->id] = round($avg, 1);
-        //     }
-
-        //     $stationData[] = [
-        //         'station' => $stationName,
-        //         'total_trucks' => $totalTrucks,
-        //         'kg_received' => $kgReceived,
-        //         'slab_averages' => $slabAverages,
-        //     ];
-        // }
         return view('management.reports.arrival.station-wise-qc-analysis.getStationWiseQCAnalysis', compact('stationData', 'product_slab_types', 'overallSlabAverages'));
     }
 }
