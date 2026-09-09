@@ -48,19 +48,48 @@ class JournalVoucherController extends Controller
      */
     public function create()
     {
-        // $data['accounts'] = Account::where('is_operational', 'yes')
-        //     ->whereHas('parent', function ($q) {
-        //         $q->where('hierarchy_path', '2')
-        //             ->orWhereHas('parent', function ($q2) {
-        //                 $q2->where('hierarchy_path', '2')
-        //                     ->orWhereHas('parent', function ($q3) {
-        //                         $q3->where('hierarchy_path', '2');
-        //                     });
-        //             });
-        //     })
-        //     ->get();
-
         $data["accounts"] = Account::where("is_operational", "yes")->get();
+        $data["receiptVouchers"] = collect([]);
+        $data["salesOrders"] = collect([]);
+
+        return view('management.finance.journal_voucher.create', $data);
+    }
+
+    /**
+     * Fetch account related data (RVs and SOs) for a given account.
+     */
+    public function fetchAccountRelatedData($accountId, $excludeJvId = null)
+    {
+        if (!$accountId) {
+            return [
+                'customer_id' => null,
+                'customer_name' => null,
+                'receipt_vouchers' => collect([]),
+                'sales_orders' => collect([])
+            ];
+        }
+
+        $customer = \App\Models\Master\Customer::where('account_id', $accountId)->first();
+        if (!$customer) {
+            $account = Account::find($accountId);
+            if ($account && $account->table_name === 'customers') {
+                if ($account->model_id) {
+                    $customer = \App\Models\Master\Customer::find($account->model_id);
+                }
+                if (!$customer) {
+                    $customer = \App\Models\Master\Customer::where('name', $account->name)->first();
+                }
+            }
+        }
+
+        if (!$customer) {
+            return [
+                'customer_id' => null,
+                'customer_name' => null,
+                'receipt_vouchers' => collect([]),
+                'sales_orders' => collect([])
+            ];
+        }
 
         $doConsumedSum = DB::table('delivery_order_receipt_voucher')
             ->select('receipt_voucher_id', DB::raw('SUM(amount) as consumed_amount'))
@@ -70,32 +99,148 @@ class JournalVoucherController extends Controller
             ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
             ->whereNull('journal_vouchers.deleted_at')
             ->whereNull('journal_voucher_details.deleted_at')
+            ->when($excludeJvId, function ($q) use ($excludeJvId) {
+                $q->where('journal_vouchers.id', '!=', $excludeJvId);
+            })
             ->select('receipt_voucher_id', DB::raw('SUM(debit_amount) as consumed_amount'))
             ->whereNotNull('receipt_voucher_id')
             ->groupBy('receipt_voucher_id');
 
-        $data["receiptVouchers"] = ReceiptVoucher::leftJoinSub($doConsumedSum, 'do_consumption', function ($join) {
+        $receiptVouchers = ReceiptVoucher::leftJoinSub($doConsumedSum, 'do_consumption', function ($join) {
                 $join->on('receipt_vouchers.id', '=', 'do_consumption.receipt_voucher_id');
             })
             ->leftJoinSub($jvConsumedSum, 'jv_consumption', function ($join) {
                 $join->on('receipt_vouchers.id', '=', 'jv_consumption.receipt_voucher_id');
             })
+            ->where('receipt_vouchers.customer_id', $customer->id)
+            ->whereNull('receipt_vouchers.deleted_at')
             ->select('receipt_vouchers.*', 
                 DB::raw('COALESCE(do_consumption.consumed_amount, 0) as do_consumed'),
                 DB::raw('COALESCE(jv_consumption.consumed_amount, 0) as jv_consumed')
             )
             ->get()
             ->map(function($rv) {
-                $rv->remaining_amount = $rv->total_amount - ($rv->do_consumed + $rv->jv_consumed);
-                return $rv;
+                $remaining = round($rv->total_amount - ($rv->do_consumed + $rv->jv_consumed), 2);
+                return [
+                    'id' => $rv->id,
+                    'unique_no' => $rv->unique_no,
+                    'total_amount' => (float) $rv->total_amount,
+                    'remaining_amount' => $remaining,
+                    'formatted_remaining' => number_format($remaining, 2),
+                    'text' => $rv->unique_no . ' (Rem: ' . number_format($remaining, 2) . ')'
+                ];
             })
             ->filter(function($rv) {
-                return $rv->remaining_amount > 0.01;
+                return $rv['remaining_amount'] > 0.01;
+            })
+            ->values();
+
+        $salesOrders = SalesOrder::where('customer_id', $customer->id)
+            ->select('id', 'reference_no')
+            ->latest('id')
+            ->get()
+            ->map(function($so) {
+                return [
+                    'id' => $so->id,
+                    'reference_no' => $so->reference_no,
+                    'text' => $so->reference_no
+                ];
             });
 
-        $data["salesOrders"] = SalesOrder::all();
+        return [
+            'customer_id' => $customer->id,
+            'customer_name' => $customer->name,
+            'receipt_vouchers' => $receiptVouchers,
+            'sales_orders' => $salesOrders
+        ];
+    }
 
-        return view('management.finance.journal_voucher.create', $data);
+    /**
+     * AJAX endpoint to get account related RVs and SOs.
+     */
+    public function getAccountRelatedData(Request $request)
+    {
+        $data = $this->fetchAccountRelatedData($request->acc_id, $request->jv_id);
+        return response()->json(array_merge(['success' => true], $data));
+    }
+
+    /**
+     * Validate Journal Entries for account ownership and RV balance limits.
+     */
+    protected function validateJournalEntries(Request $request, $excludeJvId = null)
+    {
+        $rvTotalUsage = [];
+        foreach ($request->details as $index => $detail) {
+            $debitAmount = isset($detail['debit_amount']) ? (float) $detail['debit_amount'] : 0;
+            $creditAmount = isset($detail['credit_amount']) ? (float) $detail['credit_amount'] : 0;
+            $lineAmount = max($debitAmount, $creditAmount);
+
+            if (!empty($detail['receipt_voucher_id'])) {
+                $rvId = $detail['receipt_voucher_id'];
+                $rv = ReceiptVoucher::find($rvId);
+                if (!$rv) {
+                    return "Line " . ($index + 1) . ": Receipt Voucher was not found.";
+                }
+
+                $customer = \App\Models\Master\Customer::where('account_id', $detail['acc_id'])->first();
+                if (!$customer) {
+                    $account = Account::find($detail['acc_id']);
+                    if ($account && $account->table_name === 'customers') {
+                        if ($account->model_id) $customer = \App\Models\Master\Customer::find($account->model_id);
+                        if (!$customer) $customer = \App\Models\Master\Customer::where('name', $account->name)->first();
+                    }
+                }
+                if (!$customer || $rv->customer_id != $customer->id) {
+                    return "Line " . ($index + 1) . ": Receipt Voucher {$rv->unique_no} does not belong to the selected account.";
+                }
+
+                $rvTotalUsage[$rvId] = ($rvTotalUsage[$rvId] ?? 0) + $lineAmount;
+            }
+
+            if (!empty($detail['sales_order_id'])) {
+                $soId = $detail['sales_order_id'];
+                $so = SalesOrder::find($soId);
+                if (!$so) {
+                    return "Line " . ($index + 1) . ": Sales Order was not found.";
+                }
+
+                $customer = \App\Models\Master\Customer::where('account_id', $detail['acc_id'])->first();
+                if (!$customer) {
+                    $account = Account::find($detail['acc_id']);
+                    if ($account && $account->table_name === 'customers') {
+                        if ($account->model_id) $customer = \App\Models\Master\Customer::find($account->model_id);
+                        if (!$customer) $customer = \App\Models\Master\Customer::where('name', $account->name)->first();
+                    }
+                }
+                if (!$customer || $so->customer_id != $customer->id) {
+                    return "Line " . ($index + 1) . ": Sales Order {$so->reference_no} does not belong to the selected account.";
+                }
+            }
+        }
+
+        foreach ($rvTotalUsage as $rvId => $totalEntered) {
+            $rv = ReceiptVoucher::find($rvId);
+            $doConsumed = DB::table('delivery_order_receipt_voucher')
+                ->where('receipt_voucher_id', $rvId)
+                ->sum('amount');
+
+            $jvConsumed = DB::table('journal_voucher_details')
+                ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
+                ->whereNull('journal_vouchers.deleted_at')
+                ->whereNull('journal_voucher_details.deleted_at')
+                ->when($excludeJvId, function ($q) use ($excludeJvId) {
+                    $q->where('journal_vouchers.id', '!=', $excludeJvId);
+                })
+                ->where('receipt_voucher_id', $rvId)
+                ->sum('debit_amount');
+
+            $remainingAmount = round($rv->total_amount - ($doConsumed + $jvConsumed), 2);
+            if (round($totalEntered, 2) > round($remainingAmount + 0.01, 2)) {
+                return "The entered amount (" . number_format($totalEntered, 2) . ") for Receipt Voucher {$rv->unique_no} exceeds its remaining balance of " . number_format($remainingAmount, 2) . ".";
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -167,6 +312,11 @@ class JournalVoucherController extends Controller
             return response()->json([
                 'error' => 'Total debits must equal total credits. Debits: ' . number_format($totalDebits, 2) . ', Credits: ' . number_format($totalCredits, 2)
             ], 422);
+        }
+
+        $validationError = $this->validateJournalEntries($request);
+        if ($validationError) {
+            return response()->json(['error' => $validationError], 422);
         }
 
         DB::transaction(function () use ($request) {
@@ -278,42 +428,51 @@ class JournalVoucherController extends Controller
                 ->with('error', 'Cannot edit a journal voucher that has been rejected.');
         }
 
-        $doConsumedSum = DB::table('delivery_order_receipt_voucher')
-            ->select('receipt_voucher_id', DB::raw('SUM(amount) as consumed_amount'))
-            ->groupBy('receipt_voucher_id');
+        $accounts = Account::where("is_operational", "yes")->get();
 
-        $jvConsumedSum = DB::table('journal_voucher_details')
-            ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
-            ->whereNull('journal_vouchers.deleted_at')
-            ->whereNull('journal_voucher_details.deleted_at')
-            ->select('receipt_voucher_id', DB::raw('SUM(debit_amount) as consumed_amount'))
-            ->whereNotNull('receipt_voucher_id')
-            ->groupBy('receipt_voucher_id');
+        $rowRvs = [];
+        $rowSos = [];
+        foreach ($journalVoucher->journalVoucherDetails as $index => $detail) {
+            $related = $this->fetchAccountRelatedData($detail->acc_id, $id);
+            $rowRvs[$index] = collect($related['receipt_vouchers']);
+            $rowSos[$index] = collect($related['sales_orders']);
 
-        $receiptVouchers = ReceiptVoucher::leftJoinSub($doConsumedSum, 'do_consumption', function ($join) {
-                $join->on('receipt_vouchers.id', '=', 'do_consumption.receipt_voucher_id');
-            })
-            ->leftJoinSub($jvConsumedSum, 'jv_consumption', function ($join) {
-                $join->on('receipt_vouchers.id', '=', 'jv_consumption.receipt_voucher_id');
-            })
-            ->select('receipt_vouchers.*', 
-                DB::raw('COALESCE(do_consumption.consumed_amount, 0) as do_consumed'),
-                DB::raw('COALESCE(jv_consumption.consumed_amount, 0) as jv_consumed')
-            )
-            ->get()
-            ->map(function($rv) {
-                $rv->remaining_amount = $rv->total_amount - ($rv->do_consumed + $rv->jv_consumed);
-                return $rv;
-            })
-            ->filter(function($rv) {
-                return $rv->remaining_amount > 0.01;
-            });
+            // Ensure current selected RV is present even if remaining is 0 or consumed
+            if ($detail->receipt_voucher_id && !$rowRvs[$index]->contains('id', $detail->receipt_voucher_id)) {
+                $currRv = $detail->receiptVoucher;
+                if ($currRv) {
+                    $currAmount = (float) max($detail->debit_amount, $detail->credit_amount);
+                    $rowRvs[$index]->prepend([
+                        'id' => $currRv->id,
+                        'unique_no' => $currRv->unique_no,
+                        'total_amount' => (float) $currRv->total_amount,
+                        'remaining_amount' => $currAmount,
+                        'formatted_remaining' => number_format($currAmount, 2),
+                        'text' => $currRv->unique_no . ' (Current: ' . number_format($currAmount, 2) . ')'
+                    ]);
+                }
+            }
+
+            // Ensure current selected SO is present
+            if ($detail->sales_order_id && !$rowSos[$index]->contains('id', $detail->sales_order_id)) {
+                $currSo = $detail->salesOrder;
+                if ($currSo) {
+                    $rowSos[$index]->prepend([
+                        'id' => $currSo->id,
+                        'reference_no' => $currSo->reference_no,
+                        'text' => $currSo->reference_no
+                    ]);
+                }
+            }
+        }
 
         $data = [
             'journalVoucher' => $journalVoucher,
-            'accounts' => Account::where("is_operational", "yes")->get(),
-            'receiptVouchers' => $receiptVouchers,
-            'salesOrders' => SalesOrder::all()
+            'accounts' => $accounts,
+            'rowRvs' => $rowRvs,
+            'rowSos' => $rowSos,
+            'receiptVouchers' => collect([]),
+            'salesOrders' => collect([])
         ];
 
         return view('management.finance.journal_voucher.edit', $data);
@@ -373,6 +532,11 @@ class JournalVoucherController extends Controller
             return response()->json([
                 'error' => 'Total debits must equal total credits. Debits: ' . number_format($totalDebits, 2) . ', Credits: ' . number_format($totalCredits, 2)
             ], 422);
+        }
+
+        $validationError = $this->validateJournalEntries($request, $journalVoucher->id);
+        if ($validationError) {
+            return response()->json(['error' => $validationError], 422);
         }
 
         DB::transaction(function () use ($request, $journalVoucher) {

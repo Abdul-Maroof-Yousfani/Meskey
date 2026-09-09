@@ -27,6 +27,43 @@ class ApprovalController extends Controller
         }
 
         $record = $modelClass::findOrFail($id);
+
+        $statusCol = $approvalModule->approval_column ?? 'am_approval_status';
+        $currentStatus = strtolower($record->$statusCol ?? '');
+
+        if ($currentStatus === 'reverted') {
+            $actionVerb = match($reqType) {
+                'approve' => 'approved',
+                'reject' => 'rejected',
+                'revert' => 'reverted',
+                default => 'processed'
+            };
+            return response()->json([
+                'error' => "This record has been reverted and cannot be {$actionVerb}. It must be updated and resubmitted to pending first.",
+                'message' => "This record has been reverted and cannot be {$actionVerb}. It must be updated and resubmitted to pending first."
+            ], 422);
+        }
+
+        if (in_array($currentStatus, ['approved', 'rejected'])) {
+            return response()->json([
+                'error' => "This record has already been {$currentStatus} and its status cannot be changed.",
+                'message' => "This record has already been {$currentStatus} and its status cannot be changed."
+            ], 422);
+        }
+
+        if (!in_array($currentStatus, ['pending', 'partial approved', 'partial_approved', ''])) {
+            return response()->json([
+                'error' => "This record cannot be approved or rejected because its status is '{$currentStatus}'. It must be in pending status.",
+                'message' => "This record cannot be approved or rejected because its status is '{$currentStatus}'. It must be in pending status."
+            ], 422);
+        }
+
+        if (isset($record->am_change_made) && $record->am_change_made == 0) {
+            return response()->json([
+                'error' => "This record requires modifications before it can be approved or rejected.",
+                'message' => "This record requires modifications before it can be approved or rejected. Please edit and update the record first."
+            ], 422);
+        }
         
         if (!empty($request->model_data_ids)) {
             $dataIds = json_decode($request->model_data_ids, true);
@@ -85,7 +122,10 @@ class ApprovalController extends Controller
 
 
         if (!$record->canApprove()) {
-            abort(403, 'You cannot approve this record');
+            return response()->json([
+                'error' => 'You cannot approve this record at this time.',
+                'message' => 'You cannot approve this record at this time. It may be locked, already acted upon, reverted, or requires modifications.'
+            ], 422);
         }
 
         $approved = $record->approve($request->comments);
@@ -384,38 +424,64 @@ class ApprovalController extends Controller
     }
 
 
-    // public function reject(Request $request, $modelType, $id)
-    // {
+    public function reject(Request $request, $modelType, $id)
+    {
+        $approvalModule = ApprovalModule::findOrFail($request->mc);
 
-    //     // return response()->json([
-    //     //     'success' =>  'Approval failed'
-    //     // ]);
+        $modelClass = $approvalModule->model_class ?? '';
 
-    //     $approvalModule = ApprovalModule::findOrFail($request->mc);
+        if (!class_exists($modelClass)) {
+            abort(404, 'Model not found');
+        }
 
-    //     $modelClass = $approvalModule->model_class ?? '';
+        $record = $modelClass::findOrFail($id);
 
-    //     if (!class_exists($modelClass)) {
-    //         abort(404, 'Model not found');
-    //     }
+        $statusCol = $approvalModule->approval_column ?? 'am_approval_status';
+        $currentStatus = strtolower($record->$statusCol ?? '');
 
-    //     $record = $modelClass::findOrFail($id);
+        if ($currentStatus === 'reverted') {
+            return response()->json([
+                'error' => "This record has been reverted and cannot be rejected. It must be updated and resubmitted to pending first.",
+                'message' => "This record has been reverted and cannot be rejected. It must be updated and resubmitted to pending first."
+            ], 422);
+        }
 
-    //     $record->am_change_made = 0;
-    //     $record->save();
+        if (in_array($currentStatus, ['approved', 'rejected'])) {
+            return response()->json([
+                'error' => "This record has already been {$currentStatus} and its status cannot be changed.",
+                'message' => "This record has already been {$currentStatus} and its status cannot be changed."
+            ], 422);
+        }
 
-    //     $rejected = $record->reject($request->comments);
+        if (!in_array($currentStatus, ['pending', 'partial approved', 'partial_approved', ''])) {
+            return response()->json([
+                'error' => "This record cannot be rejected because its status is '{$currentStatus}'. It must be in pending status.",
+                'message' => "This record cannot be rejected because its status is '{$currentStatus}'. It must be in pending status."
+            ], 422);
+        }
 
-    //     if ($rejected) {
-    //         return response()->json([
-    //             'success' =>  'Rejected successfully. All approvals have been reset.'
-    //         ]);
-    //     }
+        if (isset($record->am_change_made) && $record->am_change_made == 0) {
+            return response()->json([
+                'error' => "This record requires modifications before it can be approved or rejected.",
+                'message' => "This record requires modifications before it can be approved or rejected. Please edit and update the record first."
+            ], 422);
+        }
 
-    //     return response()->json([
-    //         'success' => 'Rejection failed'
-    //     ]);
-    // }
+        $record->am_change_made = 0;
+        $record->save();
+
+        $rejected = $record->reject($request->comments);
+
+        if ($rejected) {
+            return response()->json([
+                'success' =>  'Rejected successfully. All approvals have been reset.'
+            ]);
+        }
+
+        return response()->json([
+            'success' => 'Rejection failed'
+        ]);
+    }
     public function bulk_purchase_request_approval(Request $request, $modelType, $id)
     {
         $approvalModule = ApprovalModule::findOrFail($request->mc);

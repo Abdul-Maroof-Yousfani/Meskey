@@ -29,7 +29,10 @@ $(document).on("keydown", function (e) {
       $drawer.css("right", `-${drawerWidth}`);
       setTimeout(() => {
         $drawer.remove();
-        if ($(".clean-sidebar-drawer").length === 0 && !$(".modal-sidebar.open").length) {
+        if (
+          $(".clean-sidebar-drawer").length === 0 &&
+          !$(".modal-sidebar.open").length
+        ) {
           $("body").removeClass("drawer-opened");
         }
       }, 350);
@@ -45,7 +48,7 @@ $(document).on("click", ".modal-sidebar-close", function () {
 function filterationCommonoldat12Dec2025(
   url,
   loadmore = false,
-  appenddiv = "filteredData"
+  appenddiv = "filteredData",
 ) {
   renderLoadingTable("#filteredData table", 10);
 
@@ -82,14 +85,14 @@ function filterationCommonoldat12Dec2025(
     function (start, end, label) {
       console.log(
         "A new date selection was made: " +
-        start.format("YYYY-MM-DD") +
-        "  -  " +
-        start +
-        " to " +
-        end.format("YYYY-MM-DD")
+          start.format("YYYY-MM-DD") +
+          "  -  " +
+          start +
+          " to " +
+          end.format("YYYY-MM-DD"),
       );
       $("[name='daterange']").val(
-        `${start.format("MM/DD/YYYY")} - ${end.format("MM/DD/YYYY")}`
+        `${start.format("MM/DD/YYYY")} - ${end.format("MM/DD/YYYY")}`,
       );
 
       renderLoadingTable("#filteredData table", 12);
@@ -97,7 +100,7 @@ function filterationCommonoldat12Dec2025(
 
       updateUrlParams(formData);
       fetch_data(formData);
-    }
+    },
   );
 
   // Handle form input changes
@@ -117,7 +120,7 @@ function filterationCommonoldat12Dec2025(
         var formData = $("#filterForm").serialize();
         updateUrlParams(formData);
         fetch_data(formData);
-      }, 300)
+      }, 300),
     );
 
   // Handle pagination
@@ -255,15 +258,15 @@ function filterationCommonoldat12Dec2025(
 
         $("#date_range").val(
           startDate.format("YYYY-MM-DD") +
-          " - " +
-          currentDate.format("YYYY-MM-DD")
+            " - " +
+            currentDate.format("YYYY-MM-DD"),
         );
 
         $("#date_range").on("apply.daterangepicker", function (ev, picker) {
           $(this).val(
             picker.startDate.format("YYYY-MM-DD") +
-            " - " +
-            picker.endDate.format("YYYY-MM-DD")
+              " - " +
+              picker.endDate.format("YYYY-MM-DD"),
           );
           var formData = $("#filterForm").serialize();
           updateUrlParams(formData);
@@ -291,11 +294,10 @@ function filterationCommonoldat12Dec2025(
   }
 }
 
-
 function attachQueryParams() {
   let queryString = window.location.search;
 
-  document.querySelectorAll('.action-link').forEach(function (link) {
+  document.querySelectorAll(".action-link").forEach(function (link) {
     let url = new URL(link.href);
 
     let params = new URLSearchParams(window.location.search);
@@ -308,14 +310,11 @@ function attachQueryParams() {
   });
 }
 
-
-
-
 function filterationCommon(
   url,
   loadmore = false,
   appenddiv = "filteredData",
-  formId = "filterForm"
+  formId = "filterForm",
 ) {
   // Get the container element
   var $container = $("#" + appenddiv);
@@ -323,7 +322,7 @@ function filterationCommon(
   // Fallback to filteredData if specified container doesn't exist
   if ($container.length === 0) {
     console.warn(
-      `Container with ID "${appenddiv}" not found. Falling back to "filteredData".`
+      `Container with ID "${appenddiv}" not found. Falling back to "filteredData".`,
     );
     appenddiv = "filteredData";
     $container = $("#" + appenddiv);
@@ -331,12 +330,12 @@ function filterationCommon(
     // If still not found, try to find common container alternatives
     if ($container.length === 0) {
       $container = $(
-        "[data-filter-container], .filtered-data, .data-container, .ajax-content"
+        "[data-filter-container], .filtered-data, .data-container, .ajax-content",
       ).first();
       if ($container.length > 0) {
         appenddiv = $container.attr("id") || "filteredData";
         console.warn(
-          `Using container with ID "${appenddiv}" for filtered data.`
+          `Using container with ID "${appenddiv}" for filtered data.`,
         );
       } else {
         console.error("No suitable container found for filtered data!");
@@ -348,7 +347,10 @@ function filterationCommon(
   // Start with loading state if container exists
   if ($container.length) {
     console.log($container);
-    renderLoadingTable($container.find("table") || $container, $container.find("tr").length || 10);
+    renderLoadingTable(
+      $container.find("table") || $container,
+      $container.find("tr").length || 10,
+    );
   }
 
   var url = url;
@@ -359,12 +361,10 @@ function filterationCommon(
   // Get the form element
   var $form = $("#" + formId);
 
-
-
   // Fallback to filterForm if specified form doesn't exist
   if ($form.length === 0) {
     console.warn(
-      `Form with ID "${formId}" not found. Falling back to "filterForm".`
+      `Form with ID "${formId}" not found. Falling back to "filterForm".`,
     );
     formId = "filterForm";
     $form = $("#" + formId);
@@ -372,7 +372,7 @@ function filterationCommon(
     // If still not found, try to find any form with filter classes or attributes
     if ($form.length === 0) {
       $form = $(
-        "form[data-filter-form], .filter-form, form:has([name^='filter'])"
+        "form[data-filter-form], .filter-form, form:has([name^='filter'])",
       ).first();
       if ($form.length > 0) {
         formId = $form.attr("id") || "filterForm";
@@ -402,7 +402,6 @@ function filterationCommon(
     };
   }
 
-
   $('input[name="daterange"]').daterangepicker(
     {
       opens: "left",
@@ -421,7 +420,7 @@ function filterationCommon(
       //   end.format("YYYY-MM-DD")
       // );
       $("[name='daterange']").val(
-        `${start.format("MM/DD/YYYY")} - ${end.format("MM/DD/YYYY")}`
+        `${start.format("MM/DD/YYYY")} - ${end.format("MM/DD/YYYY")}`,
       );
 
       renderLoadingTable("#filteredData table", 12);
@@ -429,19 +428,22 @@ function filterationCommon(
 
       updateUrlParams(formData);
       fetch_data(formData);
-    }
+    },
   );
 
-  $('input[name="daterange"]').on('cancel.daterangepicker', function (ev, picker) {
-    ev.preventDefault(); 
+  $('input[name="daterange"]').on(
+    "cancel.daterangepicker",
+    function (ev, picker) {
+      ev.preventDefault();
 
-    $(this).val(''); 
+      $(this).val("");
 
-    picker.setStartDate(moment());
-    picker.setEndDate(moment());
+      picker.setStartDate(moment());
+      picker.setEndDate(moment());
 
-    picker.show(); 
-  });
+      picker.show();
+    },
+  );
 
   // Handle form input changes
   $("#" + formId + " input, #" + formId + " select")
@@ -459,13 +461,13 @@ function filterationCommon(
         if ($("#" + appenddiv).length) {
           renderLoadingTable(
             $("#" + appenddiv).find("table") || $("#" + appenddiv),
-            12
+            12,
           );
         }
         var formData = $("#" + formId).serialize();
         updateUrlParams(formData);
         fetch_data(formData);
-      }, 300)
+      }, 300),
     );
 
   // Handle pagination
@@ -473,7 +475,7 @@ function filterationCommon(
     if ($("#" + appenddiv).length) {
       renderLoadingTable(
         $("#" + appenddiv).find("table") || $("#" + appenddiv),
-        12
+        12,
       );
     }
     e.preventDefault();
@@ -487,7 +489,7 @@ function filterationCommon(
     if ($("#" + appenddiv).length) {
       renderLoadingTable(
         $("#" + appenddiv).find("table") || $("#" + appenddiv),
-        12
+        12,
       );
     }
     e.preventDefault();
@@ -508,12 +510,10 @@ function filterationCommon(
         $("#" + `${appenddiv}`).html(data);
         $(".selectWithoutAjax").select2();
 
-
         // Reinitialize Daterangepicker after AJAX content is loaded
         initializeDaterangepicker();
 
         attachQueryParams(); // 🔥 important
-
       },
       error: function (xhr, status, error) {
         console.error(error);
@@ -586,16 +586,16 @@ function filterationCommon(
         if (!existingValue) {
           $("#date_range").val(
             startDate.format("YYYY-MM-DD") +
-            " - " +
-            endDate.format("YYYY-MM-DD")
+              " - " +
+              endDate.format("YYYY-MM-DD"),
           );
         }
 
         $("#date_range").on("apply.daterangepicker", function (ev, picker) {
           $(this).val(
             picker.startDate.format("YYYY-MM-DD") +
-            " - " +
-            picker.endDate.format("YYYY-MM-DD")
+              " - " +
+              picker.endDate.format("YYYY-MM-DD"),
           );
           var formData = $("#" + formId).serialize();
           updateUrlParams(formData);
@@ -614,7 +614,6 @@ function filterationCommon(
     }
   }
 }
-
 
 if (!SUBMISSION_ON_ENTER) {
   $(document).on("keypress", "#ajaxSubmit input", function (e) {
@@ -729,19 +728,19 @@ $(document).on("submit", "#ajaxSubmit", function (e) {
 
                 var newRoute = originalRoute.replace(
                   /\/(\d+)(\/edit)?$/,
-                  "/" + newId + "$2"
+                  "/" + newId + "$2",
                 );
 
                 if (newRoute !== originalRoute) {
                   var newOnClick = originalOnClick.replace(
                     originalRoute,
-                    newRoute
+                    newRoute,
                   );
                   afterAjaxElement.attr("onclick", newOnClick);
                   afterAjaxElement.trigger("click");
                 } else {
                   console.error(
-                    "Route replacement failed - routes are identical"
+                    "Route replacement failed - routes are identical",
                   );
                 }
               }
@@ -925,19 +924,19 @@ $(document).on("submit", "#ajaxSubmit2", function (e) {
 
                 var newRoute = originalRoute.replace(
                   /\/(\d+)(\/edit)?$/,
-                  "/" + newId + "$2"
+                  "/" + newId + "$2",
                 );
 
                 if (newRoute !== originalRoute) {
                   var newOnClick = originalOnClick.replace(
                     originalRoute,
-                    newRoute
+                    newRoute,
                   );
                   afterAjaxElement.attr("onclick", newOnClick);
                   afterAjaxElement.trigger("click");
                 } else {
                   console.error(
-                    "Route replacement failed - routes are identical"
+                    "Route replacement failed - routes are identical",
                   );
                 }
               }
@@ -1069,13 +1068,17 @@ function printErrorMsg(errors) {
             .parent()
             .find(".select2-container")
             .after(
-              '<div class="error-message text-danger">' + messages[0] + "</div>"
+              '<div class="error-message text-danger">' +
+                messages[0] +
+                "</div>",
             );
         } else {
           field
             .parents(".form-group")
             .append(
-              '<div class="error-message text-danger">' + messages[0] + "</div>"
+              '<div class="error-message text-danger">' +
+                messages[0] +
+                "</div>",
             );
         }
       }
@@ -1097,13 +1100,17 @@ function printErrorMsg(errors) {
             .parent()
             .find(".select2-container")
             .after(
-              '<div class="error-message text-danger">' + messages[0] + "</div>"
+              '<div class="error-message text-danger">' +
+                messages[0] +
+                "</div>",
             );
         } else {
           field
             .parents(".form-group")
             .append(
-              '<div class="error-message text-danger">' + messages[0] + "</div>"
+              '<div class="error-message text-danger">' +
+                messages[0] +
+                "</div>",
             );
         }
       });
@@ -1118,7 +1125,7 @@ function printErrorMsg(errors) {
 function openImageModal(
   imageUrls,
   title = "Image Viewer",
-  drawerWidth = "50%"
+  drawerWidth = "50%",
 ) {
   $("#modal-sidebar .modal-title").html(title);
   $("#modal-sidebar").css("width", drawerWidth).css("right", `-${drawerWidth}`);
@@ -1149,11 +1156,13 @@ function openImageModal(
       const imageElement = $(`
         <div class="image-wrapper mb-4" style="text-align: center;">
           <img src="${imageUrl}" class="img-fluid" style="max-height: 70vh; max-width: 100%;">
-          ${images.length > 1
-          ? `<div class="image-counter mt-2">Image ${index + 1} of ${images.length
-          }</div>`
-          : ""
-        }
+          ${
+            images.length > 1
+              ? `<div class="image-counter mt-2">Image ${index + 1} of ${
+                  images.length
+                }</div>`
+              : ""
+          }
           <div class="image-actions mt-2">
             <button class="btn btn-sm btn-primary zoom-in" data-image="${imageUrl}">
               <i class="ft-plus"></i> Zoom In
@@ -1229,7 +1238,7 @@ function openModal(button, url, title, viewonly = false, drawerWidth = null) {
   $button
     .prop("disabled", true)
     .html(
-      `<span class="spinnerforajax"><span class="spinner-grow spinner-border-sm" role="status" aria-hidden="true"></span></span> ${originalText}`
+      `<span class="spinnerforajax"><span class="spinner-grow spinner-border-sm" role="status" aria-hidden="true"></span></span> ${originalText}`,
     );
 
   $("#modal-sidebar .modal-title").html(title);
@@ -1285,7 +1294,7 @@ function openModalAndDonotCloseLastModal(
   url,
   title,
   viewonly = false,
-  drawerWidth = null
+  drawerWidth = null,
 ) {
   const $button = $(button);
   const originalText = $button.html();
@@ -1294,7 +1303,7 @@ function openModalAndDonotCloseLastModal(
   $button
     .prop("disabled", true)
     .html(
-      `<span class="spinnerforajax"><span class="spinner-grow spinner-border-sm"></span></span> ${originalText}`
+      `<span class="spinnerforajax"><span class="spinner-grow spinner-border-sm"></span></span> ${originalText}`,
     );
 
   // Responsive width
@@ -1365,7 +1374,7 @@ function openModalAndDonotCloseLastModal(
       $drawer
         .find(".drawer-content")
         .html(
-          `<div class="alert alert-danger m-4">Failed to load content (${xhr.status})</div>`
+          `<div class="alert alert-danger m-4">Failed to load content (${xhr.status})</div>`,
         );
       $drawer.find(".loader-container").hide();
       $button.prop("disabled", false).html(originalText);
@@ -1555,7 +1564,7 @@ function initializeDynamicSelect2(
   enableTags = false,
   isMultiple = false,
   isSelectOnClose = true,
-  isAllowClear = false
+  isAllowClear = false,
 ) {
   const $el = $(selector);
 
@@ -1622,7 +1631,7 @@ function initializeDynamicDependentSelect2(
   enableTags = false,
   isMultiple = false,
   isSelectOnClose = true,
-  isAllowClear = false
+  isAllowClear = false,
 ) {
   const $el = $(selector);
   const $targetEl = $(target);
@@ -1717,7 +1726,7 @@ function initializeDynamicDependentSelect2(
         },
         success: function (data) {
           const options = data.items.map(
-            (item) => new Option(item.text, item.id, true, true)
+            (item) => new Option(item.text, item.id, true, true),
           );
           $targetEl.empty().append(options).trigger("change");
         },
@@ -1751,7 +1760,7 @@ function initializeDynamicDependentCall1Select2(
   isMultiple = false,
   isSelectOnClose = true,
   isAllowClear = false,
-  extraFilters = {}
+  extraFilters = {},
 ) {
   const $el = $(selector);
   const $targetEl = $(target);
@@ -1798,7 +1807,7 @@ function initializeDynamicDependentCall1Select2All(
   isMultiple = false,
   isSelectOnClose = true,
   isAllowClear = false,
-  extraFilters = {}
+  extraFilters = {},
 ) {
   const $el = $(selector);
   const $targetEl = $(target);
@@ -1853,7 +1862,7 @@ $(document).ready(function () {
       reader.onload = function (e) {
         $("#imagePreview").css(
           "background-image",
-          "url(" + e.target.result + ")"
+          "url(" + e.target.result + ")",
         ); // Set the blob URL
       };
       reader.readAsDataURL(file); // Read the file as a Data URL

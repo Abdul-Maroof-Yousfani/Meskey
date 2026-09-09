@@ -209,6 +209,7 @@ class LogisticsController extends Controller
             'from_location_id' => $companyLocationIds->first() ?: '',
             'from_location_options' => $fromLocationOptions,
             'to_location_id' => $order->port_of_loading_id ?: '',
+            'to_location_name' => $order->portOfLoading?->name ?? '',
             'to_location_options' => $toLocationOptions,
             'logistics' => $logistics,
             'job_order' => $jobOrder->job_order_no ?? '',
@@ -235,7 +236,7 @@ class LogisticsController extends Controller
             'items.*.qty' => 'required|numeric',
             'items.*.brand' => 'nullable|string',
             'items.*.packing_size' => 'nullable|string',
-            'to_location' => 'required',
+            'to_location' => 'required|string|max:255',
             'job_order' => 'nullable|string',
             'return_port' => 'nullable|string',
             'booking_no' => 'nullable|string',
@@ -251,14 +252,6 @@ class LogisticsController extends Controller
             if (!Port::whereKey($request->to_location)->exists()) {
                 throw ValidationException::withMessages(['to_location' => 'Selected port of loading is invalid.']);
             }
-        } else {
-            // if (!CompanyLocation::whereKey($request->location)->exists()) {
-            //     throw ValidationException::withMessages(['location' => 'Selected from location is invalid.']);
-            // }
-
-            if (!CompanyLocation::whereKey($request->to_location)->exists()) {
-                throw ValidationException::withMessages(['to_location' => 'Selected to location is invalid.']);
-            }
         }
 
         DB::beginTransaction();
@@ -268,6 +261,13 @@ class LogisticsController extends Controller
                 : ['type' => 'sale_order', 'sale_order_id' => $request->sale_order_id];
 
             $logistics = Logistics::firstOrNew($lookup);
+
+            if ($logistics->exists && in_array(strtolower($logistics->am_approval_status ?? ''), ['approved', 'rejected'])) {
+                return response()->json([
+                    'error' => "Logistics record has already been {$logistics->am_approval_status} and cannot be modified.",
+                    'message' => "Logistics record has already been {$logistics->am_approval_status} and cannot be modified."
+                ], 422);
+            }
 
             if (!$logistics->exists) {
                 $logistics->created_by = auth()->user()->id;
@@ -380,7 +380,14 @@ class LogisticsController extends Controller
     {
         $logistics = Logistics::find($id);
         if (!$logistics) {
-            return response()->json(['error' => 'Logistics not found'], 404);
+            return response()->json(['error' => 'Logistics not found', 'message' => 'Logistics not found'], 404);
+        }
+
+        if (in_array(strtolower($logistics->am_approval_status ?? ''), ['approved', 'rejected'])) {
+            return response()->json([
+                'error' => "Logistics record has been {$logistics->am_approval_status} and cannot be updated.",
+                'message' => "Logistics record has been {$logistics->am_approval_status} and cannot be updated."
+            ], 422);
         }
         
         $request->validate([
@@ -393,7 +400,7 @@ class LogisticsController extends Controller
             'items.*.rate' => 'required|numeric',
             'items.*.transporter' => 'required|string',
             'items.*.qty' => 'required|numeric',
-            'to_location' => 'required',
+            'to_location' => 'required|string|max:255',
             'job_order' => 'nullable|string',
             'return_port' => 'nullable|string',
             'booking_no' => 'nullable|string',
@@ -407,10 +414,6 @@ class LogisticsController extends Controller
             }
             if (!Port::whereKey($request->to_location)->exists()) {
                 throw ValidationException::withMessages(['to_location' => 'Selected port of loading is invalid.']);
-            }
-        } else {
-            if (!CompanyLocation::whereKey($request->to_location)->exists()) {
-                throw ValidationException::withMessages(['to_location' => 'Selected to location is invalid.']);
             }
         }
 
@@ -512,5 +515,25 @@ class LogisticsController extends Controller
             return response()->json(['error' => 'Logistics not found'], 404);
         }
         return view('management.sales.logistics.view', compact('logistics'));
+    }
+
+    public function destroy($id)
+    {
+        $logistics = Logistics::find($id);
+        if (!$logistics) {
+            return response()->json(['error' => 'Logistics not found', 'message' => 'Logistics not found'], 404);
+        }
+
+        if (in_array(strtolower($logistics->am_approval_status ?? ''), ['approved', 'rejected'])) {
+            return response()->json([
+                'error' => "Logistics record has been {$logistics->am_approval_status} and cannot be deleted.",
+                'message' => "Logistics record has been {$logistics->am_approval_status} and cannot be deleted."
+            ], 422);
+        }
+
+        $logistics->items()->delete();
+        $logistics->delete();
+
+        return response()->json(['data' => 'Logistics record has been deleted', 'success' => 'Logistics record has been deleted']);
     }
 }

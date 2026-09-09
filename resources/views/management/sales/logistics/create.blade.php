@@ -119,14 +119,14 @@
                     <div class="col-md-4">
                         <div class="form-group">
                             <label for="to_location" class="text-uppercase" id="to_location_label">To Location</label>
-                             <select name="to_location" id="to_location" class="form-control select2" required style="width: 100%;">
-                                <option value="">Select To Location</option>
-                                @foreach($companyLocations as $location)
-                                    <option value="{{ $location->id }}">
-                                        {{ $location->name }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            <div id="to_location_input_wrapper">
+                                <input type="text" name="to_location" id="to_location_input" class="form-control" placeholder="Enter To Location" required>
+                            </div>
+                            <div id="to_location_select_wrapper" style="display: none;">
+                                <select id="to_location_select" class="form-control select2" style="width: 100%;" disabled>
+                                    <option value="">Select Port of Loading</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
 
@@ -421,7 +421,28 @@
                 fromLocationValue = fromLocationOptions[0].id;
             }
 
-            $('#to_location_label').text(isExport ? 'Port of Loading' : 'To Location');
+            if (isExport) {
+                $('#to_location_label').text('Port of Loading');
+                $('#to_location_input_wrapper').hide();
+                $('#to_location_input').prop('disabled', true).removeAttr('name').prop('required', false);
+                $('#to_location_select_wrapper').show();
+                $('#to_location_select').prop('disabled', false).attr('name', 'to_location').prop('required', true);
+                populateSelectOptions(
+                    $('#to_location_select'),
+                    data.to_location_options || [],
+                    toLocationValue,
+                    'Select Port of Loading'
+                );
+            } else {
+                $('#to_location_label').text('To Location');
+                $('#to_location_select_wrapper').hide();
+                $('#to_location_select').prop('disabled', true).removeAttr('name').prop('required', false);
+                $('#to_location_input_wrapper').show();
+                $('#to_location_input').prop('disabled', false).attr('name', 'to_location').prop('required', true);
+                if (savedToLocation) {
+                    $('#to_location_input').val(savedToLocation);
+                }
+            }
             populateSelectOptions(
                 $('#location'),
                 fromLocationOptions,
@@ -430,12 +451,6 @@
             );
             $('#hidden_location').val(fromLocationValue);
             $('#location').prop('disabled', !isExport);
-            populateSelectOptions(
-                $('#to_location'),
-                isExport ? (data.to_location_options || []) : saleToLocationOptions,
-                toLocationValue,
-                isExport ? 'Select Port of Loading' : 'Select To Location'
-            );
             $('#location').data('setting-value', true);
             updateFactoryDropdown(savedFactory);
             $('#location').data('setting-value', false);
@@ -453,8 +468,19 @@
 
             if (isExport) {
                 $('.export-only-fields').show();
+                $('#to_location_label').text('Port of Loading');
+                $('#to_location_input_wrapper').hide();
+                $('#to_location_input').prop('disabled', true).removeAttr('name').prop('required', false);
+                $('#to_location_select_wrapper').show();
+                $('#to_location_select').prop('disabled', false).attr('name', 'to_location').prop('required', true);
+                populateSelectOptions($('#to_location_select'), [], '', 'Select Port of Loading');
             } else {
                 $('.export-only-fields').hide();
+                $('#to_location_label').text('To Location');
+                $('#to_location_select_wrapper').hide();
+                $('#to_location_select').prop('disabled', true).removeAttr('name').prop('required', false);
+                $('#to_location_input_wrapper').show();
+                $('#to_location_input').prop('disabled', false).attr('name', 'to_location').prop('required', true);
             }
 
             $('#sale_order_id').prop('required', !isExport).toggle(!isExport);
@@ -476,12 +502,6 @@
 
             populateSelectOptions($('#location'), [], '', 'Select From Location');
             $('#location').prop('disabled', !isExport);
-            populateSelectOptions(
-                $('#to_location'),
-                isExport ? [] : saleToLocationOptions,
-                '',
-                isExport ? 'Select Port of Loading' : 'Select To Location'
-            );
             initTransporterSelect('.transporter-select');
         }
 
@@ -499,7 +519,8 @@
                 $('#date, #so_no, #so_qty, #commodity, #sauda_type').val('');
                 populateSelectOptions($('#location'), [], '', 'Select From Location');
                 $('#location').prop('disabled', type !== 'export_order');
-                populateSelectOptions($('#to_location'), type === 'export_order' ? [] : saleToLocationOptions, '', type === 'export_order' ? 'Select Port of Loading' : 'Select To Location');
+                $('#to_location_input').val('');
+                populateSelectOptions($('#to_location_select'), [], '', 'Select Port of Loading');
                 populateSelectOptions($('#factory'), [], '', 'Select Factory');
                 populateSelectOptions($('#section'), [], '', 'Select Section');
             } else {
@@ -628,7 +649,8 @@
                 currentPackingSizes = [];
                 populateSelectOptions($('#location'), [], '', 'Select From Location');
                 $('#location').prop('disabled', $('#type').val() !== 'export_order');
-                populateSelectOptions($('#to_location'), $('#type').val() === 'export_order' ? [] : saleToLocationOptions, '', $('#type').val() === 'export_order' ? 'Select Port of Loading' : 'Select To Location');
+                $('#to_location_input').val('');
+                populateSelectOptions($('#to_location_select'), [], '', 'Select Port of Loading');
                 populateSelectOptions($('#factory'), [], '', 'Select Factory');
                 $('#itemsBody').empty();
                 rowCount = 0;

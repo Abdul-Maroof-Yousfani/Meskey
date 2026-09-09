@@ -115,6 +115,26 @@ class SalesOrder extends Model
 
     protected static function booted()
     {
+        static::updating(function ($salesOrder) {
+            $originalStatus = strtolower($salesOrder->getOriginal('am_approval_status') ?? '');
+            $newStatus = strtolower($salesOrder->am_approval_status ?? '');
+            if ($salesOrder->isDirty('am_approval_status')) {
+                if (in_array($originalStatus, ['approved', 'rejected'])) {
+                    throw new \Exception("Sale Order is already {$originalStatus} and status cannot be changed.");
+                }
+                if ($originalStatus === 'reverted' && $newStatus !== 'pending') {
+                    throw new \Exception("Sale Order is reverted and cannot be {$newStatus} directly. It must be updated to pending first.");
+                }
+            }
+        });
+
+        static::deleting(function ($salesOrder) {
+            $status = strtolower($salesOrder->am_approval_status ?? '');
+            if (in_array($status, ['approved', 'rejected'])) {
+                throw new \Exception("Sale Order is already {$status} and cannot be deleted.");
+            }
+        });
+
         static::updated(function ($salesOrder) {
             if ($salesOrder->isDirty('am_approval_status') && $salesOrder->am_approval_status === 'approved') {
                 if ($salesOrder->payment_on_kaanta) {
@@ -124,18 +144,33 @@ class SalesOrder extends Model
         });
     }
 
-    private static function autoCreateDeliveryOrder(SalesOrder $salesOrder)
+    public static function autoCreateDeliveryOrder(SalesOrder $salesOrder)
     {
-        $exists = \App\Models\Sales\DeliveryOrder::where('so_id', $salesOrder->id)
+        $existingDo = \App\Models\Sales\DeliveryOrder::where('so_id', $salesOrder->id)
             ->where('is_auto_created_from_so', true)
-            ->exists();
-
-        if ($exists) {
-            return;
-        }
+            ->first();
 
         $companyLocation = $salesOrder->locations->first();
         
+        $factoryIds = $salesOrder->factories()->pluck('arrival_location_id')->filter()->unique()->values();
+        $arrivalLocationId = $factoryIds->isNotEmpty() 
+            ? $factoryIds->implode(',') 
+            : ($salesOrder->arrival_location_id ? (string)$salesOrder->arrival_location_id : null);
+
+        $sectionIds = $salesOrder->sections()->pluck('arrival_sub_location_id')->filter()->unique()->values();
+        $subArrivalLocationId = $sectionIds->isNotEmpty() 
+            ? $sectionIds->implode(',') 
+            : ($salesOrder->arrival_sub_location_id ? (string)$salesOrder->arrival_sub_location_id : null);
+
+        if ($existingDo) {
+            $existingDo->update([
+                'location_id' => $companyLocation ? $companyLocation->location_id : $existingDo->location_id,
+                'arrival_location_id' => $arrivalLocationId,
+                'sub_arrival_location_id' => $subArrivalLocationId,
+            ]);
+            return;
+        }
+
         $deliveryOrder = \App\Models\Sales\DeliveryOrder::create([
             'customer_id' => $salesOrder->customer_id,
             'so_id' => $salesOrder->id,
@@ -148,8 +183,8 @@ class SalesOrder extends Model
             'payment_term_id' => $salesOrder->payment_term_id ?? (\App\Models\PaymentTerm::first())->id,
             'sauda_type' => $salesOrder->sauda_type,
             'location_id' => $companyLocation ? $companyLocation->location_id : null,
-            'arrival_location_id' => $salesOrder->arrival_location_id,
-            'sub_arrival_location_id' => $salesOrder->arrival_sub_location_id,
+            'arrival_location_id' => $arrivalLocationId,
+            'sub_arrival_location_id' => $subArrivalLocationId,
             'delivery_date' => $salesOrder->delivery_date,
             'line_desc' => "Auto-generated from Payment on Kaanta SO",
             'remarks' => "Auto-generated from Payment on Kaanta SO",

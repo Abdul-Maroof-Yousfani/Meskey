@@ -32,6 +32,29 @@ class SalesReturn extends Model
 
     protected $table = "sales_return";
 
+    protected static function booted()
+    {
+        static::updating(function ($model) {
+            $originalStatus = strtolower($model->getOriginal('am_approval_status') ?? '');
+            $newStatus = strtolower($model->am_approval_status ?? '');
+            if ($model->isDirty('am_approval_status')) {
+                if (in_array($originalStatus, ['approved', 'rejected'])) {
+                    throw new \Exception("Sales Return is already {$originalStatus} and status cannot be changed.");
+                }
+                if ($originalStatus === 'reverted' && $newStatus !== 'pending') {
+                    throw new \Exception("Sales Return is reverted and cannot be {$newStatus} directly. It must be updated to pending first.");
+                }
+            }
+        });
+
+        static::deleting(function ($model) {
+            $status = strtolower($model->am_approval_status ?? '');
+            if (in_array($status, ['approved', 'rejected'])) {
+                throw new \Exception("Sales Return is already {$status} and cannot be deleted.");
+            }
+        });
+    }
+
     public function customer()
     {
         return $this->belongsTo(\App\Models\Master\Customer::class, 'customer_id');
