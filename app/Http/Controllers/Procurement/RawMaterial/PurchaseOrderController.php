@@ -56,6 +56,10 @@ class PurchaseOrderController extends Controller
                     ->orWhereHas('qcProduct', function ($qcProduct) use ($searchTerm) {
                         $qcProduct->where('name', 'like', $searchTerm);
                     })
+                    ->orWhereHas('product', function ($product) use ($searchTerm) {
+                        $product->where('name', 'like', $searchTerm);
+                    })
+                    ->orWhere('contract_no', 'like', $searchTerm)
                     ->orWhere('broker_one_name', 'like', $searchTerm)
                     ->orWhere('broker_two_name', 'like', $searchTerm)
                     ->orWhere('broker_three_name', 'like', $searchTerm)
@@ -89,6 +93,33 @@ class PurchaseOrderController extends Controller
 
                 return $q->whereDate('contract_date', '>=', $startDate)
                     ->whereDate('contract_date', '<=', $endDate);
+            })
+            ->when(true, function ($q) use ($request) {
+                $contractStatusFilter = $request->get('contract_status_f', 'pending');
+
+                if ($contractStatusFilter === 'all' || $contractStatusFilter === '') {
+                    return $q;
+                } elseif ($contractStatusFilter === 'closed') {
+                    return $q->where(function ($sq) {
+                        $sq->where(function ($csq) {
+                            $csq->whereIn('status', ['completed', 'cancelled']);
+                                // ->orWhereIn('contract_status', ['close-contract-due-to-market-down', 'close-with-market-rate-penalty']);
+                        })->where(function ($rsq) {
+                            $rsq->whereNull('contract_status')
+                                ->orWhere('contract_status', '!=', 'reopen-contract-closed-by-mistake');
+                        });
+                    });
+                } else {
+                    return $q->where(function ($sq) {
+                        $sq->where(function ($ssq) {
+                            $ssq->whereIn('status', ['draft', 'confirmed']);
+                                // ->orWhere('contract_status', 'reopen-contract-closed-by-mistake');
+                        })->where(function ($csq) {
+                            $csq->whereNull('contract_status')
+                                ->orWhereNotIn('contract_status', ['close-contract-due-to-market-down', 'close-with-market-rate-penalty']);
+                        });
+                    });
+                }
             })
             ->when(auth()->user()->user_type != 'super-admin', function ($q) {
                 return $q->whereIn('company_location_id', getUserCurrentCompanyLocations());
@@ -288,6 +319,9 @@ class PurchaseOrderController extends Controller
 
 
         $data['arrivalPurchaseOrder'] = $arrivalPurchaseOrder;
+        $data['isClosed'] = $this->isContractClosed($arrivalPurchaseOrder);
+        $data['balanceTrucks'] = $this->calculateBalanceTrucks($arrivalPurchaseOrder);
+        $data['balanceQuantity'] = $this->calculateBalanceQuantity($arrivalPurchaseOrder);
         $data['bagPackings'] = [];
         $data['truckSizeRanges'] = TruckSizeRange::where('status', 'active')->get();
         $data['products'] = Product::where('product_type', 'raw_material')->get();
@@ -317,7 +351,6 @@ class PurchaseOrderController extends Controller
                 'product_id' => $data['arrivalPurchaseOrder']->product_id,
                 'company_id' => $data['arrivalPurchaseOrder']->company_id
             ];
-
             $data['slabsHtml'] = $this->getMainSlabByProduct(request(), $ids, true);
         } else {
             $data['slabsHtml'] = view('management.procurement.raw_material.purchase_order.slab-form', ['slabs' => $getSlabs, 'success' => '.'])->render();
@@ -338,6 +371,26 @@ class PurchaseOrderController extends Controller
         $data = $request->validated();
         $data = $request->all();
 
+        if (isset($data['contract_status']) && in_array($data['contract_status'], ['reopen-contract-closed-by-mistake', 'reopen', 'open'])) {
+            if ($arrivalPurchaseOrder->calculation_type == 'trucks') {
+                $balanceTrucks = $this->calculateBalanceTrucks($arrivalPurchaseOrder);
+                if ($balanceTrucks <= 0) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Remaining balance trucks is 0. Contract cannot be reopened.'
+                    ], 422);
+                }
+            } else {
+                $balanceQuantity = $this->calculateBalanceQuantity($arrivalPurchaseOrder);
+                if ($balanceQuantity <= 0) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Remaining balance quantity is 0. Contract cannot be reopened.'
+                    ], 422);
+                }
+            }
+        }
+
         if ($arrivalPurchaseOrder->am_approval_status == "approved" || $arrivalPurchaseOrder->am_approval_status == 'rejected') {
 
             $oldDeliveryDate = $arrivalPurchaseOrder->delivery_date ? \Carbon\Carbon::parse($arrivalPurchaseOrder->delivery_date)->format('Y-m-d') : null;
@@ -356,10 +409,14 @@ class PurchaseOrderController extends Controller
             }
 
             DB::transaction(function () use ($data, $arrivalPurchaseOrder) {
+                $isReopen = isset($data['contract_status']) && in_array($data['contract_status'], ['reopen-contract-closed-by-mistake', 'reopen', 'open']);
+                $isCloseContract = isset($data['contract_status']) && ($data['contract_status'] == 'close-contract-due-to-market-down' || $data['contract_status'] == 'close-with-market-rate-penalty');
+                $newStatus = $isReopen ? 'draft' : ($isCloseContract ? 'cancelled' : $arrivalPurchaseOrder->status);
+
                 $updateData = [
                     'delivery_date' => $data['delivery_date'] ?? null,
-                    'contract_status' => $data['contract_status'] ?? null,
-                    'status' => (isset($data['contract_status']) && ($data['contract_status'] == 'close-contract-due-to-market-down' || $data['contract_status'] == 'close-with-market-rate-penalty')) ? 'cancelled' : $arrivalPurchaseOrder->status,
+                    'contract_status' => $isReopen ? 'reopen-contract-closed-by-mistake' : ($data['contract_status'] ?? null),
+                    'status' => $newStatus,
                     'remarks' => $data['remarks'] ?? null,
                     'defaulter' => $data['defaulter'] ?? 0,
                 ];
@@ -381,6 +438,10 @@ class PurchaseOrderController extends Controller
         }
 
         DB::transaction(function () use ($data, $arrivalPurchaseOrder) {
+            $isReopen = isset($data['contract_status']) && in_array($data['contract_status'], ['reopen-contract-closed-by-mistake', 'reopen', 'open']);
+            $isCloseContract = isset($data['contract_status']) && ($data['contract_status'] == 'close-contract-due-to-market-down' || $data['contract_status'] == 'close-with-market-rate-penalty');
+            $newStatus = $isReopen ? 'draft' : ($isCloseContract ? 'cancelled' : $arrivalPurchaseOrder->status);
+
             $updateData = [
                 'sauda_type_id' => $data['sauda_type_id'] ?? null,
                 'supplier_id' => $data['supplier_id'] ?? null,
@@ -409,8 +470,8 @@ class PurchaseOrderController extends Controller
                 'max_quantity' => $data['max_quantity'] ?? null,
                 'min_bags' => $data['min_bags'] ?? null,
                 'max_bags' => $data['max_bags'] ?? null,
-                'contract_status' => $data['contract_status'] ?? null,
-                'status' => $data['contract_status'] == 'close-contract-due-to-market-down' || $data['contract_status'] == 'close-with-market-rate-penalty' ? 'cancelled' : $arrivalPurchaseOrder->status,
+                'contract_status' => $isReopen ? 'reopen-contract-closed-by-mistake' : ($data['contract_status'] ?? null),
+                'status' => $newStatus,
                 "am_approval_status" => "pending",
                 "am_change_made" => 1,
                 'remarks' => $data['remarks'] ?? null,
@@ -788,6 +849,32 @@ class PurchaseOrderController extends Controller
             }
         }
 
+        $contractStatusFilter = $request->get('contract_status_f', 'pending');
+
+        if ($contractStatusFilter === 'all' || $contractStatusFilter === '') {
+            // No filter applied - show all
+        } elseif ($contractStatusFilter === 'closed') {
+            $query->where(function ($q) {
+                $q->where(function ($csq) {
+                    $csq->whereIn('status', ['completed', 'cancelled'])
+                        ->orWhereIn('contract_status', ['close-contract-due-to-market-down', 'close-with-market-rate-penalty']);
+                })->where(function ($rsq) {
+                    $rsq->whereNull('contract_status')
+                        ->orWhere('contract_status', '!=', 'reopen-contract-closed-by-mistake');
+                });
+            });
+        } else {
+            $query->where(function ($q) {
+                $q->where(function ($ssq) {
+                    $ssq->whereIn('status', ['draft', 'confirmed'])
+                        ->orWhere('contract_status', 'reopen-contract-closed-by-mistake');
+                })->where(function ($csq) {
+                    $csq->whereNull('contract_status')
+                        ->orWhereNotIn('contract_status', ['close-contract-due-to-market-down', 'close-with-market-rate-penalty']);
+                });
+            });
+        }
+
         // User permissions
         if (auth()->user()->user_type != 'super-admin') {
             $query->whereIn('company_location_id', getUserCurrentCompanyLocations());
@@ -896,5 +983,40 @@ class PurchaseOrderController extends Controller
         ];
     }
 
+    private function calculateBalanceTrucks(ArrivalPurchaseOrder $arrivalPurchaseOrder)
+    {
+        $arrivedTrucks = (float) $arrivalPurchaseOrder->approvedArrivalTickets()->sum('closing_trucks_qty');
+        $rejectedTrucks = (float) $arrivalPurchaseOrder->rejectedArrivalTickets()->sum('closing_trucks_qty');
+        $rejectedHalfTrucks = $arrivalPurchaseOrder->rejectedHalfArrivalTickets->count() != 0
+            ? $arrivalPurchaseOrder->rejectedHalfArrivalTickets->count() / 2
+            : 0;
+        $totalRejectedTrucks = $rejectedTrucks + $rejectedHalfTrucks;
+        $inTransitTrucks = (float) $arrivalPurchaseOrder->stockInTransitTickets->count();
+        $orderedTrucks = (float) ($arrivalPurchaseOrder->no_of_trucks ?? 0);
+
+        if ($arrivalPurchaseOrder->is_replacement == 1) {
+            return $orderedTrucks - $arrivedTrucks - $inTransitTrucks;
+        } else {
+            return $orderedTrucks - $arrivedTrucks - $inTransitTrucks - $totalRejectedTrucks;
+        }
+    }
+
+    private function calculateBalanceQuantity(ArrivalPurchaseOrder $arrivalPurchaseOrder)
+    {
+        $totalArrivedNetWeight = (float) ($arrivalPurchaseOrder->totalArrivedNetWeight->total_arrived_net_weight ?? 0);
+        $maxQuantity = (float) ($arrivalPurchaseOrder->max_quantity ?? 0);
+        return $maxQuantity - $totalArrivedNetWeight;
+    }
+
+    private function isContractClosed(ArrivalPurchaseOrder $arrivalPurchaseOrder)
+    {
+        if ($arrivalPurchaseOrder->contract_status === 'reopen-contract-closed-by-mistake') {
+            return false;
+        }
+
+        return $arrivalPurchaseOrder->status == 'completed'
+            || $arrivalPurchaseOrder->status == 'cancelled'
+            || in_array($arrivalPurchaseOrder->contract_status, ['close-contract-due-to-market-down', 'close-with-market-rate-penalty']);
+    }
 
 }

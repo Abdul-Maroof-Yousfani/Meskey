@@ -43,13 +43,17 @@ class TicketController extends Controller
      */
     public function getList(Request $request)
     {
-        $tickets = ArrivalTicket::with(['product', 'miller'])
+        $tickets = ArrivalTicket::with(['product', 'miller', 'station'])
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
                 $q->where(function ($sq) use ($searchTerm) {
                     $sq->where('unique_no', 'like', $searchTerm)
                         ->orWhere('truck_no', 'like', $searchTerm)
-                        ->orWhere('bilty_no', 'like', $searchTerm);
+                        ->orWhere('bilty_no', 'like', $searchTerm)
+                        ->orWhere('station_name', 'like', $searchTerm)
+                        ->orWhereHas('station', function ($stationQ) use ($searchTerm) {
+                            $stationQ->where('name', 'like', $searchTerm);
+                        });
                 });
             })
             ->when($request->filled('unique_no_filter'), function ($q) use ($request) {
@@ -69,6 +73,24 @@ class TicketController extends Controller
             })
             ->when($request->filled('bilty_no'), function ($q) use ($request) {
                 $q->where('bilty_no', 'like', '%' . $request->bilty_no . '%');
+            })
+            ->when($request->filled('station_id'), function ($q) use ($request) {
+                $q->where(function ($sq) use ($request) {
+                    $sq->where('station_id', $request->station_id)
+                        ->orWhere('station_name', 'like', '%' . $request->station_id . '%')
+                        ->orWhereHas('station', function ($stationQ) use ($request) {
+                            $stationQ->where('name', 'like', '%' . $request->station_id . '%');
+                        });
+                });
+            })
+            ->when($request->filled('station'), function ($q) use ($request) {
+                $q->where(function ($sq) use ($request) {
+                    $sq->where('station_id', $request->station)
+                        ->orWhere('station_name', 'like', '%' . $request->station . '%')
+                        ->orWhereHas('station', function ($stationQ) use ($request) {
+                            $stationQ->where('name', 'like', '%' . $request->station . '%');
+                        });
+                });
             })
             ->when($request->filled('qc_status'), function ($q) use ($request) {
                 $q->where('first_qc_status', $request->qc_status);

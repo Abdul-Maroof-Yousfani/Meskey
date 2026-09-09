@@ -8,6 +8,7 @@
     <th>Net Weight</th>
     <th>Truck No</th>
     <th>Bilty No</th>
+    <th>Station</th>
     <th>First QC</th>
     <th>Created</th>
     <th>Action</th>
@@ -50,6 +51,11 @@
             <td>
                 <p class="m-0">
                     {{ $row->bilty_no }} <br>
+                </p>
+            </td>
+            <td>
+                <p class="m-0">
+                    {{ $row->station_name ?? $row->station->name ?? 'N/A' }} <br>
                 </p>
             </td>
             <td>

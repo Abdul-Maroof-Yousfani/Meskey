@@ -82,6 +82,12 @@
                                         <input type="text" class="form-control" placeholder="Bilty#" name="bilty_no"
                                             value="{{ request('bilty_no') }}">
                                     </div>
+                                    <div class="px-1 text-left" style="min-width: 180px; flex: 1 1 180px;">
+                                        <label class="form-label">Station</label>
+                                        <select name="station_id" id="station_id_f" class="form-control select2">
+                                            <option value="">All</option>
+                                        </select>
+                                    </div>
 
                                     <input type="hidden" name="page" value="{{ request('page', 1) }}">
                                     <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
@@ -98,6 +104,7 @@
                                             <th class="col-sm-3">Miller</th>
                                             <th class="col-sm-1">Truck No</th>
                                             <th class="col-sm-1">Bilty No</th>
+                                            <th class="col-sm-1">Station</th>
                                             <th class="col-sm-1">First QC</th>
                                             <th class="col-sm-1">Created</th>
                                             <th class="col-sm-1">Action</th>
@@ -119,6 +126,7 @@
             filterationCommon(`{{ route('get.ticket') }}`);
             initializeDynamicSelect2('#commodity_f', 'products', 'name', 'id', true, false, true, true);
             initializeDynamicSelect2('#miller_id_f', 'millers', 'name', 'id', true, false, true, true);
+            initializeDynamicSelect2('#station_id_f', 'stations', 'name', 'id', true, false, true, true);
 
             // Custom Dependent Select for Arrival Ticket to include "All Accounts"
             const $locationEl = $('#company_location');
