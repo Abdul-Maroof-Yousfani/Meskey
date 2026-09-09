@@ -1154,6 +1154,26 @@
                                 </a>
                             </li>
                             @endcanAccess
+                            @canAccess('product-arrival-report')
+                            <li data-menu="">
+                                <a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('product-wise.index') }}"
+                                    onclick="loadPageContent('{{ route('product-wise.index') }}')"
+                                    data-toggle="dropdown">
+                                    <i class="ft-arrow-right submenu-icon"></i><span data-i18n="Basic">Product Arrival Report</span>
+                                </a>
+                            </li>
+                            @endcanAccess
+                            @canAccess('bag-arrival-report')
+                            <li data-menu="">
+                                <a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('bag-wise.index') }}"
+                                    onclick="loadPageContent('{{ route('bag-wise.index') }}')"
+                                    data-toggle="dropdown">
+                                    <i class="ft-arrow-right submenu-icon"></i><span data-i18n="Basic">Bag Arrival Report</span>
+                                </a>
+                            </li>
+                            @endcanAccess
                         </ul>
                     </li>
                     @endcanAccess
