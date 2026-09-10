@@ -149,7 +149,7 @@
                 <td>{{ $row->truckType?->name ?? 'N/A' }}</td>
                 <td>{{ formatDate($row->loading_date, 'd M Y', 'N/A') }}</td>
                 <td>{{ $row->bags }}</td>
-                <td>{{ $row->loading_weight }}</td>
+                <td>{{ $row->net_weight }}</td>
                 <td>{{ $row->truck_no }}</td>
                 <td>{{ $row->approvals?->amanat ?? 'No' }}</td>
                 @foreach ($product_slab_types as $slab)
