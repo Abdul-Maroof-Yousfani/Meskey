@@ -454,13 +454,13 @@
                         });
                         $soSelect.prop('disabled', false).trigger('change.select2');
 
-                        // Reset line items as location has changed
-                        $('.row-so-select').val([]).trigger('change.select2');
-                        $('.delivery-order-select').empty().trigger('change.select2');
-                        $('.packing-select').empty().trigger('change.select2');
-                        $('.brand-select').val([]).trigger('change.select2');
-                        $('.arrival-location-select').empty().trigger('change.select2');
-                        $('.sub-arrival-location-select').empty().trigger('change.select2');
+                        // Reset line items as location has changed (only unlocked rows)
+                        $('.row-so-select').not(':disabled').val([]).trigger('change.select2');
+                        $('.delivery-order-select').not(':disabled').empty().trigger('change.select2');
+                        $('.packing-select').not(':disabled').empty().trigger('change.select2');
+                        $('.brand-select').not(':disabled').val([]).trigger('change.select2');
+                        $('.arrival-location-select').not(':disabled').empty().trigger('change.select2');
+                        $('.sub-arrival-location-select').not(':disabled').empty().trigger('change.select2');
 
                         window.isUpdatingUI = false;
                     }
@@ -643,7 +643,7 @@
                 $('#locationContainer').show();
                 $('#lineItemsContainer').show();
             } else {
-                $('.delivery-order-select').each(function() {
+                $('.delivery-order-select').not(':disabled').each(function() {
                     $(this).empty().append('<option value="">Select Delivery Order</option>').select2();
                 });
                 var isOptional = $('#is_delivery_order_optional').val() === '1';
@@ -811,7 +811,7 @@
             mainSOOptions.push({id: $(this).val(), text: $(this).text(), type: $(this).data('type')});
         });
 
-        $('.row-so-select').each(function() {
+        $('.row-so-select').not(':disabled').each(function() {
             const $select = $(this);
             const currentValues = $select.val() || [];
             $select.empty();
@@ -826,6 +826,7 @@
     }
 
     function updateDeliveryOrderOptionsForRow($select) {
+        if ($select.is(':disabled')) return;
         const currentValue = $select.val();
         $select.empty().append('<option value="">Select Delivery Order</option>');
         const selectedDeliveryOrderIds = $('#delivery_order_id').val() || [];
@@ -833,14 +834,17 @@
             const value = $(this).val();
             const text = $(this).text();
             if (value && selectedDeliveryOrderIds.includes(value)) {
-                $select.append(new Option(text, value, false, currentValue == value));
+                const isSelected = Array.isArray(currentValue)
+                    ? currentValue.map(String).includes(String(value))
+                    : currentValue == value;
+                $select.append(new Option(text, value, false, isSelected));
             }
         });
         $select.select2({ width: '100%' });
     }
 
     function updateDeliveryOrderOptionsForAllRows() {
-        $('.delivery-order-select').each(function() {
+        $('.delivery-order-select').not(':disabled').each(function() {
             updateDeliveryOrderOptionsForRow($(this));
         });
     }
