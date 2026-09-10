@@ -592,17 +592,47 @@ class LoadingProgramController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $loadingProgram = LoadingProgram::findOrFail($id);
+
+        $lockedItemIds = $loadingProgram->loadingProgramItems()
+            ->whereHas('secondWeighbridge')
+            ->pluck('id')
+            ->toArray();
+
         $validationRules = [
             'main_company_location_id' => 'required|exists:model_location,id',
             'sale_order_id' => 'required|array|min:1',
             'sale_order_id.*' => 'exists:sales_orders,id',
             'loading_program_items' => 'required|array|min:1',
-            'loading_program_items.*.truck_number' => 'required|string|distinct',
-            'loading_program_items.*.brand_id' => 'nullable|exists:brands,id',
-            'loading_program_items.*.arrival_location_id' => 'required|exists:arrival_locations,id',
-            'loading_program_items.*.sub_arrival_location_id' => 'required|exists:arrival_sub_locations,id',
             'remark' => 'nullable|string'
         ];
+
+        // Validate unlocked loading program items
+        if ($request->has('loading_program_items') && is_array($request->loading_program_items)) {
+            $unlockedTruckNumbers = [];
+            foreach ($request->loading_program_items as $index => $itemData) {
+                // If item is already locked with second weighbridge, skip its required field validation
+                if (!empty($itemData['id']) && in_array($itemData['id'], $lockedItemIds)) {
+                    continue;
+                }
+
+                $validationRules["loading_program_items.$index.truck_number"] = 'required|string';
+                $validationRules["loading_program_items.$index.brand_id"] = 'nullable|exists:brands,id';
+                $validationRules["loading_program_items.$index.arrival_location_id"] = 'required|exists:arrival_locations,id';
+                $validationRules["loading_program_items.$index.sub_arrival_location_id"] = 'required|exists:arrival_sub_locations,id';
+
+                if (!empty($itemData['truck_number'])) {
+                    $unlockedTruckNumbers[] = strtolower(trim($itemData['truck_number']));
+                }
+            }
+
+            // Check duplicate truck numbers among submitted items
+            if (count($unlockedTruckNumbers) !== count(array_unique($unlockedTruckNumbers))) {
+                return response()->json([
+                    'errors' => ['loading_program_items' => ['Duplicate truck number found in loading program items.']]
+                ], 422);
+            }
+        }
 
         $saleOrders = SalesOrder::whereIn('id', $request->sale_order_id)->get();
         $isAnyDeliveryOrderRequired = $saleOrders->contains(function ($so) {
@@ -622,6 +652,10 @@ class LoadingProgramController extends Controller
             $allSaleOrders = SalesOrder::whereIn('id', collect($request->loading_program_items)->pluck('sale_order_id')->flatten()->unique())->get()->keyBy('id');
             
             foreach ($request->loading_program_items as $index => $itemData) {
+                if (!empty($itemData['id']) && in_array($itemData['id'], $lockedItemIds)) {
+                    continue; // Skip locked items for row-level DO validation
+                }
+
                 $itemSoIds = (array)($itemData['sale_order_id'] ?? []);
                 $isItemDORequired = false;
                 
@@ -656,14 +690,20 @@ class LoadingProgramController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $loadingProgram = LoadingProgram::findOrFail($id);
+        // Preserve any DOs linked to locked items so they are not lost from LP header
+        $lockedDoIds = \DB::table('loading_program_item_delivery_order')
+            ->whereIn('loading_program_item_id', $lockedItemIds)
+            ->pluck('delivery_order_id')
+            ->toArray();
+        $submittedDoIds = (array)($request->delivery_order_id ?? []);
+        $allLpDoIds = array_values(array_unique(array_filter(array_merge($submittedDoIds, $lockedDoIds))));
 
         $companyLocationIds = [];
         $arrivalLocationIds = [];
         $subArrivalLocationIds = [];
 
-        if ($request->delivery_order_id && count($request->delivery_order_id) > 0) {
-            $deliveryOrders = DeliveryOrder::whereIn('id', $request->delivery_order_id)->get();
+        if (count($allLpDoIds) > 0) {
+            $deliveryOrders = DeliveryOrder::whereIn('id', $allLpDoIds)->get();
             $companyLocationIds = $deliveryOrders->flatMap(fn($do) => explode(',', $do->location_id))->filter()->unique()->toArray();
             $arrivalLocationIds = $deliveryOrders->flatMap(fn($do) => explode(',', $do->arrival_location_id))->filter()->unique()->toArray();
             $subArrivalLocationIds = $deliveryOrders->flatMap(fn($do) => explode(',', $do->sub_arrival_location_id))->filter()->unique()->toArray();
@@ -690,7 +730,7 @@ class LoadingProgramController extends Controller
         try {
             $loadingProgram->update([
                 'sale_order_id' => $request->sale_order_id[0],
-                'delivery_order_id' => isset($request->delivery_order_id[0]) ? $request->delivery_order_id[0] : null,
+                'delivery_order_id' => isset($allLpDoIds[0]) ? $allLpDoIds[0] : null,
                 'company_locations' => $companyLocationIds,
                 'company_location_id' => $request->main_company_location_id,
                 'arrival_locations' => $arrivalLocationIds,
@@ -700,8 +740,8 @@ class LoadingProgramController extends Controller
 
             // Sync main Loading Program relationships
             $loadingProgram->saleOrders()->sync($request->sale_order_id);
-            if ($request->delivery_order_id) {
-                $loadingProgram->deliveryOrders()->sync($request->delivery_order_id);
+            if (!empty($allLpDoIds)) {
+                $loadingProgram->deliveryOrders()->sync($allLpDoIds);
             } else {
                 $loadingProgram->deliveryOrders()->detach();
             }
@@ -716,21 +756,26 @@ class LoadingProgramController extends Controller
 
             if (isset($request->loading_program_items) && is_array($request->loading_program_items)) {
                 foreach ($request->loading_program_items as $index => $itemData) {
+                    // Skip locked items! Their values and relationships are preserved completely.
+                    if (!empty($itemData['id']) && in_array($itemData['id'], $lockedItemIds)) {
+                        continue;
+                    }
+
                     $selected_do_ids = $itemData['delivery_order_id'] ?? [];
 
                     $itemAttributes = [
                         'loading_program_id' => $loadingProgram->id,
                         'transaction_number' => $itemData['transaction_number'] ?? self::getNumber($request),
                         'truck_number' => $itemData['truck_number'],
-                        'container_number' => $itemData['container_number'] ?? null,
-                        'packing' => $itemData['packing'] ?? null,
-                        'brand_id' => $itemData['brand_id'] ?? null,
+                        'container_number' => !empty($itemData['container_number']) ? $itemData['container_number'] : null,
+                        'packing' => !empty($itemData['packing']) ? $itemData['packing'] : null,
+                        'brand_id' => !empty($itemData['brand_id']) ? $itemData['brand_id'] : null,
                         'arrival_location_id' => $itemData['arrival_location_id'],
                         'sub_arrival_location_id' => $itemData['sub_arrival_location_id'],
-                        'driver_name' => $itemData['driver_name'] ?? null,
-                        'contact_details' => $itemData['contact_details'] ?? null,
-                        'transporter_id' => $itemData['transporter_id'] ?? null,
-                        'qty' => $itemData['qty'] ?? 0,
+                        'driver_name' => !empty($itemData['driver_name']) ? $itemData['driver_name'] : null,
+                        'contact_details' => !empty($itemData['contact_details']) ? $itemData['contact_details'] : null,
+                        'transporter_id' => !empty($itemData['transporter_id']) ? $itemData['transporter_id'] : null,
+                        'qty' => !empty($itemData['qty']) ? $itemData['qty'] : 0,
                         'delivery_order_id' => $selected_do_ids[0] ?? null,
                     ];
 
