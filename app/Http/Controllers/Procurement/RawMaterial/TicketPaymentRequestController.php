@@ -699,7 +699,7 @@ class TicketPaymentRequestController extends Controller
                 $freightPaymentRequestgrossAmount = $freightPaymentRequestgrossAmount->gross_amount;
             }
         } else {
-            $freightPaymentRequestgrossAmount = 0;
+            $freightPaymentRequestgrossAmount = null;
         }
 
 
