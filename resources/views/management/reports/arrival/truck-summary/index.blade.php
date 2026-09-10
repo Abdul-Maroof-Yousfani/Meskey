@@ -1,6 +1,6 @@
 @extends('management.layouts.master')
 @section('title')
-    Bag Arrival Report
+    Truck Summary Report
 @endsection
 @section('content')
     <div class="content-wrapper">
@@ -8,12 +8,12 @@
             <div class="row w-100 mx-auto">
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
                     <h2 class="page-title">
-                        Bag Arrival Report
+                        Truck Summary Report
                     </h2>
                 </div>
                 <div class="col-md-6 d-flex align-items-end justify-content-end">
                     <div class="form-group mb-0">
-                        <button class="btn btn-secondary" onclick="exportToExcel('exportableTable','BagArrivalReport')">
+                        <button class="btn btn-secondary" onclick="exportToExcel('exportableTable','TruckSummaryReport')">
                             <i class="fa fa-file-excel-o mr-2"></i> Export to Excel
                         </button>
                     </div>
@@ -43,13 +43,11 @@
                                                     </select>
                                                 </div>
                                             </div>
-
                                             <div class="col-md-2">
                                                 <div class="form-group mb-0">
                                                     <label>Date Range:</label>
-                                                    <input type="text" name="daterange" id="daterange" class="form-control"
-                                                        placeholder="Select Date Range"
-                                                        value="{{ request('daterange', '') }}" />
+                                                    <input type="text" name="daterange" class="form-control"
+                                                        value="{{ request('daterange', \Carbon\Carbon::now()->subMonth()->format('m/d/Y') . ' - ' . \Carbon\Carbon::now()->format('m/d/Y')) }}" />
                                                 </div>
                                             </div>
 
@@ -71,14 +69,14 @@
 
                                             <div class="col-md-2">
                                                 <div class="form-group mb-0">
-                                                    <label>Bag:</label>
-                                                    <select name="bag_type_id[]" id="bag_type_id" multiple
+                                                    <label>Miller:</label>
+                                                    <select name="miller_id" id="miller_id"
                                                         class="form-control selectWithoutAjax">
-                                                        <option value="">Select Bag</option>
-                                                        @foreach ($bagTypes as $bagType)
-                                                            <option value="{{ $bagType->id }}"
-                                                                {{ is_array(request('bag_type_id')) && in_array($bagType->id, request('bag_type_id')) ? 'selected' : '' }}>
-                                                                {{ $bagType->name }}
+                                                        <option value="">Select Miller</option>
+                                                        @foreach ($millers as $miller)
+                                                            <option value="{{ $miller->id }}"
+                                                                {{ request('miller_id') == $miller->id ? 'selected' : '' }}>
+                                                                {{ $miller->name }}
                                                             </option>
                                                         @endforeach
                                                     </select>
@@ -117,6 +115,11 @@
                                                 </div>
                                             </div>
                                         </div>
+
+                                        <div class="row justify-content-nd text mt-2">
+                                            <input type="hidden" name="page" value="{{ request('page', 1) }}">
+                                            <input type="hidden" name="per_page" value="{{ request('per_page', 25) }}">
+                                        </div>
                                     </div>
                                 </div>
                             </form>
@@ -126,10 +129,12 @@
                                 <table class="table m-0" id="exportableTable">
                                     <thead>
                                         <tr>
-                                            <th style="width: 80px;">#</th>
-                                            <th>Bag</th>
-                                            <th class="text-center" style="width: 180px;">Total Tickets</th>
-                                            <th class="text-right" style="width: 250px;">Filled Bags</th>
+                                            <th>Date</th>
+                                            <th>Truck Arrived</th>
+                                            <th>Total Unloaded</th>
+                                            <th>Half Rejected</th>
+                                            <th>Full rejected</th>
+                                            <th>In Process</th>
                                         </tr>
                                     </thead>
                                 </table>
@@ -145,9 +150,8 @@
     <script>
         $(document).ready(function() {
             filterationCommon(
-                `{{ route('reports.arrival.get.bag-wise') }}`
+                `{{ route('reports.arrival.get.truck-summary') }}`
             );
-            $('.selectWithoutAjax').select2();
         });
     </script>
 @endsection

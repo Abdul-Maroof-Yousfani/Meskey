@@ -1,5 +1,17 @@
 <?php
-use App\Http\Controllers\Reports\Arrival\{ArrivalReportController, TruckDetailReportController, TruckDetailGateReportController, TruckTimestampReportController, WeighbridgeSampleMoneyReportController, QcAnalysisReportController, ProductWiseArrivalReportController, BagWiseArrivalReportController, StationWiseQCAnalysisReportController, CustomQcSampleReportController};
+use App\Http\Controllers\Reports\Arrival\{
+    ArrivalReportController,
+    TruckDetailReportController,
+    TruckDetailGateReportController,
+    TruckTimestampReportController,
+    WeighbridgeSampleMoneyReportController,
+    QcAnalysisReportController,
+    ProductWiseArrivalReportController,
+    BagWiseArrivalReportController,
+    StationWiseQCAnalysisReportController,
+    CustomQcSampleReportController,
+    TruckSummaryReportController
+};
 use Illuminate\Support\Facades\Route;
 
 
@@ -10,6 +22,8 @@ Route::prefix('arrival')->group(function () {
   Route::post('/get-truck-detail', [TruckDetailReportController::class, 'getList'])->name('reports.arrival.get.truck-detail');
   Route::resource('truck-detail-gate', TruckDetailGateReportController::class);
   Route::post('/get-truck-detail-gate', [TruckDetailGateReportController::class, 'getList'])->name('reports.arrival.get.truck-detail-gate');
+  Route::resource('truck-summary', TruckSummaryReportController::class);
+  Route::post('/get-truck-summary', [TruckSummaryReportController::class, 'getList'])->name('reports.arrival.get.truck-summary');
 
   Route::resource('truck-timestamp', TruckTimestampReportController::class);
   Route::post('/get-truck-timestamp', [TruckTimestampReportController::class, 'getList'])->name('reports.arrival.get.truck-timestamp');
