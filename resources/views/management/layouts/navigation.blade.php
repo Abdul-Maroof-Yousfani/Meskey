@@ -1196,6 +1196,17 @@
                                 </a>
                             </li>
                             @endcanAccess
+                            @canAccess('arrival-custom-qc-sample-report')
+                            <li data-menu="">
+                                <a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('custom-qc-sample.index') }}"
+                                    onclick="loadPageContent('{{ route('custom-qc-sample.index') }}')"
+                                    data-toggle="dropdown">
+                                    <i class="ft-arrow-right submenu-icon"></i><span data-i18n="Basic">Custom QC Sample
+                                        Report</span>
+                                </a>
+                            </li>
+                            @endcanAccess
                         </ul>
                     </li>
                     @endcanAccess

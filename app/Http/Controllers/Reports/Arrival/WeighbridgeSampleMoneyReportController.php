@@ -32,6 +32,7 @@ class WeighbridgeSampleMoneyReportController extends Controller
         $tickets = ArrivalTicket::select('arrival_tickets.*')
             ->with([
                 'creator',
+                'freight',
                 'truckType',
                 'location',
                 'firstWeighbridge',

@@ -1,5 +1,5 @@
 <?php
-use App\Http\Controllers\Reports\Arrival\{ArrivalReportController, TruckDetailReportController, TruckDetailGateReportController, TruckTimestampReportController, WeighbridgeSampleMoneyReportController, QcAnalysisReportController, ProductWiseArrivalReportController, BagWiseArrivalReportController, StationWiseQCAnalysisReportController};
+use App\Http\Controllers\Reports\Arrival\{ArrivalReportController, TruckDetailReportController, TruckDetailGateReportController, TruckTimestampReportController, WeighbridgeSampleMoneyReportController, QcAnalysisReportController, ProductWiseArrivalReportController, BagWiseArrivalReportController, StationWiseQCAnalysisReportController, CustomQcSampleReportController};
 use Illuminate\Support\Facades\Route;
 
 
@@ -23,6 +23,8 @@ Route::prefix('arrival')->group(function () {
   Route::post('/get-bag-wise', [BagWiseArrivalReportController::class, 'getList'])->name('reports.arrival.get.bag-wise');
   Route::resource('station-wise-qc-analysis', StationWiseQCAnalysisReportController::class);
   Route::post('/get-station-wise-qc-analysis', [StationWiseQCAnalysisReportController::class, 'getList'])->name('reports.arrival.get.station-wise-qc-analysis');
+  Route::resource('custom-qc-sample', CustomQcSampleReportController::class);
+  Route::post('/get-custom-qc-sample', [CustomQcSampleReportController::class, 'getList'])->name('reports.arrival.get.custom-qc-sample');
 });
 
 
