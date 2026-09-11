@@ -187,13 +187,13 @@
                 <td>{{ $row->qcProduct?->name ?? ($row->product?->name ?? 'N/A') }}</td>
                 <td>{{ $row->saudaType?->name ?? 'N/A' }}</td>
                 <td>{{ $row->status ?? 'N/A' }}</td>
-                <td>{{ $row->latestPurchaseSamplingRequest?->approved_remarks ?? 'N/A' }}</td>
+                <td>{{ $row->latestPurchaseSamplingRequest?->remark ?? 'N/A' }}</td>
                 <td>{{ $row->unloadingLocation?->arrivalLocation?->warehouse?->name ?? ($row->approvals?->gala?->arrivalLocation?->name ?? 'N/A') }}</td>
                 <td>{{ $row->unloadingLocation?->arrivalLocation?->gala_name ?? ($row->approvals?->gala?->name ?? ($row->approvals?->gala_name ?? 'N/A')) }}</td>
                 <td>{{ $row->unloadingLocation?->location_type ?? ($row->approvals?->locationType?->name ?? 'N/A') }}</td>
-                <td>{{ $row->firstWeighbridge?->gross_weight ?? ($row->first_weight ?? 'N/A') }}</td>
+                <td>{{ $row->firstWeighbridge?->weight ?? 0 }}</td>
                 <td>{{ formatDateTime($row->firstWeighbridge?->created_at, 'd M Y h:i:s A', 'N/A') }}</td>
-                <td>{{ $row->secondWeighbridge?->tare_weight ?? ($row->second_weight ?? 'N/A') }}</td>
+                <td>{{ $row->secondWeighbridge?->weight ?? 0 }}</td>
                 <td>{{ formatDateTime($row->secondWeighbridge?->created_at, 'd M Y h:i:s A', 'N/A') }}</td>
                 <td>{{ $row->freight?->gross_freight_amount ?? 'N/A' }}</td>
                 <td>{{ $row->freight?->labor_amount ?? 'N/A' }}</td>
