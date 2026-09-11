@@ -7,6 +7,7 @@ use App\Models\{
     ArrivalPurchaseOrder,
     AuditLog,
     Product,
+    PurchaseSamplingRequest,
     SaudaType,
     User
 };
@@ -300,6 +301,17 @@ class ArrivalTicket extends Model
     {
         return $this->hasOne(AuditLog::class, 'model_id')
             ->whereIn('model_type', [self::class, 'ArrivalTicket', 'arrival_tickets'])
+            ->latestOfMany();
+    }
+
+    public function purchaseSamplingRequests()
+    {
+        return $this->hasMany(PurchaseSamplingRequest::class, 'arrival_purchase_order_id', 'arrival_purchase_order_id');
+    }
+
+    public function latestPurchaseSamplingRequest()
+    {
+        return $this->hasOne(PurchaseSamplingRequest::class, 'arrival_purchase_order_id', 'arrival_purchase_order_id')
             ->latestOfMany();
     }
 }

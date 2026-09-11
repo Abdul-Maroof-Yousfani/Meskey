@@ -35,11 +35,6 @@
         <th>Sauda Terms</th>
         <th>Status</th>
         <th>Tabaar Instructions</th>
-        <th>Broken Level</th>
-        <th>Moisture Level</th>
-        <th>Paddy Level</th>
-        <th>Damage Level</th>
-        <th>Under Milled Level</th>
         <th>Warehouse</th>
         <th>Galaa #</th>
         <th>Location Type</th>
@@ -52,7 +47,7 @@
         <th>Unpaid Labor Charges</th>
         <th>Other Charges (-)</th>
         <th>Kanta Charges</th>
-        <th>Weighbridge Charges</th>
+        {{-- <th>Weighbridge Charges</th> --}}
         <th>Full Reject</th>
         <th>Full Reject By</th>
         <th>Full Reject Time</th>
@@ -70,6 +65,7 @@
         <th>Filling Bags</th>
         <th>Total Bags</th>
         <th>Completion</th>
+
         <th>Final QC Report</th>
         <th>Bilty</th>
         <th>Loading Weight</th>
@@ -191,12 +187,7 @@
                 <td>{{ $row->qcProduct?->name ?? ($row->product?->name ?? 'N/A') }}</td>
                 <td>{{ $row->saudaType?->name ?? 'N/A' }}</td>
                 <td>{{ $row->status ?? 'N/A' }}</td>
-                <td>{{ $row->tabaar_instructions ?? 'N/A' }}</td>
-                <td>{{ $row->broken_level ?? 0 }}</td>
-                <td>{{ $row->moisture_level ?? 0 }}</td>
-                <td>{{ $row->paddy_level ?? 0 }}</td>
-                <td>{{ $row->damage_level ?? 0 }}</td>
-                <td>{{ $row->under_milled_level ?? 0 }}</td>
+                <td>{{ $row->latestPurchaseSamplingRequest?->approved_remarks ?? 'N/A' }}</td>
                 <td>{{ $row->unloadingLocation?->arrivalLocation?->warehouse?->name ?? ($row->approvals?->gala?->arrivalLocation?->name ?? 'N/A') }}</td>
                 <td>{{ $row->unloadingLocation?->arrivalLocation?->gala_name ?? ($row->approvals?->gala?->name ?? ($row->approvals?->gala_name ?? 'N/A')) }}</td>
                 <td>{{ $row->unloadingLocation?->location_type ?? ($row->approvals?->locationType?->name ?? 'N/A') }}</td>
@@ -204,12 +195,12 @@
                 <td>{{ formatDateTime($row->firstWeighbridge?->created_at, 'd M Y h:i:s A', 'N/A') }}</td>
                 <td>{{ $row->secondWeighbridge?->tare_weight ?? ($row->second_weight ?? 'N/A') }}</td>
                 <td>{{ formatDateTime($row->secondWeighbridge?->created_at, 'd M Y h:i:s A', 'N/A') }}</td>
-                <td>{{ $row->freight?->freight_amount ?? 'N/A' }}</td>
+                <td>{{ $row->freight?->gross_freight_amount ?? 'N/A' }}</td>
                 <td>{{ $row->freight?->labor_amount ?? 'N/A' }}</td>
-                <td>{{ $row->freight?->unpaid_labor_amount ?? 'N/A' }}</td>
-                <td>{{ $row->freight?->other_charges ?? 'N/A' }}</td>
-                <td>{{ $row->freight?->kanta_charges ?? 'N/A' }}</td>
-                <td>{{ $row->freight?->weighbridge_charges ?? 'N/A' }}</td>
+                <td>{{ $row->freight?->unpaid_labor_charges ?? 'N/A' }}</td>
+                <td>{{ $row->freight?->other_labour_charges ?? 'N/A' }}</td>
+                <td>{{ $row->freight?->karachi_kanta_charges ?? 'N/A' }}</td>
+                {{-- <td>{{ $row->freight?->karachi_kanta_charges ?? 'N/A' }}</td> --}}
 
                 @php
                     $isHalfReject = ($row->approvals?->bag_packing_approval == 'Half Approved' || ($row->approvals?->total_rejection > 0) || $row->document_approval_status == 'half_approved');
