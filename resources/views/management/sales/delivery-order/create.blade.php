@@ -40,7 +40,7 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Customer:</label>
-                        <select name="customer_id" id="customer_id" onchange="get_sale_orders(); get_receipt_vouchers()"
+                        <select name="customer_id" id="customer_id" onchange="get_sale_orders(); get_receipt_vouchers(); get_journal_vouchers()"
                             class="form-control select2">
                             <option value="">Select Customer</option>
                             @foreach ($customers ?? [] as $customer)
@@ -53,7 +53,7 @@
                     <div class="form-group">
                         <label class="form-label">Sale Orders:</label>
                         <select name="sale_order_id" id="sale_order"
-                            onchange="get_so_detail(), get_so_items(), check_so_type(); validate_expiry(); get_receipt_vouchers()"
+                            onchange="get_so_detail(), get_so_items(), check_so_type(); validate_expiry(); get_receipt_vouchers(); get_journal_vouchers()"
                             class="form-control select2">
                             <option value="">Select SO</option>
                         </select>
@@ -155,9 +155,9 @@
                 </div>
                 <div class="col-md-3 advanced" style="display: none">
                     <div class="form-group">
-                        <label class="form-label">Withhold for RV:</label>
-                        <select name="withhold_for_rv" id="withhold_for_rv" class="form-control select2" disabled>
-                            <option value="">Select Receipt Vouchers</option>
+                        <label class="form-label">Withhold Voucher (RV / JV):</label>
+                        <select name="withhold_for_rv" id="withhold_for_rv" onchange="validate_withhold_voucher()" class="form-control select2" disabled>
+                            <option value="">Select Withhold Voucher</option>
                         </select>
                     </div>
                 </div>
@@ -625,21 +625,35 @@
         }
 
         const receipt_vouchers = $("#receipt_vouchers");
+        const journal_vouchers = $("#journal_vouchers");
         let withholdSelect = $("#withhold_for_rv");
         let currentWithholdVal = withholdSelect.val();
 
         withholdSelect.empty();
-        withholdSelect.append(`<option value='' data-amount="0">Select Receipt Voucher</option>`);
+        withholdSelect.append(`<option value='' data-amount="0">Select Withhold Voucher</option>`);
 
         // Get selected receipt vouchers and add them to withhold_for_rv
         $("#receipt_vouchers option:selected").each(function () {
             const val = $(this).val();
             const text = $(this).text();
-            const amount = $(this).data('amount');
+            const amount = parseFloat($(this).data('amount')) || 0;
 
             if (val) {
                 withholdSelect.append(
-                    `<option value="${val}" data-amount="${amount}">${text}</option>`
+                    `<option value="${val}" data-amount="${amount}">RV: ${text}</option>`
+                );
+            }
+        });
+
+        // Get selected journal vouchers and add them to withhold_for_rv
+        $("#journal_vouchers option:selected").each(function () {
+            const val = $(this).val();
+            const text = $(this).text();
+            const amount = parseFloat($(this).data('amount')) || 0;
+
+            if (val) {
+                withholdSelect.append(
+                    `<option value="${val}" data-amount="${amount}">JV: ${text}</option>`
                 );
             }
         });
@@ -649,7 +663,10 @@
             withholdSelect.val(currentWithholdVal);
         }
 
-        if (withhold > 0 && receipt_vouchers.val() && receipt_vouchers.val().length > 0) {
+        const hasSelectedVouchers = (receipt_vouchers.val() && receipt_vouchers.val().length > 0) ||
+                                    (journal_vouchers.val() && journal_vouchers.val().length > 0);
+
+        if (withhold > 0 && hasSelectedVouchers) {
             withholdSelect.prop("disabled", false);
         } else {
             withholdSelect.prop("disabled", true);
@@ -657,6 +674,26 @@
         }
 
         withholdSelect.trigger('change.select2');
+        validate_withhold_voucher();
+    }
+
+    function validate_withhold_voucher() {
+        const withhold = parseFloat($("#withhold_amount").val()) || 0;
+        const selectedOption = $("#withhold_for_rv option:selected");
+        const voucherVal = $("#withhold_for_rv").val();
+        
+        if (voucherVal && withhold > 0) {
+            const voucherAmount = parseFloat(selectedOption.data("amount")) || 0;
+            if (withhold > voucherAmount) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Invalid Withhold Voucher',
+                    text: 'Selected voucher balance (' + voucherAmount.toLocaleString() + ') is less than withhold amount (' + withhold.toLocaleString() + '). Please select a voucher with sufficient balance.',
+                    confirmButtonText: 'OK'
+                });
+                $("#withhold_for_rv").val("").trigger("change.select2");
+            }
+        }
     }
 
     function addRow() {
@@ -1010,48 +1047,52 @@
                     // $(".advanced").show();
                 }
 
-                // Reset withhold_for_rv - it will be populated when receipt vouchers are selected
-                let withholdSelect = $("#withhold_for_rv");
-                withholdSelect.empty();
-                withholdSelect.append(
-                    `<option value='' data-amount="0">Select Receipt Voucher</option>`
-                );
-                withholdSelect.prop("disabled", true);
-                withholdSelect.select2();
-                
-                $.ajax({
-                    url: "{{ route('sales.get.delivery-order.getJvAgainstCustomer') }}",
-                    method: "GET",
-                    data: {
-                        customer_id: customer_id
-                    },
-                    dataType: "json",
-                    success: function (res) {
-                        let selectJv = $("#journal_vouchers");
-                        let selectedValuesJv = selectJv.val() || [];
-                        selectJv.empty();
-
-                        res.forEach(item => {
-                            selectJv.append(
-                                `<option value="jv_${item.id}"
-                                        data-amount="${item.amount}">
-                                    ${item.text}
-                                </option>`
-                            );
-                        });
-
-                        selectJv.val(selectedValuesJv).trigger('change.select2');
-                        add_advance_amount();
-                    },
-                    error: function (error) {
-                        console.error("Error fetching JVs:", error);
-                    }
-                });
+                change_withhold_amount();
             },
             error: function (error) {
                 // Handle errors here
                 $('.loader-container').hide();
                 console.error("Error:", error);
+            }
+        });
+    }
+
+    function get_journal_vouchers() {
+        const customer_id = $("#customer_id").val();
+        let selectJv = $("#journal_vouchers");
+
+        if (!customer_id) {
+            selectJv.empty();
+            selectJv.trigger('change.select2');
+            add_advance_amount();
+            return;
+        }
+
+        $.ajax({
+            url: "{{ route('sales.get.delivery-order.getJvAgainstCustomer') }}",
+            method: "GET",
+            data: {
+                customer_id: customer_id
+            },
+            dataType: "json",
+            success: function (res) {
+                let selectedValuesJv = selectJv.val() || [];
+                selectJv.empty();
+
+                res.forEach(item => {
+                    selectJv.append(
+                        `<option value="${item.id}"
+                                data-amount="${item.amount}">
+                            ${item.text}
+                        </option>`
+                    );
+                });
+
+                selectJv.val(selectedValuesJv).trigger('change.select2');
+                add_advance_amount();
+            },
+            error: function (error) {
+                console.error("Error fetching JVs:", error);
             }
         });
     }

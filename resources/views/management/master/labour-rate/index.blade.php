@@ -11,6 +11,13 @@
                     <h2 class="page-title"> Labour Rates</h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
+                    <a href="{{ route('labour-rate.download-sample') }}" class="btn btn-outline-success position-relative mr-1">
+                        <i class="ft-download mr-1"></i> Sample Excel
+                    </a>
+                    <button onclick="openModal(this,'{{ route('labour-rate.import-modal') }}','Import Labour Rates')" type="button"
+                        class="btn btn-secondary position-relative mr-1">
+                        <i class="ft-upload mr-1"></i> Import Labour Rates
+                    </button>
                     <button onclick="openModal(this,'{{ route('labour-rates.create') }}','Add Labour Rate')" type="button"
                         class="btn btn-primary position-relative ">
                         Create Labour Rate

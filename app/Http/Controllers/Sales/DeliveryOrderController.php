@@ -76,19 +76,148 @@ class DeliveryOrderController extends Controller
             ->where('voucher_no', $delivery_order->reference_no)
             ->get();
             
+        $rv_withhold_exists = $delivery_order->receipt_vouchers->where('pivot.withhold_amount', '>', 0)->count() > 0;
+
         $journal_vouchers = [];
         foreach ($linked_jvs as $jv_adj) {
             $jv = DB::table('journal_vouchers')->where('id', $jv_adj->reference_id)->first();
             if ($jv) {
+                $is_withheld = false;
+                if (!$rv_withhold_exists && $delivery_order->withhold_amount > 0) {
+                    $cust_credit = DB::table('journal_voucher_details')
+                        ->where('journal_voucher_id', $jv->id)
+                        ->where('acc_id', function($q) use ($delivery_order) {
+                            $q->select('account_id')->from('customers')->where('id', $delivery_order->customer_id);
+                        })
+                        ->sum('credit_amount');
+                    $other_spent = DB::table('settlement_adjustments')
+                        ->where('reference_type', 'journal_voucher')
+                        ->where('reference_id', $jv->id)
+                        ->where('voucher_no', '!=', $delivery_order->reference_no)
+                        ->sum('amount');
+                    $avail = doubleval($cust_credit) - doubleval($other_spent);
+                    if (abs(($avail - $jv_adj->amount) - $delivery_order->withhold_amount) < 0.01) {
+                        $is_withheld = true;
+                    }
+                }
+
                 $journal_vouchers[] = [
                     'id' => $jv->id,
                     'text' => $jv->jv_no . ' (Consumed: ' . $jv_adj->amount . ')',
-                    'amount' => $jv_adj->amount
+                    'amount' => $jv_adj->amount,
+                    'is_withheld' => $is_withheld,
                 ];
             }
         }
 
         return view('management.sales.delivery-order.view', compact('sale_order_of_delivery_order', 'payment_terms', 'delivery_order', 'customers', 'sales_orders', 'receipt_vouchers', 'journal_vouchers', 'latestLog'));
+    }
+
+    public function getStats(Request $request, int $id)
+    {
+        $delivery_order = DeliveryOrder::with([
+            'customer',
+            'salesOrder',
+            'delivery_order_data.item',
+            'delivery_order_data.brand',
+            'delivery_challans' => function ($q) {
+                $q->where('delivery_challans.am_approval_status', '!=', 'rejected');
+            }
+        ])->findOrFail($id);
+
+        $doQty = (float) $delivery_order->delivery_order_data->sum('qty');
+        $doDataIds = $delivery_order->delivery_order_data->pluck('id')->toArray();
+
+        $dcQty = (float) \App\Models\Sales\DeliveryChallanData::whereIn('do_data_id', $doDataIds)
+            ->whereHas('deliveryChallan', function ($q) {
+                $q->where('am_approval_status', '!=', 'rejected');
+            })
+            ->sum('qty');
+
+        if ($dcQty <= 0) {
+            $dcQty = (float) $delivery_order->delivery_challans()
+                ->where('delivery_challans.am_approval_status', '!=', 'rejected')
+                ->sum('delivery_challan_delivery_order.qty');
+        }
+
+        $remainingQty = max(0, $doQty - $dcQty);
+
+        // Item-wise stats
+        $itemStats = [];
+        $totalItemDoQty = 0;
+        $totalItemDcQty = 0;
+        $totalItemRemainingQty = 0;
+        $totalItemBags = 0;
+
+        foreach ($delivery_order->delivery_order_data as $itemData) {
+            $iDoQty = (float) $itemData->qty;
+            $iDcQty = (float) \App\Models\Sales\DeliveryChallanData::where('do_data_id', $itemData->id)
+                ->whereHas('deliveryChallan', function ($q) {
+                    $q->where('am_approval_status', '!=', 'rejected');
+                })
+                ->sum('qty');
+
+            $iRemQty = max(0, $iDoQty - $iDcQty);
+
+            $totalItemDoQty += $iDoQty;
+            $totalItemDcQty += $iDcQty;
+            $totalItemRemainingQty += $iRemQty;
+            $totalItemBags += (float) ($itemData->no_of_bags ?? 0);
+
+            $itemStats[] = [
+                'item_id' => $itemData->item_id,
+                'item_name' => $itemData->item->name ?? 'N/A',
+                'brand_name' => $itemData->brand->name ?? 'N/A',
+                'bag_type' => bag_type_name($itemData->bag_type),
+                'bag_size' => $itemData->bag_size,
+                'no_of_bags' => $itemData->no_of_bags,
+                'rate' => $itemData->rate,
+                'do_qty' => $iDoQty,
+                'dc_qty' => $iDcQty,
+                'remaining_qty' => $iRemQty,
+            ];
+        }
+
+        // Delivery Challans details
+        $challans = [];
+        foreach ($delivery_order->delivery_challans as $dc) {
+            $dcDispatchedQty = (float) \App\Models\Sales\DeliveryChallanData::where('delivery_challan_id', $dc->id)
+                ->whereIn('do_data_id', $doDataIds)
+                ->sum('qty');
+            if ($dcDispatchedQty <= 0) {
+                $dcDispatchedQty = (float) ($dc->pivot->qty ?? 0);
+            }
+
+            $dcTrucks = \App\Models\Sales\DeliveryChallanData::where('delivery_challan_id', $dc->id)
+                ->whereIn('do_data_id', $doDataIds)
+                ->pluck('truck_no')
+                ->filter()
+                ->unique()
+                ->implode(', ');
+
+            $challans[] = [
+                'id' => $dc->id,
+                'reference_number' => $dc->reference_number ?? ('DC #' . $dc->id),
+                'dc_no' => $dc->dc_no,
+                'dispatch_date' => $dc->dispatch_date,
+                'status' => $dc->am_approval_status ?? 'pending',
+                'qty' => $dcDispatchedQty,
+                'truck_no' => $dcTrucks ?: 'N/A',
+            ];
+        }
+
+        return view('management.sales.delivery-order.doStatsModal', compact(
+            'delivery_order',
+            'doQty',
+            'dcQty',
+            'remainingQty',
+            'itemStats',
+            'challans',
+            'totalItemDoQty',
+            'totalItemDcQty',
+            'totalItemRemainingQty',
+            'totalItemBags'
+        ));
     }
 
     public function create()
@@ -171,6 +300,11 @@ class DeliveryOrderController extends Controller
                                 ->sum('delivery_order_receipt_voucher.amount');
                             $remaining = doubleval($adv->net_amount) - doubleval($spent);
 
+                            if ($rv_val == $request->withhold_for_rv && doubleval($request->withhold_amount ?? 0) > $remaining) {
+                                DB::rollBack();
+                                return response()->json("Withhold amount cannot be greater than the selected voucher balance ($remaining).", 422);
+                            }
+
                             $withhold_amount = ($rv_val == $request->withhold_for_rv) ? ($request->withhold_amount ?? 0) : 0;
 
                             DB::table('delivery_order_receipt_voucher')->insert([
@@ -212,6 +346,12 @@ class DeliveryOrderController extends Controller
                             $spent += $jv_spent;
 
                             $remaining = doubleval($linked_amount) - doubleval($spent);
+
+                            if ($rv_val == $request->withhold_for_rv && doubleval($request->withhold_amount ?? 0) > $remaining) {
+                                DB::rollBack();
+                                return response()->json("Withhold amount cannot be greater than the selected voucher balance ($remaining).", 422);
+                            }
+
                             $withhold_amount = ($rv_val == $request->withhold_for_rv) ? ($request->withhold_amount ?? 0) : 0;
 
                             DB::table('delivery_order_receipt_voucher')->insert([
@@ -251,14 +391,24 @@ class DeliveryOrderController extends Controller
                         $remaining = doubleval($total_credit) - doubleval($spent);
                         
                         if ($remaining > 0) {
-                            DB::table('settlement_adjustments')->insert([
-                                'reference_type' => 'journal_voucher',
-                                'reference_id' => $jv_id,
-                                'voucher_no' => $delivery_order->reference_no,
-                                'amount' => $remaining,
-                                'created_at' => now(),
-                                'updated_at' => now(),
-                            ]);
+                            if ($jv_val == $request->withhold_for_rv && doubleval($request->withhold_amount ?? 0) > $remaining) {
+                                DB::rollBack();
+                                return response()->json("Withhold amount cannot be greater than the selected voucher balance ($remaining).", 422);
+                            }
+
+                            $withhold_amount = ($jv_val == $request->withhold_for_rv) ? doubleval($request->withhold_amount ?? 0) : 0;
+                            $adjusted_amount = max(0, $remaining - $withhold_amount);
+
+                            if ($adjusted_amount > 0 || $withhold_amount > 0) {
+                                DB::table('settlement_adjustments')->insert([
+                                    'reference_type' => 'journal_voucher',
+                                    'reference_id' => $jv_id,
+                                    'voucher_no' => $delivery_order->reference_no,
+                                    'amount' => $adjusted_amount,
+                                    'created_at' => now(),
+                                    'updated_at' => now(),
+                                ]);
+                            }
                         }
                     }
                 }
@@ -712,12 +862,13 @@ class DeliveryOrderController extends Controller
             ->get();
 
         $delivery_order_id = $request->delivery_order_id;
+        $grouped_details = $jv_details->groupBy('jv_id');
 
-        foreach ($jv_details as $detail) {
-            // Calculate how much of this JV Detail is already consumed in DOs
+        foreach ($grouped_details as $jv_id => $details) {
+            $total_credit = $details->sum('credit_amount');
             $spent_query = DB::table('settlement_adjustments')
                 ->where('reference_type', 'journal_voucher')
-                ->where('reference_id', $detail->jv_id);
+                ->where('reference_id', $jv_id);
                 
             if ($delivery_order_id) {
                 $do = DeliveryOrder::find($delivery_order_id);
@@ -727,15 +878,15 @@ class DeliveryOrderController extends Controller
             }
             
             $spent = $spent_query->sum('amount');
-            
-            $remaining = doubleval($detail->credit_amount) - doubleval($spent);
+            $remaining = doubleval($total_credit) - doubleval($spent);
 
             if ($remaining > 0) {
+                $first = $details->first();
                 $data[] = [
-                    'id' => "jv_{$detail->jv_id}",
-                    'text' => "{$detail->jv_no} ({$remaining})",
+                    'id' => "jv_{$jv_id}",
+                    'text' => "{$first->jv_no} ({$remaining})",
                     'amount' => $remaining,
-                    'date' => $detail->jv_date ? date('Y-m-d', strtotime($detail->jv_date)) : null,
+                    'date' => $first->jv_date ? date('Y-m-d', strtotime($first->jv_date)) : null,
                 ];
             }
         }
@@ -755,6 +906,11 @@ class DeliveryOrderController extends Controller
         if ($delivery_order) {
             $delivery_order->delivery_order_data()->delete();
         }
+
+        DB::table('settlement_adjustments')
+            ->where('reference_type', 'journal_voucher')
+            ->where('voucher_no', $delivery_order->reference_no)
+            ->delete();
 
         $delivery_order->delete();
 
@@ -875,24 +1031,40 @@ class DeliveryOrderController extends Controller
             $linked_jvs = DB::table('settlement_adjustments')
                 ->where('reference_type', 'journal_voucher')
                 ->where('voucher_no', $delivery_order->reference_no)
-                ->pluck('reference_id')->toArray();
+                ->get();
 
-            foreach ($jv_details as $detail) {
+            $linked_jv_map = $linked_jvs->keyBy('reference_id');
+            $rv_withhold_exists = $delivery_order->receipt_vouchers->where('pivot.withhold_amount', '>', 0)->count() > 0;
+
+            $grouped_details = $jv_details->groupBy('jv_id');
+
+            foreach ($grouped_details as $jv_id => $details) {
+                $total_credit = $details->sum('credit_amount');
                 $spent = DB::table('settlement_adjustments')
                     ->where('reference_type', 'journal_voucher')
-                    ->where('reference_id', $detail->jv_id)
+                    ->where('reference_id', $jv_id)
                     ->where('voucher_no', '!=', $delivery_order->reference_no)
                     ->sum('amount');
                 
-                $remaining = doubleval($detail->credit_amount) - doubleval($spent);
-                $is_linked = in_array($detail->jv_id, $linked_jvs);
+                $remaining = doubleval($total_credit) - doubleval($spent);
+                $is_linked = $linked_jv_map->has($jv_id);
                 
+                $is_withheld = false;
+                if ($is_linked && !$rv_withhold_exists && $delivery_order->withhold_amount > 0) {
+                    $adj_amount = $linked_jv_map[$jv_id]->amount;
+                    if (abs(($remaining - $adj_amount) - $delivery_order->withhold_amount) < 0.01) {
+                        $is_withheld = true;
+                    }
+                }
+
                 if ($remaining > 0 || $is_linked) {
+                    $first = $details->first();
                     $journal_vouchers[] = [
-                        'id' => $detail->jv_id,
-                        'text' => "{$detail->jv_no} (Remaining: {$remaining})",
+                        'id' => $jv_id,
+                        'text' => "{$first->jv_no} (Remaining: {$remaining})",
                         'amount' => $remaining,
-                        'is_selected' => $is_linked
+                        'is_selected' => $is_linked,
+                        'is_withheld' => $is_withheld,
                     ];
                 }
             }
@@ -982,6 +1154,11 @@ class DeliveryOrderController extends Controller
                                 ->sum('delivery_order_receipt_voucher.amount');
                             $remaining = doubleval($adv->net_amount) - doubleval($spent);
 
+                            if ($rv_val == $request->withhold_for_rv && doubleval($request->withhold_amount ?? 0) > $remaining) {
+                                DB::rollBack();
+                                return response()->json("Withhold amount cannot be greater than the selected voucher balance ($remaining).", 422);
+                            }
+
                             $withhold_amount = ($rv_val == $request->withhold_for_rv) ? ($request->withhold_amount ?? 0) : 0;
 
                             DB::table('delivery_order_receipt_voucher')->insert([
@@ -1022,6 +1199,12 @@ class DeliveryOrderController extends Controller
                             $spent += $jv_spent;
 
                             $remaining = doubleval($linked_amount) - doubleval($spent);
+
+                            if ($rv_val == $request->withhold_for_rv && doubleval($request->withhold_amount ?? 0) > $remaining) {
+                                DB::rollBack();
+                                return response()->json("Withhold amount cannot be greater than the selected voucher balance ($remaining).", 422);
+                            }
+
                             $withhold_amount = ($rv_val == $request->withhold_for_rv) ? ($request->withhold_amount ?? 0) : 0;
 
                             DB::table('delivery_order_receipt_voucher')->insert([
@@ -1066,14 +1249,24 @@ class DeliveryOrderController extends Controller
                         $remaining = doubleval($total_credit) - doubleval($spent);
                         
                         if ($remaining > 0) {
-                            DB::table('settlement_adjustments')->insert([
-                                'reference_type' => 'journal_voucher',
-                                'reference_id' => $jv_id,
-                                'voucher_no' => $delivery_order->reference_no,
-                                'amount' => $remaining,
-                                'created_at' => now(),
-                                'updated_at' => now(),
-                            ]);
+                            if ($jv_val == $request->withhold_for_rv && doubleval($request->withhold_amount ?? 0) > $remaining) {
+                                DB::rollBack();
+                                return response()->json("Withhold amount cannot be greater than the selected voucher balance ($remaining).", 422);
+                            }
+
+                            $withhold_amount = ($jv_val == $request->withhold_for_rv) ? doubleval($request->withhold_amount ?? 0) : 0;
+                            $adjusted_amount = max(0, $remaining - $withhold_amount);
+
+                            if ($adjusted_amount > 0 || $withhold_amount > 0) {
+                                DB::table('settlement_adjustments')->insert([
+                                    'reference_type' => 'journal_voucher',
+                                    'reference_id' => $jv_id,
+                                    'voucher_no' => $delivery_order->reference_no,
+                                    'amount' => $adjusted_amount,
+                                    'created_at' => now(),
+                                    'updated_at' => now(),
+                                ]);
+                            }
                         }
                     }
                 }

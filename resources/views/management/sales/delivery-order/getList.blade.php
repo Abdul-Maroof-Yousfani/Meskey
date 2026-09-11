@@ -105,6 +105,11 @@
                                     title="View" style="margin-right: 10px;">
                                     <i class="ft-eye"></i>
                                 </a>
+                                <button type="button" class="btn btn-sm btn-secondary"
+                                    onclick="openModal(this,'{{ route('sales.delivery-order.stats', ['id' => $group['id']]) }}','Delivery Order Stats - DO #{{ $group['so_no'] }}', false, '80%')"
+                                    title="DO Stats" style="margin-right: 10px;">
+                                    <i class="ft-bar-chart-2"></i>
+                                </button>
                                 @if(auth()->user()->id == $group['created_by_id'])
                                     @if(isset($group['sale_order']) && $group['sale_order']->do_status !== 'closed')
                                         @if(!$group['sale_order']->is_auto_created_from_so)

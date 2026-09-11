@@ -229,7 +229,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-4" id="transporter_col">
+                <div class="col-md-4" id="transporter_col" style="display: none;">
                     <div class="form-group">
                         <label class="form-label">Transporter:</label>
                         <select id="transporter_display" class="form-control select2"
@@ -391,7 +391,7 @@
                                 </td>
                                 <td>
                                     <input type="text" name="no_of_bags[]" id="no_of_bags_{{ $index }}"
-                                        value="{{ $data->loadingProgramItem->loadingSlip->no_of_bags ?? 0 }}"
+                                        value="{{ $data->loadingProgramItem->loadingSlip->no_of_bags ?? $data->no_of_bags }}"
                                         class="form-control no_of_bags" readonly>
                                 </td>
                                 <td>
@@ -741,13 +741,13 @@
                             transSelect.val(response.transporter.id).trigger('change');
                             transSelect.prop('disabled', true);
                             $("#transporter").val(response.transporter.id);
-                            $("#transporter_col").show();
+                            $("#transporter_col").hide();
                             $("#transporter_amount_col").show();
                         } else {
                             transSelect.val('').trigger('change');
                             transSelect.prop('disabled', false);
                             $("#transporter").val('');
-                            $("#transporter_col").show();
+                            $("#transporter_col").hide();
                             $("#transporter_amount_col").show();
                         }
                     }
@@ -932,23 +932,6 @@
     }
 
     function calc(el) {
-        const element = $(el).closest("tr");
-        const bag_size = $(element).find(".bag_size");
-        const no_of_bags = $(element).find(".no_of_bags");
-        const qty = $(element).find(".qty");
-
-        const bagSizeVal = parseFloat(bag_size.val());
-        const qtyVal = parseFloat(qty.val());
-
-        if (!bagSizeVal || !qtyVal) {
-            no_of_bags.val("");
-            calcAmount(el);
-            return;
-        }
-
-        const bagsResult = (qtyVal / bagSizeVal).toFixed();
-
-        no_of_bags.val(bagsResult);
         calcAmount(el);
     }
 

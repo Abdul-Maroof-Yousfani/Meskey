@@ -9,10 +9,12 @@ use App\Models\Master\Customer;
 use App\Models\Master\Transporter;
 use App\Models\Master\Vendor;
 use App\Models\Product;
+use App\Models\Master\Account\TransactionVoucherType;
 use App\Models\Sales\DeliveryChallan;
 use App\Models\Sales\DeliveryChallanData;
 use App\Models\Sales\ReceivingRequest;
 use App\Models\Sales\ReceivingRequestItem;
+use App\Models\Sales\SalesInvoice;
 use App\Models\Sales\SalesInvoiceData;
 use App\Models\Sales\SalesReturn;
 use Illuminate\Support\Facades\DB;
@@ -1179,6 +1181,163 @@ class SalesLedgerService
                         ]);
                     }
                 }
+            }
+        });
+    }
+
+    /**
+     * Handle Sales Invoice Approval: Ledger Adjustment Entries for Discount & GST (Option A)
+     */
+    public function handleSalesInvoiceApproval(SalesInvoice $salesInvoice): void
+    {
+        $salesInvoice->loadMissing('sales_invoice_data', 'customer');
+
+        // 1. Calculate Total Discount and Total GST
+        $totalDiscount = 0;
+        $totalGst = 0;
+
+        foreach ($salesInvoice->sales_invoice_data as $data) {
+            $disc = (float)($data->discount_amount ?? 0);
+            if ($disc <= 0 && (float)($data->discount_percent ?? 0) > 0) {
+                $gross = (float)($data->gross_amount > 0 ? $data->gross_amount : ((float)$data->qty * (float)$data->rate));
+                $disc = round($gross * ((float)$data->discount_percent / 100), 2);
+            }
+            $totalDiscount += $disc;
+
+            $gst = (float)($data->gst_amount ?? 0);
+            if ($gst <= 0 && (float)($data->gst_percent ?? 0) > 0) {
+                $gross = (float)($data->gross_amount > 0 ? $data->gross_amount : ((float)$data->qty * (float)$data->rate));
+                $taxable = $gross - $disc;
+                $gst = round($taxable * ((float)$data->gst_percent / 100), 2);
+            }
+            $totalGst += $gst;
+        }
+
+        $totalDiscount = round($totalDiscount, 2);
+        $totalGst = round($totalGst, 2);
+
+        $si_no = $salesInvoice->si_no;
+
+        // 2. If neither discount nor GST exists, delete any existing SI adjustment entries and exit (no ledger hit)
+        if ($totalDiscount <= 0 && $totalGst <= 0) {
+            Transaction::where('voucher_no', $si_no)
+                ->where('purpose', 'like', 'sales-invoice-%')
+                ->delete();
+            return;
+        }
+
+        // 3. Resolve Accounts
+        $customerAccountId = $salesInvoice->customer?->account_id ?? Customer::find($salesInvoice->customer_id)?->account_id;
+        $discountAccount = Account::where('hierarchy_path', '6-1')->first();
+        $taxAccount = Account::where('hierarchy_path', '2-7')->first();
+
+        if (!$customerAccountId) {
+            \Log::warning("SalesInvoice {$si_no}: Customer account not found. Cannot post discount/tax ledger entries.");
+            return;
+        }
+
+        $voucherType = TransactionVoucherType::firstOrCreate(
+            ['name' => 'Sales Invoice'],
+            ['code' => 'SI', 'status' => 'active']
+        );
+        $voucherTypeId = $voucherType->id;
+        $voucherDate = $salesInvoice->invoice_date ?? now()->format('Y-m-d');
+        $companyId = $salesInvoice->company_id ?? auth()->user()?->current_company_id ?? 1;
+        $createdBy = $salesInvoice->created_by_id ?? auth()->user()?->id ?? 1;
+
+        DB::transaction(function () use (
+            $salesInvoice,
+            $si_no,
+            $totalDiscount,
+            $totalGst,
+            $customerAccountId,
+            $discountAccount,
+            $taxAccount,
+            $voucherTypeId,
+            $voucherDate,
+            $companyId,
+            $createdBy
+        ) {
+            $handleTransaction = function($amount, $accountId, $voucherTypeId, $voucherNo, $type, $isOpening, $additionalData) {
+                $tx = Transaction::where('voucher_no', $voucherNo)
+                        ->where('purpose', $additionalData['purpose'])
+                        ->where('type', $type)
+                        ->first();
+                if ($tx) {
+                    $tx->update([
+                        'amount' => $amount,
+                        'account_id' => $accountId,
+                        'counter_account_id' => $additionalData['counter_account_id'] ?? null,
+                        'payment_against' => $additionalData['payment_against'] ?? null,
+                        'against_reference_no' => $additionalData['against_reference_no'] ?? null,
+                        'remarks' => $additionalData['remarks'] ?? null,
+                        'voucher_date' => $additionalData['voucher_date'] ?? $tx->voucher_date,
+                    ]);
+                } else {
+                    createTransaction($amount, $accountId, $voucherTypeId, $voucherNo, $type, $isOpening, $additionalData);
+                }
+            };
+
+            // A. Discount Double Entry (if Discount > 0)
+            if ($totalDiscount > 0 && $discountAccount) {
+                // Entry 1: Debit Discount Account (6-1)
+                $handleTransaction($totalDiscount, $discountAccount->id, $voucherTypeId, $si_no, 'debit', 'no', [
+                    'company_id' => $companyId,
+                    'voucher_date' => $voucherDate,
+                    'created_by' => $createdBy,
+                    'counter_account_id' => $customerAccountId,
+                    'purpose' => 'sales-invoice-discount',
+                    'payment_against' => 'sale-invoice',
+                    'against_reference_no' => $si_no,
+                    'remarks' => "Sales Invoice Discount booked against SI: {$si_no}.",
+                ]);
+
+                // Entry 2: Credit Customer Account
+                $handleTransaction($totalDiscount, $customerAccountId, $voucherTypeId, $si_no, 'credit', 'no', [
+                    'company_id' => $companyId,
+                    'voucher_date' => $voucherDate,
+                    'created_by' => $createdBy,
+                    'counter_account_id' => $discountAccount->id,
+                    'purpose' => 'sales-invoice-discount',
+                    'payment_against' => 'sale-invoice',
+                    'against_reference_no' => $si_no,
+                    'remarks' => "Sales Invoice Discount credited to Customer against SI: {$si_no}.",
+                ]);
+            } else {
+                Transaction::where('voucher_no', $si_no)
+                    ->where('purpose', 'sales-invoice-discount')
+                    ->delete();
+            }
+
+            // B. Tax (GST) Double Entry (if GST > 0)
+            if ($totalGst > 0 && $taxAccount) {
+                // Entry 3: Debit Customer Account
+                $handleTransaction($totalGst, $customerAccountId, $voucherTypeId, $si_no, 'debit', 'no', [
+                    'company_id' => $companyId,
+                    'voucher_date' => $voucherDate,
+                    'created_by' => $createdBy,
+                    'counter_account_id' => $taxAccount->id,
+                    'purpose' => 'sales-invoice-tax',
+                    'payment_against' => 'sale-invoice',
+                    'against_reference_no' => $si_no,
+                    'remarks' => "Sales Invoice Tax (GST) charged to Customer against SI: {$si_no}.",
+                ]);
+
+                // Entry 4: Credit Tax Account (2-7)
+                $handleTransaction($totalGst, $taxAccount->id, $voucherTypeId, $si_no, 'credit', 'no', [
+                    'company_id' => $companyId,
+                    'voucher_date' => $voucherDate,
+                    'created_by' => $createdBy,
+                    'counter_account_id' => $customerAccountId,
+                    'purpose' => 'sales-invoice-tax',
+                    'payment_against' => 'sale-invoice',
+                    'against_reference_no' => $si_no,
+                    'remarks' => "Sales Invoice Tax (GST) booked against SI: {$si_no}.",
+                ]);
+            } else {
+                Transaction::where('voucher_no', $si_no)
+                    ->where('purpose', 'sales-invoice-tax')
+                    ->delete();
             }
         });
     }

@@ -68,10 +68,13 @@ class DeliveryOrderRequest extends FormRequest
         if ($saleOrder && $saleOrder->pay_type_id == 10) {
             $rules = array_merge($rules, [
                 'advance_amount' => 'nullable',
+                'jv_amount' => 'nullable',
                 'withhold_amount' => 'nullable',
                 'withhold_for_rv' => 'nullable',
-                "receipt_vouchers" => "required",
-                "receipt_vouchers.*" => "required"
+                "receipt_vouchers" => "nullable|array|required_without:journal_vouchers",
+                "receipt_vouchers.*" => "required",
+                "journal_vouchers" => "nullable|array|required_without:receipt_vouchers",
+                "journal_vouchers.*" => "required",
             ]);
             if (request()->withhold_amount && request()->withhold_amount > 0) {
                 $rules["withhold_for_rv"] = "required";
@@ -82,9 +85,12 @@ class DeliveryOrderRequest extends FormRequest
         return $rules;
     }
 
-    // public function messages() {
-    //     return [
-    //         "line_desc.required" => 'Reference number is required'       
-    //     ];
-    // }
+    public function messages(): array
+    {
+        return [
+            'receipt_vouchers.required_without' => 'Please select at least one Receipt Voucher or Journal Voucher.',
+            'journal_vouchers.required_without' => 'Please select at least one Receipt Voucher or Journal Voucher.',
+            'withhold_for_rv.required' => 'Please select a voucher to withhold from.',
+        ];
+    }
 }
