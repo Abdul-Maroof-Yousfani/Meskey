@@ -50,6 +50,7 @@ class TruckTimestampReportController extends Controller
                 'unloadingLocation.createdBy',
                 'arrivalSlip.creator',
                 'approvals.creator',
+                'latestAuditLog.user',
                 'arrivalSamplingRequests' => function ($q) {
                     $q->with(['takenByUser', 'approvedByUser', 'doneByUser'])->orderBy('id', 'asc');
                 },
