@@ -185,12 +185,16 @@
                     </div>
                     <div class="col-md-3 advanced">
                         <div class="form-group">
-                            <label class="form-label">Withhold for RV:</label>
+                            <label class="form-label">Withhold Voucher (RV / JV):</label>
                             <select name="withhold_for_rv" id="withhold_for_rv" class="form-control select2" disabled>
-                                <option value="">Select Receipt Voucher</option>
+                                <option value="">Select Withhold Voucher</option>
                                 @foreach ($receipt_vouchers as $item)
                                     <option value="{{ $item->unified_id }}" @selected($item->pivot->withhold_amount > 0)>
-                                        {{ $item->unified_text }}</option>
+                                        RV: {{ $item->unified_text }}</option>
+                                @endforeach
+                                @foreach ($journal_vouchers as $item)
+                                    <option value="jv_{{ $item['id'] }}" @selected(!empty($item['is_withheld']))>
+                                        JV: {{ $item['text'] }}</option>
                                 @endforeach
                             </select>
                         </div>

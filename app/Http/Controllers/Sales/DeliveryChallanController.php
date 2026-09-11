@@ -91,6 +91,25 @@ class DeliveryChallanController extends Controller
                 $total_qty = array_sum($request->qty);
             }
 
+            // Calculate total bags
+            $total_bags = 0;
+            if (is_array($request->no_of_bags)) {
+                $total_bags = array_sum($request->no_of_bags);
+            } elseif (is_numeric($request->no_of_bags)) {
+                $total_bags = (float)$request->no_of_bags;
+            }
+
+            if ($total_bags <= 0 && is_array($request->ticket_id)) {
+                foreach ($request->ticket_id as $tId) {
+                    if ($tId) {
+                        $ls = \App\Models\Sales\LoadingSlip::where('loading_program_item_id', $tId)->first();
+                        if ($ls && $ls->no_of_bags > 0) {
+                            $total_bags += (float)$ls->no_of_bags;
+                        }
+                    }
+                }
+            }
+
             // Auto calculate labour rate and amount based on matched rules
             $labour_rate = ($request->labour_rate === 'N/A' || $request->labour_rate === null) ? 0 : (float)$request->labour_rate;
             $labour_amount = $request->labour_amount ? (float)$request->labour_amount : 0;
@@ -133,7 +152,7 @@ class DeliveryChallanController extends Controller
                 }
                 
                 if ($labour_rate > 0) {
-                    $labour_amount = $total_qty * $labour_rate;
+                    $labour_amount = $total_bags * $labour_rate;
                 }
             }
 
@@ -226,12 +245,21 @@ class DeliveryChallanController extends Controller
                 //     return response()->json("Total balance is $balance. you can not exceed this balance", 422);
                 // }
 
+                $ticket_id = $request->ticket_id[$index] ?? null;
+                $bags = $request->no_of_bags[$index] ?? 0;
+                if ((!$bags || $bags <= 0) && $ticket_id) {
+                    $loadingSlip = \App\Models\Sales\LoadingSlip::where('loading_program_item_id', $ticket_id)->first();
+                    if ($loadingSlip && $loadingSlip->no_of_bags > 0) {
+                        $bags = $loadingSlip->no_of_bags;
+                    }
+                }
+
                 $dcData = $delivery_challan->delivery_challan_data()->create([
                     "item_id" => $request->item_id[$index],
                     "qty" => $request->qty[$index],
                     "rate" => $request->rate[$index],
                     "brand_id" => $request->brand_id[$index],
-                    "no_of_bags" => $request->no_of_bags[$index],
+                    "no_of_bags" => $bags,
                     "bag_size" => $request->bag_size[$index],
                     "description" => $request->desc[$index] ?? "",
                     "truck_no" => $request->truck_no[$index],
@@ -296,6 +324,27 @@ class DeliveryChallanController extends Controller
                 $total_qty = array_sum($request->qty);
             }
 
+            // Calculate total bags
+            $total_bags = 0;
+            if (is_array($request->no_of_bags)) {
+                $total_bags = array_sum($request->no_of_bags);
+            } elseif (is_numeric($request->no_of_bags)) {
+                $total_bags = (float)$request->no_of_bags;
+            } elseif ($delivery_challan && $delivery_challan->delivery_challan_data) {
+                $total_bags = $delivery_challan->delivery_challan_data->sum('no_of_bags');
+            }
+
+            if ($total_bags <= 0 && is_array($request->ticket_id)) {
+                foreach ($request->ticket_id as $tId) {
+                    if ($tId) {
+                        $ls = \App\Models\Sales\LoadingSlip::where('loading_program_item_id', $tId)->first();
+                        if ($ls && $ls->no_of_bags > 0) {
+                            $total_bags += (float)$ls->no_of_bags;
+                        }
+                    }
+                }
+            }
+
             // Auto calculate labour rate and amount based on matched rules
             $labour_rate = ($request->labour_rate === 'N/A' || $request->labour_rate === null) ? 0 : (float)$request->labour_rate;
             $labour_amount = $request->labour_amount ? (float)$request->labour_amount : 0;
@@ -338,7 +387,7 @@ class DeliveryChallanController extends Controller
                 }
                 
                 if ($labour_rate > 0) {
-                    $labour_amount = $total_qty * $labour_rate;
+                    $labour_amount = $total_bags * $labour_rate;
                 }
             }
 
@@ -424,12 +473,21 @@ class DeliveryChallanController extends Controller
 
             $createdItems = [];
             foreach($request->item_id as $index => $item) {
+                $ticket_id = $request->ticket_id[$index] ?? null;
+                $bags = $request->no_of_bags[$index] ?? 0;
+                if ((!$bags || $bags <= 0) && $ticket_id) {
+                    $loadingSlip = \App\Models\Sales\LoadingSlip::where('loading_program_item_id', $ticket_id)->first();
+                    if ($loadingSlip && $loadingSlip->no_of_bags > 0) {
+                        $bags = $loadingSlip->no_of_bags;
+                    }
+                }
+
                 $dcData = $delivery_challan->delivery_challan_data()->create([
                     "item_id" => $request->item_id[$index],
                     "qty" => $request->qty[$index],
                     "rate" => $request->rate[$index],
                     "brand_id" => $request->brand_id[$index],
-                    "no_of_bags" => $request->no_of_bags[$index],
+                    "no_of_bags" => $bags,
                     "bag_size" => $request->bag_size[$index],
                     "description" => $request->desc[$index] ?? "",
                     "truck_no" => $request->truck_no[$index],

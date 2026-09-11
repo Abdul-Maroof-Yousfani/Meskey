@@ -123,6 +123,94 @@ class SaleOrderController extends Controller
         return view('management.sales.orders.view', compact('payment_terms', 'customers', 'inquiries', 'items', 'sale_order', 'arrivalLocations', 'arrivalSubLocations', 'packings', 'brokers', 'latestLog'));
     }
 
+    public function getDoStats(Request $request, int $id)
+    {
+        $sale_order = SalesOrder::with([
+            'delivery_orders' => function ($q) {
+                $q->with([
+                    'delivery_order_data.item',
+                    'delivery_challans' => function ($dcQ) {
+                        $dcQ->where('delivery_challans.am_approval_status', '!=', 'rejected');
+                    }
+                ]);
+            },
+            'sales_order_data.item',
+            'customer'
+        ])->findOrFail($id);
+
+        $doStats = [];
+        $totalDoQty = 0;
+        $totalDcQty = 0;
+        $totalRemainingQty = 0;
+
+        foreach ($sale_order->delivery_orders as $do) {
+            $doQty = (float) $do->delivery_order_data->sum('qty');
+            $doDataIds = $do->delivery_order_data->pluck('id')->toArray();
+
+            $dcQty = (float) \App\Models\Sales\DeliveryChallanData::whereIn('do_data_id', $doDataIds)
+                ->whereHas('deliveryChallan', function ($q) {
+                    $q->where('am_approval_status', '!=', 'rejected');
+                })
+                ->sum('qty');
+
+            if ($dcQty <= 0) {
+                $dcQty = (float) $do->delivery_challans()
+                    ->where('delivery_challans.am_approval_status', '!=', 'rejected')
+                    ->sum('delivery_challan_delivery_order.qty');
+            }
+
+            $remainingQty = max(0, $doQty - $dcQty);
+
+            $totalDoQty += $doQty;
+            $totalDcQty += $dcQty;
+            $totalRemainingQty += $remainingQty;
+
+            // DC breakdown details for this DO
+            $dcBreakdown = [];
+            foreach ($do->delivery_challans as $dc) {
+                $dcItemQty = (float) \App\Models\Sales\DeliveryChallanData::where('delivery_challan_id', $dc->id)
+                    ->whereIn('do_data_id', $doDataIds)
+                    ->sum('qty');
+                if ($dcItemQty <= 0) {
+                    $dcItemQty = (float) ($dc->pivot->qty ?? 0);
+                }
+                $dcBreakdown[] = [
+                    'id' => $dc->id,
+                    'reference_number' => $dc->reference_number ?? ('DC #' . $dc->id),
+                    'dispatch_date' => $dc->dispatch_date,
+                    'status' => $dc->am_approval_status,
+                    'qty' => $dcItemQty,
+                ];
+            }
+
+            $itemNames = $do->delivery_order_data->map(function ($itemData) {
+                return $itemData->item->name ?? 'N/A';
+            })->unique()->filter()->implode(', ');
+
+            $doStats[] = [
+                'id' => $do->id,
+                'reference_no' => $do->reference_no,
+                'is_dummy' => (bool) $do->is_auto_created_from_so,
+                'do_date' => $do->do_date ?? $do->created_at,
+                'dispatch_date' => $do->dispatch_date,
+                'status' => $do->am_approval_status ?? 'pending',
+                'items' => $itemNames ?: 'N/A',
+                'do_qty' => $doQty,
+                'dc_qty' => $dcQty,
+                'remaining_qty' => $remainingQty,
+                'dcs' => $dcBreakdown,
+            ];
+        }
+
+        return view('management.sales.orders.doStatsModal', compact(
+            'sale_order',
+            'doStats',
+            'totalDoQty',
+            'totalDcQty',
+            'totalRemainingQty'
+        ));
+    }
+
     public function store(SalesOrderRequest $request)
     {
         $locations = $request->locations ?? [];

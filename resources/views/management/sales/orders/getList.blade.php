@@ -113,6 +113,11 @@
                                     title="View" style="margin-right: 10px;">
                                     <i class="ft-eye"></i>
                                 </a>
+                                <button type="button" class="btn btn-sm btn-secondary"
+                                    onclick="openModal(this,'{{ route('sales.sale-order.do-stats', ['id' => $group['id']]) }}','Delivery Order Stats - SO #{{ $group['so_no'] }}', false, '80%')"
+                                    title="DO Stats" style="margin-right: 10px;">
+                                    <i class="ft-bar-chart-2"></i>
+                                </button>
                                 @if(auth()->user()->id == $group['created_by_id'])
                                         <button
                                             onclick="openModal(this,'{{ route('sales.sale-order.edit', ['sale_order' => $group['id']]) }}','Edit Sale Order', false, '90%')"

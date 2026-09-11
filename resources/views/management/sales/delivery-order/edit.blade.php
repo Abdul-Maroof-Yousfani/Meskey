@@ -55,7 +55,7 @@
                     <div class="form-group">
                         <label class="form-label">Sale Orders:</label>
                         <select name="sale_order_id" id="sale_order"
-                            onchange="get_so_detail(), get_receipt_vouchers(), get_so_items(), check_so_type(); validate_expiry()"
+                            onchange="get_so_detail(), get_receipt_vouchers(), get_journal_vouchers(), get_so_items(), check_so_type(); validate_expiry()"
                             class="form-control select2">
                             <option value="">Select SO</option>
                             @foreach ($sale_orders as $sale_order)
@@ -189,10 +189,10 @@
                 </div>
                 <div class="col-md-3 advanced" style="display: {{ $sale_order_of_delivery_order->pay_type_id == 10 ? 'block' : 'none' }}">
                     <div class="form-group">
-                        <label class="form-label">Withhold for RV:</label>
-                        <select name="withhold_for_rv" id="withhold_for_rv" class="form-control select2"
-                            @disabled(!$delivery_order->receipt_vouchers->sum('pivot.withhold_amount'))>
-                                <option value="">Select Receipt Vouchers</option>
+                        <label class="form-label">Withhold Voucher (RV / JV):</label>
+                        <select name="withhold_for_rv" id="withhold_for_rv" onchange="validate_withhold_voucher()" class="form-control select2"
+                            @disabled($delivery_order->withhold_amount <= 0)>
+                                <option value="">Select Withhold Voucher</option>
                                 @foreach ($receipt_vouchers as $item)
                                     @php
                                         $pivotRow = null;
@@ -208,9 +208,20 @@
                                     <option value="{{ $item->unified_id }}"
                                         data-amount="{{ $item->remaining_amount }}"
                                         @selected($isWithheld)>
-                                        {{ $item->unified_text }}
+                                        RV: {{ $item->unified_text }}
                                     </option>
                                 @endforeach
+                                @if(isset($journal_vouchers))
+                                    @foreach ($journal_vouchers as $jv)
+                                        @if($jv['is_selected'])
+                                            <option value="jv_{{ $jv['id'] }}"
+                                                data-amount="{{ $jv['amount'] }}"
+                                                @selected(!empty($jv['is_withheld']))>
+                                                JV: {{ $jv['text'] }}
+                                            </option>
+                                        @endif
+                                    @endforeach
+                                @endif
                             </select>
                         </div>
                     </div>
@@ -940,7 +951,7 @@ function update_withhold_for_rv() {
     if (!isAdvancedPayment) {
         let withholdSelect = $("#withhold_for_rv");
         withholdSelect.empty();
-        withholdSelect.append(`<option value='' data-amount="0">Select Receipt Voucher</option>`);
+        withholdSelect.append(`<option value='' data-amount="0">Select Withhold Voucher</option>`);
         withholdSelect.prop("disabled", true);
         withholdSelect.trigger('change.select2');
         return;
@@ -948,21 +959,35 @@ function update_withhold_for_rv() {
 
     const withhold = parseFloat($("#withhold_amount").val()) || 0;
     const receipt_vouchers = $("#receipt_vouchers");
+    const journal_vouchers = $("#journal_vouchers");
     let withholdSelect = $("#withhold_for_rv");
     let currentWithholdVal = withholdSelect.val();
     
     withholdSelect.empty();
-    withholdSelect.append(`<option value='' data-amount="0">Select Receipt Voucher</option>`);
+    withholdSelect.append(`<option value='' data-amount="0">Select Withhold Voucher</option>`);
     
     // Get selected receipt vouchers and add them to withhold_for_rv
     $("#receipt_vouchers option:selected").each(function() {
         const val = $(this).val();
         const text = $(this).text();
-        const amount = $(this).data('amount');
+        const amount = parseFloat($(this).data('amount')) || 0;
         
         if (val) {
             withholdSelect.append(
-                `<option value="${val}" data-amount="${amount}">${text}</option>`
+                `<option value="${val}" data-amount="${amount}">RV: ${text}</option>`
+            );
+        }
+    });
+
+    // Get selected journal vouchers and add them to withhold_for_rv
+    $("#journal_vouchers option:selected").each(function() {
+        const val = $(this).val();
+        const text = $(this).text();
+        const amount = parseFloat($(this).data('amount')) || 0;
+        
+        if (val) {
+            withholdSelect.append(
+                `<option value="${val}" data-amount="${amount}">JV: ${text}</option>`
             );
         }
     });
@@ -972,7 +997,10 @@ function update_withhold_for_rv() {
         withholdSelect.val(currentWithholdVal);
     }
 
-    if (withhold > 0 && receipt_vouchers.val() && receipt_vouchers.val().length > 0) {
+    const hasSelectedVouchers = (receipt_vouchers.val() && receipt_vouchers.val().length > 0) ||
+                                (journal_vouchers.val() && journal_vouchers.val().length > 0);
+
+    if (withhold > 0 && hasSelectedVouchers) {
         withholdSelect.prop("disabled", false);
     } else {
         withholdSelect.prop("disabled", true);
@@ -980,6 +1008,26 @@ function update_withhold_for_rv() {
     }
     
     withholdSelect.trigger('change.select2');
+    validate_withhold_voucher();
+}
+
+function validate_withhold_voucher() {
+    const withhold = parseFloat($("#withhold_amount").val()) || 0;
+    const selectedOption = $("#withhold_for_rv option:selected");
+    const voucherVal = $("#withhold_for_rv").val();
+    
+    if (voucherVal && withhold > 0) {
+        const voucherAmount = parseFloat(selectedOption.data("amount")) || 0;
+        if (withhold > voucherAmount) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Invalid Withhold Voucher',
+                text: 'Selected voucher balance (' + voucherAmount.toLocaleString() + ') is less than withhold amount (' + withhold.toLocaleString() + '). Please select a voucher with sufficient balance.',
+                confirmButtonText: 'OK'
+            });
+            $("#withhold_for_rv").val("").trigger("change.select2");
+        }
+    }
 }
 
 function update_delivery_date_min() {
