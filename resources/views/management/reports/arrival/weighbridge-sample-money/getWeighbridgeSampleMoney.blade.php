@@ -44,8 +44,8 @@
                 <td>{{ $row->created_at ? $row->created_at->format('g:i:s A') : 'N/A' }}</td>
                 <td>{{ $row->creator?->name ?? 'Main Gate' }}</td>
                 <td>{{ $row->truckType?->name ?? 'N/A' }}</td>
-                <td>{{ $row->firstWeighbridge?->weight ? number_format((float)$row->firstWeighbridge->weight, 0, '.', '') : 'N/A' }}</td>
-                <td>{{ $row->secondWeighbridge?->weight ? number_format((float)$row->secondWeighbridge->weight, 0, '.', '') : 'N/A' }}</td>
+                <td>{{ $row->firstWeighbridge?->weight ? number_format((float)$row->firstWeighbridge->weight, 0, '.', '') : '0' }}</td>
+                <td>{{ $row->secondWeighbridge?->weight ? number_format((float)$row->secondWeighbridge->weight, 0, '.', '') : '0' }}</td>
                 <td>{{ $weighbridgeAmount }}</td>
                 <td>{{ $sampleAmount }}</td>
                 <!-- Action Buttons -->
