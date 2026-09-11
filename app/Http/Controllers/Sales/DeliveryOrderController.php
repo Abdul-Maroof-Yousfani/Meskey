@@ -224,6 +224,7 @@ class DeliveryOrderController extends Controller
     {
         $sale_orders = SalesOrder::select('reference_no', 'id', 'transporter_used')
             ->where('am_approval_status', 'approved')
+            ->where('delivery_date', '>=', now()->toDateString())
             ->get();
 
         // ->filter(function ($so) {
@@ -603,6 +604,7 @@ class DeliveryOrderController extends Controller
             ->select('reference_no', 'id', 'pay_type_id', 'transporter_used')
             ->where('am_approval_status', 'approved')
             ->where('customer_id', $customer_id)
+            ->where('delivery_date', '>=', now()->toDateString())
             ->get()
             ->filter(function ($saleOrder) {
                 // if ($saleOrder->transporter_used == 'yes') {
@@ -925,6 +927,11 @@ class DeliveryOrderController extends Controller
             ->select('reference_no', 'id', 'pay_type_id', 'transporter_used')
             ->where('am_approval_status', 'approved')
             ->where('customer_id', $delivery_order->customer_id)
+            ->where(function ($q) use ($delivery_order) {
+                // Show non-expired SOs OR the currently linked SO (even if expired)
+                $q->where('delivery_date', '>=', now()->toDateString())
+                  ->orWhere('id', $delivery_order->so_id);
+            })
             ->get();
         // ->filter(function ($so) {
         //     if ($so->transporter_used == 'yes') {

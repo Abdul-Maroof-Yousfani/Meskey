@@ -143,6 +143,8 @@ class SaleOrderController extends Controller
         $totalDcQty = 0;
         $totalRemainingQty = 0;
 
+        $hasRealDos = $sale_order->delivery_orders->where('is_auto_created_from_so', '!=', 1)->count() > 0;
+
         foreach ($sale_order->delivery_orders as $do) {
             $doQty = (float) $do->delivery_order_data->sum('qty');
             $doDataIds = $do->delivery_order_data->pluck('id')->toArray();
@@ -161,9 +163,13 @@ class SaleOrderController extends Controller
 
             $remainingQty = max(0, $doQty - $dcQty);
 
-            $totalDoQty += $doQty;
-            $totalDcQty += $dcQty;
-            $totalRemainingQty += $remainingQty;
+            // Don't count Dummy DOs in totals when real DOs exist (avoids double-counting)
+            $isDummy = (bool) $do->is_auto_created_from_so;
+            if (!$isDummy || !$hasRealDos) {
+                $totalDoQty += $doQty;
+                $totalDcQty += $dcQty;
+                $totalRemainingQty += $remainingQty;
+            }
 
             // DC breakdown details for this DO
             $dcBreakdown = [];
@@ -202,12 +208,20 @@ class SaleOrderController extends Controller
             ];
         }
 
+        // SO's original total qty — this is the base for progress/remaining on SO level
+        $soTotalQty = (float) $sale_order->sales_order_data->sum('qty');
+
+        // Remaining at SO level = SO qty - total actually dispatched via DCs
+        $soRemainingQty = max(0, $soTotalQty - $totalDcQty);
+
         return view('management.sales.orders.doStatsModal', compact(
             'sale_order',
             'doStats',
+            'soTotalQty',
             'totalDoQty',
             'totalDcQty',
-            'totalRemainingQty'
+            'totalRemainingQty',
+            'soRemainingQty'
         ));
     }
 

@@ -106,13 +106,10 @@
         </div>
     </div>
 
-    {{-- 4 Stat Metric Cards --}}
+    {{-- Stat Metric Cards --}}
     <div class="row">
         <div class="col-md-3 col-sm-6">
             <div class="do-stat-card">
-                {{-- <div class="icon-box" style="background-color: #ede9fe; color: #6d28d9;">
-                    <i class="ft-file-text"></i>
-                </div> --}}
                 <div>
                     <div class="stat-title">Total DOs</div>
                     <div class="stat-val">{{ count($doStats) }}</div>
@@ -122,23 +119,17 @@
 
         <div class="col-md-3 col-sm-6">
             <div class="do-stat-card">
-                {{-- <div class="icon-box" style="background-color: #e0f2fe; color: #0284c7;">
-                    <i class="ft-layers"></i>
-                </div> --}}
                 <div>
-                    <div class="stat-title">Total DO Qty</div>
-                    <div class="stat-val text-primary">{{ number_format($totalDoQty, 2) }}</div>
+                    <div class="stat-title">SO Total Qty</div>
+                    <div class="stat-val text-primary">{{ number_format($soTotalQty, 2) }}</div>
                 </div>
             </div>
         </div>
 
         <div class="col-md-3 col-sm-6">
             <div class="do-stat-card">
-                {{-- <div class="icon-box" style="background-color: #dcfce7; color: #15803d;">
-                    <i class="ft-check-circle"></i>
-                </div> --}}
                 <div>
-                    <div class="stat-title">Total DC Qty (Done)</div>
+                    <div class="stat-title">Total DC Dispatched</div>
                     <div class="stat-val text-success">{{ number_format($totalDcQty, 2) }}</div>
                 </div>
             </div>
@@ -146,30 +137,30 @@
 
         <div class="col-md-3 col-sm-6">
             <div class="do-stat-card">
-                {{-- <div class="icon-box" style="background-color: #fef3c7; color: #b45309;">
-                    <i class="ft-clock"></i>
-                </div> --}}
                 <div>
-                    <div class="stat-title">Remaining Qty</div>
-                    <div class="stat-val text-warning">{{ number_format($totalRemainingQty, 2) }}</div>
+                    <div class="stat-title">Remaining (SO Qty)</div>
+                    <div class="stat-val text-warning">{{ number_format($soRemainingQty, 2) }}</div>
                 </div>
             </div>
         </div>
     </div>
 
-    {{-- Overall Progress Bar --}}
-    @if($totalDoQty > 0)
+    {{-- Overall Progress Bar (based on SO qty) --}}
+    @if($soTotalQty > 0)
         @php
-            $overallPct = min(100, round(($totalDcQty / $totalDoQty) * 100, 1));
+            $overallPct = min(100, round(($totalDcQty / $soTotalQty) * 100, 1));
             $barColor = $overallPct >= 100 ? 'bg-success' : ($overallPct >= 50 ? 'bg-info' : 'bg-warning');
         @endphp
         <div class="mb-3">
             <div class="d-flex justify-content-between align-items-center mb-1">
                 <span style="font-size: 12px; font-weight: 600; color: #475569;">
-                    Delivery Challan Fulfillment: {{ $overallPct }}%
+                    SO Fulfillment: {{ $overallPct }}%
                 </span>
                 <span style="font-size: 11px; color: #64748b;">
-                    {{ number_format($totalDcQty, 2) }} of {{ number_format($totalDoQty, 2) }} Fulfilled
+                    {{ number_format($totalDcQty, 2) }} of {{ number_format($soTotalQty, 2) }} Dispatched
+                    @if($totalDoQty > 0 && $totalDoQty != $soTotalQty)
+                        &nbsp;|&nbsp;DO Authorized: {{ number_format($totalDoQty, 2) }}
+                    @endif
                 </span>
             </div>
             <div class="progress" style="height: 8px; border-radius: 4px; background: #e2e8f0;">
@@ -266,17 +257,31 @@
             @if(count($doStats) > 0)
                 <tfoot>
                     <tr>
-                        <td colspan="5" class="text-end text-right font-weight-bold text-uppercase py-2">
-                            Grand Totals:
+                        <td colspan="5" class="text-end text-right font-weight-bold text-uppercase py-2 text-muted" style="font-size: 11px;">
+                            DO Authorized Qty:
                         </td>
-                        <td class="text-end text-right font-weight-bold text-primary py-2" style="font-size: 15px;">
+                        <td class="text-end text-right font-weight-bold text-primary py-2" style="font-size: 14px;">
                             {{ number_format($totalDoQty, 2) }}
+                        </td>
+                        <td class="text-end text-right font-weight-bold text-success py-2" style="font-size: 14px;">
+                            {{ number_format($totalDcQty, 2) }}
+                        </td>
+                        <td class="text-end text-right font-weight-bold text-warning py-2" style="font-size: 14px;">
+                            {{ number_format($totalRemainingQty, 2) }}
+                        </td>
+                    </tr>
+                    <tr style="background: #eef2ff; border-top: 2px solid #a5b4fc;">
+                        <td colspan="5" class="text-end text-right font-weight-bold text-uppercase py-2" style="color: #4f46e5; font-size: 11px;">
+                            SO Order Qty:
+                        </td>
+                        <td class="text-end text-right font-weight-bold py-2" style="font-size: 15px; color: #4f46e5;">
+                            {{ number_format($soTotalQty, 2) }}
                         </td>
                         <td class="text-end text-right font-weight-bold text-success py-2" style="font-size: 15px;">
                             {{ number_format($totalDcQty, 2) }}
                         </td>
                         <td class="text-end text-right font-weight-bold text-warning py-2" style="font-size: 15px;">
-                            {{ number_format($totalRemainingQty, 2) }}
+                            {{ number_format($soRemainingQty, 2) }}
                         </td>
                     </tr>
                 </tfoot>

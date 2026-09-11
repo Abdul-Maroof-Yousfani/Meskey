@@ -158,14 +158,11 @@
             <table class="table table-stats table-hover mb-0">
                 <thead>
                     <tr>
-                        <th width="4%" class="text-center">#</th>
-                        <th width="22%">Item Name</th>
-                        <th width="14%">Brand</th>
-                        <th width="14%">Packing / Bags</th>
-                        <th width="10%" class="text-end text-right">Rate</th>
-                        <th width="12%" class="text-end text-right">DO Qty</th>
-                        <th width="12%" class="text-end text-right">DC Qty</th>
-                        <th width="12%" class="text-end text-right">Remaining Qty</th>
+                        <th width="5%" class="text-center">#</th>
+                        <th width="40%">Item Name</th>
+                        <th width="18%" class="text-end text-right">DO Qty</th>
+                        <th width="18%" class="text-end text-right">DC Dispatched</th>
+                        <th width="19%" class="text-end text-right">Remaining Qty</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -178,14 +175,6 @@
                             <td>
                                 <span class="font-weight-bold text-dark">{{ $item['item_name'] }}</span>
                             </td>
-                            <td>{{ $item['brand_name'] }}</td>
-                            <td>
-                                <span>{{ $item['bag_type'] }} ({{ $item['bag_size'] }})</span>
-                                @if(!empty($item['no_of_bags']))
-                                    <br><small class="text-muted">{{ number_format($item['no_of_bags']) }} Bags</small>
-                                @endif
-                            </td>
-                            <td class="text-end text-right">{{ number_format($item['rate'], 2) }}</td>
                             <td class="text-end text-right font-weight-bold text-primary" style="font-size: 14px;">
                                 {{ number_format($item['do_qty'], 2) }}
                             </td>
@@ -201,14 +190,14 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="text-center py-4 text-muted">No items found for this Delivery Order.</td>
+                            <td colspan="5" class="text-center py-4 text-muted">No items found for this Delivery Order.</td>
                         </tr>
                     @endforelse
                 </tbody>
                 @if(count($itemStats) > 0)
                     <tfoot>
                         <tr>
-                            <td colspan="5" class="text-end text-right font-weight-bold text-uppercase py-2">
+                            <td colspan="2" class="text-end text-right font-weight-bold text-uppercase py-2">
                                 Grand Totals:
                             </td>
                             <td class="text-end text-right font-weight-bold text-primary py-2" style="font-size: 15px;">
@@ -227,77 +216,6 @@
         </div>
     </div>
 
-    {{-- Section 2: Delivery Challans Generated Against this DO --}}
-    <div class="mb-3">
-        <div class="section-title">Delivery Challans Created Against this DO</div>
-        <div class="table-responsive border rounded" style="background: #fff;">
-            <table class="table table-stats table-hover mb-0">
-                <thead>
-                    <tr>
-                        <th width="4%" class="text-center">#</th>
-                        <th width="22%">DC Reference</th>
-                        <th width="16%">Dispatch Date</th>
-                        <th width="22%">Truck / Vehicle No</th>
-                        <th width="16%" class="text-center">Status</th>
-                        <th width="20%" class="text-end text-right">DC Qty Dispatched</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($challans as $cIndex => $challan)
-                        @php
-                            $cStatus = strtolower($challan['status'] ?? '');
-                            $cBadge = match ($cStatus) {
-                                'approved' => 'badge-success',
-                                'rejected' => 'badge-danger',
-                                'pending' => 'badge-warning',
-                                default => 'badge-secondary',
-                            };
-                        @endphp
-                        <tr>
-                            <td class="text-center font-weight-bold text-muted">{{ $cIndex + 1 }}</td>
-                            <td>
-                                <span class="font-weight-bold text-primary">{{ $challan['reference_number'] }}</span>
-                                @if(!empty($challan['dc_no']) && $challan['dc_no'] !== $challan['reference_number'])
-                                    <br><small class="text-muted">DC No: {{ $challan['dc_no'] }}</small>
-                                @endif
-                            </td>
-                            <td>
-                                <span>{{ $challan['dispatch_date'] ? \Carbon\Carbon::parse($challan['dispatch_date'])->format('d M, Y') : 'N/A' }}</span>
-                            </td>
-                            <td>{{ $challan['truck_no'] }}</td>
-                            <td class="text-center">
-                                <span class="badge {{ $cBadge }} px-2 py-1 text-uppercase" style="font-size: 10px;">
-                                    {{ ucfirst($challan['status']) }}
-                                </span>
-                            </td>
-                            <td class="text-end text-right font-weight-bold text-success" style="font-size: 14px;">
-                                {{ number_format($challan['qty'], 2) }}
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="6" class="text-center py-4 text-muted">
-                                No Delivery Challans have been generated against this Delivery Order yet. Full quantity is currently remaining.
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-                @if(count($challans) > 0)
-                    <tfoot>
-                        <tr>
-                            <td colspan="5" class="text-end text-right font-weight-bold text-uppercase py-2">
-                                Total DC Dispatched Qty:
-                            </td>
-                            <td class="text-end text-right font-weight-bold text-success py-2" style="font-size: 15px;">
-                                {{ number_format($dcQty, 2) }}
-                            </td>
-                        </tr>
-                    </tfoot>
-                @endif
-            </table>
-        </div>
-    </div>
-
     {{-- Bottom Bar with Close Button --}}
     <div class="row mt-4 bottom-button-bar">
         <div class="col-12 text-end text-right">
@@ -305,3 +223,4 @@
         </div>
     </div>
 </div>
+
