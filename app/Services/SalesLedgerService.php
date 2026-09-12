@@ -1197,20 +1197,32 @@ class SalesLedgerService
         $totalGst = 0;
 
         foreach ($salesInvoice->sales_invoice_data as $data) {
+            $gross       = (float)($data->gross_amount > 0 ? $data->gross_amount : ((float)$data->qty * (float)$data->rate));
+            $amtAfterDisc = (float)($data->amount ?? 0);   // = gross - discount
+            $netAmt      = (float)($data->net_amount ?? 0); // = amount + gst
+
+            // ── Discount ──────────────────────────────────────────────────────
             $disc = (float)($data->discount_amount ?? 0);
+            if ($disc <= 0 && $gross > $amtAfterDisc) {
+                // Derive from stored amounts (most reliable)
+                $disc = round($gross - $amtAfterDisc, 2);
+            }
             if ($disc <= 0 && (float)($data->discount_percent ?? 0) > 0) {
-                $gross = (float)($data->gross_amount > 0 ? $data->gross_amount : ((float)$data->qty * (float)$data->rate));
                 $disc = round($gross * ((float)$data->discount_percent / 100), 2);
             }
-            $totalDiscount += $disc;
+            $totalDiscount += max(0, $disc);
 
+            // ── GST ───────────────────────────────────────────────────────────
             $gst = (float)($data->gst_amount ?? 0);
+            if ($gst <= 0 && $netAmt > $amtAfterDisc) {
+                // Derive from stored net_amount - amount (most reliable)
+                $gst = round($netAmt - $amtAfterDisc, 2);
+            }
             if ($gst <= 0 && (float)($data->gst_percent ?? 0) > 0) {
-                $gross = (float)($data->gross_amount > 0 ? $data->gross_amount : ((float)$data->qty * (float)$data->rate));
                 $taxable = $gross - $disc;
                 $gst = round($taxable * ((float)$data->gst_percent / 100), 2);
             }
-            $totalGst += $gst;
+            $totalGst += max(0, $gst);
         }
 
         $totalDiscount = round($totalDiscount, 2);
