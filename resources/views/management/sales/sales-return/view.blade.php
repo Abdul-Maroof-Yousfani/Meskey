@@ -26,9 +26,6 @@
     }
 </style>
 
-<form action="{{ route('sales.sales-return.store') }}" method="POST" id="ajaxSubmit2" autocomplete="off">
-    @csrf
-
     <input type="hidden" id="listRefresh" value="{{ route('sales.get.sales-return.list') }}" />
 
     @if(in_array(strtolower($saleReturn->am_approval_status ?? ''), ['approved', 'rejected']))
@@ -318,13 +315,6 @@
     </div>
     <input type="hidden" id="rowCount" value="0">
     
-    <!-- <div class="row bottom-button-bar">
-        <div class="col-12 text-end">
-            <a type="button"
-            class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton me-2">Close</a>
-            <button type="submit" class="btn btn-primary submitbutton">Save</button>
-        </div>
-    </div> -->
 @php
     $srModule = $saleReturn->getApprovalModule();
     $srApprovalLogs = $srModule ? \App\Models\ApprovalsModule\ApprovalLog::where('record_id', $saleReturn->id)->where('module_id', $srModule->id)->with(['user', 'role'])->orderBy('created_at', 'desc')->get() : collect();
@@ -435,6 +425,13 @@
         <div style="height: 60px; width: 100%; clear: both;"></div>
     </div>
 @endif
+
+<div class="row bottom-button-bar">
+    <div class="col-12 text-end">
+        <a type="button"
+            class="btn btn-danger modal-sidebar-close position-relative top-1 closebutton me-2">Close</a>
+    </div>
+</div>
 
 <script>
     salesInvoiceRowIndex = 1;
