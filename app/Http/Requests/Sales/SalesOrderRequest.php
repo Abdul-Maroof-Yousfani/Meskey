@@ -30,6 +30,7 @@ class SalesOrderRequest extends FormRequest
         $rules = [
             "delivery_date" => "required|date|after_or_equal:order_date",
             "order_date" => "required|date|before_or_equal:delivery_date",
+            "contract_status" => "nullable|string",
             "reference_no" => "nullable",
             "so_reference_no" => "nullable|string|max:255",
             "transporter_used" => "nullable|in:yes,no",

@@ -34,7 +34,18 @@
 
     @if(in_array(strtolower($sale_order->am_approval_status ?? ''), ['approved', 'rejected']))
         <div class="alert alert-warning px-3 py-2 mt-2">
-            <i class="fa fa-exclamation-triangle"></i> <strong>Note:</strong> Since this Sale Order is <strong>{{ ucfirst($sale_order->am_approval_status) }}</strong>, you can only update the <strong>Delivery Date</strong>. Changes to any other fields will be ignored.
+            <i class="fa fa-exclamation-triangle"></i> <strong>Note:</strong> Since this Sale Order is <strong>{{ ucfirst($sale_order->am_approval_status) }}</strong>, you can only update the <strong>Delivery Date</strong> or <strong>Contract Status</strong>. Changes to other fields will be ignored.
+        </div>
+    @endif
+    @if($sale_order->hasPendingDeliveryDateAmendment())
+        @php $pendingAmendment = $sale_order->getPendingDeliveryDateAmendment(); @endphp
+        <div class="alert alert-info px-3 py-2 mt-2">
+            <i class="fa fa-clock-o"></i> <strong>Delivery Date Amendment Pending Approval:</strong> Proposed Delivery Date: <strong>{{ $pendingAmendment['delivery_date'] ?? 'N/A' }}</strong> (Current: <strong>{{ $sale_order->delivery_date }}</strong>).
+        </div>
+    @endif
+    @if($sale_order->isClosed())
+        <div class="alert alert-danger px-3 py-2 mt-2">
+            <i class="fa fa-ban"></i> <strong>Contract Closed:</strong> This Sale Order contract is <strong>Closed</strong> ({{ ucfirst(str_replace('-', ' ', $sale_order->contract_status)) }}). All downstream operations are locked.
         </div>
     @endif
     <div class="row form-mar">
@@ -100,6 +111,20 @@
                         <select name="transporter_used" id="transporter_used" class="form-control select2">
                             <option value="no" @selected($sale_order->transporter_used == 'no')>No</option>
                             <option value="yes" @selected($sale_order->transporter_used == 'yes')>Yes</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Contract Status:</label>
+                        <select name="contract_status" id="contract_status" class="form-control select2">
+                            <option value="">Select Contract Status</option>
+                            <option @selected($sale_order->contract_status == 'close-contract-due-to-market-down') value="close-contract-due-to-market-down">Close Contract (due to market down)</option>
+                            <option @selected($sale_order->contract_status == 'continue-contract-due-to-high-market') value="continue-contract-due-to-high-market">Continue Contract (due to high market)</option>
+                            <option @selected($sale_order->contract_status == 'close-with-market-rate-penalty') value="close-with-market-rate-penalty">Close with market rate (Penalty)</option>
+                            @if(($isClosed ?? false) || $sale_order->contract_status == 'reopen-contract-closed-by-mistake')
+                                <option @selected($sale_order->contract_status == 'reopen-contract-closed-by-mistake') value="reopen-contract-closed-by-mistake">Reopen Contract (Closed by mistake)</option>
+                            @endif
                         </select>
                     </div>
                 </div>
@@ -1374,6 +1399,62 @@
         // When rate or qty changes in any row, update commission
         $(document).on('keyup change', '.rate_per_kg, .qty', function () {
             updateCommissionFromRate();
+        });
+
+        // Contract status reopen validation
+        let previousContractStatus = '{{ $sale_order->contract_status ?? '' }}';
+        let isRevertingContractStatus = false;
+
+        $('#contract_status').on('change', function() {
+            if (isRevertingContractStatus) {
+                return;
+            }
+
+            let selectedStatus = $(this).val();
+
+            if (selectedStatus === 'reopen-contract-closed-by-mistake' || selectedStatus === 'reopen' || selectedStatus === 'open') {
+                let balanceQuantity = parseFloat('{{ $balanceQuantity ?? 0 }}') || 0;
+                let canReopen = balanceQuantity > 0;
+                let errorMsg = 'Remaining balance quantity is 0. Contract cannot be reopened.';
+
+                if (!canReopen) {
+                    isRevertingContractStatus = true;
+                    $(this).val(previousContractStatus).trigger('change');
+                    isRevertingContractStatus = false;
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Cannot Reopen Contract',
+                        text: errorMsg,
+                        confirmButtonColor: '#d33',
+                        confirmButtonText: 'OK'
+                    });
+                    return false;
+                }
+
+                previousContractStatus = selectedStatus;
+            } else {
+                previousContractStatus = selectedStatus;
+            }
+        });
+
+        // Form submission validation
+        $('#ajaxSubmit').on('submit', function(e) {
+            let contractStatusVal = $('#contract_status').val();
+            if (contractStatusVal === 'reopen-contract-closed-by-mistake' || contractStatusVal === 'reopen' || contractStatusVal === 'open') {
+                let balanceQuantity = parseFloat('{{ $balanceQuantity ?? 0 }}') || 0;
+                if (balanceQuantity <= 0) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Cannot Reopen Contract',
+                        text: 'Remaining balance quantity is 0. Contract cannot be reopened.',
+                        confirmButtonColor: '#d33',
+                        confirmButtonText: 'OK'
+                    });
+                    return false;
+                }
+            }
         });
     });
 </script>

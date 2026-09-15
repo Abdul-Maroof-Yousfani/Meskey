@@ -60,6 +60,7 @@ class SalesQcController extends Controller
     {
         // Get tickets that have first weighbridge created
         $Tickets = LoadingProgramItem::whereHas('firstWeighbridge')
+            ->whereDoesntHaveClosedSaleOrder()
             ->whereDoesntHave('salesQc')
             ->with([
                 'loadingProgram.deliveryOrder.customer',
@@ -93,6 +94,11 @@ class SalesQcController extends Controller
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $ticketItem = LoadingProgramItem::find($request->loading_program_item_id);
+        if ($ticketItem && $ticketItem->hasClosedSaleOrder()) {
+            return response()->json(['errors' => ['loading_program_item_id' => 'The Sale Order linked to this ticket has been closed. Operations are locked.']], 422);
         }
 
         // Check if the ticket already has a sales qc
@@ -259,6 +265,11 @@ class SalesQcController extends Controller
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $ticketItem = LoadingProgramItem::find($request->loading_program_item_id);
+        if ($ticketItem && $ticketItem->hasClosedSaleOrder()) {
+            return response()->json(['errors' => ['loading_program_item_id' => 'The Sale Order linked to this ticket has been closed. Operations are locked.']], 422);
         }
 
         // Check if the ticket already has a sales qc (excluding current one)

@@ -58,6 +58,7 @@ class DeliveryChallanController extends Controller
         $pay_types = PayType::select('name', 'id')->where('status', 'active')->get();
         $delivery_orders = DeliveryOrder::select("delivery_order.id", "delivery_order.reference_no")
             ->where('delivery_order.do_status', 'active')
+            ->whereDoesntHaveClosedSaleOrder()
             ->join('loading_programs', 'delivery_order.id', '=', 'loading_programs.delivery_order_id')
             ->join('loading_program_items', 'loading_programs.id', '=', 'loading_program_items.loading_program_id')
             ->join('loading_slips', 'loading_program_items.id', '=', 'loading_slips.loading_program_item_id')
@@ -76,6 +77,12 @@ class DeliveryChallanController extends Controller
 
         // delivery order's delivery date should not be greater than date
         $delivery_order = DeliveryOrder::find($do_id);
+        if ($delivery_order && $delivery_order->isClosed()) {
+            return response()->json([
+                'error' => 'The Sale Order or Delivery Order for this Delivery Challan has been closed. Operations are locked.',
+                'message' => 'The Sale Order or Delivery Order for this Delivery Challan has been closed. Operations are locked.'
+            ], 422);
+        }
         // if(strtotime($delivery_order->dispatch_date) <= strtotime($request->date)) {
         //     return response()->json("Selected Delivery order is expired. Please select a different Delivery order", 422);
         // }
@@ -302,6 +309,12 @@ class DeliveryChallanController extends Controller
         // delivery order's delivery date should not be greater than date
 
         $delivery_order = DeliveryOrder::find($do_id);
+        if ($delivery_order && $delivery_order->isClosed()) {
+            return response()->json([
+                'error' => 'The Sale Order or Delivery Order for this Delivery Challan has been closed. Operations are locked.',
+                'message' => 'The Sale Order or Delivery Order for this Delivery Challan has been closed. Operations are locked.'
+            ], 422);
+        }
         // if(strtotime($delivery_order->dispatch_date) < strtotime($request->date)) {
         //     return response()->json("Selected Delivery order is expired. Please select a different Delivery order", 422);
         // }
@@ -701,6 +714,7 @@ class DeliveryChallanController extends Controller
         $delivery_orders = DeliveryOrder::with("delivery_order_data")
             ->where("customer_id", $customer_id)
             ->where("am_approval_status", "approved")
+            ->whereDoesntHaveClosedSaleOrder()
             ->where(function ($q) use ($request) {
                 $q->where('do_status', 'active');
                 if ($request->delivery_challan_id) {

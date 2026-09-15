@@ -64,6 +64,7 @@ class DispatchQCController extends Controller
         // 1. No dispatch QC at all, OR
         // 2. Latest QC is rejected AND loading slip was edited after that specific rejection
         $Tickets = LoadingProgramItem::whereHas('loadingSlip')
+            ->whereDoesntHaveClosedSaleOrder()
             ->whereDoesntHave('dispatchQcs', function ($q) {
                 // Exclude tickets that have an accepted QC
                 $q->where('status', 'accept');
@@ -128,6 +129,11 @@ class DispatchQCController extends Controller
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $ticketItem = LoadingProgramItem::find($request->loading_program_item_id);
+        if ($ticketItem && $ticketItem->hasClosedSaleOrder()) {
+            return response()->json(['errors' => ['loading_program_item_id' => 'The Sale Order linked to this ticket has been closed. Operations are locked.']], 422);
         }
 
         // Check if the ticket already has an accepted dispatch QC
@@ -317,6 +323,11 @@ class DispatchQCController extends Controller
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $ticketItem = LoadingProgramItem::find($request->loading_program_item_id);
+        if ($ticketItem && $ticketItem->hasClosedSaleOrder()) {
+            return response()->json(['errors' => ['loading_program_item_id' => 'The Sale Order linked to this ticket has been closed. Operations are locked.']], 422);
         }
 
         // Check if the ticket already has an accepted dispatch QC (excluding current one)

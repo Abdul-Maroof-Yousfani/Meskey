@@ -69,6 +69,7 @@ class FirstWeighBridgeController extends Controller
             'Tickets' => LoadingProgramItem::whereHas('loadingProgram', function ($query) {
                 $query->where('type', 'sale_order');
             })
+                ->whereDoesntHaveClosedSaleOrder()
                 ->whereDoesntHave('firstWeighbridge')
                 ->whereIn('arrival_location_id', getUserCurrentCompanyArrivalLocations())
                 ->with([
@@ -109,10 +110,12 @@ class FirstWeighBridgeController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-
-        // $loadingProgramItem = LoadingProgramItem::find($request->loading_program_item_id);
-        // $loadingProgramItem->first_weighbridge_location_id = $firstLocationId;
-        // $loadingProgramItem->save();
+        $loadingProgramItem = LoadingProgramItem::find($request->loading_program_item_id);
+        if ($loadingProgramItem && $loadingProgramItem->hasClosedSaleOrder()) {
+            return response()->json([
+                'errors' => ['loading_program_item_id' => 'The Sale Order linked to this ticket has been closed. Cannot proceed.']
+            ], 422);
+        }
 
         // Check if the ticket already has a first weighbridge
         $existingFirstWeighbridge = FirstWeighbridge::where('loading_program_item_id', $request->loading_program_item_id)->first();

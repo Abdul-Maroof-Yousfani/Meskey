@@ -1419,8 +1419,9 @@ function get_receipt_vouchers() {
 
 function get_journal_vouchers() {
     const customer_id = $("#customer_id").val();
+    const sale_order_id = $("#sale_order").val();
 
-    if (!customer_id) {
+    if (!customer_id || !sale_order_id) {
         let select = $("#journal_vouchers");
         select.empty();
         select.append(
@@ -1436,6 +1437,7 @@ function get_journal_vouchers() {
         method: "GET",
         data: {
             customer_id: customer_id,
+            sale_order_id: sale_order_id,
             delivery_order_id: "{{ $delivery_order->id }}"
         },
         dataType: "json",

@@ -224,6 +224,7 @@ class DeliveryOrderController extends Controller
     {
         $sale_orders = SalesOrder::select('reference_no', 'id', 'transporter_used')
             ->where('am_approval_status', 'approved')
+            ->activeContract()
             ->where('delivery_date', '>=', now()->toDateString())
             ->get();
 
@@ -250,7 +251,13 @@ class DeliveryOrderController extends Controller
             $withhold_rv_id = str_replace('rv_', '', $request->withhold_for_rv);
         }
 
-
+        $salesOrder = SalesOrder::find($request->sale_order_id);
+        if ($salesOrder && $salesOrder->isClosed()) {
+            return response()->json([
+                'error' => "Sale Order #{$salesOrder->reference_no} is closed and cannot be used to create Delivery Orders.",
+                'message' => "Sale Order #{$salesOrder->reference_no} is closed and cannot be used to create Delivery Orders."
+            ], 422);
+        }
 
         try {
             $delivery_order = DeliveryOrder::create([
@@ -377,9 +384,22 @@ class DeliveryOrderController extends Controller
                     $jv_id = str_replace('jv_', '', $jv_val);
                     
                     $total_credit = DB::table('journal_voucher_details')
+                        ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
+                        ->whereNull('journal_vouchers.deleted_at')
+                        ->whereNull('journal_voucher_details.deleted_at')
                         ->where('journal_voucher_id', $jv_id)
                         ->where('acc_id', function($q) use ($request) {
                             $q->select('account_id')->from('customers')->where('id', $request->customer_id);
+                        })
+                        ->where(function ($q) use ($request, $jv_id) {
+                            $q->where('journal_voucher_details.sales_order_id', $request->sale_order_id)
+                              ->orWhereExists(function ($sub) use ($request, $jv_id) {
+                                  $sub->select(DB::raw(1))
+                                      ->from('journal_voucher_details as jvd_sub')
+                                      ->where('jvd_sub.journal_voucher_id', $jv_id)
+                                      ->whereNull('jvd_sub.deleted_at')
+                                      ->where('jvd_sub.sales_order_id', $request->sale_order_id);
+                              });
                         })
                         ->sum('credit_amount');
                         
@@ -603,6 +623,7 @@ class DeliveryOrderController extends Controller
         $saleOrders = SalesOrder::with("locations")
             ->select('reference_no', 'id', 'pay_type_id', 'transporter_used')
             ->where('am_approval_status', 'approved')
+            ->activeContract()
             ->where('customer_id', $customer_id)
             ->where('delivery_date', '>=', now()->toDateString())
             ->get()
@@ -842,9 +863,10 @@ class DeliveryOrderController extends Controller
     public function get_journal_vouchers(Request $request)
     {
         $customer_id = $request->customer_id;
+        $sale_order_id = $request->sale_order_id;
         $data = [];
 
-        if (!$customer_id) {
+        if (!$customer_id || !$sale_order_id) {
             return $data;
         }
 
@@ -853,13 +875,23 @@ class DeliveryOrderController extends Controller
             return $data;
         }
 
-        // Fetch JVs where this customer's account has a credit balance
+        // Fetch JVs where this customer's account has a credit balance AND is linked to this specific SO
         $jv_details = DB::table('journal_voucher_details')
             ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
             ->whereNull('journal_vouchers.deleted_at')
             ->whereNull('journal_voucher_details.deleted_at')
             ->where('journal_voucher_details.acc_id', $customer->account_id)
             ->where('journal_voucher_details.credit_amount', '>', 0)
+            ->where(function ($q) use ($sale_order_id) {
+                $q->where('journal_voucher_details.sales_order_id', $sale_order_id)
+                  ->orWhereExists(function ($sub) use ($sale_order_id) {
+                      $sub->select(DB::raw(1))
+                          ->from('journal_voucher_details as jvd_sub')
+                          ->whereColumn('jvd_sub.journal_voucher_id', 'journal_vouchers.id')
+                          ->whereNull('jvd_sub.deleted_at')
+                          ->where('jvd_sub.sales_order_id', $sale_order_id);
+                  });
+            })
             ->select('journal_vouchers.id as jv_id', 'journal_vouchers.jv_no', 'journal_vouchers.jv_date', 'journal_voucher_details.id as jv_detail_id', 'journal_voucher_details.credit_amount')
             ->get();
 
@@ -1026,18 +1058,35 @@ class DeliveryOrderController extends Controller
         $journal_vouchers = [];
         
         if ($customer && $customer->account_id) {
+            $so_id = $delivery_order->so_id;
+            $linked_jvs = DB::table('settlement_adjustments')
+                ->where('reference_type', 'journal_voucher')
+                ->where('voucher_no', $delivery_order->reference_no)
+                ->get();
+            $linked_jv_ids = $linked_jvs->pluck('reference_id')->toArray();
+
             $jv_details = DB::table('journal_voucher_details')
                 ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
                 ->whereNull('journal_vouchers.deleted_at')
                 ->whereNull('journal_voucher_details.deleted_at')
                 ->where('journal_voucher_details.acc_id', $customer->account_id)
                 ->where('journal_voucher_details.credit_amount', '>', 0)
+                ->where(function ($q) use ($so_id, $linked_jv_ids) {
+                    $q->where(function ($sq) use ($so_id) {
+                        $sq->where('journal_voucher_details.sales_order_id', $so_id)
+                           ->orWhereExists(function ($sub) use ($so_id) {
+                               $sub->select(DB::raw(1))
+                                   ->from('journal_voucher_details as jvd_sub')
+                                   ->whereColumn('jvd_sub.journal_voucher_id', 'journal_vouchers.id')
+                                   ->whereNull('jvd_sub.deleted_at')
+                                   ->where('jvd_sub.sales_order_id', $so_id);
+                           });
+                    });
+                    if (!empty($linked_jv_ids)) {
+                        $q->orWhereIn('journal_vouchers.id', $linked_jv_ids);
+                    }
+                })
                 ->select('journal_vouchers.id as jv_id', 'journal_vouchers.jv_no', 'journal_vouchers.jv_date', 'journal_voucher_details.id as jv_detail_id', 'journal_voucher_details.credit_amount')
-                ->get();
-
-            $linked_jvs = DB::table('settlement_adjustments')
-                ->where('reference_type', 'journal_voucher')
-                ->where('voucher_no', $delivery_order->reference_no)
                 ->get();
 
             $linked_jv_map = $linked_jvs->keyBy('reference_id');
@@ -1083,6 +1132,13 @@ class DeliveryOrderController extends Controller
 
     public function update(DeliveryOrderRequest $request, DeliveryOrder $delivery_order)
     {
+        if ($delivery_order->salesOrder && $delivery_order->salesOrder->isClosed()) {
+            return response()->json([
+                'error' => "The Sale Order for this Delivery Order is closed and operations are locked.",
+                'message' => "The Sale Order for this Delivery Order is closed and operations are locked."
+            ], 422);
+        }
+
         DB::beginTransaction();
         $withhold_rv_id = null;
 
@@ -1241,9 +1297,22 @@ class DeliveryOrderController extends Controller
                     $jv_id = str_replace('jv_', '', $jv_val);
                     
                     $total_credit = DB::table('journal_voucher_details')
+                        ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
+                        ->whereNull('journal_vouchers.deleted_at')
+                        ->whereNull('journal_voucher_details.deleted_at')
                         ->where('journal_voucher_id', $jv_id)
                         ->where('acc_id', function($q) use ($request) {
                             $q->select('account_id')->from('customers')->where('id', $request->customer_id);
+                        })
+                        ->where(function ($q) use ($request, $jv_id) {
+                            $q->where('journal_voucher_details.sales_order_id', $request->sale_order_id)
+                              ->orWhereExists(function ($sub) use ($request, $jv_id) {
+                                  $sub->select(DB::raw(1))
+                                      ->from('journal_voucher_details as jvd_sub')
+                                      ->where('jvd_sub.journal_voucher_id', $jv_id)
+                                      ->whereNull('jvd_sub.deleted_at')
+                                      ->where('jvd_sub.sales_order_id', $request->sale_order_id);
+                              });
                         })
                         ->sum('credit_amount');
                         
