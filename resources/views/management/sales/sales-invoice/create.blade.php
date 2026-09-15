@@ -424,7 +424,7 @@
                 <input type="number" name="discount_percent[]" id="discount_percent_${index}" onkeyup="calculateRow(this)" class="form-control discount_percent" step="0.01" min="0" max="100" value="0">
             </td>
             <td style="min-width: 120px;">
-                <input type="number" name="discount_amount[]" id="discount_amount_${index}" class="form-control discount_amount">
+                <input type="number" name="discount_amount[]" id="discount_amount_${index}" onkeyup="calculateRow(this)" class="form-control discount_amount" step="0.01" min="0">
             </td>
             <td style="min-width: 120px;">
                 <input type="number" name="amount[]" id="amount_${index}" class="form-control amount" readonly>
@@ -433,7 +433,7 @@
                 <input type="number" name="gst_percent[]" id="gst_percent_${index}" onkeyup="calculateRow(this)" class="form-control gst_percent" step="0.01" min="0" value="0">
             </td>
             <td style="min-width: 120px;">
-                <input type="number" name="gst_amount[]" id="gst_amount_${index}" class="form-control gst_amount">
+                <input type="number" name="gst_amount[]" id="gst_amount_${index}" onkeyup="calculateRow(this)" class="form-control gst_amount" step="0.01" min="0">
             </td>
             <td style="min-width: 120px;">
                 <input type="number" name="net_amount[]" id="net_amount_${index}" class="form-control net_amount" readonly>
@@ -484,7 +484,9 @@
         let qty = parseFloat(qtyInput.val()) || 0;
         let rate = parseFloat(rateInput.val()) || 0;
         let discountPercent = parseFloat(discountPercentInput.val()) || 0;
+        let discountAmount = parseFloat(discountAmountInput.val()) || 0;
         let gstPercent = parseFloat(gstPercentInput.val()) || 0;
+        let gstAmount = parseFloat(gstAmountInput.val()) || 0;
 
         // Calculate based on what changed
         if ($(el).hasClass("qty")) {
@@ -520,21 +522,43 @@
             qtyInput.val(round(qty, 3));
         }
 
-        // Always recalculate amounts based on current values
+        // Calculate Gross Amount = Qty * Rate
         const grossAmount = qty * rate;
         grossAmountInput.val(round(grossAmount));
 
-        // Calculate Discount Amount = (Discount % / 100) * Gross Amount
-        const discountAmount = (discountPercent / 100) * grossAmount;
-        discountAmountInput.val(round(discountAmount));
+        // Calculate Discount
+        if ($(el).hasClass("discount_amount")) {
+            // Reverse calculate discount percent from discount amount
+            if (grossAmount > 0) {
+                discountPercent = (discountAmount / grossAmount) * 100;
+            } else {
+                discountPercent = 0;
+            }
+            discountPercentInput.val(round(discountPercent, 4));
+        } else {
+            // Forward calculate discount amount from discount percent
+            discountAmount = (discountPercent / 100) * grossAmount;
+            discountAmountInput.val(round(discountAmount));
+        }
 
         // Calculate Amount = Gross Amount - Discount Amount
         const amount = grossAmount - discountAmount;
         amountInput.val(round(amount));
 
-        // Calculate GST Amount = (GST % / 100) * Amount
-        const gstAmount = (gstPercent / 100) * amount;
-        gstAmountInput.val(round(gstAmount));
+        // Calculate GST
+        if ($(el).hasClass("gst_amount")) {
+            // Reverse calculate GST percent from GST amount
+            if (amount > 0) {
+                gstPercent = (gstAmount / amount) * 100;
+            } else {
+                gstPercent = 0;
+            }
+            gstPercentInput.val(round(gstPercent, 4));
+        } else {
+            // Forward calculate GST amount from GST percent
+            gstAmount = (gstPercent / 100) * amount;
+            gstAmountInput.val(round(gstAmount));
+        }
 
         // Calculate Net Amount = Amount + GST Amount
         const netAmount = amount + gstAmount;

@@ -67,8 +67,22 @@ class QuotationRequest extends FormRequest
             'packing_items.*.maunds'            => ['nullable', 'numeric', 'min:0'],
             'packing_items.*.no_of_bags'        => ['required', 'integer', 'min:0'],
             'packing_items.*.total_kgs'         => ['nullable', 'numeric', 'min:0'],
-            'packing_items.*.stuffing_in_container' => ['required', 'numeric', 'gt:0'],
-            'packing_items.*.no_of_containers'  => ['required', 'integer', 'gt:0'],
+            'packing_items.*.stuffing_in_container' => [
+                Rule::requiredIf(function () {
+                    return stripos((string) $this->packing_type, 'bulk') === false;
+                }),
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+            'packing_items.*.no_of_containers'  => [
+                Rule::requiredIf(function () {
+                    return stripos((string) $this->packing_type, 'bulk') === false;
+                }),
+                'nullable',
+                'integer',
+                'min:0',
+            ],
             'packing_items.*.rate'              => ['required', 'numeric', 'gt:0'],
             'packing_items.*.rate_per_maund'    => ['nullable', 'numeric', 'min:0'],
             'packing_items.*.amount'            => ['required', 'numeric', 'min:0'],
@@ -93,8 +107,8 @@ class QuotationRequest extends FormRequest
             'packing_items.*.bag_type_id.required' => 'Bag type is required for all items',
             'packing_items.*.bag_packing_id.required' => 'Packing is required for all items',
             'packing_items.*.metric_tons.gt' => 'Quantity (MT) must be greater than 0',
-            'packing_items.*.stuffing_in_container.gt' => 'Stuffing per container must be greater than 0',
-            'packing_items.*.no_of_containers.gt' => 'Number of containers must be greater than 0',
+            'packing_items.*.stuffing_in_container.required' => 'Stuffing per container is required',
+            'packing_items.*.no_of_containers.required' => 'Number of containers is required',
             'packing_items.*.rate.gt' => 'Rate must be greater than 0',
         ];
     }

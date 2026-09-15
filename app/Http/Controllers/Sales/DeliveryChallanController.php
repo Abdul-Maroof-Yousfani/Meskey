@@ -168,6 +168,7 @@ class DeliveryChallanController extends Controller
             
             if ($request->transporter) {
                 $transporter_rate = 0;
+                $transporter_rate_type = '';
                 $delivery_order = DeliveryOrder::find($do_id);
                 
                 if ($delivery_order && $delivery_order->so_id) {
@@ -182,12 +183,16 @@ class DeliveryChallanController extends Controller
                             
                         if ($logisticsItem) {
                             $transporter_rate = (float)$logisticsItem->rate;
+                            $transporter_rate_type = $logisticsItem?->rate_type ?? '';
                         }
                     }
                 }
-                
                 if ($transporter_rate > 0) {
-                    $transporter_amount = $total_qty * $transporter_rate;
+                    if ($transporter_rate_type == 'Per Truck') {
+                        $transporter_amount = $transporter_rate;
+                    }else{
+                        $transporter_amount = $total_qty * $transporter_rate;
+                    }
                 }
             }
 
@@ -409,6 +414,7 @@ class DeliveryChallanController extends Controller
             
             if ($request->transporter) {
                 $transporter_rate = 0;
+                $transporter_rate_type = '';
                 $delivery_order = DeliveryOrder::find($do_id);
                 
                 if ($delivery_order && $delivery_order->so_id) {
@@ -423,12 +429,17 @@ class DeliveryChallanController extends Controller
                             
                         if ($logisticsItem) {
                             $transporter_rate = (float)$logisticsItem->rate;
+                            $transporter_rate_type = $logisticsItem?->rate_type ?? '';
                         }
                     }
                 }
                 
                 if ($transporter_rate > 0) {
-                    $transporter_amount = $total_qty * $transporter_rate;
+                    if ($transporter_rate_type == 'Per Truck') {
+                        $transporter_amount = $transporter_rate;
+                    }else{
+                        $transporter_amount = $total_qty * $transporter_rate;
+                    }
                 }
             }
 
@@ -588,7 +599,7 @@ class DeliveryChallanController extends Controller
         $perPage = $request->get('per_page', 25);
 
         // Eager load the inquiry + all its items + related product
-        $delivery_challans = DeliveryChallan::with(['delivery_challan_data.loadingProgramItem.acceptedDispatchQc'])
+        $delivery_challans = DeliveryChallan::with(['delivery_order', 'delivery_challan_data.loadingProgramItem.acceptedDispatchQc'])
             // Filter by DO No
             ->when($request->filled('do_id_for_filter') && $request->do_id_for_filter != 'all', function ($q) use ($request) {
                 $q->whereHas('delivery_order', function ($sq) use ($request) {
@@ -631,6 +642,24 @@ class DeliveryChallanController extends Controller
             ->latest()
             ->paginate($perPage);
 
+        // Map arrival location names for factories
+        $allArrivalIds = [];
+        foreach ($delivery_challans as $dc) {
+            if (!empty($dc->arrival_id)) {
+                $allArrivalIds = array_merge($allArrivalIds, explode(',', (string)$dc->arrival_id));
+            } else {
+                foreach ($dc->delivery_order as $do) {
+                    if (!empty($do->arrival_location_id)) {
+                        $allArrivalIds = array_merge($allArrivalIds, explode(',', (string)$do->arrival_location_id));
+                    }
+                }
+            }
+        }
+        $allArrivalIds = array_values(array_filter(array_unique(array_map('trim', $allArrivalIds))));
+        $arrivalLocationMap = !empty($allArrivalIds)
+            ? ArrivalLocation::whereIn('id', $allArrivalIds)->pluck('name', 'id')->toArray()
+            : [];
+
         $groupedData = [];
 
         foreach ($delivery_challans as $delivery_challan) {
@@ -640,6 +669,19 @@ class DeliveryChallanController extends Controller
             if ($items->isEmpty()) {
                 continue;
             }
+
+            $dcArrivalIds = !empty($delivery_challan->arrival_id)
+                ? explode(',', (string)$delivery_challan->arrival_id)
+                : $delivery_challan->delivery_order->pluck('arrival_location_id')->flatMap(fn($id) => explode(',', (string)$id))->filter()->unique()->toArray();
+
+            $factoryNamesList = [];
+            foreach ($dcArrivalIds as $aId) {
+                $aId = trim((string)$aId);
+                if (isset($arrivalLocationMap[$aId])) {
+                    $factoryNamesList[] = $arrivalLocationMap[$aId];
+                }
+            }
+            $factoryName = !empty($factoryNamesList) ? implode(', ', $factoryNamesList) : 'N/A';
 
             $itemRows = [];
             foreach ($items as $itemData) {
@@ -656,6 +698,7 @@ class DeliveryChallanController extends Controller
                 'delivery_date' => $delivery_challan->delivery_date,
                 'id' => $delivery_challan->id,
                 'customer_id' => $delivery_challan->customer_id,
+                'factory_name' => $factoryName,
                 'status' => $delivery_challan->am_approval_status,
                 'created_at' => $delivery_challan->created_at,
                 'customer' => $delivery_challan->customer,

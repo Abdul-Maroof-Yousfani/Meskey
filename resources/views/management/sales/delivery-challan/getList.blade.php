@@ -3,15 +3,16 @@
 <table class="table table-hover m-0">
     <thead class="bg-light">
         <tr>
-            <th width="12%">Do No</th>
-            <th width="18%">Customer</th>
-            <th width="25%">Item Description</th>
+            <th width="10%">Do No</th>
+            <th width="15%">Customer</th>
+            <th width="13%">Factory</th>
+            <th width="22%">Item Description</th>
             <th width="10%" class="text-right">Qty</th>
             <!-- <th width="10%" class="text-right">Rate</th> -->
             <!-- <th width="10%" class="text-right">Amount</th> -->
             <th width="10%" class="text-center">Date</th>
             <th width="8%">Status</th>
-            <th width="7%">Action</th>
+            <th width="12%">Action</th>
         </tr>
     </thead>
     <tbody>
@@ -19,7 +20,7 @@
             @php $isFirstRow = true; @endphp
             @foreach($group['items'] as $itemRow)
                 <tr>
-                    {{-- Inquiry No & Customer - Show only on first row --}}
+                    {{-- Inquiry No & Customer & Factory - Show only on first row --}}
                     @if($isFirstRow)
                         <td rowspan="{{ $group['rowspan'] }}" class="align-middle text-center font-weight-bold"
                             style="background-color: #e3f2fd;">
@@ -35,6 +36,10 @@
                         <td rowspan="{{ $group['rowspan'] }}" class="align-middle" style="background-color: #e3f2fd;">
                             <strong>{{ get_customer_name($group["customer_id"]) }}</strong>
 
+                        </td>
+
+                        <td rowspan="{{ $group['rowspan'] }}" class="align-middle">
+                            {{ $group['factory_name'] ?? 'N/A' }}
                         </td>
                     @endif
 
@@ -143,7 +148,7 @@
                                 </g>
                             </g>
                         </svg>
-                        <p class="text-muted mt-3">No Sale Order found</p>
+                        <p class="text-muted mt-3">No Delivery Challan found</p>
                     </div>
                 </td>
             </tr>

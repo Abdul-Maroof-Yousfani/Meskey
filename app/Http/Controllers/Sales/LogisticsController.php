@@ -54,7 +54,10 @@ class LogisticsController extends Controller
         $customer_id = $request->customer_id;
 
         $saleOrders = \App\Models\Sales\SalesOrder::with('logistics')
-            ->where('transporter_used', 'yes')
+            ->whereNot(function($q) {
+                $q->where('contract_status', 'x-mill')
+                  ->where('transporter_used', 'no');
+            })
             ->where('am_approval_status', 'approved')
             ->where('customer_id', $customer_id)
             ->orderBy('id', 'desc')
@@ -135,6 +138,13 @@ class LogisticsController extends Controller
                 ->first();
         }
 
+        $defaultFactoryNames = $order->factories
+            ->map(fn($f) => $f->factory?->name)
+            ->filter()
+            ->unique()
+            ->values()
+            ->toArray();
+
         return response()->json([
             'type' => 'sale_order',
             'date' => $order->order_date ?? date('Y-m-d'),
@@ -148,6 +158,7 @@ class LogisticsController extends Controller
             'from_location_options' => $fromLocationOptions,
             'to_location_id' => '',
             'to_location_options' => $toLocationOptions,
+            'default_factories' => $defaultFactoryNames,
             'logistics' => $logistics
         ]);
     }
@@ -241,7 +252,8 @@ class LogisticsController extends Controller
             'return_port' => 'nullable|string',
             'booking_no' => 'nullable|string',
             'shipping_line' => 'nullable|string',
-            'factory' => 'nullable|string',
+            'factory' => 'nullable',
+            'factory.*' => 'nullable|string',
         ]);
 
         if ($request->type === 'export_order') {
@@ -288,6 +300,15 @@ class LogisticsController extends Controller
                 $fromLocation = collect($eo?->company_location_ids ?? [])->first();
             }
 
+            $factoryValue = null;
+            if ($request->has('factory')) {
+                if (is_array($request->factory)) {
+                    $factoryValue = implode(', ', array_filter($request->factory));
+                } else {
+                    $factoryValue = $request->factory;
+                }
+            }
+
             $logistics->fill([
                 'date' => $request->date,
                 'type' => $request->type,
@@ -303,7 +324,7 @@ class LogisticsController extends Controller
                 'return_port' => $request->return_port,
                 'booking_no' => $request->booking_no,
                 'shipping_line' => $request->shipping_line,
-                'factory' => $request->factory,
+                'factory' => $factoryValue,
             ]);
             $logistics->save();
 
@@ -405,7 +426,8 @@ class LogisticsController extends Controller
             'return_port' => 'nullable|string',
             'booking_no' => 'nullable|string',
             'shipping_line' => 'nullable|string',
-            'factory' => 'nullable|string',
+            'factory' => 'nullable',
+            'factory.*' => 'nullable|string',
         ]);
 
         if ($request->type === 'export_order') {
@@ -434,6 +456,15 @@ class LogisticsController extends Controller
                 $fromLocation = collect($eo?->company_location_ids ?? [])->first();
             }
 
+            $factoryValue = null;
+            if ($request->has('factory')) {
+                if (is_array($request->factory)) {
+                    $factoryValue = implode(', ', array_filter($request->factory));
+                } else {
+                    $factoryValue = $request->factory;
+                }
+            }
+
             $logistics->fill([
                 'date' => $request->date,
                 'type' => $request->type,
@@ -449,7 +480,7 @@ class LogisticsController extends Controller
                 'return_port' => $request->return_port,
                 'booking_no' => $request->booking_no,
                 'shipping_line' => $request->shipping_line,
-                'factory' => $request->factory,
+                'factory' => $factoryValue,
             ]);
             $logistics->save();
 

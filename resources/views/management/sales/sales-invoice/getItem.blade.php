@@ -76,7 +76,7 @@
                 <input type="number" name="discount_percent[]" id="discount_percent_{{ $rowIndex }}" onkeyup="calculateRow(this)" class="form-control discount_percent" step="0.01" min="0" max="100" value="{{ $discountPercent }}">
             </td>
             <td style="min-width: 120px;">
-                <input type="number" name="discount_amount[]" id="discount_amount_{{ $rowIndex }}" class="form-control discount_amount" value="{{ $discountAmount }}">
+                <input type="number" name="discount_amount[]" id="discount_amount_{{ $rowIndex }}" onkeyup="calculateRow(this)" class="form-control discount_amount" step="0.01" min="0" value="{{ $discountAmount }}">
             </td>
             <td style="min-width: 120px;">
                 <input type="number" name="amount[]" id="amount_{{ $rowIndex }}" class="form-control amount" readonly value="{{ $amount }}">
@@ -85,7 +85,7 @@
                 <input type="number" name="gst_percent[]" id="gst_percent_{{ $rowIndex }}" onkeyup="calculateRow(this)" class="form-control gst_percent" step="0.01" min="0" value="{{ $gstPercent }}">
             </td>
             <td style="min-width: 120px;">
-                <input type="number" name="gst_amount[]" id="gst_amount_{{ $rowIndex }}" class="form-control gst_amount" value="{{ $gstAmount }}">
+                <input type="number" name="gst_amount[]" id="gst_amount_{{ $rowIndex }}" onkeyup="calculateRow(this)" class="form-control gst_amount" step="0.01" min="0" value="{{ $gstAmount }}">
             </td>
             <td style="min-width: 120px;">
                 <input type="number" name="net_amount[]" id="net_amount_{{ $rowIndex }}" class="form-control net_amount" readonly value="{{ $netAmount }}">

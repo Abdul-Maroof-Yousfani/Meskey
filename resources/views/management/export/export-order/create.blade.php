@@ -839,13 +839,13 @@
                                 <input type="number" name="packing_items[0][total_kgs]" class="form-control total-kgs" value="0" readonly>
                             </div>
 
-                            <div class="col-md-2">
+                            <div class="col-md-2 col-stuffing">
                                 <div class="form-group">
                                     <label>Stuffing/Cont (MT):</label>
                                     <input type="number" name="packing_items[0][stuffing_in_container]" class="form-control stuffing" step="0.001" value="0" required>
                                 </div>
                             </div>
-                            <div class="col-md-2">
+                            <div class="col-md-2 col-containers">
                                 <div class="form-group">
                                     <label>Containers:</label>
                                     <input type="number" name="packing_items[0][no_of_containers]" class="form-control containers" value="0" required>
@@ -1243,6 +1243,7 @@
             
             // Initialize Select2 on the new row AFTER re-indexing to ensure correct internal mapping
             newRow.find('.select2').select2({ width: '100%' });
+            togglePackingTypeColumns();
         });
 
         // Calculations (JobOrder Style)
@@ -1746,13 +1747,30 @@
             }
         });
         
+        function togglePackingTypeColumns() {
+            var packingType = $('select[name="packing_type"]').val() || '';
+            var isBulk = packingType.toLowerCase().indexOf('bulk') !== -1;
+
+            if (isBulk) {
+                $('.col-stuffing, .col-containers').hide();
+                $('.col-stuffing input, .col-containers input').prop('required', false).val('0');
+            } else {
+                $('.col-stuffing, .col-containers').show();
+                $('.col-stuffing input, .col-containers input').prop('required', true);
+            }
+        }
+
         // Add event listener for packing_type as well
         $('select[name="packing_type"]').on('change', function() {
             $('select[name="incoterm_id"]').trigger('change');
+            togglePackingTypeColumns();
         });
+
+        togglePackingTypeColumns();
 
         setTimeout(() => {
             $('select[name="incoterm_id"]').trigger('change');
+            togglePackingTypeColumns();
         }, 100);
 
         loadCompanyBanks(defaultCompanyId);
