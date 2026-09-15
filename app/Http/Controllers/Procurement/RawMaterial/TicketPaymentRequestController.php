@@ -594,6 +594,7 @@ class TicketPaymentRequestController extends Controller
             'rerate_on_access_weight_kg' => $request->rerate_on_access_weight_kg ?? 0,
             'rerate_on_access_weight_rate' => $request->rerate_on_access_weight_rate ?? 0,
             'rerate_on_access_weight_amount' => $request->rerate_on_access_weight_amount ?? 0,
+            'other_adjustment_amount' => $request->other_adjustment_amount ?? 0,
             'no_of_filling_bags' => $request->filling_bags_no ?? 0,
             'filling_bag_rate' => $request->filling_bags_rate ?? 0,
             'filling_bag_amount' => $request->filling_bags_amount ?? 0,
@@ -756,7 +757,7 @@ class TicketPaymentRequestController extends Controller
                 $query->where('module_type', 'ticket');
 
                 $query->where('purchase_order_id', $arrivalTicket->arrival_purchase_order_id);
-            })->select('other_deduction_kg', 'other_deduction_value', 'rerate_on_access_weight_kg', 'rerate_on_access_weight_rate', 'rerate_on_access_weight_amount', 'no_of_filling_bags', 'filling_bag_rate', 'filling_bag_amount')
+            })->select('other_deduction_kg', 'other_deduction_value', 'rerate_on_access_weight_kg', 'rerate_on_access_weight_rate', 'rerate_on_access_weight_amount', 'no_of_filling_bags', 'filling_bag_rate', 'filling_bag_amount', 'other_adjustment_amount')
                 ->latest()
                 ->first();
         }

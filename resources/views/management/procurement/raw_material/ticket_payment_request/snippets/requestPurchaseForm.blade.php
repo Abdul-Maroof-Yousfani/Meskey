@@ -12,7 +12,7 @@
     $fillingBagsAmount = $fillingBagsNo * $fillingBagsRate;
 
 
-    $hasLoadingWeight = true; 
+    $hasLoadingWeight = true;
 
     $isSlabs = false;
     $isCompulsury = false;
@@ -90,6 +90,7 @@
     $existingRerateOnAccessWeightKg = $otherDeduction->rerate_on_access_weight_kg ?? 0;
     $existingRerateOnAccessWeightRate = $otherDeduction->rerate_on_access_weight_rate ?? 0;
     $existingRerateOnAccessWeightAmount = $otherDeduction->rerate_on_access_weight_amount ?? 0;
+    $existingOtherAdjustmentAmount = $otherDeduction->other_adjustment_amount ?? 0;
     $deduction_on_weight_difference_kg = $otherDeduction->deduction_on_weight_difference_kg ?? 0;
     $deduction_on_weight_difference_amount = $otherDeduction->deduction_on_weight_difference_amount ?? 0;
     $isApprovalPage = isset($isRequestApprovalPage) && $isRequestApprovalPage;
@@ -182,7 +183,7 @@
         samplingResults: [
             @foreach ($samplingRequestResults as $slab)
                 @if ($slab->applied_deduction)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    {
                         id: {{ $slab->id }},
                         applied_deduction: {{ $slab->applied_deduction ?? 0 }},
                         deduction_type: '{{ $slab->deduction_type ?? 'amount' }}',
@@ -196,10 +197,10 @@
         compulsoryResults: [
             @foreach ($samplingRequestCompulsuryResults as $slab)
                 @if ($slab->applied_deduction)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                            {
                     id: {{ $slab->id }},
                     applied_deduction: {{ $slab->applied_deduction ?? 0 }}
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                },
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                            },
                 @endif
             @endforeach
         ],
@@ -457,7 +458,7 @@
                                     </td>
                                 </tr>
                                 <tr class="other-deduction-row" data-other-deduction="true">
-                                    <td colspan="3" >Other Deduction (if any)
+                                    <td colspan="3">Other Deduction (if any)
                                         <input type="hidden" name="other_deduction[slab_name]" value="Other Deduction">
                                     </td>
                                     <td>
@@ -516,6 +517,9 @@
                                 </tr>
 
 
+
+
+
                                 <tr class="other-deduction-row" data-other-deduction="true">
                                     <td colspan="2" width="35%"><strong>Filling Bags</strong>
                                         <input type="hidden" name="filling_bags[slab_name]" value="Filling Bags">
@@ -524,9 +528,9 @@
                                     <td>
                                         <div class="input-group mb-0">
                                             <input type="number" step="any"
-                                                class="form-control editable-field filling-bags-input"
-                                                name="filling_bags_no" id="filling_bags_no"
-                                                value="{{ $fillingBagsNo ?? 0 }}" placeholder="Enter number of bags">
+                                                class="form-control editable-field filling-bags-input" name="filling_bags_no"
+                                                id="filling_bags_no" value="{{ $fillingBagsNo ?? 0 }}"
+                                                placeholder="Enter number of bags">
                                             <div class="input-group-append">
                                                 <span class="input-group-text text-sm">Bags</span>
                                             </div>
@@ -553,6 +557,9 @@
                                         </div>
                                     </td>
                                 </tr>
+
+
+
                             </tbody>
                         </table>
                     </div>
@@ -819,9 +826,9 @@
                                     <td>
                                         <div class="input-group mb-0">
                                             <input type="number" step="any"
-                                                class="form-control editable-field filling-bags-input"
-                                                name="filling_bags_no" id="filling_bags_no"
-                                                value="{{ $fillingBagsNo ?? 0 }}" placeholder="Enter number of bags">
+                                                class="form-control editable-field filling-bags-input" name="filling_bags_no"
+                                                id="filling_bags_no" value="{{ $fillingBagsNo ?? 0 }}"
+                                                placeholder="Enter number of bags">
                                             <div class="input-group-append">
                                                 <span class="input-group-text text-sm">Bags</span>
                                             </div>
@@ -857,6 +864,24 @@
             <div class="col-12">
                 <table class="table table-bordered mb-4" style="min-width: 500px;">
                     <tbody>
+                        <!-- Other adjustment Row -->
+                        <tr class="other-adjustment-row" data-other-adjustment="true">
+                            <td><strong>Other Adjustment</strong>
+                            </td>
+                            <!-- <td>N/A</td> -->
+                            <td>
+
+                            </td>
+                            <td>
+
+                            </td>
+                            <td>
+                                <div class="input-group mb-0">
+                                    <input type="text" class="form-control" name="other_adjustment_amount"
+                                        id="other_adjustment_amount" value="{{ $existingOtherAdjustmentAmount }}">
+                                </div>
+                            </td>
+                        </tr>
                         <tr>
                             <td><strong>Bags weight in Kg</strong></td>
                             <td>
@@ -1036,116 +1061,119 @@
     </div>
 
 
-<div class="col-12">
+    <div class="col-12">
         <div class="row">
-        <div class="col-md-12">
-            <h6 class="header-heading-sepration toggleFreight" style="background: #0059ff26;">
-                {{ $arrivalTicket->saudaType?->name }} Freight Details
-            </h6>
+            <div class="col-md-12">
+                <h6 class="header-heading-sepration toggleFreight" style="background: #0059ff26;">
+                    {{ $arrivalTicket->saudaType?->name }} Freight Details
+                </h6>
+            </div>
         </div>
+        @if($arrivalTicket->saudaType?->name == 'Pohanch')
+            <div class="row toggleFreightBox" style="display:none;">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Attach Bilty</label>
+                        @if ($arrivalTicket->freight->bilty_document)
+                            <a href="{{ asset($arrivalTicket->freight->bilty_document) }}" target="_blank">
+                                <img src="{{ asset($arrivalTicket->freight->bilty_document) }}" class="d-block w-100" />
+                            </a>
+                        @endif
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Attach Loading Weight</label>
+                        @if ($arrivalTicket->freight->loading_weight_document)
+                            <a href="{{ asset($arrivalTicket->freight->loading_weight_document) }}" target="_blank">
+                                <img src="{{ asset($arrivalTicket->freight->loading_weight_document) }}"
+                                    class="d-block w-100" />
+                            </a>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Other Document (Optional)</label>
+                        @if ($arrivalTicket->freight->other_document)
+                            <a href="{{ asset($arrivalTicket->freight->other_document) }}" target="_blank">
+                                <img src="{{ asset($arrivalTicket->freight->other_document) }}" class="d-block w-100" />
+                            </a>
+                        @endif
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Other Document 2 (Optional)</label>
+                        @if ($arrivalTicket->freight->other_document_2)
+                            <a href="{{ asset($arrivalTicket->freight->other_document_2) }}" target="_blank">
+                                <img src="{{ asset($arrivalTicket->freight->other_document_2) }}" class="d-block w-100" />
+                            </a>
+                        @endif
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Arrival Slip</label>
+                        <a class="btn btn-primary btn-block"
+                            href="{{ route('arrival-slip.show', $arrivalTicket?->arrivalSlip->id) }}" target="_blank">
+                            View Arrival Slip
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        @endif
+
+
+
+
+        @if($arrivalTicket->saudaType?->name == 'Thadda')
+
+
+            <div class="row toggleFreightBox" style="display:none;">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Attach Bilty</label>
+                        @if ($arrivalTicket->purchaseOrder?->purchaseFreight?->bilty_slip)
+                            <a href="{{ asset($arrivalTicket->purchaseOrder?->purchaseFreight?->bilty_slip) }}" target="_blank">
+                                <img src="{{ asset($arrivalTicket->purchaseOrder?->purchaseFreight?->bilty_slip) }}"
+                                    class="d-block w-100" />
+                            </a>
+                        @endif
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Attach Weighbridge Slip</label>
+                        @if ($arrivalTicket->purchaseOrder?->purchaseFreight?->weighbridge_slip)
+                            <a href="{{ asset($arrivalTicket->purchaseOrder?->purchaseFreight?->weighbridge_slip) }}"
+                                target="_blank">
+                                <img src="{{ asset($arrivalTicket->purchaseOrder?->purchaseFreight?->weighbridge_slip) }}"
+                                    class="d-block w-100" />
+                            </a>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label>Supplier Bill</label>
+                        @if ($arrivalTicket->purchaseOrder?->purchaseFreight?->supplier_bill)
+                            <a href="{{ asset($arrivalTicket->purchaseOrder?->purchaseFreight?->supplier_bill) }}"
+                                target="_blank">
+                                <img src="{{ asset($arrivalTicket->purchaseOrder?->purchaseFreight?->supplier_bill) }}"
+                                    class="d-block w-100" />
+                            </a>
+                        @endif
+                    </div>
+                </div>
+
+
+            </div>
+        @endif
     </div>
-    @if($arrivalTicket->saudaType?->name == 'Pohanch')
-        <div class="row toggleFreightBox" style="display:none;">
-            <div class="col-md-3">
-                <div class="form-group">
-                    <label>Attach Bilty</label>
-                    @if ($arrivalTicket->freight->bilty_document)
-                        <a href="{{ asset($arrivalTicket->freight->bilty_document) }}" target="_blank">
-                            <img src="{{ asset($arrivalTicket->freight->bilty_document) }}" class="d-block w-100" />
-                        </a>
-                    @endif
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="form-group">
-                    <label>Attach Loading Weight</label>
-                    @if ($arrivalTicket->freight->loading_weight_document)
-                        <a href="{{ asset($arrivalTicket->freight->loading_weight_document) }}" target="_blank">
-                            <img src="{{ asset($arrivalTicket->freight->loading_weight_document) }}" class="d-block w-100" />
-                        </a>
-                    @endif
-                </div>
-            </div>
-
-            <div class="col-md-3">
-                <div class="form-group">
-                    <label>Other Document (Optional)</label>
-                    @if ($arrivalTicket->freight->other_document)
-                        <a href="{{ asset($arrivalTicket->freight->other_document) }}" target="_blank">
-                            <img src="{{ asset($arrivalTicket->freight->other_document) }}" class="d-block w-100" />
-                        </a>
-                    @endif
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="form-group">
-                    <label>Other Document 2 (Optional)</label>
-                    @if ($arrivalTicket->freight->other_document_2)
-                        <a href="{{ asset($arrivalTicket->freight->other_document_2) }}" target="_blank">
-                            <img src="{{ asset($arrivalTicket->freight->other_document_2) }}" class="d-block w-100" />
-                        </a>
-                    @endif
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="form-group">
-                    <label>Arrival Slip</label>
-                        <a class="btn btn-primary btn-block" href="{{ route('arrival-slip.show', $arrivalTicket?->arrivalSlip->id) }}" target="_blank">
-                           View Arrival Slip
-                        </a>
-                </div>
-            </div>
-
-        </div>
-    @endif
-
-
-
-
-    @if($arrivalTicket->saudaType?->name == 'Thadda')
-
-
-        <div class="row toggleFreightBox" style="display:none;">
-            <div class="col-md-3">
-                <div class="form-group">
-                    <label>Attach Bilty</label>
-                    @if ($arrivalTicket->purchaseOrder?->purchaseFreight?->bilty_slip)
-                        <a href="{{ asset($arrivalTicket->purchaseOrder?->purchaseFreight?->bilty_slip) }}" target="_blank">
-                            <img src="{{ asset($arrivalTicket->purchaseOrder?->purchaseFreight?->bilty_slip) }}"
-                                class="d-block w-100" />
-                        </a>
-                    @endif
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="form-group">
-                    <label>Attach Weighbridge Slip</label>
-                    @if ($arrivalTicket->purchaseOrder?->purchaseFreight?->weighbridge_slip)
-                        <a href="{{ asset($arrivalTicket->purchaseOrder?->purchaseFreight?->weighbridge_slip) }}"
-                            target="_blank">
-                            <img src="{{ asset($arrivalTicket->purchaseOrder?->purchaseFreight?->weighbridge_slip) }}"
-                                class="d-block w-100" />
-                        </a>
-                    @endif
-                </div>
-            </div>
-
-            <div class="col-md-3">
-                <div class="form-group">
-                    <label>Supplier Bill</label>
-                    @if ($arrivalTicket->purchaseOrder?->purchaseFreight?->supplier_bill)
-                        <a href="{{ asset($arrivalTicket->purchaseOrder?->purchaseFreight?->supplier_bill) }}" target="_blank">
-                            <img src="{{ asset($arrivalTicket->purchaseOrder?->purchaseFreight?->supplier_bill) }}"
-                                class="d-block w-100" />
-                        </a>
-                    @endif
-                </div>
-            </div>
-
-
-        </div>
-    @endif
-</div>
 </div>
 @if ($hasLoadingWeight)
     <script>
@@ -1278,7 +1306,7 @@
 
                 if (showLumpSum && !isSlabs && !isCompulsury) {
                     // console.log('show lump sum');
-  const netWeight = calculateNetWeight();
+                    const netWeight = calculateNetWeight();
                     var lumpsumAmount = $('tr[data-lumpsum-amount]').data('lumpsum-amount') || 0;
                     var lumpsumKgAmount = $('tr[data-lumpsum-kgamount]').data('lumpsum-kgamount') || 0;
                     var lump_sum_deduction_rupees = $('input[name="lump_sum_deduction_rupees"]').val() || 0;
@@ -1400,6 +1428,7 @@
                 const deduction_on_access_weight_amount = deduction_on_access_weight_rate * deduction_on_access_weight_kg;
                 $('#rerate_on_access_weight_amount').val(deduction_on_access_weight_amount.toFixed(4) || 0);
 
+                const other_adjustment_amount = parseFloat($('#other_adjustment_amount').val()) || 0;
 
                 //     Calculate filling bags deduction
                 const fillingBagsAmount = calculateFillingBags();
@@ -1413,13 +1442,15 @@
                 const totalDeductionsForFormula = totalSamplingDeductions + bagWeightAmount +
                     loadingWeighbridgeAmount + deduction_on_access_weight_amount + fillingBagsAmount;
 
-                const totalAmount = grossAmount - totalDeductionsForFormula + bagRateAmount - parseInt({{ $grossFreightAmount ?? 0 }}) + {{ $totalSupplierCommission }};
+
+                const totalAmount = grossAmount - totalDeductionsForFormula + bagRateAmount - parseInt({{ $grossFreightAmount ?? 0 }}) + {{ $totalSupplierCommission }} + other_adjustment_amount;
 
                 console.log('totalSamplingDeductions: ' + totalSamplingDeductions);
                 console.log('bagWeightAmount: ' + bagWeightAmount);
                 console.log('loadingWeighbridgeAmount: ' + loadingWeighbridgeAmount);
                 console.log('deduction_on_access_weight_amount: ' + deduction_on_access_weight_amount);
                 console.log('fillingBagsAmount: ' + fillingBagsAmount);
+                console.log('other_adjustment_amount: ' + other_adjustment_amount);
                 console.log('grossAmount: ' + grossAmount);
                 console.log('totalAmount: ' + totalAmount);
                 console.log('grossFreightAmount: ' + parseInt({{ $grossFreightAmount ?? 0 }}));
@@ -1558,6 +1589,9 @@
                 updateAllCalculations();
             });
 
+            $(document).on('input', '#other_adjustment_amount', function () {
+                updateAllCalculations();
+            });
 
             $(".togglehistory").click(function () {
                 $(".togglehistorytable").slideToggle(400);

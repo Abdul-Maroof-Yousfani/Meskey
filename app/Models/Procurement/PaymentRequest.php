@@ -44,6 +44,7 @@ class PaymentRequest extends Model
         'rerate_on_access_weight_kg',
         'rerate_on_access_weight_rate',
         'rerate_on_access_weight_amount',
+        'other_adjustment_amount',
         'no_of_filling_bags',
         'filling_bag_rate',
         'filling_bag_amount',

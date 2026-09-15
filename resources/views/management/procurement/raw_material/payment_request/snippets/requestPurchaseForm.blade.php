@@ -81,6 +81,8 @@
     $existingRerateOnAccessWeightKg = $otherDeduction->rerate_on_access_weight_kg ?? 0;
     $existingRerateOnAccessWeightRate = $otherDeduction->rerate_on_access_weight_rate ?? 0;
     $existingRerateOnAccessWeightAmount = $otherDeduction->rerate_on_access_weight_amount ?? 0;
+    $existingOtherAdjustmentAmount = $otherDeduction->other_adjustment_amount ?? 0;
+
     $isApprovalPage = isset($isRequestApprovalPage) && $isRequestApprovalPage;
     $currentPaymentAmount = 0;
     $currentFreightAmount = 0;
@@ -171,7 +173,7 @@
         samplingResults: [
             @foreach ($samplingRequestResults as $slab)
                 @if ($slab->applied_deduction)
-                                                                                                                                                                                                                                                                                                                                                                            {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                            {
                         id: {{ $slab->id }},
                         applied_deduction: {{ $slab->applied_deduction ?? 0 }},
                         deduction_type: '{{ $slab->deduction_type ?? 'amount' }}',
@@ -185,10 +187,10 @@
         compulsoryResults: [
             @foreach ($samplingRequestCompulsuryResults as $slab)
                 @if ($slab->applied_deduction)
-                                                                                                                                                                                                {
+                                                                                                                                                                                                                                                {
                     id: {{ $slab->id }},
                     applied_deduction: {{ $slab->applied_deduction ?? 0 }}
-                                                                                                                                                                                                },
+                                                                                                                                                                                                                                                },
                 @endif
             @endforeach
         ],
@@ -715,6 +717,24 @@
             <div class="col-12">
                 <table class="table table-bordered mb-4" style="min-width: 500px;">
                     <tbody>
+                        <!-- Other adjustment Row -->
+                        <tr class="other-adjustment-row" data-other-adjustment="true">
+                            <td><strong>Other Adjustment</strong>
+                            </td>
+                            <!-- <td>N/A</td> -->
+                            <td>
+
+                            </td>
+                            <td>
+
+                            </td>
+                            <td>
+                                <div class="input-group mb-0">
+                                    <input type="text" class="form-control" name="other_adjustment_amount"
+                                        id="other_adjustment_amount" value="{{ $existingOtherAdjustmentAmount }}">
+                                </div>
+                            </td>
+                        </tr>
                         <tr>
                             <td><strong>Bags weight in Kg</strong></td>
                             <td>
@@ -1333,6 +1353,7 @@
                 const deduction_on_access_weight_amount = deduction_on_access_weight_rate * deduction_on_access_weight_kg;
                 $('#rerate_on_access_weight_amount').val(deduction_on_access_weight_amount.toFixed(2) || 0);
 
+                const other_adjustment_amount = parseFloat($('#other_adjustment_amount').val()) || 0;
 
 
 
@@ -1340,8 +1361,7 @@
                 const grossAmount = ratePerKg * loadingWeight;
                 const totalDeductionsForFormula = totalSamplingDeductions + bagWeightAmount +
                     loadingWeighbridgeAmount + deduction_on_access_weight_amount;
-                const totalAmount = grossAmount - totalDeductionsForFormula + bagRateAmount +
-                                                                                                                                                                                                {{ $totalSupplierCommission }};
+                const totalAmount = grossAmount - totalDeductionsForFormula + bagRateAmount + {{ $totalSupplierCommission }} + other_adjustment_amount;
 
                 $('#modal_total_amount').val(totalAmount);
                 $('#modal_total_amount_display').val(totalAmount.toFixed(2));
@@ -1475,6 +1495,9 @@
 
 
             $(document).on('input', '#rerate_on_access_weight_kg, #rerate_on_access_weight_rate', function () {
+                updateAllCalculations();
+            });
+            $(document).on('input', '#other_adjustment_amount', function () {
                 updateAllCalculations();
             });
 

@@ -527,13 +527,14 @@ function calculatePohaunchDeductions($loadingInfo, $samplingData, $ratePerKg, $t
             $query->where('ticket_id', $ticketId)
                 ->where('module_type', 'ticket');
         })
-            ->select('other_deduction_kg', 'other_deduction_value', 'rerate_on_access_weight_amount', 'filling_bag_amount')
+            ->select('other_deduction_kg', 'other_deduction_value', 'rerate_on_access_weight_amount', 'filling_bag_amount', 'other_adjustment_amount')
             ->latest()
             ->first();
 
         $otherDeductionValue = (float) ($otherDeduction->other_deduction_value ?? 0);
         $rerateOnAccessWeightAmount = (float) ($otherDeduction->rerate_on_access_weight_amount ?? 0);
         $fillingBagAmount = (float) ($otherDeduction->filling_bag_amount ?? 0);
+        $otherAdjustmentAmount = $otherDeduction->other_adjustment_amount ?? 0;
     }
 
     return [
@@ -544,6 +545,7 @@ function calculatePohaunchDeductions($loadingInfo, $samplingData, $ratePerKg, $t
         'other_deduction_calculated' => $otherDeductionValue,
         'rerate_on_access_weight_deduction' => $rerateOnAccessWeightAmount,
         'filling_bag_amount' => $fillingBagAmount,
+        'other_adjustment_amount' => $otherAdjustmentAmount,
         'loading_weighbridge_sum' => $loadingWeighbridgeSum,
         'bags_rate_sum' => $bagsRateSum,
         'total_deductions' => $totalSamplingDeductions + $bagWeightInKgSum + $loadingWeighbridgeSum + $bagsRateSum,
@@ -633,12 +635,13 @@ function calculateThaddaDeductions($loadingInfo, $samplingData, $ratePerKg, $tic
             $query->where('ticket_id', $ticketId)
                 ->where('module_type', 'purchase_order');
         })
-            ->select('other_deduction_kg', 'other_deduction_value', 'rerate_on_access_weight_amount')
+            ->select('other_deduction_kg', 'other_deduction_value', 'rerate_on_access_weight_amount', 'other_adjustment_amount')
             ->latest()
             ->first();
 
         $otherDeductionValue = (float) ($otherDeduction->other_deduction_value ?? 0);
         $rerateOnAccessWeightAmount = (float) ($otherDeduction->rerate_on_access_weight_amount ?? 0);
+        $otherAdjustmentAmount = $otherDeduction->other_adjustment_amount ?? 0;
     }
 
     return [
@@ -648,6 +651,7 @@ function calculateThaddaDeductions($loadingInfo, $samplingData, $ratePerKg, $tic
         'bag_weight_in_kg_sum' => $bagWeightInKgSum,
         'other_deduction_calculated' => $otherDeductionValue,
         'rerate_on_access_weight_deduction' => $rerateOnAccessWeightAmount,
+        'other_adjustment_amount' => $otherAdjustmentAmount,
         'loading_weighbridge_sum' => $loadingWeighbridgeSum,
         'bags_rate_sum' => $bagsRateSum,
         'total_deductions' => $totalSamplingDeductions + $bagWeightInKgSum + $loadingWeighbridgeSum + $bagsRateSum,
@@ -669,7 +673,7 @@ function calculatePohaunchAmounts($loadingInfo, $deductions, $ratePerKg, $grossF
     ;
 
     // $totalAmount = $grossAmount - $totalDeductionsForFormula + $deductions['bags_rate_sum'] - $grossFreightAmount;
-    $totalAmount = $grossAmount - $totalDeductionsForFormula + $deductions['bags_rate_sum'];
+    $totalAmount = $grossAmount - $totalDeductionsForFormula + $deductions['bags_rate_sum'] + $deductions['other_adjustment_amount'];
 
     return [
         'gross_amount' => $grossAmount,
@@ -694,8 +698,8 @@ function calculateThaddaAmounts($loadingInfo, $deductions, $ratePerKg)
 
     $arrivedFreightAmount = $loadingInfo['arrived_frieght_amount'] ?? 0;
 
-    $totalAmount = $grossAmount - $totalDeductionsForFormula + $deductions['bags_rate_sum'];
-    $total_amount_inc_arrived_freight = $grossAmount - $totalDeductionsForFormula + $deductions['bags_rate_sum'] + $arrivedFreightAmount;
+    $totalAmount = $grossAmount - $totalDeductionsForFormula + $deductions['bags_rate_sum'] + $deductions['other_adjustment_amount'];
+    $total_amount_inc_arrived_freight = $grossAmount - $totalDeductionsForFormula + $deductions['bags_rate_sum'] + $deductions['other_adjustment_amount'] + $arrivedFreightAmount;
 
     return [
         'gross_amount' => $grossAmount,
