@@ -103,6 +103,20 @@
                             <span class="badge {{ $badge }} px-3 py-2">
                                 {{ ucfirst($status) }}
                             </span>
+                            @if($group['is_closed'] ?? false)
+                                <div class="mt-1">
+                                    <span class="badge badge-danger px-2 py-1" title="{{ ucfirst(str_replace('-', ' ', $group['contract_status'] ?? 'closed')) }}">
+                                        <i class="ft-slash"></i> Closed
+                                    </span>
+                                </div>
+                            @endif
+                            @if($group['has_pending_amendment'] ?? false)
+                                <div class="mt-1">
+                                    <span class="badge badge-info px-2 py-1" title="Delivery Date Amendment Pending: {{ $group['pending_amendment']['delivery_date'] ?? '' }}">
+                                        <i class="ft-clock"></i> Date Amendment
+                                    </span>
+                                </div>
+                            @endif
                         </td>
 
                         <td rowspan="{{ $group['rowspan'] }}" class="text-center align-middle">
@@ -118,13 +132,19 @@
                                     title="DO Stats" style="margin-right: 10px;">
                                     <i class="ft-bar-chart-2"></i>
                                 </button>
+                                @php
+                                    $canEdit = (auth()->user()->id == $group['created_by_id']) 
+                                        || (auth()->user()->user_type == 'admin') 
+                                        || (method_exists(auth()->user(), 'hasAnyRole') && auth()->user()->hasAnyRole(['Admin', 'Super Admin', 'admin', 'super-admin']));
+                                @endphp
+                                @if($canEdit)
+                                    <button
+                                        onclick="openModal(this,'{{ route('sales.sale-order.edit', ['sale_order' => $group['id']]) }}','Edit Sale Order', false, '90%')"
+                                        class="btn btn-sm btn-warning" title="Edit" style="margin-right: 10px;">
+                                        <i class="ft-edit"></i>
+                                    </button>
+                                @endif
                                 @if(auth()->user()->id == $group['created_by_id'])
-                                        <button
-                                            onclick="openModal(this,'{{ route('sales.sale-order.edit', ['sale_order' => $group['id']]) }}','Edit Sale Order', false, '90%')"
-                                            class="btn btn-sm btn-warning" title="Edit" style="margin-right: 10px;">
-                                            <i class="ft-edit"></i>
-                                        </button>
-
                                     @if($group['status'] === 'pending' || $group['status'] === 'reverted')
                                         <button
                                             onclick="deletemodal('{{ route('sales.sale-order.destroy', ['sale_order' => $group['id']]) }}', '{{ route('sales.get.sales-order.list') }}')"

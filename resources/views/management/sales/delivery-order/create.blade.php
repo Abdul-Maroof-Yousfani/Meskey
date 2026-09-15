@@ -1059,9 +1059,10 @@
 
     function get_journal_vouchers() {
         const customer_id = $("#customer_id").val();
+        const sale_order_id = $("#sale_order").val();
         let selectJv = $("#journal_vouchers");
 
-        if (!customer_id) {
+        if (!customer_id || !sale_order_id) {
             selectJv.empty();
             selectJv.trigger('change.select2');
             add_advance_amount();
@@ -1072,7 +1073,8 @@
             url: "{{ route('sales.get.delivery-order.getJvAgainstCustomer') }}",
             method: "GET",
             data: {
-                customer_id: customer_id
+                customer_id: customer_id,
+                sale_order_id: sale_order_id
             },
             dataType: "json",
             success: function (res) {

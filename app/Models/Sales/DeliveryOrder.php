@@ -119,6 +119,11 @@ class DeliveryOrder extends Model
         return $this->hasOne(LoadingProgram::class, "delivery_order_id");
     }
 
+    public function loadingPrograms()
+    {
+        return $this->hasMany(LoadingProgram::class, "delivery_order_id");
+    }
+
     public function loadingSlips()
     {
         return $this->hasMany(LoadingSlip::class, "delivery_order_id");
@@ -171,5 +176,28 @@ class DeliveryOrder extends Model
                 ]
             );
         }
+    }
+
+    public function isClosed(): bool
+    {
+        if ($this->do_status === 'closed') {
+            return true;
+        }
+        if ($this->salesOrder && $this->salesOrder->isClosed()) {
+            return true;
+        }
+        return false;
+    }
+
+    public function scopeWhereDoesntHaveClosedSaleOrder($query)
+    {
+        return $query->whereDoesntHave('salesOrder', function ($q) {
+            $q->whereIn('contract_status', [
+                'close-contract-due-to-market-down',
+                'close-with-market-rate-penalty',
+                'closed',
+                'close',
+            ])->orWhereIn('status', ['cancelled', 'closed']);
+        });
     }
 }

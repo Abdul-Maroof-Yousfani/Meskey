@@ -444,7 +444,7 @@ trait HasApproval
     }
 
 
-    protected function createNewApprovalCycle()
+    public function createNewApprovalCycle()
     {
         $module = $this->getApprovalModule();
         if (!$module) {

@@ -14,9 +14,14 @@ use Illuminate\Database\Eloquent\Model;
 
 class SalesOrder extends Model
 {
-    use HasFactory, HasApproval;
+    use HasFactory;
+    use HasApproval {
+        onApprovalComplete as traitOnApprovalComplete;
+        onApprovalRejected as traitOnApprovalRejected;
+    }
 
     protected $fillable = [
+        "contract_status",
         "delivery_date",
         "order_date",
         "reference_no",
@@ -119,7 +124,11 @@ class SalesOrder extends Model
             $originalStatus = strtolower($salesOrder->getOriginal('am_approval_status') ?? '');
             $newStatus = strtolower($salesOrder->am_approval_status ?? '');
             if ($salesOrder->isDirty('am_approval_status')) {
-                if (in_array($originalStatus, ['approved', 'rejected'])) {
+                // Allow approved -> pending transition if a delivery date amendment is in progress
+                $isAmendment = \Illuminate\Support\Facades\Cache::store('database')->has("so_amendment_{$salesOrder->id}");
+                if ($originalStatus === 'approved' && $newStatus === 'pending' && $isAmendment) {
+                    // Allowed for delivery date amendment re-approval cycle
+                } elseif (in_array($originalStatus, ['approved', 'rejected'])) {
                     throw new \Exception("Sale Order is already {$originalStatus} and status cannot be changed.");
                 }
                 if ($originalStatus === 'reverted' && $newStatus !== 'pending') {
@@ -142,6 +151,93 @@ class SalesOrder extends Model
                 }
             }
         });
+    }
+
+    public function isClosed(): bool
+    {
+        return in_array($this->contract_status, [
+            'close-contract-due-to-market-down',
+            'close-with-market-rate-penalty',
+            'closed',
+            'close'
+        ]) || in_array($this->status, ['cancelled', 'closed']);
+    }
+
+    public function hasPendingDeliveryDateAmendment(): bool
+    {
+        return \Illuminate\Support\Facades\Cache::store('database')->has("so_amendment_{$this->id}");
+    }
+
+    public function getPendingDeliveryDateAmendment(): ?array
+    {
+        return \Illuminate\Support\Facades\Cache::store('database')->get("so_amendment_{$this->id}");
+    }
+
+    public function scopeActiveContract($query)
+    {
+        return $query->where(function ($q) {
+            $q->whereNull('contract_status')
+              ->orWhereNotIn('contract_status', [
+                  'close-contract-due-to-market-down',
+                  'close-with-market-rate-penalty',
+                  'closed',
+                  'close',
+              ]);
+        })->where(function ($q) {
+            $q->whereNull('status')
+              ->orWhereNotIn('status', ['cancelled', 'closed']);
+        });
+    }
+
+    public function scopeClosedContract($query)
+    {
+        return $query->where(function ($q) {
+            $q->whereIn('contract_status', [
+                'close-contract-due-to-market-down',
+                'close-with-market-rate-penalty',
+                'closed',
+                'close',
+            ])->orWhereIn('status', ['cancelled', 'closed']);
+        });
+    }
+
+    protected function onApprovalComplete()
+    {
+        $this->traitOnApprovalComplete();
+
+        // Check if there is an amended delivery date stored in database cache
+        $cacheKey = "so_amendment_{$this->id}";
+        $amendment = \Illuminate\Support\Facades\Cache::store('database')->get($cacheKey);
+        if ($amendment && !empty($amendment['delivery_date'])) {
+            $oldDate = $this->delivery_date;
+            $newDate = $amendment['delivery_date'];
+            
+            $this->delivery_date = $newDate;
+            $this->saveQuietly();
+
+            // Audit log
+            \App\Services\AuditLogService::log(
+                $this,
+                'delivery_date_amended_approved',
+                "Delivery date amended and approved from {$oldDate} to {$newDate}",
+                ['delivery_date' => $oldDate],
+                ['delivery_date' => $newDate],
+                $amendment['requested_by'] ?? null
+            );
+
+            // Clear cache
+            \Illuminate\Support\Facades\Cache::store('database')->forget($cacheKey);
+        }
+    }
+
+    protected function onApprovalRejected()
+    {
+        $this->traitOnApprovalRejected();
+
+        $cacheKey = "so_amendment_{$this->id}";
+        if (\Illuminate\Support\Facades\Cache::store('database')->has($cacheKey)) {
+            \Illuminate\Support\Facades\Cache::store('database')->forget($cacheKey);
+        }
     }
 
     public static function autoCreateDeliveryOrder(SalesOrder $salesOrder)

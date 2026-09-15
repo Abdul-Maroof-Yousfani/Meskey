@@ -97,6 +97,14 @@
                                             <option value="reverted" {{ request('status_for_filter') == 'reverted' ? 'selected' : '' }}>Reverted</option>
                                         </select>
                                     </div>
+                                    <div class="px-1 text-left" style="width: 10%;">
+                                        <label for="contract_status_f" class="form-label">Contract</label>
+                                        <select name="contract_status_f" id="contract_status_f" class="form-control select2">
+                                            <option value="all" {{ request('contract_status_f') == 'all' ? 'selected' : '' }}>All Contracts</option>
+                                            <option value="pending" {{ request('contract_status_f', 'pending') == 'pending' ? 'selected' : '' }}>Active / Pending</option>
+                                            <option value="closed" {{ request('contract_status_f') == 'closed' ? 'selected' : '' }}>Closed</option>
+                                        </select>
+                                    </div>
                                     <div class="px-1 text-left" style="width: 9%;">
                                         <label for="search_for_filter" class="form-label">Search</label>
                                         <input type="text" class="form-control" id="search_for_filter"
@@ -158,7 +166,7 @@
 
             // Re-initialize select2 after any AJAX update to preserve selected value in visual UI
             $(document).on('ajaxSuccess', function() {
-                $('#inquiry_id_for_filter, #customer_id_for_filter, #location_id_for_filter, #item_id_for_filter, #status_for_filter').select2();
+                $('#inquiry_id_for_filter, #customer_id_for_filter, #location_id_for_filter, #item_id_for_filter, #status_for_filter, #contract_status_f').select2();
             });
         });
     </script>
