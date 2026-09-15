@@ -190,4 +190,52 @@ class LoadingProgramItem extends Model
     {
         return $this->belongsTo(Transporter::class);
     }
+
+    public function hasClosedSaleOrder(): bool
+    {
+        $closedStatuses = ['close-contract-due-to-market-down', 'close-with-market-rate-penalty', 'closed', 'close'];
+        $cancelledStatuses = ['cancelled', 'closed'];
+
+        // Direct linked sale orders
+        if ($this->saleOrders()->where(function ($q) use ($closedStatuses, $cancelledStatuses) {
+            $q->whereIn('contract_status', $closedStatuses)->orWhereIn('status', $cancelledStatuses);
+        })->exists()) {
+            return true;
+        }
+
+        // Through delivery orders
+        if ($this->deliveryOrders()->whereHas('salesOrder', function ($q) use ($closedStatuses, $cancelledStatuses) {
+            $q->whereIn('contract_status', $closedStatuses)->orWhereIn('status', $cancelledStatuses);
+        })->exists()) {
+            return true;
+        }
+
+        // Through loading program
+        if ($this->loadingProgram) {
+            if ($this->loadingProgram->saleOrder && $this->loadingProgram->saleOrder->isClosed()) {
+                return true;
+            }
+            if ($this->loadingProgram->deliveryOrder && $this->loadingProgram->deliveryOrder->salesOrder && $this->loadingProgram->deliveryOrder->salesOrder->isClosed()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function scopeWhereDoesntHaveClosedSaleOrder($query)
+    {
+        $closedStatuses = ['close-contract-due-to-market-down', 'close-with-market-rate-penalty', 'closed', 'close'];
+        $cancelledStatuses = ['cancelled', 'closed'];
+
+        return $query->whereDoesntHave('saleOrders', function ($q) use ($closedStatuses, $cancelledStatuses) {
+            $q->whereIn('contract_status', $closedStatuses)->orWhereIn('status', $cancelledStatuses);
+        })->whereDoesntHave('deliveryOrders.salesOrder', function ($q) use ($closedStatuses, $cancelledStatuses) {
+            $q->whereIn('contract_status', $closedStatuses)->orWhereIn('status', $cancelledStatuses);
+        })->whereDoesntHave('loadingProgram.saleOrder', function ($q) use ($closedStatuses, $cancelledStatuses) {
+            $q->whereIn('contract_status', $closedStatuses)->orWhereIn('status', $cancelledStatuses);
+        })->whereDoesntHave('loadingProgram.deliveryOrder.salesOrder', function ($q) use ($closedStatuses, $cancelledStatuses) {
+            $q->whereIn('contract_status', $closedStatuses)->orWhereIn('status', $cancelledStatuses);
+        });
+    }
 }

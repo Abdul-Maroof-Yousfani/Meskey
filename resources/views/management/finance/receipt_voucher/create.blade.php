@@ -61,7 +61,7 @@
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label for="bill_date">Receipt Date</label>
-                                        <input type="date" name="bill_date" id="bill_date" class="form-control" required>
+                                        <input type="date" name="bill_date" value="{{ date('Y-m-d') }}" id="bill_date" class="form-control" required>
                                     </div>
                                 </div>
                             </div>

@@ -15,7 +15,12 @@ use App\Traits\HasApproval;
 
 class SalesInvoice extends Model
 {
-    use HasFactory, HasApproval;
+    use HasFactory;
+    use HasApproval {
+        onApprovalComplete as traitOnApprovalComplete;
+    }
+
+    public static $suppressApprovalHook = false;
 
 
     protected $table = "sales_invoices";
@@ -47,6 +52,15 @@ class SalesInvoice extends Model
                 }
                 if ($originalStatus === 'reverted' && $newStatus !== 'pending') {
                     throw new \Exception("Sales Invoice is reverted and cannot be {$newStatus} directly. It must be updated to pending first.");
+                }
+            }
+        });
+
+        static::updated(function ($model) {
+            if (!static::$suppressApprovalHook && $model->wasChanged('am_approval_status')) {
+                $status = strtolower($model->am_approval_status ?? '');
+                if ($status === 'approved') {
+                    app(\App\Services\SalesLedgerService::class)->handleSalesInvoiceApproval($model);
                 }
             }
         });
@@ -91,6 +105,17 @@ class SalesInvoice extends Model
 
     public function scopeApproved($query) {
         return $query->where("am_approval_status", "approved");
+    }
+
+    protected function onApprovalComplete()
+    {
+        static::$suppressApprovalHook = true;
+        try {
+            $this->traitOnApprovalComplete();
+        } finally {
+            static::$suppressApprovalHook = false;
+        }
+        app(\App\Services\SalesLedgerService::class)->handleSalesInvoiceApproval($this);
     }
 }
 

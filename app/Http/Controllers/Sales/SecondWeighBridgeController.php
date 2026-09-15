@@ -61,7 +61,8 @@ class SecondWeighBridgeController extends Controller
         // Get loading slips that have accepted dispatch QC but don't have a second weighbridge yet
         $LoadingSlips = LoadingSlip::whereDoesntHave('secondWeighbridge')
             ->whereHas('loadingProgramItem', function ($query) {
-                $query->whereIn('arrival_location_id', getUserCurrentCompanyArrivalLocations());
+                $query->whereIn('arrival_location_id', getUserCurrentCompanyArrivalLocations())
+                      ->whereDoesntHaveClosedSaleOrder();
             })
             ->whereHas('loadingProgramItem.dispatchQcs', function ($query) {
                 $query->where('status', 'accept');
@@ -109,6 +110,10 @@ class SecondWeighBridgeController extends Controller
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        if ($loadingSlip->loadingProgramItem && $loadingSlip->loadingProgramItem->hasClosedSaleOrder()) {
+            return response()->json(['errors' => ['loading_slip_id' => 'The Sale Order linked to this Loading Slip has been closed. Operations are locked.']], 422);
         }
 
         $firstWeighbridge = $loadingSlip->loadingProgramItem->firstWeighbridge;
@@ -285,6 +290,10 @@ class SecondWeighBridgeController extends Controller
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        if ($loadingSlip->loadingProgramItem && $loadingSlip->loadingProgramItem->hasClosedSaleOrder()) {
+            return response()->json(['errors' => ['loading_slip_id' => 'The Sale Order linked to this Loading Slip has been closed. Operations are locked.']], 422);
         }
 
         $firstWeighbridge = $loadingSlip->loadingProgramItem->firstWeighbridge;

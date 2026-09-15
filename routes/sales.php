@@ -25,6 +25,7 @@ Route::name("sales.")->group(function () {
     Route::get("/get-sale-inquiries-against-customer", [SaleOrderController::class, "get_inquiries"])->name("get-sale-inquiries-against-customer");
     Route::resource("sale-order", SaleOrderController::class);
     Route::get("/sales-order/{id}/view", [SaleOrderController::class, "view"])->name("sale-order.view");
+    Route::get("/sales-order/{id}/do-stats", [SaleOrderController::class, "getDoStats"])->name("sale-order.do-stats");
     Route::post("get-sale-orders", [SaleOrderController::class, "getList"])->name("get.sales-order.list");
     Route::get("/get/so-no", [SaleOrderController::class, "getNumber"])->name("get.sales-order.getnumber");
     Route::get("/get-unallocated-receipt-vouchers", [SaleOrderController::class, "getUnallocatedReceiptVouchers"])->name("get-unallocated-receipt-vouchers");
@@ -43,6 +44,7 @@ Route::name("sales.")->group(function () {
     Route::get("/get-jv-against-customer", [DeliveryOrderController::class, "get_journal_vouchers"])->name("get.delivery-order.getJvAgainstCustomer");
     Route::get("/get-so-details", [DeliveryOrderController::class, "getDetails"])->name("get.delivery-order.details");
     Route::get("/delivery-order/{id}/view", [DeliveryOrderController::class, "view"])->name("get.delivery-order.view");
+    Route::get("/delivery-order/{id}/stats", [DeliveryOrderController::class, "getStats"])->name("delivery-order.stats");
     Route::get("/get-arrival-locations-against-company-location", [DeliveryOrderController::class, "get_arrivals"])->name("get.arrival-locations");
     Route::get("/get-storage-locations-against-arrival-location", [DeliveryOrderController::class, "get_storages"])->name("get.storage-locations");
     Route::get("/get-delivery-order-balance-balance-against-second-weighbridge", [DeliveryOrderController::class, "get_balance_against_second_weighbridge"])->name("balance-against-second-weighbridge");

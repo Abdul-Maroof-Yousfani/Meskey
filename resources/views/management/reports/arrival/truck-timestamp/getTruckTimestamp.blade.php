@@ -10,7 +10,7 @@
         <th>Total Inner Samples</th>
         <th>Total Resamples</th>
         <th>Party Ref. No</th>
-        <th>Yeild</th>
+        <th>Yield</th>
         <th>Location Time</th>
         <th>Location By</th>
         <th>1st QC Time</th>
@@ -74,10 +74,12 @@
         <th>Admin Edit By</th>
         <th>Status</th>
         <th>Completion</th>
+
+        <!-- Action Buttons -->
+        <th>Final QC Report</th>
         <th>Bilty</th>
         <th>Loading Weight</th>
         <th>Arrival Slip</th>
-        <th>View Complete Details</th>
     @endslot
 
     @slot('body')
@@ -94,8 +96,8 @@
                 $yield = $row->purchaseOrder?->yield ?? ($row->yield ?? '');
 
                 // 1st Tabaar Decision
-                $firstTabaarTime = '';
-                $firstTabaarBy = '';
+                $firstTabaarTime = 'N/A';
+                $firstTabaarBy = 'N/A';
                 if ($row->decision_making_time) {
                     $firstTabaarTime = formatDateTime($row->decision_making_time);
                     $firstTabaarBy = $row->decisionBy?->name ?? '';
@@ -105,42 +107,42 @@
                 }
 
                 // 1st Inner QC sample time
-                $firstInnerSampleTime = '';
+                $firstInnerSampleTime = 'N/A';
                 if ($firstInner && $firstInner->takenByUser) {
                     $firstInnerSampleTime = formatDateTime($firstInner->updated_at);
                 }
 
                 // 2nd Inner QC sample time
-                $secondInnerSampleTime = '';
+                $secondInnerSampleTime = 'N/A';
                 if ($secondInner && $secondInner->takenByUser) {
                     $secondInnerSampleTime = formatDateTime($secondInner->updated_at);
                 }
 
                 // 3rd Inner QC sample time
-                $thirdInnerSampleTime = '';
+                $thirdInnerSampleTime = 'N/A';
                 if ($thirdInner && $thirdInner->takenByUser) {
                     $thirdInnerSampleTime = formatDateTime($thirdInner->updated_at);
                 }
 
                 // 2nd Tabaar Decision
-                $secondTabaarTime = '';
-                $secondTabaarBy = '';
+                $secondTabaarTime = 'N/A';
+                $secondTabaarBy = 'N/A';
                 if ($firstInner && in_array($firstInner->approved_status, ['approved', 'rejected'])) {
                     $secondTabaarTime = formatDateTime($firstInner->updated_at);
                     $secondTabaarBy = $firstInner->approvedByUser?->name ?? '';
                 }
 
                 // 3rd Tabaar Decision
-                $thirdTabaarTime = '';
-                $thirdTabaarBy = '';
+                $thirdTabaarTime = 'N/A';
+                $thirdTabaarBy = 'N/A';
                 if ($secondInner && in_array($secondInner->approved_status, ['approved', 'rejected'])) {
                     $thirdTabaarTime = formatDateTime($secondInner->updated_at);
                     $thirdTabaarBy = $secondInner->approvedByUser?->name ?? '';
                 }
 
                 // 4th Tabaar Decision
-                $fourthTabaarTime = '';
-                $fourthTabaarBy = '';
+                $fourthTabaarTime = 'N/A';
+                $fourthTabaarBy = 'N/A';
                 if ($thirdInner && in_array($thirdInner->approved_status, ['approved', 'rejected'])) {
                     $fourthTabaarTime = formatDateTime($thirdInner->updated_at);
                     $fourthTabaarBy = $thirdInner->approvedByUser?->name ?? '';
@@ -150,15 +152,15 @@
                 $isFullReject = ($row->first_qc_status == 'rejected' || $row->status == 'Reject Full');
                 $isHalfReject = ($row->approvals?->bag_packing_approval == 'Half Approved' || ($row->approvals?->total_rejection > 0) || $row->document_approval_status == 'half_approved' || $row->status == 'Reject Half');
 
-                $fullRejectTime = '';
-                $fullRejectBy = '';
+                $fullRejectTime = 'N/A';
+                $fullRejectBy = 'N/A';
                 if ($isFullReject) {
                     $fullRejectTime = $firstTabaarTime;
                     $fullRejectBy = $firstTabaarBy;
                 }
 
-                $halfRejectTime = '';
-                $halfRejectBy = '';
+                $halfRejectTime = 'N/A';
+                $halfRejectBy = 'N/A';
                 if ($isHalfReject) {
                     if ($secondTabaarTime && $secondTabaarBy) {
                         $halfRejectTime = $secondTabaarTime;
@@ -170,18 +172,26 @@
                 }
 
                 // Bilty Return
-                $biltyReturnTime = '';
-                $biltyReturnBy = '';
+                $biltyReturnTime = 'N/A';
+                $biltyReturnBy = 'N/A';
                 if ($row->bilty_return_confirmation) {
                     $biltyReturnTime = formatDateTime($row->updated_at);
                 }
 
                 // HO Confirm
-                $hoConfirmTime = '';
-                $hoConfirmBy = '';
+                $hoConfirmTime = 'N/A';
+                $hoConfirmBy = 'N/A';
                 if ($row->is_ticket_verified) {
                     $hoConfirmTime = formatDateTime($row->updated_at);
                     $hoConfirmBy = $row->ticketVerifiedBy?->name ?? 'Head Office';
+                }
+
+                // Admin Edit
+                $adminEditTime = 'N/A';
+                $adminEditBy = 'N/A';
+                if ($row->latestAuditLog) {
+                    $adminEditTime = formatDateTime($row->latestAuditLog->created_at);
+                    $adminEditBy = $row->latestAuditLog->user?->name ?? '';
                 }
 
                 // Status & Completion
@@ -233,17 +243,17 @@
                     <td>{{ $thirdInner?->takenByUser?->name ?? 'N/A' }}</td>
                 @endif
 
-                @if (in_array($innerSample, ['1', '1st', 'all']))
+                @if (in_array($innerSample, ['2', '2nd', 'all']))
                     <td>{{ $secondTabaarTime }}</td>
                     <td>{{ $secondTabaarBy }}</td>
                 @endif
 
-                @if (in_array($innerSample, ['2', '2nd', 'all']))
+                @if (in_array($innerSample, ['3', '3rd', 'all']))
                     <td>{{ $thirdTabaarTime }}</td>
                     <td>{{ $thirdTabaarBy }}</td>
                 @endif
 
-                @if (in_array($innerSample, ['3', '3rd', 'all']))
+                @if (in_array($innerSample, ['4', '4th', 'all']))
                     <td>{{ $fourthTabaarTime }}</td>
                     <td>{{ $fourthTabaarBy }}</td>
                 @endif
@@ -260,13 +270,20 @@
                 <td>{{ $row->arrivalSlip?->creator?->name ?? 'N/A' }}</td>
                 <td>{{ $biltyReturnTime }}</td>
                 <td>{{ $biltyReturnBy }}</td>
+
                 <td>{{ $hoConfirmTime }}</td>
                 <td>{{ $hoConfirmBy }}</td>
-                <td></td>
-                <td></td>
+                <td>{{ $adminEditTime }}</td>
+                <td>{{ $adminEditBy }}</td>
                 <td>{{ $statusText }}</td>
                 <td>{{ $isCompleted ? 'Yes' : 'No' }}</td>
                 <!-- Action Buttons -->
+                <td>
+                    <button class="info p-1 text-center mr-2 position-relative btn"
+                        onclick="openModal(this,'{{ route('ticket.show', ['ticket' => $row->id, 'source' => 'contract']) }}','Ticket: {{ $row->unique_no }}', true, '90%')">
+                        <a href="#"><i class="ft-eye font-medium-3"></i></a>
+                    </button>
+                </td>
                 <td>
                     <button class="info p-1 text-center mr-2 position-relative btn" @disabled(
                         !$row->freight ||
@@ -291,12 +308,6 @@
                     <button class="info p-1 text-center mr-2 position-relative btn" @disabled(!$row->arrivalSlip)
                         @if ($row->arrivalSlip) onclick="openModal(this,'{{ route('arrival-slip.edit', $row->arrivalSlip->id)
                         }}','Ticket: {{ $row->unique_no }}', true, '100%')" @endif>
-                        <a href="#"><i class="ft-eye font-medium-3"></i></a>
-                    </button>
-                </td>
-                <td>
-                    <button class="info p-1 text-center mr-2 position-relative btn"
-                        onclick="openModal(this,'{{ route('ticket.show', ['ticket' => $row->id, 'source' => 'contract']) }}','Ticket: {{ $row->unique_no }}', true, '90%')">
                         <a href="#"><i class="ft-eye font-medium-3"></i></a>
                     </button>
                 </td>

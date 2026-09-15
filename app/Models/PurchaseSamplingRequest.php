@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+use App\Models\Arrival\PurchaseSamplingResult;
+use App\Models\Arrival\PurchaseSamplingResultForCompulsury;
+
 class PurchaseSamplingRequest extends Model
 {
     use SoftDeletes;
@@ -23,11 +26,13 @@ class PurchaseSamplingRequest extends Model
         'remark',
         'decision_making',
         'is_done',
+        'done_by',
         'supplier_name',
         'address',
         'is_resampling_made',
         'approved_remarks',
         'approved_status',
+        'approved_by',
         'party_ref_no',
         'sample_taken_by',
         'lumpsum_deduction',
@@ -70,6 +75,26 @@ class PurchaseSamplingRequest extends Model
     public function takenByUser()
     {
         return $this->belongsTo(User::class, 'sample_taken_by');
+    }
+
+    public function doneByUser()
+    {
+        return $this->belongsTo(User::class, 'done_by');
+    }
+
+    public function approvedByUser()
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function slabResults()
+    {
+        return $this->hasMany(PurchaseSamplingResult::class, 'purchase_sampling_request_id');
+    }
+
+    public function compulsoryResults()
+    {
+        return $this->hasMany(PurchaseSamplingResultForCompulsury::class, 'purchase_sampling_request_id');
     }
 }
 

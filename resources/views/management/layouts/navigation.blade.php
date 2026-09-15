@@ -1132,6 +1132,17 @@
                                 </a>
                             </li>
                             @endcanAccess
+                            @canAccess('arrival-truck-summary-report')
+                            <li data-menu="">
+                                <a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('truck-summary.index') }}"
+                                    onclick="loadPageContent('{{ route('truck-summary.index') }}')"
+                                    data-toggle="dropdown">
+                                    <i class="ft-arrow-right submenu-icon"></i><span data-i18n="Basic">Truck Summary
+                                        Report</span>
+                                </a>
+                            </li>
+                            @endcanAccess
                             @canAccess('arrival-truck-timestamp-report')
                             <li data-menu="">
                                 <a class="dropdown-item d-flex align-items-center"
@@ -1193,6 +1204,17 @@
                                     data-toggle="dropdown">
                                     <i class="ft-arrow-right submenu-icon"></i><span data-i18n="Basic">Station Wise QC
                                         Analysis Report</span>
+                                </a>
+                            </li>
+                            @endcanAccess
+                            @canAccess('arrival-custom-qc-sample-report')
+                            <li data-menu="">
+                                <a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('custom-qc-sample.index') }}"
+                                    onclick="loadPageContent('{{ route('custom-qc-sample.index') }}')"
+                                    data-toggle="dropdown">
+                                    <i class="ft-arrow-right submenu-icon"></i><span data-i18n="Basic">Custom QC Sample
+                                        Report</span>
                                 </a>
                             </li>
                             @endcanAccess

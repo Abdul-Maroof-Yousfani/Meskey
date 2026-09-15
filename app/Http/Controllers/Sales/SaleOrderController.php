@@ -22,6 +22,8 @@ use DB;
 use Illuminate\Http\Request;
 use App\Models\ReceiptVoucher;
 use App\Models\Master\Account\Transaction;
+use App\Services\AuditLogService;
+use Illuminate\Support\Facades\Cache;
 
 class SaleOrderController extends Controller
 {
@@ -95,7 +97,9 @@ class SaleOrderController extends Controller
         $brokers = Broker::where('status', 'active')
             ->where('is_for_sales', 1)
             ->get();
-        return view('management.sales.orders.edit', compact('payment_terms', 'customers', 'inquiries', 'items', 'sale_order', 'pay_types', 'bag_types', 'arrivalLocations', 'arrivalSubLocations', 'packings', 'brokers', 'latestLog'));
+        $balanceQuantity = $this->calculateBalanceQuantity($sale_order);
+        $isClosed = $sale_order->isClosed();
+        return view('management.sales.orders.edit', compact('payment_terms', 'customers', 'inquiries', 'items', 'sale_order', 'pay_types', 'bag_types', 'arrivalLocations', 'arrivalSubLocations', 'packings', 'brokers', 'latestLog', 'balanceQuantity', 'isClosed'));
     }
 
     public function view(Request $request, int $id)
@@ -121,6 +125,108 @@ class SaleOrderController extends Controller
         $latestLog = $sale_order->approvalLogs()->with(['user', 'role'])->latest()->first();
 
         return view('management.sales.orders.view', compact('payment_terms', 'customers', 'inquiries', 'items', 'sale_order', 'arrivalLocations', 'arrivalSubLocations', 'packings', 'brokers', 'latestLog'));
+    }
+
+    public function getDoStats(Request $request, int $id)
+    {
+        $sale_order = SalesOrder::with([
+            'delivery_orders' => function ($q) {
+                $q->with([
+                    'delivery_order_data.item',
+                    'delivery_challans' => function ($dcQ) {
+                        $dcQ->where('delivery_challans.am_approval_status', '!=', 'rejected');
+                    }
+                ]);
+            },
+            'sales_order_data.item',
+            'customer'
+        ])->findOrFail($id);
+
+        $doStats = [];
+        $totalDoQty = 0;
+        $totalDcQty = 0;
+        $totalRemainingQty = 0;
+
+        $hasRealDos = $sale_order->delivery_orders->where('is_auto_created_from_so', '!=', 1)->count() > 0;
+
+        foreach ($sale_order->delivery_orders as $do) {
+            $doQty = (float) $do->delivery_order_data->sum('qty');
+            $doDataIds = $do->delivery_order_data->pluck('id')->toArray();
+
+            $dcQty = (float) \App\Models\Sales\DeliveryChallanData::whereIn('do_data_id', $doDataIds)
+                ->whereHas('deliveryChallan', function ($q) {
+                    $q->where('am_approval_status', '!=', 'rejected');
+                })
+                ->sum('qty');
+
+            if ($dcQty <= 0) {
+                $dcQty = (float) $do->delivery_challans()
+                    ->where('delivery_challans.am_approval_status', '!=', 'rejected')
+                    ->sum('delivery_challan_delivery_order.qty');
+            }
+
+            $remainingQty = max(0, $doQty - $dcQty);
+
+            // Don't count Dummy DOs in totals when real DOs exist (avoids double-counting)
+            $isDummy = (bool) $do->is_auto_created_from_so;
+            if (!$isDummy || !$hasRealDos) {
+                $totalDoQty += $doQty;
+                $totalDcQty += $dcQty;
+                $totalRemainingQty += $remainingQty;
+            }
+
+            // DC breakdown details for this DO
+            $dcBreakdown = [];
+            foreach ($do->delivery_challans as $dc) {
+                $dcItemQty = (float) \App\Models\Sales\DeliveryChallanData::where('delivery_challan_id', $dc->id)
+                    ->whereIn('do_data_id', $doDataIds)
+                    ->sum('qty');
+                if ($dcItemQty <= 0) {
+                    $dcItemQty = (float) ($dc->pivot->qty ?? 0);
+                }
+                $dcBreakdown[] = [
+                    'id' => $dc->id,
+                    'reference_number' => $dc->reference_number ?? ('DC #' . $dc->id),
+                    'dispatch_date' => $dc->dispatch_date,
+                    'status' => $dc->am_approval_status,
+                    'qty' => $dcItemQty,
+                ];
+            }
+
+            $itemNames = $do->delivery_order_data->map(function ($itemData) {
+                return $itemData->item->name ?? 'N/A';
+            })->unique()->filter()->implode(', ');
+
+            $doStats[] = [
+                'id' => $do->id,
+                'reference_no' => $do->reference_no,
+                'is_dummy' => (bool) $do->is_auto_created_from_so,
+                'do_date' => $do->do_date ?? $do->created_at,
+                'dispatch_date' => $do->dispatch_date,
+                'status' => $do->am_approval_status ?? 'pending',
+                'items' => $itemNames ?: 'N/A',
+                'do_qty' => $doQty,
+                'dc_qty' => $dcQty,
+                'remaining_qty' => $remainingQty,
+                'dcs' => $dcBreakdown,
+            ];
+        }
+
+        // SO's original total qty — this is the base for progress/remaining on SO level
+        $soTotalQty = (float) $sale_order->sales_order_data->sum('qty');
+
+        // Remaining at SO level = SO qty - total actually dispatched via DCs
+        $soRemainingQty = max(0, $soTotalQty - $totalDcQty);
+
+        return view('management.sales.orders.doStatsModal', compact(
+            'sale_order',
+            'doStats',
+            'soTotalQty',
+            'totalDoQty',
+            'totalDcQty',
+            'totalRemainingQty',
+            'soRemainingQty'
+        ));
     }
 
     public function store(SalesOrderRequest $request)
@@ -266,20 +372,110 @@ class SaleOrderController extends Controller
                 return response()->json(['error' => 'Sale Order not found.', 'message' => 'Sale Order not found.'], 404);
             }
 
-            if (in_array(strtolower($sales_order->am_approval_status ?? ''), ['approved', 'rejected'])) {
-                $oldDeliveryDate = $sales_order->delivery_date ? Carbon::parse($sales_order->delivery_date)->format('Y-m-d') : null;
-                $newDeliveryDate = !empty($request->delivery_date) ? Carbon::parse($request->delivery_date)->format('Y-m-d') : null;
+            $oldDeliveryDate = $sales_order->delivery_date ? Carbon::parse($sales_order->delivery_date)->format('Y-m-d') : null;
+            $newDeliveryDate = !empty($request->delivery_date) ? Carbon::parse($request->delivery_date)->format('Y-m-d') : null;
+            $deliveryDateChanged = $oldDeliveryDate != $newDeliveryDate;
+            $contractStatusChanged = ($request->contract_status ?? null) != $sales_order->contract_status;
 
-                if ($oldDeliveryDate != $newDeliveryDate) {
-                    $sales_order->update(['delivery_date' => $request->delivery_date]);
-                    DB::commit();
-                    return response()->json(['data' => 'Sale Order Specific Fields Updated Successfully.', 'success' => 'Sale Order Delivery Date Updated Successfully.']);
+            // Validate contract_status reopen check against balance quantity
+            if (isset($request->contract_status) && in_array($request->contract_status, ['reopen-contract-closed-by-mistake', 'reopen', 'open'])) {
+                $balanceQuantity = $this->calculateBalanceQuantity($sales_order);
+                if ($balanceQuantity <= 0) {
+                    return response()->json([
+                        'error' => 'Remaining balance quantity is 0. Contract cannot be reopened.',
+                        'message' => 'Remaining balance quantity is 0. Contract cannot be reopened.'
+                    ], 422);
+                }
+            }
+
+            // Case 1: Approved or Rejected Sales Order
+            if (in_array(strtolower($sales_order->am_approval_status ?? ''), ['approved', 'rejected'])) {
+                if (!$deliveryDateChanged && !$contractStatusChanged) {
+                    return response()->json([
+                        'error' => "Sales Order has been {$sales_order->am_approval_status} and cannot be updated.",
+                        'message' => "Sales Order has been {$sales_order->am_approval_status} and cannot be updated."
+                    ], 422);
                 }
 
+                // Handle Contract Status Change on approved SO
+                if ($contractStatusChanged) {
+                    $isReopen = in_array($request->contract_status, ['reopen-contract-closed-by-mistake', 'reopen', 'open']);
+                    $isCloseContract = in_array($request->contract_status, ['close-contract-due-to-market-down', 'close-with-market-rate-penalty']);
+                    $newStatus = $isReopen ? 'draft' : ($isCloseContract ? 'cancelled' : $sales_order->status);
+
+                    $oldContractStatus = $sales_order->contract_status;
+                    $sales_order->contract_status = $isReopen ? 'reopen-contract-closed-by-mistake' : $request->contract_status;
+                    $sales_order->status = $newStatus;
+                    $sales_order->saveQuietly();
+
+                    AuditLogService::log(
+                        $sales_order,
+                        'contract_status_updated',
+                        "SO Contract Status updated from '{$oldContractStatus}' to '{$sales_order->contract_status}'",
+                        ['contract_status' => $oldContractStatus, 'status' => $sales_order->getOriginal('status')],
+                        ['contract_status' => $sales_order->contract_status, 'status' => $newStatus]
+                    );
+                }
+
+                // Handle Delivery Date Change on approved SO: Save to database cache & reset to pending for re-approval
+                if ($deliveryDateChanged) {
+                    Cache::store('database')->forever("so_amendment_{$sales_order->id}", [
+                        'delivery_date' => $request->delivery_date,
+                        'old_delivery_date' => $sales_order->delivery_date,
+                        'requested_by' => auth()->user()?->id ?? (is_numeric(auth()->id()) ? (int) auth()->id() : null),
+                        'requested_at' => now()->toDateTimeString(),
+                    ]);
+
+                    $sales_order->createNewApprovalCycle();
+                    $sales_order->am_approval_status = 'pending';
+                    $sales_order->am_change_made = 1;
+                    $sales_order->save();
+
+                    AuditLogService::log(
+                        $sales_order,
+                        'delivery_date_amendment_requested',
+                        "Delivery date amendment requested from {$oldDeliveryDate} to {$newDeliveryDate} (awaiting approval)",
+                        ['delivery_date' => $oldDeliveryDate],
+                        ['delivery_date' => $newDeliveryDate]
+                    );
+                }
+
+                DB::commit();
+                $msg = $deliveryDateChanged
+                    ? 'Sale Order delivery date amendment submitted for re-approval.'
+                    : 'Sale Order Contract Status updated successfully.';
+                return response()->json(['data' => $msg, 'success' => $msg]);
+            }
+
+            // Case 2: SO is in amendment-pending state (Cache has pending date amendment)
+            if ($sales_order->hasPendingDeliveryDateAmendment()) {
+                if ($deliveryDateChanged) {
+                    Cache::store('database')->forever("so_amendment_{$sales_order->id}", [
+                        'delivery_date' => $request->delivery_date,
+                        'old_delivery_date' => $sales_order->delivery_date,
+                        'requested_by' => auth()->id(),
+                        'requested_at' => now()->toDateTimeString(),
+                    ]);
+
+                    AuditLogService::log(
+                        $sales_order,
+                        'delivery_date_amendment_updated',
+                        "Delivery date amendment updated to {$newDeliveryDate} (awaiting approval)",
+                        null,
+                        ['delivery_date' => $newDeliveryDate]
+                    );
+                }
+
+                if ($contractStatusChanged) {
+                    $sales_order->contract_status = $request->contract_status;
+                    $sales_order->saveQuietly();
+                }
+
+                DB::commit();
                 return response()->json([
-                    'error' => "Sales Order has been {$sales_order->am_approval_status} and cannot be updated.",
-                    'message' => "Sales Order has been {$sales_order->am_approval_status} and cannot be updated."
-                ], 422);
+                    'data' => 'Delivery date amendment updated successfully.',
+                    'success' => 'Delivery date amendment updated successfully.'
+                ]);
             }
 
 
@@ -311,6 +507,7 @@ class SaleOrderController extends Controller
             $payload["commission_per_kg"] = $request->commission_per_kg ?? 0;
             $payload["receipt_voucher_item_ids"] = $request->receipt_voucher_item_ids;
             $payload["payment_on_kaanta"] = $request->has('payment_on_kaanta') ? 1 : 0;
+            $payload["contract_status"] = $request->contract_status ?? $sales_order->contract_status;
 
             // Update parent sale order data
             $sales_order->update($payload);
@@ -476,6 +673,23 @@ class SaleOrderController extends Controller
             ->when($request->filled('status_for_filter') && $request->status_for_filter != 'all', function ($q) use ($request) {
                 $q->where('am_approval_status', $request->status_for_filter);
             })
+            // Filter by Contract Status
+            ->when($request->filled('contract_status_f') && $request->contract_status_f != 'all', function ($q) use ($request) {
+                if ($request->contract_status_f === 'closed') {
+                    $q->where(function ($sq) {
+                        $sq->whereIn('contract_status', ['close-contract-due-to-market-down', 'close-with-market-rate-penalty', 'closed', 'close'])
+                           ->orWhereIn('status', ['cancelled', 'closed']);
+                    });
+                } elseif ($request->contract_status_f === 'pending') {
+                    $q->where(function ($sq) {
+                        $sq->whereNull('contract_status')
+                           ->orWhereNotIn('contract_status', ['close-contract-due-to-market-down', 'close-with-market-rate-penalty', 'closed', 'close']);
+                    })->where(function ($sq) {
+                        $sq->whereNull('status')
+                           ->orWhereNotIn('status', ['cancelled', 'closed']);
+                    });
+                }
+            })
             ->orderBy("reference_no", "desc")
             ->latest()
             ->paginate($perPage);
@@ -514,6 +728,10 @@ class SaleOrderController extends Controller
                 'customer' => 2,
                 'rowspan' => max(count($itemRows), 1),
                 'items' => $itemRows,
+                'contract_status' => $SaleOrder->contract_status,
+                'is_closed' => $SaleOrder->isClosed(),
+                'has_pending_amendment' => $SaleOrder->hasPendingDeliveryDateAmendment(),
+                'pending_amendment' => $SaleOrder->getPendingDeliveryDateAmendment(),
             ];
         }
 
@@ -521,6 +739,34 @@ class SaleOrderController extends Controller
             'SalesOrders' => $SalesOrders,           // for pagination
             'groupedSalesOrders' => $groupedData,  // our grouped data
         ]);
+    }
+
+    /**
+     * Calculate balance remaining quantity for a Sales Order (SO qty minus dispatched DC qty).
+     */
+    public function calculateBalanceQuantity(SalesOrder $saleOrder): float
+    {
+        $soTotalQty = (float) $saleOrder->sales_order_data->sum('qty');
+
+        $totalDcQty = 0;
+        foreach ($saleOrder->delivery_orders as $do) {
+            $doDataIds = $do->delivery_order_data->pluck('id')->toArray();
+            $dcQty = (float) \App\Models\Sales\DeliveryChallanData::whereIn('do_data_id', $doDataIds)
+                ->whereHas('deliveryChallan', function ($q) {
+                    $q->where('am_approval_status', '!=', 'rejected');
+                })
+                ->sum('qty');
+
+            if ($dcQty <= 0) {
+                $dcQty = (float) $do->delivery_challans()
+                    ->where('delivery_challans.am_approval_status', '!=', 'rejected')
+                    ->sum('delivery_challan_delivery_order.qty');
+            }
+
+            $totalDcQty += $dcQty;
+        }
+
+        return max(0, $soTotalQty - $totalDcQty);
     }
 
     public function get_inquiries(Request $request)

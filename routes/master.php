@@ -198,6 +198,9 @@ Route::resource('request-by', RequestByController::class);
 Route::post('/get-request-by', [RequestByController::class, 'getList'])->name('get.request-by');
 Route::get('/get-request-by-department/{department_id}', [RequestByController::class, 'getByDepartment'])->name('get.request-by-department');
 
+Route::get("labour-rate/import-modal", [LabourRateController::class, "importModal"])->name("labour-rate.import-modal");
+Route::post("labour-rate/import", [LabourRateController::class, "import"])->name("labour-rate.import");
+Route::get("labour-rate/download-sample", [LabourRateController::class, "downloadSample"])->name("labour-rate.download-sample");
 Route::resource("labour-rates", LabourRateController::class);
 Route::post("labour-rate/getList", [LabourRateController::class, "getList"])->name("get.labour-rate");
 

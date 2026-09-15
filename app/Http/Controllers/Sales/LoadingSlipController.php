@@ -66,6 +66,7 @@ class LoadingSlipController extends Controller
             $query->where('status', 'accept')
                 ->orWhere("am_approval_status", "approved");
         })
+            ->whereDoesntHaveClosedSaleOrder()
             ->whereDoesntHave('loadingSlip')
             ->with([
                 'loadingProgram.deliveryOrder.customer',
@@ -102,6 +103,11 @@ class LoadingSlipController extends Controller
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $ticketItem = LoadingProgramItem::find($request->loading_program_item_id);
+        if ($ticketItem && $ticketItem->hasClosedSaleOrder()) {
+            return response()->json(['errors' => ['loading_program_item_id' => ['The Sale Order linked to this ticket has been closed. Operations are locked.']]], 422);
         }
 
         // Check if loading slip already exists for this ticket
@@ -248,6 +254,10 @@ class LoadingSlipController extends Controller
 
 
         $loadingSlip = LoadingSlip::with('loadingProgramItem.dispatchQc')->findOrFail($id);
+
+        if ($loadingSlip->loadingProgramItem && $loadingSlip->loadingProgramItem->hasClosedSaleOrder()) {
+            return response()->json(['error' => 'The Sale Order linked to this Loading Slip has been closed. Operations are locked.'], 422);
+        }
 
         // Check if editing is allowed
         if (!$loadingSlip->canBeEdited()) {

@@ -58,6 +58,7 @@ class DeliveryChallanController extends Controller
         $pay_types = PayType::select('name', 'id')->where('status', 'active')->get();
         $delivery_orders = DeliveryOrder::select("delivery_order.id", "delivery_order.reference_no")
             ->where('delivery_order.do_status', 'active')
+            ->whereDoesntHaveClosedSaleOrder()
             ->join('loading_programs', 'delivery_order.id', '=', 'loading_programs.delivery_order_id')
             ->join('loading_program_items', 'loading_programs.id', '=', 'loading_program_items.loading_program_id')
             ->join('loading_slips', 'loading_program_items.id', '=', 'loading_slips.loading_program_item_id')
@@ -76,6 +77,12 @@ class DeliveryChallanController extends Controller
 
         // delivery order's delivery date should not be greater than date
         $delivery_order = DeliveryOrder::find($do_id);
+        if ($delivery_order && $delivery_order->isClosed()) {
+            return response()->json([
+                'error' => 'The Sale Order or Delivery Order for this Delivery Challan has been closed. Operations are locked.',
+                'message' => 'The Sale Order or Delivery Order for this Delivery Challan has been closed. Operations are locked.'
+            ], 422);
+        }
         // if(strtotime($delivery_order->dispatch_date) <= strtotime($request->date)) {
         //     return response()->json("Selected Delivery order is expired. Please select a different Delivery order", 422);
         // }
@@ -89,6 +96,25 @@ class DeliveryChallanController extends Controller
             $total_qty = 0;
             if(is_array($request->qty)) {
                 $total_qty = array_sum($request->qty);
+            }
+
+            // Calculate total bags
+            $total_bags = 0;
+            if (is_array($request->no_of_bags)) {
+                $total_bags = array_sum($request->no_of_bags);
+            } elseif (is_numeric($request->no_of_bags)) {
+                $total_bags = (float)$request->no_of_bags;
+            }
+
+            if ($total_bags <= 0 && is_array($request->ticket_id)) {
+                foreach ($request->ticket_id as $tId) {
+                    if ($tId) {
+                        $ls = \App\Models\Sales\LoadingSlip::where('loading_program_item_id', $tId)->first();
+                        if ($ls && $ls->no_of_bags > 0) {
+                            $total_bags += (float)$ls->no_of_bags;
+                        }
+                    }
+                }
             }
 
             // Auto calculate labour rate and amount based on matched rules
@@ -133,7 +159,7 @@ class DeliveryChallanController extends Controller
                 }
                 
                 if ($labour_rate > 0) {
-                    $labour_amount = $total_qty * $labour_rate;
+                    $labour_amount = $total_bags * $labour_rate;
                 }
             }
 
@@ -226,12 +252,21 @@ class DeliveryChallanController extends Controller
                 //     return response()->json("Total balance is $balance. you can not exceed this balance", 422);
                 // }
 
+                $ticket_id = $request->ticket_id[$index] ?? null;
+                $bags = $request->no_of_bags[$index] ?? 0;
+                if ((!$bags || $bags <= 0) && $ticket_id) {
+                    $loadingSlip = \App\Models\Sales\LoadingSlip::where('loading_program_item_id', $ticket_id)->first();
+                    if ($loadingSlip && $loadingSlip->no_of_bags > 0) {
+                        $bags = $loadingSlip->no_of_bags;
+                    }
+                }
+
                 $dcData = $delivery_challan->delivery_challan_data()->create([
                     "item_id" => $request->item_id[$index],
                     "qty" => $request->qty[$index],
                     "rate" => $request->rate[$index],
                     "brand_id" => $request->brand_id[$index],
-                    "no_of_bags" => $request->no_of_bags[$index],
+                    "no_of_bags" => $bags,
                     "bag_size" => $request->bag_size[$index],
                     "description" => $request->desc[$index] ?? "",
                     "truck_no" => $request->truck_no[$index],
@@ -274,6 +309,12 @@ class DeliveryChallanController extends Controller
         // delivery order's delivery date should not be greater than date
 
         $delivery_order = DeliveryOrder::find($do_id);
+        if ($delivery_order && $delivery_order->isClosed()) {
+            return response()->json([
+                'error' => 'The Sale Order or Delivery Order for this Delivery Challan has been closed. Operations are locked.',
+                'message' => 'The Sale Order or Delivery Order for this Delivery Challan has been closed. Operations are locked.'
+            ], 422);
+        }
         // if(strtotime($delivery_order->dispatch_date) < strtotime($request->date)) {
         //     return response()->json("Selected Delivery order is expired. Please select a different Delivery order", 422);
         // }
@@ -294,6 +335,27 @@ class DeliveryChallanController extends Controller
             $total_qty = 0;
             if(is_array($request->qty)) {
                 $total_qty = array_sum($request->qty);
+            }
+
+            // Calculate total bags
+            $total_bags = 0;
+            if (is_array($request->no_of_bags)) {
+                $total_bags = array_sum($request->no_of_bags);
+            } elseif (is_numeric($request->no_of_bags)) {
+                $total_bags = (float)$request->no_of_bags;
+            } elseif ($delivery_challan && $delivery_challan->delivery_challan_data) {
+                $total_bags = $delivery_challan->delivery_challan_data->sum('no_of_bags');
+            }
+
+            if ($total_bags <= 0 && is_array($request->ticket_id)) {
+                foreach ($request->ticket_id as $tId) {
+                    if ($tId) {
+                        $ls = \App\Models\Sales\LoadingSlip::where('loading_program_item_id', $tId)->first();
+                        if ($ls && $ls->no_of_bags > 0) {
+                            $total_bags += (float)$ls->no_of_bags;
+                        }
+                    }
+                }
             }
 
             // Auto calculate labour rate and amount based on matched rules
@@ -338,7 +400,7 @@ class DeliveryChallanController extends Controller
                 }
                 
                 if ($labour_rate > 0) {
-                    $labour_amount = $total_qty * $labour_rate;
+                    $labour_amount = $total_bags * $labour_rate;
                 }
             }
 
@@ -424,12 +486,21 @@ class DeliveryChallanController extends Controller
 
             $createdItems = [];
             foreach($request->item_id as $index => $item) {
+                $ticket_id = $request->ticket_id[$index] ?? null;
+                $bags = $request->no_of_bags[$index] ?? 0;
+                if ((!$bags || $bags <= 0) && $ticket_id) {
+                    $loadingSlip = \App\Models\Sales\LoadingSlip::where('loading_program_item_id', $ticket_id)->first();
+                    if ($loadingSlip && $loadingSlip->no_of_bags > 0) {
+                        $bags = $loadingSlip->no_of_bags;
+                    }
+                }
+
                 $dcData = $delivery_challan->delivery_challan_data()->create([
                     "item_id" => $request->item_id[$index],
                     "qty" => $request->qty[$index],
                     "rate" => $request->rate[$index],
                     "brand_id" => $request->brand_id[$index],
-                    "no_of_bags" => $request->no_of_bags[$index],
+                    "no_of_bags" => $bags,
                     "bag_size" => $request->bag_size[$index],
                     "description" => $request->desc[$index] ?? "",
                     "truck_no" => $request->truck_no[$index],
@@ -643,6 +714,7 @@ class DeliveryChallanController extends Controller
         $delivery_orders = DeliveryOrder::with("delivery_order_data")
             ->where("customer_id", $customer_id)
             ->where("am_approval_status", "approved")
+            ->whereDoesntHaveClosedSaleOrder()
             ->where(function ($q) use ($request) {
                 $q->where('do_status', 'active');
                 if ($request->delivery_challan_id) {

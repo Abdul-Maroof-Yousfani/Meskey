@@ -169,7 +169,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-4" id="transporter_col">
+                <div class="col-md-4" id="transporter_col" style="display: none;">
                     <div class="form-group">
                         <label class="form-label">Transporter:</label>
                         <select id="transporter_display" class="form-control select2"
@@ -461,13 +461,13 @@
                             transSelect.val(response.transporter.id).trigger('change');
                             transSelect.prop('disabled', true);
                             $("#transporter").val(response.transporter.id);
-                            $("#transporter_col").show();
+                            $("#transporter_col").hide();
                             $("#transporter_amount_col").show();
                         } else {
                             transSelect.val('').trigger('change');
                             transSelect.prop('disabled', false);
                             $("#transporter").val('');
-                            $("#transporter_col").show();
+                            $("#transporter_col").hide();
                             $("#transporter_amount_col").show();
                         }
                     }

@@ -52,6 +52,25 @@
             <span class="badge badge-warning text-dark px-2 py-1 text-uppercase">Reverted</span>
         </div>
     @endif
+    @if($sale_order->hasPendingDeliveryDateAmendment())
+        @php $pendingAmendment = $sale_order->getPendingDeliveryDateAmendment(); @endphp
+        <div class="alert alert-info px-3 py-2 mt-2 d-flex align-items-center justify-content-between" style="border-radius: 6px;">
+            <div>
+                <i class="fa fa-clock-o me-2"></i>
+                <strong>Delivery Date Amendment Pending Approval:</strong> Proposed: <strong>{{ $pendingAmendment['delivery_date'] ?? 'N/A' }}</strong> (Current: <strong>{{ $sale_order->delivery_date }}</strong>).
+            </div>
+            <span class="badge badge-info px-2 py-1 text-uppercase">Pending Approval</span>
+        </div>
+    @endif
+    @if($sale_order->isClosed())
+        <div class="alert alert-danger px-3 py-2 mt-2 d-flex align-items-center justify-content-between" style="border-radius: 6px;">
+            <div>
+                <i class="fa fa-ban me-2"></i>
+                <strong>Contract Closed:</strong> This Sale Order is <strong>Closed</strong> ({{ ucfirst(str_replace('-', ' ', $sale_order->contract_status)) }}). All downstream operations are locked.
+            </div>
+            <span class="badge badge-danger px-2 py-1 text-uppercase">Closed</span>
+        </div>
+    @endif
     <div class="row form-mar">
         <div class="col-md-12">
             <div class="row">
@@ -117,6 +136,13 @@
                         <label class="form-label">Transporter used:</label>
                         <input type="text" name="transporter_used" id="transporter_used"
                             value="{{ ucfirst($sale_order->transporter_used) }}" class="form-control" readonly>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Contract Status:</label>
+                        <input type="text" class="form-control" 
+                            value="{{ $sale_order->contract_status ? ucfirst(str_replace('-', ' ', $sale_order->contract_status)) : 'Active / Open' }}" readonly>
                     </div>
                 </div>
 

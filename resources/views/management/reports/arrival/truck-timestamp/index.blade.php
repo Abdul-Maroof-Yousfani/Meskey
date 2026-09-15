@@ -163,7 +163,7 @@
                                             <th>Total Inner Samples</th>
                                             <th>Total Resamples</th>
                                             <th>Party Ref. No</th>
-                                            <th>Yeild</th>
+                                            <th>Yield</th>
                                             <th>Location Time</th>
                                             <th>Location By</th>
                                             <th>1st QC Time</th>

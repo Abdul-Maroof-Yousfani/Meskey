@@ -42,8 +42,13 @@
             $assigned_qty = round($swb_item->net_weight);
             if ($assigned_qty <= 0) continue;
             
-            // Calculate bags for this portion
-            $assigned_bags = ($packing > 0) ? round($assigned_qty / $packing) : 0;
+            // Use Loading Slip bags
+            $total_swb_net = $swb_items->sum('net_weight');
+            if ($swb_items->count() > 1 && $total_swb_net > 0 && $loading_slip?->no_of_bags) {
+                $assigned_bags = round(($swb_item->net_weight / $total_swb_net) * $loading_slip->no_of_bags);
+            } else {
+                $assigned_bags = $loading_slip?->no_of_bags ?? (($packing > 0) ? round($assigned_qty / $packing) : 0);
+            }
             
             $index = "TICKET-" . $loading_program_item->id . "-" . $delivery_order->id;
         @endphp
@@ -177,23 +182,6 @@
     }
 
     function calc(el) {
-        const element = $(el).closest("tr");
-        const bag_size = $(element).find(".bag_size");
-        const no_of_bags = $(element).find(".no_of_bags");
-        const qty = $(element).find(".qty");
-
-        const bagSizeVal = parseFloat(bag_size.val());
-        const qtyVal = parseFloat(qty.val());
-
-        if (!bagSizeVal || !qtyVal) {
-            no_of_bags.val("");
-            calcAmount(el);
-            return;
-        }
-
-        const bagsResult = (qtyVal / bagSizeVal).toFixed();
-
-        no_of_bags.val(bagsResult);
         calcAmount(el);
     }
 
