@@ -57,7 +57,7 @@
                     $slabSymbol = $slab->qc_symbol ?? '';
                 @endphp
                 <td>
-                    <strong>{{ $overallAvg > 0 ? (floor($overallAvg) == $overallAvg ? (int) $overallAvg : number_format($overallAvg, 1)) . $slabSymbol : 0 }}</strong>
+                    <strong>{{ $overallAvg > 0 ? (floor($overallAvg) == $overallAvg ? (int) $overallAvg : number_format($overallAvg, 3)) . $slabSymbol : 0 }}</strong>
                 </td>
             @endforeach
         </tr>
