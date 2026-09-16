@@ -41,7 +41,7 @@
                     <div class="col-md-6">
                         <div class="form-group mb-0">
                             <label>Prefill Value:</label>
-                            <input type="number" step="0.01" class="form-control" name="slabs[{{ $slab_type->id }}][prefill_spec_value]" placeholder="Optional prefill value">
+                            <input type="number" step="0.01" class="form-control" name="slabs[{{ $slab_type->id }}][prefill_spec_value]" placeholder="Optional prefill value" readonly>
                         </div>
                     </div>
                 </div>
@@ -60,5 +60,51 @@
 <script>
     $(document).ready(function() {
         $('.select2').select2();
+
+        $(document).on('change', '.slab-enable-switch', function() {
+            var isChecked = $(this).is(':checked');
+            var $input = $(this).closest('.slab-type-group').find('input[name*="[prefill_spec_value]"]');
+            $input.prop('readonly', !isChecked);
+        });
+
+        $('#product_id_c').on('change', function() {
+            var productId = $(this).val();
+
+            // Reset all switches and inputs first
+            $('.slab-enable-switch').prop('checked', false);
+            $('input[name*="[prefill_spec_value]"]').val('').prop('readonly', true);
+
+            if (!productId) {
+                return;
+            }
+
+            var url = "{{ route('export-product-slab.by-product', ':id') }}".replace(':id', productId);
+            $.ajax({
+                url: url,
+                type: 'GET',
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success && response.slabs && response.slabs.length > 0) {
+                        response.slabs.forEach(function(slab) {
+                            var slabTypeId = slab.product_slab_type_id;
+                            var isEnabled = Boolean(slab.is_export_enable);
+                            var prefillValue = slab.prefill_spec_value;
+
+                            var $switch = $('#enable_' + slabTypeId);
+                            var $input = $('input[name="slabs[' + slabTypeId + '][prefill_spec_value]"]');
+
+                            $switch.prop('checked', isEnabled);
+                            $input.prop('readonly', !isEnabled);
+                            if (prefillValue !== null && prefillValue !== undefined) {
+                                $input.val(prefillValue);
+                            }
+                        });
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Error fetching export slabs for product:', xhr);
+                }
+            });
+        });
     });
 </script>

@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Reports\Arrival;
 use App\Http\Controllers\Controller;
 use App\Models\Arrival\ArrivalTicket;
 use App\Models\BagType;
+use App\Models\Master\CompanyLocation;
+use App\Models\Master\Supplier;
 use App\Models\Product;
 use App\Models\SaudaType;
 use Carbon\Carbon;
@@ -23,8 +25,12 @@ class BagWiseArrivalReportController extends Controller
         $bagTypes = BagType::all();
         $commodities = Product::all();
         $saudaTypes = SaudaType::all();
+        $suppliers = Supplier::all();
+        $locations = CompanyLocation::when(auth()->user()->user_type != 'super-admin', function ($q) {
+            return $q->whereIn('id', getUserCurrentCompanyLocations());
+        })->get();
 
-        return view('management.reports.arrival.bag-wise.index', compact('bagTypes', 'commodities', 'saudaTypes'));
+        return view('management.reports.arrival.bag-wise.index', compact('bagTypes', 'commodities', 'saudaTypes', 'suppliers', 'locations'));
     }
 
     public function getList(Request $request)
@@ -50,6 +56,12 @@ class BagWiseArrivalReportController extends Controller
             })
             ->when($request->filled('sauda_type_id'), function ($q) use ($request) {
                 return $q->where('arrival_tickets.sauda_type_id', $request->sauda_type_id);
+            })
+            ->when($request->filled('supplier_id'), function ($q) use ($request) {
+                return $q->where('arrival_tickets.accounts_of_id', $request->supplier_id);
+            })
+            ->when($request->filled('company_location_id'), function ($q) use ($request) {
+                return $q->whereIn('arrival_tickets.location_id', (array)$request->company_location_id);
             })
             ->when($request->filled('daterange'), function ($q) use ($request) {
                 $dates = explode(' - ', $request->daterange);

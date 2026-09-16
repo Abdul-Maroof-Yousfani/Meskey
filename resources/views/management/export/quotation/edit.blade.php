@@ -279,8 +279,8 @@
                             <th style="min-width:100px; display: none;">Maunds</th>
                             <th style="min-width:100px;">Bags</th>
                             <th style="min-width:100px; display: none;">Total KGs</th>
-                            <th style="min-width:100px;">Stuffing/Cont</th>
-                            <th style="min-width:100px;">Containers</th>
+                            <th class="col-stuffing" style="min-width:100px;">Stuffing/Cont</th>
+                            <th class="col-containers" style="min-width:100px;">Containers</th>
                             <th style="min-width:110px;">Rate/Ton</th>
                             <th style="min-width:110px; display: none;">Rate/Mnd</th>
                             <th style="min-width:130px;">Amount</th>
@@ -323,10 +323,10 @@
                             <td class="p-2" style="display: none;">
                                 <input type="number" name="packing_items[{{ $i }}][total_kgs]" class="form-control total-kgs" value="{{ $item->total_kgs }}" readonly>
                             </td>
-                            <td class="p-2">
+                            <td class="p-2 col-stuffing">
                                 <input type="number" name="packing_items[{{ $i }}][stuffing_in_container]" class="form-control stuffing-in-container" value="{{ $item->stuffing_in_container }}" step="0.001" min="0">
                             </td>
-                            <td class="p-2">
+                            <td class="p-2 col-containers">
                                 <input type="number" name="packing_items[{{ $i }}][no_of_containers]" class="form-control no-of-containers" value="{{ $item->no_of_containers }}" min="0">
                             </td>
                             <td class="p-2">
@@ -380,10 +380,10 @@
                             <td class="p-2" style="display: none;">
                                 <input type="number" name="packing_items[0][total_kgs]" class="form-control total-kgs" value="0" readonly>
                             </td>
-                            <td class="p-2">
+                            <td class="p-2 col-stuffing">
                                 <input type="number" name="packing_items[0][stuffing_in_container]" class="form-control stuffing-in-container" value="0" step="0.001" min="0">
                             </td>
-                            <td class="p-2">
+                            <td class="p-2 col-containers">
                                 <input type="number" name="packing_items[0][no_of_containers]" class="form-control no-of-containers" value="0" min="0">
                             </td>
                             <td class="p-2">
@@ -438,6 +438,24 @@
 <script>
 $(document).ready(function() {
     $('.select2').select2({ width: '100%' });
+
+    function togglePackingTypeColumns() {
+        var packingType = $('select[name="packing_type"]').val() || '';
+        var isBulk = packingType.toLowerCase().indexOf('bulk') !== -1;
+
+        if (isBulk) {
+            $('.col-stuffing, .col-containers').hide();
+            $('.col-stuffing input, .col-containers input').val('0');
+        } else {
+            $('.col-stuffing, .col-containers').show();
+        }
+    }
+
+    $('select[name="packing_type"]').on('change', function() {
+        togglePackingTypeColumns();
+    });
+
+    togglePackingTypeColumns();
 
     // Buyer details auto-fill
     $('#buyerSelect').on('change', function() {
@@ -745,10 +763,10 @@ $(document).ready(function() {
                 <td class="p-2">
                     <input type="number" name="packing_items[${index}][no_of_bags]" class="form-control no_of_bags" value="${item.no_of_bags || 0}" readonly>
                 </td>
-                <td class="p-2">
+                <td class="p-2 col-stuffing">
                     <input type="number" name="packing_items[${index}][stuffing_in_container]" class="form-control stuffing-in-container" value="${item.stuffing_in_container || 0}" step="0.001" min="0">
                 </td>
-                <td class="p-2">
+                <td class="p-2 col-containers">
                     <input type="number" name="packing_items[${index}][no_of_containers]" class="form-control no-of-containers" value="${item.no_of_containers || 0}" min="0">
                 </td>
                 <td class="p-2">
@@ -789,6 +807,7 @@ $(document).ready(function() {
         $('#packingItems').append(newRow);
         $('.select2').select2({ width: '100%' });
         reindexPackingItems();
+        togglePackingTypeColumns();
     }
     $(document).on('click', '.remove-packing-item', function() {
         if ($('#packingItems tr.packing-item').length > 1) {

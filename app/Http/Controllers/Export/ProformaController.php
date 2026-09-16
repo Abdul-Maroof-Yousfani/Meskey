@@ -22,7 +22,7 @@ use App\Models\Master\CompanyLocation;
 use App\Models\Master\Country;
 use App\Models\Master\HsCode;
 use App\Models\Master\Port;
-use App\Models\Master\ProductSlab;
+use App\Models\Master\ExportProductSlab;
 use App\Models\Master\Stitching;
 use App\Models\Master\FumigationCompany;
 use App\Models\Product;
@@ -356,7 +356,7 @@ class ProformaController extends Controller
 
     public function getProductSpecs($productId)
     {
-        $specs = ProductSlab::exportEnabled()
+        $specs = ExportProductSlab::exportEnabled()
             ->with('slabType')
             ->where('product_id', $productId)
             ->get()

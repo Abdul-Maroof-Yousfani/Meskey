@@ -936,17 +936,26 @@
                 $('#arrival_location_id').empty().trigger('change.select2');
                 return;
             }
-            const selectedLocations = $('#locations').val() || [];
-            const currentValues = $('#arrival_location_id').val() || initialFactories;
+            const selectedLocations = ($('#locations').val() || []).map(String);
+            const currentValues = ($('#arrival_location_id').val() || initialFactories || []).map(String);
             $('#arrival_location_id').empty();
 
+            if (selectedLocations.length === 0) {
+                $('#arrival_location_id').val([]).trigger('change.select2');
+                return;
+            }
+
+            const validValues = [];
             factories
-                .filter(f => selectedLocations.length === 0 || selectedLocations.includes(String(f.company_location_id)))
+                .filter(f => selectedLocations.includes(String(f.company_location_id)))
                 .forEach(f => {
-                    $('#arrival_location_id').append(`<option value="${f.id}" data-company="${f.company_location_id}">${f.name} (${f.company_location.name})</option>`);
+                    $('#arrival_location_id').append(`<option value="${f.id}" data-company="${f.company_location_id}">${f.name} (${f.company_location ? f.company_location.name : ''})</option>`);
+                    if (currentValues.includes(String(f.id))) {
+                        validValues.push(String(f.id));
+                    }
                 });
 
-            $('#arrival_location_id').val(currentValues).trigger('change.select2');
+            $('#arrival_location_id').val(validValues).trigger('change.select2');
         }
 
         function populateSections() {
@@ -955,17 +964,26 @@
                 $('#arrival_sub_location_id').empty().trigger('change.select2');
                 return;
             }
-            const factoryIds = $('#arrival_location_id').val() || initialFactories;
-            const currentSections = $('#arrival_sub_location_id').val() || initialSections;
+            const factoryIds = ($('#arrival_location_id').val() || []).map(String);
+            const currentSections = ($('#arrival_sub_location_id').val() || initialSections || []).map(String);
             $('#arrival_sub_location_id').empty();
 
+            if (factoryIds.length === 0) {
+                $('#arrival_sub_location_id').val([]).trigger('change.select2');
+                return;
+            }
+
+            const validSections = [];
             sections
-                .filter(s => factoryIds.length === 0 || factoryIds.includes(String(s.arrival_location_id)))
+                .filter(s => factoryIds.includes(String(s.arrival_location_id)))
                 .forEach(s => {
-                    $('#arrival_sub_location_id').append(`<option value="${s.id}" data-factory="${s.arrival_location_id}">${s.name} (${s.arrival_location.name})</option>`);
+                    $('#arrival_sub_location_id').append(`<option value="${s.id}" data-factory="${s.arrival_location_id}">${s.name} (${s.arrival_location ? s.arrival_location.name : ''})</option>`);
+                    if (currentSections.includes(String(s.id))) {
+                        validSections.push(String(s.id));
+                    }
                 });
 
-            $('#arrival_sub_location_id').val(currentSections).trigger('change.select2');
+            $('#arrival_sub_location_id').val(validSections).trigger('change.select2');
         }
 
         $('#locations').on('change', function() {

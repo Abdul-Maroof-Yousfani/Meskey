@@ -103,7 +103,7 @@ class PurchaseOrderController extends Controller
                     return $q->where(function ($sq) {
                         $sq->where(function ($csq) {
                             $csq->whereIn('status', ['completed', 'cancelled']);
-                                // ->orWhereIn('contract_status', ['close-contract-due-to-market-down', 'close-with-market-rate-penalty']);
+                            // ->orWhereIn('contract_status', ['close-contract-due-to-market-down', 'close-with-market-rate-penalty']);
                         })->where(function ($rsq) {
                             $rsq->whereNull('contract_status')
                                 ->orWhere('contract_status', '!=', 'reopen-contract-closed-by-mistake');
@@ -113,7 +113,7 @@ class PurchaseOrderController extends Controller
                     return $q->where(function ($sq) {
                         $sq->where(function ($ssq) {
                             $ssq->whereIn('status', ['draft', 'confirmed']);
-                                // ->orWhere('contract_status', 'reopen-contract-closed-by-mistake');
+                            // ->orWhere('contract_status', 'reopen-contract-closed-by-mistake');
                         })->where(function ($csq) {
                             $csq->whereNull('contract_status')
                                 ->orWhereNotIn('contract_status', ['close-contract-due-to-market-down', 'close-with-market-rate-penalty']);
@@ -325,6 +325,8 @@ class PurchaseOrderController extends Controller
         $data['bagPackings'] = [];
         $data['truckSizeRanges'] = TruckSizeRange::where('status', 'active')->get();
         $data['products'] = Product::where('product_type', 'raw_material')->get();
+        $locationId = (string) $data['arrivalPurchaseOrder']->company_location_id;
+        $data['suppliers'] = Supplier::whereJsonContains('company_location_ids', $locationId)->get();
         $data['brokers'] = Broker::all();
         $po = $data['arrivalPurchaseOrder'];
         $data['ticketcounts'] = $po->arrivalTickets()->count() ?? 0;
@@ -623,7 +625,11 @@ class PurchaseOrderController extends Controller
         $suppliers = $suppliers->map(function ($supplier) {
             return [
                 'id' => $supplier->id,
-                'name' => $supplier->company_name
+                'name' => $supplier->company_name,
+                'owner_name' => $supplier->owner_name,
+                'email' => $supplier->email,
+                'phone' => $supplier->owner_mobile_no,
+                'cnic' => $supplier->owner_cnic_no,
             ];
         });
 

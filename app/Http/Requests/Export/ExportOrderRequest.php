@@ -171,8 +171,22 @@ class ExportOrderRequest extends FormRequest
             'packing_items.*.stitching_id' => ['required', 'exists:stitchings,id'],
             'packing_items.*.bag_size' => ['required', 'numeric', 'min:0.01'],
             'packing_items.*.metric_tons' => ['required', 'numeric', 'min:0.001'],
-            'packing_items.*.stuffing_in_container' => ['required', 'numeric', 'min:0'],
-            'packing_items.*.no_of_containers' => ['required', 'integer', 'min:0'],
+            'packing_items.*.stuffing_in_container' => [
+                Rule::requiredIf(function () {
+                    return stripos((string) $this->packing_type, 'bulk') === false;
+                }),
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
+            'packing_items.*.no_of_containers' => [
+                Rule::requiredIf(function () {
+                    return stripos((string) $this->packing_type, 'bulk') === false;
+                }),
+                'nullable',
+                'integer',
+                'min:0',
+            ],
             'packing_items.*.rate' => ['required', 'numeric', 'min:0'],
             'packing_items.*.rate_per_maund' => ['nullable', 'numeric', 'min:0'],
             'packing_items.*.maunds' => ['nullable', 'numeric', 'min:0'],

@@ -62,8 +62,11 @@
                  <label>Supplier:</label>
                  <select name="supplier_id" id="supplier_id" class="form-control ">
 
-                     <option value="{{ $arrivalPurchaseOrder->supplier->id ?? null }}" selected>
-                         {{ $arrivalPurchaseOrder->supplier->name ?? 'Supplier' }}</option>
+                 @foreach ($suppliers as $supplier)
+                     <option value="{{ $supplier->id ?? null }}" data-phone="{{ $supplier->owner_mobile_no ?? 'N/A' }}" data-cnic="{{ $supplier->owner_cnic_no ?? 'N/A' }}" data-owner_name="{{ $supplier->owner_name ?? 'N/A' }}" data-email="{{ $supplier->email ?? 'N/A' }}"        
+                     @selected($supplier->id == $arrivalPurchaseOrder->supplier_id)>
+                         {{ $supplier->name ?? 'Supplier' }}</option>
+                 @endforeach
                  </select>
              </div>
          </div>
@@ -75,6 +78,30 @@
                      min="-999999" max="999999" />
              </div>
          </div>
+
+         <div class="col-xs-12 col-sm-12 col-md-12">
+            <!-- Supplier KYC Alert Container -->
+            <div id="supplierKycAlert" class="my-2 p-3 bg-light-info rounded border-left-info shadow-sm"
+                style="background-color: #e7f3f5; border-left: 5px solid #17a2b8;" bis_skin_checked="1">
+
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="text-info font-weight-bold mb-2"> Supplier KYC
+                        </h6>
+
+                        <div class="mt-1" style="font-size:13px; line-height:1.6;">
+                            <div><strong>Owner Name:</strong> <span id="kycName">{{ $arrivalPurchaseOrder->supplier->owner_name ?? 'N/A' }}</span></div>
+                            <div><strong>Phone:</strong> <span id="kycPhone">{{ $arrivalPurchaseOrder->supplier->owner_mobile_no ?? 'N/A' }}</span></div>
+                            <div><strong>CNIC:</strong> <span id="kycCnic">{{ $arrivalPurchaseOrder->supplier->owner_cnic_no ?? 'N/A' }}</span></div>
+                            <!-- <div><strong>Email:</strong> <span id="kycEmail">{{ $arrivalPurchaseOrder->supplier->email ?? 'N/A' }}</span></div> -->
+                        </div>
+                    </div>
+                    <!-- <button type="button" class="close ml-2" id="closeKycAlert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button> -->
+                </div>
+            </div>
+        </div>
      </div>
      <div class="row">
          <div class="col-12">
@@ -475,6 +502,7 @@
  <script>
      $(document).ready(function() {
          $('.select22').select2();
+         $('#supplier_id').select2();
 
          $('.broker-select').on('change', function() {
              var commissionInput = $($(this).data('commission'));
@@ -833,10 +861,36 @@
          // Initialize dynamic select2 fields
          initializeDynamicSelect2('#company_location_id', 'company_locations', 'name', 'id', true, false);
          initializeDynamicSelect2('#sauda_type_id', 'sauda_types', 'name', 'id', true, false);
-         initializeDynamicSelect2('#supplier_id', 'suppliers', 'name', 'id', true, false);
+        //  initializeDynamicSelect2('#supplier_id', 'suppliers', 'name', 'id', true, false);
          initializeDynamicSelect2('#division_id', 'divisions', 'name', 'id', true, false);
          //  initializeDynamicSelect2('#broker_one_id', 'brokers', 'name', 'id', true, false);
          //  initializeDynamicSelect2('#broker_two_id', 'brokers', 'name', 'id', true, false);
          //  initializeDynamicSelect2('#broker_three_id', 'brokers', 'name', 'id', true, false);
+
+
+
+                 $('#supplier_id').on('change', function () {
+            var selectedOption = $(this).find('option:selected');
+            var supplierId = $(this).val();
+
+            // Reset if no supplier selected
+            if (!supplierId) {
+                $('#supplierKycAlert').addClass('d-none');
+                return;
+            }
+
+            var phone = selectedOption.data('phone') || 'N/A';
+            var cnic = selectedOption.data('cnic') || 'N/A';
+            var email = selectedOption.data('email') || 'N/A';
+            var ownerName = selectedOption.data('owner_name') || 'N/A';
+
+            $('#kycPhone').text(phone);
+            $('#kycCnic').text(cnic);
+            $('#kycEmail').text(email);
+            $('#kycName').text(ownerName);
+
+            $('#supplierKycAlert').removeClass('d-none');
+        });
+
      });
  </script>

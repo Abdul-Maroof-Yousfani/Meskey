@@ -11,7 +11,7 @@ use App\Models\Arrival\ArrivalTicket;
 use App\Models\Master\ProductSlabType;
 use Illuminate\Http\Request;
 
-class TruckDetailReportController extends Controller
+class TruckDetailGateReportController extends Controller
 {
     public function index()
     {
@@ -23,7 +23,7 @@ class TruckDetailReportController extends Controller
             return $q->whereIn('id', getUserCurrentCompanyLocations());
         })->get();
 
-        return view('management.reports.arrival.truck-detail.index', compact('commodities', 'millers', 'locations', 'product_slab_types', 'arrival_compulsory_qc_params'));
+        return view('management.reports.arrival.truck-detail-gate.index', compact('commodities', 'millers', 'locations', 'product_slab_types', 'arrival_compulsory_qc_params'));
     }
 
     public function getList(Request $request)
@@ -60,8 +60,7 @@ class TruckDetailReportController extends Controller
                 'unloadingLocation.arrivalLocation',
                 'freight',
                 'arrivalSlip.createdBy',
-                'purchaseOrder.purchaseSamplingRequests',
-                'latestPurchaseSamplingRequest',
+                'purchaseOrder',
                 'firstWeighbridge',
                 'secondWeighbridge',
                 'lastInitialSampling',
@@ -94,9 +93,9 @@ class TruckDetailReportController extends Controller
             ->when($request->filled('commodity_id'), function ($q) use ($request) {
                 return $q->where(function ($subQuery) use ($request) {
                     $subQuery->whereHas('qcProduct', function ($query) use ($request) {
-                        $query->whereIn('id', (array)$request->commodity_id);
+                        $query->whereIn('id', (array) $request->commodity_id);
                     })->orWhereHas('product', function ($query) use ($request) {
-                        $query->whereIn('id', (array)$request->commodity_id);
+                        $query->whereIn('id', (array) $request->commodity_id);
                     });
                 });
             })
@@ -107,7 +106,7 @@ class TruckDetailReportController extends Controller
                 return $q->where('arrival_tickets.sauda_type_id', $request->sauda_type_id);
             })
             ->when($request->filled('company_location_id'), function ($q) use ($request) {
-                return $q->whereIn('arrival_tickets.location_id', (array)$request->company_location_id);
+                return $q->whereIn('arrival_tickets.location_id', (array) $request->company_location_id);
             })
             ->when($request->filled('supplier_id'), function ($q) use ($request) {
                 return $q->where('arrival_tickets.accounts_of_id', $request->supplier_id);
@@ -128,6 +127,6 @@ class TruckDetailReportController extends Controller
             ->get();
         // dd($arrival_compulsory_qc_params->pluck('name')->toArray());
 
-        return view('management.reports.arrival.truck-detail.getTruckDetail', compact('tickets', 'product_slab_types', 'arrival_compulsory_qc_params'));
+        return view('management.reports.arrival.truck-detail-gate.getTruckDetail', compact('tickets', 'product_slab_types', 'arrival_compulsory_qc_params'));
     }
 }

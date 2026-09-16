@@ -1,6 +1,6 @@
 @extends('management.layouts.master')
 @section('title')
-    Truck Timestamp Report
+    Truck Detail Gate Report
 @endsection
 @section('content')
     <div class="content-wrapper">
@@ -8,12 +8,12 @@
             <div class="row w-100 mx-auto">
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
                     <h2 class="page-title">
-                        Truck Timestamp Report
+                        Truck Detail Report (Gate)
                     </h2>
                 </div>
                 <div class="col-md-6 d-flex align-items-end justify-content-end">
                     <div class="form-group mb-0">
-                        <button class="btn btn-secondary" onclick="exportToExcel('exportableTable','TruckTimestampReport')">
+                        <button class="btn btn-secondary" onclick="exportToExcel('exportableTable','TruckDetailReport')">
                             <i class="fa fa-file-excel-o mr-2"></i> Export to Excel
                         </button>
                     </div>
@@ -30,7 +30,7 @@
                                             <div class="col-md-2">
                                                 <div class="form-group mb-0">
                                                     <label>Location:</label>
-                                                    <select name="company_location_id[]" id="cmpany_location" {{ count($locations) == 1 ? 'disabled' : 'multiple' }} class="form-control selectWithoutAjax">
+                                                    <select name="company_location_id[]" id="cmpany_location" {{ count($locations) == 1 ? 'disabled' : 'multiple' }} class="form-control selectWithoutAjax" >
                                                         <option value="">Location</option>
                                                         @foreach ($locations as $location)
                                                             <option value="{{ $location->id }}"
@@ -62,17 +62,6 @@
                                                     <label>GRN No:</label>
                                                     <input type="text" class="form-control" name="grn_no"
                                                         placeholder="GRN No" value="{{ request('grn_no', '') }}">
-                                                </div>
-                                            </div>
-                                            <div class="col-md-2">
-                                                <div class="form-group mb-0">
-                                                    <label>Inner Sample:</label>
-                                                    <select name="inner_sample" id="inner_sample" class="form-control selectWithoutAjax">
-                                                        <option value="1" {{ request('inner_sample', '1') == '1' ? 'selected' : '' }}>1st</option>
-                                                        <option value="2" {{ request('inner_sample') == '2' ? 'selected' : '' }}>2nd</option>
-                                                        <option value="3" {{ request('inner_sample') == '3' ? 'selected' : '' }}>3rd</option>
-                                                        <option value="all" {{ request('inner_sample') == 'all' ? 'selected' : '' }}>All</option>
-                                                    </select>
                                                 </div>
                                             </div>
                                         </div>
@@ -141,6 +130,7 @@
                                                         placeholder="Bilty No" value="{{ request('bilty_no', '') }}">
                                                 </div>
                                             </div>
+                                           
                                         </div>
                                         <div class="row justify-content-nd text mt-2">
                                             <input type="hidden" name="page" value="{{ request('page', 1) }}">
@@ -149,69 +139,88 @@
                                     </div>
                                 </div>
                             </form>
+                          
                         </div>
                         <div class="card-content">
                             <div class="card-body table-responsive" id="filteredData">
-
+                          
                                 <table class="table m-0" id="exportableTable">
                                     <thead>
                                         <tr>
                                             <th>Ticket #</th>
-                                            <th>Gate Entry Time</th>
+                                            <th>Entry Date</th>
+                                            <th>Entry Time</th>
                                             <th>Entry By</th>
+                                            <th>Broker</th>
+                                            <th>Supplier</th>
+                                            <th>Station</th>
+                                            <th>Account of</th>
+                                            <th>Decision</th>
+                                            <th>Bilty #</th>
+                                            <th>Truck Type</th>
                                             <th>Loading Date</th>
+                                            <th>No of Bags (Loaded)</th>
+                                            <th>Loaded Weight (KG)</th>
+                                            <th>Truck #</th>
+                                            <th>Amanat</th>
+                                            @foreach ($product_slab_types as $slab)
+                                                <th>Avg. {{ $slab->name }} </th>
+                                            @endforeach
+                                            {{-- <th>Avg. Broken</th>
+                                            <th>Avg. Moisture</th>
+                                            <th>Avg. Paddy</th>
+                                            <th>Avg. Damage</th> --}}
+                                            @foreach ($arrival_compulsory_qc_params as $compulsory_slab_type)
+                                                <th>{{ $compulsory_slab_type->name }}</th>
+                                            @endforeach
+                                            {{-- <th>QC Advice</th>
+                                            <th>QC Remarks</th>
+                                            <th>Unloading Instruction</th> --}}
+                                            <th>QC Analysis By</th>
                                             <th>Total Inner Samples</th>
-                                            <th>Total Resamples</th>
-                                            <th>Party Ref. No</th>
-                                            <th>Yield</th>
-                                            <th>Location Time</th>
-                                            <th>Location By</th>
-                                            <th>1st QC Time</th>
-                                            <th>1st QC By</th>
-                                            <th>1st Tabaar Decision Time</th>
-                                            <th>1st Tabaar Decision By</th>
-                                            <th>1st Weight Time</th>
-                                            <th>1st Weight By</th>
-                                            <th>1st Inner QC Sample Request Time</th>
-                                            <th>1st Inner QC Sample Request By</th>
-                                            <th>1st Inner QC Sample Time</th>
-                                            <th>1st Inner QC Sample By</th>
-                                            <th>2nd Inner QC Sample Request Time</th>
-                                            <th>2nd Inner QC Sample Request By</th>
-                                            <th>2nd Inner QC Sample Time</th>
-                                            <th>2nd Inner QC Sample By</th>
-                                            <th>3rd Inner QC Sample Request Time</th>
-                                            <th>3rd Inner QC Sample Request By</th>
-                                            <th>3rd Inner QC Sample Time</th>
-                                            <th>3rd Inner QC Sample By</th>
-                                            <th>2nd Tabaar Decision Time</th>
-                                            <th>2nd Tabaar Decision By</th>
-                                            <th>3rd Tabaar Decision Time</th>
-                                            <th>3rd Tabaar Decision By</th>
-                                            <th>4th Tabaar Decision Time</th>
-                                            <th>4th Tabaar Decision By</th>
-                                            <th>Full Reject Time</th>
-                                            <th>Full Reject By</th>
-                                            <th>Half Reject Time</th>
-                                            <th>Half Reject By</th>
-                                            <th>Confirm Unloading Time</th>
-                                            <th>Confirm Unloading By</th>
-                                            <th>2nd Weight Time</th>
-                                            <th>2nd Weight By</th>
-                                            <th>Accounts Entry Time</th>
-                                            <th>Accounts Entry By</th>
-                                            <th>Bilty Return Time</th>
-                                            <th>Bilty Return By</th>
-                                            <th>HO Confirm Time</th>
-                                            <th>HO Confirm By</th>
-                                            <th>Admin Edit Time</th>
-                                            <th>Admin Edit By</th>
+                                            <th>Commodity</th>
+                                            <th>Sauda Terms</th>
                                             <th>Status</th>
+                                            <th>Tabaar Instructions</th>
+                                            <th>Broken Level</th>
+                                            <th>Moisture Level</th>
+                                            <th>Paddy Level</th>
+                                            <th>Damage Level</th>
+                                            <th>Under Milled Level</th>
+                                            <th>Warehouse</th>
+                                            <th>Galaa #</th>
+                                            <th>Location Type</th>
+                                            <th>1st Weight</th>
+                                            <th>1st Weight Time</th>
+                                            <th>2nd Weight</th>
+                                            <th>2nd Weight Time</th>
+                                            <th>Freight Charges</th>
+                                            <th>Labor Charges</th>
+                                            <th>Unpaid Labor Charges</th>
+                                            <th>Other Charges (-)</th>
+                                            <th>Kanta Charges</th>
+                                            <th>Weighbridge Charges</th>
+                                            <th>Full Reject</th>
+                                            <th>Full Reject By</th>
+                                            <th>Full Reject Time</th>
+                                            <th>Full Reject Comments</th>
+                                            <th>Half Reject</th>
+                                            <th>Half Reject By</th>
+                                            <th>Half Reject Time</th>
+                                            <th>Half Reject Comments</th>
+                                            <th>Confirm Unloading</th>
+                                            <th>Confirm Unloading By</th>
+                                            <th>Confirm Unloading Time</th>
+                                            <th>Confirm Unloading Comments</th>
+                                            <th>Bag Packing</th>
+                                            <th>Bag Type</th>
+                                            <th>Filling Bags</th>
+                                            <th>Total Bags</th>
                                             <th>Completion</th>
+                                            <th>Final QC Report</th>
                                             <th>Bilty</th>
                                             <th>Loading Weight</th>
                                             <th>Arrival Slip</th>
-                                            <th>View Complete Details</th>
                                         </tr>
                                     </thead>
                                 </table>
@@ -227,7 +236,7 @@
     <script>
         $(document).ready(function() {
             filterationCommon(
-                `{{ route('reports.arrival.get.truck-timestamp') }}`
+                `{{ route('reports.arrival.get.truck-detail-gate') }}`
             )
 
             initializeDynamicSelect2('#sauda_type', 'sauda_types', 'name', 'id', true, false, true, true);

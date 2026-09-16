@@ -64,6 +64,16 @@ class PurchaseTicket extends Model
         return $this->hasMany(PurchaseSamplingRequest::class, 'purchase_ticket_id');
     }
 
+    public function lastInitialSampling()
+    {
+        return $this->hasOne(PurchaseSamplingRequest::class, 'purchase_ticket_id')->latestOfMany();
+    }
+
+    public function latestSampling()
+    {
+        return $this->hasOne(PurchaseSamplingRequest::class, 'purchase_ticket_id')->latestOfMany();
+    }
+
     public function purchaseOrderLoadedQuantity()
     {
         return $this->hasOneThrough(

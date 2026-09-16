@@ -243,14 +243,17 @@ class LoadingProgramController extends Controller
 
         // Check for sauda_type pohanch and logistics requirement
         foreach ($saleOrders as $so) {
-            if (strtolower(trim($so->sauda_type)) === 'pohanch') {
+            $saudaType = strtolower(trim($so->sauda_type ?? ''));
+            $transporterUsed = strtolower(trim($so->transporter_used ?? ''));
+
+            if ($saudaType === 'pohanch') {
                 $logisticsCount = \App\Models\Sales\Logistics::where('sale_order_id', $so->id)->count();
                 if ($logisticsCount === 0) {
                     return response()->json(['errors' => ['logistics' => ['Logistics is required for Sale Order (' . $so->reference_no . ') because sauda type is Pohanch.']]], 422);
                 }
             }
-            if (strtolower(trim($so->sauda_type)) === 'x-mill') {
-                if (strtolower(trim($so->trasnsporter_used)) === 'yes') {
+            if ($saudaType === 'x-mill') {
+                if ($transporterUsed === 'yes') {
                     $logisticsCount = \App\Models\Sales\Logistics::where('sale_order_id', $so->id)->count();
                     if ($logisticsCount === 0) {
                         return response()->json(['errors' => ['logistics' => ['Logistics is required for Sale Order (' . $so->reference_no . ') because sauda type is X-Mill and Transporter is Yes.']]], 422);
@@ -705,10 +708,21 @@ class LoadingProgramController extends Controller
 
         // Check for sauda_type pohanch and logistics requirement
         foreach ($saleOrders as $so) {
-            if (strtolower(trim($so->sauda_type)) === 'pohanch') {
+            $saudaType = strtolower(trim($so->sauda_type ?? ''));
+            $transporterUsed = strtolower(trim($so->transporter_used ?? ''));
+
+            if ($saudaType === 'pohanch') {
                 $logisticsCount = \App\Models\Sales\Logistics::where('sale_order_id', $so->id)->count();
                 if ($logisticsCount === 0) {
                     return response()->json(['errors' => ['logistics' => ['Logistics is required for Sale Order (' . $so->reference_no . ') because sauda type is Pohanch.']]], 422);
+                }
+            }
+            if ($saudaType === 'x-mill') {
+                if ($transporterUsed === 'yes') {
+                    $logisticsCount = \App\Models\Sales\Logistics::where('sale_order_id', $so->id)->count();
+                    if ($logisticsCount === 0) {
+                        return response()->json(['errors' => ['logistics' => ['Logistics is required for Sale Order (' . $so->reference_no . ') because sauda type is X-Mill and Transporter is Yes.']]], 422);
+                    }
                 }
             }
         }
@@ -974,6 +988,26 @@ class LoadingProgramController extends Controller
                 return $delivery_order;
             });
 
+        $logisticsErrors = [];
+        foreach ($SalesOrders as $so) {
+            $saudaType = strtolower(trim($so->sauda_type ?? ''));
+            $transporterUsed = strtolower(trim($so->transporter_used ?? ''));
+
+            if ($saudaType === 'pohanch') {
+                $logisticsCount = \App\Models\Sales\Logistics::where('sale_order_id', $so->id)->count();
+                if ($logisticsCount === 0) {
+                    $logisticsErrors[] = 'Logistics is required for Sale Order (' . $so->reference_no . ') because sauda type is Pohanch.';
+                }
+            } elseif ($saudaType === 'x-mill') {
+                if ($transporterUsed === 'yes') {
+                    $logisticsCount = \App\Models\Sales\Logistics::where('sale_order_id', $so->id)->count();
+                    if ($logisticsCount === 0) {
+                        $logisticsErrors[] = 'Logistics is required for Sale Order (' . $so->reference_no . ') because sauda type is X-Mill and Transporter is Yes.';
+                    }
+                }
+            }
+        }
+
         $html = view('management.sales.loading-program.getSaleOrderRelatedData', compact('SalesOrders', 'DeliveryOrders'))->render();
 
         // Check if any delivery order is optional (pay_type_id = 11)
@@ -983,15 +1017,15 @@ class LoadingProgramController extends Controller
 
         // Get sale order data for first SO for default population
         $firstSo = $SalesOrders->first();
-        $firstSoData = $firstSo->sales_order_data->first();
-        $companyLocationId = $firstSo->locations->first()?->location_id;
+        $firstSoData = $firstSo?->sales_order_data?->first();
+        $companyLocationId = $firstSo?->locations?->first()?->location_id;
 
         $saleOrderData = [
             'packing' => $firstSoData->bag_size ?? null,
             'brand_id' => $firstSoData->brand_id ?? null,
             'brand_name' => $firstSoData->brand->name ?? null,
-            'arrival_location_id' => $firstSo->arrival_location_id,
-            'sub_arrival_location_id' => $firstSo->arrival_sub_location_id,
+            'arrival_location_id' => $firstSo?->arrival_location_id,
+            'sub_arrival_location_id' => $firstSo?->arrival_sub_location_id,
             'company_location_id' => $companyLocationId,
         ];
 
@@ -999,9 +1033,11 @@ class LoadingProgramController extends Controller
             'success' => true,
             'html' => $html,
             'is_delivery_order_optional' => $isAnyDeliveryOrderOptional,
-            'pay_type_id' => $firstSo->pay_type_id,
+            'pay_type_id' => $firstSo?->pay_type_id,
             'sale_order_data' => $saleOrderData,
-            'transporters_map' => $transportersMap
+            'transporters_map' => $transportersMap,
+            'logistics_errors' => $logisticsErrors,
+            'has_logistics_error' => !empty($logisticsErrors)
         ]);
     }
 

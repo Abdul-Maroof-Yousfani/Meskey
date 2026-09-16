@@ -51,6 +51,7 @@
                     <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
                     @endforeach --}}
                 </select>
+
             </div>
         </div>
         <div class="col-xs-4 col-sm-4 col-md-4">
@@ -58,6 +59,29 @@
                 <label>Commission (per KG):</label>
                 <input type="number" name="supplier_commission" placeholder="Commission (per KG)" class="form-control"
                     step="any" min="-999999" max="999999" />
+            </div>
+        </div>
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <!-- Supplier KYC Alert Container -->
+            <div id="supplierKycAlert" class="my-2 p-3 bg-light-info rounded border-left-info shadow-sm d-none"
+                style="background-color: #e7f3f5; border-left: 5px solid #17a2b8;" bis_skin_checked="1">
+
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="text-info font-weight-bold mb-2"> Supplier KYC
+                        </h6>
+
+                        <div class="mt-1" style="font-size:13px; line-height:1.6;">
+                            <div><strong>Owner Name:</strong> <span id="kycName">-</span></div>
+                            <div><strong>Phone:</strong> <span id="kycPhone">-</span></div>
+                            <div><strong>CNIC:</strong> <span id="kycCnic">-</span></div>
+                            <!-- <div><strong>Email:</strong> <span id="kycEmail">-</span></div> -->
+                        </div>
+                    </div>
+                    <!-- <button type="button" class="close ml-2" id="closeKycAlert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button> -->
+                </div>
             </div>
         </div>
     </div>
@@ -439,7 +463,7 @@
                         if (response.success && response.suppliers.length > 0) {
                             var options = '<option value="">Select Supplier</option>';
                             $.each(response.suppliers, function (key, supplier) {
-                                options += '<option value="' + supplier.id + '">' +
+                                options += '<option value="' + supplier.id + '" data-phone="' + supplier.phone + '" data-cnic="' + supplier.cnic + '" data-email="' + supplier.email + '" data-owner_name="' + supplier.owner_name + '">' +
                                     supplier.name + '</option>';
                             });
                             $('#supplier_id').html(options);
@@ -726,5 +750,37 @@
         // initializeDynamicSelect2('#broker_one_id', 'brokers', 'name', 'id', false, false);
         // initializeDynamicSelect2('#broker_two_id', 'brokers', 'name', 'id', false, false);
         // initializeDynamicSelect2('#broker_three_id', 'brokers', 'name', 'id', false, false);
+
+
+
+
+
+        $('#supplier_id').on('change', function () {
+            var selectedOption = $(this).find('option:selected');
+            var supplierId = $(this).val();
+
+            // Reset if no supplier selected
+            if (!supplierId) {
+                $('#supplierKycAlert').addClass('d-none');
+                return;
+            }
+
+            var phone = selectedOption.data('phone') || 'N/A';
+            var cnic = selectedOption.data('cnic') || 'N/A';
+            var email = selectedOption.data('email') || 'N/A';
+            var ownerName = selectedOption.data('owner_name') || 'N/A';
+
+            $('#kycPhone').text(phone);
+            $('#kycCnic').text(cnic);
+            $('#kycEmail').text(email);
+            $('#kycName').text(ownerName);
+
+            $('#supplierKycAlert').removeClass('d-none');
+        });
+
+        // Close button
+        $(document).on('click', '#closeKycAlert', function () {
+            $('#supplierKycAlert').addClass('d-none');
+        });
     });
 </script>

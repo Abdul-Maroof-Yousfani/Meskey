@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Acl\Company;
+use App\Models\Master\ExportProductSlab;
 use App\Models\Master\ProductSlab;
 use App\Models\Master\QcReliefParameter;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -56,7 +57,7 @@ class Product extends Model
 
     public function exportSlabs()
     {
-        return $this->hasMany(ProductSlab::class)->exportEnabled();
+        return $this->hasMany(ExportProductSlab::class)->exportEnabled();
     }
 
     public function reliefParameters()

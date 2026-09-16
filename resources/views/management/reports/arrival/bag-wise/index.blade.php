@@ -27,23 +27,33 @@
                                 <div class="row">
                                     <div class="col-md-12 my-1">
                                         <div class="row justify-content-nd text">
-                                            <div class="col-md-3">
+                                            <div class="col-md-2">
                                                 <div class="form-group mb-0">
-                                                    <label>Bag:</label>
-                                                    <select name="bag_type_id[]" id="bag_type_id" multiple
+                                                    <label>Location:</label>
+                                                    <select name="company_location_id[]" id="company_location"
+                                                        {{ count($locations) == 1 ? 'disabled' : 'multiple' }}
                                                         class="form-control selectWithoutAjax">
-                                                        <option value="">Select Bag</option>
-                                                        @foreach ($bagTypes as $bagType)
-                                                            <option value="{{ $bagType->id }}"
-                                                                {{ is_array(request('bag_type_id')) && in_array($bagType->id, request('bag_type_id')) ? 'selected' : '' }}>
-                                                                {{ $bagType->name }}
+                                                        <option value="">Select Location</option>
+                                                        @foreach ($locations as $location)
+                                                            <option value="{{ $location->id }}"
+                                                                {{ (is_array(request('company_location_id')) && in_array($location->id, request('company_location_id'))) || count($locations) == 1 ? 'selected' : '' }}>
+                                                                {{ $location->name }}
                                                             </option>
                                                         @endforeach
                                                     </select>
                                                 </div>
                                             </div>
 
-                                            <div class="col-md-3">
+                                            <div class="col-md-2">
+                                                <div class="form-group mb-0">
+                                                    <label>Date Range:</label>
+                                                    <input type="text" name="daterange" id="daterange" class="form-control"
+                                                        placeholder="Select Date Range"
+                                                        value="{{ request('daterange', '') }}" />
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-2">
                                                 <div class="form-group mb-0">
                                                     <label>Commodity:</label>
                                                     <select name="commodity_id[]" id="commodity_id" multiple
@@ -59,16 +69,39 @@
                                                 </div>
                                             </div>
 
-                                            <div class="col-md-3">
+                                            <div class="col-md-2">
                                                 <div class="form-group mb-0">
-                                                    <label>Date Range:</label>
-                                                    <input type="text" name="daterange" id="daterange" class="form-control"
-                                                        placeholder="Select Date Range"
-                                                        value="{{ request('daterange', '') }}" />
+                                                    <label>Bag:</label>
+                                                    <select name="bag_type_id[]" id="bag_type_id" multiple
+                                                        class="form-control selectWithoutAjax">
+                                                        <option value="">Select Bag</option>
+                                                        @foreach ($bagTypes as $bagType)
+                                                            <option value="{{ $bagType->id }}"
+                                                                {{ is_array(request('bag_type_id')) && in_array($bagType->id, request('bag_type_id')) ? 'selected' : '' }}>
+                                                                {{ $bagType->name }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
                                                 </div>
                                             </div>
 
-                                            <div class="col-md-3">
+                                            <div class="col-md-2">
+                                                <div class="form-group mb-0">
+                                                    <label>Accounts Of:</label>
+                                                    <select name="supplier_id" id="supplier_id"
+                                                        class="form-control selectWithoutAjax">
+                                                        <option value="">Select Accounts Of</option>
+                                                        @foreach ($suppliers as $supplier)
+                                                            <option value="{{ $supplier->id }}"
+                                                                {{ request('supplier_id') == $supplier->id ? 'selected' : '' }}>
+                                                                {{ $supplier->name }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-2">
                                                 <div class="form-group mb-0">
                                                     <label>Sauda Type:</label>
                                                     <select name="sauda_type_id" id="sauda_type_id"

@@ -5,7 +5,9 @@ namespace App\Models\Arrival;
 use App\Models\{
     ArrivalApprove,
     ArrivalPurchaseOrder,
+    AuditLog,
     Product,
+    PurchaseSamplingRequest,
     SaudaType,
     User
 };
@@ -287,6 +289,30 @@ class ArrivalTicket extends Model
     public function ticketVerifiedBy()
     {
         return $this->belongsTo(User::class, 'ticket_verified_by');
+    }
+
+    public function auditLogs()
+    {
+        return $this->hasMany(AuditLog::class, 'model_id')
+            ->whereIn('model_type', [self::class, 'ArrivalTicket', 'arrival_tickets']);
+    }
+
+    public function latestAuditLog()
+    {
+        return $this->hasOne(AuditLog::class, 'model_id')
+            ->whereIn('model_type', [self::class, 'ArrivalTicket', 'arrival_tickets'])
+            ->latestOfMany();
+    }
+
+    public function purchaseSamplingRequests()
+    {
+        return $this->hasMany(PurchaseSamplingRequest::class, 'arrival_purchase_order_id', 'arrival_purchase_order_id');
+    }
+
+    public function latestPurchaseSamplingRequest()
+    {
+        return $this->hasOne(PurchaseSamplingRequest::class, 'arrival_purchase_order_id', 'arrival_purchase_order_id')
+            ->latestOfMany();
     }
 }
 
