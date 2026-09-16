@@ -117,14 +117,14 @@ class StationWiseQCAnalysisReportController extends Controller
                                 $slabValue = (float) $res->checklist_value;
                                 if ($slabValue > 0) {
                                     $values[] = $slabValue;
-                                    $overallSlabValues[$slab->id][] = $slabValue * $stationTickets->arrived_net_weight;
+                                    $overallSlabValues[$slab->id][] = $slabValue * $t->arrived_net_weight;
                                 }
                             }
                         }
                     }
                 }
 
-                $avg = count($values) > 0 ? (array_sum($values) / $kgReceived) : 0;
+                $avg = count($values) > 0 ? (array_sum($values) / ($kgReceived == 0 ? 1 : $kgReceived)) : 0;
                 $slabAverages[$slab->id] = $avg;
             }
 
