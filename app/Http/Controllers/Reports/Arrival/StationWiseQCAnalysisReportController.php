@@ -54,9 +54,9 @@ class StationWiseQCAnalysisReportController extends Controller
             ->when($request->filled('commodity_id'), function ($q) use ($request) {
                 return $q->where(function ($subQuery) use ($request) {
                     $subQuery->whereHas('qcProduct', function ($query) use ($request) {
-                        $query->whereIn('id', (array)$request->commodity_id);
+                        $query->whereIn('id', (array) $request->commodity_id);
                     })->orWhereHas('product', function ($query) use ($request) {
-                        $query->whereIn('id', (array)$request->commodity_id);
+                        $query->whereIn('id', (array) $request->commodity_id);
                     });
                 });
             })
@@ -67,7 +67,7 @@ class StationWiseQCAnalysisReportController extends Controller
                 return $q->where('arrival_tickets.sauda_type_id', $request->sauda_type_id);
             })
             ->when($request->filled('company_location_id'), function ($q) use ($request) {
-                return $q->whereIn('arrival_tickets.location_id', (array)$request->company_location_id);
+                return $q->whereIn('arrival_tickets.location_id', (array) $request->company_location_id);
             })
             ->when($request->filled('supplier_id'), function ($q) use ($request) {
                 return $q->where('arrival_tickets.accounts_of_id', $request->supplier_id);
@@ -117,14 +117,14 @@ class StationWiseQCAnalysisReportController extends Controller
                                 $slabValue = (float) $res->checklist_value;
                                 if ($slabValue > 0) {
                                     $values[] = $slabValue;
-                                    $overallSlabValues[$slab->id][] = $slabValue;
+                                    $overallSlabValues[$slab->id][] = $slabValue * $stationTickets->arrived_net_weight;
                                 }
                             }
                         }
                     }
                 }
 
-                $avg = count($values) > 0 ? (array_sum($values) / count($values)) : 0;
+                $avg = count($values) > 0 ? (array_sum($values) / $kgReceived) : 0;
                 $slabAverages[$slab->id] = $avg;
             }
 
