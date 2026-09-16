@@ -61,34 +61,43 @@
             </h6>
         </div>
         
-        <div class="col-md-3">
+        <div class="col-md-2">
             <div class="form-group">
                 <label class="font-weight-bold">Total Dispatch Weight</label>
                 <input type="text" class="form-control bg-light font-weight-bold" value="{{ number_format($receivingRequest->items->sum('dispatch_weight'), 2, '.', '') }}" readonly>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
             <div class="form-group">
                 <label class="font-weight-bold">Receiving Weight (Total)</label>
                 <input type="number" class="form-control bg-light" value="{{ $receivingRequest->arrived_weight }}" readonly>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
             <div class="form-group">
                 <label class="font-weight-bold">Weight Difference</label>
-                <input type="text" class="form-control bg-light font-weight-bold text-danger" value="{{ number_format(floatval($receivingRequest->items->sum('dispatch_weight')) - floatval($receivingRequest->arrived_weight), 2) }}" readonly>
+                @php
+                    $diffWeight = floatval($receivingRequest->items->sum('dispatch_weight')) - floatval($receivingRequest->arrived_weight);
+                @endphp
+                <input type="text" class="form-control bg-light font-weight-bold {{ $diffWeight > 0 ? 'text-danger' : 'text-success' }}" value="{{ number_format($diffWeight, 2, '.', '') }}" readonly>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
             <div class="form-group">
                 <label class="font-weight-bold">Exempted Weight</label>
-                <input type="number" class="form-control bg-light" value="{{ $receivingRequest->exempted_weight }}" readonly>
+                <input type="number" class="form-control bg-light font-weight-bold" value="{{ $receivingRequest->exempted_weight }}" readonly>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
+            <div class="form-group">
+                <label class="font-weight-bold">Penalty Weight</label>
+                <input type="number" class="form-control bg-light font-weight-bold text-danger" value="{{ number_format($receivingRequest->penalty_weight, 2, '.', '') }}" readonly>
+            </div>
+        </div>
+        <div class="col-md-2">
             <div class="form-group">
                 <label class="font-weight-bold">Payment Weight</label>
-                <input type="number" class="form-control bg-light font-weight-bold" value="{{ $receivingRequest->payment_weight }}" readonly>
+                <input type="number" class="form-control bg-light font-weight-bold text-primary" value="{{ number_format(floatval($receivingRequest->arrived_weight), 2, '.', '') }}" readonly>
             </div>
         </div>
     </div>

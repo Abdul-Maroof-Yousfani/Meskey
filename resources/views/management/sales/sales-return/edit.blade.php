@@ -257,14 +257,14 @@
                                 </td>
                                 <td style="min-width: 100px;">
                                     <input readonly type="number" name="discount_percent[]"
-                                        id="discount_percent_{{ $rowIndex }}" onkeyup=""
+                                        id="discount_percent_{{ $rowIndex }}"
                                         class="form-control discount_percent" step="0.01" min="0"
                                         max="100" value="{{ $discountPercent }}">
                                 </td>
                                 <td style="min-width: 120px;">
                                     <input readonly type="number" name="discount_amount[]"
                                         id="discount_amount_{{ $rowIndex }}" class="form-control discount_amount"
-                                        readonly value="{{ $discountAmount }}">
+                                        step="0.01" min="0" value="{{ $discountAmount }}">
                                 </td>
                                 <td style="min-width: 120px;">
                                     <input readonly type="number" name="amount[]" id="amount_{{ $rowIndex }}"
@@ -272,14 +272,14 @@
                                 </td>
                                 <td style="min-width: 100px;">
                                     <input readonly type="number" name="gst_percent[]"
-                                        id="gst_percent_{{ $rowIndex }}" onkeyup=""
+                                        id="gst_percent_{{ $rowIndex }}"
                                         class="form-control gst_percent" step="0.01" min="0"
                                         value="{{ $gstPercent }}">
                                 </td>
                                 <td style="min-width: 120px;">
                                     <input readonly type="number" name="gst_amount[]"
-                                        id="gst_amount_{{ $rowIndex }}" class="form-control gst_amount" readonly
-                                        value="{{ $gstAmount }}">
+                                        id="gst_amount_{{ $rowIndex }}" class="form-control gst_amount"
+                                        step="0.01" min="0" value="{{ $gstAmount }}">
                                 </td>
                                 <td style="min-width: 120px;">
                                     <input readonly type="number" name="net_amount[]"
@@ -449,7 +449,7 @@
     }
 
     function calculateRow(el) {
-          const row = $(el).closest("tr");
+        const row = $(el).closest("tr");
         // Get input elements
         const packingInput = row.find(".packing");
         const noOfBagsInput = row.find(".no_of_bags");
@@ -464,31 +464,45 @@
         const netAmountInput = row.find(".net_amount");
 
         // Get values
-        const packing = parseFloat(packingInput.val()) || 0;
-        const qty = parseFloat(qtyInput.val()) || 0;
-        const rate = parseFloat(rateInput.val()) || 0;
-        const discountPercent = parseFloat(discountPercentInput.val()) || 0;
-        const gstPercent = parseFloat(gstPercentInput.val()) || 0;
+        let packing = parseFloat(packingInput.val()) || 0;
+        let qty = parseFloat(qtyInput.val()) || 0;
+        let rate = parseFloat(rateInput.val()) || 0;
+        let discountPercent = parseFloat(discountPercentInput.val()) || 0;
+        let discountAmount = parseFloat(discountAmountInput.val()) || 0;
+        let gstPercent = parseFloat(gstPercentInput.val()) || 0;
+        let gstAmount = parseFloat(gstAmountInput.val()) || 0;
 
         // Calculate No of Bags = Qty / Packing
-        const noOfBagsResult = packing > 0 ? Math.round(qty / packing) : 0;
-        noOfBagsInput.val(noOfBagsResult);
-      
+        if ($(el).hasClass("qty") || $(el).hasClass("packing")) {
+            const noOfBagsResult = packing > 0 ? Math.round(qty / packing) : 0;
+            noOfBagsInput.val(noOfBagsResult);
+        }
+
         // Calculate Gross Amount = Qty * Rate
         const grossAmount = qty * rate;
         grossAmountInput.val(round(grossAmount));
 
-        // Calculate Discount Amount = (Discount % / 100) * Gross Amount
-        const discountAmount = (discountPercent / 100) * grossAmount;
-        discountAmountInput.val(round(discountAmount));
+        // Calculate Discount
+        if ($(el).hasClass("discount_amount")) {
+            discountPercent = grossAmount > 0 ? (discountAmount / grossAmount) * 100 : 0;
+            discountPercentInput.val(round(discountPercent, 4));
+        } else {
+            discountAmount = (discountPercent / 100) * grossAmount;
+            discountAmountInput.val(round(discountAmount));
+        }
 
         // Calculate Amount = Gross Amount - Discount Amount
         const amount = grossAmount - discountAmount;
         amountInput.val(round(amount));
 
-        // Calculate GST Amount = (GST % / 100) * Amount
-        const gstAmount = (gstPercent / 100) * amount;
-        gstAmountInput.val(round(gstAmount));
+        // Calculate GST
+        if ($(el).hasClass("gst_amount")) {
+            gstPercent = amount > 0 ? (gstAmount / amount) * 100 : 0;
+            gstPercentInput.val(round(gstPercent, 4));
+        } else {
+            gstAmount = (gstPercent / 100) * amount;
+            gstAmountInput.val(round(gstAmount));
+        }
 
         // Calculate Net Amount = Amount + GST Amount
         const netAmount = amount + gstAmount;
@@ -638,19 +652,19 @@
                 <input type="number" name="gross_amount[]" id="gross_amount_${index}" class="form-control gross_amount" readonly>
             </td>
             <td style="min-width: 100px;">
-                <input type="number" name="discount_percent[]" id="discount_percent_${index}" onkeyup="" class="form-control discount_percent" step="0.01" min="0" max="100" value="0">
+                <input readonly type="number" name="discount_percent[]" id="discount_percent_${index}" class="form-control discount_percent" step="0.01" min="0" max="100" value="0">
             </td>
             <td style="min-width: 120px;">
-                <input type="number" name="discount_amount[]" id="discount_amount_${index}" class="form-control discount_amount" readonly>
+                <input readonly type="number" name="discount_amount[]" id="discount_amount_${index}" class="form-control discount_amount" readonly value="0">
             </td>
             <td style="min-width: 120px;">
-                <input type="number" name="amount[]" id="amount_${index}" class="form-control amount" readonly>
+                <input readonly type="number" name="amount[]" id="amount_${index}" class="form-control amount" readonly value="0">
             </td>
             <td style="min-width: 100px;">
-                <input type="number" name="gst_percent[]" id="gst_percent_${index}" onkeyup="" class="form-control gst_percent" step="0.01" min="0" value="0">
+                <input readonly type="number" name="gst_percent[]" id="gst_percent_${index}" class="form-control gst_percent" step="0.01" min="0" max="100" value="0">
             </td>
             <td style="min-width: 120px;">
-                <input type="number" name="gst_amount[]" id="gst_amount_${index}" class="form-control gst_amount" readonly>
+                <input readonly type="number" name="gst_amount[]" id="gst_amount_${index}" class="form-control gst_amount" readonly value="0">
             </td>
             <td style="min-width: 120px;">
                 <input type="number" name="net_amount[]" id="net_amount_${index}" class="form-control net_amount" readonly>

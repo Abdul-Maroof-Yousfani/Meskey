@@ -55,7 +55,7 @@
                                 </td>
 
                                 <td class="text-right align-middle">
-                                    {{ isset($itemRow["item_data"]) ? number_format($itemRow["item_data"]->amount, 2) : '' }}
+                                    {{ isset($itemRow["item_data"]) ? number_format(($itemRow["item_data"]->net_amount > 0 ? $itemRow["item_data"]->net_amount : $itemRow["item_data"]->amount), 2) : '' }}
                                 </td>
 
                                 {{-- Date & Status - Show only on first row --}}

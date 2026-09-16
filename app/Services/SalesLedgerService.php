@@ -13,6 +13,7 @@ use App\Models\Master\Account\TransactionVoucherType;
 use App\Models\Sales\DeliveryChallan;
 use App\Models\Sales\DeliveryChallanData;
 use App\Models\Sales\ReceivingRequest;
+use App\Models\Sales\LogisticsBill;
 use App\Models\Sales\ReceivingRequestItem;
 use App\Models\Sales\SalesInvoice;
 use App\Models\Sales\SalesInvoiceData;
@@ -526,7 +527,7 @@ class SalesLedgerService
     /**
      * Handle Receiving Request / Logistics Bill Approval: Ledger Transactions
      */
-    public function handleReceivingRequestApproval(ReceivingRequest $receivingRequest): void
+    public function handleReceivingRequestApproval(ReceivingRequest|LogisticsBill $receivingRequest): void
     {
         $dc = $receivingRequest->deliveryChallan;
         $dc_no = $receivingRequest->dc_no;
@@ -738,8 +739,8 @@ class SalesLedgerService
                     ->where('purpose', 'receiving-request-short-weight-adjustment')
                     ->delete();
 
-                $shortWeight = $dispatchedWeight - $arrivedWeight;
-                $exemptedWeight = $receivingRequest->exempted_weight ?? 0;
+                $shortWeight = max(0, $dispatchedWeight - $arrivedWeight);
+                $exemptedWeight = min(max(0, floatval($receivingRequest->exempted_weight ?? 0)), $shortWeight);
                 $penaltyWeight = max(0, $shortWeight - $exemptedWeight);
                 
                 $totalShortAmount = $shortWeight * $averageRate;
@@ -1108,46 +1109,120 @@ class SalesLedgerService
                         'payment_against' => $additionalData['payment_against'] ?? null,
                         'against_reference_no' => $additionalData['against_reference_no'] ?? null,
                         'remarks' => $additionalData['remarks'] ?? null,
+                        'voucher_date' => $additionalData['voucher_date'] ?? $tx->voucher_date,
                     ]);
                 } else {
                     createTransaction($amount, $accountId, $voucherTypeId, $voucherNo, $type, $isOpening, $additionalData);
                 }
             };
 
-            // 2.1 Revenue Reversal: Debit Sales Return (4-3), Credit Customer
-            $totalReturnAmount = 0;
+            // 2.1 Revenue, Discount & Tax Reversals
+            $totalGrossReturn = 0;
+            $totalDiscountReturn = 0;
+            $totalGstReturn = 0;
+            $totalNetReturn = 0;
+
             foreach ($salesReturn->sale_return_data as $data) {
-                $net = (float)($data->net_amount ?? 0);
-                if ($net <= 0) {
-                    $net = (float)($data->amount ?? 0);
+                $gross = (float)($data->gross_amount > 0 ? $data->gross_amount : ((float)$data->quantity * (float)$data->rate));
+                
+                $disc = (float)($data->discount_amount ?? 0);
+                if ($disc <= 0 && (float)($data->discount_percent ?? 0) > 0) {
+                    $disc = round($gross * ((float)$data->discount_percent / 100), 2);
                 }
-                if ($net <= 0) {
-                    $net = (float)($data->quantity * $data->rate);
+
+                $amt = (float)($data->amount > 0 ? $data->amount : ($gross - $disc));
+
+                $gst = (float)($data->gst_amount ?? 0);
+                if ($gst <= 0 && (float)($data->gst_percentage ?? 0) > 0) {
+                    $gst = round($amt * ((float)$data->gst_percentage / 100), 2);
                 }
-                $totalReturnAmount += $net;
+
+                $net = (float)($data->net_amount > 0 ? $data->net_amount : ($amt + $gst));
+
+                $totalGrossReturn += $gross;
+                $totalDiscountReturn += $disc;
+                $totalGstReturn += $gst;
+                $totalNetReturn += $net;
+            }
+
+            $totalGrossReturn = round($totalGrossReturn, 2);
+            $totalDiscountReturn = round($totalDiscountReturn, 2);
+            $totalGstReturn = round($totalGstReturn, 2);
+            $totalNetReturn = round($totalNetReturn, 2);
+
+            if ($totalNetReturn <= 0) {
+                $totalNetReturn = round($totalGrossReturn - $totalDiscountReturn + $totalGstReturn, 2);
             }
 
             $customerAccountId = $salesReturn->customer?->account_id ?? Customer::find($salesReturn->customer_id)?->account_id;
             $salesReturnAccount = Account::where('hierarchy_path', '4-3')->first();
+            $discountAccount = Account::where('hierarchy_path', '6-1')->first();
+            $taxAccount = Account::where('hierarchy_path', '2-7')->first();
 
-            if ($totalReturnAmount > 0 && $customerAccountId && $salesReturnAccount) {
-                // Entry 1: Sales Return Account Debit (DR)
-                $handleTransaction($totalReturnAmount, $salesReturnAccount->id, $voucherTypeId, $sr_no, 'debit', 'no', [
+            $voucherDate = $salesReturn->date ?? now()->format('Y-m-d');
+            $companyId = $salesReturn->company_id ?? auth()->user()?->current_company_id ?? 1;
+            $createdBy = $salesReturn->created_by ?? auth()->user()?->id ?? 1;
+
+            if ($totalGrossReturn > 0 && $customerAccountId && $salesReturnAccount) {
+                // Entry 1: Sales Return Account Debit (DR) - Reverses Gross Sale Revenue
+                $handleTransaction($totalGrossReturn, $salesReturnAccount->id, $voucherTypeId, $sr_no, 'debit', 'no', [
+                    'company_id' => $companyId,
+                    'voucher_date' => $voucherDate,
+                    'created_by' => $createdBy,
                     'counter_account_id' => $customerAccountId,
                     'purpose' => "sales-return",
                     'payment_against' => "sale-return",
                     'against_reference_no' => $sr_no,
-                    'remarks' => "Sales Return booked against SR: {$sr_no}.",
+                    'remarks' => "Sales Return gross revenue reversal booked against SR: {$sr_no}.",
                 ]);
 
-                // Entry 2: Customer Account Credit (CR)
-                $handleTransaction($totalReturnAmount, $customerAccountId, $voucherTypeId, $sr_no, 'credit', 'no', [
+                // Entry 2: Customer Account Credit (CR) - Reverses Net Customer Receivable
+                $handleTransaction($totalNetReturn, $customerAccountId, $voucherTypeId, $sr_no, 'credit', 'no', [
+                    'company_id' => $companyId,
+                    'voucher_date' => $voucherDate,
+                    'created_by' => $createdBy,
                     'counter_account_id' => $salesReturnAccount->id,
                     'purpose' => "sales-return",
                     'payment_against' => "sale-return",
                     'against_reference_no' => $sr_no,
                     'remarks' => "Sales Return credited to Customer against SR: {$sr_no}.",
                 ]);
+            }
+
+            // Entry 3: Discount Account Credit (CR) - Reverses Discount Expense allowed on returned goods
+            if ($totalDiscountReturn > 0 && $discountAccount && $customerAccountId) {
+                $handleTransaction($totalDiscountReturn, $discountAccount->id, $voucherTypeId, $sr_no, 'credit', 'no', [
+                    'company_id' => $companyId,
+                    'voucher_date' => $voucherDate,
+                    'created_by' => $createdBy,
+                    'counter_account_id' => $customerAccountId,
+                    'purpose' => "sales-return-discount",
+                    'payment_against' => "sale-return",
+                    'against_reference_no' => $sr_no,
+                    'remarks' => "Sales Return discount reversed against SR: {$sr_no}.",
+                ]);
+            } else {
+                Transaction::where('voucher_no', $sr_no)
+                    ->where('purpose', 'sales-return-discount')
+                    ->delete();
+            }
+
+            // Entry 4: Tax Account Debit (DR) - Reverses Output Tax / GST liability on returned goods
+            if ($totalGstReturn > 0 && $taxAccount && $customerAccountId) {
+                $handleTransaction($totalGstReturn, $taxAccount->id, $voucherTypeId, $sr_no, 'debit', 'no', [
+                    'company_id' => $companyId,
+                    'voucher_date' => $voucherDate,
+                    'created_by' => $createdBy,
+                    'counter_account_id' => $customerAccountId,
+                    'purpose' => "sales-return-tax",
+                    'payment_against' => "sale-return",
+                    'against_reference_no' => $sr_no,
+                    'remarks' => "Sales Return Tax (GST) reversed against SR: {$sr_no}.",
+                ]);
+            } else {
+                Transaction::where('voucher_no', $sr_no)
+                    ->where('purpose', 'sales-return-tax')
+                    ->delete();
             }
 
             // 2.2 Inventory & COGS Reversal: Debit Inventory Asset (1-2), Credit COGS (6-2)

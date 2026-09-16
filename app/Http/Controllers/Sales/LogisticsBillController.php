@@ -173,8 +173,16 @@ class LogisticsBillController extends Controller
                     }
                 }
 
+                $dispatchWeight = floatval($logisticsBill->items->sum('dispatch_weight'));
+                $arrivedWeight = floatval($logisticsBill->arrived_weight ?? 0);
+                $shortWeight = max(0, $dispatchWeight - $arrivedWeight);
                 $exemptedWeight = floatval($request->exempted_weight ?? 0);
-                $paymentWeight = floatval($logisticsBill->arrived_weight ?? 0) - $exemptedWeight;
+                if ($shortWeight > 0) {
+                    $exemptedWeight = min($exemptedWeight, $shortWeight);
+                } else {
+                    $exemptedWeight = 0;
+                }
+                $paymentWeight = $arrivedWeight;
 
                 $salesReturnId = $request->filled('sales_return_id') ? $request->sales_return_id : null;
                 $salesReturnQty = floatval($request->sales_return_qty ?? 0);

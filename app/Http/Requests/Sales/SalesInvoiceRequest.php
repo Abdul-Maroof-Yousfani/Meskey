@@ -33,6 +33,8 @@ class SalesInvoiceRequest extends FormRequest
             "remarks" => ["nullable", "string"],
             "dc_no" => ["required", "array"],
             "dc_no.*" => ["exists:delivery_challans,id"],
+            "discount_percent.*" => ["nullable", "numeric", "min:0", "max:100"],
+            "gst_percent.*" => ["nullable", "numeric", "min:0", "max:100"],
         ];
     }
 
@@ -49,6 +51,10 @@ class SalesInvoiceRequest extends FormRequest
             "invoice_date.required" => "Invoice Date is required",
             "sauda_type.required" => "Sauda Type is required",
             "sauda_type.in" => "Sauda Type must be either pohanch or x-mill",
+            "discount_percent.*.max" => "Discount % cannot exceed 100%",
+            "discount_percent.*.min" => "Discount % cannot be negative",
+            "gst_percent.*.max" => "GST % cannot exceed 100%",
+            "gst_percent.*.min" => "GST % cannot be negative",
         ];
     }
 }

@@ -7,14 +7,33 @@
                 $packing = $dcData?->bag_size ?? 50;
                 $noOfBags = $data->no_of_bags > 0 ? $data->no_of_bags : ($dcData?->no_of_bags ?? 0);
                 $qty = $data->receiving_weight > 0 ? $data->receiving_weight : ($data->dispatch_weight > 0 ? $data->dispatch_weight : ($dcData?->qty ?? 0));
-                $rate = $dcData?->rate ?? 0;
-                $grossAmount = $qty * $rate;
-                $discountPercent = 0;
-                $discountAmount = 0;
-                $amount = $grossAmount;
-                $gstPercent = 0;
-                $gstAmount = 0;
-                $netAmount = $amount;
+                $dcDataId = $dcData?->id ?? $data->delivery_challan_data_id;
+
+                // Lookup matching Sales Invoice Data for this delivery item
+                $siData = \App\Models\Sales\SalesInvoiceData::where('dc_data_id', $dcDataId)
+                    ->whereHas('sales_invoice', function($q) {
+                        $q->where('am_approval_status', '!=', 'rejected');
+                    })
+                    ->latest('id')
+                    ->first();
+
+                $rate = (float)($siData?->rate > 0 ? $siData->rate : ($dcData?->rate ?? 0));
+                $discountPercent = (float)($siData?->discount_percent ?? 0);
+                $gstPercent = (float)($siData?->gst_percent ?? 0);
+
+                if ($discountPercent <= 0 && (float)($siData?->discount_amount ?? 0) > 0 && (float)($siData?->gross_amount ?? 0) > 0) {
+                    $discountPercent = round(((float)$siData->discount_amount / (float)$siData->gross_amount) * 100, 4);
+                }
+                if ($gstPercent <= 0 && (float)($siData?->gst_amount ?? 0) > 0 && (float)($siData?->amount ?? 0) > 0) {
+                    $gstPercent = round(((float)$siData->gst_amount / (float)$siData->amount) * 100, 4);
+                }
+
+                $grossAmount = round($qty * $rate, 2);
+                $discountAmount = round(($discountPercent / 100) * $grossAmount, 2);
+                $amount = round($grossAmount - $discountAmount, 2);
+                $gstAmount = round(($gstPercent / 100) * $amount, 2);
+                $netAmount = round($amount + $gstAmount, 2);
+
                 $lineDesc = $dcData?->description ?? '';
                 $truckNo = $dcData?->truck_no ?? $rr->truck_number ?? '';
                 $dataId = $data->delivery_challan_data_id ?? $data->id;
@@ -57,16 +76,16 @@
                     <input readonly type="number" name="discount_percent[]" id="discount_percent_{{ $rowIndex }}" class="form-control discount_percent" step="0.01" min="0" max="100" value="{{ $discountPercent }}">
                 </td>
                 <td style="min-width: 120px;">
-                    <input readonly type="number" name="discount_amount[]" id="discount_amount_{{ $rowIndex }}" class="form-control discount_amount" readonly value="{{ $discountAmount }}">
+                    <input readonly type="number" name="discount_amount[]" id="discount_amount_{{ $rowIndex }}" class="form-control discount_amount" step="0.01" min="0" value="{{ $discountAmount }}">
                 </td>
                 <td style="min-width: 120px;">
                     <input readonly type="number" name="amount[]" id="amount_{{ $rowIndex }}" class="form-control amount" readonly value="{{ $amount }}">
                 </td>
                 <td style="min-width: 100px;">
-                    <input readonly type="number" name="gst_percent[]" id="gst_percent_{{ $rowIndex }}" class="form-control gst_percent" step="0.01" min="0" value="{{ $gstPercent }}">
+                    <input readonly type="number" name="gst_percent[]" id="gst_percent_{{ $rowIndex }}" class="form-control gst_percent" step="0.01" min="0" max="100" value="{{ $gstPercent }}">
                 </td>
                 <td style="min-width: 120px;">
-                    <input readonly type="number" name="gst_amount[]" id="gst_amount_{{ $rowIndex }}" class="form-control gst_amount" readonly value="{{ $gstAmount }}">
+                    <input readonly type="number" name="gst_amount[]" id="gst_amount_{{ $rowIndex }}" class="form-control gst_amount" step="0.01" min="0" value="{{ $gstAmount }}">
                 </td>
                 <td style="min-width: 120px;">
                     <input readonly type="number" name="net_amount[]" id="net_amount_{{ $rowIndex }}" class="form-control net_amount" readonly value="{{ $netAmount }}">
@@ -142,16 +161,16 @@
                     <input readonly type="number" name="discount_percent[]" id="discount_percent_{{ $rowIndex }}" class="form-control discount_percent" step="0.01" min="0" max="100" value="{{ $discountPercent }}">
                 </td>
                 <td style="min-width: 120px;">
-                    <input readonly type="number" name="discount_amount[]" id="discount_amount_{{ $rowIndex }}" class="form-control discount_amount" readonly value="{{ $discountAmount }}">
+                    <input readonly type="number" name="discount_amount[]" id="discount_amount_{{ $rowIndex }}" class="form-control discount_amount" step="0.01" min="0" value="{{ $discountAmount }}">
                 </td>
                 <td style="min-width: 120px;">
                     <input readonly type="number" name="amount[]" id="amount_{{ $rowIndex }}" class="form-control amount" readonly value="{{ $amount }}">
                 </td>
                 <td style="min-width: 100px;">
-                    <input readonly type="number" name="gst_percent[]" id="gst_percent_{{ $rowIndex }}" class="form-control gst_percent" step="0.01" min="0" value="{{ $gstPercent }}">
+                    <input readonly type="number" name="gst_percent[]" id="gst_percent_{{ $rowIndex }}" class="form-control gst_percent" step="0.01" min="0" max="100" value="{{ $gstPercent }}">
                 </td>
                 <td style="min-width: 120px;">
-                    <input readonly type="number" name="gst_amount[]" id="gst_amount_{{ $rowIndex }}" class="form-control gst_amount" readonly value="{{ $gstAmount }}">
+                    <input readonly type="number" name="gst_amount[]" id="gst_amount_{{ $rowIndex }}" class="form-control gst_amount" step="0.01" min="0" value="{{ $gstAmount }}">
                 </td>
                 <td style="min-width: 120px;">
                     <input readonly type="number" name="net_amount[]" id="net_amount_{{ $rowIndex }}" class="form-control net_amount" readonly value="{{ $netAmount }}">

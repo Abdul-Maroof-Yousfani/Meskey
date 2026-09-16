@@ -83,4 +83,13 @@ class LogisticsBill extends Model
     {
         return $this->belongsTo(User::class, 'created_by_id');
     }
+
+    public function getPenaltyWeightAttribute(): float
+    {
+        $dispatchWeight = floatval($this->items->sum('dispatch_weight'));
+        $arrivedWeight = floatval($this->arrived_weight ?? 0);
+        $shortWeight = max(0, $dispatchWeight - $arrivedWeight);
+        $exemptedWeight = floatval($this->exempted_weight ?? 0);
+        return max(0, $shortWeight - $exemptedWeight);
+    }
 }
