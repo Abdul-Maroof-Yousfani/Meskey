@@ -116,8 +116,8 @@ class StationWiseQCAnalysisReportController extends Controller
                             if ($res->product_slab_type_id == $slab->id && $res->checklist_value !== null && $res->checklist_value !== '') {
                                 $slabValue = (float) $res->checklist_value;
                                 if ($slabValue > 0) {
-                                    $values[] = $slabValue;
-                                    $overallSlabValues[$slab->id][] = $slabValue * $t->arrived_net_weight;
+                                    $values[] = $slabValue * $t->arrived_net_weight;
+                                    $overallSlabValues[$slab->id][] = $slabValue;
                                 }
                             }
                         }
