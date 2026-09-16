@@ -118,7 +118,7 @@ class StationWiseQCAnalysisReportController extends Controller
                                 $slabValue = (float) $res->checklist_value;
                                 if ($slabValue > 0) {
                                     $values[] = $slabValue * $t->arrived_net_weight;
-                                    $overallSlabValues[$slab->id][] = $slabValue;
+                                    $overallSlabValues[$slab->id][] = $slabValue * $t->arrived_net_weight;
                                 }
                             }
                         }
@@ -137,11 +137,15 @@ class StationWiseQCAnalysisReportController extends Controller
             ];
         }
 
-        // Main Totals: Simple average across all tickets
+        $totalKgReceived = $tickets->sum(function ($t) {
+            return (float) ($t->arrived_net_weight ?: 0);
+        });
+
+        // Main Totals: Weighted average across all tickets
         $overallSlabAverages = [];
         foreach ($product_slab_types as $slab) {
             $overallSlabAverages[$slab->id] = count($overallSlabValues[$slab->id]) > 0
-                ? (array_sum($overallSlabValues[$slab->id]) / count($overallSlabValues[$slab->id]))
+                ? (array_sum($overallSlabValues[$slab->id]) / ($totalKgReceived == 0 ? 1 : $totalKgReceived))
                 : 0;
         }
 

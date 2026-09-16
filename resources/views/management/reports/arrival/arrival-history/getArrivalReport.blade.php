@@ -285,10 +285,10 @@
                     $slabSymbol = $slab->qc_symbol ?? '';
 
                     if (is_numeric($initialValue) && (float)$initialValue > 0) {
-                        $slabInitialTotals[$slab->id][] = (float)$initialValue;
+                        $slabInitialTotals[$slab->id][] = (float)$initialValue * $netWeight;
                     }
                     if (is_numeric($innerValue) && (float)$innerValue > 0) {
-                        $slabInnerTotals[$slab->id][] = (float)$innerValue;
+                        $slabInnerTotals[$slab->id][] = (float)$innerValue * $netWeight;
                     }
                 @endphp
 
@@ -384,12 +384,12 @@
             <td></td>
             @foreach ($product_slab_types as $slab)
                 @php
-                    $initAvg = count($slabInitialTotals[$slab->id]) > 0 ? (array_sum($slabInitialTotals[$slab->id]) / count($slabInitialTotals[$slab->id])) : 0;
-                    $innerAvg = count($slabInnerTotals[$slab->id]) > 0 ? (array_sum($slabInnerTotals[$slab->id]) / count($slabInnerTotals[$slab->id])) : 0;
+                    $initAvg = count($slabInitialTotals[$slab->id]) > 0 ? (array_sum($slabInitialTotals[$slab->id]) / ($totalNetWeight == 0 ? 1 : $totalNetWeight)) : 0;
+                    $innerAvg = count($slabInnerTotals[$slab->id]) > 0 ? (array_sum($slabInnerTotals[$slab->id]) / ($totalNetWeight == 0 ? 1 : $totalNetWeight)) : 0;
                     $slabSymbol = $slab->qc_symbol ?? '';
                 @endphp
-                <td><strong>{{ $initAvg > 0 ? (floor($initAvg) == $initAvg ? (int)$initAvg : number_format($initAvg, 1)) . $slabSymbol : 0 }}</strong></td>
-                <td><strong>{{ $innerAvg > 0 ? (floor($innerAvg) == $innerAvg ? (int)$innerAvg : number_format($innerAvg, 1)) . $slabSymbol : 0 }}</strong></td>
+                <td><strong>{{ $initAvg > 0 ? (floor($initAvg) == $initAvg ? (int)$initAvg : number_format($initAvg, 3)) . $slabSymbol : 0 }}</strong></td>
+                <td><strong>{{ $innerAvg > 0 ? (floor($innerAvg) == $innerAvg ? (int)$innerAvg : number_format($innerAvg, 3)) . $slabSymbol : 0 }}</strong></td>
             @endforeach
             @foreach ($arrival_compulsory_qc_params as $compulsory_slab_type)
                 <td></td>
