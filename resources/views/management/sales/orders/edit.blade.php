@@ -32,15 +32,19 @@
     {{ method_field('PUT') }}
     <input type="hidden" id="listRefresh" value="{{ route('sales.get.sales-order.list') }}" />
 
-    @if(in_array(strtolower($sale_order->am_approval_status ?? ''), ['approved', 'rejected']))
+    @php
+        $isApprovedOrAmendment = in_array(strtolower($sale_order->am_approval_status ?? ''), ['approved', 'rejected']) || $sale_order->hasPendingDeliveryDateAmendment();
+    @endphp
+
+    @if($isApprovedOrAmendment)
         <div class="alert alert-warning px-3 py-2 mt-2">
-            <i class="fa fa-exclamation-triangle"></i> <strong>Note:</strong> Since this Sale Order is <strong>{{ ucfirst($sale_order->am_approval_status) }}</strong>, you can only update the <strong>Delivery Date</strong> or <strong>Contract Status</strong>. Changes to other fields will be ignored.
+            <i class="fa fa-exclamation-triangle"></i> <strong>Note:</strong> Since this Sale Order is <strong>{{ ucfirst($sale_order->am_approval_status) }}</strong>, you can only update the <strong>Delivery Date</strong> or <strong>Contract Status</strong>. Other fields are locked and cannot be modified.
         </div>
     @endif
     @if($sale_order->hasPendingDeliveryDateAmendment())
         @php $pendingAmendment = $sale_order->getPendingDeliveryDateAmendment(); @endphp
         <div class="alert alert-info px-3 py-2 mt-2">
-            <i class="fa fa-clock-o"></i> <strong>Delivery Date Amendment Pending Approval:</strong> Proposed Delivery Date: <strong>{{ $pendingAmendment['delivery_date'] ?? 'N/A' }}</strong> (Current: <strong>{{ $sale_order->delivery_date }}</strong>).
+            <i class="fa fa-clock-o"></i> <strong>Delivery Date Amendment Pending Approval:</strong> Proposed Delivery Date: <strong>{{ $pendingAmendment['delivery_date'] ?? 'N/A' }}</strong> (Original Date: <strong>{{ $pendingAmendment['old_delivery_date'] ?? $sale_order->delivery_date }}</strong>).
         </div>
     @endif
     @if($sale_order->isClosed())
@@ -71,7 +75,7 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Delivery Date:</label>
-                        <input type="date" name="delivery_date" value="{{ $sale_order->delivery_date }}" 
+                        <input type="date" name="delivery_date" value="{{ $sale_order->delivery_date ? \Carbon\Carbon::parse($sale_order->delivery_date)->format('Y-m-d') : '' }}" 
                             id="delivery_date" class="form-control">
                     </div>
                 </div>
@@ -1474,5 +1478,18 @@
                 }
             }
         });
+
+        @if($isApprovedOrAmendment)
+            // Lock all form fields except delivery_date and contract_status
+            $('#ajaxSubmit input, #ajaxSubmit select, #ajaxSubmit textarea').not('#delivery_date, #contract_status, input[name="_token"], input[name="_method"], #listRefresh').each(function() {
+                if ($(this).is('select')) {
+                    $(this).prop('disabled', true);
+                } else {
+                    $(this).prop('readonly', true);
+                }
+            });
+            $('.removeRowBtn, #addRowBtn, button[onclick*="addRow"]').prop('disabled', true).css({'pointer-events': 'none', 'opacity': '0.5'});
+            $('#ajaxSubmit select').not('#contract_status').prop('disabled', true);
+        @endif
     });
 </script>

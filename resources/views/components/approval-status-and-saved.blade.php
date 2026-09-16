@@ -3,14 +3,19 @@
         $user = auth()->user();
         $userAlreadyApproved = false;
         $userAlreadyRejected = false;
-        $userActions = $model->approvalLogs()->where('user_id', $user->id)->where('module_id', $module->id)->get();
+        $currentCycle = $model->getCurrentApprovalCycle();
+        $userActions = $model->approvalLogs()
+            ->where('user_id', $user->id)
+            ->where('module_id', $module->id)
+            ->where('approval_cycle', $currentCycle)
+            ->get();
         // dd(class_basename($module->id));
         $userAlreadyApproved = $userActions->where('action', 'approved')->where('status', 'active')->isNotEmpty();
         $userAlreadyRejected = $userActions->where('action', 'rejected')->where('status', 'active')->isNotEmpty();
         $userAlreadyActed = $userAlreadyApproved;
         $changesRequired = $model->am_change_made == 0;
         $currentApprovals = $model->getCurrentApprovals();
-        $approvalCycles = $model->approvalRows()->orderBy('approval_cycle', 'desc')->get()->groupBy('approval_cycle');
+        $approvalCycles = $model->approvalRows()->where('module_id', $module->id)->orderBy('approval_cycle', 'desc')->get()->groupBy('approval_cycle');
 
     @endphp
 

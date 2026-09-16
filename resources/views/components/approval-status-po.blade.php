@@ -7,7 +7,12 @@
         $user = auth()->user();
         $userAlreadyApproved = false;
         $userAlreadyRejected = false;
-        $userActions = $model->approvalLogs()->where('user_id', $user->id)->where('module_id', $module->id)->get();
+        $currentCycle = $model->getCurrentApprovalCycle();
+        $userActions = $model->approvalLogs()
+            ->where('user_id', $user->id)
+            ->where('module_id', $module->id)
+            ->where('approval_cycle', $currentCycle)
+            ->get();
         $userAlreadyApproved = $userActions->whereIn('action', ['approved', 'partial_approved'])->where('status', 'active')->isNotEmpty();
         $userAlreadyRejected = $userActions->where('action', 'rejected')->where('status', 'active')->isNotEmpty();
         
@@ -19,7 +24,7 @@
         $userAlreadyActed = $userAlreadyApproved && !$hasPendingItems;
         $changesRequired = $model->am_change_made == 0 && !$hasPendingItems;
         $currentApprovals = $model->getCurrentApprovals();
-        $approvalCycles = $model->approvalRows()->orderBy('approval_cycle', 'desc')->get()->groupBy('approval_cycle');
+        $approvalCycles = $model->approvalRows()->where('module_id', $module->id)->orderBy('approval_cycle', 'desc')->get()->groupBy('approval_cycle');
 
     @endphp
 

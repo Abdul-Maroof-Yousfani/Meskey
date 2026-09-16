@@ -83,6 +83,20 @@ class DeliveryChallanController extends Controller
                 'message' => 'The Sale Order or Delivery Order for this Delivery Challan has been closed. Operations are locked.'
             ], 422);
         }
+
+        if (is_array($request->ticket_id)) {
+            foreach ($request->ticket_id as $tId) {
+                if ($tId) {
+                    $ticketItem = LoadingProgramItem::find($tId);
+                    if ($ticketItem && $ticketItem->hasClosedSaleOrder()) {
+                        return response()->json([
+                            'error' => 'The Sale Order linked to ticket ' . ($ticketItem->transaction_number ?? $tId) . ' has been closed. Operations are locked.',
+                            'message' => 'The Sale Order linked to ticket ' . ($ticketItem->transaction_number ?? $tId) . ' has been closed. Operations are locked.'
+                        ], 422);
+                    }
+                }
+            }
+        }
         // if(strtotime($delivery_order->dispatch_date) <= strtotime($request->date)) {
         //     return response()->json("Selected Delivery order is expired. Please select a different Delivery order", 422);
         // }
@@ -98,22 +112,24 @@ class DeliveryChallanController extends Controller
                 $total_qty = array_sum($request->qty);
             }
 
-            // Calculate total bags
-            $total_bags = 0;
-            if (is_array($request->no_of_bags)) {
-                $total_bags = array_sum($request->no_of_bags);
-            } elseif (is_numeric($request->no_of_bags)) {
-                $total_bags = (float)$request->no_of_bags;
+            // Calculate total bags directly from Loading Slip
+            $loading_slip_bags = 0;
+            if (is_array($request->ticket_id)) {
+                $unique_ticket_ids = array_unique(array_filter($request->ticket_id));
+                foreach ($unique_ticket_ids as $tId) {
+                    $ls = \App\Models\Sales\LoadingSlip::where('loading_program_item_id', $tId)->first();
+                    if ($ls && $ls->no_of_bags > 0) {
+                        $loading_slip_bags += (float)$ls->no_of_bags;
+                    }
+                }
             }
 
-            if ($total_bags <= 0 && is_array($request->ticket_id)) {
-                foreach ($request->ticket_id as $tId) {
-                    if ($tId) {
-                        $ls = \App\Models\Sales\LoadingSlip::where('loading_program_item_id', $tId)->first();
-                        if ($ls && $ls->no_of_bags > 0) {
-                            $total_bags += (float)$ls->no_of_bags;
-                        }
-                    }
+            $total_bags = $loading_slip_bags;
+            if ($total_bags <= 0) {
+                if (is_array($request->no_of_bags)) {
+                    $total_bags = array_sum($request->no_of_bags);
+                } elseif (is_numeric($request->no_of_bags)) {
+                    $total_bags = (float)$request->no_of_bags;
                 }
             }
 
@@ -169,7 +185,8 @@ class DeliveryChallanController extends Controller
             if ($request->transporter) {
                 $transporter_rate = 0;
                 $transporter_rate_type = '';
-                $delivery_order = DeliveryOrder::find($do_id);
+                $first_do_id = explode(',', (string)$do_id)[0] ?? null;
+                $delivery_order = $first_do_id ? DeliveryOrder::find($first_do_id) : null;
                 
                 if ($delivery_order && $delivery_order->so_id) {
                     $logistics = \App\Models\Sales\Logistics::where('type', 'sale_order')
@@ -183,15 +200,15 @@ class DeliveryChallanController extends Controller
                             
                         if ($logisticsItem) {
                             $transporter_rate = (float)$logisticsItem->rate;
-                            $transporter_rate_type = $logisticsItem?->rate_type ?? '';
+                            $transporter_rate_type = strtolower(trim($logisticsItem?->rate_type ?? ''));
                         }
                     }
                 }
                 if ($transporter_rate > 0) {
-                    if ($transporter_rate_type == 'Per Truck') {
+                    if ($transporter_rate_type == 'per truck') {
                         $transporter_amount = $transporter_rate;
                     }else{
-                        $transporter_amount = $total_qty * $transporter_rate;
+                        $transporter_amount = $total_bags * $transporter_rate;
                     }
                 }
             }
@@ -216,7 +233,7 @@ class DeliveryChallanController extends Controller
                 "weighbridge-amount" => $request->weighbridge_amount,
                 "remarks" => $request->remarks,
                 'labour_rate' => $labour_rate,
-                "created_by_id" => auth()->user()->id,
+                "created_by_id" => auth()->user()?->id ?? auth()->id() ?? 1,
             ]);
 
             
@@ -320,6 +337,20 @@ class DeliveryChallanController extends Controller
                 'message' => 'The Sale Order or Delivery Order for this Delivery Challan has been closed. Operations are locked.'
             ], 422);
         }
+
+        if (is_array($request->ticket_id)) {
+            foreach ($request->ticket_id as $tId) {
+                if ($tId) {
+                    $ticketItem = LoadingProgramItem::find($tId);
+                    if ($ticketItem && $ticketItem->hasClosedSaleOrder()) {
+                        return response()->json([
+                            'error' => 'The Sale Order linked to ticket ' . ($ticketItem->transaction_number ?? $tId) . ' has been closed. Operations are locked.',
+                            'message' => 'The Sale Order linked to ticket ' . ($ticketItem->transaction_number ?? $tId) . ' has been closed. Operations are locked.'
+                        ], 422);
+                    }
+                }
+            }
+        }
         // if(strtotime($delivery_order->dispatch_date) < strtotime($request->date)) {
         //     return response()->json("Selected Delivery order is expired. Please select a different Delivery order", 422);
         // }
@@ -342,24 +373,26 @@ class DeliveryChallanController extends Controller
                 $total_qty = array_sum($request->qty);
             }
 
-            // Calculate total bags
-            $total_bags = 0;
-            if (is_array($request->no_of_bags)) {
-                $total_bags = array_sum($request->no_of_bags);
-            } elseif (is_numeric($request->no_of_bags)) {
-                $total_bags = (float)$request->no_of_bags;
-            } elseif ($delivery_challan && $delivery_challan->delivery_challan_data) {
-                $total_bags = $delivery_challan->delivery_challan_data->sum('no_of_bags');
+            // Calculate total bags directly from Loading Slip
+            $loading_slip_bags = 0;
+            if (is_array($request->ticket_id)) {
+                $unique_ticket_ids = array_unique(array_filter($request->ticket_id));
+                foreach ($unique_ticket_ids as $tId) {
+                    $ls = \App\Models\Sales\LoadingSlip::where('loading_program_item_id', $tId)->first();
+                    if ($ls && $ls->no_of_bags > 0) {
+                        $loading_slip_bags += (float)$ls->no_of_bags;
+                    }
+                }
             }
 
-            if ($total_bags <= 0 && is_array($request->ticket_id)) {
-                foreach ($request->ticket_id as $tId) {
-                    if ($tId) {
-                        $ls = \App\Models\Sales\LoadingSlip::where('loading_program_item_id', $tId)->first();
-                        if ($ls && $ls->no_of_bags > 0) {
-                            $total_bags += (float)$ls->no_of_bags;
-                        }
-                    }
+            $total_bags = $loading_slip_bags;
+            if ($total_bags <= 0) {
+                if (is_array($request->no_of_bags)) {
+                    $total_bags = array_sum($request->no_of_bags);
+                } elseif (is_numeric($request->no_of_bags)) {
+                    $total_bags = (float)$request->no_of_bags;
+                } elseif ($delivery_challan && $delivery_challan->delivery_challan_data) {
+                    $total_bags = $delivery_challan->delivery_challan_data->sum('no_of_bags');
                 }
             }
 
@@ -415,7 +448,8 @@ class DeliveryChallanController extends Controller
             if ($request->transporter) {
                 $transporter_rate = 0;
                 $transporter_rate_type = '';
-                $delivery_order = DeliveryOrder::find($do_id);
+                $first_do_id = explode(',', (string)$do_id)[0] ?? null;
+                $delivery_order = $first_do_id ? DeliveryOrder::find($first_do_id) : null;
                 
                 if ($delivery_order && $delivery_order->so_id) {
                     $logistics = \App\Models\Sales\Logistics::where('type', 'sale_order')
@@ -429,16 +463,16 @@ class DeliveryChallanController extends Controller
                             
                         if ($logisticsItem) {
                             $transporter_rate = (float)$logisticsItem->rate;
-                            $transporter_rate_type = $logisticsItem?->rate_type ?? '';
+                            $transporter_rate_type = strtolower(trim($logisticsItem?->rate_type ?? ''));
                         }
                     }
                 }
                 
                 if ($transporter_rate > 0) {
-                    if ($transporter_rate_type == 'Per Truck') {
+                    if ($transporter_rate_type == 'per truck') {
                         $transporter_amount = $transporter_rate;
                     }else{
-                        $transporter_amount = $total_qty * $transporter_rate;
+                        $transporter_amount = $total_bags * $transporter_rate;
                     }
                 }
             }
@@ -547,6 +581,26 @@ class DeliveryChallanController extends Controller
         $arrivalLocations = ArrivalLocation::whereIn('id', explode(",", $delivery_challan->arrival_id))->get();
         $sections = ArrivalSubLocation::whereIn('id', explode(",", $delivery_challan->section_id))->get();
 
+        $initial_transporter_rate = 0;
+        $initial_transporter_rate_type = '';
+        if ($delivery_challan->transporter) {
+            $first_do = $delivery_challan->delivery_order->first();
+            if ($first_do && $first_do->so_id) {
+                $logistics = \App\Models\Sales\Logistics::where('type', 'sale_order')
+                    ->where('sale_order_id', $first_do->so_id)
+                    ->first();
+                if ($logistics) {
+                    $logisticsItem = \App\Models\Sales\LogisticsItem::where('logistics_id', $logistics->id)
+                        ->where('transporter_id', $delivery_challan->transporter)
+                        ->first();
+                    if ($logisticsItem) {
+                        $initial_transporter_rate = (float)$logisticsItem->rate;
+                        $initial_transporter_rate_type = strtolower(trim($logisticsItem?->rate_type ?? ''));
+                    }
+                }
+            }
+        }
+
         return view("management.sales.delivery-challan.edit", [
             "customers" => $customers,
             "delivery_orders" => $delivery_orders,
@@ -558,6 +612,8 @@ class DeliveryChallanController extends Controller
             "arrivalLocationIds" => $arrivalLocationIds,
             "sectionIds" => $sectionIds,
             "transporters" => \App\Models\Master\Transporter::all(),
+            "initial_transporter_rate" => $initial_transporter_rate,
+            "initial_transporter_rate_type" => $initial_transporter_rate_type,
         ]);
     }
 
@@ -849,6 +905,7 @@ class DeliveryChallanController extends Controller
                 'loadingProgram.deliveryOrder',
                 'dispatchQc'
             ])
+            ->whereDoesntHaveClosedSaleOrder()
             ->whereHas("dispatchQc")
             ->whereHas('loadingProgram', function($q) use ($delivery_order_ids) {
                 $q->whereIn('delivery_order_id', $delivery_order_ids);
@@ -905,6 +962,7 @@ class DeliveryChallanController extends Controller
                 'subArrivalLocation',
                 'loadingSlip.secondWeighbridge'
             ])
+            ->whereDoesntHaveClosedSaleOrder()
             ->whereHas("loadingSlip.secondWeighbridge");
 
         if ($delivery_challan_id) {
@@ -952,6 +1010,13 @@ class DeliveryChallanController extends Controller
             'loadingSlip.secondWeighbridge',
             'transporter'
         ])->findOrFail($ticket_id);
+
+        if ($ticket->hasClosedSaleOrder()) {
+            return response()->json([
+                'error' => 'The Sale Order linked to this ticket has been closed. Operations are locked.',
+                'message' => 'The Sale Order linked to this ticket has been closed. Operations are locked.'
+            ], 422);
+        }
 
         $loadingSlip = \App\Models\Sales\LoadingSlip::where("loading_program_item_id", $ticket_id)->first();
 
@@ -1063,6 +1128,24 @@ class DeliveryChallanController extends Controller
             ];
         }
 
+        // Get transporter rate from Logistics
+        $transporter_rate = 0;
+        $transporter_rate_type = '';
+        if ($deliveryOrder && $deliveryOrder->so_id && $ticket->transporter_id) {
+            $logistics = \App\Models\Sales\Logistics::where('type', 'sale_order')
+                ->where('sale_order_id', $deliveryOrder->so_id)
+                ->first();
+            if ($logistics) {
+                $logisticsItem = \App\Models\Sales\LogisticsItem::where('logistics_id', $logistics->id)
+                    ->where('transporter_id', $ticket->transporter_id)
+                    ->first();
+                if ($logisticsItem) {
+                    $transporter_rate = (float)$logisticsItem->rate;
+                    $transporter_rate_type = strtolower(trim($logisticsItem?->rate_type ?? ''));
+                }
+            }
+        }
+
         $data = [
             'success' => true,
             'rate' => $labour_rate ? $labour_rate->rate : "N/A",
@@ -1095,7 +1178,9 @@ class DeliveryChallanController extends Controller
             'is_labour_editable' => (strtolower($deliveryOrder->sauda_type ?? '') == 'x-mill' || strtolower($deliveryOrder->sauda_type ?? '') == 'xmill'),
             'transporter' => [
                 'id' => $ticket->transporter_id,
-                'name' => $ticket->transporter->name ?? 'N/A'
+                'name' => $ticket->transporter->name ?? 'N/A',
+                'rate' => $transporter_rate,
+                'rate_type' => $transporter_rate_type,
             ]
         ];
 

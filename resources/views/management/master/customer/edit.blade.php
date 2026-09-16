@@ -56,6 +56,37 @@
                      class="form-control" />
              </div>
          </div>
+
+         @php
+             $currAcc = $customer->account;
+             $hierarchyBreadcrumb = [];
+             while ($currAcc) {
+                 $hierarchyBreadcrumb[] = $currAcc->name . ' (' . ($currAcc->hierarchy_path ?? $currAcc->unique_no) . ')';
+                 $currAcc = $currAcc->parent;
+             }
+             $hierarchyBreadcrumbStr = !empty($hierarchyBreadcrumb) ? implode(' > ', array_reverse($hierarchyBreadcrumb)) : '';
+         @endphp
+         <div class="col-xs-6 col-sm-6 col-md-6">
+             <div class="form-group">
+                 <label>COA Hierarchy Path:</label>
+                 <input type="text" class="form-control bg-light font-weight-bold text-primary" 
+                     value="{{ $customer->account->hierarchy_path ?? 'N/A' }}" readonly />
+                 @if($customer->account && $customer->account->unique_no)
+                     <small class="text-muted">Account Code: <strong>{{ $customer->account->unique_no }}</strong></small>
+                 @endif
+             </div>
+         </div>
+         <div class="col-xs-6 col-sm-6 col-md-6">
+             <div class="form-group">
+                 <label>Chart of Account Tree:</label>
+                 <input type="text" class="form-control bg-light" 
+                     value="{{ $hierarchyBreadcrumbStr ?: ($customer->account->name ?? 'No Linked Account') }}" readonly 
+                     title="{{ $hierarchyBreadcrumbStr }}" />
+                 @if($customer->account)
+                     <small class="text-muted">Account Name: <strong>{{ $customer->account->name }}</strong></small>
+                 @endif
+             </div>
+         </div>
          <div class="col-xs-12 col-sm-12 col-md-12">
              <div id="card-container" class="mb-4">
                  @if (count($customer->companyBankDetails) > 0)

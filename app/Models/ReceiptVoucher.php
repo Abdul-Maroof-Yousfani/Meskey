@@ -106,9 +106,10 @@ class ReceiptVoucher extends Model
         $purpose = "RV-{$this->id}-{$this->unique_no}";
         $customerAccountId = $this->customer->account_id ?? null;
 
-        // Debit Transactions for Bank Details
+        // Debit Transactions for Bank Details and corresponding Credit to Customer
         foreach ($this->bankDetails as $detail) {
-            if ($detail->account_id) {
+            if ($detail->account_id && $detail->amount > 0) {
+                // Debit the selected Bank / Cash Account
                 createTransaction(
                     $detail->amount,
                     $detail->account_id,
@@ -123,15 +124,30 @@ class ReceiptVoucher extends Model
                         "remarks" => $this->remarks . ($detail->cheque_no ? " (Cheque: {$detail->cheque_no})" : "")
                     ]
                 );
+
+                // Credit the Customer Account against this specific Bank / Cash Account
+                if ($customerAccountId) {
+                    createTransaction(
+                        $detail->amount,
+                        $customerAccountId,
+                        $this->company_id,
+                        $this->unique_no,
+                        "credit",
+                        "no",
+                        [
+                            "purpose" => $purpose,
+                            "payment_against" => $this->unique_no,
+                            "counter_account_id" => $detail->account_id,
+                            "remarks" => $this->remarks . ($detail->cheque_no ? " (Cheque: {$detail->cheque_no})" : "")
+                        ]
+                    );
+                }
             }
         }
 
-        // Generate Credit transaction to Customer
+        // Fallback for legacy vouchers created before bankDetails or without bank details
         $totalAdvanceConsumed = \App\Models\CustomerAdvanceAdjustment::where('voucher_no', $this->unique_no)->sum('amount');
-        $creditAmount = $this->total_amount - $totalAdvanceConsumed;
-
-        // Also if no bank details, we used to create a single debit transaction
-        if ($this->bankDetails->isEmpty() && $totalAdvanceConsumed == 0) {
+        if ($this->bankDetails->isEmpty() && $totalAdvanceConsumed == 0 && $this->account_id) {
             createTransaction(
                 $this->total_amount,
                 $this->account_id,
@@ -146,23 +162,23 @@ class ReceiptVoucher extends Model
                     "remarks" => $this->remarks
                 ]
             );
-        }
 
-        if ($creditAmount > 0) {
-            createTransaction(
-                $creditAmount,
-                $customerAccountId,
-                $this->company_id,
-                $this->unique_no,
-                "credit",
-                "no",
-                [
-                    "purpose" => $purpose,
-                    "payment_against" => $this->unique_no,
-                    "counter_account_id" => $this->account_id,
-                    "remarks" => $this->remarks
-                ]
-            );
+            if ($customerAccountId) {
+                createTransaction(
+                    $this->total_amount,
+                    $customerAccountId,
+                    $this->company_id,
+                    $this->unique_no,
+                    "credit",
+                    "no",
+                    [
+                        "purpose" => $purpose,
+                        "payment_against" => $this->unique_no,
+                        "counter_account_id" => $this->account_id,
+                        "remarks" => $this->remarks
+                    ]
+                );
+            }
         }
 
         // Excess Amount Logic (not-allocated)

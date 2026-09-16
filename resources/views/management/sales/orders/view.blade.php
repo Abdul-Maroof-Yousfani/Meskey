@@ -280,21 +280,6 @@
         </div>
     </div>
 
-    <div class="row form-mar">
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Token Money:</label>
-                <input type="text" value="{{ $sale_order->token_money ?? 'N/A' }}" class="form-control" readonly>
-            </div>
-        </div>
-        <div class="col-md-8">
-            <div class="form-group">
-                <label class="form-label">Remarks:</label>
-                <textarea name="remarks" id="remarks" class="form-control" rows="2"
-                    readonly>{{ $sale_order->remarks }}</textarea>
-            </div>
-        </div>
-    </div>
 
     <div class="row form-mar">
         <!-- <div class="col-12 text-right mb-2">

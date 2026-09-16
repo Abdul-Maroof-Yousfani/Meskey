@@ -3,9 +3,14 @@
         $user = auth()->user();
         $userAlreadyApproved = false;
         $userAlreadyRejected = false;
-        $userActions = $model->approvalLogs()->where('user_id', $user->id)->get();
-        $userAlreadyApproved = $userActions->where('action', 'approved')->isNotEmpty();
-        $userAlreadyRejected = $userActions->where('action', 'rejected')->isNotEmpty();
+        $currentCycle = $model->getCurrentApprovalCycle();
+        $userActions = $model->approvalLogs()
+            ->where('user_id', $user->id)
+            ->where('module_id', $module->id)
+            ->where('approval_cycle', $currentCycle)
+            ->get();
+        $userAlreadyApproved = $userActions->where('action', 'approved')->where('status', 'active')->isNotEmpty();
+        $userAlreadyRejected = $userActions->where('action', 'rejected')->where('status', 'active')->isNotEmpty();
         $userAlreadyActed = $userAlreadyApproved;
         $changesRequired = $model->am_change_made == 0;
         $currentApprovals = $model->getCurrentApprovals();

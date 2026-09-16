@@ -54,33 +54,19 @@
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label for="account_id">Account</label>
-                                        <select name="account_id" id="account_id" class="form-control select2" required>
-                                            <option value="">Select Account</option>
-                                            @foreach ($accounts ?? [] as $acc)
-                                                <option value="{{ $acc->id }}" {{ $receiptVoucher->account_id == $acc->id ? 'selected' : '' }}>{{ $acc->name }} ({{ $acc->hierarchy_path ?? $acc->unique_no }})</option>
-                                            @endforeach
-                                        </select>
+                                        <label for="ref_bill_no">Receipt Ref No</label>
+                                        <input type="text" name="ref_bill_no" id="ref_bill_no" class="form-control" value="{{ $receiptVoucher->ref_bill_no }}" required>
                                     </div>
                                 </div>
                             </div>
 
                             <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="ref_bill_no">Receipt Ref No</label>
-                                        <input type="text" name="ref_bill_no" id="ref_bill_no" class="form-control" value="{{ $receiptVoucher->ref_bill_no }}" required>
-                                    </div>
-                                </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label for="bill_date">Receipt Date</label>
                                         <input type="date" name="bill_date" id="bill_date" class="form-control" value="{{ $receiptVoucher->bill_date ? \Carbon\Carbon::parse($receiptVoucher->bill_date)->format('Y-m-d') : '' }}" required>
                                     </div>
                                 </div>
-                            </div>
-
-                            <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label for="customer_id">Customer Account</label>
@@ -92,7 +78,10 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-12">
                                     <div class="form-group">
                                         <label id="reference_label">{{ $isAdvance ? 'Sale Orders (approved, receiving pending)' : 'Invoices (approved, receiving pending)' }}</label>
                                         <select id="reference_ids" class="form-control select2" multiple style="width: 100%;">
@@ -639,7 +628,7 @@
             select_customer();
         }
 
-        // ==================== Load RV Number or Accounts ====================
+        // ==================== Load RV Number ====================
         function loadRvNumber() {
             if (!$('#voucher_type').val()) return;
 
@@ -649,19 +638,7 @@
                 rv_date: $('#rv_date').val() || null
             }, function (resp) {
                 if (resp.success) {
-                    if ($('#rv_date').val()) {
-                        $('#unique_no').val(resp.rv_number);
-                    } else {
-                        const $accountSelect = $('#account_id');
-                        $accountSelect.empty().append(`<option value="">Select Account</option>
-                                            @foreach ($accounts ?? [] as $acc)
-                                                <option value="{{ $acc->id }}" {{ $receiptVoucher->account_id == $acc->id ? 'selected' : '' }}>{{ $acc->name }} ({{ $acc->hierarchy_path ?? $acc->unique_no }})</option>
-                                            @endforeach`);
-                        resp.accounts.forEach(function (acc) {
-                            $accountSelect.append(`<option value="${acc.id}">${acc.name} (${acc.hierarchy_path ?? acc.unique_no ?? ''})</option>`);
-                        });
-                        $accountSelect.trigger('change');
-                    }
+                    $('#unique_no').val(resp.rv_number);
                 }
             });
         }
