@@ -55,9 +55,10 @@ class StationWiseQCAnalysisReportController extends Controller
                 return $q->where(function ($subQuery) use ($request) {
                     $subQuery->whereHas('qcProduct', function ($query) use ($request) {
                         $query->whereIn('id', (array) $request->commodity_id);
-                    })->orWhereHas('product', function ($query) use ($request) {
-                        $query->whereIn('id', (array) $request->commodity_id);
                     });
+                    // ->orWhereHas('product', function ($query) use ($request) {
+                    //     $query->whereIn('id', (array) $request->commodity_id);
+                    // });
                 });
             })
             ->when($request->filled('miller_id'), function ($q) use ($request) {
