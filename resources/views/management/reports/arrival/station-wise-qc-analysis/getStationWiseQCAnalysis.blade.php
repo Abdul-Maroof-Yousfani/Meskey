@@ -40,7 +40,7 @@
                     }
                 @endphp
                 <td>
-                    {{ $val > 0 ? (floor($val) == $val ? (int) $val : number_format($val, 4)) . $slabSymbol : 0 }}
+                    {{ $val > 0 ? (floor($val) == $val ? (int) $val : number_format($val, 2)) . $slabSymbol : 0 }}
                 </td>
             @endforeach
         </tr>
