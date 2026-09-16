@@ -54,10 +54,11 @@ class StationWiseQCAnalysisReportController extends Controller
             ->when($request->filled('commodity_id'), function ($q) use ($request) {
                 return $q->where(function ($subQuery) use ($request) {
                     $subQuery->whereHas('qcProduct', function ($query) use ($request) {
-                        $query->whereIn('id', (array)$request->commodity_id);
-                    })->orWhereHas('product', function ($query) use ($request) {
-                        $query->whereIn('id', (array)$request->commodity_id);
+                        $query->whereIn('id', (array) $request->commodity_id);
                     });
+                    // ->orWhereHas('product', function ($query) use ($request) {
+                    //     $query->whereIn('id', (array) $request->commodity_id);
+                    // });
                 });
             })
             ->when($request->filled('miller_id'), function ($q) use ($request) {
@@ -67,7 +68,7 @@ class StationWiseQCAnalysisReportController extends Controller
                 return $q->where('arrival_tickets.sauda_type_id', $request->sauda_type_id);
             })
             ->when($request->filled('company_location_id'), function ($q) use ($request) {
-                return $q->whereIn('arrival_tickets.location_id', (array)$request->company_location_id);
+                return $q->whereIn('arrival_tickets.location_id', (array) $request->company_location_id);
             })
             ->when($request->filled('supplier_id'), function ($q) use ($request) {
                 return $q->where('arrival_tickets.accounts_of_id', $request->supplier_id);
@@ -116,15 +117,15 @@ class StationWiseQCAnalysisReportController extends Controller
                             if ($res->product_slab_type_id == $slab->id && $res->checklist_value !== null && $res->checklist_value !== '') {
                                 $slabValue = (float) $res->checklist_value;
                                 if ($slabValue > 0) {
-                                    $values[] = $slabValue;
-                                    $overallSlabValues[$slab->id][] = $slabValue;
+                                    $values[] = $slabValue * $t->arrived_net_weight;
+                                    $overallSlabValues[$slab->id][] = $slabValue * $t->arrived_net_weight;
                                 }
                             }
                         }
                     }
                 }
 
-                $avg = count($values) > 0 ? (array_sum($values) / count($values)) : 0;
+                $avg = count($values) > 0 ? (array_sum($values) / ($kgReceived == 0 ? 1 : $kgReceived)) : 0;
                 $slabAverages[$slab->id] = $avg;
             }
 
@@ -136,11 +137,15 @@ class StationWiseQCAnalysisReportController extends Controller
             ];
         }
 
-        // Main Totals: Simple average across all tickets
+        $totalKgReceived = $tickets->sum(function ($t) {
+            return (float) ($t->arrived_net_weight ?: 0);
+        });
+
+        // Main Totals: Weighted average across all tickets
         $overallSlabAverages = [];
         foreach ($product_slab_types as $slab) {
             $overallSlabAverages[$slab->id] = count($overallSlabValues[$slab->id]) > 0
-                ? (array_sum($overallSlabValues[$slab->id]) / count($overallSlabValues[$slab->id]))
+                ? (array_sum($overallSlabValues[$slab->id]) / ($totalKgReceived == 0 ? 1 : $totalKgReceived))
                 : 0;
         }
 

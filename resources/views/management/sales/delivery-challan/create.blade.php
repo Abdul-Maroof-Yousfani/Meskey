@@ -217,6 +217,7 @@
                         <label class="form-label">Transporter Amount:</label>
                         <input type="number" name="transporter_amount" onchange="" id="transporter_amount"
                             class="form-control">
+                        <small class="text-muted">(Rate * Total Bags)</small>
                     </div>
                 </div>
                 <div class="col-md-3" style="display: none;">
@@ -457,6 +458,9 @@
                         $("#transporter_col").hide();
                         $("#transporter_amount_col").hide();
                     } else {
+                        window.currentTransporterRate = (response.transporter && response.transporter.rate) ? parseFloat(response.transporter.rate) : 0;
+                        window.currentTransporterRateType = (response.transporter && response.transporter.rate_type) ? response.transporter.rate_type : '';
+
                         if (response.transporter && response.transporter.id) {
                             transSelect.val(response.transporter.id).trigger('change');
                             transSelect.prop('disabled', true);
@@ -499,6 +503,7 @@
                             $("#dcTableBody").append(res);
                             $(".select2").select2();
                             calculateLabourAmount();
+                            calculateTransporterAmount();
 
                             // Track added ticket IDs
                             addedTicketIds = [parseInt(ticketId)];
@@ -536,6 +541,9 @@
         $("#standard_labour_rate").val('');
         $("#transporter_display").empty().append('<option value="">Select Transporter</option>').trigger('change');
         $("#transporter").val('');
+        $("#transporter_amount").val('');
+        window.currentTransporterRate = 0;
+        window.currentTransporterRateType = '';
         addedTicketIds = [];
         doMeta = {};
     }
@@ -604,6 +612,7 @@
                 $("#dcTableBody").append(res);
                 $(".select2").select2();
                 calculateLabourAmount();
+                calculateTransporterAmount();
 
                 // Track this ticket as added
                 addedTicketIds.push(parseInt(ticketId));
@@ -649,6 +658,7 @@
         // Show the dropdown if it was hidden
         $("#addTicketContainer").show();
         calculateLabourAmount();
+        calculateTransporterAmount();
     }
 
     sum = 0;
@@ -1228,6 +1238,26 @@
         let amount = totalBags * rate;
         $("#labour_amount").val(amount.toFixed(2));
         validateLabourSlab();
+    }
+
+    function calculateTransporterAmount() {
+        let rate = window.currentTransporterRate || 0;
+        let rateType = (window.currentTransporterRateType || '').toLowerCase();
+        if (rate <= 0) return;
+
+        let totalBags = 0;
+        $(".no_of_bags").each(function () {
+            let bags = parseFloat($(this).val()) || 0;
+            totalBags += bags;
+        });
+
+        let amount = 0;
+        if (rateType === 'per truck') {
+            amount = rate;
+        } else {
+            amount = totalBags * rate;
+        }
+        $("#transporter_amount").val(amount.toFixed(2));
     }
 
     function validateLabourSlab() {

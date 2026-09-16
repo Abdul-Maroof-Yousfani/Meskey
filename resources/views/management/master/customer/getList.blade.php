@@ -4,9 +4,10 @@
             <th class="col-sm-1">S No. </th>
             <th class="col-sm-2">Customer </th>
             <th class="col-sm-2">Company </th>
+            <th class="col-sm-2">COA Hierarchy </th>
             <th class="col-sm-1">Type </th>
-            <th class="col-sm-3">Address</th>
-            <th class="col-sm-2">Created</th>
+            <th class="col-sm-2">Address</th>
+            <th class="col-sm-1">Created</th>
             <th class="col-sm-1">Action</th>
         </tr>
     </thead>
@@ -30,6 +31,22 @@
                         <p class="m-0">
                             {{ $row->company_name }} <br>
                             {{-- <small>{{ $row->company_mobile_no ?? '--' }}</small> <br> --}}
+                        </p>
+                    </td>
+                    <td>
+                        <p class="m-0">
+                            @if ($row->account && $row->account->hierarchy_path)
+                                <span class="badge badge-info" title="{{ $row->account->name }}">
+                                    {{ $row->account->hierarchy_path }}
+                                </span>
+                                @if ($row->account->unique_no)
+                                    <br><small class="text-muted">{{ $row->account->unique_no }}</small>
+                                @endif
+                            @elseif ($row->account)
+                                <small class="text-muted">{{ $row->account->unique_no ?? '--' }}</small>
+                            @else
+                                <span class="text-muted">--</span>
+                            @endif
                         </p>
                     </td>
                     <td>

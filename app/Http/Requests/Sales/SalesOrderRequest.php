@@ -25,6 +25,16 @@ class SalesOrderRequest extends FormRequest
 
     public function rules(): array
     {
+        $saleOrderId = is_object($this->route('sale_order')) ? $this->route('sale_order')->id : $this->route('sale_order');
+        if ($saleOrderId) {
+            $so = \App\Models\Sales\SalesOrder::find($saleOrderId);
+            if ($so && (in_array(strtolower($so->am_approval_status ?? ''), ['approved', 'rejected']) || $so->hasPendingDeliveryDateAmendment())) {
+                return [
+                    "delivery_date" => "nullable|date",
+                    "contract_status" => "nullable|string",
+                ];
+            }
+        }
 
         // delivery date and order date can be equal to each other
         $rules = [
@@ -102,6 +112,14 @@ class SalesOrderRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
+            $saleOrderId = is_object($this->route('sale_order')) ? $this->route('sale_order')->id : $this->route('sale_order');
+            if ($saleOrderId) {
+                $so = \App\Models\Sales\SalesOrder::find($saleOrderId);
+                if ($so && (in_array(strtolower($so->am_approval_status ?? ''), ['approved', 'rejected']) || $so->hasPendingDeliveryDateAmendment())) {
+                    return;
+                }
+            }
+
             $qtys = $this->input('qty', []);
             $minimumQtys = $this->input('minimum_qty', []);
 

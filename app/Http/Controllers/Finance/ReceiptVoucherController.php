@@ -108,16 +108,12 @@ class ReceiptVoucherController extends Controller
             ];
 
             $data = SalesOrder::select("id", "reference_no")
-                ->with("sales_order_data")
                 ->where("customer_id", $customer_id)
                 ->where("am_approval_status", 'approved')
                 ->get()
                 ->filter(function ($saleOrder) use ($exclude_rv_id) {
-                    // Example: keep only if any related sale_order_data has quantity > 0
-                    return $saleOrder->sales_order_data->contains(function ($item) use ($saleOrder, $exclude_rv_id) {
-                        $balance = receipt_voucher_balance($item->sale_order_id, "sale_order", $exclude_rv_id);
-                        return $balance > 0;
-                    });
+                    $balance = receipt_voucher_balance($saleOrder->id, "sale_order", $exclude_rv_id);
+                    return $balance > 0;
                 });
 
 
@@ -132,11 +128,8 @@ class ReceiptVoucherController extends Controller
                 ->where("am_approval_status", "approved")
                 ->get()
                 ->filter(function ($sale_invoice) use ($exclude_rv_id) {
-                    // Example: keep only if any related sale_order_data has quantity > 0
-                    return $sale_invoice->sales_invoice_data->contains(function ($item) use ($sale_invoice, $exclude_rv_id) {
-                        $balance = receipt_voucher_balance($item->sales_invoice_id, "sales_invoice", $exclude_rv_id);
-                        return $balance > 0;
-                    });
+                    $balance = receipt_voucher_balance($sale_invoice->id, "sales_invoice", $exclude_rv_id);
+                    return $balance > 0;
                 });
         }
 
@@ -158,7 +151,7 @@ class ReceiptVoucherController extends Controller
 
     public function getList(Request $request)
     {
-        $receiptVouchers = ReceiptVoucher::with(['account', 'customer', 'items'])
+        $receiptVouchers = ReceiptVoucher::with(['account', 'customer', 'items', 'bankDetails.account'])
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
                 return $q->where(function ($sq) use ($searchTerm) {
@@ -320,7 +313,9 @@ class ReceiptVoucherController extends Controller
                     "text" => $adv->voucher_no . " - " . number_format($remaining, 2),
                     "remaining_amount" => $remaining
                 ];
-            });
+            })->filter(function ($adv) {
+                return $adv->remaining_amount > 0.01;
+            })->values();
 
         return view("management.finance.receipt_voucher.edit", [
             "receiptVoucher" => $receiptVoucher,
@@ -553,7 +548,7 @@ class ReceiptVoucherController extends Controller
                 'bill_date' => $payload['bill_date'] ?? null,
                 'cheque_no' => $payload['cheque_no'] ?? null,
                 'cheque_date' => $payload['cheque_date'] ?? null,
-                'account_id' => $payload['account_id'],
+                'account_id' => $payload['account_id'] ?? null,
                 'customer_id' => $payload['customer_id'] ?? null,
                 'voucher_type' => $payload['voucher_type'],
                 'remarks' => $payload['remarks'] ?? null,
@@ -728,7 +723,9 @@ class ReceiptVoucherController extends Controller
                 "voucher_no" => $adv->voucher_no,
                 "text" => $adv->voucher_no . " - " . number_format($remaining, 2)
             ];
-        });
+        })->filter(function ($item) {
+            return $item['remaining_amount'] > 0.01;
+        })->values();
 
         return response()->json(["advances" => $formatted]);
     }
@@ -958,7 +955,7 @@ class ReceiptVoucherController extends Controller
                 "bill_date" => $payload["bill_date"] ?? null,
                 "cheque_no" => $payload["cheque_no"] ?? null,
                 "cheque_date" => $payload["cheque_date"] ?? null,
-                "account_id" => $payload["account_id"],
+                "account_id" => $payload["account_id"] ?? null,
                 "customer_id" => $payload["customer_id"] ?? null,
                 "voucher_type" => $payload["voucher_type"],
                 "remarks" => $payload["remarks"] ?? null,

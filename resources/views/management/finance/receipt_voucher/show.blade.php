@@ -16,8 +16,7 @@
         <div class="row" style="width: 100% !important;">
             <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
                 <h5 class="font-weight-bold">Received From:</h5>
-                <p><strong>Customer:</strong> {{ $receiptVoucher->customer->name ?? 'N/A' }}</p>
-                <p><strong>Account:</strong> {{ $receiptVoucher->account->account_name ?? $receiptVoucher->account->name ?? 'N/A' }}</p>
+                <p class="mb-0"><strong>Customer:</strong> {{ $receiptVoucher->customer->name ?? 'N/A' }}</p>
             </div>
             <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
                 <h5 class="font-weight-bold">Reference Information</h5>

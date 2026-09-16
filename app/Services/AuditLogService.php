@@ -35,6 +35,8 @@ class AuditLogService
             $effectiveUserId = Auth::user()->id;
         } elseif (is_numeric(Auth::id())) {
             $effectiveUserId = (int) Auth::id();
+        } else {
+            $effectiveUserId = 1;
         }
 
         return AuditLog::create([
@@ -69,6 +71,8 @@ class AuditLogService
             $effectiveUserId = Auth::user()->id;
         } elseif (is_numeric(Auth::id())) {
             $effectiveUserId = (int) Auth::id();
+        } else {
+            $effectiveUserId = 1;
         }
 
         return AuditLog::create([
