@@ -110,8 +110,7 @@
                     <div class="col-md-4">
                         <div class="form-group">
                             <label for="factory" class="text-uppercase">Factory</label>
-                            <select name="factory" id="factory" class="form-control select2" style="width: 100%;">
-                                <option value="">Select Factory</option>
+                            <select name="factory[]" id="factory" class="form-control select2" multiple style="width: 100%;">
                             </select>
                         </div>
                     </div>
@@ -267,10 +266,10 @@
         const saleToLocationOptions = @json($companyLocations->map(fn($location) => ['id' => $location->id, 'name' => $location->name])->values());
         const arrivalLocationsList = @json($arrivalLocations->map(fn($a) => ['id' => $a->name, 'name' => $a->name, 'location_id' => $a->company_location_id])->values());
 
-        function updateFactoryDropdown(selectedValue = '') {
+        function updateFactoryDropdown(selectedValue = []) {
             const locationId = $('#location').val();
             const filteredLocations = arrivalLocationsList.filter(l => l.location_id == locationId);
-            populateSelectOptions($('#factory'), filteredLocations, selectedValue, 'Select Factory');
+            populateSelectOptions($('#factory'), filteredLocations, selectedValue, 'Select Factory', true);
         }
 
         $('#location').on('change', function() {
@@ -345,12 +344,12 @@
             let isExport = $('#type').val() === 'export_order';
             let displayStyle = isExport ? '' : 'style="display: none;"';
 
+            // <option value="Per MT" ${rateType === 'Per MT' ? 'selected' : ''}>Per MT</option>
             let newRow = `
                 <tr class="item-row">
                     <td>
                         <select name="items[${rowCount}][rate_type]" class="form-control" required>
                             <option value="">Select Type</option>
-                            <option value="Per MT" ${rateType === 'Per MT' ? 'selected' : ''}>Per MT</option>
                             <option value="Per KG" ${rateType === 'Per KG' ? 'selected' : ''}>Per KG</option>
                             <option value="Per Truck" ${rateType === 'Per Truck' ? 'selected' : ''}>Per Truck</option>
                         </select>
@@ -398,11 +397,23 @@
             return 'Select Transporter';
         }
 
-        function populateSelectOptions($select, options, selectedValue, placeholder) {
-            $select.empty().append(new Option(placeholder, '', !selectedValue, !selectedValue));
+        function populateSelectOptions($select, options, selectedValue, placeholder, isMultiple = false) {
+            $select.empty();
+            if (!isMultiple) {
+                $select.append(new Option(placeholder, '', !selectedValue, !selectedValue));
+            }
+
+            let selectedArray = [];
+            if (Array.isArray(selectedValue)) {
+                selectedArray = selectedValue.map(String);
+            } else if (typeof selectedValue === 'string' && selectedValue) {
+                selectedArray = selectedValue.split(',').map(s => s.trim());
+            }
 
             (options || []).forEach(function(option) {
-                const isSelected = selectedValue && option.id.toString() === selectedValue.toString();
+                const isSelected = isMultiple
+                    ? (selectedArray.includes(option.id.toString()) || selectedArray.includes(option.name.toString()))
+                    : (selectedValue && option.id.toString() === selectedValue.toString());
                 $select.append(new Option(option.name, option.id, isSelected, isSelected));
             });
 
@@ -413,7 +424,7 @@
             const isExport = type === 'export_order';
             const savedFromLocation = selectedLogistics && selectedLogistics.location ? selectedLogistics.location : '';
             const savedToLocation = selectedLogistics && selectedLogistics.to_location ? selectedLogistics.to_location : '';
-            const savedFactory = selectedLogistics && selectedLogistics.factory ? selectedLogistics.factory : '';
+            const savedFactory = selectedLogistics && selectedLogistics.factory ? selectedLogistics.factory : (data.default_factories || []);
             let fromLocationValue = /^\d+$/.test(String(savedFromLocation)) ? savedFromLocation : (data.from_location_id || '');
             const toLocationValue = /^\d+$/.test(String(savedToLocation)) ? savedToLocation : (data.to_location_id || '');
             const fromLocationOptions = data.from_location_options && data.from_location_options.length > 0 ? data.from_location_options : (saleToLocationOptions || []);
@@ -521,7 +532,7 @@
                 $('#location').prop('disabled', type !== 'export_order');
                 $('#to_location_input').val('');
                 populateSelectOptions($('#to_location_select'), [], '', 'Select Port of Loading');
-                populateSelectOptions($('#factory'), [], '', 'Select Factory');
+                populateSelectOptions($('#factory'), [], [], 'Select Factory', true);
                 populateSelectOptions($('#section'), [], '', 'Select Section');
             } else {
                 $('#document_info_container').hide();
@@ -651,7 +662,7 @@
                 $('#location').prop('disabled', $('#type').val() !== 'export_order');
                 $('#to_location_input').val('');
                 populateSelectOptions($('#to_location_select'), [], '', 'Select Port of Loading');
-                populateSelectOptions($('#factory'), [], '', 'Select Factory');
+                populateSelectOptions($('#factory'), [], [], 'Select Factory', true);
                 $('#itemsBody').empty();
                 rowCount = 0;
                 addRow();

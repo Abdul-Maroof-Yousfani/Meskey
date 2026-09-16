@@ -23,7 +23,7 @@ use App\Models\Master\Country;
 use App\Models\Master\HsCode;
 use App\Models\Master\InspectionCompany;
 use App\Models\Master\Port;
-use App\Models\Master\ProductSlab;
+use App\Models\Master\ExportProductSlab;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -633,7 +633,7 @@ class ExportOrderController extends Controller
 
     public function getProductSpecs(Request $request, $productId)
     {
-        $specs = ProductSlab::exportEnabled()
+        $specs = ExportProductSlab::exportEnabled()
             ->with('slabType')
             ->where('product_id', $productId)
             ->get()

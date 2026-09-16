@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Master;
 
 use App\Http\Controllers\Controller;
-use App\Models\Master\ProductSlab;
+use App\Models\Master\ExportProductSlab;
 use App\Models\Master\ProductSlabType;
 use App\Models\Product;
 use Illuminate\Http\Request;
@@ -18,7 +18,7 @@ class ExportProductSlabController extends Controller
 
     public function getList(Request $request)
     {
-        $productIds = ProductSlab::exportEnabled()
+        $productIds = ExportProductSlab::exportEnabled()
             ->select('product_id')
             ->when($request->filled('product_id'), function ($q) use ($request) {
                 return $q->where('product_id', $request->product_id);
@@ -31,7 +31,7 @@ class ExportProductSlabController extends Controller
             ->latest()
             ->paginate($request->get('per_page', 25));
 
-        $productSlabs = ProductSlab::exportEnabled()
+        $productSlabs = ExportProductSlab::exportEnabled()
             ->with(['product', 'slabType'])
             ->whereIn('product_id', $productIds->pluck('product_id'))
             ->get()
@@ -49,6 +49,16 @@ class ExportProductSlabController extends Controller
         $slab_types = ProductSlabType::where('status', 'active')->get();
 
         return view('management.master.export_product_slab.create', compact('products', 'slab_types'));
+    }
+
+    public function getByProduct($productId)
+    {
+        $slabs = ExportProductSlab::where('product_id', $productId)->get();
+
+        return response()->json([
+            'success' => true,
+            'slabs' => $slabs,
+        ]);
     }
 
     public function storeMultiple(Request $request)
@@ -75,7 +85,7 @@ class ExportProductSlabController extends Controller
     {
         $product = Product::findOrFail($productId);
         $slab_types = ProductSlabType::where('status', 'active')->get();
-        $productSlabs = ProductSlab::where('product_id', $productId)->get();
+        $productSlabs = ExportProductSlab::where('product_id', $productId)->get();
 
         return view('management.master.export_product_slab.edit', compact('product', 'slab_types', 'productSlabs'));
     }
@@ -109,19 +119,19 @@ class ExportProductSlabController extends Controller
             $isExportEnabled = isset($slabData['is_export_enable']) && (int) $slabData['is_export_enable'] === 1;
             $prefillSpecValue = $slabData['prefill_spec_value'] ?? null;
 
-            $exists = ProductSlab::where('product_id', $request->product_id)
+            $exists = ExportProductSlab::where('product_id', $request->product_id)
                 ->where('product_slab_type_id', $slabTypeId)
                 ->exists();
 
             if ($exists) {
-                ProductSlab::where('product_id', $request->product_id)
+                ExportProductSlab::where('product_id', $request->product_id)
                     ->where('product_slab_type_id', $slabTypeId)
                     ->update([
                         'prefill_spec_value' => $prefillSpecValue,
                         'is_export_enable' => $isExportEnabled,
                     ]);
             } elseif ($isExportEnabled || !is_null($prefillSpecValue)) {
-                ProductSlab::create([
+                ExportProductSlab::create([
                     'company_id' => $companyId,
                     'product_id' => $request->product_id,
                     'product_slab_type_id' => $slabTypeId,

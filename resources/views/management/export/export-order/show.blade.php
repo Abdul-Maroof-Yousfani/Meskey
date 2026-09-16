@@ -778,6 +778,10 @@
                                 readonly>
                         </div>
                     </div>
+                    @php
+                        $isBulkOrder = stripos((string) ($exportOrder->packing_type ?? ''), 'bulk') !== false;
+                    @endphp
+                    @if(!$isBulkOrder)
                     <div class="col-md-2">
                         <div class="form-group">
                             <label>Stuffing/Cont (MT):</label>
@@ -791,6 +795,7 @@
                             <input type="text" class="form-control" value="{{ $item->no_of_containers }}" readonly>
                         </div>
                     </div>
+                    @endif
                     <div class="col-md-2">
                         <div class="form-group">
                             <label>Rate/Ton:</label>

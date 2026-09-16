@@ -793,6 +793,19 @@
                     updateAllRowSaleOrderOptions();
                     window.isUpdatingUI = false;
                     if (window.updateTabsVisibility) window.updateTabsVisibility();
+
+                    if (response.has_logistics_error && response.logistics_errors && response.logistics_errors.length > 0) {
+                        const errorHtml = response.logistics_errors.map(err => `<li>${err}</li>`).join('');
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Logistics Required',
+                            html: `<ul class="text-left mb-0" style="text-align: left; padding-left: 20px;">${errorHtml}</ul>`,
+                            confirmButtonText: 'OK'
+                        });
+                        $('.submitbutton').prop('disabled', true);
+                    } else {
+                        $('.submitbutton').prop('disabled', false);
+                    }
                 }
             },
             complete: function() {

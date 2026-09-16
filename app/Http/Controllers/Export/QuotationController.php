@@ -20,7 +20,7 @@ use App\Models\Master\Brands;
 use App\Models\Master\Country;
 use App\Models\Master\HsCode;
 use App\Models\Master\Port;
-use App\Models\Master\ProductSlab;
+use App\Models\Master\ExportProductSlab;
 use App\Models\Product;
 use App\Models\Master\Customer;
 use Illuminate\Http\Request;
@@ -137,8 +137,10 @@ class QuotationController extends Controller
                         'maunds' => $item['maunds'] ?? 0,
                         'no_of_bags' => $item['no_of_bags'] ?? 0,
                         'total_kgs' => $item['total_kgs'] ?? 0,
+                        // not required when PACKING TYPE is bulk
                         'stuffing_in_container' => $item['stuffing_in_container'] ?? 0,
                         'no_of_containers' => $item['no_of_containers'] ?? 0,
+                        // not required when PACKING TYPE is bulk
                         'rate' => $item['rate'] ?? 0,
                         'rate_per_maund' => $item['rate_per_maund'] ?? 0,
                         'amount' => $item['amount'] ?? 0,
@@ -407,7 +409,7 @@ class QuotationController extends Controller
 
     public function getProductSpecs(Request $request, $productId)
     {
-        $specs = ProductSlab::exportEnabled()
+        $specs = ExportProductSlab::exportEnabled()
             ->with('slabType')
             ->where('product_id', $productId)
             ->get()

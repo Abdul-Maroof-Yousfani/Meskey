@@ -122,6 +122,7 @@ Route::put('/product-slab/update-multiple/{productId}', [ProductSlabController::
 
 Route::resource('export-product-slab', ExportProductSlabController::class)->except(['show', 'store', 'update', 'destroy']);
 Route::post('/get-export-product-slab', [ExportProductSlabController::class, 'getList'])->name('get.export-product-slab');
+Route::get('/export-product-slab/by-product/{productId}', [ExportProductSlabController::class, 'getByProduct'])->name('export-product-slab.by-product');
 Route::post('/export-product-slab/store-multiple', [ExportProductSlabController::class, 'storeMultiple'])->name('export-product-slab.store-multiple');
 Route::put('/export-product-slab/update-multiple/{productId}', [ExportProductSlabController::class, 'updateMultiple'])->name('export-product-slab.update-multiple');
 

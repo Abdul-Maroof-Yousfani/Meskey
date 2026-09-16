@@ -252,6 +252,9 @@
     {{-- ====== PACKING DETAILS (Full Width) ====== --}}
     <div class="col-12 mt-4">
         <h6 class="header-heading-sepration">Packing Details</h6>
+        @php
+            $isBulk = stripos((string) $quotation->packing_type, 'bulk') !== false;
+        @endphp
         <div class="table-responsive">
             <table class="table table-bordered mb-0">
                 <thead>
@@ -263,8 +266,10 @@
                         <th style="display: none;">Qty (Mnds)</th>
                         <th>Bags</th>
                         <th style="display: none;">Total KGs</th>
-                        <th>Stuffing (MT)</th>
-                        <th>Containers</th>
+                        @if (!$isBulk)
+                            <th>Stuffing (MT)</th>
+                            <th>Containers</th>
+                        @endif
                         <th>Rate/Ton</th>
                         <th style="display: none;">Rate/Mnd</th>
                         <th>Amount</th>
@@ -281,8 +286,10 @@
                             <td class="p-2" style="display: none;"><input type="text" class="form-control" value="{{ number_format($item->maunds, 2) }}" readonly></td>
                             <td class="p-2"><input type="text" class="form-control" value="{{ number_format($item->no_of_bags, 0) }}" readonly></td>
                             <td class="p-2" style="display: none;"><input type="text" class="form-control" value="{{ number_format($item->total_kgs, 2) }}" readonly></td>
-                            <td class="p-2"><input type="text" class="form-control" value="{{ number_format($item->stuffing_in_container, 3) }}" readonly></td>
-                            <td class="p-2"><input type="text" class="form-control" value="{{ $item->no_of_containers }}" readonly></td>
+                            @if (!$isBulk)
+                                <td class="p-2"><input type="text" class="form-control" value="{{ number_format($item->stuffing_in_container, 3) }}" readonly></td>
+                                <td class="p-2"><input type="text" class="form-control" value="{{ $item->no_of_containers }}" readonly></td>
+                            @endif
                             <td class="p-2"><input type="text" class="form-control" value="{{ number_format($item->rate, 2) }}" readonly></td>
                             <td class="p-2" style="display: none;"><input type="text" class="form-control" value="{{ number_format($item->rate_per_maund, 2) }}" readonly></td>
                             <td class="p-2"><input type="text" class="form-control" value="{{ number_format($item->amount, 2) }}" readonly></td>

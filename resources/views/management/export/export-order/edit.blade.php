@@ -980,7 +980,7 @@
                                             class="form-control total-kgs" value="{{ $item->total_kgs }}" readonly>
                                     </div>
 
-                                    <div class="col-md-2">
+                                    <div class="col-md-2 col-stuffing">
                                         <div class="form-group">
                                             <label>Stuffing/Cont (MT):</label>
                                             <input type="number" name="packing_items[{{ $pIdx }}][stuffing_in_container]"
@@ -988,7 +988,7 @@
                                                 value="{{ $item->stuffing_in_container }}">
                                         </div>
                                     </div>
-                                    <div class="col-md-2">
+                                    <div class="col-md-2 col-containers">
                                         <div class="form-group">
                                             <label>Containers:</label>
                                             <input type="number" name="packing_items[{{ $pIdx }}][no_of_containers]"
@@ -1482,6 +1482,7 @@
 
             // Initialize Select2 on the new row AFTER re-indexing to ensure correct internal mapping
             newRow.find('.select2').select2({ width: '100%' });
+            togglePackingTypeColumns();
         });
 
         $(document).off('click', '.remove-packing-item').on('click', '.remove-packing-item', function () {
@@ -2037,14 +2038,31 @@
                 $('#discharge_terms_section').show();
             }
         });
+
+        function togglePackingTypeColumns() {
+            var packingType = $('select[name="packing_type"]').val() || '';
+            var isBulk = packingType.toLowerCase().indexOf('bulk') !== -1;
+
+            if (isBulk) {
+                $('.col-stuffing, .col-containers').hide();
+                $('.col-stuffing input, .col-containers input').prop('required', false).val('0');
+            } else {
+                $('.col-stuffing, .col-containers').show();
+                $('.col-stuffing input, .col-containers input').prop('required', true);
+            }
+        }
         
         // Add event listener for packing_type as well
         $('select[name="packing_type"]').on('change', function() {
             $('select[name="incoterm_id"]').trigger('change');
+            togglePackingTypeColumns();
         });
+
+        togglePackingTypeColumns();
 
         setTimeout(() => {
             $('select[name="incoterm_id"]').trigger('change');
+            togglePackingTypeColumns();
         }, 100);
 
         // Initial Load

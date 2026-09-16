@@ -45,7 +45,7 @@
                     <div class="col-md-6">
                         <div class="form-group mb-0">
                             <label>Prefill Value:</label>
-                            <input type="number" step="0.01" class="form-control" name="slabs[{{ $slab_type->id }}][prefill_spec_value]" value="{{ $prefillSpecValue }}" placeholder="Optional prefill value">
+                            <input type="number" step="0.01" class="form-control" name="slabs[{{ $slab_type->id }}][prefill_spec_value]" value="{{ $prefillSpecValue }}" placeholder="Optional prefill value" @readonly(!$isEnabled)>
                         </div>
                     </div>
                 </div>
@@ -60,3 +60,13 @@
         </div>
     </div>
 </form>
+
+<script>
+    $(document).ready(function() {
+        $(document).on('change', '.slab-enable-switch', function() {
+            var isChecked = $(this).is(':checked');
+            var $input = $(this).closest('.slab-type-group').find('input[name*="[prefill_spec_value]"]');
+            $input.prop('readonly', !isChecked);
+        });
+    });
+</script>
