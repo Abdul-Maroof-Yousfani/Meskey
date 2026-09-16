@@ -430,7 +430,7 @@
                 <input type="number" name="amount[]" id="amount_${index}" class="form-control amount" readonly>
             </td>
             <td style="min-width: 100px;">
-                <input type="number" name="gst_percent[]" id="gst_percent_${index}" onkeyup="calculateRow(this)" class="form-control gst_percent" step="0.01" min="0" value="0">
+                <input type="number" name="gst_percent[]" id="gst_percent_${index}" onkeyup="calculateRow(this)" class="form-control gst_percent" step="0.01" min="0" max="100" value="0">
             </td>
             <td style="min-width: 120px;">
                 <input type="number" name="gst_amount[]" id="gst_amount_${index}" onkeyup="calculateRow(this)" class="form-control gst_amount" step="0.01" min="0">
@@ -531,11 +531,29 @@
             // Reverse calculate discount percent from discount amount
             if (grossAmount > 0) {
                 discountPercent = (discountAmount / grossAmount) * 100;
+                if (discountPercent > 100) {
+                    discountPercent = 100;
+                    discountAmount = grossAmount;
+                    discountAmountInput.val(round(discountAmount));
+                    if (typeof toastr !== 'undefined') {
+                        toastr.warning('Discount cannot exceed 100% of gross amount');
+                    }
+                }
             } else {
                 discountPercent = 0;
             }
             discountPercentInput.val(round(discountPercent, 4));
         } else {
+            if (discountPercent > 100) {
+                discountPercent = 100;
+                discountPercentInput.val(100);
+                if (typeof toastr !== 'undefined') {
+                    toastr.warning('Discount % cannot exceed 100%');
+                }
+            } else if (discountPercent < 0) {
+                discountPercent = 0;
+                discountPercentInput.val(0);
+            }
             // Forward calculate discount amount from discount percent
             discountAmount = (discountPercent / 100) * grossAmount;
             discountAmountInput.val(round(discountAmount));
@@ -550,11 +568,29 @@
             // Reverse calculate GST percent from GST amount
             if (amount > 0) {
                 gstPercent = (gstAmount / amount) * 100;
+                if (gstPercent > 100) {
+                    gstPercent = 100;
+                    gstAmount = amount;
+                    gstAmountInput.val(round(gstAmount));
+                    if (typeof toastr !== 'undefined') {
+                        toastr.warning('GST cannot exceed 100% of amount');
+                    }
+                }
             } else {
                 gstPercent = 0;
             }
             gstPercentInput.val(round(gstPercent, 4));
         } else {
+            if (gstPercent > 100) {
+                gstPercent = 100;
+                gstPercentInput.val(100);
+                if (typeof toastr !== 'undefined') {
+                    toastr.warning('GST % cannot exceed 100%');
+                }
+            } else if (gstPercent < 0) {
+                gstPercent = 0;
+                gstPercentInput.val(0);
+            }
             // Forward calculate GST amount from GST percent
             gstAmount = (gstPercent / 100) * amount;
             gstAmountInput.val(round(gstAmount));

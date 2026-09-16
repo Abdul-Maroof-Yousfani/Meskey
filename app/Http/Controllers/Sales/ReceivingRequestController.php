@@ -116,9 +116,16 @@ class ReceivingRequestController extends Controller
                 }
             }
 
-            $arrivedWeight = $request->arrived_weight ?? 0;
-            $exemptedWeight = $request->exempted_weight ?? 0;
-            $paymentWeight = floatval($arrivedWeight) - floatval($exemptedWeight);
+            $dispatchWeight = floatval($receivingRequest->items->sum('dispatch_weight'));
+            $arrivedWeight = floatval($request->arrived_weight ?? 0);
+            $shortWeight = max(0, $dispatchWeight - $arrivedWeight);
+            $exemptedWeight = floatval($request->exempted_weight ?? 0);
+            if ($shortWeight > 0) {
+                $exemptedWeight = min($exemptedWeight, $shortWeight);
+            } else {
+                $exemptedWeight = 0;
+            }
+            $paymentWeight = $arrivedWeight;
 
             // Update main receiving request
             $receivingRequest->update([

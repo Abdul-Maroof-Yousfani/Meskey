@@ -46,19 +46,19 @@
             </h6>
         </div>
         
-        <div class="col-md-3">
+        <div class="col-md-2">
             <div class="form-group">
                 <label class="font-weight-bold">Total Dispatch Weight</label>
                 <input type="text" class="form-control bg-light font-weight-bold" id="summary_dispatch" value="{{ number_format($logisticsBill->items->sum('dispatch_weight'), 2, '.', '') }}" readonly>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
             <div class="form-group">
                 <label class="font-weight-bold">Receiving Weight (Total)</label>
                 <input type="number" class="form-control bg-light font-weight-bold" id="arrived_weight" value="{{ $logisticsBill->arrived_weight }}" readonly placeholder="Receiving Weight">
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
             <div class="form-group">
                 <label class="font-weight-bold">Weight Difference</label>
                 @php
@@ -67,16 +67,22 @@
                 <input type="text" class="form-control bg-light font-weight-bold {{ $diffWeight > 0 ? 'text-danger' : 'text-success' }}" id="overall_weight_difference" value="{{ number_format($diffWeight, 2, '.', '') }}" readonly>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
             <div class="form-group">
                 <label class="font-weight-bold">Exempted Weight</label>
                 <input type="number" class="form-control editable-field" name="exempted_weight" id="exempted_weight" value="{{ $logisticsBill->exempted_weight }}" step="0.01" min="0" placeholder="Exempted Weight">
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
+            <div class="form-group">
+                <label class="font-weight-bold">Penalty Weight</label>
+                <input type="number" class="form-control bg-light font-weight-bold text-danger" id="penalty_weight" value="{{ number_format($logisticsBill->penalty_weight, 2, '.', '') }}" readonly placeholder="Penalty Weight">
+            </div>
+        </div>
+        <div class="col-md-2">
             <div class="form-group">
                 <label class="font-weight-bold">Payment Weight</label>
-                <input type="number" class="form-control bg-light font-weight-bold" id="payment_weight" value="{{ $logisticsBill->payment_weight }}" readonly placeholder="Payment Weight">
+                <input type="number" class="form-control bg-light font-weight-bold text-primary" id="payment_weight" value="{{ number_format(floatval($logisticsBill->arrived_weight), 2, '.', '') }}" readonly placeholder="Payment Weight">
             </div>
         </div>
     </div>
@@ -397,10 +403,32 @@
     }
 
     function calculateOverallWeights() {
+        let dispatchTotal = parseFloat($('#summary_dispatch').val().replace(/,/g, '')) || 0;
         let arrivedWeight = parseFloat($('#arrived_weight').val()) || 0;
-        let exemptedWeight = parseFloat($('#exempted_weight').val()) || 0;
+        let overallDifference = dispatchTotal - arrivedWeight;
         
-        let paymentWeight = arrivedWeight - exemptedWeight;
+        $('#overall_weight_difference').val(overallDifference.toFixed(2));
+        if (overallDifference > 0) {
+            $('#overall_weight_difference').removeClass('text-success').addClass('text-danger');
+        } else {
+            $('#overall_weight_difference').removeClass('text-danger').addClass('text-success');
+        }
+
+        let exemptedWeight = parseFloat($('#exempted_weight').val()) || 0;
+        if (overallDifference > 0) {
+            if (exemptedWeight > overallDifference) {
+                exemptedWeight = overallDifference;
+                $('#exempted_weight').val(exemptedWeight.toFixed(2));
+            }
+        } else {
+            exemptedWeight = 0;
+            $('#exempted_weight').val('0.00');
+        }
+
+        let penaltyWeight = overallDifference > 0 ? Math.max(0, overallDifference - exemptedWeight) : 0;
+        $('#penalty_weight').val(penaltyWeight.toFixed(2));
+
+        let paymentWeight = arrivedWeight;
         $('#payment_weight').val(paymentWeight.toFixed(2));
     }
 

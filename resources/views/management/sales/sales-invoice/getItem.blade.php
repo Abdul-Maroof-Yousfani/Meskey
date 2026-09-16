@@ -82,7 +82,7 @@
                 <input type="number" name="amount[]" id="amount_{{ $rowIndex }}" class="form-control amount" readonly value="{{ $amount }}">
             </td>
             <td style="min-width: 100px;">
-                <input type="number" name="gst_percent[]" id="gst_percent_{{ $rowIndex }}" onkeyup="calculateRow(this)" class="form-control gst_percent" step="0.01" min="0" value="{{ $gstPercent }}">
+                <input type="number" name="gst_percent[]" id="gst_percent_{{ $rowIndex }}" onkeyup="calculateRow(this)" class="form-control gst_percent" step="0.01" min="0" max="100" value="{{ $gstPercent }}">
             </td>
             <td style="min-width: 120px;">
                 <input type="number" name="gst_amount[]" id="gst_amount_{{ $rowIndex }}" onkeyup="calculateRow(this)" class="form-control gst_amount" step="0.01" min="0" value="{{ $gstAmount }}">
