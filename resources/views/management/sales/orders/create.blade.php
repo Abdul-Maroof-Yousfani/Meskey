@@ -52,7 +52,7 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Delivery Date:</label>
-                        <input type="date" name="delivery_date" id="delivery_date" class="form-control">
+                        <input type="date" name="delivery_date" id="delivery_date" class="form-control" readonly>
                     </div>
                 </div>
                 <div class="col-md-6">
