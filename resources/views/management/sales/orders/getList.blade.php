@@ -29,7 +29,7 @@
                         <td rowspan="{{ $group['rowspan'] }}" class="align-middle text-center font-weight-bold"
                             style="background-color: #e3f2fd;">
                             <div class="p-2">
-                                #{{ $group['so_no'] }}
+                                #{{ $group['so_no'] }}fddhrgsdvsdvcdsgdgdfbgfnhdgvdxfbd
                                 <br>
                                 <small class="text-muted">
                                     {{ \Carbon\Carbon::parse($group['created_at'])->format('d M Y') }}

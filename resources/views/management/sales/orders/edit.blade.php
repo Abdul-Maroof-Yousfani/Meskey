@@ -74,7 +74,7 @@
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label class="form-label">Delivery Date:</label>
+                        <label class="form-label">Delivery Date:dsvregtrfbfdbdfbfgbf</label>
                         <input type="date" name="delivery_date" value="{{ $sale_order->delivery_date ? \Carbon\Carbon::parse($sale_order->delivery_date)->format('Y-m-d') : '' }}" 
                             id="delivery_date" class="form-control">
                     </div>
