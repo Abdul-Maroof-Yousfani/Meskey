@@ -942,6 +942,13 @@ function delivery_order_balance($sale_order_data_id)
 
     $spentBags = 0;
     foreach ($doDataRecords as $doData) {
+        $do = $doData->delivery_order;
+        if (!$do) {
+            continue;
+        }
+
+        $isActive = ($do->do_status === 'active');
+
         $dcBags = (float) \App\Models\Sales\DeliveryChallanData::where('do_data_id', $doData->id)
             ->whereHas('deliveryChallan', function ($q) {
                 $q->where('am_approval_status', '!=', 'rejected');
@@ -954,19 +961,19 @@ function delivery_order_balance($sale_order_data_id)
             })
             ->sum('qty');
 
-        if ($dcBags > 0) {
-            $spentBags += $dcBags;
-        } elseif ($dcQty > 0) {
+        if ($dcBags <= 0 && $dcQty > 0) {
             $bagSize = (float) ($doData->bag_size ?: ($soData->bag_size ?: 50));
-            $spentBags += $bagSize > 0 ? ($dcQty / $bagSize) : 0;
-        } else {
-            $hasPivotDc = $doData->delivery_order?->delivery_challans()
-                ->where('delivery_challans.am_approval_status', '!=', 'rejected')
-                ->exists();
+            $dcBags = $bagSize > 0 ? ($dcQty / $bagSize) : 0;
+        }
 
-            if (!$hasPivotDc && $doData->delivery_order && $doData->delivery_order->do_status !== 'closed') {
-                $spentBags += (float) ($doData->no_of_bags ?? 0);
-            }
+        if ($isActive) {
+            // When DO is active, another truck/LP can still be created under this DO,
+            // so it holds its full DO bags
+            $spentBags += max((float) ($doData->no_of_bags ?? 0), $dcBags);
+        } else {
+            // When DO is not active (closed / inactive), no more trucks can be made,
+            // so only the actual dispatched DC bags are counted
+            $spentBags += $dcBags;
         }
     }
 
@@ -2401,27 +2408,38 @@ function delivery_order_qty_used($sale_order_data_id)
 
     $spent = 0;
     foreach ($doDataRecords as $doData) {
+        $do = $doData->delivery_order;
+        if (!$do) {
+            continue;
+        }
+
+        $isActive = ($do->do_status === 'active');
+
         $dcQty = (float) \App\Models\Sales\DeliveryChallanData::where('do_data_id', $doData->id)
             ->whereHas('deliveryChallan', function ($q) {
                 $q->where('am_approval_status', '!=', 'rejected');
             })
             ->sum('qty');
 
-        if ($dcQty > 0) {
-            $spent += $dcQty;
-        } else {
-            $hasPivotDc = $doData->delivery_order?->delivery_challans()
+        if ($dcQty <= 0) {
+            $hasPivotDc = $do->delivery_challans()
                 ->where('delivery_challans.am_approval_status', '!=', 'rejected')
                 ->exists();
-
             if ($hasPivotDc) {
-                $pivotQty = (float) $doData->delivery_order->delivery_challans()
+                $dcQty = (float) $do->delivery_challans()
                     ->where('delivery_challans.am_approval_status', '!=', 'rejected')
                     ->sum('delivery_challan_delivery_order.qty');
-                $spent += $pivotQty;
-            } elseif ($doData->delivery_order && $doData->delivery_order->do_status !== 'closed') {
-                $spent += (float) $doData->qty;
             }
+        }
+
+        if ($isActive) {
+            // When DO is active, another truck/LP can still be made for this DO,
+            // so it holds its full DO quantity
+            $spent += max((float) $doData->qty, $dcQty);
+        } else {
+            // When DO is not active (closed / inactive), no more trucks can be made,
+            // so only the actual dispatched DC quantity is considered spent!
+            $spent += $dcQty;
         }
     }
 
