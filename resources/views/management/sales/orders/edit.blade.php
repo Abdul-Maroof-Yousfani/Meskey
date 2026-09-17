@@ -1106,7 +1106,7 @@
     }
 
     function disableInquiryFields() {
-        $("#delivery_date").prop('readonly', true);
+        // $("#delivery_date").prop('readonly', true);
         $("#customer_id").prop('disabled', true);
         $("#sauda_type").prop('disabled', true);
         $("#locations").prop('disabled', true);
