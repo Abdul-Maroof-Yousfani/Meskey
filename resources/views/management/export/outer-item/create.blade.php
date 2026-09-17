@@ -32,7 +32,7 @@
     <div id="itemsSection" style="display: none;">
         <div class="row">
             <div class="col-12">
-                <h6 class="header-heading-sepration">Other Items</h6>
+                <h6 class="header-heading-sepration">Outer Items</h6>
                 <table class="table table-bordered table-striped" id="itemsTable">
                     <thead>
                         <tr>

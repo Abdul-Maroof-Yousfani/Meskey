@@ -130,8 +130,8 @@
                     <thead class="thead-light">
                         <tr>
                             <th style="width: 13%">Truck Number *</th>
-                            <th style="width: 12%">Container Number</th>
-                            <th style="width: 8%">Berth No</th>
+                            <th style="width: 12%">Container Number *</th>
+                            <th style="width: 8%">Berth No *</th>
                             <th style="width: 10%">S.Bill No</th>
                             <th style="width: 12%">Driver Name</th>
                             <th style="width: 12%">Contact Details</th>
@@ -141,7 +141,7 @@
                         </tr>
                     </thead>
                     <tbody id="itemsList">
-                        @foreach($loadingProgram->loadingProgramItems as $index => $item)
+                        @forelse($loadingProgram->loadingProgramItems as $index => $item)
                             <tr class="item-row" data-index="{{ $index }}">
                                 <td>
                                         <input type="text" name="loading_program_items[{{ $index }}][truck_number]"
@@ -152,11 +152,11 @@
                                         value="{{ $item->transaction_number }}">
                                 </td>
                                 <td>
-                                    <input type="text" name="loading_program_items[{{ $index }}][container_number]"
+                                    <input type="text" name="loading_program_items[{{ $index }}][container_number]" required
                                         class="form-control form-control-sm" value="{{ $item->container_number }}" @disabled($item->exportFirstWeighbridge)>
                                 </td>
                                 <td>
-                                    <input type="text" name="loading_program_items[{{ $index }}][berth_no]"
+                                    <input type="text" name="loading_program_items[{{ $index }}][berth_no]" required
                                         class="form-control form-control-sm" value="{{ $item->berth_no }}" @disabled($item->exportFirstWeighbridge)>
                                 </td>
                                 <td>
@@ -191,7 +191,55 @@
                                     </button>
                                 </td>
                             </tr>
-                        @endforeach
+                        @empty
+                            <tr class="item-row" data-index="0">
+                                <td>
+                                    <input type="text" name="loading_program_items[0][truck_number]"
+                                        class="form-control form-control-sm" required value="">
+                                    <input type="hidden" name="loading_program_items[0][id]" value="">
+                                    <input type="hidden" name="loading_program_items[0][transaction_number]" value="">
+                                </td>
+                                <td>
+                                    <input type="text" name="loading_program_items[0][container_number]" required
+                                        class="form-control form-control-sm" value="">
+                                </td>
+                                <td>
+                                    <input type="text" name="loading_program_items[0][berth_no]" required
+                                        class="form-control form-control-sm" value="">
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control form-control-sm item-sbill-display"
+                                        value="{{ $loadingProgram->s_bill_no ?? '' }}" readonly
+                                        style="background:#f8f9fa; color:#555;" tabindex="-1">
+                                </td>
+                                <td>
+                                    <input type="text" name="loading_program_items[0][driver_name]"
+                                        class="form-control form-control-sm" value="">
+                                </td>
+                                <td>
+                                    <input type="text" name="loading_program_items[0][contact_details]"
+                                        class="form-control form-control-sm" value="">
+                                </td>
+                                <td>
+                                    <select name="loading_program_items[0][transporter_id]" class="form-control form-control-sm select2 transporter-select">
+                                        <option value="">Select Transporter</option>
+                                        @foreach($Transporters as $transporter)
+                                            <option value="{{ $transporter->id }}">{{ $transporter->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="number" name="loading_program_items[0][qty]"
+                                        class="form-control form-control-sm item-qty" step="0.001" min="0"
+                                        value="0">
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn btn-sm btn-danger remove-item-btn">
+                                        <i class="ft-trash-2"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>
@@ -404,7 +452,7 @@
             window.isUpdatingUI = false;
         }
 
-        let itemIndex = {{ $loadingProgram->loadingProgramItems->count() }};
+        let itemIndex = {{ max(1, $loadingProgram->loadingProgramItems->count()) }};
         $('#addItemBtn').click(function() {
             addItemRow(itemIndex);
             itemIndex++;
@@ -453,8 +501,8 @@
             const itemHtml = `
                 <tr class="item-row" data-index="${index}">
                     <td><input type="text" name="loading_program_items[${index}][truck_number]" class="form-control form-control-sm" required></td>
-                    <td><input type="text" name="loading_program_items[${index}][container_number]" class="form-control form-control-sm"></td>
-                    <td><input type="text" name="loading_program_items[${index}][berth_no]" class="form-control form-control-sm"></td>
+                    <td><input type="text" name="loading_program_items[${index}][container_number]" class="form-control form-control-sm" required></td>
+                    <td><input type="text" name="loading_program_items[${index}][berth_no]" class="form-control form-control-sm" required></td>
                     <td><input type="text" class="form-control form-control-sm item-sbill-display" value="${$('#s_bill_no').val()}" readonly style="background:#f8f9fa; color:#555;" tabindex="-1"></td>
                     <td><input type="text" name="loading_program_items[${index}][driver_name]" class="form-control form-control-sm"></td>
                     <td><input type="text" name="loading_program_items[${index}][contact_details]" class="form-control form-control-sm"></td>

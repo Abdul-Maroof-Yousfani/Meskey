@@ -376,10 +376,12 @@
                 </div>
             </div>
 
-            {{-- doucments to be povided --}}
+            {{-- documents to be provided --}}
             <div class="col-md-12 mb-3">
                 <label>Documents to be provided:</label>
-                <textarea name="documents_to_be_provided" id="documents_to_be_provided" class="form-control">{{ old('documents_to_be_provided', $exportOrder->documents_to_be_provided) }}</textarea>
+                <div class="show-content-box" style="max-height: 200px; overflow-y: auto; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 10px 15px;">
+                    {!! $exportOrder->documents_to_be_provided ?: '<p class="text-muted mb-0">No documents specified.</p>' !!}
+                </div>
             </div>
 
             <div class="row p-2">
@@ -959,7 +961,7 @@
 <script>
     $(document).ready(function() {
 
-        $('#shipping_instructions, #documents_to_be_provided, #other_condition, #force_majure, #application_law, #consigned_details, #other_specifications, #additional_info').summernote({
+        $('#shipping_instructions, #other_condition, #force_majure, #application_law, #consigned_details, #other_specifications, #additional_info').summernote({
             tabsize: 2,
             height: 200,
             toolbar: [],
@@ -972,7 +974,6 @@
         $('#additional_info').summernote('code', `{!! addslashes(old('additional_info', $exportOrder->additional_info ?? '')) !!}`);
 
         $('#shipping_instructions').summernote('disable');
-        $('#documents_to_be_provided').summernote('disable');
         $('#other_condition').summernote('disable');
         $('#force_majure').summernote('disable');
         $('#application_law').summernote('disable');

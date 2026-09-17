@@ -1060,7 +1060,7 @@
             $('input[name="shipment_delivery_date_to"]').val('');
 
             // Export sidebar dropdowns
-            $('select[name="incoterm_id"], select[name="packing_type"], select[name="mode_of_term_id"], select[name="mode_of_transport_id"], select[name="origin_country_id"], select[name="port_of_discharge_id"], select[name="port_of_loading_id"], select[name="hs_code_id"], select[name="partial_payment"], select[name="transhipment"], select[name="part_shipment"], select[name="insurance_covered_by"], select[name="currency_id"]').val('').trigger('change.select2');
+            $('select[name="incoterm_id"], select[name="packing_type"], select[name="mode_of_term_id"], select[name="mode_of_transport_id"], select[name="origin_country_id"], select[name="port_of_discharge_id"], select[name="port_of_loading_id"], select[name="hs_code_id"], select[name="partial_payment"], select[name="transhipment"], select[name="part_shipment"], select[name="insurance_covered_by"], select[name="currency_id"]').val('').trigger('change');
 
             // Export sidebar numeric fields
             $('input[name="advance_payment"], input[name="payment_days"], input[name="currency_rate"], #currencyRate').val('');
@@ -1078,6 +1078,7 @@
             
             reindexAll();
             calculateGrandTotals();
+            togglePackingTypeColumns();
 
             // Specifications
             $('#productSpecs').html('<div class="alert bg-light-warning mb-2 alert-light-warning" role="alert"><i class="ft-info mr-1"></i><strong>No specifications found!</strong> Please select a commodity/product first!</div>');
@@ -1153,6 +1154,7 @@
             });
 
             reindexAll();
+            togglePackingTypeColumns();
         }
 
         function fillFormFromData(data) {
@@ -1168,8 +1170,8 @@
             if (data.shipment_delivery_date_to)   $('input[name="shipment_delivery_date_to"]').val(data.shipment_delivery_date_to);
 
             // Export sidebar dropdowns
-            if (data.incoterm_id)          $('select[name="incoterm_id"]').val(data.incoterm_id).trigger('change.select2');
-            if (data.packing_type)         $('select[name="packing_type"]').val(data.packing_type).trigger('change.select2');
+            if (data.incoterm_id)          $('select[name="incoterm_id"]').val(data.incoterm_id).trigger('change');
+            if (data.packing_type)         $('select[name="packing_type"]').val(data.packing_type).trigger('change');
             if (data.mode_of_term_id)      $('select[name="mode_of_term_id"]').val(data.mode_of_term_id).trigger('change.select2');
             if (data.mode_of_transport_id) $('select[name="mode_of_transport_id"]').val(data.mode_of_transport_id).trigger('change.select2');
             if (data.origin_country_id)    $('select[name="origin_country_id"]').val(data.origin_country_id).trigger('change.select2');
@@ -1196,6 +1198,7 @@
             $('#commission_amount_per_ton').val(data.commission_amount_per_ton || 0);
             $('#commission').val(data.commission || 0);
             calculateGrandTotals();
+            togglePackingTypeColumns();
 
             // Specifications
             if (data.specifications && data.specifications.length > 0) {
@@ -1425,6 +1428,8 @@
             let metricTons = parseFloat(row.find('.metric-tons').val()) || 0;
             let stuffing = parseFloat(row.find('.stuffing').val()) || 0;
             let containers = parseInt(row.find('.containers').val()) || 0;
+            var packingType = $('select[name="packing_type"]').val() || '';
+            var isBulk = packingType.toLowerCase().indexOf('bulk') !== -1;
 
             if (sourceField === 'no_of_bags' || sourceField === 'bag-size') {
                 metricTons = (noOfBags * bagSize) / 1000;
@@ -1436,25 +1441,29 @@
                 }
             }
 
-            // Bi-directional Stuffing & Containers based on MT
-            if (sourceField === 'metric-tons' || sourceField === 'no_of_bags' || sourceField === 'bag-size') {
-                if (stuffing > 0) {
-                    containers = Math.ceil(metricTons / stuffing);
-                    row.find('.containers').val(containers);
-                } else if (containers > 0) {
-                    stuffing = metricTons / containers;
-                    row.find('.stuffing').val(stuffing.toFixed(3));
+            if (!isBulk) {
+                // Bi-directional Stuffing & Containers based on MT
+                if (sourceField === 'metric-tons' || sourceField === 'no_of_bags' || sourceField === 'bag-size') {
+                    if (stuffing > 0) {
+                        containers = Math.ceil(metricTons / stuffing);
+                        row.find('.containers').val(containers);
+                    } else if (containers > 0) {
+                        stuffing = metricTons / containers;
+                        row.find('.stuffing').val(stuffing.toFixed(3));
+                    }
+                } else if (sourceField === 'stuffing') {
+                    if (stuffing > 0) {
+                        containers = Math.ceil(metricTons / stuffing);
+                        row.find('.containers').val(containers);
+                    }
+                } else if (sourceField === 'containers') {
+                    if (containers > 0) {
+                        stuffing = metricTons / containers;
+                        row.find('.stuffing').val(stuffing.toFixed(3));
+                    }
                 }
-            } else if (sourceField === 'stuffing') {
-                if (stuffing > 0) {
-                    containers = Math.ceil(metricTons / stuffing);
-                    row.find('.containers').val(containers);
-                }
-            } else if (sourceField === 'containers') {
-                if (containers > 0) {
-                    stuffing = metricTons / containers;
-                    row.find('.stuffing').val(stuffing.toFixed(3));
-                }
+            } else {
+                row.find('.stuffing, .containers').val(0);
             }
 
             let extraBags = parseInt(row.find('.extra-bags').val()) || 0;

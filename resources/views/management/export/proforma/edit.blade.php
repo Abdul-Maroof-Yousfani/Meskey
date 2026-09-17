@@ -377,10 +377,28 @@
                 </div>
             </div>
 
-            {{-- doucments to be povided --}}
+            {{-- documents to be provided --}}
             <div class="col-md-12 mb-3">
                 <label>Documents to be provided:</label>
-                <textarea name="documents_to_be_provided" id="documents_to_be_provided" class="form-control" disabled>{{ old('documents_to_be_provided', $exportOrder->documents_to_be_provided) }}</textarea>
+                <div class="documents-checklist" style="max-height: 200px; overflow-y: auto; border: 1px solid #d9d9d9; padding: 10px; border-radius: 4px;">
+                    @php
+                        $existingDocs = old('documents_to_be_provided', $exportOrder->documents_to_be_provided ?? '');
+                    @endphp
+                    @foreach($documentLists as $doc)
+                        @php
+                            $isChecked = empty($existingDocs) ? true : (strpos($existingDocs, $doc->name) !== false || $doc->is_required);
+                        @endphp
+                        <div class="custom-control custom-checkbox mb-1">
+                            <input type="checkbox" class="custom-control-input document-checkbox" 
+                                id="doc_{{ $doc->id }}" 
+                                value="{{ $doc->name }}" 
+                                {{ $isChecked ? 'checked' : '' }}
+                                {{ $doc->is_required ? 'disabled' : '' }}>
+                            <label class="custom-control-label" for="doc_{{ $doc->id }}">{{ $doc->name }}</label>
+                        </div>
+                    @endforeach
+                </div>
+                <input type="hidden" name="documents_to_be_provided" id="documents_to_be_provided" value="{{ old('documents_to_be_provided', $exportOrder->documents_to_be_provided ?? '') }}">
             </div>
 
             <div class="row p-2">
@@ -779,8 +797,28 @@
             $('#proforma-packing-source').remove();
         }
 
+        function updateDocumentsList() {
+            var items = [];
+            $('.document-checkbox:checked').each(function() {
+                items.push('<li>' + $(this).val() + '</li>');
+            });
+            
+            if (items.length > 0) {
+                $('#documents_to_be_provided').val('<ol>' + items.join('') + '</ol>');
+            } else {
+                $('#documents_to_be_provided').val('');
+            }
+        }
+
+        $(document).on('change', '.document-checkbox', function() {
+            updateDocumentsList();
+        });
+
+        // Initialize on load
+        updateDocumentsList();
+
         // Initialize Summernote (safe re-open in modal)
-        $('#shipping_instructions, #documents_to_be_provided, #other_condition, #force_majure, #application_law, #other_specifications, #consigned_details, #additional_info').each(function() {
+        $('#shipping_instructions, #other_condition, #force_majure, #application_law, #other_specifications, #consigned_details, #additional_info').each(function() {
             if ($(this).next('.note-editor').length) {
                 $(this).summernote('destroy');
             }
@@ -802,7 +840,7 @@
         $('#force_majure').summernote('code', `{!! addslashes(old('force_majure', $exportOrder->force_majure ?? '')) !!}`);
         $('#application_law').summernote('code', `{!! addslashes(old('application_law', $exportOrder->application_law ?? '')) !!}`);
         $('#additional_info').summernote('code', `{!! addslashes(old('additional_info', $exportOrder->additional_info ?? '')) !!}`);
-        $('#shipping_instructions, #documents_to_be_provided, #other_condition, #force_majure, #application_law, #other_specifications, #additional_info').summernote('disable');
+        $('#shipping_instructions, #other_condition, #force_majure, #application_law, #other_specifications, #additional_info').summernote('disable');
 
         // Initialize Select2 (safe re-open in modal)
         $('.select2').each(function() {
