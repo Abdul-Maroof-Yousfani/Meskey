@@ -121,6 +121,10 @@ class SalesOrder extends Model
         return $this->belongsTo(\App\Models\Master\Broker::class, "broker_id");
     }
 
+    public function seller() {
+        return $this->belongsTo(\App\Models\User::class, "parent_user_id");
+    }
+
     protected static function booted()
     {
         static::updating(function ($salesOrder) {

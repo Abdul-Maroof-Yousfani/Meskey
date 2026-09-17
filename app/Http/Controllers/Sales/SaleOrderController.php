@@ -32,33 +32,62 @@ class SaleOrderController extends Controller
 {
     protected function getSellerDropdownData($currentParentUserId = null)
     {
-        $sellerUsers = User::permission('Seller')->with('parent')->get();
         $sellers = collect();
         $sellerError = null;
         $authUser = auth()->user();
         $defaultSellerId = null;
 
-        foreach ($sellerUsers as $u) {
-            if ($u->parent_user_id && $u->parent) {
-                if ($u->parent->can('Seller')) {
-                    $sellers->put($u->parent->id, $u->parent);
-                } else {
-                    if (!$sellerError) {
-                        $sellerError = "Parent user ({$u->parent->name}) doen't have 'Seller' permission.";
-                    }
-                }
+        // 1. Add all root users (no parent_user_id) who have 'Seller' permission
+        $rootSellers = User::permission('Seller')
+            ->whereNull('parent_user_id')
+            ->get();
+        foreach ($rootSellers as $rs) {
+            $sellers->put($rs->id, $rs);
+        }
+
+        // 2. Add all parents whose children have 'Seller' permission, provided parent also has 'Seller' permission
+        $sellerChildren = User::permission('Seller')
+            ->whereNotNull('parent_user_id')
+            ->with('parent')
+            ->get();
+        foreach ($sellerChildren as $child) {
+            if ($child->parent && $child->parent->can('Seller')) {
+                $sellers->put($child->parent->id, $child->parent);
             }
         }
 
-        // Pre-select seller for current logged-in user
-        if ($authUser && $authUser->parent_user_id && $sellers->has($authUser->parent_user_id)) {
-            $defaultSellerId = $authUser->parent_user_id;
-        } elseif ($authUser && $sellers->has($authUser->id)) {
-            $defaultSellerId = $authUser->id;
-        } elseif ($sellers->count() === 1) {
-            $defaultSellerId = $sellers->keys()->first();
+        // 3. Check currently logged-in user:
+        if ($authUser) {
+            if (!$authUser->can('Seller')) {
+                // Currently logged-in user does not have Seller permission
+                $sellerError = "User ({$authUser->name}) does not have 'Seller' permission.";
+                $defaultSellerId = null;
+            } elseif ($authUser->parent_user_id) {
+                // User has a parent (e.g. Arsal Sale Test)
+                $parent = $authUser->parent ?? User::find($authUser->parent_user_id);
+                if ($parent) {
+                    if ($parent->can('Seller')) {
+                        // Parent has 'Seller' permission -> must appear in dropdown and be pre-selected!
+                        $sellers->put($parent->id, $parent);
+                        $defaultSellerId = $parent->id;
+                    } else {
+                        // Parent does NOT have 'Seller' permission -> show error!
+                        $sellerError = "Parent user ({$parent->name}) does not have 'Seller' permission.";
+                        $defaultSellerId = null;
+                    }
+                } else {
+                    $sellerError = "Parent user not found.";
+                    $defaultSellerId = null;
+                }
+            } else {
+                // User has no parent (he is himself a parent user, e.g. Meskay & Femtee)
+                // And he has 'Seller' permission (checked above)
+                $sellers->put($authUser->id, $authUser);
+                $defaultSellerId = $authUser->id;
+            }
         }
 
+        // 4. For Edit mode, ensure existing saved parent is present in dropdown if valid
         if ($currentParentUserId && !$sellers->has($currentParentUserId)) {
             $existingParent = User::find($currentParentUserId);
             if ($existingParent) {
@@ -66,7 +95,7 @@ class SaleOrderController extends Controller
                     $sellers->put($existingParent->id, $existingParent);
                 } else {
                     if (!$sellerError) {
-                        $sellerError = "Parent user ({$existingParent->name}) doen't have 'Seller' permission.";
+                        $sellerError = "Parent user ({$existingParent->name}) does not have 'Seller' permission.";
                     }
                 }
             }
@@ -300,12 +329,29 @@ class SaleOrderController extends Controller
         $payload['created_by'] = auth()->user()->id;
 
         // Seller / Sell By (parent_user_id) validation
+        $authUser = auth()->user();
+        if ($authUser) {
+            if (!$authUser->can('Seller')) {
+                return response()->json(['error' => "User ({$authUser->name}) does not have 'Seller' permission."], 422);
+            }
+            if ($authUser->parent_user_id) {
+                $parent = $authUser->parent ?? User::find($authUser->parent_user_id);
+                if (!$parent || !$parent->can('Seller')) {
+                    $pName = $parent?->name ?? 'Parent';
+                    return response()->json(['error' => "Parent user ({$pName}) does not have 'Seller' permission."], 422);
+                }
+            }
+        }
+
         if ($request->filled('parent_user_id')) {
             $parentUser = User::find($request->parent_user_id);
             if (!$parentUser || !$parentUser->can('Seller')) {
-                return response()->json(['error' => "Parent user doen't have 'Seller' permission."], 422);
+                $pName = $parentUser?->name ?? 'Parent';
+                return response()->json(['error' => "Parent user ({$pName}) does not have 'Seller' permission."], 422);
             }
             $payload['parent_user_id'] = $request->parent_user_id;
+        } elseif ($authUser && !$authUser->parent_user_id && $authUser->can('Seller')) {
+            $payload['parent_user_id'] = $authUser->id;
         } else {
             $payload['parent_user_id'] = null;
         }
@@ -707,7 +753,8 @@ class SaleOrderController extends Controller
                 if ($request->filled('parent_user_id')) {
                     $parentUser = User::find($request->parent_user_id);
                     if (!$parentUser || !$parentUser->can('Seller')) {
-                        return response()->json(['error' => "Parent user doen't have 'Seller' permission."], 422);
+                        $pName = $parentUser?->name ?? 'Parent';
+                        return response()->json(['error' => "Parent user ({$pName}) does not have 'Seller' permission."], 422);
                     }
                     $payload['parent_user_id'] = $request->parent_user_id;
                 } else {
