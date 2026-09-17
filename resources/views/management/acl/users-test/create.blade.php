@@ -85,6 +85,21 @@
                 </select>
             </div>
         </div>
+
+        <div class="col-xs-12 col-sm-12 col-md-12">
+            <hr class="mt-1 mb-2">
+            <div class="form-group mb-1">
+                <div class="checkbox">
+                    <input type="checkbox" name="has_account" id="has_account" value="1">
+                    <label for="has_account" class="font-weight-bold text-primary" style="cursor: pointer;">
+                        <span><i class="ft-git-merge mr-1"></i> Chart of Account (Parent: {{ $parentAccount->name ?? 'Seller Commission' }} [{{ $parentAccount->hierarchy_path ?? '2-9' }}])</span>
+                    </label>
+                </div>
+                <small class="text-muted d-block mt-1">
+                    <i class="ft-info mr-1"></i> By checking the checkbox, a Chart of Account will be generated using the user’s name (Parent: {{ $parentAccount->name ?? 'Seller Commission' }} [{{ $parentAccount->hierarchy_path ?? '2-9' }}]).
+                </small>
+            </div>
+        </div>
     </div>
 
     <div class="row bottom-button-bar">

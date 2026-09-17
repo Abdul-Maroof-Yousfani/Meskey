@@ -46,6 +46,7 @@ class SalesOrder extends Model
         "broker_id",
         "parent_user_id",
         "commission_per_kg",
+        "seller_commission_per_kg",
         "receipt_voucher_item_ids",
         "payment_on_kaanta"
     ];

@@ -26,9 +26,59 @@ use App\Models\ReceiptVoucher;
 use App\Models\Master\Account\Transaction;
 use App\Services\AuditLogService;
 use Illuminate\Support\Facades\Cache;
+use App\Models\User;
 
 class SaleOrderController extends Controller
 {
+    protected function getSellerDropdownData($currentParentUserId = null)
+    {
+        $sellerUsers = User::permission('Seller')->with('parent')->get();
+        $sellers = collect();
+        $sellerError = null;
+        $authUser = auth()->user();
+        $defaultSellerId = null;
+
+        foreach ($sellerUsers as $u) {
+            if ($u->parent_user_id && $u->parent) {
+                if ($u->parent->can('Seller')) {
+                    $sellers->put($u->parent->id, $u->parent);
+                } else {
+                    if (!$sellerError) {
+                        $sellerError = "Parent user ({$u->parent->name}) doen't have 'Seller' permission.";
+                    }
+                }
+            }
+        }
+
+        // Pre-select seller for current logged-in user
+        if ($authUser && $authUser->parent_user_id && $sellers->has($authUser->parent_user_id)) {
+            $defaultSellerId = $authUser->parent_user_id;
+        } elseif ($authUser && $sellers->has($authUser->id)) {
+            $defaultSellerId = $authUser->id;
+        } elseif ($sellers->count() === 1) {
+            $defaultSellerId = $sellers->keys()->first();
+        }
+
+        if ($currentParentUserId && !$sellers->has($currentParentUserId)) {
+            $existingParent = User::find($currentParentUserId);
+            if ($existingParent) {
+                if ($existingParent->can('Seller')) {
+                    $sellers->put($existingParent->id, $existingParent);
+                } else {
+                    if (!$sellerError) {
+                        $sellerError = "Parent user ({$existingParent->name}) doen't have 'Seller' permission.";
+                    }
+                }
+            }
+        }
+
+        return [
+            'sellers' => $sellers->values(),
+            'sellerError' => $sellerError,
+            'defaultSellerId' => $defaultSellerId,
+        ];
+    }
+
     public function index()
     {
         $customerIds = SalesOrder::distinct()->pluck('customer_id')->filter();
@@ -73,12 +123,17 @@ class SaleOrderController extends Controller
         $brokers = Broker::where('status', 'active')
             ->where('is_for_sales', 1)
             ->get();
-        return view('management.sales.orders.create', compact('payment_terms', 'customers', 'inquiries', 'items', 'pay_types', 'bag_types', 'arrivalLocations', 'arrivalSubLocations', 'packings', 'brokers'));
+        $sellerData = $this->getSellerDropdownData();
+        $sellers = $sellerData['sellers'];
+        $sellerError = $sellerData['sellerError'];
+        $defaultSellerId = $sellerData['defaultSellerId'];
+
+        return view('management.sales.orders.create', compact('payment_terms', 'customers', 'inquiries', 'items', 'pay_types', 'bag_types', 'arrivalLocations', 'arrivalSubLocations', 'packings', 'brokers', 'sellers', 'sellerError', 'defaultSellerId'));
     }
 
     public function edit(int $id)
     {
-        $sale_order = SalesOrder::with(['locations', 'factories', 'sections', 'sales_order_data', 'pay_type', 'sales_order_data.sale_inquiry_data'])->find($id);
+        $sale_order = SalesOrder::with(['locations', 'factories', 'sections', 'sales_order_data', 'pay_type', 'sales_order_data.sale_inquiry_data', 'parent_user', 'broker'])->find($id);
         $payment_terms = PaymentTerm::all();
         $customers = Customer::where("type", "local")->get();
         $inquiries = SalesInquiry::all();
@@ -99,14 +154,17 @@ class SaleOrderController extends Controller
         $brokers = Broker::where('status', 'active')
             ->where('is_for_sales', 1)
             ->get();
+        $sellerData = $this->getSellerDropdownData($sale_order->parent_user_id);
+        $sellers = $sellerData['sellers'];
+        $sellerError = $sellerData['sellerError'];
         $balanceQuantity = $this->calculateBalanceQuantity($sale_order);
         $isClosed = $sale_order->isClosed();
-        return view('management.sales.orders.edit', compact('payment_terms', 'customers', 'inquiries', 'items', 'sale_order', 'pay_types', 'bag_types', 'arrivalLocations', 'arrivalSubLocations', 'packings', 'brokers', 'latestLog', 'balanceQuantity', 'isClosed'));
+        return view('management.sales.orders.edit', compact('payment_terms', 'customers', 'inquiries', 'items', 'sale_order', 'pay_types', 'bag_types', 'arrivalLocations', 'arrivalSubLocations', 'packings', 'brokers', 'latestLog', 'balanceQuantity', 'isClosed', 'sellers', 'sellerError'));
     }
 
     public function view(Request $request, int $id)
     {
-        $sale_order = SalesOrder::with('sales_order_data', 'locations', 'factories', 'sections', 'sales_order_data.sale_inquiry_data', 'pay_type', 'sale_inquiry')->find($id);
+        $sale_order = SalesOrder::with('sales_order_data', 'locations', 'factories', 'sections', 'sales_order_data.sale_inquiry_data', 'pay_type', 'sale_inquiry', 'parent_user', 'broker')->find($id);
         $payment_terms = PaymentTerm::all();
         $customers = Customer::where("type", "local")->get();
         $inquiries = SalesInquiry::all();
@@ -240,7 +298,19 @@ class SaleOrderController extends Controller
         $payload['arrival_location_id'] = $factoryIds[0] ?? null;
         $payload['arrival_sub_location_id'] = $sectionIds[0] ?? null;
         $payload['created_by'] = auth()->user()->id;
-        $payload['parent_user_id'] = auth()->user()->parent_user_id ?? auth()->user()->id;
+
+        // Seller / Sell By (parent_user_id) validation
+        if ($request->filled('parent_user_id')) {
+            $parentUser = User::find($request->parent_user_id);
+            if (!$parentUser || !$parentUser->can('Seller')) {
+                return response()->json(['error' => "Parent user doen't have 'Seller' permission."], 422);
+            }
+            $payload['parent_user_id'] = $request->parent_user_id;
+        } else {
+            $payload['parent_user_id'] = null;
+        }
+        $payload['seller_commission_per_kg'] = $request->seller_commission_per_kg ?? 0;
+
         $payload["remarks"] = !$request->remarks ? '' : $request->remarks;
         $payload["reference_no"] = self::getNumber($request, null, $request->order_date);
         $payload["contact_person"] = !$request->contact_person ? '' : $request->contact_person;
@@ -631,7 +701,23 @@ class SaleOrderController extends Controller
             $payload['arrival_sub_location_id'] = $sectionIds[0] ?? null;
             $payload['am_approval_status'] = 'pending';
             $payload['am_change_made'] = 1;
-            // $payload['parent_user_id'] = auth()->user()->parent_user_id ?? auth()->user()->id;
+
+            // Seller / Sell By (parent_user_id) validation
+            if ($request->has('parent_user_id')) {
+                if ($request->filled('parent_user_id')) {
+                    $parentUser = User::find($request->parent_user_id);
+                    if (!$parentUser || !$parentUser->can('Seller')) {
+                        return response()->json(['error' => "Parent user doen't have 'Seller' permission."], 422);
+                    }
+                    $payload['parent_user_id'] = $request->parent_user_id;
+                } else {
+                    $payload['parent_user_id'] = null;
+                }
+            }
+            if ($request->has('seller_commission_per_kg')) {
+                $payload['seller_commission_per_kg'] = $request->seller_commission_per_kg ?? 0;
+            }
+
             $payload["remarks"] = !$request->remarks ? '' : $request->remarks;
             $payload["contact_person"] = !$request->contact_person ? '' : $request->contact_person;
             $payload["so_reference_no"] = !$request->so_reference_no ? '' : $request->so_reference_no;

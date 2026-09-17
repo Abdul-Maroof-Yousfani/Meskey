@@ -27,6 +27,8 @@ class UserTestStoreRequest extends FormRequest
             'email' => 'nullable|email|unique:users,email',
             'password' => 'required|confirmed',
             'parent_user_id' => 'nullable|exists:users,id',
+            'has_account' => 'nullable',
+            'account_id' => 'nullable|exists:accounts,id',
         ];
     }
 

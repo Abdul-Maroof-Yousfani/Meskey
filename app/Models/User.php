@@ -34,6 +34,7 @@ class User extends Authenticatable
         'password',
         'user_type',
         'parent_user_id',
+        'account_id',
         'status',
         'current_company_id',
         'company_location_id',
@@ -86,6 +87,11 @@ class User extends Authenticatable
     public function parent()
     {
         return $this->belongsTo(User::class, 'parent_user_id');
+    }
+
+    public function account()
+    {
+        return $this->belongsTo(Account::class, 'account_id');
     }
 
     public function children()

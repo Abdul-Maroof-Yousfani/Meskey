@@ -1,7 +1,8 @@
 @foreach ($sale_order->sales_order_data as $index => $data)
     @php
         $balance = delivery_order_balance($data->id);
-        if(!$balance) continue;
+        $qtyBalance = delivery_order_qty_balance($data->id);
+        if ($balance <= 0 && $qtyBalance <= 0) continue;
     @endphp
     <tr id="row_{{ $index }}">
         <td>
@@ -34,7 +35,7 @@
             <input type="text" style="margin-bottom: 10px;" name="no_of_bags[]" id="no_of_bags_{{ $index }}" value="{{ $total_quantity - $used_quantity }}" class="form-control no_of_bags" step="0.01" min="0" readonly>
         </td>
         <td>
-            <input type="text" name="qty[]" @readonly($sale_order->pay_type_id == 10) value="{{ round($remaining_qty) }}" id="qty_{{ $index }}" class="form-control qty" step="0.01" min="0" onchange="calc(this); check_balance(this, 'no_of_bags_{{ $index }}')" onkeyup="check_balance(this, 'no_of_bags_{{ $index }}')" data-balance="{{ delivery_order_balance($data->id) }}" data-qty-balance="{{ delivery_order_qty_balance($data->id) }}" oninput="calc(this)">
+            <input type="text" name="qty[]" @readonly($sale_order->pay_type_id == 10) value="{{ round($qtyBalance > 0 ? $qtyBalance : $remaining_qty) }}" id="qty_{{ $index }}" class="form-control qty" step="0.01" min="0" onchange="calc(this); check_balance(this, 'no_of_bags_{{ $index }}')" onkeyup="check_balance(this, 'no_of_bags_{{ $index }}')" data-balance="{{ delivery_order_balance($data->id) }}" data-qty-balance="{{ delivery_order_qty_balance($data->id) }}" oninput="calc(this)">
             <input type="hidden" name="current_qty[]" value="0">
             <span style="font-size: 14px;">Used Quantity: {{ round(delivery_order_qty_used($data->id))  }}</span>
             <br />
@@ -47,7 +48,7 @@
             <input type="text" name="rate_per_mond[]" id="rate_per_mond_{{ $index }}" value="{{ $data->rate_per_mond }}" class="form-control rate_per_mond" step="0.01" min="0" readonly>
         </td>
         <td>
-            <input type="text" name="amount[]" id="amount_{{ $index }}" value="{{ round($data->rate * ($remaining_qty ?? 0))  }}"
+            <input type="text" name="amount[]" id="amount_{{ $index }}" value="{{ round($data->rate * ($qtyBalance > 0 ? $qtyBalance : ($remaining_qty ?? 0)))  }}"
                 class="form-control amount" readonly>
         </td>
         <td>

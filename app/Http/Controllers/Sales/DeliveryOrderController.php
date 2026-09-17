@@ -436,25 +436,16 @@ class DeliveryOrderController extends Controller
             }
 
 
-            $spent_qty = $salesOrder->delivery_orders
-                ->reject(function($do) {
-                    return $do->am_approval_status === "rejected" || $do->is_auto_created_from_so;
-                })
-                ->flatMap->delivery_order_data
-                ->sum("qty");
-            $total_qty = $salesOrder?->sales_order_data?->first()->qty;
-            $remaining_qty = $total_qty - $spent_qty;
-
+            $firstSoData = $salesOrder?->sales_order_data?->first();
+            $spent_qty = $firstSoData ? delivery_order_qty_used($firstSoData->id) : 0;
+            $remaining_qty = $firstSoData ? delivery_order_qty_balance($firstSoData->id) : 0;
 
             foreach ($request->item_id as $key => $item) {
-                // $balance = delivery_order_balance($request->so_data_id[$key]);
+                $soDataId = $request->so_data_id[$key] ?? $firstSoData?->id;
+                $itemRemaining = $soDataId ? delivery_order_qty_balance($soDataId) : $remaining_qty;
 
-                // if($request->no_of_bags[$key] > $balance) {
-                //     return response()->json("Total balance is $balance. you can not exceed this balance", 422);
-                // }
-
-                if ($remaining_qty < (int) $request->qty[$key]) {
-                    return response()->json("Total remaining qty(kg): $remaining_qty. you can not exceed this balance", 422);
+                if ($itemRemaining < (float) $request->qty[$key]) {
+                    return response()->json("Total remaining qty(kg): $itemRemaining. you can not exceed this balance", 422);
                 }
 
                 $delivery_order->delivery_order_data()->create([
@@ -643,8 +634,9 @@ class DeliveryOrderController extends Controller
                 }
 
                 foreach ($saleOrder->sales_order_data as $data) {
-                    $balance = delivery_order_balance($data->id);
-                    if ($balance > 0) {
+                    $qtyBalance = delivery_order_qty_balance($data->id);
+                    $bagBalance = delivery_order_balance($data->id);
+                    if ($qtyBalance > 0 || $bagBalance > 0) {
                         return true;
                     }
                 }
@@ -747,23 +739,19 @@ class DeliveryOrderController extends Controller
         $so_id = $request->so_id;
 
         $items = Product::select('id', 'name')->get();
-        $sale_order = SalesOrder::with('delivery_order_transactions', 'locations', 'delivery_orders')
+        $sale_order = SalesOrder::with('delivery_order_transactions', 'locations', 'delivery_orders', 'sales_order_data')
             ->find($so_id);
 
-        $spent = $sale_order->delivery_orders
-            ->reject(function($do) {
-                return $do->am_approval_status === "rejected" || $do->is_auto_created_from_so;
-            })
-            ->flatMap->delivery_order_data
-            ->sum('qty');
-
-        $spent_qty = $spent;
-        $total_qty = $sale_order?->sales_order_data?->first()->qty;
-        $remaining_qty = $total_qty - $spent_qty;
+        $firstSoData = $sale_order?->sales_order_data?->first();
+        if ($firstSoData) {
+            $spent = delivery_order_qty_used($firstSoData->id);
+            $remaining_qty = delivery_order_qty_balance($firstSoData->id);
+        } else {
+            $spent = 0;
+            $remaining_qty = 0;
+        }
 
         $bag_types = BagType::select('id', 'name')->get();
-
-
 
         return view('management.sales.delivery-order.getItem', compact('sale_order', 'items', 'bag_types', 'spent', 'remaining_qty'));
     }
@@ -1349,33 +1337,19 @@ class DeliveryOrderController extends Controller
             }
 
             $salesOrder = SalesOrder::with('sales_order_data')->find($request->sale_order_id);
-            $spent_qty = $salesOrder->delivery_orders()
-                ->where("am_approval_status", "!=", "rejected")
-                ->where(function($query) {
-                    $query->whereNull("is_auto_created_from_so")
-                          ->orWhere("is_auto_created_from_so", "!=", 1);
-                })
-                ->with('delivery_order_data')
-                ->get()
-                ->flatMap->delivery_order_data
-                ->whereIn('so_data_id', $salesOrder->sales_order_data->pluck('id'))
-                ->sum("qty");
-
-            $total_qty = $salesOrder->sales_order_data->sum('qty');
-            $remaining_qty = $total_qty - $spent_qty;
+            $firstSoData = $salesOrder?->sales_order_data?->first();
+            $spent_qty = $firstSoData ? delivery_order_qty_used($firstSoData->id) : 0;
+            $remaining_qty = $firstSoData ? delivery_order_qty_balance($firstSoData->id) : 0;
 
             // Rebuild line items
 
             $delivery_order->delivery_order_data()->delete();
             foreach ($request->item_id as $key => $item) {
-                // $balance =  delivery_order_balance($request->so_data_id[$key]);
-                // if($request->no_of_bags[$key] > ($balance)) {
-                //     return response()->json("Total balance is $balance. you can not exceed this balance", 422);
-                // }
-
+                $soDataId = $request->so_data_id[$key] ?? $firstSoData?->id;
+                $itemRemaining = $soDataId ? delivery_order_qty_balance($soDataId) : $remaining_qty;
                 $current_qty = $request->current_qty[$key] ?? 0;
-                if ((int) $request->qty[$key] > (int) ($remaining_qty + $current_qty)) {
-                    return response()->json("Total KG is: $remaining_qty, you can not exceed this balance", 422);
+                if ((float) $request->qty[$key] > (float) ($itemRemaining + $current_qty)) {
+                    return response()->json("Total KG is: $itemRemaining, you can not exceed this balance", 422);
                 }
 
                 $delivery_order->delivery_order_data()->create([

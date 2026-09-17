@@ -48,12 +48,14 @@
                                 <table class="table m-0">
                                     <thead>
                                         <tr>
-                                            <th class="col-sm-1">Image</th>
                                             <th class="col-sm-2">Name</th>
-                                            <th class="col-sm-2">Username</th>
-                                            <th class="col-sm-3">Role</th>
-                                            <th class="col-sm-3">Companies Assign</th>
-                                            <th class="col-sm-2">Action</th>
+                                            <th class="col-sm-1">Parent</th>
+                                            <th class="col-sm-1 text-center">PO Approval</th>
+                                            <th class="col-sm-2">Role</th>
+                                            <th class="col-sm-2">Companies Assign</th>
+                                            <th class="col-sm-2">Location/Sublocation</th>
+                                            <th class="col-sm-1">COA Hierarchy</th>
+                                            <th class="col-sm-1">Action</th>
                                         </tr>
                                     </thead>
                                 </table>
