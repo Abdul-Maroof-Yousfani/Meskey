@@ -18,6 +18,8 @@ class SalesOrder extends Model
     use HasApproval {
         onApprovalComplete as traitOnApprovalComplete;
         onApprovalRejected as traitOnApprovalRejected;
+        onApprovalReverted as traitOnApprovalReverted;
+        getApprovalStatus as traitGetApprovalStatus;
     }
 
     protected $fillable = [
@@ -44,6 +46,7 @@ class SalesOrder extends Model
         "broker_id",
         "parent_user_id",
         "commission_per_kg",
+        "seller_commission_per_kg",
         "receipt_voucher_item_ids",
         "payment_on_kaanta"
     ];
@@ -116,6 +119,10 @@ class SalesOrder extends Model
 
     public function broker() {
         return $this->belongsTo(\App\Models\Master\Broker::class, "broker_id");
+    }
+
+    public function seller() {
+        return $this->belongsTo(\App\Models\User::class, "parent_user_id");
     }
 
     protected static function booted()
@@ -208,9 +215,9 @@ class SalesOrder extends Model
         // Check if there is an amended delivery date stored in database cache
         $cacheKey = "so_amendment_{$this->id}";
         $amendment = \Illuminate\Support\Facades\Cache::store('database')->get($cacheKey);
-        if ($amendment && !empty($amendment['delivery_date'])) {
-            $oldDate = $this->delivery_date;
-            $newDate = $amendment['delivery_date'];
+        if ($amendment) {
+            $oldDate = $amendment['old_delivery_date'] ?? null;
+            $newDate = $amendment['delivery_date'] ?? $this->delivery_date;
             
             $this->delivery_date = $newDate;
             $this->saveQuietly();
@@ -230,14 +237,93 @@ class SalesOrder extends Model
         }
     }
 
+    public function getApprovalStatus()
+    {
+        if ($this->am_approval_status === 'approved') {
+            return 'approved';
+        }
+        return $this->traitGetApprovalStatus();
+    }
+
     protected function onApprovalRejected()
     {
-        $this->traitOnApprovalRejected();
-
         $cacheKey = "so_amendment_{$this->id}";
-        if (\Illuminate\Support\Facades\Cache::store('database')->has($cacheKey)) {
+        $amendment = \Illuminate\Support\Facades\Cache::store('database')->get($cacheKey);
+        if ($amendment) {
+            // An amendment on an already-approved SO was rejected/declined
+            // 1. Restore original delivery date
+            if (!empty($amendment['old_delivery_date'])) {
+                $this->delivery_date = $amendment['old_delivery_date'];
+            }
+            // 2. SO itself remains Approved!
+            $this->am_approval_status = 'approved';
+            $this->am_change_made = 1;
+            $this->saveQuietly();
+
+            // 3. Remove the extra pending cycle rows created by reject()
+            $module = $this->getApprovalModule();
+            if ($module) {
+                $maxCycle = $this->approvalRows()->where('module_id', $module->id)->max('approval_cycle');
+                $this->approvalRows()
+                    ->where('module_id', $module->id)
+                    ->where('approval_cycle', $maxCycle)
+                    ->where('status', 'pending')
+                    ->delete();
+            }
+
+            \App\Services\AuditLogService::log(
+                $this,
+                'delivery_date_amendment_rejected',
+                "Delivery date amendment declined. Retained original delivery date {$this->delivery_date} and restored Approved status.",
+                ['delivery_date' => $amendment['delivery_date'] ?? null],
+                ['delivery_date' => $this->delivery_date],
+                auth()->id() ?? 1
+            );
+
             \Illuminate\Support\Facades\Cache::store('database')->forget($cacheKey);
+            return;
         }
+
+        $this->traitOnApprovalRejected();
+    }
+
+    protected function onApprovalReverted()
+    {
+        $cacheKey = "so_amendment_{$this->id}";
+        $amendment = \Illuminate\Support\Facades\Cache::store('database')->get($cacheKey);
+        if ($amendment) {
+            // An amendment on an already-approved SO was reverted/declined
+            if (!empty($amendment['old_delivery_date'])) {
+                $this->delivery_date = $amendment['old_delivery_date'];
+            }
+            $this->am_approval_status = 'approved';
+            $this->am_change_made = 1;
+            $this->saveQuietly();
+
+            $module = $this->getApprovalModule();
+            if ($module) {
+                $maxCycle = $this->approvalRows()->where('module_id', $module->id)->max('approval_cycle');
+                $this->approvalRows()
+                    ->where('module_id', $module->id)
+                    ->where('approval_cycle', $maxCycle)
+                    ->where('status', 'pending')
+                    ->delete();
+            }
+
+            \App\Services\AuditLogService::log(
+                $this,
+                'delivery_date_amendment_reverted',
+                "Delivery date amendment reverted. Retained original delivery date {$this->delivery_date} and restored Approved status.",
+                ['delivery_date' => $amendment['delivery_date'] ?? null],
+                ['delivery_date' => $this->delivery_date],
+                auth()->id() ?? 1
+            );
+
+            \Illuminate\Support\Facades\Cache::store('database')->forget($cacheKey);
+            return;
+        }
+
+        $this->traitOnApprovalReverted();
     }
 
     public static function autoCreateDeliveryOrder(SalesOrder $salesOrder)

@@ -91,6 +91,11 @@ class ApprovalController extends Controller
             $returned = $record->revert($request->comments);
 
             if ($returned) {
+                if ($record instanceof \App\Models\Sales\SalesOrder && $record->am_approval_status === 'approved') {
+                    return response()->json([
+                        'success' => 'Delivery date amendment reverted. Sale Order remains approved with original delivery date.'
+                    ]);
+                }
                 return response()->json([
                     'success' => 'Request reverted successfully.'
                 ]);
@@ -110,6 +115,11 @@ class ApprovalController extends Controller
             $rejected = $record->reject($request->comments);
 
             if ($rejected) {
+                if ($record instanceof \App\Models\Sales\SalesOrder && $record->am_approval_status === 'approved') {
+                    return response()->json([
+                        'success' => 'Delivery date amendment declined. Sale Order remains approved with original delivery date.'
+                    ]);
+                }
                 return response()->json([
                     'success' => 'Rejected successfully. All approvals have been reset.'
                 ]);

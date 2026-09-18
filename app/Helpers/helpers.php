@@ -924,20 +924,70 @@ function get_storage_name_by_id($storage_id)
 
 function delivery_order_balance($sale_order_data_id)
 {
-    $spent = DeliveryOrderData::where("so_data_id", $sale_order_data_id)
+    $soData = SalesOrderData::find($sale_order_data_id);
+    if (!$soData) {
+        return 0;
+    }
+
+    $doDataRecords = DeliveryOrderData::where("so_data_id", $sale_order_data_id)
         ->whereHas('delivery_order', function ($q) {
-            $q->where(function ($query) {
-                $query->whereNull('is_auto_created_from_so')
-                    ->orWhere('is_auto_created_from_so', '!=', 1);
-            });
-            $q->where('am_approval_status', '!=', 'rejected');
+            $q->where('am_approval_status', '!=', 'rejected')
+                ->where(function ($query) {
+                    $query->whereNull('is_auto_created_from_so')
+                        ->orWhere('is_auto_created_from_so', '!=', 1);
+                });
         })
-        ->sum("no_of_bags");
+        ->with('delivery_order')
+        ->get();
 
-    $able_to_spend = (SalesOrderData::where("id", $sale_order_data_id)->first())->no_of_bags;
-    $balance = (int) $able_to_spend - (int) $spent;
+    $spentBags = 0;
+    foreach ($doDataRecords as $doData) {
+        $do = $doData->delivery_order;
+        if (!$do) {
+            continue;
+        }
 
-    return $balance;
+        $isActive = ($do->do_status === 'active');
+
+        $dcBags = (float) \App\Models\Sales\DeliveryChallanData::where('do_data_id', $doData->id)
+            ->whereHas('deliveryChallan', function ($q) {
+                $q->where('am_approval_status', '!=', 'rejected');
+            })
+            ->sum('no_of_bags');
+
+        $dcQty = (float) \App\Models\Sales\DeliveryChallanData::where('do_data_id', $doData->id)
+            ->whereHas('deliveryChallan', function ($q) {
+                $q->where('am_approval_status', '!=', 'rejected');
+            })
+            ->sum('qty');
+
+        if ($dcBags <= 0 && $dcQty > 0) {
+            $bagSize = (float) ($doData->bag_size ?: ($soData->bag_size ?: 50));
+            $dcBags = $bagSize > 0 ? ($dcQty / $bagSize) : 0;
+        }
+
+        if ($isActive) {
+            // When DO is active, another truck/LP can still be created under this DO,
+            // so it holds its full DO bags
+            $spentBags += max((float) ($doData->no_of_bags ?? 0), $dcBags);
+        } else {
+            // When DO is not active (closed / inactive), no more trucks can be made,
+            // so only the actual dispatched DC bags are counted
+            $spentBags += $dcBags;
+        }
+    }
+
+    $able_to_spend = (float) $soData->no_of_bags;
+    $balance = $able_to_spend - $spentBags;
+
+    // If there is still QTY balance remaining, ensure at least proportional bags are available
+    $qtyBalance = delivery_order_qty_balance($sale_order_data_id);
+    if ($qtyBalance > 0 && $balance <= 0) {
+        $bagSize = (float) ($soData->bag_size ?: 50);
+        $balance = $bagSize > 0 ? ceil($qtyBalance / $bagSize) : 1;
+    }
+
+    return max(0, (int) round($balance));
 }
 
 function get_second_weighbridge_balance(LoadingSlip $loadingSlip, $delivery_order_id = null)
@@ -2338,34 +2388,75 @@ if (!function_exists('lastpaymentStatus')) {
     }
 }
 
-function delivery_order_qty_balance($sale_order_data_id)
-{
-    $data = DeliveryOrderData::whereHas("delivery_order", function ($query) {
-        $query->where("am_approval_status", "!=", "rejected");
-        $query->where(function ($q) {
-            $q->whereNull('is_auto_created_from_so')
-                ->orWhere('is_auto_created_from_so', '!=', 1);
-        });
-    })->where("so_data_id", $sale_order_data_id)->get();
-
-    $spent = $data->sum("qty");
-    $soData = SalesOrderData::find($sale_order_data_id);
-    $able_to_spend = $soData ? $soData->qty : 0;
-
-    return $able_to_spend - $spent;
-}
-
 function delivery_order_qty_used($sale_order_data_id)
 {
-    $data = DeliveryOrderData::whereHas("delivery_order", function ($query) {
-        $query->where("am_approval_status", "!=", "rejected");
-        $query->where(function ($q) {
-            $q->whereNull('is_auto_created_from_so')
-                ->orWhere('is_auto_created_from_so', '!=', 1);
-        });
-    })->where("so_data_id", $sale_order_data_id)->get();
+    $soData = SalesOrderData::find($sale_order_data_id);
+    if (!$soData) {
+        return 0;
+    }
 
-    return $data->sum("qty");
+    $doDataRecords = DeliveryOrderData::where("so_data_id", $sale_order_data_id)
+        ->whereHas("delivery_order", function ($query) {
+            $query->where("am_approval_status", "!=", "rejected")
+                ->where(function ($q) {
+                    $q->whereNull('is_auto_created_from_so')
+                        ->orWhere('is_auto_created_from_so', '!=', 1);
+                });
+        })
+        ->with('delivery_order')
+        ->get();
+
+    $spent = 0;
+    foreach ($doDataRecords as $doData) {
+        $do = $doData->delivery_order;
+        if (!$do) {
+            continue;
+        }
+
+        $isActive = ($do->do_status === 'active');
+
+        $dcQty = (float) \App\Models\Sales\DeliveryChallanData::where('do_data_id', $doData->id)
+            ->whereHas('deliveryChallan', function ($q) {
+                $q->where('am_approval_status', '!=', 'rejected');
+            })
+            ->sum('qty');
+
+        if ($dcQty <= 0) {
+            $hasPivotDc = $do->delivery_challans()
+                ->where('delivery_challans.am_approval_status', '!=', 'rejected')
+                ->exists();
+            if ($hasPivotDc) {
+                $dcQty = (float) $do->delivery_challans()
+                    ->where('delivery_challans.am_approval_status', '!=', 'rejected')
+                    ->sum('delivery_challan_delivery_order.qty');
+            }
+        }
+
+        if ($isActive) {
+            // When DO is active, another truck/LP can still be made for this DO,
+            // so it holds its full DO quantity
+            $spent += max((float) $doData->qty, $dcQty);
+        } else {
+            // When DO is not active (closed / inactive), no more trucks can be made,
+            // so only the actual dispatched DC quantity is considered spent!
+            $spent += $dcQty;
+        }
+    }
+
+    return $spent;
+}
+
+function delivery_order_qty_balance($sale_order_data_id)
+{
+    $soData = SalesOrderData::find($sale_order_data_id);
+    if (!$soData) {
+        return 0;
+    }
+
+    $able_to_spend = (float) $soData->qty;
+    $spent = delivery_order_qty_used($sale_order_data_id);
+
+    return max(0, $able_to_spend - $spent);
 }
 
 if (!function_exists('formatDateTime')) {

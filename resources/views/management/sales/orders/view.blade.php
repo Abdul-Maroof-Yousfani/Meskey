@@ -156,13 +156,6 @@
                             class="form-control" readonly>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label class="form-label">Sell By:</label>
-                        <input type="text" class="form-control" value="{{ $sale_order->parent_user->name ?? 'N/A' }}"
-                            readonly>
-                    </div>
-                </div>
 
                 <div class="col-md-3">
                     <div class="form-group">
@@ -280,21 +273,6 @@
         </div>
     </div>
 
-    <div class="row form-mar">
-        <div class="col-md-4">
-            <div class="form-group">
-                <label class="form-label">Token Money:</label>
-                <input type="text" value="{{ $sale_order->token_money ?? 'N/A' }}" class="form-control" readonly>
-            </div>
-        </div>
-        <div class="col-md-8">
-            <div class="form-group">
-                <label class="form-label">Remarks:</label>
-                <textarea name="remarks" id="remarks" class="form-control" rows="2"
-                    readonly>{{ $sale_order->remarks }}</textarea>
-            </div>
-        </div>
-    </div>
 
     <div class="row form-mar">
         <!-- <div class="col-12 text-right mb-2">
@@ -411,6 +389,35 @@
 
 
 
+
+        <div class="col-12 mt-3">
+            <h6 class="header-heading-sepration">Seller Details</h6>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label class="form-label">Sell By:</label>
+                <input type="text" value="{{ $sale_order->parent_user->name ?? 'N/A' }}" class="form-control"
+                    readonly>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label class="form-label">Comission RS per KG:</label>
+                <input type="number" name="seller_commission_per_kg" id="seller_commission_per_kg" class="form-control" step="0.0001" min="0" value="{{ $sale_order->seller_commission_per_kg ?? 0 }}" readonly>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label class="form-label">Comission in % per KG:</label>
+                @php
+                    $firstRate = floatval($sale_order->sales_order_data->first()?->rate ?? 0);
+                    $sellerCommRs = floatval($sale_order->seller_commission_per_kg ?? 0);
+                    $initialSellerPercent = ($firstRate > 0) ? number_format(($sellerCommRs / $firstRate) * 100, 2, '.', '') : '0';
+                @endphp
+                <input type="number" name="seller_commission_percent_per_kg" id="seller_commission_percent_per_kg"
+                    class="form-control" step="0.01" min="0" value="{{ $initialSellerPercent }}" readonly>
+            </div>
+        </div>
 
          <div class="col-12 mt-3">
                     <h6 class="header-heading-sepration">Broker Details</h6>
@@ -575,11 +582,33 @@
     $(document).ready(function () {
         $('.select2').select2();
         calculateCommissionFromRs();
+        calculateSellerCommissionFromRs();
     });
 
     // Run immediately and on slight delay for AJAX modal injection
     calculateCommissionFromRs();
-    setTimeout(calculateCommissionFromRs, 150);
+    calculateSellerCommissionFromRs();
+    setTimeout(function() {
+        calculateCommissionFromRs();
+        calculateSellerCommissionFromRs();
+    }, 150);
+
+    function calculateSellerCommissionFromRs() {
+        let commissionInRs = parseFloat($('#seller_commission_per_kg').val()) || 0;
+        const ratePerKg = getFirstItemRate();
+
+        if (ratePerKg > 0) {
+            let percent = (commissionInRs / ratePerKg) * 100;
+            if (percent > 100) {
+                percent = 100;
+                commissionInRs = (100 / 100) * ratePerKg;
+                $('#seller_commission_per_kg').val(commissionInRs.toFixed(4));
+            }
+            $('#seller_commission_percent_per_kg').val(percent.toFixed(2));
+        } else {
+            $('#seller_commission_percent_per_kg').val('0');
+        }
+    }
 
     function calculateCommissionFromRs() {
         let commissionInRs = parseFloat($('#commission_per_kg').val()) || 0;

@@ -25,6 +25,16 @@ class SalesOrderRequest extends FormRequest
 
     public function rules(): array
     {
+        $saleOrderId = is_object($this->route('sale_order')) ? $this->route('sale_order')->id : $this->route('sale_order');
+        if ($saleOrderId) {
+            $so = \App\Models\Sales\SalesOrder::find($saleOrderId);
+            if ($so && (in_array(strtolower($so->am_approval_status ?? ''), ['approved', 'rejected']) || $so->hasPendingDeliveryDateAmendment())) {
+                return [
+                    "delivery_date" => "nullable|date",
+                    "contract_status" => "nullable|string",
+                ];
+            }
+        }
 
         // delivery date and order date can be equal to each other
         $rules = [
@@ -36,6 +46,7 @@ class SalesOrderRequest extends FormRequest
             "transporter_used" => "nullable|in:yes,no",
             "customer_id" => "required|numeric",
             "broker_id" => "nullable|numeric",
+            "parent_user_id" => "nullable|numeric|exists:users,id",
             "inquiry_id" => "nullable|numeric",
             "sauda_type" => "required|in:pohanch,x-mill,thadda",
             "company_id" => "required",
@@ -44,6 +55,7 @@ class SalesOrderRequest extends FormRequest
             "remarks" => "nullable",
             "contact_person" => "nullable|string|max:255",
             "commission_per_kg" => "nullable|numeric|min:0",
+            "seller_commission_per_kg" => "nullable|numeric|min:0",
             "payment_on_kaanta" => "nullable|boolean",
             "arrival_location_id" => "nullable|array",
             "arrival_location_id.*" => "integer|exists:arrival_locations,id",
@@ -102,6 +114,14 @@ class SalesOrderRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
+            $saleOrderId = is_object($this->route('sale_order')) ? $this->route('sale_order')->id : $this->route('sale_order');
+            if ($saleOrderId) {
+                $so = \App\Models\Sales\SalesOrder::find($saleOrderId);
+                if ($so && (in_array(strtolower($so->am_approval_status ?? ''), ['approved', 'rejected']) || $so->hasPendingDeliveryDateAmendment())) {
+                    return;
+                }
+            }
+
             $qtys = $this->input('qty', []);
             $minimumQtys = $this->input('minimum_qty', []);
 

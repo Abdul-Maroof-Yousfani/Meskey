@@ -110,39 +110,6 @@
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label class="form-label">Sell By:</label>
-                        <input type="text" class="form-control"
-                            value="{{ auth()->user()->parent ? auth()->user()->parent->name : auth()->user()->name }}"
-                            readonly>
-                    </div>
-                </div>
-                <!-- <div class="col-md-3">
-                    <div class="form-group">
-                        <label class="form-label">Broker:</label>
-                        <select name="broker_id" id="broker_id" class="form-control select2">
-                            <option value="">Select Broker</option>
-                            @foreach ($brokers ?? [] as $broker)
-                                <option value="{{ $broker->id }}">{{ $broker->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label class="form-label">Comission RS per KG:</label>
-                        <input type="number" name="commission_per_kg" id="commission_per_kg" class="form-control"
-                            step="0.0001" min="0" value="0">
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label class="form-label">Comission in % per KG:</label>
-                        <input type="number" name="commission_percent_per_kg" id="commission_percent_per_kg"
-                            class="form-control" step="0.01" min="0" value="0">
-                    </div>
-                </div> -->
-                <div class="col-md-3">
-                    <div class="form-group">
                         <label class="form-label">Contact Person:</label>
                         <input type="text" name="contact_person" id="contact_person" class="form-control">
                     </div>
@@ -371,6 +338,44 @@
 
 
 
+
+        <div class="col-12 mt-3">
+            <h6 class="header-heading-sepration">Seller Details</h6>
+        </div>
+        @if(!empty($sellerError))
+        <div class="col-12 mb-2">
+            <div class="alert alert-danger py-2 px-3 mb-0" role="alert" style="font-size: 13px;">
+                <i class="fa fa-exclamation-triangle me-1"></i> {{ $sellerError }}
+            </div>
+        </div>
+        @endif
+        <div class="col-md-3">
+            <div class="form-group">
+                <label class="form-label">Sell By:</label>
+                <select name="parent_user_id" id="parent_user_id" class="form-control select2">
+                    <option value="">Select Seller</option>
+                    @foreach ($sellers ?? [] as $seller)
+                        <option value="{{ $seller->id }}" {{ ($defaultSellerId ?? '') == $seller->id ? 'selected' : '' }}>
+                            {{ $seller->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label class="form-label">Comission RS per KG:</label>
+                <input type="number" name="seller_commission_per_kg" id="seller_commission_per_kg" class="form-control" step="0.0001"
+                    min="0" value="0">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label class="form-label">Comission in % per KG:</label>
+                <input type="number" name="seller_commission_percent_per_kg" id="seller_commission_percent_per_kg"
+                    class="form-control" step="0.01" min="0" value="0">
+            </div>
+        </div>
 
         <div class="col-12 mt-3">
             <h6 class="header-heading-sepration">Broker Details</h6>
@@ -925,6 +930,7 @@
                 }
                 // Recalculate commission based on newly loaded rate/qty
                 updateCommissionFromRate();
+                updateSellerCommissionFromRate();
             },
             error: function (error) {
                 console.log(error);
@@ -1213,7 +1219,53 @@
         }
     }
 
+    // Seller Commission conversion functions
+    function calculateSellerCommissionFromPercent() {
+        let percent = parseFloat($('#seller_commission_percent_per_kg').val()) || 0;
+        if (percent > 100) {
+            percent = 100;
+            $('#seller_commission_percent_per_kg').val(percent);
+        }
 
+        const ratePerKg = getFirstItemRate();
+
+        if (ratePerKg > 0) {
+            const commissionInRs = (percent / 100) * ratePerKg;
+            $('#seller_commission_per_kg').val(commissionInRs.toFixed(4));
+        } else {
+            $('#seller_commission_per_kg').val('0');
+        }
+    }
+
+    function calculateSellerCommissionFromRs() {
+        let commissionInRs = parseFloat($('#seller_commission_per_kg').val()) || 0;
+        const ratePerKg = getFirstItemRate();
+
+        if (ratePerKg > 0) {
+            let percent = (commissionInRs / ratePerKg) * 100;
+            if (percent > 100) {
+                percent = 100;
+                commissionInRs = (100 / 100) * ratePerKg;
+                $('#seller_commission_per_kg').val(commissionInRs.toFixed(4));
+            }
+            $('#seller_commission_percent_per_kg').val(percent.toFixed(2));
+        } else {
+            $('#seller_commission_percent_per_kg').val('0');
+        }
+    }
+
+    // Update seller commission when rate changes
+    function updateSellerCommissionFromRate() {
+        if (window.lastSellerCommissionInputType === 'percent') {
+            if ($('#seller_commission_percent_per_kg').val() && $('#seller_commission_percent_per_kg').val() != '0') {
+                calculateSellerCommissionFromPercent();
+            }
+        } else {
+            if ($('#seller_commission_per_kg').val() && $('#seller_commission_per_kg').val() != '0') {
+                calculateSellerCommissionFromRs();
+            }
+        }
+    }
 
     // Function to handle transporter based on contract type
     function handleTransporterByContractType() {
@@ -1233,6 +1285,7 @@
     // Attach event listeners
     $(document).ready(function () {
         window.lastCommissionInputType = 'percent';
+        window.lastSellerCommissionInputType = 'percent';
 
         $('#sauda_type').on('change', function () {
             handleTransporterByContractType();
@@ -1249,9 +1302,22 @@
             calculateCommissionFromRs();
         });
 
+        // Seller commission percentage field changes
+        $('#seller_commission_percent_per_kg').on('keyup change', function () {
+            window.lastSellerCommissionInputType = 'percent';
+            calculateSellerCommissionFromPercent();
+        });
+
+        // Seller commission RS field changes
+        $('#seller_commission_per_kg').on('keyup change', function () {
+            window.lastSellerCommissionInputType = 'rs';
+            calculateSellerCommissionFromRs();
+        });
+
         // When rate or qty changes in any row, update commission
         $(document).on('keyup change', '.rate_per_kg, .qty', function () {
             updateCommissionFromRate();
+            updateSellerCommissionFromRate();
         });
     });
 </script>

@@ -8,6 +8,7 @@ use App\Http\Requests\User\UserTestUpdateRequest;
 use App\Models\Acl\Company;
 use App\Models\Master\ArrivalLocation;
 use App\Models\Master\CompanyLocation;
+use App\Models\Master\Account\Account;
 use App\Models\User;
 use Exception;
 use Illuminate\Http\JsonResponse;
@@ -46,15 +47,10 @@ class UserTestController extends Controller
 
     public function create(): View
     {
-        // $roles = Role::all();
-        // $locations = CompanyLocation::all();
-        $users = User::
-            // where('id', '!=', auth()->id())
-            //     // ->where('user_type', '!=', 'super-admin')
-            //     ->
-            get();
+        $users = User::get();
+        $parentAccount = Account::where('hierarchy_path', '2-9')->first();
 
-        return view('management.acl.users-test.create', compact('users'));
+        return view('management.acl.users-test.create', compact('users', 'parentAccount'));
     }
 
     public function store(UserTestStoreRequest $request): JsonResponse
@@ -62,6 +58,15 @@ class UserTestController extends Controller
         $data = $request->validated();
 
         $data['password'] = Hash::make($data['password']);
+
+        if ($request->has('has_account') && $request->has_account) {
+            $companyId = auth()->user()?->current_company_id ?: 1;
+            $account = Account::create(getParamsForAccountCreationByPath($companyId, $request->name, '2-9', 'users'));
+            $account->update(['status' => 'active']);
+            $data['account_id'] = $account->id;
+        } else {
+            $data['account_id'] = null;
+        }
 
         $user = User::create($data);
 
@@ -125,11 +130,12 @@ class UserTestController extends Controller
 
     public function edit($id): View
     {
-        $user = User::with(['companies', 'roles', 'companyLocation.arrivalLocations'])->findOrFail($id);
+        $user = User::with(['companies', 'roles', 'companyLocation.arrivalLocations', 'account.parent'])->findOrFail($id);
         $users = User::where('id', '!=', $id)->get();
         $userRole = $user->roles->pluck('id', 'name')->all();
+        $parentAccount = Account::where('hierarchy_path', '2-9')->first();
 
-        return view('management.acl.users-test.edit', compact('user', 'userRole', 'users'));
+        return view('management.acl.users-test.edit', compact('user', 'userRole', 'users', 'parentAccount'));
     }
 
     public function update(UserTestUpdateRequest $request, $id): JsonResponse
@@ -144,6 +150,23 @@ class UserTestController extends Controller
             }
 
             $user = User::findOrFail($id);
+
+            if ($request->has('has_account') && $request->has_account) {
+                if ($user->account_id && $user->account) {
+                    $user->account->update(['status' => 'active', 'name' => $request->name]);
+                    $input['account_id'] = $user->account_id;
+                } else {
+                    $companyId = $user->current_company_id ?: (auth()->user()?->current_company_id ?: 1);
+                    $account = Account::create(getParamsForAccountCreationByPath($companyId, $request->name, '2-9', 'users'));
+                    $account->update(['status' => 'active']);
+                    $input['account_id'] = $account->id;
+                }
+            } else {
+                if ($user->account) {
+                    $user->account->update(['status' => 'inactive']);
+                }
+                $input['account_id'] = $user->account_id;
+            }
 
             if ($user->username !== $input['username']) {
                 $usernameExists = User::where('username', $input['username'])
@@ -671,18 +694,23 @@ class UserTestController extends Controller
 
     public function getTable(Request $request)
     {
-        $users = User::with(['companies'])->when($request->filled('search'), function ($q) use ($request) {
+        $users = User::with(['companies', 'account.parent'])->when($request->filled('search'), function ($q) use ($request) {
             $searchTerm = '%' . $request->search . '%';
 
             return $q->where(function ($sq) use ($searchTerm) {
-                $sq->where('name', 'like', $searchTerm);
-                $sq->orWhere('email', 'like', $searchTerm);
+                $sq->where('name', 'like', $searchTerm)
+                    ->orWhere('username', 'like', $searchTerm)
+                    ->orWhere('email', 'like', $searchTerm)
+                    ->orWhereHas('account', function ($aq) use ($searchTerm) {
+                        $aq->where('hierarchy_path', 'like', $searchTerm)
+                            ->orWhere('unique_no', 'like', $searchTerm)
+                            ->orWhere('name', 'like', $searchTerm);
+                    });
             });
         })
             ->latest()
             // ->paginate(10);
             ->paginate($request->get('per_page', 25));
-
 
         return view('management.acl.users-test.getList', compact('users'));
     }

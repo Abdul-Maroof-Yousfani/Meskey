@@ -139,7 +139,7 @@
                                 @endphp
                                 @if($canEdit)
                                     <button
-                                        onclick="openModal(this,'{{ route('sales.sale-order.edit', ['sale_order' => $group['id']]) }}','Edit Sale Order', false, '90%')"
+                                        onclick="openModal(this,'{{ route('sales.sale-order.edit', ['sale_order' => $group['id']]) }}','Edit Sale Order',false, '90%')"
                                         class="btn btn-sm btn-warning" title="Edit" style="margin-right: 10px;">
                                         <i class="ft-edit"></i>
                                     </button>

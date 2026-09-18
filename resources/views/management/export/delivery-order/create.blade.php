@@ -531,13 +531,13 @@
                             <input type="number" name="packing_items[0][metric_tons]" class="form-control metric-tons" step="0.001" min="0" style="background-color: #fff9e6; border-color: #ffc107;">
                         </div>
                     </div>
-                    <div class="col-md-1">
+                    <div class="col-md-1 col-stuffing">
                         <div class="form-group">
                             <label>Stuffing (MT):</label>
                             <input type="number" name="packing_items[0][stuffing_in_container]" value="0" class="form-control stuffing" step="0.001" min="0">
                         </div>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-md-2 col-containers">
                         <div class="form-group">
                             <label>No. Containers:</label>
                             <input type="number" name="packing_items[0][no_of_containers]" class="form-control containers" value="0" min="0">
@@ -1263,7 +1263,8 @@
             $('[data-name="commission"]').val(commission.toFixed(2));
 
             // Export Table fields static options
-            $('[data-name="packing_type"]').val(data.packing_type).trigger('change.select2');
+            $('[data-name="packing_type"]').val(data.packing_type).trigger('change');
+            togglePackingTypeColumns();
             $('[data-name="partial_payment"]').val(data.partial_payment).trigger('change.select2');
             $('[data-name="transhipment"]').val(data.transhipment).trigger('change.select2');
             $('[data-name="part_shipment"]').val(data.part_shipment).trigger('change.select2');
@@ -1277,6 +1278,7 @@
             $('#packingItemsWrapper').show();
             if (packingItemsAuto && packingItemsAuto.length > 0) {
                 addPackingRowsFromExportOrder(packingItemsAuto);
+                togglePackingTypeColumns();
             } else {
                 $('#packingItems').find('.packing-item:not(#dummyPackingRow)').remove();
                 if ($('#packingItems').find('tbody.empty-placeholder').length === 0) {
@@ -1471,27 +1473,34 @@
             }
 
             // 2. Stuffing vs Containers Logic (Revised)
-            var stuffing = parseFloat(item.find('.stuffing').val()) || 0;
-            var containers = parseInt(item.find('.containers').val()) || 0;
+            var packingType = $('[data-name="packing_type"]').val() || '';
+            var isBulk = packingType.toLowerCase().indexOf('bulk') !== -1;
 
-            if (source.hasClass('metric-tons') || source.hasClass('no-of-bags') || source.hasClass('bag-size')) {
-                // Qty changed: stuffing stays fixed, containers update
-                if (stuffing > 0) {
-                    containers = Math.ceil(metricTons / stuffing);
-                    item.find('.containers').val(containers);
+            if (!isBulk) {
+                var stuffing = parseFloat(item.find('.stuffing').val()) || 0;
+                var containers = parseInt(item.find('.containers').val()) || 0;
+
+                if (source.hasClass('metric-tons') || source.hasClass('no-of-bags') || source.hasClass('bag-size')) {
+                    // Qty changed: stuffing stays fixed, containers update
+                    if (stuffing > 0) {
+                        containers = Math.ceil(metricTons / stuffing);
+                        item.find('.containers').val(containers);
+                    }
+                } else if (source.hasClass('stuffing')) {
+                    // When manual stuffing edit, containers should update
+                    if (stuffing > 0) {
+                        containers = Math.ceil(metricTons / stuffing);
+                        item.find('.containers').val(containers);
+                    }
+                } else if (source.hasClass('containers')) {
+                    // When manual container edit, stuffing should update
+                    if (containers > 0) {
+                        stuffing = metricTons / containers;
+                        item.find('.stuffing').val(stuffing.toFixed(3));
+                    }
                 }
-            } else if (source.hasClass('stuffing')) {
-                // When manual stuffing edit, containers should update
-                if (stuffing > 0) {
-                    containers = Math.ceil(metricTons / stuffing);
-                    item.find('.containers').val(containers);
-                }
-            } else if (source.hasClass('containers')) {
-                // When manual container edit, stuffing should update
-                if (containers > 0) {
-                    stuffing = metricTons / containers;
-                    item.find('.stuffing').val(stuffing.toFixed(3));
-                }
+            } else {
+                item.find('.stuffing, .containers').val(0);
             }
 
             // Recalculate Total Bags (Crucial: User wants NO auto-increase of extra bags when no-of-bags changes)
@@ -1562,5 +1571,23 @@
             $('.submitbutton').attr('disabled', false);
         }
     }
+
+    function togglePackingTypeColumns() {
+        var packingType = $('[data-name="packing_type"]').val() || '';
+        var isBulk = packingType.toLowerCase().indexOf('bulk') !== -1;
+
+        if (isBulk) {
+            $('.col-stuffing, .col-containers').hide();
+            $('.col-stuffing input, .col-containers input').prop('required', false).val('0');
+        } else {
+            $('.col-stuffing, .col-containers').show();
+        }
+    }
+
+    $(document).on('change', '[data-name="packing_type"]', function() {
+        togglePackingTypeColumns();
+    });
+
+    togglePackingTypeColumns();
     });
 </script>

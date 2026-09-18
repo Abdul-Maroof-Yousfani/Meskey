@@ -3,15 +3,16 @@
         <tr>
             {{-- <th class="col-sm-1">Image</th> --}}
             <th class="col-sm-2">Name</th>
-            <th class="col-sm-2">Parent</th>
-            <th class="col-sm-2 text-center">PO Approval</th>
+            <th class="col-sm-1">Parent</th>
+            <th class="col-sm-1 text-center">PO Approval</th>
 
             {{-- <th class="col-sm-2">Username</th> --}}
-            <th class="col-sm-3">Role</th>
+            <th class="col-sm-2">Role</th>
             {{-- <th class="col-sm-3">Parent</th> --}}
-            <th class="col-sm-3">Companies Assign</th>
-            <th class="col-sm-3">Location/Sublocation</th>
-            <th class="col-sm-2">Action</th>
+            <th class="col-sm-2">Companies Assign</th>
+            <th class="col-sm-2">Location/Sublocation</th>
+            <th class="col-sm-1">COA Hierarchy</th>
+            <th class="col-sm-1">Action</th>
         </tr>
     </thead>
     <tbody>
@@ -163,6 +164,26 @@
                         @endif
                     </td>
 
+                    <td>
+                        @if ($user->account && $user->account->hierarchy_path)
+                            <p class="m-0">
+                                {{-- <span class="badge badge-{{ $user->account->status === 'active' ? 'success' : 'secondary' }} font-small-3" title="{{ $user->account->name }} ({{ ucfirst($user->account->status) }})">
+                                    {{ $user->account->hierarchy_path }}
+                                </span> --}}
+                                @if ($user->account->status !== 'active')
+                                    <span class="badge badge-warning font-small-1">Inactive</span>
+                                @endif
+                            </p>
+                            @if ($user->account->unique_no)
+                                <small class="text-muted"><code class="d-block">{{ $user->account->unique_no }}</code></small>
+                            @endif
+                            <small class="text-secondary" style="font-size: 11px;">{{ \Illuminate\Support\Str::limit($user->account->name, 20) }}</small>
+                        @elseif ($user->account)
+                            <small class="text-muted">{{ $user->account->unique_no ?? '--' }}</small>
+                        @else
+                            <span class="text-muted">--</span>
+                        @endif
+                    </td>
 
                     <td>
                         @canAccess('user-edit')

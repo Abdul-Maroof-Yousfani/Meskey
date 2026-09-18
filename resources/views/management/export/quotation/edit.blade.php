@@ -538,10 +538,15 @@ $(document).ready(function() {
         row.find('.total-kgs').val(totalKgs.toFixed(2));
         row.find('.no_of_bags').val(Math.ceil(bags));
         
-        // Auto-calculate containers if stuffing is set
-        let stuffing = parseFloat(row.find('.stuffing-in-container').val()) || 0;
-        if (stuffing > 0) {
-            row.find('.no-of-containers').val(Math.ceil(mt / stuffing));
+        var isBulk = (($('select[name="packing_type"]').val() || '').toLowerCase().indexOf('bulk') !== -1);
+        if (!isBulk) {
+            // Auto-calculate containers if stuffing is set
+            let stuffing = parseFloat(row.find('.stuffing-in-container').val()) || 0;
+            if (stuffing > 0) {
+                row.find('.no-of-containers').val(Math.ceil(mt / stuffing));
+            }
+        } else {
+            row.find('.stuffing-in-container, .no-of-containers').val(0);
         }
         
         calculateRowAmount(row);
@@ -557,10 +562,15 @@ $(document).ready(function() {
         row.find('.total-kgs').val(totalKgs.toFixed(2));
         row.find('.no_of_bags').val(Math.ceil(bags));
         
-        // Auto-calculate containers if stuffing is set
-        let stuffing = parseFloat(row.find('.stuffing-in-container').val()) || 0;
-        if (stuffing > 0) {
-            row.find('.no-of-containers').val(Math.ceil(mt / stuffing));
+        var isBulk = (($('select[name="packing_type"]').val() || '').toLowerCase().indexOf('bulk') !== -1);
+        if (!isBulk) {
+            // Auto-calculate containers if stuffing is set
+            let stuffing = parseFloat(row.find('.stuffing-in-container').val()) || 0;
+            if (stuffing > 0) {
+                row.find('.no-of-containers').val(Math.ceil(mt / stuffing));
+            }
+        } else {
+            row.find('.stuffing-in-container, .no-of-containers').val(0);
         }
 
         calculateRowAmount(row);

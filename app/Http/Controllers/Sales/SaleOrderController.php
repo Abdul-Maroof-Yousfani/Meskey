@@ -18,15 +18,96 @@ use App\Models\Sales\SalesInquiry;
 use App\Models\Sales\SalesOrder;
 use Carbon\Carbon;
 use App\Models\ReceiptVoucherItem;
+use App\Models\CustomerAdvance;
+use App\Models\CustomerAdvanceAdjustment;
 use DB;
 use Illuminate\Http\Request;
 use App\Models\ReceiptVoucher;
 use App\Models\Master\Account\Transaction;
 use App\Services\AuditLogService;
 use Illuminate\Support\Facades\Cache;
+use App\Models\User;
 
 class SaleOrderController extends Controller
 {
+    protected function getSellerDropdownData($currentParentUserId = null)
+    {
+        $sellers = collect();
+        $sellerError = null;
+        $authUser = auth()->user();
+        $defaultSellerId = null;
+
+        // 1. Add all root users (no parent_user_id) who have 'Seller' permission
+        $rootSellers = User::permission('Seller')
+            ->whereNull('parent_user_id')
+            ->get();
+        foreach ($rootSellers as $rs) {
+            $sellers->put($rs->id, $rs);
+        }
+
+        // 2. Add all parents whose children have 'Seller' permission, provided parent also has 'Seller' permission
+        $sellerChildren = User::permission('Seller')
+            ->whereNotNull('parent_user_id')
+            ->with('parent')
+            ->get();
+        foreach ($sellerChildren as $child) {
+            if ($child->parent && $child->parent->can('Seller')) {
+                $sellers->put($child->parent->id, $child->parent);
+            }
+        }
+
+        // 3. Check currently logged-in user:
+        if ($authUser) {
+            if (!$authUser->can('Seller')) {
+                // Currently logged-in user does not have Seller permission
+                $sellerError = "User ({$authUser->name}) does not have 'Seller' permission.";
+                $defaultSellerId = null;
+            } elseif ($authUser->parent_user_id) {
+                // User has a parent (e.g. Arsal Sale Test)
+                $parent = $authUser->parent ?? User::find($authUser->parent_user_id);
+                if ($parent) {
+                    if ($parent->can('Seller')) {
+                        // Parent has 'Seller' permission -> must appear in dropdown and be pre-selected!
+                        $sellers->put($parent->id, $parent);
+                        $defaultSellerId = $parent->id;
+                    } else {
+                        // Parent does NOT have 'Seller' permission -> show error!
+                        $sellerError = "Parent user ({$parent->name}) does not have 'Seller' permission.";
+                        $defaultSellerId = null;
+                    }
+                } else {
+                    $sellerError = "Parent user not found.";
+                    $defaultSellerId = null;
+                }
+            } else {
+                // User has no parent (he is himself a parent user, e.g. Meskay & Femtee)
+                // And he has 'Seller' permission (checked above)
+                $sellers->put($authUser->id, $authUser);
+                $defaultSellerId = $authUser->id;
+            }
+        }
+
+        // 4. For Edit mode, ensure existing saved parent is present in dropdown if valid
+        if ($currentParentUserId && !$sellers->has($currentParentUserId)) {
+            $existingParent = User::find($currentParentUserId);
+            if ($existingParent) {
+                if ($existingParent->can('Seller')) {
+                    $sellers->put($existingParent->id, $existingParent);
+                } else {
+                    if (!$sellerError) {
+                        $sellerError = "Parent user ({$existingParent->name}) does not have 'Seller' permission.";
+                    }
+                }
+            }
+        }
+
+        return [
+            'sellers' => $sellers->values(),
+            'sellerError' => $sellerError,
+            'defaultSellerId' => $defaultSellerId,
+        ];
+    }
+
     public function index()
     {
         $customerIds = SalesOrder::distinct()->pluck('customer_id')->filter();
@@ -71,12 +152,17 @@ class SaleOrderController extends Controller
         $brokers = Broker::where('status', 'active')
             ->where('is_for_sales', 1)
             ->get();
-        return view('management.sales.orders.create', compact('payment_terms', 'customers', 'inquiries', 'items', 'pay_types', 'bag_types', 'arrivalLocations', 'arrivalSubLocations', 'packings', 'brokers'));
+        $sellerData = $this->getSellerDropdownData();
+        $sellers = $sellerData['sellers'];
+        $sellerError = $sellerData['sellerError'];
+        $defaultSellerId = $sellerData['defaultSellerId'];
+
+        return view('management.sales.orders.create', compact('payment_terms', 'customers', 'inquiries', 'items', 'pay_types', 'bag_types', 'arrivalLocations', 'arrivalSubLocations', 'packings', 'brokers', 'sellers', 'sellerError', 'defaultSellerId'));
     }
 
     public function edit(int $id)
     {
-        $sale_order = SalesOrder::with(['locations', 'factories', 'sections', 'sales_order_data', 'pay_type', 'sales_order_data.sale_inquiry_data'])->find($id);
+        $sale_order = SalesOrder::with(['locations', 'factories', 'sections', 'sales_order_data', 'pay_type', 'sales_order_data.sale_inquiry_data', 'parent_user', 'broker'])->find($id);
         $payment_terms = PaymentTerm::all();
         $customers = Customer::where("type", "local")->get();
         $inquiries = SalesInquiry::all();
@@ -97,14 +183,17 @@ class SaleOrderController extends Controller
         $brokers = Broker::where('status', 'active')
             ->where('is_for_sales', 1)
             ->get();
+        $sellerData = $this->getSellerDropdownData($sale_order->parent_user_id);
+        $sellers = $sellerData['sellers'];
+        $sellerError = $sellerData['sellerError'];
         $balanceQuantity = $this->calculateBalanceQuantity($sale_order);
         $isClosed = $sale_order->isClosed();
-        return view('management.sales.orders.edit', compact('payment_terms', 'customers', 'inquiries', 'items', 'sale_order', 'pay_types', 'bag_types', 'arrivalLocations', 'arrivalSubLocations', 'packings', 'brokers', 'latestLog', 'balanceQuantity', 'isClosed'));
+        return view('management.sales.orders.edit', compact('payment_terms', 'customers', 'inquiries', 'items', 'sale_order', 'pay_types', 'bag_types', 'arrivalLocations', 'arrivalSubLocations', 'packings', 'brokers', 'latestLog', 'balanceQuantity', 'isClosed', 'sellers', 'sellerError'));
     }
 
     public function view(Request $request, int $id)
     {
-        $sale_order = SalesOrder::with('sales_order_data', 'locations', 'factories', 'sections', 'sales_order_data.sale_inquiry_data', 'pay_type', 'sale_inquiry')->find($id);
+        $sale_order = SalesOrder::with('sales_order_data', 'locations', 'factories', 'sections', 'sales_order_data.sale_inquiry_data', 'pay_type', 'sale_inquiry', 'parent_user', 'broker')->find($id);
         $payment_terms = PaymentTerm::all();
         $customers = Customer::where("type", "local")->get();
         $inquiries = SalesInquiry::all();
@@ -238,7 +327,36 @@ class SaleOrderController extends Controller
         $payload['arrival_location_id'] = $factoryIds[0] ?? null;
         $payload['arrival_sub_location_id'] = $sectionIds[0] ?? null;
         $payload['created_by'] = auth()->user()->id;
-        $payload['parent_user_id'] = auth()->user()->parent_user_id ?? auth()->user()->id;
+
+        // Seller / Sell By (parent_user_id) validation
+        $authUser = auth()->user();
+        if ($authUser) {
+            if (!$authUser->can('Seller')) {
+                return response()->json(['error' => "User ({$authUser->name}) does not have 'Seller' permission."], 422);
+            }
+            if ($authUser->parent_user_id) {
+                $parent = $authUser->parent ?? User::find($authUser->parent_user_id);
+                if (!$parent || !$parent->can('Seller')) {
+                    $pName = $parent?->name ?? 'Parent';
+                    return response()->json(['error' => "Parent user ({$pName}) does not have 'Seller' permission."], 422);
+                }
+            }
+        }
+
+        if ($request->filled('parent_user_id')) {
+            $parentUser = User::find($request->parent_user_id);
+            if (!$parentUser || !$parentUser->can('Seller')) {
+                $pName = $parentUser?->name ?? 'Parent';
+                return response()->json(['error' => "Parent user ({$pName}) does not have 'Seller' permission."], 422);
+            }
+            $payload['parent_user_id'] = $request->parent_user_id;
+        } elseif ($authUser && !$authUser->parent_user_id && $authUser->can('Seller')) {
+            $payload['parent_user_id'] = $authUser->id;
+        } else {
+            $payload['parent_user_id'] = null;
+        }
+        $payload['seller_commission_per_kg'] = $request->seller_commission_per_kg ?? 0;
+
         $payload["remarks"] = !$request->remarks ? '' : $request->remarks;
         $payload["reference_no"] = self::getNumber($request, null, $request->order_date);
         $payload["contact_person"] = !$request->contact_person ? '' : $request->contact_person;
@@ -294,12 +412,41 @@ class SaleOrderController extends Controller
                 ]);
             }
 
-            // Sync Unallocated Receipt Vouchers
-            if ($request->has('receipt_voucher_item_ids')) {
-                ReceiptVoucherItem::whereIn('id', $request->receipt_voucher_item_ids)->update([
-                    'reference_type' => 'sale_order',
-                    'reference_id' => $sales_order->id,
-                ]);
+            // Sync Unallocated Receipt Vouchers & Customer Advances
+            if ($request->has('receipt_voucher_item_ids') && is_array($request->receipt_voucher_item_ids)) {
+                $rvItems = ReceiptVoucherItem::with('receiptVoucher')->whereIn('id', $request->receipt_voucher_item_ids)->get();
+
+                foreach ($rvItems as $rvItem) {
+                    $rvItem->update([
+                        'reference_type' => 'sale_order',
+                        'reference_id' => $sales_order->id,
+                    ]);
+
+                    // Sync corresponding CustomerAdvance if exists
+                    $uniqueNo = $rvItem->receiptVoucher?->unique_no;
+                    if ($uniqueNo) {
+                        $adv = CustomerAdvance::where('voucher_no', $uniqueNo)
+                            ->where('customer_id', $sales_order->customer_id)
+                            ->first();
+
+                        if ($adv && $adv->remaining_amount > 0) {
+                            $itemAmt = (float)($rvItem->net_amount > 0 ? $rvItem->net_amount : $rvItem->amount);
+                            $adjAmount = min((float)$adv->remaining_amount, $itemAmt);
+                            if ($adjAmount > 0) {
+                                $adv->used_amount += $adjAmount;
+                                $adv->remaining_amount -= $adjAmount;
+                                $adv->status = ($adv->remaining_amount <= 0.01) ? 'completed' : 'partial_payment';
+                                $adv->save();
+
+                                CustomerAdvanceAdjustment::create([
+                                    'customer_advance_id' => $adv->id,
+                                    'voucher_no' => $sales_order->reference_no,
+                                    'amount' => $adjAmount
+                                ]);
+                            }
+                        }
+                    }
+                }
 
                 // Update associated transactions to have the SO reference no
                 Transaction::whereIn('receipt_voucher_item_id', $request->receipt_voucher_item_ids)
@@ -375,7 +522,7 @@ class SaleOrderController extends Controller
             $oldDeliveryDate = $sales_order->delivery_date ? Carbon::parse($sales_order->delivery_date)->format('Y-m-d') : null;
             $newDeliveryDate = !empty($request->delivery_date) ? Carbon::parse($request->delivery_date)->format('Y-m-d') : null;
             $deliveryDateChanged = $oldDeliveryDate != $newDeliveryDate;
-            $contractStatusChanged = ($request->contract_status ?? null) != $sales_order->contract_status;
+            $contractStatusChanged = $request->has('contract_status') && ($request->contract_status ?? null) != $sales_order->contract_status;
 
             // Validate contract_status reopen check against balance quantity
             if (isset($request->contract_status) && in_array($request->contract_status, ['reopen-contract-closed-by-mistake', 'reopen', 'open'])) {
@@ -388,16 +535,124 @@ class SaleOrderController extends Controller
                 }
             }
 
-            // Case 1: Approved or Rejected Sales Order
-            if (in_array(strtolower($sales_order->am_approval_status ?? ''), ['approved', 'rejected'])) {
-                if (!$deliveryDateChanged && !$contractStatusChanged) {
+            $isApprovedOrAmendment = in_array(strtolower($sales_order->am_approval_status ?? ''), ['approved', 'rejected']) || $sales_order->hasPendingDeliveryDateAmendment();
+
+            if ($isApprovedOrAmendment) {
+                // Check if any restricted fields were modified
+                $otherFieldsChanged = false;
+
+                if ($request->has('customer_id') && (int)$request->customer_id !== (int)$sales_order->customer_id) {
+                    $otherFieldsChanged = true;
+                }
+                if ($request->has('order_date') && !empty($request->order_date)) {
+                    if (Carbon::parse($request->order_date)->format('Y-m-d') !== Carbon::parse($sales_order->order_date)->format('Y-m-d')) {
+                        $otherFieldsChanged = true;
+                    }
+                }
+                if ($request->has('inquiry_id')) {
+                    $reqInq = !empty($request->inquiry_id) ? (int)$request->inquiry_id : null;
+                    $currInq = $sales_order->inquiry_id ? (int)$sales_order->inquiry_id : null;
+                    if ($reqInq !== $currInq) {
+                        $otherFieldsChanged = true;
+                    }
+                }
+                if ($request->has('sauda_type') && !empty($request->sauda_type)) {
+                    if (strtolower(trim($request->sauda_type)) !== strtolower(trim($sales_order->sauda_type ?? ''))) {
+                        $otherFieldsChanged = true;
+                    }
+                }
+                if ($request->has('transporter_used')) {
+                    if (strtolower(trim($request->transporter_used)) !== strtolower(trim($sales_order->transporter_used ?? 'no'))) {
+                        $otherFieldsChanged = true;
+                    }
+                }
+                if ($request->has('pay_type_id') && !empty($request->pay_type_id)) {
+                    if ((int)$request->pay_type_id !== (int)$sales_order->pay_type_id) {
+                        $otherFieldsChanged = true;
+                    }
+                }
+                if ($request->has('payment_term_id') && !empty($request->payment_term_id)) {
+                    if ((int)$request->payment_term_id !== (int)$sales_order->payment_term_id) {
+                        $otherFieldsChanged = true;
+                    }
+                }
+                if ($request->has('broker_id')) {
+                    $reqBroker = !empty($request->broker_id) ? (int)$request->broker_id : null;
+                    $currBroker = $sales_order->broker_id ? (int)$sales_order->broker_id : null;
+                    if ($reqBroker !== $currBroker) {
+                        $otherFieldsChanged = true;
+                    }
+                }
+                if ($request->has('commission_per_kg')) {
+                    if (abs((float)$request->commission_per_kg - (float)($sales_order->commission_per_kg ?? 0)) > 0.001) {
+                        $otherFieldsChanged = true;
+                    }
+                }
+                if ($request->has('contact_person')) {
+                    if (trim((string)$request->contact_person) !== trim((string)($sales_order->contact_person ?? ''))) {
+                        $otherFieldsChanged = true;
+                    }
+                }
+                if ($request->has('remarks')) {
+                    if (trim((string)$request->remarks) !== trim((string)($sales_order->remarks ?? ''))) {
+                        $otherFieldsChanged = true;
+                    }
+                }
+                if ($request->has('locations')) {
+                    $existingLocs = $sales_order->locations->pluck('location_id')->map(fn($v) => (int)$v)->sort()->values()->toArray();
+                    $incomingLocs = collect($request->locations)->map(fn($v) => (int)$v)->filter()->sort()->values()->toArray();
+                    if ($existingLocs != $incomingLocs) {
+                        $otherFieldsChanged = true;
+                    }
+                }
+                if ($request->has('arrival_location_id')) {
+                    $existingFacts = $sales_order->factories->pluck('arrival_location_id')->map(fn($v) => (int)$v)->sort()->values()->toArray();
+                    $incomingFacts = collect($request->arrival_location_id)->map(fn($v) => (int)$v)->filter()->sort()->values()->toArray();
+                    if ($existingFacts != $incomingFacts) {
+                        $otherFieldsChanged = true;
+                    }
+                }
+                if ($request->has('arrival_sub_location_id')) {
+                    $existingSecs = $sales_order->sections->pluck('arrival_sub_location_id')->map(fn($v) => (int)$v)->sort()->values()->toArray();
+                    $incomingSecs = collect($request->arrival_sub_location_id)->map(fn($v) => (int)$v)->filter()->sort()->values()->toArray();
+                    if ($existingSecs != $incomingSecs) {
+                        $otherFieldsChanged = true;
+                    }
+                }
+                if ($request->has('item_id')) {
+                    $existingItems = $sales_order->sales_order_data->sortBy('id')->values();
+                    $incomingItems = $request->item_id;
+                    if (count($incomingItems) !== $existingItems->count()) {
+                        $otherFieldsChanged = true;
+                    } else {
+                        foreach ($incomingItems as $idx => $itemId) {
+                            $ex = $existingItems[$idx] ?? null;
+                            if (!$ex) { $otherFieldsChanged = true; break; }
+                            if ((int)$ex->item_id !== (int)$itemId) { $otherFieldsChanged = true; break; }
+                            if (abs((float)$ex->qty - (float)($request->qty[$idx] ?? 0)) > 0.001) { $otherFieldsChanged = true; break; }
+                            if (abs((float)$ex->rate - (float)($request->rate[$idx] ?? 0)) > 0.001) { $otherFieldsChanged = true; break; }
+                            if (isset($request->brand_id[$idx]) && (int)$ex->brand_id !== (int)$request->brand_id[$idx]) { $otherFieldsChanged = true; break; }
+                            if (isset($request->bag_size[$idx]) && (int)$ex->bag_size !== (int)$request->bag_size[$idx]) { $otherFieldsChanged = true; break; }
+                            if (isset($request->no_of_bags[$idx]) && abs((float)$ex->no_of_bags - (float)$request->no_of_bags[$idx]) > 0.001) { $otherFieldsChanged = true; break; }
+                        }
+                    }
+                }
+
+                if ($otherFieldsChanged) {
                     return response()->json([
-                        'error' => "Sales Order has been {$sales_order->am_approval_status} and cannot be updated.",
-                        'message' => "Sales Order has been {$sales_order->am_approval_status} and cannot be updated."
+                        'error' => 'For an approved Sale Order, only Delivery Date and Contract Status can be updated. Other fields cannot be modified.',
+                        'message' => 'For an approved Sale Order, only Delivery Date and Contract Status can be updated. Other fields cannot be modified.'
                     ], 422);
                 }
 
-                // Handle Contract Status Change on approved SO
+                if (!$deliveryDateChanged && !$contractStatusChanged) {
+                    return response()->json([
+                        'error' => 'No changes were detected in Delivery Date or Contract Status.',
+                        'message' => 'No changes were detected in Delivery Date or Contract Status.'
+                    ], 422);
+                }
+
+                // Handle Contract Status Change
                 if ($contractStatusChanged) {
                     $isReopen = in_array($request->contract_status, ['reopen-contract-closed-by-mistake', 'reopen', 'open']);
                     $isCloseContract = in_array($request->contract_status, ['close-contract-due-to-market-down', 'close-with-market-rate-penalty']);
@@ -417,27 +672,52 @@ class SaleOrderController extends Controller
                     );
                 }
 
-                // Handle Delivery Date Change on approved SO: Save to database cache & reset to pending for re-approval
+                // Handle Delivery Date Change
                 if ($deliveryDateChanged) {
-                    Cache::store('database')->forever("so_amendment_{$sales_order->id}", [
-                        'delivery_date' => $request->delivery_date,
-                        'old_delivery_date' => $sales_order->delivery_date,
-                        'requested_by' => auth()->user()?->id ?? (is_numeric(auth()->id()) ? (int) auth()->id() : null),
-                        'requested_at' => now()->toDateTimeString(),
-                    ]);
+                    if (!$sales_order->hasPendingDeliveryDateAmendment()) {
+                        // First amendment on approved SO: store cache, reset to pending in new cycle
+                        Cache::store('database')->forever("so_amendment_{$sales_order->id}", [
+                            'delivery_date' => $newDeliveryDate,
+                            'old_delivery_date' => $oldDeliveryDate,
+                            'requested_by' => auth()->user()?->id ?? (is_numeric(auth()->id()) ? (int) auth()->id() : null),
+                            'requested_at' => now()->toDateTimeString(),
+                        ]);
 
-                    $sales_order->createNewApprovalCycle();
-                    $sales_order->am_approval_status = 'pending';
-                    $sales_order->am_change_made = 1;
-                    $sales_order->save();
+                        $sales_order->createNewApprovalCycle();
+                        $sales_order->am_approval_status = 'pending';
+                        $sales_order->am_change_made = 1;
+                        $sales_order->delivery_date = $newDeliveryDate;
+                        $sales_order->save();
 
-                    AuditLogService::log(
-                        $sales_order,
-                        'delivery_date_amendment_requested',
-                        "Delivery date amendment requested from {$oldDeliveryDate} to {$newDeliveryDate} (awaiting approval)",
-                        ['delivery_date' => $oldDeliveryDate],
-                        ['delivery_date' => $newDeliveryDate]
-                    );
+                        AuditLogService::log(
+                            $sales_order,
+                            'delivery_date_amendment_requested',
+                            "Delivery date amendment requested from {$oldDeliveryDate} to {$newDeliveryDate} (awaiting approval)",
+                            ['delivery_date' => $oldDeliveryDate],
+                            ['delivery_date' => $newDeliveryDate]
+                        );
+                    } else {
+                        // Already pending amendment: update proposed date and keep original old date
+                        $existingAmendment = Cache::store('database')->get("so_amendment_{$sales_order->id}");
+                        $originalOldDate = $existingAmendment['old_delivery_date'] ?? $oldDeliveryDate;
+                        Cache::store('database')->forever("so_amendment_{$sales_order->id}", [
+                            'delivery_date' => $newDeliveryDate,
+                            'old_delivery_date' => $originalOldDate,
+                            'requested_by' => auth()->user()?->id ?? (is_numeric(auth()->id()) ? (int) auth()->id() : null),
+                            'requested_at' => now()->toDateTimeString(),
+                        ]);
+
+                        $sales_order->delivery_date = $newDeliveryDate;
+                        $sales_order->saveQuietly();
+
+                        AuditLogService::log(
+                            $sales_order,
+                            'delivery_date_amendment_updated',
+                            "Delivery date amendment updated to {$newDeliveryDate} (awaiting approval)",
+                            ['delivery_date' => $oldDeliveryDate],
+                            ['delivery_date' => $newDeliveryDate]
+                        );
+                    }
                 }
 
                 DB::commit();
@@ -445,37 +725,6 @@ class SaleOrderController extends Controller
                     ? 'Sale Order delivery date amendment submitted for re-approval.'
                     : 'Sale Order Contract Status updated successfully.';
                 return response()->json(['data' => $msg, 'success' => $msg]);
-            }
-
-            // Case 2: SO is in amendment-pending state (Cache has pending date amendment)
-            if ($sales_order->hasPendingDeliveryDateAmendment()) {
-                if ($deliveryDateChanged) {
-                    Cache::store('database')->forever("so_amendment_{$sales_order->id}", [
-                        'delivery_date' => $request->delivery_date,
-                        'old_delivery_date' => $sales_order->delivery_date,
-                        'requested_by' => auth()->id(),
-                        'requested_at' => now()->toDateTimeString(),
-                    ]);
-
-                    AuditLogService::log(
-                        $sales_order,
-                        'delivery_date_amendment_updated',
-                        "Delivery date amendment updated to {$newDeliveryDate} (awaiting approval)",
-                        null,
-                        ['delivery_date' => $newDeliveryDate]
-                    );
-                }
-
-                if ($contractStatusChanged) {
-                    $sales_order->contract_status = $request->contract_status;
-                    $sales_order->saveQuietly();
-                }
-
-                DB::commit();
-                return response()->json([
-                    'data' => 'Delivery date amendment updated successfully.',
-                    'success' => 'Delivery date amendment updated successfully.'
-                ]);
             }
 
 
@@ -498,7 +747,24 @@ class SaleOrderController extends Controller
             $payload['arrival_sub_location_id'] = $sectionIds[0] ?? null;
             $payload['am_approval_status'] = 'pending';
             $payload['am_change_made'] = 1;
-            // $payload['parent_user_id'] = auth()->user()->parent_user_id ?? auth()->user()->id;
+
+            // Seller / Sell By (parent_user_id) validation
+            if ($request->has('parent_user_id')) {
+                if ($request->filled('parent_user_id')) {
+                    $parentUser = User::find($request->parent_user_id);
+                    if (!$parentUser || !$parentUser->can('Seller')) {
+                        $pName = $parentUser?->name ?? 'Parent';
+                        return response()->json(['error' => "Parent user ({$pName}) does not have 'Seller' permission."], 422);
+                    }
+                    $payload['parent_user_id'] = $request->parent_user_id;
+                } else {
+                    $payload['parent_user_id'] = null;
+                }
+            }
+            if ($request->has('seller_commission_per_kg')) {
+                $payload['seller_commission_per_kg'] = $request->seller_commission_per_kg ?? 0;
+            }
+
             $payload["remarks"] = !$request->remarks ? '' : $request->remarks;
             $payload["contact_person"] = !$request->contact_person ? '' : $request->contact_person;
             $payload["so_reference_no"] = !$request->so_reference_no ? '' : $request->so_reference_no;
@@ -556,8 +822,21 @@ class SaleOrderController extends Controller
                 ]);
             }
 
-            // Sync Unallocated Receipt Vouchers
-            // 1. Unset old ones linked to this SO
+            // Sync Unallocated Receipt Vouchers & Customer Advances
+            // 1. Revert previous advance adjustments made by this SO
+            $prevAdjustments = CustomerAdvanceAdjustment::where('voucher_no', $sales_order->reference_no)->get();
+            foreach ($prevAdjustments as $adj) {
+                $adv = CustomerAdvance::find($adj->customer_advance_id);
+                if ($adv) {
+                    $adv->used_amount -= $adj->amount;
+                    $adv->remaining_amount += $adj->amount;
+                    $adv->status = ($adv->used_amount <= 0.01) ? 'pending' : 'partial_payment';
+                    $adv->save();
+                }
+                $adj->delete();
+            }
+
+            // Unset old items linked to this SO
             $oldItemIds = ReceiptVoucherItem::where('reference_type', 'sale_order')
                 ->where('reference_id', $id)
                 ->pluck('id');
@@ -572,15 +851,43 @@ class SaleOrderController extends Controller
                     'reference_id' => null
                 ]);
 
-            // 2. Set new ones
-            if ($request->has('receipt_voucher_item_ids')) {
-                ReceiptVoucherItem::whereIn('id', $request->receipt_voucher_item_ids)->update([
-                    'reference_type' => 'sale_order',
-                    'reference_id' => $id
-                ]);
+            // 2. Set new ones & sync CustomerAdvance
+            if ($request->has('receipt_voucher_item_ids') && is_array($request->receipt_voucher_item_ids)) {
+                $rvItems = ReceiptVoucherItem::with('receiptVoucher')->whereIn('id', $request->receipt_voucher_item_ids)->get();
+
+                foreach ($rvItems as $rvItem) {
+                    $rvItem->update([
+                        'reference_type' => 'sale_order',
+                        'reference_id' => $id
+                    ]);
+
+                    // Sync corresponding CustomerAdvance if exists
+                    $uniqueNo = $rvItem->receiptVoucher?->unique_no;
+                    if ($uniqueNo) {
+                        $adv = CustomerAdvance::where('voucher_no', $uniqueNo)
+                            ->where('customer_id', $sales_order->customer_id)
+                            ->first();
+
+                        if ($adv && $adv->remaining_amount > 0) {
+                            $itemAmt = (float)($rvItem->net_amount > 0 ? $rvItem->net_amount : $rvItem->amount);
+                            $adjAmount = min((float)$adv->remaining_amount, $itemAmt);
+                            if ($adjAmount > 0) {
+                                $adv->used_amount += $adjAmount;
+                                $adv->remaining_amount -= $adjAmount;
+                                $adv->status = ($adv->remaining_amount <= 0.01) ? 'completed' : 'partial_payment';
+                                $adv->save();
+
+                                CustomerAdvanceAdjustment::create([
+                                    'customer_advance_id' => $adv->id,
+                                    'voucher_no' => $sales_order->reference_no,
+                                    'amount' => $adjAmount
+                                ]);
+                            }
+                        }
+                    }
+                }
 
                 // Update associated transactions to have the SO reference no
-
                 Transaction::whereIn('receipt_voucher_item_id', $request->receipt_voucher_item_ids)
                     ->update([
                         'voucher_no' => DB::raw('payment_against')
@@ -608,6 +915,27 @@ class SaleOrderController extends Controller
                 'message' => "Sales Order has been {$sales_order->am_approval_status} and cannot be deleted."
             ], 422);
         }
+        // Revert any advance adjustments
+        $prevAdjustments = CustomerAdvanceAdjustment::where('voucher_no', $sales_order->reference_no)->get();
+        foreach ($prevAdjustments as $adj) {
+            $adv = CustomerAdvance::find($adj->customer_advance_id);
+            if ($adv) {
+                $adv->used_amount -= $adj->amount;
+                $adv->remaining_amount += $adj->amount;
+                $adv->status = ($adv->used_amount <= 0.01) ? 'pending' : 'partial_payment';
+                $adv->save();
+            }
+            $adj->delete();
+        }
+
+        // Reset any ReceiptVoucherItem reference
+        ReceiptVoucherItem::where('reference_type', 'sale_order')
+            ->where('reference_id', $id)
+            ->update([
+                'reference_type' => 'not-allocated',
+                'reference_id' => null
+            ]);
+
         $sales_order->sales_order_data()->delete();
         $sales_order->delete();
 

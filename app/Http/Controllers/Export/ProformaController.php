@@ -78,9 +78,11 @@ class ProformaController extends Controller
     {
         $exportOrder = ExportOrder::with(['specifications', 'packingItems.subItems', 'product'])->findOrFail($exportOrderId);
         $formData = $this->getExportOrderFormData();
+        $documentLists = \App\Models\Export\DocumentList::where('status', 1)->get();
 
         return view('management.export.proforma.create', array_merge($formData, [
             'exportOrder' => $exportOrder,
+            'documentLists' => $documentLists,
         ]));
     }
 
@@ -402,6 +404,7 @@ class ProformaController extends Controller
             'stitchings' => Stitching::where('status', 'active')->get(),
             'threadColors' => Color::where('status', 1)->get(),
             'inspectionCompanies' => FumigationCompany::where('status', 'active')->get(),
+            'documentLists' => \App\Models\Export\DocumentList::where('status', 1)->get(),
         ];
     }
 }

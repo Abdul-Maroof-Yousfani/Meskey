@@ -32,15 +32,19 @@
     {{ method_field('PUT') }}
     <input type="hidden" id="listRefresh" value="{{ route('sales.get.sales-order.list') }}" />
 
-    @if(in_array(strtolower($sale_order->am_approval_status ?? ''), ['approved', 'rejected']))
+    @php
+        $isApprovedOrAmendment = in_array(strtolower($sale_order->am_approval_status ?? ''), ['approved', 'rejected']) || $sale_order->hasPendingDeliveryDateAmendment();
+    @endphp
+
+    @if($isApprovedOrAmendment)
         <div class="alert alert-warning px-3 py-2 mt-2">
-            <i class="fa fa-exclamation-triangle"></i> <strong>Note:</strong> Since this Sale Order is <strong>{{ ucfirst($sale_order->am_approval_status) }}</strong>, you can only update the <strong>Delivery Date</strong> or <strong>Contract Status</strong>. Changes to other fields will be ignored.
+            <i class="fa fa-exclamation-triangle"></i> <strong>Note:</strong> Since this Sale Order is <strong>{{ ucfirst($sale_order->am_approval_status) }}</strong>, you can only update the <strong>Delivery Date</strong> or <strong>Contract Status</strong>. Other fields are locked and cannot be modified.
         </div>
     @endif
     @if($sale_order->hasPendingDeliveryDateAmendment())
         @php $pendingAmendment = $sale_order->getPendingDeliveryDateAmendment(); @endphp
         <div class="alert alert-info px-3 py-2 mt-2">
-            <i class="fa fa-clock-o"></i> <strong>Delivery Date Amendment Pending Approval:</strong> Proposed Delivery Date: <strong>{{ $pendingAmendment['delivery_date'] ?? 'N/A' }}</strong> (Current: <strong>{{ $sale_order->delivery_date }}</strong>).
+            <i class="fa fa-clock-o"></i> <strong>Delivery Date Amendment Pending Approval:</strong> Proposed Delivery Date: <strong>{{ $pendingAmendment['delivery_date'] ?? 'N/A' }}</strong> (Original Date: <strong>{{ $pendingAmendment['old_delivery_date'] ?? $sale_order->delivery_date }}</strong>).
         </div>
     @endif
     @if($sale_order->isClosed())
@@ -71,7 +75,7 @@
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">Delivery Date:</label>
-                        <input type="date" name="delivery_date" value="{{ $sale_order->delivery_date }}" 
+                        <input type="date" name="delivery_date" value="{{ $sale_order->delivery_date ? \Carbon\Carbon::parse($sale_order->delivery_date)->format('Y-m-d') : '' }}" 
                             id="delivery_date" class="form-control">
                     </div>
                 </div>
@@ -146,36 +150,6 @@
                         <input type="hidden" @if($sale_order->inquiry_id) name="customer_id" @endif value="{{ $sale_order->customer_id }}" />
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label class="form-label">Sell By:</label>
-                        <input type="text" class="form-control" value="{{ $sale_order->parent_user->name ?? 'N/A' }}" readonly>
-                    </div>
-                </div>
-                <!-- <div class="col-md-3">
-                    <div class="form-group">
-                        <label class="form-label">Broker:</label>
-                        <select name="broker_id" id="broker_id" class="form-control select2">
-                            <option value="">Select Broker</option>
-                            @foreach ($brokers ?? [] as $broker)
-                                <option value="{{ $broker->id }}" @selected($broker->id == $sale_order->broker_id)>{{ $broker->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label class="form-label">Comission RS per KG:</label>
-                        <input type="number" name="commission_per_kg" id="commission_per_kg" class="form-control" step="0.0001" min="0" value="{{ $sale_order->commission_per_kg ?? 0 }}">
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label class="form-label">Comission in % per KG:</label>
-                        <input type="number" name="commission_percent_per_kg" id="commission_percent_per_kg"
-                            class="form-control" step="0.01" min="0" value="0">
-                    </div>
-                </div> -->
                 <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Contact Person:</label>
@@ -437,10 +411,47 @@
 
 
 
-        
-       <div class="col-12 mt-3">
-                    <h6 class="header-heading-sepration">Broker Details</h6>
-                </div>
+        <div class="col-12 mt-3">
+            <h6 class="header-heading-sepration">Seller Details</h6>
+        </div>
+        @if(!empty($sellerError))
+        <div class="col-12 mb-2">
+            <div class="alert alert-danger py-2 px-3 mb-0" role="alert" style="font-size: 13px;">
+                <i class="fa fa-exclamation-triangle me-1"></i> {{ $sellerError }}
+            </div>
+        </div>
+        @endif
+        <div class="col-md-3">
+            <div class="form-group">
+                <label class="form-label">Sell By:</label>
+                <select name="parent_user_id" id="parent_user_id" class="form-control select2">
+                    <option value="">Select Seller</option>
+                    @foreach ($sellers ?? [] as $seller)
+                        <option value="{{ $seller->id }}" @selected($seller->id == ($sale_order->parent_user_id ?? ''))>
+                            {{ $seller->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label class="form-label">Comission RS per KG:</label>
+                <input type="number" name="seller_commission_per_kg" id="seller_commission_per_kg" class="form-control" step="0.0001"
+                    min="0" value="{{ $sale_order->seller_commission_per_kg ?? 0 }}">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <label class="form-label">Comission in % per KG:</label>
+                <input type="number" name="seller_commission_percent_per_kg" id="seller_commission_percent_per_kg"
+                    class="form-control" step="0.01" min="0" value="0">
+            </div>
+        </div>
+
+        <div class="col-12 mt-3">
+            <h6 class="header-heading-sepration">Broker Details</h6>
+        </div>
                  <div class="col-md-3">
                     <div class="form-group">
                         <label class="form-label">Broker:</label>
@@ -1102,7 +1113,7 @@
     }
 
     function disableInquiryFields() {
-        $("#delivery_date").prop('readonly', true);
+        // $("#delivery_date").prop('readonly', true);
         $("#customer_id").prop('disabled', true);
         $("#sauda_type").prop('disabled', true);
         $("#locations").prop('disabled', true);
@@ -1393,6 +1404,50 @@
         }
     }
 
+    // Seller Commission conversion functions
+    function calculateSellerCommissionFromPercent() {
+        let percent = parseFloat($('#seller_commission_percent_per_kg').val()) || 0;
+        if (percent > 100) {
+            percent = 100;
+            $('#seller_commission_percent_per_kg').val(percent);
+        }
+
+        const ratePerKg = getFirstItemRate();
+
+        if (ratePerKg > 0) {
+            const commissionInRs = (percent / 100) * ratePerKg;
+            $('#seller_commission_per_kg').val(commissionInRs.toFixed(4));
+        } else {
+            $('#seller_commission_per_kg').val('0');
+        }
+    }
+
+    function calculateSellerCommissionFromRs() {
+        let commissionInRs = parseFloat($('#seller_commission_per_kg').val()) || 0;
+        const ratePerKg = getFirstItemRate();
+
+        if (ratePerKg > 0) {
+            let percent = (commissionInRs / ratePerKg) * 100;
+            if (percent > 100) {
+                percent = 100;
+                commissionInRs = (100 / 100) * ratePerKg;
+                $('#seller_commission_per_kg').val(commissionInRs.toFixed(4));
+            }
+            $('#seller_commission_percent_per_kg').val(percent.toFixed(2));
+        } else {
+            $('#seller_commission_percent_per_kg').val('0');
+        }
+    }
+
+    // Update seller commission when rate changes
+    function updateSellerCommissionFromRate() {
+        if (window.lastSellerCommissionInputType === 'percent') {
+            calculateSellerCommissionFromPercent();
+        } else {
+            calculateSellerCommissionFromRs();
+        }
+    }
+
     $(document).ready(function () {
         // Calculate initial % if RS is present
         if ($('#commission_per_kg').val() && parseFloat($('#commission_per_kg').val()) > 0) {
@@ -1400,6 +1455,14 @@
             calculateCommissionFromRs();
         } else {
             window.lastCommissionInputType = 'percent';
+        }
+
+        // Calculate initial % if RS is present for seller
+        if ($('#seller_commission_per_kg').val() && parseFloat($('#seller_commission_per_kg').val()) > 0) {
+            window.lastSellerCommissionInputType = 'rs';
+            calculateSellerCommissionFromRs();
+        } else {
+            window.lastSellerCommissionInputType = 'percent';
         }
 
         // When percentage field changes, calculate RS
@@ -1414,9 +1477,22 @@
             calculateCommissionFromRs();
         });
 
+        // When seller percentage field changes, calculate RS
+        $('#seller_commission_percent_per_kg').on('keyup change', function () {
+            window.lastSellerCommissionInputType = 'percent';
+            calculateSellerCommissionFromPercent();
+        });
+
+        // When seller RS field changes, calculate percentage
+        $('#seller_commission_per_kg').on('keyup change', function () {
+            window.lastSellerCommissionInputType = 'rs';
+            calculateSellerCommissionFromRs();
+        });
+
         // When rate or qty changes in any row, update commission
         $(document).on('keyup change', '.rate_per_kg, .qty', function () {
             updateCommissionFromRate();
+            updateSellerCommissionFromRate();
         });
 
         // Contract status reopen validation
@@ -1474,5 +1550,18 @@
                 }
             }
         });
+
+        @if($isApprovedOrAmendment)
+            // Lock all form fields except delivery_date and contract_status
+            $('#ajaxSubmit input, #ajaxSubmit select, #ajaxSubmit textarea').not('#delivery_date, #contract_status, input[name="_token"], input[name="_method"], #listRefresh').each(function() {
+                if ($(this).is('select')) {
+                    $(this).prop('disabled', true);
+                } else {
+                    $(this).prop('readonly', true);
+                }
+            });
+            $('.removeRowBtn, #addRowBtn, button[onclick*="addRow"]').prop('disabled', true).css({'pointer-events': 'none', 'opacity': '0.5'});
+            $('#ajaxSubmit select').not('#contract_status').prop('disabled', true);
+        @endif
     });
 </script>

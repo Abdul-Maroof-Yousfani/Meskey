@@ -573,14 +573,14 @@
                                 step="0.001" min="0" style="background-color: #fff9e6; border-color: #ffc107;">
                         </div>
                     </div>
-                    <div class="col-md-1">
+                    <div class="col-md-1 col-stuffing">
                         <div class="form-group">
                             <label>Stuffing (MT):</label>
                             <input type="number" name="packing_items[0][stuffing_in_container]" value="0"
                                 class="form-control stuffing" step="0.001" min="0">
                         </div>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-md-2 col-containers">
                         <div class="form-group">
                             <label>No. Containers:</label>
                             <input type="number" name="packing_items[0][no_of_containers]"
@@ -774,11 +774,12 @@
                     <div class="form-group">
                         <label>Transporter: <span class="text-danger">*</span></label>
                         @php
-                            $selectedTransporters = json_decode($deliveryOrder->transporter_id, true) ?? (is_numeric($deliveryOrder->transporter_id) ? [$deliveryOrder->transporter_id] : []);
+                            $decodedTransporters = json_decode($deliveryOrder->transporter_id, true);
+                            $selectedTransporters = is_array($decodedTransporters) ? $decodedTransporters : ($deliveryOrder->transporter_id ? (array) $deliveryOrder->transporter_id : []);
                         @endphp
                         <select name="transporter_id[]" id="transporter_id" class="form-control select2" multiple>
-                            @foreach ($logisticsTransporters as $transporter)
-                                <option value="{{ $transporter['id'] }}" {{ in_array($transporter['id'], $selectedTransporters) ? 'selected' : '' }}>{{ $transporter['name'] }}</option>
+                            @foreach ($transporters as $transporter)
+                                <option value="{{ $transporter->id ?? $transporter['id'] }}" {{ in_array($transporter->id ?? $transporter['id'], $selectedTransporters) ? 'selected' : '' }}>{{ $transporter->name ?? $transporter['name'] }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -812,7 +813,8 @@
                     <div class="form-group">
                         <label>Fumigation By:</label>
                         @php
-                            $selectedFumigation = json_decode($deliveryOrder->fumigation_by, true) ?? [];
+                            $decodedFumigation = json_decode($deliveryOrder->fumigation_by, true);
+                            $selectedFumigation = is_array($decodedFumigation) ? $decodedFumigation : ($deliveryOrder->fumigation_by ? (array) $deliveryOrder->fumigation_by : []);
                         @endphp
                         <select name="fumigation_by[]" id="fumigation_by" class="form-control select2" multiple disabled>
                             @foreach ($fumigationCompanies as $fCompany)
@@ -826,7 +828,8 @@
                     <div class="form-group">
                         <label>Inspection By:</label>
                         @php
-                            $selectedInspection = json_decode($deliveryOrder->inspection_by, true) ?? [];
+                            $decodedInspection = json_decode($deliveryOrder->inspection_by, true);
+                            $selectedInspection = is_array($decodedInspection) ? $decodedInspection : ($deliveryOrder->inspection_by ? (array) $deliveryOrder->inspection_by : []);
                         @endphp
                         <select name="inspection_by[]" id="inspection_by" class="form-control select2" multiple disabled>
                             @foreach ($inspectionCompanies as $iCompany)
@@ -840,7 +843,8 @@
                     <div class="form-group">
                         <label>Phyto Certificate:</label>
                         @php
-                            $selectedPhyto = json_decode($deliveryOrder->phyto_certificate, true) ?? [];
+                            $decodedPhyto = json_decode($deliveryOrder->phyto_certificate, true);
+                            $selectedPhyto = is_array($decodedPhyto) ? $decodedPhyto : ($deliveryOrder->phyto_certificate ? (array) $deliveryOrder->phyto_certificate : []);
                         @endphp
                         <select name="phyto_certificate[]" id="phyto_certificate" class="form-control select2" multiple>
                             @foreach ($fumigationCompanies as $fCompany)
@@ -1200,6 +1204,7 @@
 
             $('#snap_incoterm_edit').val(data.incoterm ? data.incoterm.name : '');
             $('#snap_packing_type_edit').val(data.packing_type || '');
+            togglePackingTypeColumns();
             $('#snap_mode_of_term_edit').val(data.mode_of_term ? data.mode_of_term.name : '');
             $('#snap_mode_of_transport_edit').val(data.mode_of_transport ? data.mode_of_transport.name : '');
             $('#snap_origin_country_edit').val(data.origin_country ? data.origin_country.name : '');
@@ -1219,6 +1224,7 @@
             $('#packingItemsWrapper').show();
             if (packingItemsAuto && packingItemsAuto.length > 0) {
                 addPackingRowsFromExportOrder(packingItemsAuto);
+                togglePackingTypeColumns();
                 checkCapacity();
             } else {
                 $('#packingItems').find('.packing-item:not(#dummyPackingRow)').remove();
@@ -1379,27 +1385,34 @@
             }
 
             // 2. Stuffing vs Containers Logic (Revised)
-            var stuffing = parseFloat(item.find('.stuffing').val()) || 0;
-            var containers = parseInt(item.find('.containers').val()) || 0;
+            var packingType = $('#snap_packing_type_edit').val() || '';
+            var isBulk = packingType.toLowerCase().indexOf('bulk') !== -1;
 
-            if (source.hasClass('metric-tons') || source.hasClass('no-of-bags') || source.hasClass('bag-size')) {
-                // Qty changed: stuffing stays fixed, containers update
-                if (stuffing > 0) {
-                    containers = Math.ceil(metricTons / stuffing);
-                    item.find('.containers').val(containers);
+            if (!isBulk) {
+                var stuffing = parseFloat(item.find('.stuffing').val()) || 0;
+                var containers = parseInt(item.find('.containers').val()) || 0;
+
+                if (source.hasClass('metric-tons') || source.hasClass('no-of-bags') || source.hasClass('bag-size')) {
+                    // Qty changed: stuffing stays fixed, containers update
+                    if (stuffing > 0) {
+                        containers = Math.ceil(metricTons / stuffing);
+                        item.find('.containers').val(containers);
+                    }
+                } else if (source.hasClass('stuffing')) {
+                    // When manual stuffing edit, containers should update
+                    if (stuffing > 0) {
+                        containers = Math.ceil(metricTons / stuffing);
+                        item.find('.containers').val(containers);
+                    }
+                } else if (source.hasClass('containers')) {
+                    // When manual container edit, stuffing should update
+                    if (containers > 0) {
+                        stuffing = metricTons / containers;
+                        item.find('.stuffing').val(stuffing.toFixed(3));
+                    }
                 }
-            } else if (source.hasClass('stuffing')) {
-                // When manual stuffing edit, containers should update
-                if (stuffing > 0) {
-                    containers = Math.ceil(metricTons / stuffing);
-                    item.find('.containers').val(containers);
-                }
-            } else if (source.hasClass('containers')) {
-                // When manual container edit, stuffing should update
-                if (containers > 0) {
-                    stuffing = metricTons / containers;
-                    item.find('.stuffing').val(stuffing.toFixed(3));
-                }
+            } else {
+                item.find('.stuffing, .containers').val(0);
             }
 
             // Recalculate Total Bags (Crucial: User wants NO auto-increase of extra bags)
@@ -1470,5 +1483,19 @@
                 $('.submitbutton').attr('disabled', false);
             }
         }
+
+        function togglePackingTypeColumns() {
+            var packingType = $('#snap_packing_type_edit').val() || '';
+            var isBulk = packingType.toLowerCase().indexOf('bulk') !== -1;
+
+            if (isBulk) {
+                $('.col-stuffing, .col-containers').hide();
+                $('.col-stuffing input, .col-containers input').prop('required', false).val('0');
+            } else {
+                $('.col-stuffing, .col-containers').show();
+            }
+        }
+
+        togglePackingTypeColumns();
     });
 </script>

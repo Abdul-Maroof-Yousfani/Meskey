@@ -138,6 +138,42 @@
                                             </div>
                                         </div>
                                     </div>
+
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <hr class="mt-2 mb-2">
+                                            <div class="form-group mb-1">
+                                                <div class="checkbox">
+                                                    <input type="checkbox" name="has_account" id="has_account" value="1" {{ ($user->account && $user->account->status === 'active') ? 'checked' : '' }}>
+                                                    <label for="has_account" class="font-weight-bold text-primary" style="cursor: pointer;">
+                                                        <span><i class="ft-git-merge mr-1"></i> Chart of Account (Parent: {{ $parentAccount->name ?? 'Seller Commission' }} [{{ $parentAccount->hierarchy_path ?? '2-9' }}])</span>
+                                                    </label>
+                                                </div>
+                                                <small class="text-muted d-block mt-1">
+                                                    Checking the checkbox will keep the account active, while unchecking it will make the account inactive.
+                                                </small>
+                                            </div>
+
+                                            @if ($user->account)
+                                                <div class="alert alert-light py-2 my-2">
+                                                    <div class="row align-items-center">
+                                                        <div class="col-md-5">
+                                                            <strong>Account:</strong> {{ $user->account->name }}
+                                                            <span class="badge badge-{{ $user->account->status === 'active' ? 'success' : 'danger' }} ml-1">
+                                                                {{ ucfirst($user->account->status) }}
+                                                            </span>
+                                                        </div>
+                                                        <div class="col-md-3">
+                                                            <strong>Code:</strong> <span class="badge badge-secondary">{{ $user->account->unique_no }}</span>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <strong>Hierarchy Path:</strong> <span class="badge badge-success font-medium-1">{{ $user->account->hierarchy_path }}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 

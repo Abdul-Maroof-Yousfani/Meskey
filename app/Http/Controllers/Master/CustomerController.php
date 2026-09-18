@@ -30,18 +30,26 @@ class CustomerController extends Controller
      */
     public function getList(Request $request)
     {
-        $Customers = Customer::when($request->filled('search'), function ($q) use ($request) {
-            $searchTerm = '%'.$request->search.'%';
+        $Customers = Customer::with(['account.parent'])
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $searchTerm = '%'.$request->search.'%';
 
-            return $q->where(function ($sq) use ($searchTerm) {
-                $sq->where('name', 'like', $searchTerm);
-            });
-        })
+                return $q->where(function ($sq) use ($searchTerm) {
+                    $sq->where('name', 'like', $searchTerm)
+                        ->orWhere('company_name', 'like', $searchTerm)
+                        ->orWhere('owner_name', 'like', $searchTerm)
+                        ->orWhere('unique_no', 'like', $searchTerm)
+                        ->orWhereHas('account', function ($aq) use ($searchTerm) {
+                            $aq->where('hierarchy_path', 'like', $searchTerm)
+                                ->orWhere('unique_no', 'like', $searchTerm)
+                                ->orWhere('name', 'like', $searchTerm);
+                        });
+                });
+            })
             ->where('company_id', $request->company_id)
             ->latest()
             ->paginate(request('per_page', 25));
 
-        // dd($Suppliers->first()->company_location_ids);
         return view('management.master.customer.getList', compact('Customers'));
     }
 
@@ -191,6 +199,7 @@ class CustomerController extends Controller
             'companyBankDetails',
             'ownerBankDetails',
             'consignees',
+            'account.parent',
         ])->findOrFail($id);
 
         $companyLocations = CompanyLocation::all();

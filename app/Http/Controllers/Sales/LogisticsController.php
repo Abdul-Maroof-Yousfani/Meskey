@@ -53,7 +53,8 @@ class LogisticsController extends Controller
     {
         $customer_id = $request->customer_id;
 
-        $saleOrders = \App\Models\Sales\SalesOrder::with('logistics')
+        $saleOrders = \App\Models\Sales\SalesOrder::activeContract()
+            ->with('logistics')
             ->whereNot(function($q) {
                 $q->where('contract_status', 'x-mill')
                   ->where('transporter_used', 'no');
@@ -63,6 +64,9 @@ class LogisticsController extends Controller
             ->orderBy('id', 'desc')
             ->get()
             ->filter(function ($so) {
+                if ($so->isClosed()) {
+                    return false;
+                }
                 $hasApprovedLogistic = $so->logistics
                     ->where('am_approval_status', 'approved')
                     ->isNotEmpty();
@@ -108,6 +112,13 @@ class LogisticsController extends Controller
 
         if (!$order) {
             return response()->json(['error' => 'Order not found'], 404);
+        }
+
+        if ($order->isClosed()) {
+            return response()->json([
+                'error' => 'The Sale Order has been closed. Logistics operations are locked.',
+                'message' => 'The Sale Order has been closed. Logistics operations are locked.'
+            ], 422);
         }
 
         $totalQty = $order->sales_order_data->sum('qty');
@@ -271,6 +282,16 @@ class LogisticsController extends Controller
             $lookup = $request->type === 'export_order'
                 ? ['type' => 'export_order', 'export_order_id' => $request->export_order_id]
                 : ['type' => 'sale_order', 'sale_order_id' => $request->sale_order_id];
+
+            if ($request->type === 'sale_order' && $request->sale_order_id) {
+                $so = \App\Models\Sales\SalesOrder::find($request->sale_order_id);
+                if ($so && $so->isClosed()) {
+                    return response()->json([
+                        'error' => 'The Sale Order for this Logistics record has been closed. Operations are locked.',
+                        'message' => 'The Sale Order for this Logistics record has been closed. Operations are locked.'
+                    ], 422);
+                }
+            }
 
             $logistics = Logistics::firstOrNew($lookup);
 
@@ -441,6 +462,16 @@ class LogisticsController extends Controller
 
         DB::beginTransaction();
         try {
+            if ($request->type === 'sale_order' && $request->sale_order_id) {
+                $so = \App\Models\Sales\SalesOrder::find($request->sale_order_id);
+                if ($so && $so->isClosed()) {
+                    return response()->json([
+                        'error' => 'The Sale Order for this Logistics record has been closed. Operations are locked.',
+                        'message' => 'The Sale Order for this Logistics record has been closed. Operations are locked.'
+                    ], 422);
+                }
+            }
+
             $logistics->sale_order_id = $request->type === 'sale_order' ? $request->sale_order_id : null;
             $logistics->export_order_id = $request->type === 'export_order' ? $request->export_order_id : null;
             $logistics->to_location = $request->to_location;

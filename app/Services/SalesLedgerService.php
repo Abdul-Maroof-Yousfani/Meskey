@@ -173,6 +173,8 @@ class SalesLedgerService
                 $labourAccountId = $labourObj?->account_id;
 
                 $brokerAccountId = $salesOrder?->broker?->account_id;
+                $sellerUser = $salesOrder?->parent_user ?? ($salesOrder?->parent_user_id ? \App\Models\User::find($salesOrder->parent_user_id) : null);
+                $sellerAccountId = $sellerUser?->account_id;
 
                 $transporterExpenseAccount = Account::where('hierarchy_path', '5-3')->first();
                 $labourExpenseAccount = Account::where('hierarchy_path', '5-4')->first();
@@ -302,6 +304,31 @@ class SalesLedgerService
                         'remarks' => "Broker payable booked for DC: {$dc_no}.",
                     ]);
                 }
+
+                // Seller Commission Entry
+                if ($salesOrder && $salesOrder->seller_commission_per_kg > 0 && $commissionExpenseAccount && $sellerAccountId && $totalQty > 0) {
+                    $sellerCommissionAmount = $totalQty * $salesOrder->seller_commission_per_kg;
+
+                    // Seller Commission Expense Debit
+                    $handleTransaction($sellerCommissionAmount, $commissionExpenseAccount->id, $voucherTypeId, $dc_no, 'debit', 'no', [
+                        'counter_account_id' => $sellerAccountId,
+                        'purpose' => "seller-commission-expense",
+                        'payment_against' => "pohanch-sale-expense",
+                        'against_reference_no' => $dc_no,
+                        'remarks' => "Seller commission expense booked for DC: {$dc_no}.",
+                    ]);
+
+                    // Seller Payable Credit
+                    $handleTransaction($sellerCommissionAmount, $sellerAccountId, $voucherTypeId, $dc_no, 'credit', 'no', [
+                        'counter_account_id' => $commissionExpenseAccount->id,
+                        'purpose' => "seller-payable",
+                        'payment_against' => "pohanch-sale-payable",
+                        'against_reference_no' => $dc_no,
+                        'remarks' => "Seller commission payable booked for DC: {$dc_no}.",
+                    ]);
+                } else {
+                    Transaction::where('voucher_no', $dc_no)->whereIn('purpose', ['seller-commission-expense', 'seller-payable'])->delete();
+                }
             });
         } elseif (in_array(strtolower(str_replace(['-', ' ', '_'], '', $deliveryChallan->sauda_type ?? '')), ['xmill'])) {
             // 5. X-Mill Sauda Ledger Entries
@@ -340,6 +367,8 @@ class SalesLedgerService
                     $labourAccountId = $labourObj?->account_id;
 
                     $brokerAccountId = $salesOrder?->broker?->account_id;
+                    $sellerUser = $salesOrder?->parent_user ?? ($salesOrder?->parent_user_id ? \App\Models\User::find($salesOrder->parent_user_id) : null);
+                    $sellerAccountId = $sellerUser?->account_id;
                     $commissionExpenseAccount = Account::where('hierarchy_path', '5-5')->first();
 
                     $totalSaleAmount = 0;
@@ -512,6 +541,31 @@ class SalesLedgerService
                             'against_reference_no' => $dc_no,
                             'remarks' => "Broker payable booked for DC: {$dc_no}.",
                         ]);
+                    }
+
+                    // 5. Seller Commission Entry
+                    if ($salesOrder && $salesOrder->seller_commission_per_kg > 0 && $commissionExpenseAccount && $sellerAccountId && $totalQty > 0) {
+                        $sellerCommissionAmount = $totalQty * $salesOrder->seller_commission_per_kg;
+
+                        // Seller Commission Expense Debit
+                        $handleTransaction($sellerCommissionAmount, $commissionExpenseAccount->id, $voucherTypeId, $dc_no, 'debit', 'no', [
+                            'counter_account_id' => $sellerAccountId,
+                            'purpose' => "seller-commission-expense",
+                            'payment_against' => "x-mill-sale-expense",
+                            'against_reference_no' => $dc_no,
+                            'remarks' => "Seller commission expense booked for DC: {$dc_no}.",
+                        ]);
+
+                        // Seller Payable Credit
+                        $handleTransaction($sellerCommissionAmount, $sellerAccountId, $voucherTypeId, $dc_no, 'credit', 'no', [
+                            'counter_account_id' => $commissionExpenseAccount->id,
+                            'purpose' => "seller-payable",
+                            'payment_against' => "x-mill-sale-payable",
+                            'against_reference_no' => $dc_no,
+                            'remarks' => "Seller commission payable booked for DC: {$dc_no}.",
+                        ]);
+                    } else {
+                        Transaction::where('voucher_no', $dc_no)->whereIn('purpose', ['seller-commission-expense', 'seller-payable'])->delete();
                     }
                 });
             }

@@ -29,6 +29,8 @@ class UserTestUpdateRequest extends FormRequest
             // 'email' => 'nullable|email|unique:users,email',
             'password' => 'nullable|confirmed',
             'parent_user_id' => 'nullable|exists:users,id',
+            'has_account' => 'nullable',
+            'account_id' => 'nullable|exists:accounts,id',
         ];
     }
 

@@ -17,7 +17,7 @@ class ReceiptVoucherRequest extends FormRequest
             'unique_no' => ['required', 'string'],
             'rv_date' => ['required', 'date'],
             'voucher_type' => ['required', 'in:bank_payment_voucher,cash_payment_voucher'],
-            'account_id' => ['required', 'exists:accounts,id'],
+            'account_id' => ['nullable', 'exists:accounts,id'],
             'customer_id' => ['required', 'exists:customers,id'],
             'ref_bill_no' => ['nullable', 'string'],
             'bill_date' => ['nullable', 'date'],

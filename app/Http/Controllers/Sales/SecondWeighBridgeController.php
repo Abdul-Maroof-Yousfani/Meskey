@@ -123,10 +123,15 @@ class SecondWeighBridgeController extends Controller
 
         $first_weight = $firstWeighbridge->first_weight;
         $second_weight = $request->second_weight;
-        $net_weight = $second_weight - $first_weight;
 
-        if ($second_weight < $first_weight) {
-            return response()->json("Second Weight can not be less than First Weight", 422);
+        if ($second_weight <= $first_weight) {
+            return response()->json("Second weighbridge must be greater than first weighbridge.", 422);
+        }   
+
+        $net_weight = $second_weight - $first_weight;       
+
+        if ($net_weight < 1) {
+            return response()->json("Second Weight must be greater than First Weight. Net weight must be at least 1 kg.", 422);
         }
 
         // Get aggregate balance for all DOs on the ticket
@@ -303,10 +308,15 @@ class SecondWeighBridgeController extends Controller
 
         $first_weight = $firstWeighbridge->first_weight;
         $second_weight = $request->second_weight;
+
+        if ($second_weight <= 0) {
+            return response()->json(['errors' => ['second_weight' => 'Second weighbridge must be greater than zero.']], 422);
+        }
+
         $net_weight = $second_weight - $first_weight;
 
-        if ($second_weight < $first_weight) {
-            return response()->json("Second Weight can not be less than First Weight", 422);
+        if ($net_weight < 1) {
+            return response()->json(['errors' => ['second_weight' => 'Second Weight must be greater than First Weight. Net weight must be at least 1 kg.']], 422);
         }
 
         // Calculate available balance (add current record's weight back to get true remaining)

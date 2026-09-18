@@ -24,7 +24,13 @@
                     </td>
                     <td>{{ $voucher->voucher_type == 'bank_payment_voucher' ? 'Bank Receipt Voucher' : 'Cash Receipt Voucher'}}</td>
                     <td>{{ $voucher->is_advance ? 'Sale Order' : 'Sale Invoice' }}</td>
-                    <td>{{ $voucher->account->account_name ?? $voucher->account->name ?? 'N/A' }}</td>
+                    <td>
+                        @if($voucher->bankDetails && $voucher->bankDetails->isNotEmpty())
+                            {{ $voucher->bankDetails->map(fn($bd) => $bd->account->name ?? '')->filter()->unique()->implode(', ') }}
+                        @else
+                            {{ $voucher->account->account_name ?? $voucher->account->name ?? 'N/A' }}
+                        @endif
+                    </td>
                     <td>{{ $voucher->ref_bill_no ?? 'N/A' }}</td>
                     <td>{{ number_format($voucher->total_amount, 2) }}</td>
                     <td>
@@ -49,7 +55,7 @@
                         @endif
                     </td>
                     <td>
-                        <a onclick="openModal(this, '{{ route('receipt-voucher.show', $voucher->id) }}', 'View Receipt Voucher', true, '80%')"
+                        <a onclick="openModal(this, '{{ route('receipt-voucher.show', $voucher->id) }}', 'View Receipt Voucher', false, '80%')"
                             class="info p-1 text-center mr-2 position-relative" title="View">
                             <i class="ft-eye font-medium-3"></i>
                         </a>
