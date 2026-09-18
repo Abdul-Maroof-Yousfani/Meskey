@@ -257,10 +257,8 @@
                     </div>
                 </div>
             </div>
-            <!-- <div class="row">
-                <div class="col-12 mt-3">
-                    <h6 class="header-heading-sepration">Financials</h6>
-                </div>
+            {{-- Financials section: fields kept in DOM (hidden) so JS can read/write them --}}
+            <div class="row" style="display:none;">
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Labour Rate:</label>
@@ -274,7 +272,6 @@
                         <label class="form-label">Labour Amount:</label>
                         <input type="number" name="labour_amount" value="{{ $delivery_challan->labour_amount }}"
                             id="labour_amount" class="form-control" readonly style="background-color: #f8f9fa;">
-                        <small class="text-muted">(Rate * Total Bags)</small>
                     </div>
                 </div>
                 <div class="col-md-4" id="transporter_amount_col">
@@ -283,26 +280,22 @@
                         <input type="number" name="transporter_amount"
                             value="{{ $delivery_challan->transporter_amount }}" id="transporter_amount"
                             class="form-control">
-                        <small class="text-muted">(Rate * Total Bags)</small>
                     </div>
                 </div>
-                <div class="col-md-3" style="display: none;">
+                <div class="col-md-3">
                     <div class="form-group">
-                        <label class="form-label">Weighbridge Amount:</label>
                         <input type="number" name="weighbridge_amount"
                             value="{{ $delivery_challan->{"weighbridge-amount"} }}" id="weighbridge_amount"
                             class="form-control">
                     </div>
                 </div>
-
-                <div class="col-12 mt-3">
+                <div class="col-12">
                     <div class="form-group">
-                        <label class="form-label">Remarks:</label>
                         <textarea name="remarks" id="remarks" class="form-control"
                             rows="3">{{ $delivery_challan->remarks }}</textarea>
                     </div>
                 </div>
-            </div> -->
+            </div>
         </div>
     </div>
 
@@ -985,17 +978,20 @@
         let rateType = (window.currentTransporterRateType || '').toLowerCase();
         if (rate <= 0) return;
 
-        let totalBags = 0;
-        $(".no_of_bags").each(function () {
-            let bags = parseFloat($(this).val()) || 0;
-            totalBags += bags;
+        let totalQty = 0;
+        $(".qty").each(function () {
+            totalQty += parseFloat($(this).val()) || 0;
         });
 
         let amount = 0;
         if (rateType === 'per truck') {
             amount = rate;
+        } else if (rateType === 'per mt') {
+            // Per MT: rate * (total_qty / 1000)
+            amount = rate * (totalQty / 1000);
         } else {
-            amount = totalBags * rate;
+            // Per KG or others: rate * total_qty
+            amount = rate * totalQty;
         }
         $("#transporter_amount").val(amount.toFixed(2));
     }

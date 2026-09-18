@@ -344,12 +344,13 @@
             let isExport = $('#type').val() === 'export_order';
             let displayStyle = isExport ? '' : 'style="display: none;"';
 
-            // <option value="Per MT" ${rateType === 'Per MT' ? 'selected' : ''}>Per MT</option>
+            // <option value="Per MT" ${rateType === 'Per MT' ? 'selected' : ''}\u003ePer MT\u003c/option\u003e -- now enabled
             let newRow = `
                 <tr class="item-row">
                     <td>
                         <select name="items[${rowCount}][rate_type]" class="form-control" required>
                             <option value="">Select Type</option>
+                            <option value="Per MT" ${rateType === 'Per MT' ? 'selected' : ''}>Per MT</option>
                             <option value="Per KG" ${rateType === 'Per KG' ? 'selected' : ''}>Per KG</option>
                             <option value="Per Truck" ${rateType === 'Per Truck' ? 'selected' : ''}>Per Truck</option>
                         </select>

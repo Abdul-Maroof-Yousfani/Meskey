@@ -207,8 +207,12 @@ class DeliveryChallanController extends Controller
                 if ($transporter_rate > 0) {
                     if ($transporter_rate_type == 'per truck') {
                         $transporter_amount = $transporter_rate;
-                    }else{
-                        $transporter_amount = $total_bags * $transporter_rate;
+                    } elseif ($transporter_rate_type == 'per mt') {
+                        // Per MT: rate * (total_qty / 1000)
+                        $transporter_amount = $transporter_rate * ($total_qty / 1000);
+                    } else {
+                        // Per KG or other: rate * total_qty
+                        $transporter_amount = $total_qty * $transporter_rate;
                     }
                 }
             }
@@ -471,7 +475,11 @@ class DeliveryChallanController extends Controller
                 if ($transporter_rate > 0) {
                     if ($transporter_rate_type == 'per truck') {
                         $transporter_amount = $transporter_rate;
-                    }else{
+                    } elseif ($transporter_rate_type == 'per mt') {
+                        // Per MT: rate * (total_qty / 1000)
+                        $transporter_amount = $transporter_rate * ($total_qty / 1000);
+                    } else {
+                        // Per KG or other: rate * total_qty
                         $transporter_amount = $total_qty * $transporter_rate;
                     }
                 }
