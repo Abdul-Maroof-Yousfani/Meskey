@@ -48,11 +48,13 @@ class SalesOrder extends Model
         "commission_per_kg",
         "seller_commission_per_kg",
         "receipt_voucher_item_ids",
-        "payment_on_kaanta"
+        "payment_on_kaanta",
+        "is_bardana"
     ];
 
     protected $casts = [
         'receipt_voucher_item_ids' => 'array',
+        'is_bardana' => 'boolean',
     ];
 
     public function parent_user() {

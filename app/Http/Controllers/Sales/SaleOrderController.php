@@ -366,6 +366,7 @@ class SaleOrderController extends Controller
         $payload["commission_per_kg"] = $request->commission_per_kg ?? 0;
         $payload["receipt_voucher_item_ids"] = $request->receipt_voucher_item_ids ?? null;
         $payload["payment_on_kaanta"] = $request->has('payment_on_kaanta') ? 1 : 0;
+        $payload["is_bardana"] = $request->has('is_bardana') ? 1 : 0;
 
         $soTotal = array_sum($request->amount ?? []);
         if ($request->pay_type_id == 10 && $request->receipt_voucher_item_ids) { // Advanced
@@ -773,6 +774,7 @@ class SaleOrderController extends Controller
             $payload["commission_per_kg"] = $request->commission_per_kg ?? 0;
             $payload["receipt_voucher_item_ids"] = $request->receipt_voucher_item_ids;
             $payload["payment_on_kaanta"] = $request->has('payment_on_kaanta') ? 1 : 0;
+            $payload["is_bardana"] = $request->has('is_bardana') ? 1 : 0;
             $payload["contract_status"] = $request->contract_status ?? $sales_order->contract_status;
 
             // Update parent sale order data
@@ -1058,6 +1060,7 @@ class SaleOrderController extends Controller
                 'items' => $itemRows,
                 'contract_status' => $SaleOrder->contract_status,
                 'is_closed' => $SaleOrder->isClosed(),
+                'is_bardana' => (bool) $SaleOrder->is_bardana,
                 'has_pending_amendment' => $SaleOrder->hasPendingDeliveryDateAmendment(),
                 'pending_amendment' => $SaleOrder->getPendingDeliveryDateAmendment(),
             ];

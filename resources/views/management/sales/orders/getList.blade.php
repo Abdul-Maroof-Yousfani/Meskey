@@ -117,6 +117,13 @@
                                     </span>
                                 </div>
                             @endif
+                            @if($group['is_bardana'] ?? false)
+                                <div class="mt-1">
+                                    <span class="badge badge-warning text-white px-2 py-1 font-weight-bold" style="background-color: #f39c12; color: #ffffff !important;" title="Bardana Order">
+                                        Bardana
+                                    </span>
+                                </div>
+                            @endif
                         </td>
 
                         <td rowspan="{{ $group['rowspan'] }}" class="text-center align-middle">

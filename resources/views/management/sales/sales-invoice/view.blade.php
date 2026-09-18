@@ -181,31 +181,31 @@
                                     $qty = $data->no_of_bags * $data->packing;
                                 }
                             @endphp
-                            <input type="number" class="form-control" value="{{ round($qty) }}" readonly>
+                            <input type="number" class="form-control" value="{{ $qty + 0 }}" readonly>
                         </td>
                         <td style="min-width: 100px;">
-                            <input type="number" class="form-control" value="{{ $data->rate }}" readonly>
+                            <input type="number" class="form-control" value="{{ $data->rate + 0 }}" readonly>
                         </td>
                         <td style="min-width: 120px;">
-                            <input type="number" class="form-control" value="{{ $data->gross_amount }}" readonly>
+                            <input type="number" class="form-control" value="{{ $data->gross_amount + 0 }}" readonly>
                         </td>
                         <td style="min-width: 100px;">
-                            <input type="number" class="form-control" value="{{ $data->discount_percent }}" readonly>
+                            <input type="number" class="form-control" value="{{ $data->discount_percent + 0 }}" readonly>
                         </td>
                         <td style="min-width: 120px;">
-                            <input type="number" class="form-control" value="{{ $data->discount_amount }}" readonly>
+                            <input type="number" class="form-control" value="{{ $data->discount_amount + 0 }}" readonly>
                         </td>
                         <td style="min-width: 120px;">
-                            <input type="number" class="form-control" value="{{ $data->amount }}" readonly>
+                            <input type="number" class="form-control" value="{{ $data->amount + 0 }}" readonly>
                         </td>
                         <td style="min-width: 100px;">
-                            <input type="number" class="form-control" value="{{ $data->gst_percent }}" readonly>
+                            <input type="number" class="form-control" value="{{ $data->gst_percent + 0 }}" readonly>
                         </td>
                         <td style="min-width: 120px;">
-                            <input type="number" class="form-control" value="{{ $data->gst_amount }}" readonly>
+                            <input type="number" class="form-control" value="{{ $data->gst_amount + 0 }}" readonly>
                         </td>
                         <td style="min-width: 120px;">
-                            <input type="number" class="form-control" value="{{ $data->net_amount }}" readonly>
+                            <input type="number" class="form-control" value="{{ $data->net_amount + 0 }}" readonly>
                         </td>
                         <td style="min-width: 150px;">
                             <input type="text" class="form-control" value="{{ $data->line_desc ?? '' }}" readonly>
@@ -225,25 +225,25 @@
                     <tr>
                         <th colspan="3" class="text-right">Totals:</th>
                         <th>
-                            <input type="number" class="form-control" value="{{ round($sales_invoice->sales_invoice_data->sum('qty'))  }}" readonly>
+                            <input type="number" class="form-control" value="{{ $sales_invoice->sales_invoice_data->sum('qty') + 0 }}" readonly>
                         </th>
                         <th></th>
                         <th>
-                            <input type="number" class="form-control" value="{{ $sales_invoice->sales_invoice_data->sum('gross_amount') }}" readonly>
+                            <input type="number" class="form-control" value="{{ $sales_invoice->sales_invoice_data->sum('gross_amount') + 0 }}" readonly>
                         </th>
                         <th></th>
                         <th>
-                            <input type="number" class="form-control" value="{{ $sales_invoice->sales_invoice_data->sum('discount_amount') }}" readonly>
+                            <input type="number" class="form-control" value="{{ $sales_invoice->sales_invoice_data->sum('discount_amount') + 0 }}" readonly>
                         </th>
                         <th>
-                            <input type="number" class="form-control" value="{{ $sales_invoice->sales_invoice_data->sum('amount') }}" readonly>
+                            <input type="number" class="form-control" value="{{ $sales_invoice->sales_invoice_data->sum('amount') + 0 }}" readonly>
                         </th>
                         <th></th>
                         <th>
-                            <input type="number" class="form-control" value="{{ $sales_invoice->sales_invoice_data->sum('gst_amount') }}" readonly>
+                            <input type="number" class="form-control" value="{{ $sales_invoice->sales_invoice_data->sum('gst_amount') + 0 }}" readonly>
                         </th>
                         <th>
-                            <input type="number" class="form-control" value="{{ $sales_invoice->sales_invoice_data->sum('net_amount') }}" readonly>
+                            <input type="number" class="form-control" value="{{ $sales_invoice->sales_invoice_data->sum('net_amount') + 0 }}" readonly>
                         </th>
                         <th colspan="2"></th>
                     </tr>

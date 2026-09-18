@@ -47,7 +47,12 @@ class DeliveryChallan extends Model
         'labour_rate',
         "labour_status",
         "am_approval_status",
-        "am_change_made"
+        "am_change_made",
+        "is_bardana"
+    ];
+
+    protected $casts = [
+        'is_bardana' => 'boolean',
     ];
 
     protected static function booted()

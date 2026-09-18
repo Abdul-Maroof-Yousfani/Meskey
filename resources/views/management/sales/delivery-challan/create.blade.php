@@ -25,13 +25,22 @@
         font-size: 13px;
     }
 
+    .packing-select+.select2-container {
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+    }
+
     .packing-select+.select2-container .select2-selection--multiple {
-        min-width: 130px !important;
-        width: 130px !important;
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
     }
 
     #salesInquiryTable td {
-        padding: 5px 10px !important;
+        padding: 6px 12px !important;
+        vertical-align: middle;
     }
 </style>
 
@@ -98,6 +107,17 @@
                             <option value="pohanch">Pohanch</option>
                             <option value="x-mill">X-mill</option>
                         </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group mt-2">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="is_bardana" name="is_bardana" value="1" onchange="toggleBardanaMode()">
+                            <label class="custom-control-label font-weight-bold" for="is_bardana">
+                                Bardana (Bag Weight Deduction)
+                            </label>
+                        </div>
+                        <small class="text-muted">When enabled, allows editing No. of Bags and entering Bag Weight to deduct bag weight from customer receivable.</small>
                     </div>
                 </div>
                 <div class="col-md-6 d-none ">
@@ -255,8 +275,9 @@
                             <th>DO No</th>
                             <th>Item</th>
                             <th>Bag Type</th>
-                            <th style="min-width: 130px; width: 130px;">Packing</th>
-                            <th>No of Bags</th>
+                            <th style="min-width: 160px; width: 160px;">Packing</th>
+                            <th style="min-width: 130px; width: 130px;">No of Bags</th>
+                            <th class="bardana-col" style="display: none; min-width: 120px;">Bag Wt (kg)</th>
                             <th>Quantity (kg)</th>
                             <th style="display: none">Rate per Kg</th>
                             <th style="display: none">Rate per Mond</th>
@@ -377,6 +398,14 @@
                         $("#standard_labour_rate").val('N/A');
                         $("#labour_amount").val(0);
                     }
+
+                    // Set Bardana Checkbox from Ticket SO
+                    if (response.is_bardana) {
+                        $("#is_bardana").prop("checked", true);
+                    } else {
+                        $("#is_bardana").prop("checked", false);
+                    }
+                    toggleBardanaMode();
 
                     // Set Contract Type (readonly)
                     $("#sauda_type").val(response.delivery_order.sauda_type).trigger('change');
@@ -504,6 +533,7 @@
                             $(".select2").select2();
                             calculateLabourAmount();
                             calculateTransporterAmount();
+                            toggleBardanaMode();
 
                             // Track added ticket IDs
                             addedTicketIds = [parseInt(ticketId)];
@@ -1338,4 +1368,56 @@
             return false;
         }
     });
+
+    function toggleBardanaMode() {
+        let isChecked = $('#is_bardana').is(':checked');
+        if (isChecked) {
+            $('.bardana-col').show();
+            $('.no_of_bags').prop('readonly', false).addClass('border-primary bg-white');
+        } else {
+            $('.bardana-col').hide();
+            $('.no_of_bags').prop('readonly', true).removeClass('border-primary bg-white');
+            $('.bag_weight').val('0');
+            $('.total_bag_weight').val('0');
+        }
+
+        $('#dcTableBody tr').each(function () {
+            let rowId = $(this).attr('id');
+            if (rowId && rowId.startsWith('row_')) {
+                let index = rowId.replace('row_', '');
+                calculateRowBardana(index);
+            }
+        });
+    }
+
+    function calculateRowBardana(index) {
+        let isBardana = $('#is_bardana').is(':checked');
+        let row = $('#row_' + index);
+        let swbWeight = parseFloat(row.attr('data-swb-weight')) || parseFloat($('#qty_' + index).val()) || 0;
+        if (!row.attr('data-swb-weight')) {
+            row.attr('data-swb-weight', swbWeight);
+        }
+
+        if (isBardana) {
+            let bags = parseFloat($('#no_of_bags_' + index).val()) || 0;
+            let bagWeight = parseFloat($('#bag_weight_' + index).val()) || 0;
+            let totalBagWeight = bags * bagWeight; // Exact precision, no round off!
+            let billedQty = Math.max(0, swbWeight - totalBagWeight);
+
+            $('#total_bag_weight_' + index).val(totalBagWeight);
+            $('#billed_qty_' + index).val(billedQty);
+
+            if (totalBagWeight > 0) {
+                $('#bardana_calc_text_' + index)
+                    .text(`SWB: ${swbWeight} kg | Bags: ${totalBagWeight} kg | Net Billed: ${billedQty} kg`)
+                    .removeClass('d-none');
+            } else {
+                $('#bardana_calc_text_' + index).text('').addClass('d-none');
+            }
+        } else {
+            $('#total_bag_weight_' + index).val(0);
+            $('#billed_qty_' + index).val(swbWeight);
+            $('#bardana_calc_text_' + index).text('').addClass('d-none');
+        }
+    }
 </script>

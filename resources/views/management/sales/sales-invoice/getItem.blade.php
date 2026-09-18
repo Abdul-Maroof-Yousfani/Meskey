@@ -64,31 +64,31 @@
                     {{ sales_invoice_balance($data->id) }}</span>
             </td>
             <td style="min-width: 100px;">
-                <input type="number" name="qty[]" id="qty_{{ $rowIndex }}" data-balance="{{ sales_invoice_balance($data->id) }}" class="form-control qty" onkeyup="calculateRow(this); check_balance(this, 'no_of_bags_{{ $rowIndex }}')" step="0.01" min="0" value="{{ round($qty, 3) }}" readonly>
+                <input type="number" name="qty[]" id="qty_{{ $rowIndex }}" data-balance="{{ sales_invoice_balance($data->id) }}" class="form-control qty" onkeyup="calculateRow(this); check_balance(this, 'no_of_bags_{{ $rowIndex }}')" step="any" min="0" value="{{ $qty + 0 }}" readonly>
             </td>
             <td style="min-width: 100px;">
-                <input type="number" name="rate[]" id="rate_{{ $rowIndex }}" onkeyup="calculateRow(this)" class="form-control rate" step="0.01" min="0" value="{{ $rate }}" readonly>
+                <input type="number" name="rate[]" id="rate_{{ $rowIndex }}" onkeyup="calculateRow(this)" class="form-control rate" step="any" min="0" value="{{ $rate + 0 }}" readonly>
             </td>
             <td style="min-width: 120px;">
-                <input type="number" name="gross_amount[]" id="gross_amount_{{ $rowIndex }}" class="form-control gross_amount" readonly value="{{ round($qty * $rate) }}">
+                <input type="number" name="gross_amount[]" id="gross_amount_{{ $rowIndex }}" class="form-control gross_amount" readonly step="any" value="{{ $grossAmount + 0 }}">
             </td>
             <td style="min-width: 100px;">
-                <input type="number" name="discount_percent[]" id="discount_percent_{{ $rowIndex }}" onkeyup="calculateRow(this)" class="form-control discount_percent" step="0.01" min="0" max="100" value="{{ $discountPercent }}">
+                <input type="number" name="discount_percent[]" id="discount_percent_{{ $rowIndex }}" onkeyup="calculateRow(this)" class="form-control discount_percent" step="any" min="0" max="100" value="{{ $discountPercent + 0 }}">
             </td>
             <td style="min-width: 120px;">
-                <input type="number" name="discount_amount[]" id="discount_amount_{{ $rowIndex }}" onkeyup="calculateRow(this)" class="form-control discount_amount" step="0.01" min="0" value="{{ $discountAmount }}">
+                <input type="number" name="discount_amount[]" id="discount_amount_{{ $rowIndex }}" onkeyup="calculateRow(this)" class="form-control discount_amount" step="any" min="0" value="{{ $discountAmount + 0 }}">
             </td>
             <td style="min-width: 120px;">
-                <input type="number" name="amount[]" id="amount_{{ $rowIndex }}" class="form-control amount" readonly value="{{ $amount }}">
+                <input type="number" name="amount[]" id="amount_{{ $rowIndex }}" class="form-control amount" readonly step="any" value="{{ $amount + 0 }}">
             </td>
             <td style="min-width: 100px;">
-                <input type="number" name="gst_percent[]" id="gst_percent_{{ $rowIndex }}" onkeyup="calculateRow(this)" class="form-control gst_percent" step="0.01" min="0" max="100" value="{{ $gstPercent }}">
+                <input type="number" name="gst_percent[]" id="gst_percent_{{ $rowIndex }}" onkeyup="calculateRow(this)" class="form-control gst_percent" step="any" min="0" max="100" value="{{ $gstPercent + 0 }}">
             </td>
             <td style="min-width: 120px;">
-                <input type="number" name="gst_amount[]" id="gst_amount_{{ $rowIndex }}" onkeyup="calculateRow(this)" class="form-control gst_amount" step="0.01" min="0" value="{{ $gstAmount }}">
+                <input type="number" name="gst_amount[]" id="gst_amount_{{ $rowIndex }}" onkeyup="calculateRow(this)" class="form-control gst_amount" step="any" min="0" value="{{ $gstAmount + 0 }}">
             </td>
             <td style="min-width: 120px;">
-                <input type="number" name="net_amount[]" id="net_amount_{{ $rowIndex }}" class="form-control net_amount" readonly value="{{ $netAmount }}">
+                <input type="number" name="net_amount[]" id="net_amount_{{ $rowIndex }}" class="form-control net_amount" readonly step="any" value="{{ $netAmount + 0 }}">
             </td>
             <td style="min-width: 150px;">
                 <input type="text" name="line_desc[]" id="line_desc_{{ $rowIndex }}" class="form-control line_desc" value="{{ $lineDesc }}" readonly>

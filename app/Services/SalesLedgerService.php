@@ -183,7 +183,10 @@ class SalesLedgerService
                 $totalSaleAmount = 0;
                 $totalQty = 0;
                 foreach ($deliveryChallan->delivery_challan_data as $data) {
-                    $totalSaleAmount += ($data->qty * $data->rate);
+                    $effectiveQty = ($deliveryChallan->is_bardana && ($data->total_bag_weight ?? 0) > 0)
+                        ? ($data->billed_qty ?? max(0, $data->qty - $data->total_bag_weight))
+                        : $data->qty;
+                    $totalSaleAmount += ($effectiveQty * $data->rate);
                     $totalQty += $data->qty;
                 }
 
@@ -374,7 +377,10 @@ class SalesLedgerService
                     $totalSaleAmount = 0;
                     $totalQty = 0;
                     foreach ($deliveryChallan->delivery_challan_data as $data) {
-                        $totalSaleAmount += ($data->qty * $data->rate);
+                        $effectiveQty = ($deliveryChallan->is_bardana && ($data->total_bag_weight ?? 0) > 0)
+                            ? ($data->billed_qty ?? max(0, $data->qty - $data->total_bag_weight))
+                            : $data->qty;
+                        $totalSaleAmount += ($effectiveQty * $data->rate);
                         $totalQty += $data->qty;
                     }
 
@@ -1148,7 +1154,12 @@ class SalesLedgerService
                         $netAmount,
                         $rate,
                         $salesReturn->remarks ?? "Sales Return Stock-In: {$sr_no}",
-                        ['avg_cost_price' => $newWac],
+                        [
+                            'avg_cost_price' => $newWac,
+                            'company_location_id' => $salesReturn->company_location_id,
+                            'arrival_id' => $salesReturn->arrival_location_id,
+                            'subarrival_id' => $salesReturn->storage_location_id,
+                        ],
                         $newWac
                     );
                 } else {
@@ -1157,7 +1168,10 @@ class SalesLedgerService
                         'price' => $netAmount,
                         'avg_price_per_kg' => $rate,
                         'avg_cost_price' => $newWac,
-                        'narration' => $salesReturn->remarks ?? "Sales Return Stock-In: {$sr_no}"
+                        'narration' => $salesReturn->remarks ?? "Sales Return Stock-In: {$sr_no}",
+                        'company_location_id' => $salesReturn->company_location_id,
+                        'arrival_id' => $salesReturn->arrival_location_id,
+                        'subarrival_id' => $salesReturn->storage_location_id,
                     ]);
                 }
             }
@@ -1349,10 +1363,10 @@ class SalesLedgerService
             $disc = (float)($data->discount_amount ?? 0);
             if ($disc <= 0 && $gross > $amtAfterDisc) {
                 // Derive from stored amounts (most reliable)
-                $disc = round($gross - $amtAfterDisc, 2);
+                $disc = $gross - $amtAfterDisc;
             }
             if ($disc <= 0 && (float)($data->discount_percent ?? 0) > 0) {
-                $disc = round($gross * ((float)$data->discount_percent / 100), 2);
+                $disc = $gross * ((float)$data->discount_percent / 100);
             }
             $totalDiscount += max(0, $disc);
 
@@ -1360,17 +1374,14 @@ class SalesLedgerService
             $gst = (float)($data->gst_amount ?? 0);
             if ($gst <= 0 && $netAmt > $amtAfterDisc) {
                 // Derive from stored net_amount - amount (most reliable)
-                $gst = round($netAmt - $amtAfterDisc, 2);
+                $gst = $netAmt - $amtAfterDisc;
             }
             if ($gst <= 0 && (float)($data->gst_percent ?? 0) > 0) {
                 $taxable = $gross - $disc;
-                $gst = round($taxable * ((float)$data->gst_percent / 100), 2);
+                $gst = $taxable * ((float)$data->gst_percent / 100);
             }
             $totalGst += max(0, $gst);
         }
-
-        $totalDiscount = round($totalDiscount, 2);
-        $totalGst = round($totalGst, 2);
 
         $si_no = $salesInvoice->si_no;
 

@@ -84,7 +84,7 @@
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Arrival Location:<span class="text-danger">*</span></label>
-                        <select name="arrival_location_id" id="arrivals" onchange="get_sale_invoices()"
+                        <select name="arrival_location_id" id="arrivals"
                             class="form-control select2">
                             <option value="">Select Arrival Location</option>
                             @foreach (get_arrival_locations() as $arrival_location)
@@ -559,6 +559,12 @@
             return;
         }
 
+        const selectedOption = $(el).find('option:selected');
+        const origArrivalId = selectedOption.data('arrival-id');
+        if (origArrivalId && !$("#arrivals").val()) {
+            $("#arrivals").val(origArrivalId).trigger('change.select2');
+        }
+
         $.ajax({
             url: "{{ route('sales.get.invoice-items') }}",
             method: "GET",
@@ -580,11 +586,10 @@
     function get_sale_invoices(selectedId = null) {
         const customer_id = $("#customer_id").val();
         const location_id = $("#locations").val();
-        const arrival_location_id = $("#arrivals").val();
         const storage_id = $("#storages").val();
         const currentSelectedId = selectedId !== null ? selectedId : $("#si_no").val();
 
-        if (!customer_id || !location_id || !arrival_location_id) {
+        if (!customer_id || !location_id) {
             $("#si_no").empty().append(`<option value=''>Select Receiving Request</option>`);
             $("#si_no").select2();
             return;
@@ -596,7 +601,6 @@
             data: {
                 customer_id,
                 location_id,
-                arrival_location_id,
                 storage_id,
                 sales_return_id: '{{ $saleReturn->id }}'
             },
@@ -609,7 +613,7 @@
                 res.forEach(sale_invoice => {
                     const isSelected = (currentSelectedId && sale_invoice.id == currentSelectedId) ? 'selected' : '';
                     $("#si_no").append(`
-                        <option value="${sale_invoice.id}" ${isSelected}>
+                        <option value="${sale_invoice.id}" data-arrival-id="${sale_invoice.arrival_id || ''}" ${isSelected}>
                             ${sale_invoice.text}
                         </option>
                     `);

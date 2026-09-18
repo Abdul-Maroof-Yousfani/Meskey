@@ -52,7 +52,7 @@
             
             $index = "TICKET-" . $loading_program_item->id . "-" . $delivery_order->id;
         @endphp
-        <tr id="row_{{ $index }}">
+        <tr id="row_{{ $index }}" data-swb-weight="{{ $assigned_qty }}">
             <td>
                 <input type="text" class="form-control" value="{{ $delivery_order->reference_no }}" readonly>
             </td>
@@ -83,7 +83,7 @@
                     value="{{ $delivery_order_data->so_data_id }}" onkeyup="calc(this)" class="form-control so_data_id"
                     step="0.01" min="0">
             </td>
-            <td>
+            <td style="min-width: 160px; width: 160px;">
                 <input type="hidden" name="bag_size[]" id="bag_size_{{ $index }}" value="{{ $loading_program_item->packing }}"
                     class="form-control bag_size">
                 <select class="form-select select2 packing-select" multiple disabled>
@@ -97,14 +97,21 @@
                     @endforeach
                 </select>
             </td>
-            <td>
-                <input type="text" name="no_of_bags[]" id="no_of_bags_{{ $index }}" value="{{ $assigned_bags }}"
-                    class="form-control no_of_bags" step="0.01" min="0" readonly>
+            <td style="min-width: 130px; width: 130px;">
+                <input type="number" name="no_of_bags[]" id="no_of_bags_{{ $index }}" value="{{ $assigned_bags }}"
+                    class="form-control no_of_bags" step="1" min="0" oninput="calculateRowBardana('{{ $index }}')" readonly>
+            </td>
+            <td class="bardana-col" style="display: none;">
+                <input type="number" name="bag_weight[]" id="bag_weight_{{ $index }}" value="0"
+                    class="form-control bag_weight" step="0.0001" min="0" oninput="calculateRowBardana('{{ $index }}')" placeholder="0.0000">
+                <input type="hidden" name="total_bag_weight[]" id="total_bag_weight_{{ $index }}" value="0">
+                <input type="hidden" name="billed_qty[]" id="billed_qty_{{ $index }}" value="{{ $assigned_qty }}">
             </td>
             <td>
                 <input type="text" name="qty[]" id="qty_{{ $index }}" value="{{ $assigned_qty }}" 
                     class="form-control qty" step="0.01" min="0"
                     oninput="calc(this)" readonly>
+                <small id="bardana_calc_text_{{ $index }}" class="form-text font-weight-bold text-success mt-1 d-none" style="font-size: 11px;"></small>
             </td>
             <td class="d-none">
                 <input type="text" name="rate[]" id="rate_{{ $index }}" value="{{ $delivery_order_data->rate ?? 0 }}"

@@ -406,37 +406,37 @@
                 <input type="hidden" name="dc_data_id[]" value="">
             </td>
             <td style="min-width: 100px;">
-                <input type="number" name="packing[]" id="packing_${index}" onkeyup="calculateRow(this)" class="form-control packing" step="0.01" min="0">
+                <input type="number" name="packing[]" id="packing_${index}" onkeyup="calculateRow(this)" class="form-control packing" step="any" min="0">
             </td>
             <td style="min-width: 100px;">
-                <input type="number" name="no_of_bags[]" id="no_of_bags_${index}" onkeyup="calculateRow(this)" class="form-control no_of_bags" step="0.01" min="0" readonly>
+                <input type="number" name="no_of_bags[]" id="no_of_bags_${index}" onkeyup="calculateRow(this)" class="form-control no_of_bags" step="any" min="0" readonly>
             </td>
             <td style="min-width: 100px;">
-                <input type="number" name="qty[]" id="qty_${index}" onkeyup="calculateRow(this)" class="form-control qty" step="0.01" min="0">
+                <input type="number" name="qty[]" id="qty_${index}" onkeyup="calculateRow(this)" class="form-control qty" step="any" min="0">
             </td>
             <td style="min-width: 100px;">
-                <input type="number" name="rate[]" id="rate_${index}" onkeyup="calculateRow(this)" class="form-control rate" step="0.01" min="0">
+                <input type="number" name="rate[]" id="rate_${index}" onkeyup="calculateRow(this)" class="form-control rate" step="any" min="0">
             </td>
             <td style="min-width: 120px;">
-                <input type="number" name="gross_amount[]" id="gross_amount_${index}" class="form-control gross_amount" readonly>
+                <input type="number" name="gross_amount[]" id="gross_amount_${index}" class="form-control gross_amount" step="any" readonly>
             </td>
             <td style="min-width: 100px;">
-                <input type="number" name="discount_percent[]" id="discount_percent_${index}" onkeyup="calculateRow(this)" class="form-control discount_percent" step="0.01" min="0" max="100" value="0">
+                <input type="number" name="discount_percent[]" id="discount_percent_${index}" onkeyup="calculateRow(this)" class="form-control discount_percent" step="any" min="0" max="100" value="0">
             </td>
             <td style="min-width: 120px;">
-                <input type="number" name="discount_amount[]" id="discount_amount_${index}" onkeyup="calculateRow(this)" class="form-control discount_amount" step="0.01" min="0">
+                <input type="number" name="discount_amount[]" id="discount_amount_${index}" onkeyup="calculateRow(this)" class="form-control discount_amount" step="any" min="0">
             </td>
             <td style="min-width: 120px;">
-                <input type="number" name="amount[]" id="amount_${index}" class="form-control amount" readonly>
+                <input type="number" name="amount[]" id="amount_${index}" class="form-control amount" step="any" readonly>
             </td>
             <td style="min-width: 100px;">
-                <input type="number" name="gst_percent[]" id="gst_percent_${index}" onkeyup="calculateRow(this)" class="form-control gst_percent" step="0.01" min="0" max="100" value="0">
+                <input type="number" name="gst_percent[]" id="gst_percent_${index}" onkeyup="calculateRow(this)" class="form-control gst_percent" step="any" min="0" max="100" value="0">
             </td>
             <td style="min-width: 120px;">
-                <input type="number" name="gst_amount[]" id="gst_amount_${index}" onkeyup="calculateRow(this)" class="form-control gst_amount" step="0.01" min="0">
+                <input type="number" name="gst_amount[]" id="gst_amount_${index}" onkeyup="calculateRow(this)" class="form-control gst_amount" step="any" min="0">
             </td>
             <td style="min-width: 120px;">
-                <input type="number" name="net_amount[]" id="net_amount_${index}" class="form-control net_amount" readonly>
+                <input type="number" name="net_amount[]" id="net_amount_${index}" class="form-control net_amount" step="any" readonly>
             </td>
             <td style="min-width: 150px;">
                 <input type="text" name="line_desc[]" id="line_desc_${index}" class="form-control line_desc">
@@ -459,7 +459,8 @@
         $('#row_' + index).remove();
     }
 
-    function round(num, decimals = 2) {
+    function round(num, decimals = 4) {
+        if (isNaN(num) || num === null || num === undefined || num === '') return 0;
         return Number(Math.round(num + "e" + decimals) + "e-" + decimals);
     }
 
@@ -505,7 +506,7 @@
                 } else {
                     qty = noOfBags * packing;
                 }
-                qtyInput.val(round(qty, 3));
+                qtyInput.val(round(qty, 4));
                 if (typeof toastr !== 'undefined') {
                     toastr.warning(`Cannot exceed available balance of ${maxBalance} bags`);
                 }
@@ -519,12 +520,12 @@
             } else {
                 qty = packing * noOfBags;
             }
-            qtyInput.val(round(qty, 3));
+            qtyInput.val(round(qty, 4));
         }
 
         // Calculate Gross Amount = Qty * Rate
         const grossAmount = qty * rate;
-        grossAmountInput.val(round(grossAmount));
+        grossAmountInput.val(round(grossAmount, 4));
 
         // Calculate Discount
         if ($(el).hasClass("discount_amount")) {
@@ -534,7 +535,7 @@
                 if (discountPercent > 100) {
                     discountPercent = 100;
                     discountAmount = grossAmount;
-                    discountAmountInput.val(round(discountAmount));
+                    discountAmountInput.val(round(discountAmount, 4));
                     if (typeof toastr !== 'undefined') {
                         toastr.warning('Discount cannot exceed 100% of gross amount');
                     }
@@ -543,7 +544,7 @@
                 discountPercent = 0;
             }
             discountPercentInput.val(round(discountPercent, 4));
-        } else {
+        } else if ($(el).hasClass("discount_percent")) {
             if (discountPercent > 100) {
                 discountPercent = 100;
                 discountPercentInput.val(100);
@@ -556,12 +557,21 @@
             }
             // Forward calculate discount amount from discount percent
             discountAmount = (discountPercent / 100) * grossAmount;
-            discountAmountInput.val(round(discountAmount));
+            discountAmountInput.val(round(discountAmount, 4));
+        } else {
+            // If qty or rate changed, re-calculate discount
+            if (discountPercent > 0) {
+                discountAmount = (discountPercent / 100) * grossAmount;
+                discountAmountInput.val(round(discountAmount, 4));
+            } else if (discountAmount > 0 && grossAmount > 0) {
+                discountPercent = (discountAmount / grossAmount) * 100;
+                discountPercentInput.val(round(discountPercent, 4));
+            }
         }
 
         // Calculate Amount = Gross Amount - Discount Amount
         const amount = grossAmount - discountAmount;
-        amountInput.val(round(amount));
+        amountInput.val(round(amount, 4));
 
         // Calculate GST
         if ($(el).hasClass("gst_amount")) {
@@ -571,7 +581,7 @@
                 if (gstPercent > 100) {
                     gstPercent = 100;
                     gstAmount = amount;
-                    gstAmountInput.val(round(gstAmount));
+                    gstAmountInput.val(round(gstAmount, 4));
                     if (typeof toastr !== 'undefined') {
                         toastr.warning('GST cannot exceed 100% of amount');
                     }
@@ -580,7 +590,7 @@
                 gstPercent = 0;
             }
             gstPercentInput.val(round(gstPercent, 4));
-        } else {
+        } else if ($(el).hasClass("gst_percent")) {
             if (gstPercent > 100) {
                 gstPercent = 100;
                 gstPercentInput.val(100);
@@ -593,12 +603,20 @@
             }
             // Forward calculate GST amount from GST percent
             gstAmount = (gstPercent / 100) * amount;
-            gstAmountInput.val(round(gstAmount));
+            gstAmountInput.val(round(gstAmount, 4));
+        } else {
+            if (gstPercent > 0) {
+                gstAmount = (gstPercent / 100) * amount;
+                gstAmountInput.val(round(gstAmount, 4));
+            } else if (gstAmount > 0 && amount > 0) {
+                gstPercent = (gstAmount / amount) * 100;
+                gstPercentInput.val(round(gstPercent, 4));
+            }
         }
 
         // Calculate Net Amount = Amount + GST Amount
         const netAmount = amount + gstAmount;
-        netAmountInput.val(round(netAmount));
+        netAmountInput.val(round(netAmount, 4));
     }
 
     // Legacy function for backward compatibility
