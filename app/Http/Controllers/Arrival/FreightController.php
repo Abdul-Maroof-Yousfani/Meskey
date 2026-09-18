@@ -339,7 +339,7 @@ class FreightController extends Controller
                                 'credit',
                                 'no',
                                 [
-                                    'counter_account_id' => $purchaseOrder->qcProduct->account_id,
+                                    'counter_account_id' => $purchaseOrder->qcProduct->account_id ?? $ticket->qcProduct->account_id,
                                     'grn_no' => $grnNo,
                                     'purpose' => "stock-in-transit",
                                     'payment_against' => "thadda-purchase",
@@ -350,7 +350,7 @@ class FreightController extends Controller
 
                             createTransaction(
                                 $inventoryAmount,
-                                $purchaseOrder->qcProduct->account_id,
+                                $purchaseOrder->qcProduct->account_id ?? $ticket->qcProduct->account_id,
                                 1,
                                 $contractNo,
                                 'debit',
@@ -384,7 +384,7 @@ class FreightController extends Controller
                 if ($previousStocks->count() > 0) {
                     $prevTotalQty = $previousStocks->sum('qty');
                     $prevTotalValue = $previousStocks->sum(function ($s) {
-                        return (float)($s->price > 0 ? $s->price : ($s->qty * ($s->avg_price_per_kg ?: $s->avg_cost_price)));
+                        return (float) ($s->price > 0 ? $s->price : ($s->qty * ($s->avg_price_per_kg ?: $s->avg_cost_price)));
                     });
 
                     $combinedTotalQty = $prevTotalQty + $qty;
