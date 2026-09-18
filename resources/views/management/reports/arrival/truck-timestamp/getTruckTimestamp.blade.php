@@ -11,12 +11,12 @@
         <th>Total Resamples</th>
         <th>Party Ref. No</th>
         <th>Yield</th>
-        <th>Location Time</th>
-        <th>Location By</th>
         <th>1st QC Time</th>
         <th>1st QC By</th>
         <th>1st Tabaar Decision Time</th>
         <th>1st Tabaar Decision By</th>
+        <th>Location Time</th>
+        <th>Location By</th>
         <th>1st Weight Time</th>
         <th>1st Weight By</th>
         
@@ -96,8 +96,8 @@
                 $yield = $row->purchaseOrder?->yield ?? ($row->yield ?? '');
 
                 // 1st Tabaar Decision
-                $firstTabaarTime = 'N/A';
-                $firstTabaarBy = 'N/A';
+                $firstTabaarTime = '';
+                $firstTabaarBy = '';
                 if ($row->decision_making_time) {
                     $firstTabaarTime = formatDateTime($row->decision_making_time);
                     $firstTabaarBy = $row->decisionBy?->name ?? '';
@@ -107,42 +107,42 @@
                 }
 
                 // 1st Inner QC sample time
-                $firstInnerSampleTime = 'N/A';
+                $firstInnerSampleTime = '';
                 if ($firstInner && $firstInner->takenByUser) {
                     $firstInnerSampleTime = formatDateTime($firstInner->updated_at);
                 }
 
                 // 2nd Inner QC sample time
-                $secondInnerSampleTime = 'N/A';
+                $secondInnerSampleTime = '';
                 if ($secondInner && $secondInner->takenByUser) {
                     $secondInnerSampleTime = formatDateTime($secondInner->updated_at);
                 }
 
                 // 3rd Inner QC sample time
-                $thirdInnerSampleTime = 'N/A';
+                $thirdInnerSampleTime = '';
                 if ($thirdInner && $thirdInner->takenByUser) {
                     $thirdInnerSampleTime = formatDateTime($thirdInner->updated_at);
                 }
 
                 // 2nd Tabaar Decision
-                $secondTabaarTime = 'N/A';
-                $secondTabaarBy = 'N/A';
+                $secondTabaarTime = '';
+                $secondTabaarBy = '';
                 if ($firstInner && in_array($firstInner->approved_status, ['approved', 'rejected'])) {
                     $secondTabaarTime = formatDateTime($firstInner->updated_at);
                     $secondTabaarBy = $firstInner->approvedByUser?->name ?? '';
                 }
 
                 // 3rd Tabaar Decision
-                $thirdTabaarTime = 'N/A';
-                $thirdTabaarBy = 'N/A';
+                $thirdTabaarTime = '';
+                $thirdTabaarBy = '';
                 if ($secondInner && in_array($secondInner->approved_status, ['approved', 'rejected'])) {
                     $thirdTabaarTime = formatDateTime($secondInner->updated_at);
                     $thirdTabaarBy = $secondInner->approvedByUser?->name ?? '';
                 }
 
                 // 4th Tabaar Decision
-                $fourthTabaarTime = 'N/A';
-                $fourthTabaarBy = 'N/A';
+                $fourthTabaarTime = '';
+                $fourthTabaarBy = '';
                 if ($thirdInner && in_array($thirdInner->approved_status, ['approved', 'rejected'])) {
                     $fourthTabaarTime = formatDateTime($thirdInner->updated_at);
                     $fourthTabaarBy = $thirdInner->approvedByUser?->name ?? '';
@@ -152,15 +152,15 @@
                 $isFullReject = ($row->first_qc_status == 'rejected' || $row->status == 'Reject Full');
                 $isHalfReject = ($row->approvals?->bag_packing_approval == 'Half Approved' || ($row->approvals?->total_rejection > 0) || $row->document_approval_status == 'half_approved' || $row->status == 'Reject Half');
 
-                $fullRejectTime = 'N/A';
-                $fullRejectBy = 'N/A';
+                $fullRejectTime = '';
+                $fullRejectBy = '';
                 if ($isFullReject) {
                     $fullRejectTime = $firstTabaarTime;
                     $fullRejectBy = $firstTabaarBy;
                 }
 
-                $halfRejectTime = 'N/A';
-                $halfRejectBy = 'N/A';
+                $halfRejectTime = '';
+                $halfRejectBy = '';
                 if ($isHalfReject) {
                     if ($secondTabaarTime && $secondTabaarBy) {
                         $halfRejectTime = $secondTabaarTime;
@@ -172,23 +172,23 @@
                 }
 
                 // Bilty Return
-                $biltyReturnTime = 'N/A';
-                $biltyReturnBy = 'N/A';
+                $biltyReturnTime = '';
+                $biltyReturnBy = '';
                 if ($row->bilty_return_confirmation) {
                     $biltyReturnTime = formatDateTime($row->updated_at);
                 }
 
                 // HO Confirm
-                $hoConfirmTime = 'N/A';
-                $hoConfirmBy = 'N/A';
+                $hoConfirmTime = '';
+                $hoConfirmBy = '';
                 if ($row->is_ticket_verified) {
                     $hoConfirmTime = formatDateTime($row->updated_at);
                     $hoConfirmBy = $row->ticketVerifiedBy?->name ?? 'Head Office';
                 }
 
                 // Admin Edit
-                $adminEditTime = 'N/A';
-                $adminEditBy = 'N/A';
+                $adminEditTime = '';
+                $adminEditBy = '';
                 if ($row->latestAuditLog) {
                     $adminEditTime = formatDateTime($row->latestAuditLog->created_at);
                     $adminEditBy = $row->latestAuditLog->user?->name ?? '';
@@ -213,34 +213,34 @@
                 <td>{{ $resamplesCount }}</td>
                 <td>{{ $partyRefNo }}</td>
                 <td>{{ $yield }}</td>
-                <td>{{ formatDateTime($row->unloadingLocation?->created_at) }}</td>
-                <td>{{ $row->unloadingLocation?->createdBy?->name ?? 'N/A' }}</td>
                 <td>{{ formatDateTime($initialQC?->created_at) }}</td>
-                <td>{{ $initialQC?->takenByUser?->name ?? 'N/A' }}</td>
+                <td>{{ $initialQC?->takenByUser?->name ?? '' }}</td>
                 <td>{{ $firstTabaarTime }}</td>
                 <td>{{ $firstTabaarBy }}</td>
+                <td>{{ formatDateTime($row->unloadingLocation?->created_at) }}</td>
+                <td>{{ $row->unloadingLocation?->createdBy?->name ?? '' }}</td>
                 <td>{{ formatDateTime($row->firstWeighbridge?->created_at) }}</td>
-                <td>{{ $row->firstWeighbridge?->createdBy?->name ?? 'N/A' }}</td>
+                <td>{{ $row->firstWeighbridge?->createdBy?->name ?? '' }}</td>
 
                 @if (in_array($innerSample, ['1', '1st', 'all']))
                     <td>{{ formatDateTime($firstInner?->created_at) }}</td>
-                    <td>{{ $firstInner?->doneByUser?->name ?? ($firstInner?->creator?->name ?? 'N/A') }}</td>
+                    <td>{{ $firstInner?->doneByUser?->name ?? ($firstInner?->creator?->name ?? '') }}</td>
                     <td>{{ $firstInnerSampleTime }}</td>
-                    <td>{{ $firstInner?->takenByUser?->name ?? 'N/A' }}</td>
+                    <td>{{ $firstInner?->takenByUser?->name ?? '' }}</td>
                 @endif
 
                 @if (in_array($innerSample, ['2', '2nd', 'all']))
                     <td>{{ formatDateTime($secondInner?->created_at) }}</td>
-                    <td>{{ $secondInner?->doneByUser?->name ?? 'N/A' }}</td>
+                    <td>{{ $secondInner?->doneByUser?->name ?? '' }}</td>
                     <td>{{ $secondInnerSampleTime }}</td>
-                    <td>{{ $secondInner?->takenByUser?->name ?? 'N/A' }}</td>
+                    <td>{{ $secondInner?->takenByUser?->name ?? '' }}</td>
                 @endif
 
                 @if (in_array($innerSample, ['3', '3rd', 'all']))
                     <td>{{ formatDateTime($thirdInner?->created_at) }}</td>
-                    <td>{{ $thirdInner?->doneByUser?->name ?? 'N/A' }}</td>
+                    <td>{{ $thirdInner?->doneByUser?->name ?? '' }}</td>
                     <td>{{ $thirdInnerSampleTime }}</td>
-                    <td>{{ $thirdInner?->takenByUser?->name ?? 'N/A' }}</td>
+                    <td>{{ $thirdInner?->takenByUser?->name ?? '' }}</td>
                 @endif
 
                 @if (in_array($innerSample, ['2', '2nd', 'all']))
@@ -263,11 +263,11 @@
                 <td>{{ $halfRejectTime }}</td>
                 <td>{{ $halfRejectBy }}</td>
                 <td>{{ formatDateTime($row->approvals?->created_at) }}</td>
-                <td>{{ $row->approvals?->creator?->name ?? 'N/A' }}</td>
+                <td>{{ $row->approvals?->creator?->name ?? '' }}</td>
                 <td>{{ formatDateTime($row->secondWeighbridge?->created_at) }}</td>
-                <td>{{ $row->secondWeighbridge?->createdBy?->name ?? 'N/A' }}</td>
+                <td>{{ $row->secondWeighbridge?->createdBy?->name ?? '' }}</td>
                 <td>{{ formatDateTime($row->arrivalSlip?->created_at) }}</td>
-                <td>{{ $row->arrivalSlip?->creator?->name ?? 'N/A' }}</td>
+                <td>{{ $row->arrivalSlip?->creator?->name ?? '' }}</td>
                 <td>{{ $biltyReturnTime }}</td>
                 <td>{{ $biltyReturnBy }}</td>
 

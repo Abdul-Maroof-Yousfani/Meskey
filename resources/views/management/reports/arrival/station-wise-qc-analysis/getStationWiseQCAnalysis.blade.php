@@ -1,8 +1,9 @@
-<x-sticky-table :items="collect($stationData)" :leftSticky="2" :rightSticky="0" :emptyMessage="'No records found'"
+<x-sticky-table :items="collect($stationData)" :leftSticky="3" :rightSticky="0" :emptyMessage="'No records found'"
     :pagination="false">
     @slot('head')
     <th>S. No</th>
     <th>Station</th>
+    <th>COMMODITY</th>
     <th>Total Trucks</th>
     <th>KG Received</th>
     @foreach ($product_slab_types as $slab)
@@ -29,6 +30,7 @@
         <tr>
             <td>{{ $index + 1 }}</td>
             <td><strong>{{ $row['station'] }}</strong></td>
+            <td>{{ $row['commodity'] }}</td>
             <td>{{ number_format($row['total_trucks']) }}</td>
             <td>{{ number_format($row['kg_received'], 0, '.', '') }}</td>
             @foreach ($product_slab_types as $slab)
@@ -48,7 +50,7 @@
 
     @if (count($stationData) > 0)
         <tr class="font-weight-bold bg-light">
-            <td colspan="2" class="text-right"><strong>Main Total:</strong></td>
+            <td colspan="3" class="text-right"><strong>Main Total:</strong></td>
             <td><strong>{{ number_format($grandTotalTrucks) }}</strong></td>
             <td><strong>{{ number_format($grandTotalKg, 0, '.', '') }}</strong></td>
             @foreach ($product_slab_types as $slab)

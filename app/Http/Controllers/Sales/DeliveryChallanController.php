@@ -472,7 +472,7 @@ class DeliveryChallanController extends Controller
                     if ($transporter_rate_type == 'per truck') {
                         $transporter_amount = $transporter_rate;
                     }else{
-                        $transporter_amount = $total_bags * $transporter_rate;
+                        $transporter_amount = $total_qty * $transporter_rate;
                     }
                 }
             }

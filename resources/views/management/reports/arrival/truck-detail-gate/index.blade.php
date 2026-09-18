@@ -221,6 +221,10 @@
                                             <th>Bilty</th>
                                             <th>Loading Weight</th>
                                             <th>Arrival Slip</th>
+                                            <th>QC Report</th>
+                                            <th>Bilty</th>
+                                            <th>Loading Weight</th>
+                                            <th>Arrival Slip</th>
                                         </tr>
                                     </thead>
                                 </table>

@@ -40,10 +40,10 @@
             @endphp
             <tr>
                 <td>#{{ $row->unique_no }}</td>
-                <td>{{ $row->created_at ? $row->created_at->format('d-M-y') : 'N/A' }}</td>
-                <td>{{ $row->created_at ? $row->created_at->format('g:i:s A') : 'N/A' }}</td>
+                <td>{{ $row->created_at ? $row->created_at->format('d-M-y') : '' }}</td>
+                <td>{{ $row->created_at ? $row->created_at->format('g:i:s A') : '' }}</td>
                 <td>{{ $row->creator?->name ?? 'Main Gate' }}</td>
-                <td>{{ $row->truckType?->name ?? 'N/A' }}</td>
+                <td>{{ $row->truckType?->name ?? '' }}</td>
                 <td>{{ $row->firstWeighbridge?->weight ? number_format((float)$row->firstWeighbridge->weight, 0, '.', '') : '0' }}</td>
                 <td>{{ $row->secondWeighbridge?->weight ? number_format((float)$row->secondWeighbridge->weight, 0, '.', '') : '0' }}</td>
                 <td>{{ $weighbridgeAmount }}</td>

@@ -82,7 +82,7 @@
                 $avgDamage = '';
                 if ($sampling && isset($sampling->slabResults)) {
                     foreach ($sampling->slabResults as $slabRes) {
-                        $name = strtolower($slabRes->slabType?->name ?? 'N/A');
+                        $name = strtolower($slabRes->slabType?->name ?? '');
                         if (str_contains($name, 'broken')) {
                             $avgBroken = $slabRes->checklist_value . ' %';
                         } elseif (str_contains($name, 'moisture')) {
@@ -132,18 +132,18 @@
                 }
             @endphp
             <tr>
-                <td>#{{ $row->unique_no ?? 'N/A' }}</td>
-                <td>{{ formatDate($row->created_at, 'd-M-Y', 'N/A') }}</td>
-                <td>{{ formatTime($row->created_at, 'h:i:s A', 'N/A') }}</td>
+                <td>#{{ $row->unique_no ?? '' }}</td>
+                <td>{{ formatDate($row->created_at, 'd-M-Y', '') }}</td>
+                <td>{{ formatTime($row->created_at, 'h:i:s A', '') }}</td>
                 <td>{{ $row->creator?->name ?? 'Main Gate' }}</td>
                 <td>{{ $row->broker_name ?? ($row->broker?->name ?? '< Not Available >') }}</td>
                 <td>{{ $row->miller?->name ?? ($row->accountsOf?->name ?? '< Not Available >') }}</td>
-                <td>{{ $row->station_name ?? ($row->station?->name ?? 'N/A') }}</td>
+                <td>{{ $row->station_name ?? ($row->station?->name ?? '') }}</td>
                 <td>{{ $row->accounts_of_name ?? ($row->accountsOf?->name ?? '< Not Available >') }}</td>
-                <td>{{ $row->decisionBy?->name ?? 'N/A' }}</td>
+                <td>{{ $row->decisionBy?->name ?? '' }}</td>
                 <td>{{ $row->bilty_no }}</td>
-                <td>{{ $row->truckType?->name ?? 'N/A' }}</td>
-                <td>{{ formatDate($row->loading_date, 'd M Y', 'N/A') }}</td>
+                <td>{{ $row->truckType?->name ?? '' }}</td>
+                <td>{{ formatDate($row->loading_date, 'd M Y', '') }}</td>
                 <td>{{ $row->bags }}</td>
                 <td>{{ $row->net_weight }}</td>
                 <td>{{ $row->truck_no }}</td>
@@ -179,51 +179,51 @@
                         @endif
                     </td>
                 @endforeach
-                {{-- <td>{{ $row->approvals?->qc_advice ?? ($row->initialSampling?->approved_status ?? ($row->first_qc_status ?? 'N/A')) }}</td>
-                <td>{{ $row->initialSampling?->approved_remarks ?? ($row->remarks ?? 'N/A') }}</td>
-                <td>{{ $row->unloading_instruction ?? ($row->unloadingLocation?->remark ?? 'N/A') }}</td> --}}
-                <td>{{ $row->initialSampling?->takenByUser?->name ?? ($row->innerSampling?->takenByUser?->name ?? 'N/A') }}</td>
+                {{-- <td>{{ $row->approvals?->qc_advice ?? ($row->initialSampling?->approved_status ?? ($row->first_qc_status ?? '')) }}</td>
+                <td>{{ $row->initialSampling?->approved_remarks ?? ($row->remarks ?? '') }}</td>
+                <td>{{ $row->unloading_instruction ?? ($row->unloadingLocation?->remark ?? '') }}</td> --}}
+                <td>{{ $row->initialSampling?->takenByUser?->name ?? ($row->innerSampling?->takenByUser?->name ?? '') }}</td>
                 <td>{{ $innerSampleCount }}</td>
-                <td>{{ $row->qcProduct?->name ?? ($row->product?->name ?? 'N/A') }}</td>
-                <td>{{ $row->saudaType?->name ?? 'N/A' }}</td>
-                <td>{{ $row->status ?? 'N/A' }}</td>
-                <td>{{ $row->latestPurchaseSamplingRequest?->remark ?? 'N/A' }}</td>
-                <td>{{ $row->unloadingLocation?->arrivalLocation?->warehouse?->name ?? ($row->approvals?->gala?->arrivalLocation?->name ?? 'N/A') }}</td>
-                <td>{{ $row->unloadingLocation?->arrivalLocation?->gala_name ?? ($row->approvals?->gala?->name ?? ($row->approvals?->gala_name ?? 'N/A')) }}</td>
-                <td>{{ $row->unloadingLocation?->location_type ?? ($row->approvals?->locationType?->name ?? 'N/A') }}</td>
+                <td>{{ $row->qcProduct?->name ?? ($row->product?->name ?? '') }}</td>
+                <td>{{ $row->saudaType?->name ?? '' }}</td>
+                <td>{{ $row->status ?? '' }}</td>
+                <td>{{ $row->latestPurchaseSamplingRequest?->remark ?? '' }}</td>
+                <td>{{ $row->unloadingLocation?->arrivalLocation?->warehouse?->name ?? ($row->approvals?->gala?->arrivalLocation?->name ?? '') }}</td>
+                <td>{{ $row->unloadingLocation?->arrivalLocation?->gala_name ?? ($row->approvals?->gala?->name ?? ($row->approvals?->gala_name ?? '')) }}</td>
+                <td>{{ $row->unloadingLocation?->location_type ?? ($row->approvals?->locationType?->name ?? '') }}</td>
                 <td>{{ $row->firstWeighbridge?->weight ?? 0 }}</td>
-                <td>{{ formatDateTime($row->firstWeighbridge?->created_at, 'd M Y h:i:s A', 'N/A') }}</td>
+                <td>{{ formatDateTime($row->firstWeighbridge?->created_at, 'd M Y h:i:s A', '') }}</td>
                 <td>{{ $row->secondWeighbridge?->weight ?? 0 }}</td>
-                <td>{{ formatDateTime($row->secondWeighbridge?->created_at, 'd M Y h:i:s A', 'N/A') }}</td>
-                <td>{{ $row->freight?->gross_freight_amount ?? 'N/A' }}</td>
-                <td>{{ $row->freight?->labor_amount ?? 'N/A' }}</td>
-                <td>{{ $row->freight?->unpaid_labor_charges ?? 'N/A' }}</td>
-                <td>{{ $row->freight?->other_labour_charges ?? 'N/A' }}</td>
-                <td>{{ $row->freight?->karachi_kanta_charges ?? 'N/A' }}</td>
-                {{-- <td>{{ $row->freight?->karachi_kanta_charges ?? 'N/A' }}</td> --}}
+                <td>{{ formatDateTime($row->secondWeighbridge?->created_at, 'd M Y h:i:s A', '') }}</td>
+                <td>{{ $row->freight?->gross_freight_amount ?? '' }}</td>
+                <td>{{ $row->freight?->labor_amount ?? '' }}</td>
+                <td>{{ $row->freight?->unpaid_labor_charges ?? '' }}</td>
+                <td>{{ $row->freight?->other_labour_charges ?? '' }}</td>
+                <td>{{ $row->freight?->karachi_kanta_charges ?? '' }}</td>
+                {{-- <td>{{ $row->freight?->karachi_kanta_charges ?? '' }}</td> --}}
 
                 @php
                     $isHalfReject = ($row->approvals?->bag_packing_approval == 'Half Approved' || ($row->approvals?->total_rejection > 0) || $row->document_approval_status == 'half_approved');
                     $isFullReject = ($row->first_qc_status == 'rejected' || $row->status == 'Reject Full');
                 @endphp
                 <td>{{ $isFullReject ? 'Yes' : 'No' }}</td>
-                <td>{{ $isFullReject ? ($row->initialSampling?->takenByUser?->name ?? ($row->decisionBy?->name ?? 'N/A')) : 'N/A' }}</td>
-                <td>{{ $isFullReject ? formatDateTime($row->initialSampling?->created_at, 'd M Y h:i:s A', 'N/A') : 'N/A' }}</td>
-                <td>{{ $isFullReject ? ($row->initialSampling?->approved_remarks ?? ($row->remarks ?? 'N/A')) : 'N/A' }}</td>
+                <td>{{ $isFullReject ? ($row->initialSampling?->takenByUser?->name ?? ($row->decisionBy?->name ?? '')) : '' }}</td>
+                <td>{{ $isFullReject ? formatDateTime($row->initialSampling?->created_at, 'd M Y h:i:s A', '') : '' }}</td>
+                <td>{{ $isFullReject ? ($row->initialSampling?->approved_remarks ?? ($row->remarks ?? '')) : '' }}</td>
                 <td>{{ $isHalfReject ? 'Yes' : 'No' }}</td>
-                <td>{{ $isHalfReject ? ($row->approvals?->creator?->name ?? 'N/A') : 'N/A' }}</td>
-                <td>{{ $isHalfReject ? formatDateTime($row->approvals?->created_at, 'd M Y h:i:s A', 'N/A') : 'N/A' }}</td>
-                <td>{{ $isHalfReject ? ($row->approvals?->remark ?? 'N/A') : 'N/A' }}</td>
+                <td>{{ $isHalfReject ? ($row->approvals?->creator?->name ?? '') : '' }}</td>
+                <td>{{ $isHalfReject ? formatDateTime($row->approvals?->created_at, 'd M Y h:i:s A', '') : '' }}</td>
+                <td>{{ $isHalfReject ? ($row->approvals?->remark ?? '') : '' }}</td>
                 
                 <td>{{ $row->approvals ? 'Yes' : 'No' }}</td>
-                <td>{{ $row->approvals?->creator?->name ?? 'N/A' }}</td>
-                <td>{{ formatDateTime($row->approvals?->created_at, 'd M Y h:i:s A', 'N/A') }}</td>
-                <td>{{ $row->approvals?->remark ?? 'N/A' }}</td>
+                <td>{{ $row->approvals?->creator?->name ?? '' }}</td>
+                <td>{{ formatDateTime($row->approvals?->created_at, 'd M Y h:i:s A', '') }}</td>
+                <td>{{ $row->approvals?->remark ?? '' }}</td>
                 
-                <td>{{ $row->approvals?->bagPacking?->name ?? 'N/A' }}</td>
-                <td>{{ $row->approvals?->bagType?->name ?? 'N/A' }}</td>
-                <td>{{ $row->approvals?->filling_bags_no ?? 'N/A' }}</td>
-                <td>{{ $row->arrivalSlip?->total_bags ?? ($row->approvals?->total_bags ?? 'N/A') }}</td>
+                <td>{{ $row->approvals?->bagPacking?->name ?? '' }}</td>
+                <td>{{ $row->approvals?->bagType?->name ?? '' }}</td>
+                <td>{{ $row->approvals?->filling_bags_no ?? '' }}</td>
+                <td>{{ $row->arrivalSlip?->total_bags ?? ($row->approvals?->total_bags ?? '') }}</td>
                 <td>{{ $row->freight_status == 'completed' || $row->status == 'completed' ? 'Yes' : 'No' }}</td>
 
                 <!-- Action Buttons -->

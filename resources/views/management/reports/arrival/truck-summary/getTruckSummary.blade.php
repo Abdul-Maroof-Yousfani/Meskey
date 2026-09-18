@@ -35,7 +35,7 @@
                 $sumInProcess += $inProcess;
                 $sumFully_approved += $fully_approved;
 
-                $formattedDate = $row->summary_date ? \Carbon\Carbon::parse($row->summary_date)->format('d M y') : 'N/A';
+                $formattedDate = $row->summary_date ? \Carbon\Carbon::parse($row->summary_date)->format('d M y') : '';
             @endphp
             <tr>
                 <td>{{ $formattedDate }}</td>

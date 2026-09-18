@@ -126,13 +126,13 @@
             // ==========================================
             // 4. TABAAR
             // ==========================================
-            // $tabaar = 'N/A';
+            // $tabaar = '';
             // if ($initialRequest && $initialRequest->applied_deduction) {
             //     $tabaar = number_format($initialRequest->applied_deduction, 2) . '%';
             // }
 
             $tabaar = formatDeductionsAsString(getTicketDeductions($row));
-            $tabaar = $tabaar == '' ? 'N/A' : $tabaar;
+            $tabaar = $tabaar == '' ? '' : $tabaar;
 
             // DEBUG - Check if inner exists
             // if($innerRequest) {
@@ -142,7 +142,7 @@
 
         <tr>
             <!-- Ticket # -->
-            <td>#{{ $row->unique_no ?? 'N/A' }}</td>
+            <td>#{{ $row->unique_no ?? '' }}</td>
 
             <!-- Status -->
             <td>
@@ -156,25 +156,25 @@
             </td>
 
             <!-- Miller -->
-            <td>{{ $row->miller->name ?? 'N/A' }}</td>
+            <td>{{ $row->miller->name ?? '' }}</td>
 
             <!-- Broker -->
-            <td>{{ $row->broker_name ?? ($row->purchaseOrder->broker_one_name ?? 'N/A') }}</td>
+            <td>{{ $row->broker_name ?? ($row->purchaseOrder->broker_one_name ?? '') }}</td>
 
             <!-- A/c Of -->
-            <td>{{ $row->accounts_of_name ?? 'N/A' }}</td>
+            <td>{{ $row->accounts_of_name ?? '' }}</td>
 
             <!-- decision Of -->
-            <td>{{ $row->decisionBy->name ?? 'N/A' }}</td>
+            <td>{{ $row->decisionBy->name ?? '' }}</td>
 
             <!-- Truck # -->
-            <td>{{ $row->truck_no ?? ($row->purchaseOrder->truck_no ?? 'N/A') }}</td>
+            <td>{{ $row->truck_no ?? ($row->purchaseOrder->truck_no ?? '') }}</td>
 
             <!-- QC Commodity -->
-            <td>{{ $row->qcProduct->name ?? 'N/A' }}</td>
+            <td>{{ $row->qcProduct->name ?? '' }}</td>
 
             <!-- Location -->
-            <td>{{ $row->location->name ?? 'N/A' }}</td>
+            <td>{{ $row->location->name ?? '' }}</td>
 
             <!-- Party Ref.# -->
             <td>N/A</td>
@@ -210,7 +210,7 @@
             </td>
 
             <!-- Station -->
-            <td>{{ $row->station_name ?? 'N/A' }}</td>
+            <td>{{ $row->station_name ?? '' }}</td>
 
             @php
                 $loadingWeight = (float) ($row->net_weight ?? 0);
@@ -229,10 +229,10 @@
             @endphp
 
             <!-- Bilty # -->
-            <td>{{ $row->bilty_no ?? 'N/A' }}</td>
+            <td>{{ $row->bilty_no ?? '' }}</td>
 
             <!-- Loading Weight -->
-            <td>{{ $row->net_weight ?? 'N/A' }}</td>
+            <td>{{ $row->net_weight ?? '' }}</td>
 
             <!-- 1st Weight -->
             <td>{{ $row->firstWeighbridge->weight ?? 0 }}</td>
@@ -250,27 +250,27 @@
             <td>
                 {{ $row->approvals?->total_bags
             ? number_format($row->arrived_net_weight / $row->approvals->total_bags, 2)
-            : 'N/A'
+            : ''
                 }}
             </td>
 
             <!-- Bag Type -->
-            <td>{{ $row->approvals->bagType->name ?? 'N/A' }}</td>
+            <td>{{ $row->approvals->bagType->name ?? '' }}</td>
 
             <!-- Bag Condition -->
-            <td>{{ $row->approvals->bagCondition->name ?? 'N/A' }}</td>
+            <td>{{ $row->approvals->bagCondition->name ?? '' }}</td>
 
             <!-- Bag Packing -->
-            <td>{{ $row->approvals->bagPacking->name ?? 'N/A' }}</td>
+            <td>{{ $row->approvals->bagPacking->name ?? '' }}</td>
 
             <!-- No. Bag -->
-            <td>{{ $row->approvals->total_bags ?? 'N/A' }}</td>
+            <td>{{ $row->approvals->total_bags ?? '' }}</td>
 
             <!-- Warehouse -->
-            <td>Warehouse {{ $row->unloadingLocation->arrivalLocation->name ?? 'N/A' }}</td>
+            <td>Warehouse {{ $row->unloadingLocation->arrivalLocation->name ?? '' }}</td>
 
             <!-- Gala -->
-            <td>{{ $row->approvals->gala_name ?? 'N/A' }}</td>
+            <td>{{ $row->approvals->gala_name ?? '' }}</td>
 
             <!-- Tabaar Remarks -->
             <td>{{ $tabaar }}</td>
