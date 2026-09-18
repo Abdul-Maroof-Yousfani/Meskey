@@ -181,7 +181,7 @@ class PurchaseOrderController extends Controller
     {
         $data['bagPackings'] = [];
         $data['truckSizeRanges'] = TruckSizeRange::where('status', 'active')->get();
-        $data['products'] = Product::where('product_type', 'raw_material')->get();
+        $data['products'] = Product::whereIn('product_type', ['raw_material', 'finish_good'])->get();
         $data['brokers'] = Broker::all();
         // $data['companyLocations'] = CompanyLocation::when(auth()->user()->user_type != 'super-admin', function ($q) {
         //     return $q->where('id', auth()->user()->company_location_id);
@@ -324,7 +324,7 @@ class PurchaseOrderController extends Controller
         $data['balanceQuantity'] = $this->calculateBalanceQuantity($arrivalPurchaseOrder);
         $data['bagPackings'] = [];
         $data['truckSizeRanges'] = TruckSizeRange::where('status', 'active')->get();
-        $data['products'] = Product::where('product_type', 'raw_material')->get();
+        $data['products'] = Product::whereIn('product_type', ['raw_material', 'finish_good'])->get();
         $locationId = (string) $data['arrivalPurchaseOrder']->company_location_id;
         $data['suppliers'] = Supplier::whereJsonContains('company_location_ids', $locationId)->get();
         $data['brokers'] = Broker::all();
