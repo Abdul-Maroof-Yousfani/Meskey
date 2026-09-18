@@ -252,9 +252,9 @@
 
         // Handle delivery order change
         $('#delivery_order_id').change(function() {
-            if (window.isUpdatingUI) return;
+            if (window.isUpdatingUI || window.isSelectingSO) return;
             
-            var delivery_order_ids = $(this).val();
+            var delivery_order_ids = $(this).val() || [];
             const type_id = $("#sale_order_id option:selected").data("type");
             const submitBtn = $(".submitbutton");
             
@@ -286,7 +286,16 @@
                             sale_order_id: saleOrderId,
                             company_location_id: $('#main_company_location_id').val()
                         },
+                        beforeSend: function() {
+                            Swal.fire({
+                                title: "Processing...",
+                                text: "Please wait while fetching delivery order details.",
+                                allowOutsideClick: false,
+                                didOpen: () => { Swal.showLoading(); }
+                            });
+                        },
                         success: function(response) {
+                            Swal.close();
                             if (response.success && response.delivery_orders) {
                                 var selectedDeliveryOrders = response.delivery_orders.filter(function(d_o) {
                                     return delivery_order_ids.includes(d_o.id.toString());
@@ -307,6 +316,10 @@
                                     window.isUpdatingUI = false;
                                 }
                             }
+                        },
+                        error: function() {
+                            Swal.close();
+                            Swal.fire("Error", "Something went wrong.", "error");
                         }
                     });
                 }

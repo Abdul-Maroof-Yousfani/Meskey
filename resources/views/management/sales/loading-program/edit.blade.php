@@ -568,8 +568,9 @@
                 validateRowQty($row);
             });
         });
-    get_sale_order(initialSOIds, $('#sale_order_id option:selected').first().data('type'));
-        }
+        window.isSelectingSO = true;
+        get_sale_order(initialSOIds, $('#sale_order_id option:selected').first().data('type'));
+    }
 
         // Handle sale order change
         $('#sale_order_id').change(function() {
@@ -596,8 +597,8 @@
 
         // Handle delivery order change
         $('#delivery_order_id').change(function() {
-            if (window.isUpdatingUI) return;
-            var delivery_order_ids = $(this).val();
+            if (window.isUpdatingUI || window.isSelectingSO) return;
+            var delivery_order_ids = $(this).val() || [];
             const type_id = $("#sale_order_id option:selected").data("type");
             const submitBtn = $(".submitbutton");
             
@@ -621,6 +622,7 @@
 
             if (delivery_order_ids && delivery_order_ids.length > 0) {
                 var saleOrderId = $('#sale_order_id').val();
+                if (saleOrderId) {
                     $.ajax({
                         url: '{{ route('sales.getDeliveryOrdersBySaleOrderLoadingEdit') }}',
                         type: 'GET',
@@ -629,16 +631,30 @@
                             company_location_id: $('#main_company_location_id').val(),
                             loading_program_id: '{{ $LoadingProgram->id }}'
                         },
+                        beforeSend: function() {
+                            Swal.fire({
+                                title: "Processing...",
+                                text: "Please wait while fetching delivery order details.",
+                                allowOutsideClick: false,
+                                didOpen: () => { Swal.showLoading(); }
+                            });
+                        },
                         success: function(response) {
-                        if (response.success && response.delivery_orders) {
-                            var selectedDeliveryOrders = response.delivery_orders.filter(d_o => delivery_order_ids.includes(d_o.id.toString()));
-                            if (selectedDeliveryOrders.length > 0) {
-                                populateLocationFields(selectedDeliveryOrders);
-                                updateItemLocations();
+                            Swal.close();
+                            if (response.success && response.delivery_orders) {
+                                var selectedDeliveryOrders = response.delivery_orders.filter(d_o => delivery_order_ids.includes(d_o.id.toString()));
+                                if (selectedDeliveryOrders.length > 0) {
+                                    populateLocationFields(selectedDeliveryOrders);
+                                    updateItemLocations();
+                                }
                             }
+                        },
+                        error: function() {
+                            Swal.close();
+                            Swal.fire("Error", "Something went wrong.", "error");
                         }
-                    }
-                });
+                    });
+                }
                 updateDeliveryOrderOptionsForAllRows();
                 $('#locationContainer').show();
                 $('#lineItemsContainer').show();

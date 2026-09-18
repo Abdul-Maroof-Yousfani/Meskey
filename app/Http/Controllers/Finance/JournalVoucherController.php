@@ -91,9 +91,11 @@ class JournalVoucherController extends Controller
             ];
         }
 
-        $doConsumedSum = DB::table('delivery_order_receipt_voucher')
-            ->select('receipt_voucher_id', DB::raw('SUM(amount) as consumed_amount'))
-            ->groupBy('receipt_voucher_id');
+        $doConsumedSum = DB::table('delivery_order_receipt_voucher as dorv')
+            ->join('delivery_order as do_tbl', 'do_tbl.id', '=', 'dorv.delivery_order_id')
+            ->where('do_tbl.am_approval_status', '!=', 'rejected')
+            ->select('dorv.receipt_voucher_id', DB::raw('SUM(dorv.amount) as consumed_amount'))
+            ->groupBy('dorv.receipt_voucher_id');
 
         $jvConsumedSum = DB::table('journal_voucher_details')
             ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
@@ -120,7 +122,16 @@ class JournalVoucherController extends Controller
             )
             ->get()
             ->map(function($rv) {
-                $remaining = round($rv->total_amount - ($rv->do_consumed + $rv->jv_consumed), 2);
+                // Use the SO-linked net_amount as the base (not total_amount which may include excess)
+                $soLinkedAmount = DB::table('receipt_voucher_items')
+                    ->where('receipt_voucher_id', $rv->id)
+                    ->whereIn('reference_type', ['sale_order', 'sales_invoice'])
+                    ->sum('net_amount');
+
+                // If no items found, fall back to total_amount
+                $baseAmount = $soLinkedAmount > 0 ? $soLinkedAmount : (float) $rv->total_amount;
+
+                $remaining = round($baseAmount - ($rv->do_consumed + $rv->jv_consumed), 2);
                 return [
                     'id' => $rv->id,
                     'unique_no' => $rv->unique_no,
@@ -220,9 +231,11 @@ class JournalVoucherController extends Controller
 
         foreach ($rvTotalUsage as $rvId => $totalEntered) {
             $rv = ReceiptVoucher::find($rvId);
-            $doConsumed = DB::table('delivery_order_receipt_voucher')
-                ->where('receipt_voucher_id', $rvId)
-                ->sum('amount');
+            $doConsumed = DB::table('delivery_order_receipt_voucher as dorv')
+                ->join('delivery_order as do_tbl', 'do_tbl.id', '=', 'dorv.delivery_order_id')
+                ->where('do_tbl.am_approval_status', '!=', 'rejected')
+                ->where('dorv.receipt_voucher_id', $rvId)
+                ->sum('dorv.amount');
 
             $jvConsumed = DB::table('journal_voucher_details')
                 ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
@@ -234,7 +247,14 @@ class JournalVoucherController extends Controller
                 ->where('receipt_voucher_id', $rvId)
                 ->sum('debit_amount');
 
-            $remainingAmount = round($rv->total_amount - ($doConsumed + $jvConsumed), 2);
+            // Use SO-linked net_amount as base (consistent with fetchAccountRelatedData)
+            $soLinkedAmount = DB::table('receipt_voucher_items')
+                ->where('receipt_voucher_id', $rvId)
+                ->whereIn('reference_type', ['sale_order', 'sales_invoice'])
+                ->sum('net_amount');
+            $baseAmount = $soLinkedAmount > 0 ? $soLinkedAmount : (float) $rv->total_amount;
+
+            $remainingAmount = round($baseAmount - ($doConsumed + $jvConsumed), 2);
             if (round($totalEntered, 2) > round($remainingAmount + 0.01, 2)) {
                 return "The entered amount (" . number_format($totalEntered, 2) . ") for Receipt Voucher {$rv->unique_no} exceeds its remaining balance of " . number_format($remainingAmount, 2) . ".";
             }
