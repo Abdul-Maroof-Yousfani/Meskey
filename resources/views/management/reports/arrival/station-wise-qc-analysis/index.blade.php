@@ -134,6 +134,7 @@
                                             <th>Station</th>
                                             <th>Total Trucks</th>
                                             <th>KG Received</th>
+                                            <th>COMMODITY</th>
                                             @foreach ($product_slab_types as $slab)
                                                 <th>{{ $slab->name }}</th>
                                             @endforeach

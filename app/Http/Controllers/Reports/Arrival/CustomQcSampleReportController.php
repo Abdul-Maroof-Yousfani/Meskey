@@ -40,7 +40,11 @@ class CustomQcSampleReportController extends Controller
         ini_set('memory_limit', '512M');
         ini_set('max_execution_time', 300);
 
-        $product_slab_types = ProductSlabType::get();
+        $product_slab_types = ProductSlabType::when($request->filled('commodity_id'), function ($q) use ($request) {
+            return $q->whereHas('slabs', function ($query) use ($request) {
+                $query->whereIn('product_id', (array) $request->commodity_id);
+            });
+        })->get();
         $arrival_compulsory_qc_params = ArrivalCompulsoryQcParam::get();
 
         $tickets = PurchaseTicket::select('purchase_tickets.*')

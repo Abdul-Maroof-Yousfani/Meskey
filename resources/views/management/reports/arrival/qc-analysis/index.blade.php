@@ -157,10 +157,10 @@
                                             @foreach ($product_slab_types as $slab)
                                                 <th>{{ $slab->name }}</th>
                                             @endforeach
-                                            <th>QC Report</th>
+                                            {{-- <th>QC Report</th>
                                             <th>Bilty</th>
                                             <th>Loading Weight</th>
-                                            <th>Arrival Slip</th>
+                                            <th>Arrival Slip</th> --}}
                                         </tr>
                                     </thead>
                                 </table>

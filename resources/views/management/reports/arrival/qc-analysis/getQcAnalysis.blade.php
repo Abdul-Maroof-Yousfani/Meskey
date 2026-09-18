@@ -12,18 +12,17 @@
         <th>Unloading Instructions</th>
         <th>Commodity</th>
 
-        @foreach ($arrival_compulsory_qc_params as $compulsory_param)
-            <th>{{ $compulsory_param->name }}</th>
-        @endforeach
-
         @foreach ($product_slab_types as $slab)
             <th>{{ $slab->name }}</th>
         @endforeach
 
-        <th>QC Report</th>
+        @foreach ($arrival_compulsory_qc_params as $compulsory_param)
+            <th>{{ $compulsory_param->name }}</th>
+        @endforeach
+        {{-- <th>QC Report</th>
         <th>Bilty</th>
         <th>Loading Weight</th>
-        <th>Arrival Slip</th>
+        <th>Arrival Slip</th> --}}
     @endslot
 
     @slot('body')
@@ -73,13 +72,13 @@
                 $unloadingInstructions = $row->unloadingLocation?->remarks ?? '-';
             @endphp
             <tr>
-                <td>#{{ $row->unique_no ?? 'N/A' }}</td>
+                <td>#{{ $row->unique_no ?? '' }}</td>
                 <td>{{ formatDate($row->created_at) }}</td>
                 <td>{{ formatDate($sampling?->created_at) }}</td>
-                <td>{{ $sampling?->created_at ? formatTime($sampling->created_at) : 'N/A' }}</td>
+                <td>{{ $sampling?->created_at ? formatTime($sampling->created_at) : '' }}</td>
                 <td>{{ $innerSampleCount }}</td>
-                <td>{{ $sampling?->takenByUser?->name ?? 'N/A' }}</td>
-                <td>{{ $sampling?->doneByUser?->name ?? ($sampling?->approvedByUser?->name ?? 'N/A') }}</td>
+                <td>{{ $sampling?->takenByUser?->name ?? '' }}</td>
+                <td>{{ $sampling?->doneByUser?->name ?? ($sampling?->approvedByUser?->name ?? '') }}</td>
                 <td>
                     @if ($qcAdvice == 'Rejected' || str_contains(strtolower($qcAdvice), 'reject'))
                         <span class="badge bg-danger">{{ $qcAdvice }}</span>
@@ -91,7 +90,23 @@
                 </td>
                 <td>{{ $qcRemarks ?: '-' }}</td>
                 <td>{{ $unloadingInstructions ?: '-' }}</td>
-                <td>{{ $row->qcProduct?->name ?? ($row->product?->name ?? 'N/A') }}</td>
+                <td>{{ $row->qcProduct?->name ?? '' }}</td>
+
+                <!-- SLAB DEDUCTIONS -->
+                @foreach ($product_slab_types as $slab)
+                    @php
+                        $initialValue = $deductionValueSlabinitial[$slab->id]['checklist_value'] ?? 0;
+                        $slabSymbol = $slab->qc_symbol ?? '';
+                    @endphp
+                    <td>
+                        @if ($initialValue != 0)
+                            {{ $initialValue }}
+                            {{-- {{ $slabSymbol }} --}}
+                        @else
+                            0
+                        @endif
+                    </td>
+                @endforeach
 
                 <!-- COMPULSORY QC DEDUCTIONS -->
                 @foreach ($arrival_compulsory_qc_params as $compulsory_param)
@@ -102,27 +117,12 @@
                         @if ($compulsoryValue !== null && $compulsoryValue !== '')
                             {{ $compulsoryValue }}
                         @else
-                            {{ $compulsory_param->default_options ?? 'N/A' }}
-                        @endif
-                    </td>
-                @endforeach
-
-                <!-- SLAB DEDUCTIONS -->
-                @foreach ($product_slab_types as $slab)
-                    @php
-                        $initialValue = $deductionValueSlabinitial[$slab->id]['checklist_value'] ?? 0;
-                        $slabSymbol = $slab->qc_symbol ?? '';
-                    @endphp
-                    <td>
-                        @if ($initialValue != 0)
-                            {{ $initialValue }}{{ $slabSymbol }}
-                        @else
-                            0
+                            {{ $compulsory_param->default_options ?? '' }}
                         @endif
                     </td>
                 @endforeach
                 <!-- Action Buttons -->
-                <td>
+                {{-- <td>
                     <button class="info p-1 text-center mr-2 position-relative btn"
                         onclick="openModal(this,'{{ route('ticket.show', ['ticket' => $row->id, 'source' => 'contract']) }}','Ticket: {{ $row->unique_no }}', true, '90%')">
                         <a href="#"><i class="ft-eye font-medium-3"></i></a>
@@ -154,7 +154,7 @@
                         }}','Ticket: {{ $row->unique_no }}', true, '100%')" @endif>
                         <a href="#"><i class="ft-eye font-medium-3"></i></a>
                     </button>
-                </td>
+                </td> --}}
             </tr>
         @endforeach
     @endslot

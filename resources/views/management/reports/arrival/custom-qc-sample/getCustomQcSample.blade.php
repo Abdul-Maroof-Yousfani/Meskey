@@ -94,21 +94,21 @@
                 $qcRemarks = $sampling?->remark ?? ($sampling?->approved_remarks ?? ($getCompVal(['qc remarks', 'remarks']) !== '-' ? $getCompVal(['qc remarks', 'remarks']) : '-'));
                 $totalBags = $freight?->no_of_bags ?? ($row->purchaseOrder?->max_bags ?? ($row->purchaseOrder?->min_bags ?? '-'));
                 $qty = $freight?->loading_weight ? number_format($freight->loading_weight, 2) : ($row->purchaseOrder?->total_quantity ? number_format($row->purchaseOrder->total_quantity, 2) : ($row->purchaseOrder?->max_quantity ? number_format($row->purchaseOrder->max_quantity, 2) : '-'));
-                $supplierName = $row->purchaseOrder?->supplier_name ?? ($row->purchaseOrder?->supplier?->name ?? ($sampling?->supplier_name ?? 'N/A'));
+                $supplierName = $row->purchaseOrder?->supplier_name ?? ($row->purchaseOrder?->supplier?->name ?? ($sampling?->supplier_name ?? ''));
                 $receivedFrom = $freight?->station_name ?? ($freight?->station?->name ?? ($sampling?->address ?? ($row->purchaseOrder?->location?->name ?? '-')));
-                $commodity = $row->qcProduct?->name ?? ($row->product?->name ?? ($sampling?->product?->name ?? ($row->purchaseOrder?->product?->name ?? 'N/A')));
+                $commodity = $row->qcProduct?->name ?? ($row->product?->name ?? ($sampling?->product?->name ?? ($row->purchaseOrder?->product?->name ?? '')));
                 $partyRefNo = $sampling?->party_ref_no ?? ($row->purchaseOrder?->ref_no ?? '-');
             @endphp
             <tr>
-                <td>#{{ $row->unique_no ?? 'N/A' }}</td>
+                <td>#{{ $row->unique_no ?? '' }}</td>
                 <td>{{ formatDate($row->created_at) }}</td>
-                <td>{{ $sampling?->takenByUser?->name ?? 'N/A' }}</td>
+                <td>{{ $sampling?->takenByUser?->name ?? '' }}</td>
                 <td>{{ $supplierName }}</td>
                 <td>{{ $totalBags }}</td>
                 <td>{{ $qty }}</td>
                 <td>{{ $partyRefNo }}</td>
                 <td>{{ $receivedFrom }}</td>
-                <td>{{ $sampling?->doneByUser?->name ?? ($sampling?->approvedByUser?->name ?? 'N/A') }}</td>
+                <td>{{ $sampling?->doneByUser?->name ?? ($sampling?->approvedByUser?->name ?? '') }}</td>
                 <td>{{ $commodity }}</td>
 
                 <!-- COMPULSORY QC PARAMETERS -->
@@ -120,7 +120,7 @@
                         @if ($compulsoryValue !== null && $compulsoryValue !== '')
                             {{ $compulsoryValue }}
                         @else
-                            {{ $compulsory_param->default_options ?? 'N/A' }}
+                            {{ $compulsory_param->default_options ?? '' }}
                         @endif
                     </td>
                 @endforeach

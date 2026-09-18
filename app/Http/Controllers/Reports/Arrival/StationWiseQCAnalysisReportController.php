@@ -31,7 +31,11 @@ class StationWiseQCAnalysisReportController extends Controller
         ini_set('memory_limit', '512M');
         ini_set('max_execution_time', 300);
 
-        $product_slab_types = ProductSlabType::get();
+        $product_slab_types = ProductSlabType::when($request->filled('commodity_id'), function ($q) use ($request) {
+            return $q->whereHas('slabs', function ($query) use ($request) {
+                $query->whereIn('product_id', (array) $request->commodity_id);
+            });
+        })->get();
 
         $tickets = ArrivalTicket::select('arrival_tickets.*')
             ->with([
@@ -88,9 +92,11 @@ class StationWiseQCAnalysisReportController extends Controller
             ->orderBy('arrival_tickets.created_at', 'asc')
             ->get();
 
-        // Group tickets by station
+        // Group tickets by station and commodity
         $grouped = $tickets->groupBy(function ($ticket) {
-            return $ticket->station?->name ?? ($ticket->station_name ?? 'Unknown Station');
+            $station = $ticket->station?->name ?? ($ticket->station_name ?? 'Unknown Station');
+            $commodity = $ticket->qcProduct?->name ?? '';
+            return $station . '___' . $commodity;
         })->sortKeys();
 
         $stationData = [];
@@ -99,26 +105,30 @@ class StationWiseQCAnalysisReportController extends Controller
             $overallSlabValues[$slab->id] = [];
         }
 
-        foreach ($grouped as $stationName => $stationTickets) {
-            $totalTrucks = $stationTickets->count();
-            $kgReceived = $stationTickets->sum(function ($t) {
+        foreach ($grouped as $groupTickets) {
+            $firstTicket = $groupTickets->first();
+            $stationName = $firstTicket->station?->name ?? ($firstTicket->station_name ?? 'Unknown Station');
+            $commodityName = $firstTicket->qcProduct?->name ?? ($firstTicket->product?->name ?? 'Unknown Commodity');
+
+            $totalTrucks = $groupTickets->count();
+            $kgReceived = $groupTickets->sum(function ($t) {
                 return (float) ($t->arrived_net_weight ?: 0);
             });
 
-            // Calculate average for each slab type across this station's tickets
+            // Calculate average for each slab type across this station + commodity tickets
             $slabAverages = [];
             foreach ($product_slab_types as $slab) {
                 $values = [];
 
-                foreach ($stationTickets as $t) {
+                foreach ($groupTickets as $t) {
                     $sampling = $t->lastInitialSampling;
                     if ($sampling && $sampling->slabResults) {
                         foreach ($sampling->slabResults as $res) {
                             if ($res->product_slab_type_id == $slab->id && $res->checklist_value !== null && $res->checklist_value !== '') {
                                 $slabValue = (float) $res->checklist_value;
                                 if ($slabValue > 0) {
-                                    $values[] = $slabValue * $t->arrived_net_weight;
-                                    $overallSlabValues[$slab->id][] = $slabValue * $t->arrived_net_weight;
+                                    $values[] = $slabValue * (float) ($t->arrived_net_weight ?: 0);
+                                    $overallSlabValues[$slab->id][] = $slabValue * (float) ($t->arrived_net_weight ?: 0);
                                 }
                             }
                         }
@@ -131,6 +141,7 @@ class StationWiseQCAnalysisReportController extends Controller
 
             $stationData[] = [
                 'station' => $stationName,
+                'commodity' => $commodityName,
                 'total_trucks' => $totalTrucks,
                 'kg_received' => $kgReceived,
                 'slab_averages' => $slabAverages,

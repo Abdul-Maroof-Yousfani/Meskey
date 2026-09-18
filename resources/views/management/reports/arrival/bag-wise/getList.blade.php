@@ -20,7 +20,7 @@
                 @endphp
                 <tr>
                     <td>{{ $loop->iteration }}</td>
-                    <td class="font-weight-bold">{{ $row->bag_name ?? 'N/A' }}</td>
+                    <td class="font-weight-bold">{{ $row->bag_name ?? '' }}</td>
                     <td class="text-center">{{ number_format($row->total_tickets) }}</td>
                     <td class="text-right">{{ number_format($row->total_filled_bags) }}</td>
                 </tr>
