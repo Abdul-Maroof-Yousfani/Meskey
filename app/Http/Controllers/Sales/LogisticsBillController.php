@@ -175,10 +175,16 @@ class LogisticsBillController extends Controller
 
                 $dispatchWeight = floatval($logisticsBill->items->sum('dispatch_weight'));
                 $arrivedWeight = floatval($logisticsBill->arrived_weight ?? 0);
-                $shortWeight = max(0, $dispatchWeight - $arrivedWeight);
-                $exemptedWeight = floatval($request->exempted_weight ?? 0);
-                if ($shortWeight > 0) {
+                $exemptedWeight = max(0, floatval($request->exempted_weight ?? 0));
+
+                if ($dispatchWeight > $arrivedWeight) {
+                    // Shortage / Loss case: exempt up to shortage
+                    $shortWeight = $dispatchWeight - $arrivedWeight;
                     $exemptedWeight = min($exemptedWeight, $shortWeight);
+                } elseif ($arrivedWeight > $dispatchWeight) {
+                    // Excess / Gain case: exempt up to excess gain
+                    $excessWeight = $arrivedWeight - $dispatchWeight;
+                    $exemptedWeight = min($exemptedWeight, $excessWeight);
                 } else {
                     $exemptedWeight = 0;
                 }

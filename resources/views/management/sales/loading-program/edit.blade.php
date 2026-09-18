@@ -27,7 +27,7 @@
                 <select class="form-control select2" name="sale_order_id[]" id="sale_order_id" multiple>
                     @foreach ($SaleOrders as $SaleOrder)
                         <option value="{{ $SaleOrder->id }}" data-type="{{ $SaleOrder->pay_type_id }}"
-                            @selected($LoadingProgram->saleOrders->contains($SaleOrder->id))>
+                            @selected($LoadingProgram->saleOrders->contains($SaleOrder->id) || $LoadingProgram->sale_order_id == $SaleOrder->id)>
                             {{ $SaleOrder->reference_no }}
                         </option>
                     @endforeach

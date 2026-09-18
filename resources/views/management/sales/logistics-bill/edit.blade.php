@@ -71,6 +71,7 @@
             <div class="form-group">
                 <label class="font-weight-bold">Exempted Weight</label>
                 <input type="number" class="form-control editable-field" name="exempted_weight" id="exempted_weight" value="{{ $logisticsBill->exempted_weight }}" step="0.01" min="0" placeholder="Exempted Weight">
+                <small id="gain_helper_text" class="form-text font-weight-bold text-success mt-1" style="font-size: 11px;"></small>
             </div>
         </div>
         <div class="col-md-2">
@@ -416,17 +417,31 @@
 
         let exemptedWeight = parseFloat($('#exempted_weight').val()) || 0;
         if (overallDifference > 0) {
+            // Loss Case
             if (exemptedWeight > overallDifference) {
                 exemptedWeight = overallDifference;
                 $('#exempted_weight').val(exemptedWeight.toFixed(2));
             }
+            let penaltyWeight = Math.max(0, overallDifference - exemptedWeight);
+            $('#penalty_weight').val(penaltyWeight.toFixed(2)).removeClass('text-success text-muted').addClass('text-danger');
+            $('#gain_helper_text').text('');
+        } else if (overallDifference < 0) {
+            // Gain Case
+            let grossGain = Math.abs(overallDifference);
+            if (exemptedWeight > grossGain) {
+                exemptedWeight = grossGain;
+                $('#exempted_weight').val(exemptedWeight.toFixed(2));
+            }
+            let netGain = Math.max(0, grossGain - exemptedWeight);
+            $('#penalty_weight').val('0.00').removeClass('text-danger text-success').addClass('text-muted');
+            $('#gain_helper_text').text(`Gross Gain: ${grossGain.toFixed(2)} kg | Net Gain: ${netGain.toFixed(2)} kg`);
         } else {
+            // Balanced
             exemptedWeight = 0;
             $('#exempted_weight').val('0.00');
+            $('#penalty_weight').val('0.00').removeClass('text-danger text-success').addClass('text-muted');
+            $('#gain_helper_text').text('');
         }
-
-        let penaltyWeight = overallDifference > 0 ? Math.max(0, overallDifference - exemptedWeight) : 0;
-        $('#penalty_weight').val(penaltyWeight.toFixed(2));
 
         let paymentWeight = arrivedWeight;
         $('#payment_weight').val(paymentWeight.toFixed(2));

@@ -17,17 +17,27 @@
                     <td>{{ $voucher->jv_date->format('d-m-Y') }}</td>
                     <td>{{ Str::limit($voucher->description ?? 'N/A', 50) }}</td>
                     <td>
-                        <span class="badge badge-{{ $voucher->jv_status == 'approved' ? 'success' : ($voucher->jv_status == 'pending' ? 'warning' : 'danger') }}">
-                            {{ ucfirst($voucher->jv_status) }}
+                        @php
+                            $status = strtolower($voucher->am_approval_status ?? $voucher->jv_status ?? 'pending');
+                            $badge = match ($status) {
+                                'approved' => 'badge-success',
+                                'rejected' => 'badge-danger',
+                                'pending' => 'badge-warning',
+                                'reverted' => 'badge-secondary',
+                                default => 'badge-secondary'
+                            };
+                        @endphp
+                        <span class="badge {{ $badge }}">
+                            {{ ucfirst($status) }}
                         </span>
                     </td>
-                    <td>{{ $voucher->username ?? 'N/A' }}</td>
+                    <td>{{ optional($voucher->createdBy)->name ?? ($voucher->username ?? 'N/A') }}</td>
                     <td>
                         <a onclick="openModal(this, '{{ route('journal-voucher.show', $voucher->id) }}', 'View Journal Voucher', true, '80%')"
                             class="info p-1 text-center mr-2 position-relative" title="View">
                             <i class="ft-eye font-medium-3"></i>
                         </a>
-                        @if ($voucher->jv_status == 'pending')
+                        @if (in_array(strtolower($voucher->am_approval_status ?? $voucher->jv_status ?? ''), ['pending', 'reverted']))
                             <a class="info p-1 text-center mr-2 position-relative"
                                 href="{{ route('journal-voucher.edit', $voucher->id) }}" title="Edit">
                                 <i class="ft-edit font-medium-3"></i>

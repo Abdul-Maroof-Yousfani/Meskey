@@ -29,7 +29,7 @@ class JournalVoucherController extends Controller
      */
     public function getList(Request $request)
     {
-        $journalVouchers = JournalVoucher::with(['journalVoucherDetails.account'])
+        $journalVouchers = JournalVoucher::with(['journalVoucherDetails.account', 'createdBy'])
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
                 return $q->where(function ($sq) use ($searchTerm) {
@@ -348,15 +348,13 @@ class JournalVoucherController extends Controller
                 'description' => $request->description,
                 'username' => $username,
                 'status' => 'active',
-                'jv_status' => 'approved',
-                'approve_user_id' => optional(Auth::user())->id,
+                'jv_status' => 'pending',
+                'am_approval_status' => 'pending',
+                'am_change_made' => 1,
+                'created_by' => Auth::id(),
+                'approve_user_id' => null,
                 'company_id' => Auth::user()->current_company_id ?? null
             ]);
-
-            $voucherType = TransactionVoucherType::where('code', 'JV')->first();
-            if (!$voucherType) {
-                throw new \Exception('Journal Voucher transaction type not found');
-            }
 
             foreach ($request->details as $detail) {
                 $debitAmount = isset($detail['debit_amount']) ? (float) $detail['debit_amount'] : 0;
@@ -377,39 +375,6 @@ class JournalVoucherController extends Controller
                     'status' => 'active',
                     'timestamp' => now()
                 ]);
-
-                $transaction_id = 11;
-                if ($debitAmount > 0) {
-                    createTransaction(
-                        $debitAmount,
-                        $detail['acc_id'],
-                        $voucherType->id,
-                        $transaction_id,
-                        'debit',
-                        'no',
-                        [
-                            'purpose' => "journal-voucher-{$journalVoucher->id}-{$journalVoucher->jv_no}",
-                            'remarks' => $detail['description'] ?? ($journalVoucher->description ?? "Journal entry for {$journalVoucher->jv_no}"),
-                            'voucher_date' => $journalVoucher->jv_date->format('Y-m-d')
-                        ]
-                    );
-                }
-
-                if ($creditAmount > 0) {
-                    createTransaction(
-                        $creditAmount,
-                        $detail['acc_id'],
-                        $voucherType->id,
-                        $transaction_id,
-                        'credit',
-                        'no',
-                        [
-                            'purpose' => "journal-voucher-{$journalVoucher->id}-{$journalVoucher->jv_no}",
-                            'remarks' => $detail['description'] ?? ($journalVoucher->description ?? "Journal entry for {$journalVoucher->jv_no}"),
-                            'voucher_date' => $journalVoucher->jv_date->format('Y-m-d')
-                        ]
-                    );
-                }
             }
         });
 
@@ -429,10 +394,18 @@ class JournalVoucherController extends Controller
             'journalVoucherDetails.receiptVoucher',
             'journalVoucherDetails.salesOrder',
             'approveUser',
-            'deleteUser'
+            'deleteUser',
+            'createdBy'
         ])->findOrFail($id);
 
-        return view('management.finance.journal_voucher.show', compact('journalVoucher'));
+        $jvModule = $journalVoucher->getApprovalModule();
+        $jvApprovalLogs = $jvModule ? \App\Models\ApprovalsModule\ApprovalLog::where('record_id', $journalVoucher->id)
+            ->where('module_id', $jvModule->id)
+            ->with(['user', 'role'])
+            ->orderBy('created_at', 'desc')
+            ->get() : collect();
+
+        return view('management.finance.journal_voucher.show', compact('journalVoucher', 'jvApprovalLogs'));
     }
 
     /**
@@ -442,10 +415,11 @@ class JournalVoucherController extends Controller
     {
         $journalVoucher = JournalVoucher::with(['journalVoucherDetails.account'])->findOrFail($id);
 
-        // Prevent editing rejected vouchers
-        if ($journalVoucher->jv_status === 'rejected') {
+        // Prevent editing approved or rejected vouchers
+        $currentApprovalStatus = strtolower($journalVoucher->am_approval_status ?? $journalVoucher->jv_status ?? '');
+        if (in_array($currentApprovalStatus, ['approved', 'rejected'])) {
             return redirect()->route('journal-voucher.index')
-                ->with('error', 'Cannot edit a journal voucher that has been rejected.');
+                ->with('error', "Cannot edit a journal voucher that has been {$currentApprovalStatus}.");
         }
 
         $accounts = Account::where("is_operational", "yes")->get();
@@ -505,10 +479,11 @@ class JournalVoucherController extends Controller
     {
         $journalVoucher = JournalVoucher::findOrFail($id);
 
-        // Prevent updating rejected vouchers
-        if ($journalVoucher->jv_status === 'rejected') {
+        // Prevent updating approved or rejected vouchers
+        $currentApprovalStatus = strtolower($journalVoucher->am_approval_status ?? $journalVoucher->jv_status ?? '');
+        if (in_array($currentApprovalStatus, ['approved', 'rejected'])) {
             return response()->json([
-                'error' => 'Cannot update a journal voucher that has been rejected.'
+                'error' => "Cannot update a journal voucher that has been {$currentApprovalStatus}."
             ], 422);
         }
 
@@ -567,25 +542,21 @@ class JournalVoucherController extends Controller
                 'description' => $request->description,
                 'username' => $username,
                 'status' => 'active',
-                'jv_status' => 'approved',
-                'approve_user_id' => optional(Auth::user())->id,
+                'jv_status' => 'pending',
+                'am_approval_status' => 'pending',
+                'am_change_made' => 1,
                 'company_id' => Auth::user()->current_company_id ?? $journalVoucher->company_id
             ]);
 
             // Delete old details
             JournalVoucherDetail::where('journal_voucher_id', $journalVoucher->id)->delete();
 
-            // Delete old transactions
+            // Delete old transactions if any existed
             Transaction::where('voucher_no', $journalVoucher->jv_no)
                 ->where('purpose', 'like', "journal-voucher-{$journalVoucher->id}%")
                 ->delete();
 
-            $voucherType = TransactionVoucherType::where('code', 'JV')->first();
-            if (!$voucherType) {
-                throw new \Exception('Journal Voucher transaction type not found');
-            }
-
-            // Create new details and transactions
+            // Create new details
             foreach ($request->details as $detail) {
                 $debitAmount = isset($detail['debit_amount']) ? (float) $detail['debit_amount'] : 0;
                 $creditAmount = isset($detail['credit_amount']) ? (float) $detail['credit_amount'] : 0;
@@ -606,38 +577,6 @@ class JournalVoucherController extends Controller
                     'timestamp' => now(),
                     'company_id' => Auth::user()->current_company_id ?? $journalVoucher->company_id
                 ]);
-
-                if ($debitAmount > 0) {
-                    createTransaction(
-                        $debitAmount,
-                        $detail['acc_id'],
-                        $voucherType->id,
-                        $journalVoucher->jv_no,
-                        'debit',
-                        'no',
-                        [
-                            'purpose' => "journal-voucher-{$journalVoucher->id}-{$journalVoucher->jv_no}",
-                            'remarks' => $detail['description'] ?? ($journalVoucher->description ?? "Journal entry for {$journalVoucher->jv_no}"),
-                            'voucher_date' => $journalVoucher->jv_date->format('Y-m-d')
-                        ]
-                    );
-                }
-
-                if ($creditAmount > 0) {
-                    createTransaction(
-                        $creditAmount,
-                        $detail['acc_id'],
-                        $voucherType->id,
-                        $journalVoucher->jv_no,
-                        'credit',
-                        'no',
-                        [
-                            'purpose' => "journal-voucher-{$journalVoucher->id}-{$journalVoucher->jv_no}",
-                            'remarks' => $detail['description'] ?? ($journalVoucher->description ?? "Journal entry for {$journalVoucher->jv_no}"),
-                            'voucher_date' => $journalVoucher->jv_date->format('Y-m-d')
-                        ]
-                    );
-                }
             }
         });
 
@@ -652,74 +591,24 @@ class JournalVoucherController extends Controller
      */
     public function approve(Request $request, $id)
     {
-        $journalVoucher = JournalVoucher::with(['journalVoucherDetails.account'])->findOrFail($id);
+        $journalVoucher = JournalVoucher::findOrFail($id);
 
-        // Check if already approved
-        if ($journalVoucher->jv_status === 'approved') {
+        if (!$journalVoucher->canApprove()) {
             return response()->json([
-                'error' => 'Journal voucher is already approved.'
+                'error' => 'You are not authorized to approve this journal voucher or it cannot be approved.'
             ], 422);
         }
 
-        // Check if already rejected
-        if ($journalVoucher->jv_status === 'rejected') {
+        $result = $journalVoucher->approve($request->comments ?? 'Approved');
+        if ($result) {
             return response()->json([
-                'error' => 'Cannot approve a rejected journal voucher.'
-            ], 422);
-        }
-
-        DB::transaction(function () use ($journalVoucher) {
-            // Get Journal Voucher transaction voucher type ID
-            $voucherType = TransactionVoucherType::where('code', 'JV')->first();
-            if (!$voucherType) {
-                throw new \Exception('Journal Voucher transaction type not found');
-            }
-
-            // Create transactions for each journal entry
-            foreach ($journalVoucher->journalVoucherDetails as $detail) {
-                if ($detail->debit_amount > 0) {
-                    createTransaction(
-                        $detail->debit_amount,
-                        $detail->acc_id,
-                        $voucherType->id,
-                        $journalVoucher->jv_no,
-                        'debit',
-                        'no',
-                        [
-                            'purpose' => "journal-voucher-{$journalVoucher->id}-{$journalVoucher->jv_no}",
-                            'remarks' => $detail->description ?? ($journalVoucher->description ?? "Journal entry for {$journalVoucher->jv_no}"),
-                            'voucher_date' => $journalVoucher->jv_date->format('Y-m-d')
-                        ]
-                    );
-                }
-
-                if ($detail->credit_amount > 0) {
-                    createTransaction(
-                        $detail->credit_amount,
-                        $detail->acc_id,
-                        $voucherType->id,
-                        $journalVoucher->jv_no,
-                        'credit',
-                        'no',
-                        [
-                            'purpose' => "journal-voucher-{$journalVoucher->id}-{$journalVoucher->jv_no}",
-                            'remarks' => $detail->description ?? ($journalVoucher->description ?? "Journal entry for {$journalVoucher->jv_no}"),
-                            'voucher_date' => $journalVoucher->jv_date->format('Y-m-d')
-                        ]
-                    );
-                }
-            }
-
-            // Update journal voucher status
-            $journalVoucher->update([
-                'jv_status' => 'approved',
-                'approve_user_id' => optional(Auth::user())->id
+                'success' => 'Journal voucher approved successfully and transactions created!'
             ]);
-        });
+        }
 
         return response()->json([
-            'success' => 'Journal voucher approved successfully and transactions created!'
-        ]);
+            'error' => 'An error occurred while approving the journal voucher.'
+        ], 422);
     }
 
     /**
@@ -729,21 +618,22 @@ class JournalVoucherController extends Controller
     {
         $journalVoucher = JournalVoucher::findOrFail($id);
 
-        // Check if already approved
-        if ($journalVoucher->jv_status === 'approved') {
+        if (!$journalVoucher->canApprove()) {
             return response()->json([
-                'error' => 'Cannot reject an approved journal voucher. Please reverse the transactions first.'
+                'error' => 'You are not authorized to reject this journal voucher or it cannot be rejected.'
             ], 422);
         }
 
-        $journalVoucher->update([
-            'jv_status' => 'rejected',
-            'approve_user_id' => optional(Auth::user())->id
-        ]);
+        $result = $journalVoucher->reject($request->comments ?? 'Rejected');
+        if ($result) {
+            return response()->json([
+                'success' => 'Journal voucher rejected successfully!'
+            ]);
+        }
 
         return response()->json([
-            'success' => 'Journal voucher rejected successfully!'
-        ]);
+            'error' => 'An error occurred while rejecting the journal voucher.'
+        ], 422);
     }
 
     /**
@@ -754,9 +644,10 @@ class JournalVoucherController extends Controller
         $journalVoucher = JournalVoucher::findOrFail($id);
 
         // Prevent deleting approved or rejected vouchers
-        if ($journalVoucher->jv_status !== 'pending') {
+        $currentApprovalStatus = strtolower($journalVoucher->am_approval_status ?? $journalVoucher->jv_status ?? '');
+        if (in_array($currentApprovalStatus, ['approved', 'rejected'])) {
             return response()->json([
-                'error' => 'Cannot delete a journal voucher that has been approved or rejected.'
+                'error' => "Cannot delete a journal voucher that has been {$currentApprovalStatus}."
             ], 422);
         }
 

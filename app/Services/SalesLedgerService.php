@@ -875,8 +875,10 @@ class SalesLedgerService
                 ])->delete();
 
                 // Case 2: Excess Weight (Arrived > Dispatched) -> Profit
-                $excessWeight = $arrivedWeight - $dispatchedWeight;
-                $totalExcessAmount = $excessWeight * $averageRate;
+                $grossExcessWeight = $arrivedWeight - $dispatchedWeight;
+                $exemptedWeight = min(max(0, floatval($receivingRequest->exempted_weight ?? 0)), $grossExcessWeight);
+                $netGainWeight = max(0, $grossExcessWeight - $exemptedWeight);
+                $totalExcessAmount = $netGainWeight * $averageRate;
                 
                 $customerAccountId = $dc->customer?->account_id;
                 
@@ -884,13 +886,21 @@ class SalesLedgerService
                     $profitAccount = Account::where('hierarchy_path', '4-1-4')->first();
                     
                     if ($profitAccount) {
+                        $remarksGain = $exemptedWeight > 0
+                            ? "Excess weight adjustment (+{$netGainWeight} kg net gain, {$exemptedWeight} kg exempted) on Receiving Request for DC: {$dc_no}"
+                            : "Excess weight adjustment (+{$netGainWeight} kg) on Receiving Request for DC: {$dc_no}";
+
+                        $remarksProfit = $exemptedWeight > 0
+                            ? "Excess weight gain/profit (+{$netGainWeight} kg net gain, {$exemptedWeight} kg exempted) on Receiving Request for DC: {$dc_no}"
+                            : "Excess weight gain/profit (+{$netGainWeight} kg) on Receiving Request for DC: {$dc_no}";
+
                         // 1. Debit Customer (Customer got extra goods, so receivable increases)
                         $handleTransaction($totalExcessAmount, $customerAccountId, $voucherTypeId, $dc_no, 'debit', 'no', [
                             'counter_account_id' => $profitAccount->id,
                             'purpose' => "receiving-request-excess-weight-adjustment",
                             'payment_against' => "pohanch-sale-receivable",
                             'against_reference_no' => $dc_no,
-                            'remarks' => "Excess weight adjustment (+{$excessWeight} kg) on Receiving Request for DC: {$dc_no}",
+                            'remarks' => $remarksGain,
                         ]);
 
                         // 2. Credit Gain/Profit Account (hierarchy 4-1-4)
@@ -899,9 +909,14 @@ class SalesLedgerService
                             'purpose' => "receiving-request-excess-profit",
                             'payment_against' => "pohanch-sale-profit",
                             'against_reference_no' => $dc_no,
-                            'remarks' => "Excess weight gain/profit (+{$excessWeight} kg) on Receiving Request for DC: {$dc_no}",
+                            'remarks' => $remarksProfit,
                         ]);
                     }
+                } else {
+                    Transaction::where('voucher_no', $dc_no)->whereIn('purpose', [
+                        'receiving-request-excess-weight-adjustment',
+                        'receiving-request-excess-profit'
+                    ])->delete();
                 }
             } else {
                 // Arrived == Dispatched or no weight diff -> delete both short and excess

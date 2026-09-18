@@ -204,6 +204,12 @@ class LoadingProgramController extends Controller
                     'message' => "Sale Order #{$so->reference_no} is closed and cannot be used in Loading Programs."
                 ], 422);
             }
+            if ($so->delivery_date && Carbon::parse($so->delivery_date)->startOfDay()->lt(now()->startOfDay())) {
+                return response()->json([
+                    'error' => "Sale Order #{$so->reference_no} has expired (Delivery Date: " . Carbon::parse($so->delivery_date)->format('d-m-Y') . ") and cannot be used in Loading Programs.",
+                    'message' => "Sale Order #{$so->reference_no} has expired (Delivery Date: " . Carbon::parse($so->delivery_date)->format('d-m-Y') . ") and cannot be used in Loading Programs."
+                ], 422);
+            }
         }
         $isAnyDeliveryOrderRequired = $saleOrders->contains(function ($so) {
             return $so->pay_type_id != 11;
@@ -454,19 +460,42 @@ class LoadingProgramController extends Controller
         ])->findOrFail($id);
 
         $mainCompanyLoc = $data['LoadingProgram']->company_location_id;
+
+        $existingSoIds = $data['LoadingProgram']->saleOrders->pluck('id')->toArray();
+        if ($data['LoadingProgram']->sale_order_id) {
+            $existingSoIds[] = $data['LoadingProgram']->sale_order_id;
+        }
+        foreach ($data['LoadingProgram']->loadingProgramItems as $item) {
+            foreach ($item->saleOrders as $itemSo) {
+                $existingSoIds[] = $itemSo->id;
+            }
+        }
+        $existingSoIds = array_values(array_unique(array_filter($existingSoIds)));
+
         $SaleOrders = SalesOrder::where('am_approval_status', 'approved')
             ->activeContract()
+            ->where(function ($q) use ($existingSoIds) {
+                $q->where('delivery_date', '>=', now()->toDateString());
+                if (!empty($existingSoIds)) {
+                    $q->orWhereIn('id', $existingSoIds);
+                }
+            })
             ->when($mainCompanyLoc, function ($q) use ($mainCompanyLoc) {
                 return $q->whereHas('locations', function ($lq) use ($mainCompanyLoc) {
                     $lq->where('location_id', $mainCompanyLoc);
                 });
             })
             ->get()
-            ->filter(function ($sale_order) use ($data, $mainCompanyLoc) {
-                if ($sale_order->pay_type_id == 11) {
+            ->filter(function ($sale_order) use ($data, $mainCompanyLoc, $existingSoIds) {
+                if (in_array($sale_order->id, $existingSoIds)) {
                     return true;
                 }
-                if ($data["LoadingProgram"]->saleOrders->contains('id', $sale_order->id) || $sale_order->id == $data["LoadingProgram"]->sale_order_id) {
+
+                if ($sale_order->delivery_date && Carbon::parse($sale_order->delivery_date)->startOfDay()->lt(now()->startOfDay())) {
+                    return false;
+                }
+
+                if ($sale_order->pay_type_id == 11) {
                     return true;
                 }
 
@@ -658,11 +687,28 @@ class LoadingProgramController extends Controller
         }
 
         $saleOrders = SalesOrder::whereIn('id', $request->sale_order_id)->get();
+        $existingSoIds = $loadingProgram->saleOrders->pluck('id')->toArray();
+        if ($loadingProgram->sale_order_id) {
+            $existingSoIds[] = $loadingProgram->sale_order_id;
+        }
+        foreach ($loadingProgram->loadingProgramItems as $item) {
+            foreach ($item->saleOrders as $itemSo) {
+                $existingSoIds[] = $itemSo->id;
+            }
+        }
+        $existingSoIds = array_values(array_unique(array_filter($existingSoIds)));
+
         foreach ($saleOrders as $so) {
             if ($so->isClosed()) {
                 return response()->json([
                     'error' => "Sale Order #{$so->reference_no} is closed and operations are locked.",
                     'message' => "Sale Order #{$so->reference_no} is closed and operations are locked."
+                ], 422);
+            }
+            if (!in_array($so->id, $existingSoIds) && $so->delivery_date && Carbon::parse($so->delivery_date)->startOfDay()->lt(now()->startOfDay())) {
+                return response()->json([
+                    'error' => "Sale Order #{$so->reference_no} has expired (Delivery Date: " . Carbon::parse($so->delivery_date)->format('d-m-Y') . ") and cannot be added to Loading Program.",
+                    'message' => "Sale Order #{$so->reference_no} has expired (Delivery Date: " . Carbon::parse($so->delivery_date)->format('d-m-Y') . ") and cannot be added to Loading Program."
                 ], 422);
             }
         }
@@ -1266,30 +1312,50 @@ class LoadingProgramController extends Controller
     {
         $location_id = $request->location_id;
         $excludeItemIds = null;
+        $existingSoIds = [];
         if ($request->loading_program_id) {
             $excludeItemIds = LoadingProgramItem::where('loading_program_id', $request->loading_program_id)->pluck('id')->toArray();
+            $lp = LoadingProgram::with('saleOrders', 'loadingProgramItems.saleOrders')->find($request->loading_program_id);
+            if ($lp) {
+                $existingSoIds = $lp->saleOrders->pluck('id')->toArray();
+                if ($lp->sale_order_id) {
+                    $existingSoIds[] = $lp->sale_order_id;
+                }
+                foreach ($lp->loadingProgramItems as $item) {
+                    foreach ($item->saleOrders as $itemSo) {
+                        $existingSoIds[] = $itemSo->id;
+                    }
+                }
+                $existingSoIds = array_values(array_unique(array_filter($existingSoIds)));
+            }
         }
 
         $SaleOrders = SalesOrder::where('am_approval_status', 'approved')
             ->activeContract()
+            ->where(function ($q) use ($existingSoIds) {
+                $q->where('delivery_date', '>=', now()->toDateString());
+                if (!empty($existingSoIds)) {
+                    $q->orWhereIn('id', $existingSoIds);
+                }
+            })
             ->whereHas('locations', function ($q) use ($location_id) {
                 $q->where('location_id', $location_id);
             })
             ->get()
-            ->filter(function ($so) use ($location_id, $excludeItemIds, $request) {
-                // Keep Type 11 orders as DOs are optional for them
-                if ($so->pay_type_id == 11) {
+            ->filter(function ($so) use ($location_id, $excludeItemIds, $request, $existingSoIds) {
+                // If editing, always keep Sale Orders that are already part of this Loading Program
+                if (!empty($existingSoIds) && in_array($so->id, $existingSoIds)) {
                     return true;
                 }
 
-                // If editing, always keep Sale Orders that are already part of this Loading Program
-                if ($request->loading_program_id) {
-                    $isPart = LoadingProgramItem::where('loading_program_id', $request->loading_program_id)
-                        ->whereHas('saleOrders', function ($q) use ($so) {
-                            $q->where('sales_order_id', $so->id);
-                        })->exists();
-                    if ($isPart)
-                        return true;
+                // Exclude expired SOs
+                if ($so->delivery_date && Carbon::parse($so->delivery_date)->startOfDay()->lt(now()->startOfDay())) {
+                    return false;
+                }
+
+                // Keep Type 11 orders as DOs are optional for them
+                if ($so->pay_type_id == 11) {
+                    return true;
                 }
 
                 // For other orders, check if they have any approved DO with remaining balance

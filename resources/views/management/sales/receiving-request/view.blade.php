@@ -86,6 +86,16 @@
             <div class="form-group">
                 <label class="font-weight-bold">Exempted Weight</label>
                 <input type="number" class="form-control bg-light font-weight-bold" value="{{ $receivingRequest->exempted_weight }}" readonly>
+                @if($diffWeight < 0)
+                    @php
+                        $grossGain = abs($diffWeight);
+                        $exemptWeight = floatval($receivingRequest->exempted_weight ?? 0);
+                        $netGain = max(0, $grossGain - $exemptWeight);
+                    @endphp
+                    <small class="form-text font-weight-bold text-success mt-1" style="font-size: 11px;">
+                        Gross Gain: {{ number_format($grossGain, 2) }} kg | Net Gain: {{ number_format($netGain, 2) }} kg
+                    </small>
+                @endif
             </div>
         </div>
         <div class="col-md-2">

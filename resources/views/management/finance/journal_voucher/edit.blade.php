@@ -12,6 +12,21 @@
                         <a href="{{ route('journal-voucher.index') }}" class="btn btn-sm btn-primary">Back</a>
                     </div>
                     <div class="card-body">
+                        @if(strtolower($journalVoucher->am_approval_status ?? $journalVoucher->jv_status ?? '') === 'reverted')
+                            @php
+                                $latestLog = $journalVoucher->approvalLogs()->latest()->first();
+                            @endphp
+                            <div class="alert alert-warning mb-3">
+                                <i class="fa fa-undo me-2"></i>
+                                <strong>Status: Reverted</strong> - This Journal Voucher has been reverted. Please make the necessary changes and save to resubmit for approval.
+                                @if($latestLog && !empty(trim($latestLog->comments ?? '')))
+                                    <div class="mt-1 small">
+                                        <strong>Revert Comment ({{ $latestLog->user->name ?? 'Approver' }}):</strong> {{ $latestLog->comments }}
+                                    </div>
+                                @endif
+                            </div>
+                        @endif
+
                         <form id="ajaxSubmit" action="{{ route('journal-voucher.update', $journalVoucher->id) }}">
                             @csrf
                             @method('PUT')
