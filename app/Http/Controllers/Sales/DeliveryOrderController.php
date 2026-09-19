@@ -803,7 +803,7 @@ class DeliveryOrderController extends Controller
         foreach ($advances as $adv) {
             $data[] = [
                 'id' => "adv_{$adv->id}",
-                'text' => "advance ({$adv->net_amount})",
+                'text' => "advance ({$adv->remaining_amount})",
                 'amount' => $adv->remaining_amount,
                 'date' => $adv->receiptVoucher && $adv->receiptVoucher->rv_date
                     ? $adv->receiptVoucher->rv_date->format('Y-m-d')
