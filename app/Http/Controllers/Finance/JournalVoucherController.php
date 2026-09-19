@@ -351,7 +351,7 @@ class JournalVoucherController extends Controller
                 'jv_status' => 'pending',
                 'am_approval_status' => 'pending',
                 'am_change_made' => 1,
-                'created_by' => Auth::id(),
+                'created_by' => Auth::user()->id,
                 'approve_user_id' => null,
                 'company_id' => Auth::user()->current_company_id ?? null
             ]);
