@@ -306,6 +306,16 @@ class DeliveryOrderController extends Controller
                                 ->where('delivery_order_receipt_voucher.receipt_voucher_advance_id', $adv->id)
                                 ->where('delivery_order.am_approval_status', '!=', 'rejected')
                                 ->sum('delivery_order_receipt_voucher.amount');
+                                
+                            $jv_spent = DB::table('journal_voucher_details')
+                                ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
+                                ->whereNull('journal_vouchers.deleted_at')
+                                ->whereNull('journal_voucher_details.deleted_at')
+                                ->where('receipt_voucher_id', $adv->receipt_voucher_id)
+                                ->sum('debit_amount');
+                                
+                            $spent += $jv_spent;
+                                
                             $remaining = doubleval($adv->net_amount) - doubleval($spent);
 
                             if ($rv_val == $request->withhold_for_rv && doubleval($request->withhold_amount ?? 0) > $remaining) {
@@ -775,6 +785,16 @@ class DeliveryOrderController extends Controller
                     ->where('delivery_order_receipt_voucher.receipt_voucher_advance_id', $adv->id)
                     ->where('delivery_order.am_approval_status', '!=', 'rejected')
                     ->sum('delivery_order_receipt_voucher.amount');
+                    
+                $jv_spent = DB::table('journal_voucher_details')
+                    ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
+                    ->whereNull('journal_vouchers.deleted_at')
+                    ->whereNull('journal_voucher_details.deleted_at')
+                    ->where('receipt_voucher_id', $adv->receipt_voucher_id)
+                    ->sum('debit_amount');
+                    
+                $spent += $jv_spent;
+                
                 $adv->remaining_amount = doubleval($adv->net_amount) - doubleval($spent);
                 return $adv;
             })
