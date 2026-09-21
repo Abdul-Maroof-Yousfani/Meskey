@@ -153,7 +153,16 @@ class TicketContractController extends Controller
             'closing_trucks_qty' => 'required|numeric|min:0.01',
             'selected_freight' => 'nullable|exists:purchase_freights,id'
         ]);
+        $queryString = $request->query_string;
 
+        // Parse query string into array
+        parse_str($queryString, $queryParams);
+
+        // Remove ticket_id if exists
+        unset($queryParams['ticket_id']);
+
+        // Rebuild query string
+        $newQueryString = http_build_query($queryParams);
 
         try {
             DB::beginTransaction();
@@ -213,9 +222,15 @@ class TicketContractController extends Controller
             if ($arrivalTicket->first_qc_status == 'rejected') {
                 DB::commit();
 
+                // return response()->json([
+                //     'success' => 'Ticket successfully linked to contract',
+                //     'redirect' => route('raw-material.ticket-contracts.index')
+                // ]);
+
+
                 return response()->json([
                     'success' => 'Ticket successfully linked to contract',
-                    'redirect' => route('raw-material.ticket-contracts.index')
+                    'redirect' => route('raw-material.ticket-contracts.index') . ($newQueryString ? '?' . $newQueryString : '')
                 ]);
             }
 
@@ -533,16 +548,7 @@ class TicketContractController extends Controller
             DB::commit();
             // dd(route('raw-material.ticket-contracts.index', request()->query()));
 
-            $queryString = $request->query_string;
 
-            // Parse query string into array
-            parse_str($queryString, $queryParams);
-
-            // Remove ticket_id if exists
-            unset($queryParams['ticket_id']);
-
-            // Rebuild query string
-            $newQueryString = http_build_query($queryParams);
 
             return response()->json([
                 'success' => 'Ticket successfully linked to contract',
