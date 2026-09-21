@@ -85,11 +85,11 @@ function filterationCommonoldat12Dec2025(
     function (start, end, label) {
       console.log(
         "A new date selection was made: " +
-          start.format("YYYY-MM-DD") +
-          "  -  " +
-          start +
-          " to " +
-          end.format("YYYY-MM-DD"),
+        start.format("YYYY-MM-DD") +
+        "  -  " +
+        start +
+        " to " +
+        end.format("YYYY-MM-DD"),
       );
       $("[name='daterange']").val(
         `${start.format("MM/DD/YYYY")} - ${end.format("MM/DD/YYYY")}`,
@@ -258,15 +258,15 @@ function filterationCommonoldat12Dec2025(
 
         $("#date_range").val(
           startDate.format("YYYY-MM-DD") +
-            " - " +
-            currentDate.format("YYYY-MM-DD"),
+          " - " +
+          currentDate.format("YYYY-MM-DD"),
         );
 
         $("#date_range").on("apply.daterangepicker", function (ev, picker) {
           $(this).val(
             picker.startDate.format("YYYY-MM-DD") +
-              " - " +
-              picker.endDate.format("YYYY-MM-DD"),
+            " - " +
+            picker.endDate.format("YYYY-MM-DD"),
           );
           var formData = $("#filterForm").serialize();
           updateUrlParams(formData);
@@ -280,6 +280,61 @@ function filterationCommonoldat12Dec2025(
           fetch_data(formData);
         });
       }
+
+
+
+
+
+
+      // 👇 YE NAYA CODE ADD KARO - date_range2 ke liye
+      if ($("#date_range2").length) {
+        var existingValue2 = $("#date_range2").val();
+        var startDate2 = moment().subtract(28, "days");
+        var endDate2 = moment();
+
+        if (existingValue2 && existingValue2.includes(" - ")) {
+          var dates2 = existingValue2.split(" - ");
+          startDate2 = moment(dates2[0], "YYYY-MM-DD");
+          endDate2 = moment(dates2[1], "YYYY-MM-DD");
+        }
+
+        $("#date_range2").daterangepicker({
+          startDate: startDate2,
+          endDate: endDate2,
+          autoUpdateInput: false,
+          locale: {
+            format: "YYYY-MM-DD",
+            cancelLabel: "Clear",
+          },
+        });
+
+        if (!existingValue2) {
+          $("#date_range2").val(
+            startDate2.format("YYYY-MM-DD") +
+            " - " +
+            endDate2.format("YYYY-MM-DD"),
+          );
+        }
+
+        $("#date_range2").on("apply.daterangepicker", function (ev, picker) {
+          $(this).val(
+            picker.startDate.format("YYYY-MM-DD") +
+            " - " +
+            picker.endDate.format("YYYY-MM-DD"),
+          );
+          var formData = $("#" + formId).serialize();
+          updateUrlParams(formData);
+          fetch_data(formData);
+        });
+
+        $("#date_range2").on("cancel.daterangepicker", function (ev, picker) {
+          $(this).val("");
+          var formData = $("#" + formId).serialize();
+          updateUrlParams(formData);
+          fetch_data(formData);
+        });
+      }
+
     } catch (error) {
       console.error(error);
       Swal.fire({
@@ -445,6 +500,49 @@ function filterationCommon(
     },
   );
 
+
+
+
+
+
+  // 👇 YE NAYA CODE ADD KARO - daterange2 ke liye
+  $('input[name="daterange2"]').daterangepicker(
+    {
+      opens: "left",
+      autoUpdateInput: false,
+      locale: {
+        cancelLabel: "Clear",
+      },
+    },
+    function (start, end, label) {
+      $("[name='daterange2']").val(
+        `${start.format("MM/DD/YYYY")} - ${end.format("MM/DD/YYYY")}`,
+      );
+
+      renderLoadingTable("#filteredData table", 12);
+      var formData = $("#" + formId).serialize();
+
+      updateUrlParams(formData);
+      fetch_data(formData);
+    },
+  );
+
+  $('input[name="daterange2"]').on(
+    "cancel.daterangepicker",
+    function (ev, picker) {
+      ev.preventDefault();
+      $(this).val("");
+      picker.setStartDate(moment());
+      picker.setEndDate(moment());
+      picker.show();
+
+      renderLoadingTable("#filteredData table", 12);
+      var formData = $("#" + formId).serialize();
+
+      updateUrlParams(formData);
+      fetch_data(formData);
+    },
+  );
   // Handle form input changes
   $("#" + formId + " input, #" + formId + " select")
     .off("change keyup")
@@ -586,16 +684,16 @@ function filterationCommon(
         if (!existingValue) {
           $("#date_range").val(
             startDate.format("YYYY-MM-DD") +
-              " - " +
-              endDate.format("YYYY-MM-DD"),
+            " - " +
+            endDate.format("YYYY-MM-DD"),
           );
         }
 
         $("#date_range").on("apply.daterangepicker", function (ev, picker) {
           $(this).val(
             picker.startDate.format("YYYY-MM-DD") +
-              " - " +
-              picker.endDate.format("YYYY-MM-DD"),
+            " - " +
+            picker.endDate.format("YYYY-MM-DD"),
           );
           var formData = $("#" + formId).serialize();
           updateUrlParams(formData);
@@ -1069,16 +1167,16 @@ function printErrorMsg(errors) {
             .find(".select2-container")
             .after(
               '<div class="error-message text-danger">' +
-                messages[0] +
-                "</div>",
+              messages[0] +
+              "</div>",
             );
         } else {
           field
             .parents(".form-group")
             .append(
               '<div class="error-message text-danger">' +
-                messages[0] +
-                "</div>",
+              messages[0] +
+              "</div>",
             );
         }
       }
@@ -1101,16 +1199,16 @@ function printErrorMsg(errors) {
             .find(".select2-container")
             .after(
               '<div class="error-message text-danger">' +
-                messages[0] +
-                "</div>",
+              messages[0] +
+              "</div>",
             );
         } else {
           field
             .parents(".form-group")
             .append(
               '<div class="error-message text-danger">' +
-                messages[0] +
-                "</div>",
+              messages[0] +
+              "</div>",
             );
         }
       });
@@ -1156,13 +1254,11 @@ function openImageModal(
       const imageElement = $(`
         <div class="image-wrapper mb-4" style="text-align: center;">
           <img src="${imageUrl}" class="img-fluid" style="max-height: 70vh; max-width: 100%;">
-          ${
-            images.length > 1
-              ? `<div class="image-counter mt-2">Image ${index + 1} of ${
-                  images.length
-                }</div>`
-              : ""
-          }
+          ${images.length > 1
+          ? `<div class="image-counter mt-2">Image ${index + 1} of ${images.length
+          }</div>`
+          : ""
+        }
           <div class="image-actions mt-2">
             <button class="btn btn-sm btn-primary zoom-in" data-image="${imageUrl}">
               <i class="ft-plus"></i> Zoom In
