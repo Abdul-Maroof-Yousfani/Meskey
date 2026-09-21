@@ -137,12 +137,11 @@ class SalesReturnController extends Controller
     public function get_sale_invoices(Request $request) {
         $customer_id = $request->customer_id;
         $locations_id = $request->location_id;
-        $arrival_location_id = $request->arrival_location_id;
         $storage_id = $request->storage_id;
         $sales_return_id = $request->sales_return_id;
 
-        // If Customer, Company Location, or Arrival Location is missing, return empty
-        if (!$customer_id || !$locations_id || !$arrival_location_id) {
+        // Company Location and Customer are mandatory
+        if (!$customer_id || !$locations_id) {
             return [];
         }
 
@@ -159,11 +158,10 @@ class SalesReturnController extends Controller
         $receiving_requests = ReceivingRequest::with(['deliveryChallan', 'items.deliveryChallanData'])
             ->where('am_approval_status', 'approved')
             ->whereNotIn('id', $usedRrIds)
-            ->whereHas('deliveryChallan', function($q) use ($customer_id, $locations_id, $arrival_location_id) {
+            ->whereHas('deliveryChallan', function($q) use ($customer_id, $locations_id) {
                 $q->where('sauda_type', 'pohanch')
                   ->where('customer_id', $customer_id)
-                  ->where('location_id', $locations_id)
-                  ->where('arrival_id', $arrival_location_id);
+                  ->where('location_id', $locations_id);
             })
             ->latest()
             ->get();
@@ -175,7 +173,8 @@ class SalesReturnController extends Controller
             $dateInfo = $rr->dc_date ? " - " . Carbon::parse($rr->dc_date)->format('d M Y') : "";
             $data[] = [
                 "id" => $rr->id,
-                "text" => "{$rr->dc_no}{$truckInfo}{$dateInfo}"
+                "text" => "{$rr->dc_no}{$truckInfo}{$dateInfo}",
+                "arrival_id" => $rr->deliveryChallan?->arrival_id
             ];
         }
 

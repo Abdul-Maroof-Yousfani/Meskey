@@ -92,6 +92,17 @@
                         </select>
                     </div>
                 </div>
+                <div class="col-md-6">
+                    <div class="form-group mt-3">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="is_bardana" name="is_bardana" value="1">
+                            <label class="custom-control-label font-weight-bold" for="is_bardana">
+                                Bardana
+                            </label>
+                        </div>
+                        <small class="text-muted">Check this if the sale involves Bardana where bag weight will be deducted at DC.</small>
+                    </div>
+                </div>
 
 
                 <div class="col-12 mt-3">

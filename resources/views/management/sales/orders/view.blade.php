@@ -145,6 +145,16 @@
                             value="{{ $sale_order->contract_status ? ucfirst(str_replace('-', ' ', $sale_order->contract_status)) : 'Active / Open' }}" readonly>
                     </div>
                 </div>
+                <div class="col-md-6">
+                    <div class="form-group mt-3">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="so_view_is_bardana" {{ !empty($sale_order->is_bardana) ? 'checked' : '' }} disabled>
+                            <label class="custom-control-label font-weight-bold text-dark" for="so_view_is_bardana" style="opacity: 1; cursor: default;">
+                                Bardana (Bag Weight Deduction)
+                            </label>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="col-12 mt-3">
                     <h6 class="header-heading-sepration">Customer Details</h6>

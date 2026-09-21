@@ -92,19 +92,24 @@ class PlantBreakdownController extends Controller
             // Save breakdown items
             if ($request->has('breakdown_type_id') && is_array($request->breakdown_type_id)) {
                 foreach ($request->breakdown_type_id as $index => $breakdownTypeId) {
-                    if (!empty($breakdownTypeId) && !empty($request->from[$index]) && !empty($request->to[$index])) {
-                        // Calculate hours if not provided
-                        $fromTime = \Carbon\Carbon::parse($request->from[$index]);
-                        $toTime = \Carbon\Carbon::parse($request->to[$index]);
-                        $calculatedHours = $fromTime->diffInHours($toTime, false) + ($fromTime->diffInMinutes($toTime, false) % 60) / 60;
+                    if (!empty($breakdownTypeId) && !empty($request->from[$index])) {
+                        $fromVal = $request->from[$index];
+                        $toVal = !empty($request->to[$index]) ? $request->to[$index] : null;
+                        $hoursVal = !empty($request->hours[$index]) ? $request->hours[$index] : null;
+
+                        if (!empty($fromVal) && !empty($toVal) && empty($hoursVal)) {
+                            $fromTime = \Carbon\Carbon::parse($fromVal);
+                            $toTime = \Carbon\Carbon::parse($toVal);
+                            $hoursVal = $fromTime->diffInHours($toTime, false) + ($fromTime->diffInMinutes($toTime, false) % 60) / 60;
+                        }
 
                         PlantBreakdownItem::create([
                             'company_id' => $request->company_id,
                             'plant_breakdown_id' => $plantBreakdown->id,
                             'breakdown_type_id' => $breakdownTypeId,
-                            'from' => $request->from[$index],
-                            'to' => $request->to[$index],
-                            'hours' => $request->hours[$index] ?? $calculatedHours,
+                            'from' => $fromVal,
+                            'to' => $toVal,
+                            'hours' => $hoursVal,
                             'remarks' => $request->remarks[$index] ?? null,
                         ]);
                     }
@@ -182,19 +187,24 @@ class PlantBreakdownController extends Controller
             // Save new breakdown items
             if ($request->has('breakdown_type_id') && is_array($request->breakdown_type_id)) {
                 foreach ($request->breakdown_type_id as $index => $breakdownTypeId) {
-                    if (!empty($breakdownTypeId) && !empty($request->from[$index]) && !empty($request->to[$index])) {
-                        // Calculate hours if not provided
-                        $fromTime = \Carbon\Carbon::parse($request->from[$index]);
-                        $toTime = \Carbon\Carbon::parse($request->to[$index]);
-                        $calculatedHours = $fromTime->diffInHours($toTime, false) + ($fromTime->diffInMinutes($toTime, false) % 60) / 60;
+                    if (!empty($breakdownTypeId) && !empty($request->from[$index])) {
+                        $fromVal = $request->from[$index];
+                        $toVal = !empty($request->to[$index]) ? $request->to[$index] : null;
+                        $hoursVal = !empty($request->hours[$index]) ? $request->hours[$index] : null;
+
+                        if (!empty($fromVal) && !empty($toVal) && empty($hoursVal)) {
+                            $fromTime = \Carbon\Carbon::parse($fromVal);
+                            $toTime = \Carbon\Carbon::parse($toVal);
+                            $hoursVal = $fromTime->diffInHours($toTime, false) + ($fromTime->diffInMinutes($toTime, false) % 60) / 60;
+                        }
 
                         PlantBreakdownItem::create([
                             'company_id' => $request->company_id,
                             'plant_breakdown_id' => $plantBreakdown->id,
                             'breakdown_type_id' => $breakdownTypeId,
-                            'from' => $request->from[$index],
-                            'to' => $request->to[$index],
-                            'hours' => $request->hours[$index] ?? $calculatedHours,
+                            'from' => $fromVal,
+                            'to' => $toVal,
+                            'hours' => $hoursVal,
                             'remarks' => $request->remarks[$index] ?? null,
                         ]);
                     }

@@ -24,6 +24,24 @@
         font-weight: 600;
         font-size: 13px;
     }
+
+    .packing-select+.select2-container {
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    .packing-select+.select2-container .select2-selection--multiple {
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    #salesInquiryTable td {
+        padding: 6px 12px !important;
+        vertical-align: middle;
+    }
 </style>
 
 @if(in_array(strtolower($delivery_challan->am_approval_status ?? ''), ['approved', 'rejected']))
@@ -111,6 +129,16 @@
                         <option value="pohanch" @selected($delivery_challan->sauda_type == 'pohanch')>Pohanch</option>
                         <option value="x-mill" @selected($delivery_challan->sauda_type == 'x-mill')>X-mill</option>
                     </select>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group mt-3">
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="dc_view_is_bardana" {{ !empty($delivery_challan->is_bardana) ? 'checked' : '' }} disabled>
+                        <label class="custom-control-label font-weight-bold text-dark" for="dc_view_is_bardana" style="opacity: 1; cursor: default;">
+                            Bardana (Bag Weight Deduction)
+                        </label>
+                    </div>
                 </div>
             </div>
             <div class="col-md-6 d-none\">
@@ -294,8 +322,11 @@
                         <th>DO No</th>
                         <th>Item</th>
                         <th>Bag Type</th>
-                        <th style="width: 250px;">Packing</th>
-                        <th>No of Bags</th>
+                        <th style="min-width: 160px; width: 160px;">Packing</th>
+                        <th style="min-width: 130px; width: 130px;">No of Bags</th>
+                        @if(!empty($delivery_challan->is_bardana))
+                            <th>Bag Wt (kg)</th>
+                        @endif
                         <th>Quantity (kg)</th>
                         <!-- <th>Rate per Kg</th>
                         <th>Rate per Mond</th>
@@ -325,7 +356,7 @@
                                     class="form-control" readonly>
                             </td>
 
-                            <td>
+                            <td style="min-width: 160px; width: 160px;">
                                 <select class="form-select select2 packing-select" multiple disabled>
                                     @php
                                         $packings = explode(',', $data->bag_size);
@@ -337,11 +368,21 @@
                                     @endforeach
                                 </select>
                             </td>
-                            <td>
+                            <td style="min-width: 130px; width: 130px;">
                                 <input type="text" value="{{ $data->no_of_bags }}" class="form-control" readonly>
                             </td>
+                            @if(!empty($delivery_challan->is_bardana))
+                                <td>
+                                    <input type="text" value="{{ $data->bag_weight + 0 }}" class="form-control" readonly>
+                                </td>
+                            @endif
                             <td>
-                                <input type="text" value="{{ round($data->qty) }}" class="form-control" readonly>
+                                <input type="text" value="{{ $data->qty + 0 }}" class="form-control" readonly>
+                                @if(!empty($delivery_challan->is_bardana) && ($data->total_bag_weight ?? 0) > 0)
+                                    <small class="form-text font-weight-bold text-success mt-1" style="font-size: 11px;">
+                                        SWB: {{ $data->qty + 0 }} kg | Bags: {{ $data->total_bag_weight + 0 }} kg | Net Billed: {{ $data->billed_qty + 0 }} kg
+                                    </small>
+                                @endif
                             </td>
                             <!-- <td>
                                     <input type="text" value="{{ $data->rate }}" class="form-control" readonly>

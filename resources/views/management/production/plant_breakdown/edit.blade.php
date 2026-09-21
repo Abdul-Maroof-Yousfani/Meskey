@@ -64,7 +64,7 @@
                                                 <input type="time" name="from[]" class="form-control from-time" value="{{ $item->from ? date('H:i', strtotime($item->from)) : '' }}" required>
                                             </td>
                                             <td>
-                                                <input type="time" name="to[]" class="form-control to-time" value="{{ $item->to ? date('H:i', strtotime($item->to)) : '' }}" required>
+                                                <input type="time" name="to[]" class="form-control to-time" value="{{ $item->to ? date('H:i', strtotime($item->to)) : '' }}">
                                             </td>
                                             <td>
                                                 <input type="number" name="hours[]" class="form-control hours-input" step="0.01" min="0" value="{{ $item->hours }}" readonly>
@@ -92,7 +92,7 @@
                                             <input type="time" name="from[]" class="form-control from-time" required>
                                         </td>
                                         <td>
-                                            <input type="time" name="to[]" class="form-control to-time" required>
+                                            <input type="time" name="to[]" class="form-control to-time">
                                         </td>
                                         <td>
                                             <input type="number" name="hours[]" class="form-control hours-input" step="0.01" min="0" readonly>

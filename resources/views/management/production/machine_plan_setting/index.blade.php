@@ -1,10 +1,9 @@
 @extends('management.layouts.master')
 @section('title')
-    Plant Breakdown
+    Machine Plan Setting List
 @endsection
 @section('content')
     <div class="content-wrapper">
-
         <section id="extended">
             <div class="row w-100 mx-auto">
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
@@ -14,7 +13,7 @@
                     <button
                         onclick="openModal(this,'{{ route('machine-plan-setting.create') }}','Add Machine Plan Setting',false,'85%')"
                         type="button" class="btn btn-primary position-relative ">
-                        Create Machine Plan Setting
+                        Add Machine Plan Setting
                     </button>
                 </div>
             </div>
@@ -48,7 +47,9 @@
                                             <th>Plant</th>
                                             <th>Production Voucher</th>
                                             <th>User</th>
+                                            <th>Machines</th>
                                             <th>Breakdown Items</th>
+                                            <th>Remarks</th>
                                             <th>Action</th>
                                         </tr>
                                     </thead>
@@ -60,13 +61,11 @@
                 </div>
             </div>
         </section>
-
-
     </div>
 @endsection
 @section('script')
     <script>
-        $(document).ready(function () {
+        $(document).ready(function() {
             filterationCommon(`{{ route('get.machine-plan-setting') }}`)
         });
     </script>

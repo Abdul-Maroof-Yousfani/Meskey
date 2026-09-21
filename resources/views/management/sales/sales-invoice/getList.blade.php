@@ -44,7 +44,7 @@
                         </td>
 
                         <td class="text-right align-middle">
-                            {{ round($itemRow['item_data']->qty) }}
+                            {{ $itemRow['item_data']->qty + 0 }}
                         </td>
 
                         <td class="text-right align-middle">

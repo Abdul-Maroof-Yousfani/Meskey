@@ -690,12 +690,14 @@
                                                     $machineTimes = $productionVoucher->productionVoucherMachineTimes->groupBy('production_machine_id');
                                                 @endphp
 
-                                                @if(count($allMachines) > 0)
+                                                 @if(count($allMachines) > 0)
                                                 <div class="row">
                                                     @foreach($allMachines as $index => $machine)
                                                         @php
-                                                            $isChecked = count($selectedMachineIds) > 0 ? in_array($machine->id, $selectedMachineIds) : $machine->is_enabled;
-                                                            $times = isset($machineTimes[$machine->id]) && $machineTimes[$machine->id]->count() > 0 ? $machineTimes[$machine->id] : collect([new \App\Models\Production\ProductionVoucherMachineTime()]);
+                                                            $planItem = $machinePlanSetting && $machinePlanSetting->items ? $machinePlanSetting->items->firstWhere('production_machine_id', $machine->id) : null;
+                                                            $isChecked = count($selectedMachineIds) > 0 ? in_array($machine->id, $selectedMachineIds) : ($planItem ? $planItem->is_enabled : $machine->is_enabled);
+                                                            $hasSavedTimes = isset($machineTimes[$machine->id]) && $machineTimes[$machine->id]->count() > 0;
+                                                            $times = $hasSavedTimes ? $machineTimes[$machine->id] : collect([new \App\Models\Production\ProductionVoucherMachineTime()]);
                                                             $totalMins = 0;
                                                         @endphp
                                                         <div class="col-md-12 mb-3">
@@ -719,52 +721,108 @@
                                                                     </div>
                                                                 </div>
 
-                                                                <!-- Time Slots -->
-                                                                <div class="machine-card-body px-3 pt-2 pb-2" style="background:#fff;">
-                                                                    <div style="font-size:14px; font-weight:bold; color:#333; margin-bottom:12px;">Time Slots</div>
-                                                                    <div id="machine_time_table_{{ $machine->id }}">
-                                                                        @foreach($times as $time)
-                                                                            @php
-                                                                                $totalMins += $time->duration_minutes;
-                                                                                $hours = floor($time->duration_minutes / 60);
-                                                                                $mins = $time->duration_minutes % 60;
-                                                                                $durText = $time->duration_minutes > 0 ? "{$hours}h {$mins}m" : '';
-                                                                            @endphp
-                                                                            <div class="row time-row align-items-end mb-3">
-                                                                                <div class="col-md-3">
-                                                                                    <label style="font-size:14px; color:#555; font-weight:500; margin-bottom:4px;">Start Time</label>
-                                                                                    <input type="time" name="machine_start_time[{{ $machine->id }}][]" class="form-control start-time" value="{{ $time->start_time ? \Carbon\Carbon::parse($time->start_time)->format('H:i') : '' }}" onchange="calculateMachineTime({{ $machine->id }})" style="font-size:14px; height:42px;">
-                                                                                </div>
-                                                                                <div class="col-md-3">
-                                                                                    <label style="font-size:14px; color:#555; font-weight:500; margin-bottom:4px;">End Time</label>
-                                                                                    <input type="time" name="machine_end_time[{{ $machine->id }}][]" class="form-control end-time" value="{{ $time->end_time ? \Carbon\Carbon::parse($time->end_time)->format('H:i') : '' }}" onchange="calculateMachineTime({{ $machine->id }})" style="font-size:14px; height:42px;">
-                                                                                </div>
-                                                                                <div class="col-md-3">
-                                                                                    <label style="font-size:14px; color:#555; font-weight:500; margin-bottom:4px;">Duration</label>
-                                                                                    <input type="text" class="form-control duration-display" value="{{ $durText }}" readonly style="background:#f8f9fa; font-weight:bold; font-size:14px; text-align:center; height:42px;">
-                                                                                </div>
-                                                                                <div class="col-md-3">
-                                                                                    <button type="button" class="btn btn-danger remove-time-row" onclick="removeMachineTimeRow(this, {{ $machine->id }})" style="height:42px; width:42px; display:flex; align-items:center; justify-content:center; margin: 0;"><i class="fa fa-trash"></i></button>
-                                                                                </div>
-                                                                            </div>
-                                                                        @endforeach
-                                                                    </div>
+                                                                    <!-- Time Slots -->
+                                                                    <div class="machine-card-body px-3 pt-2 pb-2" style="background:#fff;">
+                                                                        <div style="font-size:14px; font-weight:bold; color:#333; margin-bottom:12px;">Time Slots</div>
+                                                                        <div id="machine_time_table_{{ $machine->id }}">
+                                                                            @foreach($times as $sIdx => $time)
+                                                                                @php
+                                                                                    $startTimeVal = $time->start_time ? \Carbon\Carbon::parse($time->start_time)->format('H:i') : (!$hasSavedTimes && $planItem && $planItem->start_time ? substr($planItem->start_time, 0, 5) : '');
+                                                                                    $endTimeVal = $time->end_time ? \Carbon\Carbon::parse($time->end_time)->format('H:i') : (!$hasSavedTimes && $planItem && $planItem->end_time ? substr($planItem->end_time, 0, 5) : '');
+                                                                                    
+                                                                                    $itemMins = $time->duration_minutes ?? 0;
+                                                                                    if (!$hasSavedTimes && $startTimeVal && $endTimeVal) {
+                                                                                        $fromCarbon = \Carbon\Carbon::parse($startTimeVal);
+                                                                                        $toCarbon = \Carbon\Carbon::parse($endTimeVal);
+                                                                                        if ($toCarbon < $fromCarbon) { $toCarbon->addDay(); }
+                                                                                        $itemMins = $fromCarbon->diffInMinutes($toCarbon);
+                                                                                    }
+                                                                                    $totalMins += $itemMins;
+                                                                                    $hours = floor($itemMins / 60);
+                                                                                    $mins = $itemMins % 60;
+                                                                                    $durText = $itemMins > 0 ? "{$hours}h {$mins}m" : '';
 
-                                                                    <!-- Add More Button -->
-                                                                    <div class="d-flex justify-content-between align-items-center mt-3 pt-3" style="border-top: 1px solid #dee2e6;">
-                                                                        @php $gHours = floor($totalMins / 60); $gMins = $totalMins % 60; @endphp
-                                                                        <div class="d-flex align-items-center" style="gap:10px;">
-                                                                            <span style="font-size:15px; font-weight:bold; color:#333;">Grand Total Time:</span>
-                                                                            <input type="text" class="grand-total-display form-control" value="{{ $gHours }}h {{ $gMins }}m" readonly style="width:120px; font-weight:bold; text-align:center; font-size:15px; height:42px;">
+                                                                                    $breakdowns = collect();
+                                                                                    if ($hasSavedTimes) {
+                                                                                        $breakdowns = $time->relationLoaded('breakdowns') ? $time->breakdowns : ($time->id ? $time->breakdowns : collect());
+                                                                                    } elseif ($planItem) {
+                                                                                        $breakdowns = $planItem->relationLoaded('breakdowns') ? $planItem->breakdowns : ($planItem->id ? $planItem->breakdowns : collect());
+                                                                                    }
+                                                                                @endphp
+                                                                                <div class="time-slot-block mb-3 p-3" data-slot-index="{{ $sIdx }}" style="border: 1px solid #dcdfe6; border-radius: 6px; background: #fafbfc;">
+                                                                                    <div class="row time-row align-items-end mb-2">
+                                                                                        <div class="col-md-3">
+                                                                                            <label style="font-size:13px; color:#444; font-weight:600; margin-bottom:4px;">Start Time</label>
+                                                                                            <input type="time" name="machine_start_time[{{ $machine->id }}][]" class="form-control start-time" value="{{ $startTimeVal }}" onchange="handleSlotTimeChange(this, {{ $machine->id }})" style="font-size:14px; height:38px;">
+                                                                                        </div>
+                                                                                        <div class="col-md-3">
+                                                                                            <label style="font-size:13px; color:#444; font-weight:600; margin-bottom:4px;">End Time</label>
+                                                                                            <input type="time" name="machine_end_time[{{ $machine->id }}][]" class="form-control end-time" value="{{ $endTimeVal }}" onchange="handleSlotTimeChange(this, {{ $machine->id }})" style="font-size:14px; height:38px;">
+                                                                                        </div>
+                                                                                        <div class="col-md-3">
+                                                                                            <label style="font-size:13px; color:#444; font-weight:600; margin-bottom:4px;">Duration</label>
+                                                                                            <input type="text" class="form-control duration-display" value="{{ $durText }}" readonly style="background:#f1f3f5; font-weight:bold; font-size:14px; text-align:center; height:38px;">
+                                                                                        </div>
+                                                                                        <div class="col-md-3 text-right">
+                                                                                            <button type="button" class="btn btn-sm btn-outline-danger remove-time-row" onclick="removeMachineTimeRow(this, {{ $machine->id }})" title="Remove Time Slot" style="height:38px; width:38px; padding:0; display:inline-flex; align-items:center; justify-content:center;"><i class="fa fa-trash"></i></button>
+                                                                                        </div>
+                                                                                    </div>
+
+                                                                                    <!-- Child Breakdowns Section -->
+                                                                                    <div class="slot-breakdowns-container mt-2 pt-2" style="border-top: 1px dashed #ced4da;">
+                                                                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                                                                            <span style="font-size:12px; font-weight:bold; color:#e06d53;"><i class="fa fa-wrench mr-1"></i> Inner Breakdowns (Within Time Slot)</span>
+                                                                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addSlotBreakdownRow({{ $machine->id }}, this)" style="font-size:11px; padding: 2px 10px;">
+                                                                                                <i class="fa fa-plus mr-1"></i> Add Breakdown
+                                                                                            </button>
+                                                                                        </div>
+                                                                                        <div class="slot-breakdown-list">
+                                                                                            @if($breakdowns && $breakdowns->isNotEmpty())
+                                                                                                @foreach($breakdowns as $bd)
+                                                                                                    <div class="row slot-breakdown-row align-items-center mb-2 px-2 py-1 mx-0" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 4px;">
+                                                                                                        <div class="col-md-3 px-1">
+                                                                                                            <label style="font-size:11px; color:#666; margin-bottom:2px;">From</label>
+                                                                                                            <input type="time" name="slot_breakdown_from[{{ $machine->id }}][{{ $sIdx }}][]" class="form-control form-control-sm slot-breakdown-from" value="{{ $bd->from ? substr($bd->from, 0, 5) : '' }}" onchange="validateAndCalculateBreakdown(this, {{ $machine->id }})">
+                                                                                                        </div>
+                                                                                                        <div class="col-md-3 px-1">
+                                                                                                            <label style="font-size:11px; color:#666; margin-bottom:2px;">To</label>
+                                                                                                            <input type="time" name="slot_breakdown_to[{{ $machine->id }}][{{ $sIdx }}][]" class="form-control form-control-sm slot-breakdown-to" value="{{ $bd->to ? substr($bd->to, 0, 5) : '' }}" onchange="validateAndCalculateBreakdown(this, {{ $machine->id }})">
+                                                                                                        </div>
+                                                                                                        <div class="col-md-2 px-1">
+                                                                                                            <label style="font-size:11px; color:#666; margin-bottom:2px;">Hours</label>
+                                                                                                            <input type="number" step="0.01" min="0" name="slot_breakdown_hours[{{ $machine->id }}][{{ $sIdx }}][]" class="form-control form-control-sm slot-breakdown-hours" value="{{ $bd->hours ? number_format($bd->hours, 2, '.', '') : '' }}" readonly style="background:#f8f9fa;">
+                                                                                                        </div>
+                                                                                                        <div class="col-md-3 px-1">
+                                                                                                            <label style="font-size:11px; color:#666; margin-bottom:2px;">Remarks</label>
+                                                                                                            <input type="text" name="slot_breakdown_remarks[{{ $machine->id }}][{{ $sIdx }}][]" class="form-control form-control-sm slot-breakdown-remarks" value="{{ $bd->remarks }}" placeholder="Remarks...">
+                                                                                                        </div>
+                                                                                                        <div class="col-md-1 px-1 text-center pt-3">
+                                                                                                            <button type="button" class="btn btn-sm btn-link text-danger p-0" onclick="removeSlotBreakdownRow(this, {{ $machine->id }})" title="Delete Breakdown"><i class="fa fa-trash"></i></button>
+                                                                                                        </div>
+                                                                                                    </div>
+                                                                                                @endforeach
+                                                                                            @endif
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            @endforeach
                                                                         </div>
-                                                                        <button type="button" class="btn btn-primary" onclick="addMachineTimeRow({{ $machine->id }})" style="height:42px; padding:0 20px;">
-                                                                            <i class="fa fa-plus mr-1"></i> Add Time Slot
-                                                                        </button>
+
+                                                                        <!-- Add More Button -->
+                                                                        <div class="d-flex justify-content-between align-items-center mt-3 pt-3" style="border-top: 1px solid #dee2e6;">
+                                                                            @php $gHours = floor($totalMins / 60); $gMins = $totalMins % 60; @endphp
+                                                                            <div class="d-flex align-items-center" style="gap:10px;">
+                                                                                <span style="font-size:15px; font-weight:bold; color:#333;">Grand Total Time:</span>
+                                                                                <input type="text" class="grand-total-display form-control" value="{{ $gHours }}h {{ $gMins }}m" readonly style="width:120px; font-weight:bold; text-align:center; font-size:15px; height:42px;">
+                                                                            </div>
+                                                                            <button type="button" class="btn btn-primary" onclick="addMachineTimeRow({{ $machine->id }})" style="height:42px; padding:0 20px;">
+                                                                                <i class="fa fa-plus mr-1"></i> Add Time Slot
+                                                                            </button>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
                                                             </div>
-                                                        </div>
-                                                    @endforeach
+                                                        @endforeach
                                                 </div>
                                                 @else
                                                     <div class="text-center py-4" style="color:#999; font-size:13px;">
@@ -772,6 +830,98 @@
                                                     </div>
                                                 @endif
                                             @endif
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row mt-3" id="overallPlantBreakdownSection">
+                                    <div class="col-md-12">
+                                        <div class="row header-heading-sepration w-100 mx-auto mb-2 align-items-center"
+                                            style="background-color: #93c3f2;">
+                                            <div class="col-md-12">
+                                                <h6 class="m-0">Overall Plant Breakdown</h6>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-12">
+                                                <div id="breakdownItemsTable" class="table-responsive">
+                                                    <table class="table table-sm table-bordered mb-0" style="font-size: 12px;">
+                                                        <thead style="background: #f4f6f9;">
+                                                            <tr>
+                                                                <th style="width: 28%">Breakdown Type</th>
+                                                                <th style="width: 14%">From</th>
+                                                                <th style="width: 14%">To</th>
+                                                                <th style="width: 10%">Hours</th>
+                                                                <th style="width: 26%">Remarks</th>
+                                                                <th style="width: 8%" class="text-center">Actions</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="breakdownItemsBody">
+                                                            @if(isset($plantBreakdown) && $plantBreakdown && $plantBreakdown->items && $plantBreakdown->items->count() > 0)
+                                                                @foreach($plantBreakdown->items as $item)
+                                                                    <tr>
+                                                                        <td>
+                                                                            <select name="breakdown_type_id[]" class="form-control form-control-sm" style="height: 30px;">
+                                                                                <option value="">Select Breakdown Type</option>
+                                                                                @if(isset($breakdownTypes))
+                                                                                    @foreach($breakdownTypes as $type)
+                                                                                        <option value="{{ $type->id }}" {{ $item->breakdown_type_id == $type->id ? 'selected' : '' }}>{{ $type->name }}</option>
+                                                                                    @endforeach
+                                                                                @endif
+                                                                            </select>
+                                                                        </td>
+                                                                        <td>
+                                                                            <input type="time" name="from[]" class="form-control form-control-sm from-time" value="{{ $item->from ? substr($item->from, 0, 5) : '' }}" style="height: 30px;">
+                                                                        </td>
+                                                                        <td>
+                                                                            <input type="time" name="to[]" class="form-control form-control-sm to-time" value="{{ $item->to ? substr($item->to, 0, 5) : '' }}" style="height: 30px;">
+                                                                        </td>
+                                                                        <td>
+                                                                            <input type="number" name="hours[]" class="form-control form-control-sm hours-input" step="0.01" min="0" value="{{ $item->hours ? number_format($item->hours, 2, '.', '') : '' }}" readonly style="height: 30px; background: #f8f9fa; text-align: center;">
+                                                                        </td>
+                                                                        <td>
+                                                                            <input type="text" name="breakdown_remarks[]" class="form-control form-control-sm" placeholder="Breakdown remarks..." value="{{ $item->remarks }}" style="height: 30px;">
+                                                                        </td>
+                                                                        <td class="text-center align-middle">
+                                                                            <button type="button" class="btn btn-sm btn-primary copythis_breakdown py-0 px-2" style="height: 26px;"><i class="fa fa-plus"></i></button>
+                                                                            <button type="button" class="btn btn-sm btn-danger removethis_breakdown py-0 px-2" style="height: 26px;"><i class="fa fa-trash"></i></button>
+                                                                        </td>
+                                                                    </tr>
+                                                                @endforeach
+                                                            @else
+                                                                <tr>
+                                                                    <td>
+                                                                        <select name="breakdown_type_id[]" class="form-control form-control-sm" style="height: 30px;">
+                                                                            <option value="">Select Breakdown Type</option>
+                                                                            @if(isset($breakdownTypes))
+                                                                                @foreach($breakdownTypes as $type)
+                                                                                    <option value="{{ $type->id }}">{{ $type->name }}</option>
+                                                                                @endforeach
+                                                                            @endif
+                                                                        </select>
+                                                                    </td>
+                                                                    <td>
+                                                                        <input type="time" name="from[]" class="form-control form-control-sm from-time" style="height: 30px;">
+                                                                    </td>
+                                                                    <td>
+                                                                        <input type="time" name="to[]" class="form-control form-control-sm to-time" style="height: 30px;">
+                                                                    </td>
+                                                                    <td>
+                                                                        <input type="number" name="hours[]" class="form-control form-control-sm hours-input" step="0.01" min="0" readonly style="height: 30px; background: #f8f9fa; text-align: center;">
+                                                                    </td>
+                                                                    <td>
+                                                                        <input type="text" name="breakdown_remarks[]" class="form-control form-control-sm" placeholder="Breakdown remarks..." style="height: 30px;">
+                                                                    </td>
+                                                                    <td class="text-center align-middle">
+                                                                        <button type="button" class="btn btn-sm btn-primary copythis_breakdown py-0 px-2" style="height: 26px;"><i class="fa fa-plus"></i></button>
+                                                                        <button type="button" class="btn btn-sm btn-danger removethis_breakdown py-0 px-2" style="height: 26px;"><i class="fa fa-trash"></i></button>
+                                                                    </td>
+                                                                </tr>
+                                                            @endif
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -970,6 +1120,10 @@
         const container = $('#productionMachinesContainer');
         const section = $('#productionMachinesSection');
 
+        if (plantId && date) {
+            loadPlantBreakdowns(date, plantId);
+        }
+
         if (!plantId || !date) {
             container.empty();
             section.hide();
@@ -991,30 +1145,75 @@
                     let html = `<div class="row">`;
                     $.each(response.machines, function (index, machine) {
                         const isEnabled = machine.is_enabled;
-                        const headerBg = isEnabled ? 'linear-gradient(135deg, #667eea, #764ba2)' : '#f5f5f5';
-                        const iconBg = isEnabled ? 'rgba(255,255,255,0.25)' : '#e0e0e0';
-                        const iconColor = isEnabled ? '#fff' : '#999';
-                        const nameColor = isEnabled ? '#fff' : '#444';
-                        const subColor = isEnabled ? 'rgba(255,255,255,0.75)' : '#999';
+                        const headerBg = isEnabled ? '#e8f3fc' : '#f5f5f5';
                         const statusLabel = isEnabled ? 'Active' : 'Inactive';
-                        const statusColor = isEnabled ? 'rgba(255,255,255,0.85)' : '#999';
-                        const cardBorder = isEnabled ? '#667eea' : '#e0e0e0';
+                        const statusColor = isEnabled ? '#007bff' : '#6c757d';
+                        const cardBorder = isEnabled ? '#93c3f2' : '#e0e0e0';
+
+                        let timeSlotsHtml = '';
+                        const slots = (machine.time_slots && machine.time_slots.length > 0) 
+                            ? machine.time_slots 
+                            : [{ start_time: machine.start_time || '', end_time: machine.end_time || '', breakdowns: [] }];
+
+                        $.each(slots, function(sIdx, slot) {
+                            const startTimeVal = slot.start_time || '';
+                            const endTimeVal = slot.end_time || '';
+                            let breakdownsHtml = '';
+                            if (slot.breakdowns && slot.breakdowns.length > 0) {
+                                $.each(slot.breakdowns, function(bIdx, bd) {
+                                    breakdownsHtml += renderSlotBreakdownRowHtml(machine.id, sIdx, bd);
+                                });
+                            }
+
+                            timeSlotsHtml += `
+                                <div class="time-slot-block mb-3 p-3" data-slot-index="${sIdx}" style="border: 1px solid #dcdfe6; border-radius: 6px; background: #fafbfc;">
+                                    <div class="row time-row align-items-end mb-2">
+                                        <div class="col-md-3">
+                                            <label style="font-size:13px; color:#444; font-weight:600; margin-bottom:4px;">Start Time</label>
+                                            <input type="time" name="machine_start_time[${machine.id}][]" class="form-control start-time" value="${startTimeVal}" onchange="handleSlotTimeChange(this, ${machine.id})" style="font-size:14px; height:38px;">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label style="font-size:13px; color:#444; font-weight:600; margin-bottom:4px;">End Time</label>
+                                            <input type="time" name="machine_end_time[${machine.id}][]" class="form-control end-time" value="${endTimeVal}" onchange="handleSlotTimeChange(this, ${machine.id})" style="font-size:14px; height:38px;">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label style="font-size:13px; color:#444; font-weight:600; margin-bottom:4px;">Duration</label>
+                                            <input type="text" class="form-control duration-display" readonly style="background:#f1f3f5; font-weight:bold; font-size:14px; text-align:center; height:38px;">
+                                        </div>
+                                        <div class="col-md-3 text-right">
+                                            <button type="button" class="btn btn-sm btn-outline-danger remove-time-row" onclick="removeMachineTimeRow(this, ${machine.id})" title="Remove Time Slot" style="height:38px; width:38px; padding:0; display:inline-flex; align-items:center; justify-content:center;"><i class="fa fa-trash"></i></button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Child Breakdowns Section -->
+                                    <div class="slot-breakdowns-container mt-2 pt-2" style="border-top: 1px dashed #ced4da;">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span style="font-size:12px; font-weight:bold; color:#e06d53;"><i class="fa fa-wrench mr-1"></i> Inner Breakdowns (Within Time Slot)</span>
+                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addSlotBreakdownRow(${machine.id}, this)" style="font-size:11px; padding: 2px 10px;">
+                                                <i class="fa fa-plus mr-1"></i> Add Breakdown
+                                            </button>
+                                        </div>
+                                        <div class="slot-breakdown-list">
+                                            ${breakdownsHtml}
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+
                         html += `
-                            <div class="col-md-6 mb-3">
-                                <div class="machine-card" id="machine_card_${machine.id}" style="border: 1px solid ${cardBorder}; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.07); transition: all 0.3s;">
-                                    <div class="machine-card-header d-flex align-items-center justify-content-between px-3 py-2" id="machine_card_header_${machine.id}" style="background: ${headerBg};">
+                            <div class="col-md-12 mb-3">
+                                <div class="machine-card" id="machine_card_${machine.id}" style="border: 1px solid ${cardBorder}; border-radius: 4px; overflow: hidden; transition: all 0.3s;">
+                                    <div class="machine-card-header d-flex align-items-center justify-content-between px-3 py-2" id="machine_card_header_${machine.id}" style="background: ${headerBg}; border-bottom: 1px solid ${cardBorder};">
                                         <div class="d-flex align-items-center">
-                                            <div class="machine-icon mr-2" style="width:32px; height:32px; border-radius:50%; background: ${iconBg}; display:flex; align-items:center; justify-content:center;">
-                                                <i class="fa fa-cog" style="color:${iconColor}; font-size:14px;"></i>
-                                            </div>
                                             <div>
-                                                <div style="font-weight:600; font-size:13px; color:${nameColor};">${machine.name}</div>
-                                                <div style="font-size:11px; color:${subColor};">Machine #${index + 1}</div>
+                                                <div style="font-weight:bold; font-size:14px; color: #333;">${machine.name}</div>
+                                                <div style="font-size:12px; color: #666;">Machine #${index + 1}</div>
                                             </div>
                                         </div>
                                         <div class="d-flex align-items-center">
                                             <label class="machine-toggle-label mb-0" for="machine_${machine.id}" style="cursor:pointer; display:flex; align-items:center; gap:6px;">
-                                                <span id="machine_status_${machine.id}" style="font-size:11px; font-weight:500; color:${statusColor};">${statusLabel}</span>
+                                                <span id="machine_status_${machine.id}" style="font-size:12px; font-weight:bold; color:${statusColor};">${statusLabel}</span>
                                                 <div class="custom-control custom-switch mb-0">
                                                     <input type="checkbox" class="custom-control-input machine-toggle" name="production_machine_id[]" value="${machine.id}" id="machine_${machine.id}" ${isEnabled ? 'checked' : ''} onchange="updateMachineCardStyle(this, ${machine.id})">
                                                     <label class="custom-control-label" for="machine_${machine.id}"></label>
@@ -1022,35 +1221,19 @@
                                             </label>
                                         </div>
                                     </div>
-                                    <div class="machine-card-body px-3 pt-2 pb-2" style="background:#fafbff;">
-                                        <div style="font-size:11px; font-weight:600; color:#667eea; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;"><i class="fa fa-clock-o mr-1"></i>Time Slots</div>
+                                    <div class="machine-card-body px-3 pt-2 pb-2" style="background:#fff;">
+                                        <div style="font-size:14px; font-weight:bold; color:#333; margin-bottom:12px;">Time Slots</div>
                                         <div id="machine_time_table_${machine.id}">
-                                            <div class="time-row d-flex align-items-center mb-2" style="gap:6px;">
-                                                <div style="flex:1;">
-                                                    <label style="font-size:10px; color:#888; margin-bottom:2px;">Start</label>
-                                                    <input type="time" name="machine_start_time[${machine.id}][]" class="form-control form-control-sm start-time" onchange="calculateMachineTime(${machine.id})" style="font-size:13px;">
-                                                </div>
-                                                <div style="flex:1;">
-                                                    <label style="font-size:10px; color:#888; margin-bottom:2px;">End</label>
-                                                    <input type="time" name="machine_end_time[${machine.id}][]" class="form-control form-control-sm end-time" onchange="calculateMachineTime(${machine.id})" style="font-size:13px;">
-                                                </div>
-                                                <div style="flex:1;">
-                                                    <label style="font-size:10px; color:#888; margin-bottom:2px;">Duration</label>
-                                                    <input type="text" class="form-control form-control-sm duration-display" readonly style="background:#f0f4ff; color:#667eea; font-weight:600; font-size:12px; text-align:center;">
-                                                </div>
-                                                <div style="padding-top:16px;">
-                                                    <button type="button" class="btn btn-sm remove-time-row" onclick="removeMachineTimeRow(this, ${machine.id})" style="background:#fff0f0; color:#e74c3c; border:1px solid #ffd0d0; border-radius:6px; padding:3px 8px;"><i class="fa fa-times"></i></button>
-                                                </div>
-                                            </div>
+                                            ${timeSlotsHtml}
                                         </div>
-                                        <div class="d-flex justify-content-between align-items-center mt-2 pt-2" style="border-top: 1px dashed #e0e7ff;">
-                                            <button type="button" class="btn btn-sm" onclick="addMachineTimeRow(${machine.id})" style="background: linear-gradient(135deg,#667eea,#764ba2); color:#fff; border:none; border-radius:20px; font-size:11px; padding:4px 12px; font-weight:500;">
-                                                <i class="fa fa-plus mr-1"></i>Add Slot
-                                            </button>
-                                            <div class="d-flex align-items-center" style="gap:6px;">
-                                                <span style="font-size:11px; color:#888;">Total:</span>
-                                                <input type="text" class="grand-total-display" readonly style="width:70px; background:linear-gradient(135deg,#667eea,#764ba2); color:#fff; border:none; border-radius:20px; font-size:12px; font-weight:700; text-align:center; padding:3px 8px;">
+                                        <div class="d-flex justify-content-between align-items-center mt-3 pt-3" style="border-top: 1px solid #dee2e6;">
+                                            <div class="d-flex align-items-center" style="gap:10px;">
+                                                <span style="font-size:15px; font-weight:bold; color:#333;">Grand Total Time:</span>
+                                                <input type="text" class="grand-total-display form-control" readonly style="width:120px; font-weight:bold; text-align:center; font-size:15px; height:42px;">
                                             </div>
+                                            <button type="button" class="btn btn-primary" onclick="addMachineTimeRow(${machine.id})" style="height:42px; padding:0 20px;">
+                                                <i class="fa fa-plus mr-1"></i> Add Time Slot
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -1059,6 +1242,11 @@
                     });
                     html += `</div>`;
                     container.append(html);
+
+                    $.each(response.machines, function (index, machine) {
+                        calculateMachineTime(machine.id);
+                        updateMachineCardStyle($(`#machine_${machine.id}`), machine.id);
+                    });
                 } else {
                     section.hide();
                 }
@@ -1884,38 +2072,249 @@
         });
     }
 
-    function addMachineTimeRow(machineId) {
-        const container = $(`#machine_time_table_${machineId}`);
-        const tr = `
-            <div class="row time-row align-items-end mb-3">
-                <div class="col-md-3">
-                    <label style="font-size:14px; color:#555; font-weight:500; margin-bottom:4px;">Start Time</label>
-                    <input type="time" name="machine_start_time[${machineId}][]" class="form-control start-time" onchange="calculateMachineTime(${machineId})" style="font-size:14px; height:42px;">
+    function renderSlotBreakdownRowHtml(machineId, slotIdx, bd) {
+        bd = bd || {};
+        var fromVal = bd.from || '';
+        var toVal = bd.to || '';
+        var hoursVal = bd.hours ? parseFloat(bd.hours).toFixed(2) : '';
+        var remarksVal = bd.remarks || '';
+
+        return `
+            <div class="row slot-breakdown-row align-items-center mb-2 px-2 py-1 mx-0" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 4px;">
+                <div class="col-md-3 px-1">
+                    <label style="font-size:11px; color:#666; margin-bottom:2px;">From</label>
+                    <input type="time" name="slot_breakdown_from[${machineId}][${slotIdx}][]" class="form-control form-control-sm slot-breakdown-from" value="${fromVal}" onchange="validateAndCalculateBreakdown(this, ${machineId})">
                 </div>
-                <div class="col-md-3">
-                    <label style="font-size:14px; color:#555; font-weight:500; margin-bottom:4px;">End Time</label>
-                    <input type="time" name="machine_end_time[${machineId}][]" class="form-control end-time" onchange="calculateMachineTime(${machineId})" style="font-size:14px; height:42px;">
+                <div class="col-md-3 px-1">
+                    <label style="font-size:11px; color:#666; margin-bottom:2px;">To</label>
+                    <input type="time" name="slot_breakdown_to[${machineId}][${slotIdx}][]" class="form-control form-control-sm slot-breakdown-to" value="${toVal}" onchange="validateAndCalculateBreakdown(this, ${machineId})">
                 </div>
-                <div class="col-md-3">
-                    <label style="font-size:14px; color:#555; font-weight:500; margin-bottom:4px;">Duration</label>
-                    <input type="text" class="form-control duration-display" readonly style="background:#f8f9fa; font-weight:bold; font-size:14px; text-align:center; height:42px;">
+                <div class="col-md-2 px-1">
+                    <label style="font-size:11px; color:#666; margin-bottom:2px;">Hours</label>
+                    <input type="number" step="0.01" min="0" name="slot_breakdown_hours[${machineId}][${slotIdx}][]" class="form-control form-control-sm slot-breakdown-hours" value="${hoursVal}" readonly style="background:#f8f9fa;">
                 </div>
-                <div class="col-md-3">
-                    <button type="button" class="btn btn-danger remove-time-row" onclick="removeMachineTimeRow(this, ${machineId})" style="height:42px; width:42px; display:flex; align-items:center; justify-content:center; margin: 0;"><i class="fa fa-trash"></i></button>
+                <div class="col-md-3 px-1">
+                    <label style="font-size:11px; color:#666; margin-bottom:2px;">Remarks</label>
+                    <input type="text" name="slot_breakdown_remarks[${machineId}][${slotIdx}][]" class="form-control form-control-sm slot-breakdown-remarks" value="${remarksVal}" placeholder="Remarks...">
+                </div>
+                <div class="col-md-1 px-1 text-center pt-3">
+                    <button type="button" class="btn btn-sm btn-link text-danger p-0" onclick="removeSlotBreakdownRow(this, ${machineId})" title="Delete Breakdown"><i class="fa fa-trash"></i></button>
                 </div>
             </div>
         `;
-        container.append(tr);
+    }
+
+    function addMachineTimeRow(machineId) {
+        const container = $(`#machine_time_table_${machineId}`);
+        const slotIdx = container.find('.time-slot-block').length;
+        const slotHtml = `
+            <div class="time-slot-block mb-3 p-3" data-slot-index="${slotIdx}" style="border: 1px solid #dcdfe6; border-radius: 6px; background: #fafbfc;">
+                <div class="row time-row align-items-end mb-2">
+                    <div class="col-md-3">
+                        <label style="font-size:13px; color:#444; font-weight:600; margin-bottom:4px;">Start Time</label>
+                        <input type="time" name="machine_start_time[${machineId}][]" class="form-control start-time" onchange="handleSlotTimeChange(this, ${machineId})" style="font-size:14px; height:38px;">
+                    </div>
+                    <div class="col-md-3">
+                        <label style="font-size:13px; color:#444; font-weight:600; margin-bottom:4px;">End Time</label>
+                        <input type="time" name="machine_end_time[${machineId}][]" class="form-control end-time" onchange="handleSlotTimeChange(this, ${machineId})" style="font-size:14px; height:38px;">
+                    </div>
+                    <div class="col-md-3">
+                        <label style="font-size:13px; color:#444; font-weight:600; margin-bottom:4px;">Duration</label>
+                        <input type="text" class="form-control duration-display" readonly style="background:#f1f3f5; font-weight:bold; font-size:14px; text-align:center; height:38px;">
+                    </div>
+                    <div class="col-md-3 text-right">
+                        <button type="button" class="btn btn-sm btn-outline-danger remove-time-row" onclick="removeMachineTimeRow(this, ${machineId})" title="Remove Time Slot" style="height:38px; width:38px; padding:0; display:inline-flex; align-items:center; justify-content:center;"><i class="fa fa-trash"></i></button>
+                    </div>
+                </div>
+
+                <!-- Child Breakdowns Section -->
+                <div class="slot-breakdowns-container mt-2 pt-2" style="border-top: 1px dashed #ced4da;">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span style="font-size:12px; font-weight:bold; color:#e06d53;"><i class="fa fa-wrench mr-1"></i> Inner Breakdowns (Within Time Slot)</span>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addSlotBreakdownRow(${machineId}, this)" style="font-size:11px; padding: 2px 10px;">
+                            <i class="fa fa-plus mr-1"></i> Add Breakdown
+                        </button>
+                    </div>
+                    <div class="slot-breakdown-list">
+                    </div>
+                </div>
+            </div>
+        `;
+        container.append(slotHtml);
+        reindexMachineTimeSlots(machineId);
+        calculateMachineTime(machineId);
     }
 
     function removeMachineTimeRow(btn, machineId) {
-        $(btn).closest('.time-row').remove();
+        $(btn).closest('.time-slot-block').remove();
+        reindexMachineTimeSlots(machineId);
         calculateMachineTime(machineId);
+    }
+
+    function reindexMachineTimeSlots(machineId) {
+        $(`#machine_time_table_${machineId} .time-slot-block`).each(function(slotIdx) {
+            $(this).attr('data-slot-index', slotIdx);
+            $(this).find('.slot-breakdown-from').attr('name', `slot_breakdown_from[${machineId}][${slotIdx}][]`);
+            $(this).find('.slot-breakdown-to').attr('name', `slot_breakdown_to[${machineId}][${slotIdx}][]`);
+            $(this).find('.slot-breakdown-hours').attr('name', `slot_breakdown_hours[${machineId}][${slotIdx}][]`);
+            $(this).find('.slot-breakdown-remarks').attr('name', `slot_breakdown_remarks[${machineId}][${slotIdx}][]`);
+        });
+    }
+
+    function addSlotBreakdownRow(machineId, btn) {
+        const $slotBlock = $(btn).closest('.time-slot-block');
+        const slotIdx = $slotBlock.data('slot-index') !== undefined ? $slotBlock.data('slot-index') : $slotBlock.index();
+        const rowHtml = renderSlotBreakdownRowHtml(machineId, slotIdx, {});
+        $slotBlock.find('.slot-breakdown-list').append(rowHtml);
+    }
+
+    function removeSlotBreakdownRow(btn, machineId) {
+        const $slotBlock = $(btn).closest('.time-slot-block');
+        $(btn).closest('.slot-breakdown-row').remove();
+        validateAllSlotBreakdowns($slotBlock, machineId);
+    }
+
+    function handleSlotTimeChange(input, machineId) {
+        calculateMachineTime(machineId);
+        const $slotBlock = $(input).closest('.time-slot-block');
+        validateAllSlotBreakdowns($slotBlock, machineId);
+    }
+
+    function validateAndCalculateBreakdown(input, machineId) {
+        const $slotBlock = $(input).closest('.time-slot-block');
+        validateAllSlotBreakdowns($slotBlock, machineId, $(input));
+    }
+
+    function timeToMinutes(timeStr) {
+        if (!timeStr) return null;
+        var parts = timeStr.split(':');
+        return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+    }
+
+    function validateAllSlotBreakdowns($slotBlock = null, machineId = null, $changedInput = null) {
+        if (!$slotBlock || $slotBlock.length === 0) {
+            let allValid = true;
+            $('.time-slot-block').each(function() {
+                const $card = $(this).closest('.machine-card');
+                if ($card.length && !$card.find('.machine-toggle').is(':checked')) {
+                    return; // Skip inactive machines
+                }
+                if (!validateAllSlotBreakdowns($(this), null, null)) {
+                    allValid = false;
+                }
+            });
+            return allValid;
+        }
+
+        const parentStart = $slotBlock.find('.start-time').val();
+        const parentEnd = $slotBlock.find('.end-time').val();
+
+        let pStartMin = timeToMinutes(parentStart);
+        let pEndMin = timeToMinutes(parentEnd);
+
+        if (pStartMin !== null && pEndMin !== null) {
+            if (pEndMin < pStartMin) {
+                pEndMin += 1440;
+            }
+        }
+
+        let rows = [];
+        let hasError = false;
+
+        $slotBlock.find('.slot-breakdown-row').each(function(index) {
+            const $row = $(this);
+            const $from = $row.find('.slot-breakdown-from');
+            const $to = $row.find('.slot-breakdown-to');
+            const $hours = $row.find('.slot-breakdown-hours');
+
+            $from.removeClass('is-invalid');
+            $to.removeClass('is-invalid');
+
+            const fromVal = $from.val();
+            const toVal = $to.val();
+
+            if (fromVal && toVal) {
+                let fromMin = timeToMinutes(fromVal);
+                let toMin = timeToMinutes(toVal);
+
+                if (pStartMin !== null && pEndMin !== null && pEndMin > 1440) {
+                    if (fromMin < (pStartMin % 1440) && fromMin < 720) {
+                        fromMin += 1440;
+                    }
+                    if (toMin < (pStartMin % 1440) && toMin < 720) {
+                        toMin += 1440;
+                    }
+                }
+
+                if (toMin <= fromMin) {
+                    $to.addClass('is-invalid');
+                    toastr.error(`Breakdown End Time (${toVal}) must be after Start Time (${fromVal})`);
+                    if ($changedInput && $changedInput.is($to)) {
+                        $to.val('');
+                    }
+                    $hours.val('');
+                    hasError = true;
+                    return;
+                }
+
+                if (pStartMin !== null && pEndMin !== null) {
+                    if (fromMin < pStartMin || toMin > pEndMin) {
+                        $from.addClass('is-invalid');
+                        $to.addClass('is-invalid');
+                        toastr.warning(`Breakdown time (${fromVal} - ${toVal}) must be within the slot time (${parentStart} - ${parentEnd})`);
+                        if ($changedInput && ($changedInput.is($from) || $changedInput.is($to))) {
+                            $changedInput.val('');
+                            $hours.val('');
+                        }
+                        hasError = true;
+                        return;
+                    }
+                }
+
+                const diffMins = toMin - fromMin;
+                $hours.val((diffMins / 60).toFixed(2));
+
+                rows.push({
+                    index: index,
+                    fromMin: fromMin,
+                    toMin: toMin,
+                    fromVal: fromVal,
+                    toVal: toVal,
+                    $from: $from,
+                    $to: $to
+                });
+            } else {
+                $hours.val('');
+            }
+        });
+
+        if (hasError) return false;
+
+        for (let i = 0; i < rows.length; i++) {
+            for (let j = i + 1; j < rows.length; j++) {
+                let r1 = rows[i];
+                let r2 = rows[j];
+                if (Math.max(r1.fromMin, r2.fromMin) < Math.min(r1.toMin, r2.toMin)) {
+                    r1.$from.addClass('is-invalid');
+                    r1.$to.addClass('is-invalid');
+                    r2.$from.addClass('is-invalid');
+                    r2.$to.addClass('is-invalid');
+                    toastr.error(`Breakdown (${r2.fromVal} - ${r2.toVal}) overlaps with (${r1.fromVal} - ${r1.toVal})`);
+                    if ($changedInput) {
+                        $changedInput.val('');
+                        $changedInput.addClass('is-invalid');
+                    }
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
     function calculateMachineTime(machineId) {
         let totalMinutes = 0;
-        $(`#machine_time_table_${machineId} .time-row`).each(function() {
+        $(`#machine_time_table_${machineId} .time-slot-block`).each(function() {
             const startTime = $(this).find('.start-time').val();
             const endTime = $(this).find('.end-time').val();
             let durationInput = $(this).find('.duration-display');
@@ -1948,23 +2347,325 @@
         const card = $(`#machine_card_${machineId}`);
         const header = $(`#machine_card_header_${machineId}`);
         const statusLabel = $(`#machine_status_${machineId}`);
+        const cardBody = card.find('.machine-card-body');
+        const addSlotBtn = card.find('button[onclick*="addMachineTimeRow"]');
+
         if (isChecked) {
-            card.css('border-color', '#93c3f2');
-            header.css('background', '#e8f3fc');
-            header.css('border-bottom', '1px solid #93c3f2');
+            card.css({
+                'border-color': '#93c3f2',
+                'opacity': '1'
+            });
+            header.css({
+                'background': '#e8f3fc',
+                'border-bottom': '1px solid #93c3f2'
+            });
             statusLabel.text('Active').css('color', '#007bff');
+
+            // Enable Add Slot button
+            addSlotBtn.prop('disabled', false).css({
+                'opacity': '1',
+                'pointer-events': 'auto',
+                'cursor': 'pointer'
+            });
+
+            // Enable inputs & buttons inside machine card body
+            cardBody.css({
+                'opacity': '1',
+                'pointer-events': 'auto'
+            });
+            cardBody.find('input:not([type="hidden"])').prop('disabled', false);
+            cardBody.find('input:not(.duration-display):not(.slot-breakdown-hours):not([type="hidden"])').prop('readonly', false).css({
+                'background': '#fff',
+                'cursor': 'text'
+            });
+            cardBody.find('button').prop('disabled', false).css({
+                'opacity': '1',
+                'pointer-events': 'auto',
+                'cursor': 'pointer'
+            });
         } else {
-            card.css('border-color', '#e0e0e0');
-            header.css('background', '#f5f5f5');
-            header.css('border-bottom', '1px solid #e0e0e0');
+            card.css({
+                'border-color': '#e2e8f0',
+                'opacity': '0.75'
+            });
+            header.css({
+                'background': '#f8f9fa',
+                'border-bottom': '1px solid #e2e8f0'
+            });
             statusLabel.text('Inactive').css('color', '#6c757d');
+
+            // Disable Add Slot button
+            addSlotBtn.prop('disabled', true).css({
+                'opacity': '0.5',
+                'pointer-events': 'none',
+                'cursor': 'not-allowed'
+            });
+
+            // Make columns disabled & readonly & buttons disabled inside machine card body
+            cardBody.css({
+                'opacity': '0.6',
+                'pointer-events': 'none'
+            });
+            cardBody.find('input:not([type="hidden"])').prop('disabled', true).prop('readonly', true).css({
+                'background': '#f1f5f9',
+                'cursor': 'not-allowed'
+            });
+            cardBody.find('button').prop('disabled', true).css({
+                'opacity': '0.5',
+                'pointer-events': 'none',
+                'cursor': 'not-allowed'
+            });
         }
     }
+
+    function loadPlantBreakdowns(date, plantId) {
+        if (!date || !plantId) return;
+
+        $.ajax({
+            url: '{{ route("getBreakdownsByPlantAndDate") }}',
+            type: 'GET',
+            data: { date: date, plant_id: plantId },
+            success: function (response) {
+                if (response.items && response.items.length > 0) {
+                    var html = '';
+                    $.each(response.items, function (index, item) {
+                        var fromVal = item.from ? item.from.substring(0, 5) : '';
+                        var toVal = item.to ? item.to.substring(0, 5) : '';
+                        var hoursVal = item.hours || '';
+                        var remarksVal = item.remarks || '';
+
+                        var optionsHtml = '<option value="">Select Breakdown Type</option>';
+                        @if(isset($breakdownTypes))
+                            @foreach($breakdownTypes as $type)
+                                var selected = (item.breakdown_type_id == '{{ $type->id }}') ? 'selected' : '';
+                                optionsHtml += `<option value="{{ $type->id }}" ${selected}>{{ $type->name }}</option>`;
+                            @endforeach
+                        @endif
+
+                        html += `
+                            <tr>
+                                <td>
+                                    <select name="breakdown_type_id[]" class="form-control form-control-sm" style="height: 30px;">
+                                        ${optionsHtml}
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="time" name="from[]" class="form-control form-control-sm from-time" value="${fromVal}" style="height: 30px;">
+                                </td>
+                                <td>
+                                    <input type="time" name="to[]" class="form-control form-control-sm to-time" value="${toVal}" style="height: 30px;">
+                                </td>
+                                <td>
+                                    <input type="number" name="hours[]" class="form-control form-control-sm hours-input" step="0.01" min="0" value="${hoursVal}" readonly style="height: 30px; background: #f8f9fa; text-align: center;">
+                                </td>
+                                <td>
+                                    <input type="text" name="breakdown_remarks[]" class="form-control form-control-sm" placeholder="Breakdown remarks..." value="${remarksVal}" style="height: 30px;">
+                                </td>
+                                <td class="text-center align-middle">
+                                    <button type="button" class="btn btn-sm btn-primary copythis_breakdown py-0 px-2" style="height: 26px;"><i class="fa fa-plus"></i></button>
+                                    <button type="button" class="btn btn-sm btn-danger removethis_breakdown py-0 px-2" style="height: 26px;"><i class="fa fa-trash"></i></button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    $('#breakdownItemsBody').html(html);
+                    calculateBreakdownHours();
+                } else {
+                    var optionsHtml = '<option value="">Select Breakdown Type</option>';
+                    @if(isset($breakdownTypes))
+                        @foreach($breakdownTypes as $type)
+                            optionsHtml += `<option value="{{ $type->id }}">{{ $type->name }}</option>`;
+                        @endforeach
+                    @endif
+
+                    var emptyRowHtml = `
+                        <tr>
+                            <td>
+                                <select name="breakdown_type_id[]" class="form-control form-control-sm" style="height: 30px;">
+                                    ${optionsHtml}
+                                </select>
+                            </td>
+                            <td>
+                                <input type="time" name="from[]" class="form-control form-control-sm from-time" style="height: 30px;">
+                            </td>
+                            <td>
+                                <input type="time" name="to[]" class="form-control form-control-sm to-time" style="height: 30px;">
+                            </td>
+                            <td>
+                                <input type="number" name="hours[]" class="form-control form-control-sm hours-input" step="0.01" min="0" readonly style="height: 30px; background: #f8f9fa; text-align: center;">
+                            </td>
+                            <td>
+                                <input type="text" name="breakdown_remarks[]" class="form-control form-control-sm" placeholder="Breakdown remarks..." style="height: 30px;">
+                            </td>
+                            <td class="text-center align-middle">
+                                <button type="button" class="btn btn-sm btn-primary copythis_breakdown py-0 px-2" style="height: 26px;"><i class="fa fa-plus"></i></button>
+                                <button type="button" class="btn btn-sm btn-danger removethis_breakdown py-0 px-2" style="height: 26px;"><i class="fa fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                    $('#breakdownItemsBody').html(emptyRowHtml);
+                    calculateBreakdownHours();
+                }
+            },
+            error: function (xhr) {
+                console.error('Error loading breakdowns:', xhr);
+            }
+        });
+    }
+
+    function timeToMinutesBreakdown(timeStr) {
+        if (!timeStr) return null;
+        var parts = timeStr.split(':');
+        return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+    }
+
+    function validateBreakdownTimes($changedInput) {
+        var hasError = false;
+        var rows = [];
+
+        $('#breakdownItemsBody tr').each(function (index) {
+            var $row = $(this);
+            var $fromInput = $row.find('.from-time');
+            var $toInput = $row.find('.to-time');
+            var fromVal = $fromInput.val();
+            var toVal = $toInput.val();
+
+            $fromInput.removeClass('is-invalid');
+            $toInput.removeClass('is-invalid');
+
+            if (fromVal && toVal) {
+                var fromMin = timeToMinutesBreakdown(fromVal);
+                var toMin = timeToMinutesBreakdown(toVal);
+
+                if (fromMin >= toMin) {
+                    $toInput.addClass('is-invalid');
+                    toastr.error('End time (' + toVal + ') must be after start time (' + fromVal + ') in row ' + (index + 1));
+                    if ($changedInput && $changedInput.is($toInput)) {
+                        $toInput.val('');
+                    }
+                    hasError = true;
+                    return false;
+                }
+
+                rows.push({
+                    index: index,
+                    fromMin: fromMin,
+                    toMin: toMin,
+                    fromVal: fromVal,
+                    toVal: toVal,
+                    $fromInput: $fromInput,
+                    $toInput: $toInput
+                });
+            }
+        });
+
+        if (hasError) {
+            calculateBreakdownHours();
+            return false;
+        }
+
+        // Check for overlaps among rows
+        for (var i = 0; i < rows.length; i++) {
+            for (var j = i + 1; j < rows.length; j++) {
+                var r1 = rows[i];
+                var r2 = rows[j];
+
+                if (Math.max(r1.fromMin, r2.fromMin) < Math.min(r1.toMin, r2.toMin)) {
+                    r1.$fromInput.addClass('is-invalid');
+                    r1.$toInput.addClass('is-invalid');
+                    r2.$fromInput.addClass('is-invalid');
+                    r2.$toInput.addClass('is-invalid');
+
+                    toastr.error('Time interval (' + r2.fromVal + ' - ' + r2.toVal + ') in row ' + (r2.index + 1) + ' overlaps with (' + r1.fromVal + ' - ' + r1.toVal + ') in row ' + (r1.index + 1));
+
+                    if ($changedInput) {
+                        $changedInput.val('');
+                        $changedInput.addClass('is-invalid');
+                    }
+                    calculateBreakdownHours();
+                    return false;
+                }
+            }
+        }
+
+        calculateBreakdownHours();
+        return true;
+    }
+
+    function calculateBreakdownHours() {
+        $('#breakdownItemsBody tr').each(function () {
+            var $row = $(this);
+            var fromTime = $row.find('.from-time').val();
+            var toTime = $row.find('.to-time').val();
+            var $hoursInput = $row.find('.hours-input');
+
+            if (fromTime && toTime) {
+                var fromMin = timeToMinutesBreakdown(fromTime);
+                var toMin = timeToMinutesBreakdown(toTime);
+
+                if (toMin > fromMin) {
+                    var diffMinutes = toMin - fromMin;
+                    var diffHours = diffMinutes / 60;
+                    $hoursInput.val(diffHours.toFixed(2));
+                } else {
+                    $hoursInput.val('');
+                }
+            } else {
+                $hoursInput.val('');
+            }
+        });
+    }
+
+    $(document).on('change', '#breakdownItemsBody .from-time, #breakdownItemsBody .to-time', function () {
+        validateBreakdownTimes($(this));
+    });
+
+    $(document).on('click', '.copythis_breakdown', function (e) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        var $row = $(this).closest('tr');
+        var clone = $row.clone();
+        clone.find('select').val('');
+        clone.find('input').val('');
+        clone.find('.from-time, .to-time').removeClass('is-invalid');
+        $row.after(clone);
+        calculateBreakdownHours();
+    });
+
+    $(document).on('click', '.removethis_breakdown', function (e) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        if ($('#breakdownItemsBody tr').length > 1) {
+            $(this).closest('tr').remove();
+            validateBreakdownTimes();
+        } else {
+            var $row = $(this).closest('tr');
+            $row.find('select').val('');
+            $row.find('input').val('');
+            $row.find('.from-time, .to-time').removeClass('is-invalid');
+            calculateBreakdownHours();
+        }
+    });
 
     $(document).ready(function() {
         $('input[name="prod_date"]').on('change', function() {
             loadMachinesByPlant();
         });
+
+        $(document).off('submit.pv_breakdown', '#ajaxSubmit').on('submit.pv_breakdown', '#ajaxSubmit', function(e) {
+            if (!validateBreakdownTimes() || !validateAllSlotBreakdowns()) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                return false;
+            }
+        });
+
+        $('.machine-toggle').each(function() {
+            var machineId = $(this).val();
+            updateMachineCardStyle(this, machineId);
+        });
+
+        calculateBreakdownHours();
     });
 </script>
 @endsection

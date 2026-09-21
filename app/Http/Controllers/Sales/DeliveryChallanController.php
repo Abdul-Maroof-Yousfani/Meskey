@@ -227,6 +227,7 @@ class DeliveryChallanController extends Controller
                 "dispatch_date" => $request->date,
                 "dc_no" => $request->dc_no,
                 "sauda_type" => $request->sauda_type,
+                "is_bardana" => $request->has('is_bardana') ? 1 : 0,
                 "labour_status" => $request->labour_status ?? 'paid',
                 "company_id" => $request->company_id,
                 "labour" => $request->labour,
@@ -287,12 +288,26 @@ class DeliveryChallanController extends Controller
                     }
                 }
 
+                $isBardana = $request->has('is_bardana') && $request->is_bardana;
+                $bagWeight = 0;
+                $totalBagWeight = 0;
+                $billedQty = $request->qty[$index];
+
+                if ($isBardana) {
+                    $bagWeight = isset($request->bag_weight[$index]) ? floatval($request->bag_weight[$index]) : 0;
+                    $totalBagWeight = $bags * $bagWeight;
+                    $billedQty = max(0, floatval($request->qty[$index]) - $totalBagWeight);
+                }
+
                 $dcData = $delivery_challan->delivery_challan_data()->create([
                     "item_id" => $request->item_id[$index],
                     "qty" => $request->qty[$index],
                     "rate" => $request->rate[$index],
                     "brand_id" => $request->brand_id[$index],
                     "no_of_bags" => $bags,
+                    "bag_weight" => $bagWeight,
+                    "total_bag_weight" => $totalBagWeight,
+                    "billed_qty" => $billedQty,
                     "bag_size" => $request->bag_size[$index],
                     "description" => $request->desc[$index] ?? "",
                     "truck_no" => $request->truck_no[$index],
@@ -493,6 +508,7 @@ class DeliveryChallanController extends Controller
                 "dispatch_date" => $request->date,
                 "dc_no" => $request->dc_no,
                 "sauda_type" => $request->sauda_type,
+                "is_bardana" => $request->has('is_bardana') ? 1 : 0,
                 "labour_status" => $request->labour_status ?? $delivery_challan->labour_status,
                 "company_id" => $request->company_id,
                 "labour" => $request->labour,
@@ -548,12 +564,26 @@ class DeliveryChallanController extends Controller
                     }
                 }
 
+                $isBardana = $request->has('is_bardana') && $request->is_bardana;
+                $bagWeight = 0;
+                $totalBagWeight = 0;
+                $billedQty = $request->qty[$index];
+
+                if ($isBardana) {
+                    $bagWeight = isset($request->bag_weight[$index]) ? floatval($request->bag_weight[$index]) : 0;
+                    $totalBagWeight = $bags * $bagWeight;
+                    $billedQty = max(0, floatval($request->qty[$index]) - $totalBagWeight);
+                }
+
                 $dcData = $delivery_challan->delivery_challan_data()->create([
                     "item_id" => $request->item_id[$index],
                     "qty" => $request->qty[$index],
                     "rate" => $request->rate[$index],
                     "brand_id" => $request->brand_id[$index],
                     "no_of_bags" => $bags,
+                    "bag_weight" => $bagWeight,
+                    "total_bag_weight" => $totalBagWeight,
+                    "billed_qty" => $billedQty,
                     "bag_size" => $request->bag_size[$index],
                     "description" => $request->desc[$index] ?? "",
                     "truck_no" => $request->truck_no[$index],
@@ -768,6 +798,7 @@ class DeliveryChallanController extends Controller
                 'customer' => $delivery_challan->customer,
                 'rowspan' => count($itemRows),
                 'items' => $itemRows,
+                'is_bardana' => (bool)$delivery_challan->is_bardana,
              ];
         }
 
@@ -1183,7 +1214,11 @@ class DeliveryChallanController extends Controller
                 'sub_arrival_location_ids' => $subArrivalLocationIds,
             ],
             'loading_slip_labour' => $loadingSlipLabour,
-            'is_labour_editable' => (strtolower($deliveryOrder->sauda_type ?? '') == 'x-mill' || strtolower($deliveryOrder->sauda_type ?? '') == 'xmill'),
+            'is_bardana' => (bool) (
+                (!empty($ticket->loadingProgram?->saleOrder?->is_bardana))
+                || (!empty($deliveryOrder?->salesOrder?->is_bardana))
+                || (!empty($ticket->loadingProgram?->deliveryOrder?->salesOrder?->is_bardana))
+            ),
             'transporter' => [
                 'id' => $ticket->transporter_id,
                 'name' => $ticket->transporter->name ?? 'N/A',

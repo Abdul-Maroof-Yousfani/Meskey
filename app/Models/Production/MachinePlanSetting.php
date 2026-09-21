@@ -45,13 +45,13 @@ class MachinePlanSetting extends Model
 
     public function items()
     {
-        return $this->hasMany(MachinePlanSettingItem::class);
+        return $this->hasMany(ProductionVoucherMachineTime::class, 'machine_plan_setting_id');
     }
 
     public function machines()
     {
-        return $this->belongsToMany(ProductionMachine::class, 'machine_plan_setting_items')
-            ->withPivot('hours', 'is_enabled', 'remarks')
+        return $this->belongsToMany(ProductionMachine::class, 'production_voucher_machine_times', 'machine_plan_setting_id', 'production_machine_id')
+            ->withPivot('start_time', 'end_time', 'duration_minutes', 'hours', 'is_enabled', 'remarks')
             ->withTimestamps();
     }
 }

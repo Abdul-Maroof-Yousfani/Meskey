@@ -25,13 +25,22 @@
         font-size: 13px;
     }
 
+    .packing-select+.select2-container {
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+    }
+
     .packing-select+.select2-container .select2-selection--multiple {
-        min-width: 130px !important;
-        width: 130px !important;
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
     }
 
     #salesInquiryTable td {
-        padding: 5px 10px !important;
+        padding: 6px 12px !important;
+        vertical-align: middle;
     }
 </style>
 
@@ -119,6 +128,17 @@
                         </select>
                         <input type="hidden" name="sauda_type" id="sauda_type_hidden"
                             value="{{ $delivery_challan->sauda_type }}">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group mt-2">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="is_bardana" name="is_bardana" value="1" @checked($delivery_challan->is_bardana) onchange="toggleBardanaMode()">
+                            <label class="custom-control-label font-weight-bold" for="is_bardana">
+                                Bardana (Bag Weight Deduction)
+                            </label>
+                        </div>
+                        <small class="text-muted">When enabled, allows editing No. of Bags and entering Bag Weight to deduct bag weight from customer receivable.</small>
                     </div>
                 </div>
                 <div class="col-md-6 d-none">
@@ -326,8 +346,9 @@
                             <th>DO No</th>
                             <th>Item</th>
                             <th>Bag Type</th>
-                            <th style="min-width: 130px; width: 130px;">Packing</th>
-                            <th>No of Bags</th>
+                            <th style="min-width: 160px; width: 160px;">Packing</th>
+                            <th style="min-width: 130px; width: 130px;">No of Bags</th>
+                            <th class="bardana-col" style="{{ !empty($delivery_challan->is_bardana) ? '' : 'display: none;' }} min-width: 120px;">Bag Wt (kg)</th>
                             <th>Quantity (kg)</th>
                             <!-- <th>Rate (Kg)</th>
                             <th>Rate (Mond)</th>
@@ -344,8 +365,14 @@
                         @foreach ($delivery_challan->delivery_challan_data as $index => $data)
                             @php
                                 $index = "TICKET-" . $data->ticket_id;
+                                $swbWeight = $data->qty + 0;
+                                $isBardanaActive = !empty($delivery_challan->is_bardana);
+                                $rowBags = $data->loadingProgramItem->loadingSlip->no_of_bags ?? $data->no_of_bags;
+                                $bagWeight = $data->bag_weight ?? 0;
+                                $totalBagWeight = $data->total_bag_weight ?? 0;
+                                $billedQty = $data->billed_qty ?? $swbWeight;
                             @endphp
-                            <tr id="row_{{ $index }}">
+                            <tr id="row_{{ $index }}" data-swb-weight="{{ $swbWeight }}">
                                 <td>
                                     <input type="text" class="form-control" value="{{ $data->deliveryOrderData?->delivery_order?->reference_no }}" readonly>
                                 </td>
@@ -369,7 +396,7 @@
                                     <input type="hidden" name="so_data_id[]" id="so_data_id_{{ $index }}"
                                         value="{{ $data->id }}">
                                 </td>
-                                <td>
+                                <td style="min-width: 160px; width: 160px;">
                                     <input type="hidden" name="bag_size[]" id="bag_size_{{ $index }}"
                                         value="{{ $data->bag_size }}" class="form-control bag_size">
                                     <select class="form-select select2 packing-select" multiple disabled>
@@ -383,14 +410,27 @@
                                         @endforeach
                                     </select>
                                 </td>
-                                <td>
-                                    <input type="text" name="no_of_bags[]" id="no_of_bags_{{ $index }}"
-                                        value="{{ $data->loadingProgramItem->loadingSlip->no_of_bags ?? $data->no_of_bags }}"
-                                        class="form-control no_of_bags" readonly>
+                                <td style="min-width: 130px; width: 130px;">
+                                    <input type="number" name="no_of_bags[]" id="no_of_bags_{{ $index }}"
+                                        value="{{ $rowBags }}"
+                                        class="form-control no_of_bags {{ $isBardanaActive ? 'border-primary bg-white' : '' }}"
+                                        step="1" min="0" oninput="calculateRowBardana('{{ $index }}')" {{ $isBardanaActive ? '' : 'readonly' }}>
+                                </td>
+                                <td class="bardana-col" style="{{ $isBardanaActive ? '' : 'display: none;' }}">
+                                    <input type="number" name="bag_weight[]" id="bag_weight_{{ $index }}"
+                                        value="{{ $bagWeight }}"
+                                        class="form-control bag_weight" step="0.0001" min="0" oninput="calculateRowBardana('{{ $index }}')" placeholder="0.0000">
+                                    <input type="hidden" name="total_bag_weight[]" id="total_bag_weight_{{ $index }}" value="{{ $totalBagWeight }}">
+                                    <input type="hidden" name="billed_qty[]" id="billed_qty_{{ $index }}" value="{{ $billedQty }}">
                                 </td>
                                 <td>
-                                    <input type="text" name="qty[]" id="qty_{{ $index }}" value="{{ round($data->qty) }}"
+                                    <input type="text" name="qty[]" id="qty_{{ $index }}" value="{{ $swbWeight }}"
                                         class="form-control qty" oninput="calc(this)" readonly>
+                                    <small id="bardana_calc_text_{{ $index }}" class="form-text font-weight-bold text-success mt-1 {{ ($isBardanaActive && $totalBagWeight > 0) ? '' : 'd-none' }}" style="font-size: 11px;">
+                                        @if($isBardanaActive && $totalBagWeight > 0)
+                                            SWB: {{ $swbWeight }} kg | Bags: {{ $totalBagWeight }} kg | Net Billed: {{ $billedQty }} kg
+                                        @endif
+                                    </small>
                                 </td>
                                 <td class="d-none">
                                     <input type="text" name="rate[]" id="rate_{{ $index }}" value="{{ $data->rate }}"
@@ -403,7 +443,7 @@
                                 </td>
                                 <td class="d-none">
                                     <input type="text" name="amount[]" id="amount_{{ $index }}"
-                                        value="{{ round($data->rate * ($data->qty ?? 0)) }}" class="form-control amount"
+                                        value="{{ $data->rate * ($data->qty ?? 0) }}" class="form-control amount"
                                         readonly>
                                 </td>
                                 <td>
@@ -659,6 +699,14 @@
                     // Set Labour Rate
                     $("#standard_labour_rate").val(response.rate || 'N/A');
 
+                    // Set Bardana Checkbox from Ticket SO
+                    if (response.is_bardana) {
+                        $("#is_bardana").prop("checked", true);
+                    } else {
+                        $("#is_bardana").prop("checked", false);
+                    }
+                    toggleBardanaMode();
+
                     // Set Sauda Type
                     $("#sauda_type").val(response.delivery_order.sauda_type).trigger('change');
                     $("#sauda_type_hidden").val(response.delivery_order.sauda_type);
@@ -775,6 +823,7 @@
             success: function (res) {
                 $("#dcTableBody").empty().append(res);
                 addedTicketIds = [parseInt(ticketId)];
+                toggleBardanaMode();
                 calculateLabourAmount();
                 calculateTransporterAmount();
             }
@@ -864,6 +913,7 @@
                 $("#add_ticket_id option[value='" + ticketId + "']").remove();
                 $("#add_ticket_id").val('').trigger('change');
 
+                toggleBardanaMode();
                 calculateLabourAmount();
                 calculateTransporterAmount();
 
@@ -1073,4 +1123,56 @@
             return false;
         }
     });
+
+    function toggleBardanaMode() {
+        let isChecked = $('#is_bardana').is(':checked');
+        if (isChecked) {
+            $('.bardana-col').show();
+            $('.no_of_bags').prop('readonly', false).addClass('border-primary bg-white');
+        } else {
+            $('.bardana-col').hide();
+            $('.no_of_bags').prop('readonly', true).removeClass('border-primary bg-white');
+            $('.bag_weight').val('0');
+            $('.total_bag_weight').val('0');
+        }
+
+        $('#dcTableBody tr').each(function () {
+            let rowId = $(this).attr('id');
+            if (rowId && rowId.startsWith('row_')) {
+                let index = rowId.replace('row_', '');
+                calculateRowBardana(index);
+            }
+        });
+    }
+
+    function calculateRowBardana(index) {
+        let isBardana = $('#is_bardana').is(':checked');
+        let row = $('#row_' + index);
+        let swbWeight = parseFloat(row.attr('data-swb-weight')) || parseFloat($('#qty_' + index).val()) || 0;
+        if (!row.attr('data-swb-weight')) {
+            row.attr('data-swb-weight', swbWeight);
+        }
+
+        if (isBardana) {
+            let bags = parseFloat($('#no_of_bags_' + index).val()) || 0;
+            let bagWeight = parseFloat($('#bag_weight_' + index).val()) || 0;
+            let totalBagWeight = bags * bagWeight; // Exact precision, no round off!
+            let billedQty = Math.max(0, swbWeight - totalBagWeight);
+
+            $('#total_bag_weight_' + index).val(totalBagWeight);
+            $('#billed_qty_' + index).val(billedQty);
+
+            if (totalBagWeight > 0) {
+                $('#bardana_calc_text_' + index)
+                    .text(`SWB: ${swbWeight} kg | Bags: ${totalBagWeight} kg | Net Billed: ${billedQty} kg`)
+                    .removeClass('d-none');
+            } else {
+                $('#bardana_calc_text_' + index).text('').addClass('d-none');
+            }
+        } else {
+            $('#total_bag_weight_' + index).val(0);
+            $('#billed_qty_' + index).val(swbWeight);
+            $('#bardana_calc_text_' + index).text('').addClass('d-none');
+        }
+    }
 </script>

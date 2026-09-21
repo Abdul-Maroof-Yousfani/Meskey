@@ -12,6 +12,13 @@ class DeliveryChallanData extends Model
     use HasFactory;
     protected $guarded = [ "id", "created_at", "updated" ];
 
+    protected $casts = [
+        'bag_weight' => 'decimal:4',
+        'total_bag_weight' => 'decimal:4',
+        'billed_qty' => 'decimal:4',
+        'qty' => 'decimal:4',
+    ];
+
     public function product()
     {
         return $this->belongsTo(Product::class, 'item_id');

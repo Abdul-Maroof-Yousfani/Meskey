@@ -183,7 +183,10 @@ class SalesLedgerService
                 $totalSaleAmount = 0;
                 $totalQty = 0;
                 foreach ($deliveryChallan->delivery_challan_data as $data) {
-                    $totalSaleAmount += ($data->qty * $data->rate);
+                    $effectiveQty = ($deliveryChallan->is_bardana && ($data->total_bag_weight ?? 0) > 0)
+                        ? ($data->billed_qty ?? max(0, $data->qty - $data->total_bag_weight))
+                        : $data->qty;
+                    $totalSaleAmount += ($effectiveQty * $data->rate);
                     $totalQty += $data->qty;
                 }
 
@@ -374,7 +377,10 @@ class SalesLedgerService
                     $totalSaleAmount = 0;
                     $totalQty = 0;
                     foreach ($deliveryChallan->delivery_challan_data as $data) {
-                        $totalSaleAmount += ($data->qty * $data->rate);
+                        $effectiveQty = ($deliveryChallan->is_bardana && ($data->total_bag_weight ?? 0) > 0)
+                            ? ($data->billed_qty ?? max(0, $data->qty - $data->total_bag_weight))
+                            : $data->qty;
+                        $totalSaleAmount += ($effectiveQty * $data->rate);
                         $totalQty += $data->qty;
                     }
 
@@ -875,8 +881,10 @@ class SalesLedgerService
                 ])->delete();
 
                 // Case 2: Excess Weight (Arrived > Dispatched) -> Profit
-                $excessWeight = $arrivedWeight - $dispatchedWeight;
-                $totalExcessAmount = $excessWeight * $averageRate;
+                $grossExcessWeight = $arrivedWeight - $dispatchedWeight;
+                $exemptedWeight = min(max(0, floatval($receivingRequest->exempted_weight ?? 0)), $grossExcessWeight);
+                $netGainWeight = max(0, $grossExcessWeight - $exemptedWeight);
+                $totalExcessAmount = $netGainWeight * $averageRate;
                 
                 $customerAccountId = $dc->customer?->account_id;
                 
@@ -884,13 +892,21 @@ class SalesLedgerService
                     $profitAccount = Account::where('hierarchy_path', '4-1-4')->first();
                     
                     if ($profitAccount) {
+                        $remarksGain = $exemptedWeight > 0
+                            ? "Excess weight adjustment (+{$netGainWeight} kg net gain, {$exemptedWeight} kg exempted) on Receiving Request for DC: {$dc_no}"
+                            : "Excess weight adjustment (+{$netGainWeight} kg) on Receiving Request for DC: {$dc_no}";
+
+                        $remarksProfit = $exemptedWeight > 0
+                            ? "Excess weight gain/profit (+{$netGainWeight} kg net gain, {$exemptedWeight} kg exempted) on Receiving Request for DC: {$dc_no}"
+                            : "Excess weight gain/profit (+{$netGainWeight} kg) on Receiving Request for DC: {$dc_no}";
+
                         // 1. Debit Customer (Customer got extra goods, so receivable increases)
                         $handleTransaction($totalExcessAmount, $customerAccountId, $voucherTypeId, $dc_no, 'debit', 'no', [
                             'counter_account_id' => $profitAccount->id,
                             'purpose' => "receiving-request-excess-weight-adjustment",
                             'payment_against' => "pohanch-sale-receivable",
                             'against_reference_no' => $dc_no,
-                            'remarks' => "Excess weight adjustment (+{$excessWeight} kg) on Receiving Request for DC: {$dc_no}",
+                            'remarks' => $remarksGain,
                         ]);
 
                         // 2. Credit Gain/Profit Account (hierarchy 4-1-4)
@@ -899,9 +915,14 @@ class SalesLedgerService
                             'purpose' => "receiving-request-excess-profit",
                             'payment_against' => "pohanch-sale-profit",
                             'against_reference_no' => $dc_no,
-                            'remarks' => "Excess weight gain/profit (+{$excessWeight} kg) on Receiving Request for DC: {$dc_no}",
+                            'remarks' => $remarksProfit,
                         ]);
                     }
+                } else {
+                    Transaction::where('voucher_no', $dc_no)->whereIn('purpose', [
+                        'receiving-request-excess-weight-adjustment',
+                        'receiving-request-excess-profit'
+                    ])->delete();
                 }
             } else {
                 // Arrived == Dispatched or no weight diff -> delete both short and excess
@@ -1133,7 +1154,12 @@ class SalesLedgerService
                         $netAmount,
                         $rate,
                         $salesReturn->remarks ?? "Sales Return Stock-In: {$sr_no}",
-                        ['avg_cost_price' => $newWac],
+                        [
+                            'avg_cost_price' => $newWac,
+                            'company_location_id' => $salesReturn->company_location_id,
+                            'arrival_id' => $salesReturn->arrival_location_id,
+                            'subarrival_id' => $salesReturn->storage_location_id,
+                        ],
                         $newWac
                     );
                 } else {
@@ -1142,7 +1168,10 @@ class SalesLedgerService
                         'price' => $netAmount,
                         'avg_price_per_kg' => $rate,
                         'avg_cost_price' => $newWac,
-                        'narration' => $salesReturn->remarks ?? "Sales Return Stock-In: {$sr_no}"
+                        'narration' => $salesReturn->remarks ?? "Sales Return Stock-In: {$sr_no}",
+                        'company_location_id' => $salesReturn->company_location_id,
+                        'arrival_id' => $salesReturn->arrival_location_id,
+                        'subarrival_id' => $salesReturn->storage_location_id,
                     ]);
                 }
             }
@@ -1334,10 +1363,10 @@ class SalesLedgerService
             $disc = (float)($data->discount_amount ?? 0);
             if ($disc <= 0 && $gross > $amtAfterDisc) {
                 // Derive from stored amounts (most reliable)
-                $disc = round($gross - $amtAfterDisc, 2);
+                $disc = $gross - $amtAfterDisc;
             }
             if ($disc <= 0 && (float)($data->discount_percent ?? 0) > 0) {
-                $disc = round($gross * ((float)$data->discount_percent / 100), 2);
+                $disc = $gross * ((float)$data->discount_percent / 100);
             }
             $totalDiscount += max(0, $disc);
 
@@ -1345,17 +1374,14 @@ class SalesLedgerService
             $gst = (float)($data->gst_amount ?? 0);
             if ($gst <= 0 && $netAmt > $amtAfterDisc) {
                 // Derive from stored net_amount - amount (most reliable)
-                $gst = round($netAmt - $amtAfterDisc, 2);
+                $gst = $netAmt - $amtAfterDisc;
             }
             if ($gst <= 0 && (float)($data->gst_percent ?? 0) > 0) {
                 $taxable = $gross - $disc;
-                $gst = round($taxable * ((float)$data->gst_percent / 100), 2);
+                $gst = $taxable * ((float)$data->gst_percent / 100);
             }
             $totalGst += max(0, $gst);
         }
-
-        $totalDiscount = round($totalDiscount, 2);
-        $totalGst = round($totalGst, 2);
 
         $si_no = $salesInvoice->si_no;
 

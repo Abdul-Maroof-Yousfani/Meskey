@@ -146,6 +146,10 @@ class ApprovalModuleController extends Controller
                 'value' => 'App\Models\ReceiptVoucher',
                 'label' => 'Receipt Voucher'
             ],
+            [
+                'value' => 'App\Models\JournalVoucher',
+                'label' => 'Journal Voucher'
+            ],
         ];
 
         $availableModels = collect($allModels)->reject(function ($model) use ($usedModels) {
