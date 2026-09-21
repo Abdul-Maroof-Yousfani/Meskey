@@ -9,6 +9,7 @@ use App\Models\ArrivalPurchaseOrder;
 use App\Models\Master\Broker;
 use App\Models\Master\CompanyLocation;
 use App\Models\Master\ProductSlab;
+use App\Models\User;
 use App\Models\Procurement\PurchaseOrder;
 use App\Models\Product;
 use App\Models\Master\ProductSlabForRmPo;
@@ -25,15 +26,22 @@ class PurchaseOrderController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $commodities = Product::all();
+        $authUserCompany = $request->company_id;
 
+        $commodities = Product::all();
+        $decisionofUsers = User::role('Purchaser')
+            ->where('parent_user_id', null)
+            ->whereHas('companies', function ($q) use ($authUserCompany) {
+                $q->where('companies.id', $authUserCompany);
+            })
+            ->get();
         // $companyLocations = CompanyLocation::when(auth()->user()->user_type != 'super-admin', function ($q) {
         //     return $q->where('id', auth()->user()->company_location_id);
         // })->get();
         $companyLocations = CompanyLocation::whereIn('id', getUserCurrentCompanyLocations())->get();
-        return view('management.procurement.raw_material.purchase_order.index', compact('companyLocations', 'commodities'));
+        return view('management.procurement.raw_material.purchase_order.index', compact('companyLocations', 'commodities', 'decisionofUsers'));
     }
 
     /**
@@ -83,6 +91,9 @@ class PurchaseOrderController extends Controller
             ->when($request->filled('supplier_id_f'), function ($q) use ($request) {
                 return $q->where('supplier_id', $request->supplier_id_f);
             })
+            ->when($request->filled('decision_of_f'), function ($q) use ($request) {
+                return $q->where('decision_of_id', $request->decision_of_f);
+            })
             ->when($request->filled('commodity_id_f'), function ($q) use ($request) {
                 return $q->where('product_id', $request->commodity_id_f);
             })
@@ -93,6 +104,14 @@ class PurchaseOrderController extends Controller
 
                 return $q->whereDate('contract_date', '>=', $startDate)
                     ->whereDate('contract_date', '<=', $endDate);
+            })
+            ->when($request->filled('daterange2'), function ($q) use ($request) {
+                $dates = explode(' - ', $request->daterange2);
+                $deliveryStartDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[0]))->format('Y-m-d');
+                $deliveryEndDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[1]))->format('Y-m-d');
+
+                return $q->whereDate('delivery_date', '>=', $deliveryStartDate)
+                    ->whereDate('delivery_date', '<=', $deliveryEndDate);
             })
             ->when(true, function ($q) use ($request) {
                 $contractStatusFilter = $request->get('contract_status_f', 'pending');

@@ -46,6 +46,13 @@
                                             </div>
                                             <div class="col-md-2">
                                                 <div class="form-group mb-0">
+                                                    <label>Expiry Date:</label>
+                                                    <input type="text" name="daterange2" class="form-control"
+                                                        value="{{ request('daterange2') }}" />
+                                                </div>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <div class="form-group mb-0">
                                                     <label>Location:</label>
                                                     <select name="company_location_id_f" id="company_location"
                                                         class="form-control ">
@@ -56,6 +63,7 @@
                                                     </select>
                                                 </div>
                                             </div>
+                                          
                                              <div class="col-md-2">
                                                 <div class="form-group mb-0">
                                                     <label>Commodity:</label>
@@ -98,6 +106,18 @@
                                                     <label>Suppliers:</label>
                                                     <select name="supplier_id_f" id="supplier_id_f" class="form-control ">
                                                         <option value="">Supplier</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                              <div class="col-md-2">
+                                                <div class="form-group mb-0">
+                                                    <label>Decision Of:</label>
+                                                    <select name="decision_of_f" id="decision_of_f"
+                                                        class="form-control selectWithoutAjax ">
+                                                        <option value="">All Decision Of</option>
+                                                        @foreach ($decisionofUsers as $decisionof)
+                                                            <option value="{{ $decisionof->id }}">{{ $decisionof->name }}</option>
+                                                        @endforeach
                                                     </select>
                                                 </div>
                                             </div>
