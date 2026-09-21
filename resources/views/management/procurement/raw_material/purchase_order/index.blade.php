@@ -39,14 +39,14 @@
                                         <div class="row justify-content-nd text">
                                             <div class="col-md-2">
                                                 <div class="form-group mb-0">
-                                                    <label>Date:</label>
+                                                    <label>Contract Date:</label>
                                                     <input type="text" name="daterange" class="form-control"
                                                         value="{{ request('daterange', \Carbon\Carbon::now()->subMonth()->format('m/d/Y') . ' - ' . \Carbon\Carbon::now()->format('m/d/Y')) }}" />
                                                 </div>
                                             </div>
                                             <div class="col-md-2">
                                                 <div class="form-group mb-0">
-                                                    <label>Expiry Date:</label>
+                                                    <label>Contract Expiry Date:</label>
                                                     <input type="text" name="daterange2" class="form-control"
                                                         value="{{ request('daterange2') }}" />
                                                 </div>
