@@ -7,7 +7,8 @@
             <th>Plant</th>
             <th>Production Voucher</th>
             <th>User</th>
-            <th>Machines & Hours</th>
+            <th>Machines</th>
+            <th>Breakdown Items</th>
             <th>Remarks</th>
             <th>Action</th>
         </tr>
@@ -49,10 +50,9 @@
                                                     <span class="badge badge-secondary">OFF</span>
                                                 @endif
                                                 <strong>{{ $item->machine->name ?? '--' }}</strong>
-                                                {{-- {{ $item->hours }} hrs
-                                                @if($item->remarks)
-                                                    <br><em class="text-muted">{{ $item->remarks }}</em>
-                                                @endif --}}
+                                                @if($item->start_time && $item->end_time)
+                                                    <span class="text-muted">({{ date('H:i', strtotime($item->start_time)) }}-{{ date('H:i', strtotime($item->end_time)) }})</span>
+                                                @endif
                                             </small>
                                         </li>
                                     @endforeach
@@ -63,13 +63,48 @@
                         </div>
                     </td>
                     <td>
+                        @php
+                            $breakdownKey = $row->date->format('Y-m-d') . '_' . $row->plant_id;
+                            $pBreakdown = isset($plantBreakdowns[$breakdownKey]) ? $plantBreakdowns[$breakdownKey]->first() : null;
+                        @endphp
+                        @if($pBreakdown && $pBreakdown->items->count() > 0)
+                            <div class="div-box-b">
+                                <ul class="m-0 pl-3">
+                                    @foreach($pBreakdown->items as $bItem)
+                                        <li>
+                                            <small>
+                                                <strong>{{ $bItem->breakdownType->name ?? 'Breakdown' }}:</strong>
+                                                @if($bItem->hours)
+                                                    {{ $bItem->hours }} hrs
+                                                @endif
+                                                @if($bItem->from && $bItem->to)
+                                                    <span class="text-muted">({{ date('H:i', strtotime($bItem->from)) }}-{{ date('H:i', strtotime($bItem->to)) }})</span>
+                                                @elseif($bItem->from)
+                                                    <span class="text-muted">(From: {{ date('H:i', strtotime($bItem->from)) }})</span>
+                                                @endif
+                                            </small>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @else
+                            <p class="m-0"><small class="text-muted">--</small></p>
+                        @endif
+                    </td>
+                    <td>
                         <p class="m-0">{{ $row->remarks ?? '--' }}</p>
                     </td>
                     <td>
                         @canAccess('machine-plan-setting-edit')
                         <a onclick="openModal(this,'{{ route('machine-plan-setting.edit', $row->id) }}','Edit Machine Plan Setting',false,'85%')"
-                            class="info p-1 text-center mr-2 position-relative">
+                            class="info p-1 text-center mr-2 position-relative" title="Edit">
                             <i class="ft-edit font-medium-3"></i>
+                        </a>
+                        @endcanAccess
+                        @canAccess('machine-plan-setting-delete')
+                        <a onclick="deletemodal('{{ route('machine-plan-setting.destroy', $row->id) }}','{{ route('get.machine-plan-setting') }}')"
+                            class="danger p-1 text-center mr-2 position-relative" title="Delete">
+                            <i class="ft-x font-medium-3"></i>
                         </a>
                         @endcanAccess
                     </td>
@@ -77,7 +112,7 @@
             @endforeach
         @else
             <tr class="ant-table-placeholder">
-                <td colspan="7" class="ant-table-cell text-center">
+                <td colspan="8" class="ant-table-cell text-center">
                     <div class="my-5">
                         <svg width="64" height="41" viewBox="0 0 64 41" xmlns="http://www.w3.org/2000/svg">
                             <g transform="translate(0 1)" fill="none" fill-rule="evenodd">

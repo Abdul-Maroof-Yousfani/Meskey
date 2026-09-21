@@ -158,6 +158,26 @@ class ProductionVoucherRequest extends FormRequest
             ],
             'production_machine_id.*' => [
                 'exists:production_machines,id'
+            ],
+            'breakdown_type_id' => [
+                'nullable',
+                'array'
+            ],
+            'from' => [
+                'nullable',
+                'array'
+            ],
+            'to' => [
+                'nullable',
+                'array'
+            ],
+            'hours' => [
+                'nullable',
+                'array'
+            ],
+            'breakdown_remarks' => [
+                'nullable',
+                'array'
             ]
         ];
 

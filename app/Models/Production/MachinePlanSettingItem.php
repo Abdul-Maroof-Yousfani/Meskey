@@ -13,6 +13,8 @@ class MachinePlanSettingItem extends Model
         'machine_plan_setting_id',
         'production_machine_id',
         'hours',
+        'start_time',
+        'end_time',
         'is_enabled',
         'remarks'
     ];

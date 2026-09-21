@@ -19,6 +19,9 @@ use App\Models\Master\ArrivalSubLocation;
 use App\Models\Master\Brands;
 use App\Models\Master\Plant;
 use App\Models\Master\ProductionMachine;
+use App\Models\Master\PlantBreakdownType;
+use App\Models\Production\PlantBreakdown;
+use App\Models\Production\PlantBreakdownItem;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -417,12 +420,14 @@ class ProductionVoucherController extends Controller
         $products = Product::where('status', 1)->get();
         $byheadsproducts = Product::where('status', 1)->where('parent_id', null)->get();
         $sublocations = ArrivalSubLocation::with('arrivalLocation')->get();
+        $breakdownTypes = PlantBreakdownType::where('status', 'active')->get();
 
         return view('management.production.production_voucher.create', compact(
             'companyLocations',
             'products',
             'byheadsproducts',
-            'sublocations'
+            'sublocations',
+            'breakdownTypes'
         ));
     }
 
@@ -749,25 +754,81 @@ class ProductionVoucherController extends Controller
         $plantId = $request->plant_id;
         $date = $request->date;
 
-        if (!$plantId || !$date) {
+        if (!$plantId) {
             return response()->json(['machines' => []]);
         }
 
-        // Fetch from MachinePlanSetting
-        $machinePlanSetting = \App\Models\Production\MachinePlanSetting::with(['items.machine'])
-            ->where('plant_id', $plantId)
-            ->whereDate('date', $date)
-            ->first();
+        // Fetch all active machines of this plant
+        $allMachines = \App\Models\Master\ProductionMachine::where('plant_id', $plantId)
+            ->where('status', 'active')
+            ->get();
+
+        if ($allMachines->isEmpty()) {
+            return response()->json(['machines' => []]);
+        }
+
+        // Fetch from MachinePlanSetting if date is provided
+        $machinePlanSetting = null;
+        if ($date) {
+            $machinePlanSetting = \App\Models\Production\MachinePlanSetting::with(['items.breakdowns'])
+                ->where('plant_id', $plantId)
+                ->whereDate('date', $date)
+                ->first();
+        }
 
         $machines = [];
-        if ($machinePlanSetting && $machinePlanSetting->items) {
-            foreach ($machinePlanSetting->items as $item) {
-                if ($item->machine && $item->machine->status === 'active') {
-                    $machine = $item->machine;
-                    $machine->is_enabled = $item->is_enabled;
-                    $machines[] = $machine;
-                }
+        foreach ($allMachines as $machine) {
+            $planItems = collect([]);
+            if ($machinePlanSetting && $machinePlanSetting->items) {
+                $planItems = $machinePlanSetting->items->where('production_machine_id', $machine->id);
             }
+
+            $firstItem = $planItems->first();
+            $isEnabled = $firstItem ? (bool)$firstItem->is_enabled : false;
+
+            $slots = [];
+            if ($planItems->isNotEmpty()) {
+                foreach ($planItems as $pItem) {
+                    $bList = [];
+                    if ($pItem->breakdowns && $pItem->breakdowns->isNotEmpty()) {
+                        foreach ($pItem->breakdowns as $bd) {
+                            $bList[] = [
+                                'id' => $bd->id,
+                                'from' => $bd->from ? substr($bd->from, 0, 5) : '',
+                                'to' => $bd->to ? substr($bd->to, 0, 5) : '',
+                                'hours' => $bd->hours,
+                                'remarks' => $bd->remarks ?? '',
+                            ];
+                        }
+                    }
+
+                    $slots[] = [
+                        'start_time' => $pItem->start_time ? substr($pItem->start_time, 0, 5) : '',
+                        'end_time' => $pItem->end_time ? substr($pItem->end_time, 0, 5) : '',
+                        'hours' => $pItem->hours,
+                        'breakdowns' => $bList,
+                    ];
+                }
+            } else {
+                $slots[] = [
+                    'start_time' => '',
+                    'end_time' => '',
+                    'hours' => null,
+                    'breakdowns' => [],
+                ];
+            }
+
+            $mObj = [
+                'id' => $machine->id,
+                'name' => $machine->name,
+                'is_enabled' => $isEnabled,
+                'start_time' => $slots[0]['start_time'] ?? '',
+                'end_time' => $slots[0]['end_time'] ?? '',
+                'hours' => $slots[0]['hours'] ?? null,
+                'time_slots' => $slots,
+            ];
+
+            $machines[] = $mObj;
         }
 
         return response()->json(['machines' => $machines]);
@@ -835,21 +896,62 @@ class ProductionVoucherController extends Controller
                         
                         foreach ($startTimes as $index => $startTime) {
                             $endTime = $endTimes[$index] ?? null;
-                            if ($startTime && $endTime) {
-                                $start = \Carbon\Carbon::parse($startTime);
-                                $end = \Carbon\Carbon::parse($endTime);
-                                if ($end->lt($start)) {
-                                    $end->addDay();
+                            if ($startTime || $endTime) {
+                                $durationMinutes = 0;
+                                $hours = 0;
+                                if ($startTime && $endTime) {
+                                    $start = \Carbon\Carbon::parse($startTime);
+                                    $end = \Carbon\Carbon::parse($endTime);
+                                    if ($end->lt($start)) {
+                                        $end->addDay();
+                                    }
+                                    $durationMinutes = $start->diffInMinutes($end);
+                                    $hours = round($durationMinutes / 60, 2);
                                 }
-                                $durationMinutes = $start->diffInMinutes($end);
 
-                                \App\Models\Production\ProductionVoucherMachineTime::create([
+                                $machineTime = \App\Models\Production\ProductionVoucherMachineTime::create([
+                                    'company_id' => $productionVoucher->company_id,
                                     'production_voucher_id' => $productionVoucher->id,
                                     'production_machine_id' => $machineId,
-                                    'start_time' => $startTime,
-                                    'end_time' => $endTime,
-                                    'duration_minutes' => $durationMinutes
+                                    'start_time' => $startTime ?: null,
+                                    'end_time' => $endTime ?: null,
+                                    'duration_minutes' => $durationMinutes,
+                                    'hours' => $hours,
+                                    'is_enabled' => in_array($machineId, $request->production_machine_id ?? []),
                                 ]);
+
+                                // Save child breakdowns for this slot
+                                $slotBreakdownFroms = $request->input("slot_breakdown_from.{$machineId}.{$index}", []);
+                                $slotBreakdownTos = $request->input("slot_breakdown_to.{$machineId}.{$index}", []);
+                                $slotBreakdownHours = $request->input("slot_breakdown_hours.{$machineId}.{$index}", []);
+                                $slotBreakdownRemarks = $request->input("slot_breakdown_remarks.{$machineId}.{$index}", []);
+
+                                if (is_array($slotBreakdownFroms) && !empty($slotBreakdownFroms)) {
+                                    foreach ($slotBreakdownFroms as $bIdx => $bFrom) {
+                                        $bTo = !empty($slotBreakdownTos[$bIdx]) ? $slotBreakdownTos[$bIdx] : null;
+                                        $bHours = !empty($slotBreakdownHours[$bIdx]) ? $slotBreakdownHours[$bIdx] : null;
+
+                                        if (!empty($bFrom)) {
+                                            if (!empty($bFrom) && !empty($bTo) && empty($bHours)) {
+                                                $fTime = \Carbon\Carbon::parse($bFrom);
+                                                $tTime = \Carbon\Carbon::parse($bTo);
+                                                if ($tTime->lt($fTime)) {
+                                                    $tTime->addDay();
+                                                }
+                                                $bHours = round($fTime->diffInMinutes($tTime) / 60, 2);
+                                            }
+
+                                            \App\Models\Production\MachineTimeBreakdown::create([
+                                                'company_id' => $productionVoucher->company_id,
+                                                'production_voucher_machine_time_id' => $machineTime->id,
+                                                'from' => $bFrom,
+                                                'to' => $bTo,
+                                                'hours' => $bHours,
+                                                'remarks' => $slotBreakdownRemarks[$bIdx] ?? null,
+                                            ]);
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -920,6 +1022,77 @@ class ProductionVoucherController extends Controller
                         ]);
                     }
                 }
+            }
+
+            // Save Overall Plant Breakdown if provided
+            if ($request->filled('breakdown_type_id') && is_array($request->breakdown_type_id)) {
+                $hasBreakdownItems = false;
+                foreach ($request->breakdown_type_id as $index => $breakdownTypeId) {
+                    if (!empty($breakdownTypeId) && !empty($request->from[$index])) {
+                        $hasBreakdownItems = true;
+                        break;
+                    }
+                }
+
+                if ($hasBreakdownItems) {
+                    $plantBreakdown = PlantBreakdown::updateOrCreate(
+                        [
+                            'company_id' => $productionVoucher->company_id,
+                            'date' => $productionVoucher->prod_date,
+                            'plant_id' => $productionVoucher->plant_id,
+                        ],
+                        [
+                            'production_voucher_id' => $productionVoucher->id,
+                            'user_id' => auth()->user()->id,
+                        ]
+                    );
+
+                    $plantBreakdown->items()->delete();
+
+                    foreach ($request->breakdown_type_id as $index => $breakdownTypeId) {
+                        if (!empty($breakdownTypeId) && !empty($request->from[$index])) {
+                            $fromVal = $request->from[$index];
+                            $toVal = !empty($request->to[$index]) ? $request->to[$index] : null;
+                            $hoursVal = !empty($request->hours[$index]) ? $request->hours[$index] : null;
+
+                            if (!empty($fromVal) && !empty($toVal) && empty($hoursVal)) {
+                                $fromTime = \Carbon\Carbon::parse($fromVal);
+                                $toTime = \Carbon\Carbon::parse($toVal);
+                                if ($toTime->lt($fromTime)) {
+                                    $toTime->addDay();
+                                }
+                                $hoursVal = round($fromTime->diffInMinutes($toTime) / 60, 2);
+                            }
+
+                            PlantBreakdownItem::create([
+                                'company_id' => $productionVoucher->company_id,
+                                'plant_breakdown_id' => $plantBreakdown->id,
+                                'breakdown_type_id' => $breakdownTypeId,
+                                'from' => $fromVal,
+                                'to' => $toVal,
+                                'hours' => $hoursVal,
+                                'remarks' => $request->breakdown_remarks[$index] ?? null,
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            // Auto assign production voucher to Machine Plan Setting & Plant Breakdown if they exist for the same date and plant
+            if ($productionVoucher->prod_date && $productionVoucher->plant_id) {
+                $planSettings = \App\Models\Production\MachinePlanSetting::where('plant_id', $productionVoucher->plant_id)
+                    ->whereDate('date', $productionVoucher->prod_date)
+                    ->get();
+
+                foreach ($planSettings as $setting) {
+                    $setting->update(['production_voucher_id' => $productionVoucher->id]);
+                    \App\Models\Production\ProductionVoucherMachineTime::where('machine_plan_setting_id', $setting->id)
+                        ->update(['production_voucher_id' => $productionVoucher->id]);
+                }
+
+                \App\Models\Production\PlantBreakdown::where('plant_id', $productionVoucher->plant_id)
+                    ->whereDate('date', $productionVoucher->prod_date)
+                    ->update(['production_voucher_id' => $productionVoucher->id]);
             }
 
             DB::commit();
@@ -1038,7 +1211,9 @@ class ProductionVoucherController extends Controller
             'outputs.product',
             'outputs.storageLocation',
             'outputs.brand',
-            'slots.breaks'
+            'slots.breaks',
+            'productionVoucherMachineTimes.breakdowns',
+            'productionMachines'
         ])->findOrFail($id);
 
         $productIds = Product::where('id', $productionVoucher->product_id)
@@ -1147,6 +1322,19 @@ class ProductionVoucherController extends Controller
         $sublocations = ArrivalSubLocation::where('status', 1)->get();
         $brands = Brands::where('status', 1)->get();
         $plants = \App\Models\Master\Plant::where('status', 'active')->get();
+        $breakdownTypes = PlantBreakdownType::where('status', 'active')->get();
+
+        $plantBreakdown = PlantBreakdown::with('items.breakdownType')
+            ->where(function ($q) use ($productionVoucher) {
+                $q->where('production_voucher_id', $productionVoucher->id);
+                if ($productionVoucher->plant_id && $productionVoucher->prod_date) {
+                    $q->orWhere(function ($sub) use ($productionVoucher) {
+                        $sub->where('plant_id', $productionVoucher->plant_id)
+                            ->whereDate('date', $productionVoucher->prod_date);
+                    });
+                }
+            })
+            ->first();
 
         // IMPORTANT: Convert headProductOutputs to collection
         $headProductOutputs = collect($productionVoucher->outputs->where('product_id', $productionVoucher->product_id));
@@ -1166,7 +1354,9 @@ class ProductionVoucherController extends Controller
             'packingItemsProducts',
             'nonPackingItemsProducts',
             'allHeadProductIds',
-            'headProductOutputs' // Ab ye collection hai
+            'headProductOutputs', // Ab ye collection hai
+            'breakdownTypes',
+            'plantBreakdown'
         ));
     }
 
@@ -1212,8 +1402,12 @@ class ProductionVoucherController extends Controller
             if ($request->has('production_machine_id')) {
                 $productionVoucher->productionMachines()->sync($request->production_machine_id);
 
-                // Save Machine Timings
-                \App\Models\Production\ProductionVoucherMachineTime::where('production_voucher_id', $productionVoucher->id)->delete();
+                // Delete old machine times and their breakdowns
+                $existingMachineTimeIds = \App\Models\Production\ProductionVoucherMachineTime::where('production_voucher_id', $productionVoucher->id)->pluck('id');
+                if ($existingMachineTimeIds->isNotEmpty()) {
+                    \App\Models\Production\MachineTimeBreakdown::whereIn('production_voucher_machine_time_id', $existingMachineTimeIds)->delete();
+                    \App\Models\Production\ProductionVoucherMachineTime::whereIn('id', $existingMachineTimeIds)->delete();
+                }
                 
                 if ($request->has('machine_start_time') && is_array($request->machine_start_time)) {
                     foreach ($request->machine_start_time as $machineId => $startTimes) {
@@ -1221,28 +1415,73 @@ class ProductionVoucherController extends Controller
                         
                         foreach ($startTimes as $index => $startTime) {
                             $endTime = $endTimes[$index] ?? null;
-                            if ($startTime && $endTime) {
-                                $start = \Carbon\Carbon::parse($startTime);
-                                $end = \Carbon\Carbon::parse($endTime);
-                                if ($end->lt($start)) {
-                                    $end->addDay();
+                            if ($startTime || $endTime) {
+                                $durationMinutes = 0;
+                                $hours = 0;
+                                if ($startTime && $endTime) {
+                                    $start = \Carbon\Carbon::parse($startTime);
+                                    $end = \Carbon\Carbon::parse($endTime);
+                                    if ($end->lt($start)) {
+                                        $end->addDay();
+                                    }
+                                    $durationMinutes = $start->diffInMinutes($end);
+                                    $hours = round($durationMinutes / 60, 2);
                                 }
-                                $durationMinutes = $start->diffInMinutes($end);
 
-                                \App\Models\Production\ProductionVoucherMachineTime::create([
+                                $machineTime = \App\Models\Production\ProductionVoucherMachineTime::create([
+                                    'company_id' => $productionVoucher->company_id,
                                     'production_voucher_id' => $productionVoucher->id,
                                     'production_machine_id' => $machineId,
-                                    'start_time' => $startTime,
-                                    'end_time' => $endTime,
-                                    'duration_minutes' => $durationMinutes
+                                    'start_time' => $startTime ?: null,
+                                    'end_time' => $endTime ?: null,
+                                    'duration_minutes' => $durationMinutes,
+                                    'hours' => $hours,
+                                    'is_enabled' => in_array($machineId, $request->production_machine_id ?? []),
                                 ]);
+
+                                // Save child breakdowns for this slot
+                                $slotBreakdownFroms = $request->input("slot_breakdown_from.{$machineId}.{$index}", []);
+                                $slotBreakdownTos = $request->input("slot_breakdown_to.{$machineId}.{$index}", []);
+                                $slotBreakdownHours = $request->input("slot_breakdown_hours.{$machineId}.{$index}", []);
+                                $slotBreakdownRemarks = $request->input("slot_breakdown_remarks.{$machineId}.{$index}", []);
+
+                                if (is_array($slotBreakdownFroms) && !empty($slotBreakdownFroms)) {
+                                    foreach ($slotBreakdownFroms as $bIdx => $bFrom) {
+                                        $bTo = !empty($slotBreakdownTos[$bIdx]) ? $slotBreakdownTos[$bIdx] : null;
+                                        $bHours = !empty($slotBreakdownHours[$bIdx]) ? $slotBreakdownHours[$bIdx] : null;
+
+                                        if (!empty($bFrom)) {
+                                            if (!empty($bFrom) && !empty($bTo) && empty($bHours)) {
+                                                $fTime = \Carbon\Carbon::parse($bFrom);
+                                                $tTime = \Carbon\Carbon::parse($bTo);
+                                                if ($tTime->lt($fTime)) {
+                                                    $tTime->addDay();
+                                                }
+                                                $bHours = round($fTime->diffInMinutes($tTime) / 60, 2);
+                                            }
+
+                                            \App\Models\Production\MachineTimeBreakdown::create([
+                                                'company_id' => $productionVoucher->company_id,
+                                                'production_voucher_machine_time_id' => $machineTime->id,
+                                                'from' => $bFrom,
+                                                'to' => $bTo,
+                                                'hours' => $bHours,
+                                                'remarks' => $slotBreakdownRemarks[$bIdx] ?? null,
+                                            ]);
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
                 }
             } else {
                 $productionVoucher->productionMachines()->sync([]);
-                \App\Models\Production\ProductionVoucherMachineTime::where('production_voucher_id', $productionVoucher->id)->delete();
+                $existingMachineTimeIds = \App\Models\Production\ProductionVoucherMachineTime::where('production_voucher_id', $productionVoucher->id)->pluck('id');
+                if ($existingMachineTimeIds->isNotEmpty()) {
+                    \App\Models\Production\MachineTimeBreakdown::whereIn('production_voucher_machine_time_id', $existingMachineTimeIds)->delete();
+                    \App\Models\Production\ProductionVoucherMachineTime::whereIn('id', $existingMachineTimeIds)->delete();
+                }
             }
 
             // Delete existing inputs and outputs (always delete and recreate from form data)
@@ -1313,6 +1552,92 @@ class ProductionVoucherController extends Controller
                 }
             }
 
+            // Save/Update Overall Plant Breakdown
+            if ($request->has('breakdown_type_id') && is_array($request->breakdown_type_id)) {
+                $hasBreakdownItems = false;
+                foreach ($request->breakdown_type_id as $index => $breakdownTypeId) {
+                    if (!empty($breakdownTypeId) && !empty($request->from[$index])) {
+                        $hasBreakdownItems = true;
+                        break;
+                    }
+                }
+
+                $plantBreakdown = PlantBreakdown::where(function ($q) use ($productionVoucher) {
+                    $q->where('production_voucher_id', $productionVoucher->id);
+                    if ($productionVoucher->plant_id && $productionVoucher->prod_date) {
+                        $q->orWhere(function ($sub) use ($productionVoucher) {
+                            $sub->where('plant_id', $productionVoucher->plant_id)
+                                ->whereDate('date', $productionVoucher->prod_date);
+                        });
+                    }
+                })->first();
+
+                if ($hasBreakdownItems) {
+                    if (!$plantBreakdown) {
+                        $plantBreakdown = PlantBreakdown::create([
+                            'company_id' => $productionVoucher->company_id,
+                            'date' => $productionVoucher->prod_date,
+                            'plant_id' => $productionVoucher->plant_id,
+                            'production_voucher_id' => $productionVoucher->id,
+                            'user_id' => auth()->user()->id,
+                        ]);
+                    } else {
+                        $plantBreakdown->update([
+                            'date' => $productionVoucher->prod_date,
+                            'plant_id' => $productionVoucher->plant_id,
+                            'production_voucher_id' => $productionVoucher->id,
+                        ]);
+                        $plantBreakdown->items()->delete();
+                    }
+
+                    foreach ($request->breakdown_type_id as $index => $breakdownTypeId) {
+                        if (!empty($breakdownTypeId) && !empty($request->from[$index])) {
+                            $fromVal = $request->from[$index];
+                            $toVal = !empty($request->to[$index]) ? $request->to[$index] : null;
+                            $hoursVal = !empty($request->hours[$index]) ? $request->hours[$index] : null;
+
+                            if (!empty($fromVal) && !empty($toVal) && empty($hoursVal)) {
+                                $fromTime = \Carbon\Carbon::parse($fromVal);
+                                $toTime = \Carbon\Carbon::parse($toVal);
+                                if ($toTime->lt($fromTime)) {
+                                    $toTime->addDay();
+                                }
+                                $hoursVal = round($fromTime->diffInMinutes($toTime) / 60, 2);
+                            }
+
+                            PlantBreakdownItem::create([
+                                'company_id' => $productionVoucher->company_id,
+                                'plant_breakdown_id' => $plantBreakdown->id,
+                                'breakdown_type_id' => $breakdownTypeId,
+                                'from' => $fromVal,
+                                'to' => $toVal,
+                                'hours' => $hoursVal,
+                                'remarks' => $request->breakdown_remarks[$index] ?? null,
+                            ]);
+                        }
+                    }
+                } else if ($plantBreakdown) {
+                    $plantBreakdown->items()->delete();
+                }
+            }
+
+            // Auto assign production voucher to Machine Plan Setting & Plant Breakdown if they exist for the same date and plant
+            if ($productionVoucher->prod_date && $productionVoucher->plant_id) {
+                $planSettings = \App\Models\Production\MachinePlanSetting::where('plant_id', $productionVoucher->plant_id)
+                    ->whereDate('date', $productionVoucher->prod_date)
+                    ->get();
+
+                foreach ($planSettings as $setting) {
+                    $setting->update(['production_voucher_id' => $productionVoucher->id]);
+                    \App\Models\Production\ProductionVoucherMachineTime::where('machine_plan_setting_id', $setting->id)
+                        ->update(['production_voucher_id' => $productionVoucher->id]);
+                }
+
+                \App\Models\Production\PlantBreakdown::where('plant_id', $productionVoucher->plant_id)
+                    ->whereDate('date', $productionVoucher->prod_date)
+                    ->update(['production_voucher_id' => $productionVoucher->id]);
+            }
+
             DB::commit();
 
             return response()->json([
@@ -1331,6 +1656,12 @@ class ProductionVoucherController extends Controller
     public function destroy($id)
     {
         $productionVoucher = ProductionVoucher::findOrFail($id);
+
+        \App\Models\Production\MachinePlanSetting::where('production_voucher_id', $productionVoucher->id)
+            ->update(['production_voucher_id' => null]);
+        \App\Models\Production\PlantBreakdown::where('production_voucher_id', $productionVoucher->id)
+            ->update(['production_voucher_id' => null]);
+
         $productionVoucher->delete();
 
         return response()->json([
