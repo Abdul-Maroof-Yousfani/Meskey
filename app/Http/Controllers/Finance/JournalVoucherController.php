@@ -101,12 +101,39 @@ class JournalVoucherController extends Controller
             ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
             ->whereNull('journal_vouchers.deleted_at')
             ->whereNull('journal_voucher_details.deleted_at')
+            // ->where(function ($q) {
+            //     $q->whereNull('journal_vouchers.am_approval_status')
+            //       ->orWhere('journal_vouchers.am_approval_status', '!=', 'rejected');
+            // })
+            // ->where(function ($q) {
+            //     $q->whereNull('journal_vouchers.jv_status')
+            //       ->orWhere('journal_vouchers.jv_status', '!=', 'rejected');
+            // })
             ->when($excludeJvId, function ($q) use ($excludeJvId) {
                 $q->where('journal_vouchers.id', '!=', $excludeJvId);
             })
             ->select('receipt_voucher_id', DB::raw('SUM(debit_amount) as consumed_amount'))
             ->whereNotNull('receipt_voucher_id')
             ->groupBy('receipt_voucher_id');
+
+        // $existingJvRvIds = DB::table('journal_voucher_details')
+        //     ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
+        //     ->whereNull('journal_voucher_details.deleted_at')
+        //     ->whereNull('journal_vouchers.deleted_at')
+        //     ->whereNotNull('journal_voucher_details.receipt_voucher_id')
+        //     ->where(function ($q) {
+        //         $q->whereNull('journal_vouchers.am_approval_status')
+        //           ->orWhere('journal_vouchers.am_approval_status', '!=', 'rejected');
+        //     })
+        //     ->where(function ($q) {
+        //         $q->whereNull('journal_vouchers.jv_status')
+        //           ->orWhere('journal_vouchers.jv_status', '!=', 'rejected');
+        //     })
+        //     ->when($excludeJvId, function ($q) use ($excludeJvId) {
+        //         $q->where('journal_vouchers.id', '!=', $excludeJvId);
+        //     })
+        //     ->pluck('journal_voucher_details.receipt_voucher_id')
+        //     ->toArray();
 
         $receiptVouchers = ReceiptVoucher::leftJoinSub($doConsumedSum, 'do_consumption', function ($join) {
                 $join->on('receipt_vouchers.id', '=', 'do_consumption.receipt_voucher_id');
@@ -116,6 +143,7 @@ class JournalVoucherController extends Controller
             })
             ->where('receipt_vouchers.customer_id', $customer->id)
             ->whereNull('receipt_vouchers.deleted_at')
+            // ->whereNotIn('receipt_vouchers.id', $existingJvRvIds)
             ->select('receipt_vouchers.*', 
                 DB::raw('COALESCE(do_consumption.consumed_amount, 0) as do_consumed'),
                 DB::raw('COALESCE(jv_consumption.consumed_amount, 0) as jv_consumed')
@@ -181,6 +209,8 @@ class JournalVoucherController extends Controller
     protected function validateJournalEntries(Request $request, $excludeJvId = null)
     {
         $rvTotalUsage = [];
+        $seenRvIds = [];
+
         foreach ($request->details as $index => $detail) {
             $debitAmount = isset($detail['debit_amount']) ? (float) $detail['debit_amount'] : 0;
             $creditAmount = isset($detail['credit_amount']) ? (float) $detail['credit_amount'] : 0;
@@ -193,6 +223,11 @@ class JournalVoucherController extends Controller
                     return "Line " . ($index + 1) . ": Receipt Voucher was not found.";
                 }
 
+                if (in_array($rvId, $seenRvIds)) {
+                    return "Line " . ($index + 1) . ": Receipt Voucher {$rv->unique_no} cannot be selected multiple times.";
+                }
+                $seenRvIds[] = $rvId;
+
                 $customer = \App\Models\Master\Customer::where('account_id', $detail['acc_id'])->first();
                 if (!$customer) {
                     $account = Account::find($detail['acc_id']);
@@ -203,6 +238,30 @@ class JournalVoucherController extends Controller
                 }
                 if (!$customer || $rv->customer_id != $customer->id) {
                     return "Line " . ($index + 1) . ": Receipt Voucher {$rv->unique_no} does not belong to the selected account.";
+                }
+
+                // Check if Receiving is already created for this Receipt Voucher
+                $existingJv = DB::table('journal_voucher_details')
+                    ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
+                    ->where('journal_voucher_details.receipt_voucher_id', $rvId)
+                    ->whereNull('journal_voucher_details.deleted_at')
+                    ->whereNull('journal_vouchers.deleted_at')
+                    ->where(function ($q) {
+                        $q->whereNull('journal_vouchers.am_approval_status')
+                          ->orWhere('journal_vouchers.am_approval_status', '!=', 'rejected');
+                    })
+                    ->where(function ($q) {
+                        $q->whereNull('journal_vouchers.jv_status')
+                          ->orWhere('journal_vouchers.jv_status', '!=', 'rejected');
+                    })
+                    ->when($excludeJvId, function ($q) use ($excludeJvId) {
+                        $q->where('journal_vouchers.id', '!=', $excludeJvId);
+                    })
+                    ->select('journal_vouchers.id', 'journal_vouchers.jv_no')
+                    ->first();
+
+                if ($existingJv) {
+                    return "Receiving has already been created for Receipt Voucher {$rv->unique_no} (in Journal Voucher {$existingJv->jv_no}).";
                 }
 
                 $rvTotalUsage[$rvId] = ($rvTotalUsage[$rvId] ?? 0) + $lineAmount;
@@ -241,6 +300,14 @@ class JournalVoucherController extends Controller
                 ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
                 ->whereNull('journal_vouchers.deleted_at')
                 ->whereNull('journal_voucher_details.deleted_at')
+                ->where(function ($q) {
+                    $q->whereNull('journal_vouchers.am_approval_status')
+                      ->orWhere('journal_vouchers.am_approval_status', '!=', 'rejected');
+                })
+                ->where(function ($q) {
+                    $q->whereNull('journal_vouchers.jv_status')
+                      ->orWhere('journal_vouchers.jv_status', '!=', 'rejected');
+                })
                 ->when($excludeJvId, function ($q) use ($excludeJvId) {
                     $q->where('journal_vouchers.id', '!=', $excludeJvId);
                 })
@@ -288,6 +355,7 @@ class JournalVoucherController extends Controller
      */
     public function store(Request $request)
     {
+        // dd($request->all());
         $request->validate([
             'jv_date' => 'required|date',
             'jv_no' => 'required|string',
@@ -336,47 +404,96 @@ class JournalVoucherController extends Controller
 
         $validationError = $this->validateJournalEntries($request);
         if ($validationError) {
-            return response()->json(['error' => $validationError], 422);
+            return response()->json([
+                'error' => $validationError,
+                'message' => $validationError,
+                'errors' => ['receipt_voucher' => [$validationError]]
+            ], 422);
         }
 
-        DB::transaction(function () use ($request) {
-            $username = Auth::user()->name ?? Auth::user()->email ?? 'System';
+        try {
+            DB::transaction(function () use ($request) {
+                // Concurrency safety check: Ensure no other tab has created Receiving for any selected RV
+                foreach ($request->details as $detail) {
+                    if (!empty($detail['receipt_voucher_id'])) {
+                        $rvId = $detail['receipt_voucher_id'];
+                        $alreadyCreated = DB::table('journal_voucher_details')
+                            ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
+                            ->where('journal_voucher_details.receipt_voucher_id', $rvId)
+                            ->whereNull('journal_voucher_details.deleted_at')
+                            ->whereNull('journal_vouchers.deleted_at')
+                            ->where(function ($q) {
+                                $q->whereNull('journal_vouchers.am_approval_status')
+                                  ->orWhere('journal_vouchers.am_approval_status', '!=', 'rejected');
+                            })
+                            ->where(function ($q) {
+                                $q->whereNull('journal_vouchers.jv_status')
+                                  ->orWhere('journal_vouchers.jv_status', '!=', 'rejected');
+                            })
+                            ->lockForUpdate()
+                            ->exists();
 
-            $journalVoucher = JournalVoucher::create([
-                'jv_date' => $request->jv_date,
-                'jv_no' => $request->jv_no,
-                'description' => $request->description,
-                'username' => $username,
-                'status' => 'active',
-                'jv_status' => 'pending',
-                'am_approval_status' => 'pending',
-                'am_change_made' => 1,
-                'created_by' => Auth::user()->id,
-                'approve_user_id' => null,
-                'company_id' => Auth::user()->current_company_id ?? null
-            ]);
+                        if ($alreadyCreated) {
+                            $rv = ReceiptVoucher::find($rvId);
+                            $rvNo = $rv ? $rv->unique_no : $rvId;
+                            throw new \Exception("Receiving is already created for Receipt Voucher {$rvNo}.");
+                        }
+                    }
+                }
 
-            foreach ($request->details as $detail) {
-                $debitAmount = isset($detail['debit_amount']) ? (float) $detail['debit_amount'] : 0;
-                $creditAmount = isset($detail['credit_amount']) ? (float) $detail['credit_amount'] : 0;
+                $username = Auth::user()->name ?? Auth::user()->email ?? 'System';
 
-                $debitAmount = round($debitAmount, 2);
-                $creditAmount = round($creditAmount, 2);
+                // Regenerate JV number if empty or already taken by another tab
+                $jvNo = $request->jv_no;
+                if (empty($jvNo) || JournalVoucher::where('jv_no', $jvNo)->exists()) {
+                    $prefix = 'JV';
+                    $jvDate = $request->jv_date ? date('m-d-Y', strtotime($request->jv_date)) : date('m-d-Y');
+                    $datePrefix = $prefix . '-' . $jvDate . '-';
+                    $jvNo = generateUniqueNumberByDate('journal_vouchers', $datePrefix, null, 'jv_no', false);
+                }
 
-                JournalVoucherDetail::create([
-                    'journal_voucher_id' => $journalVoucher->id,
-                    'acc_id' => $detail['acc_id'],
-                    'receipt_voucher_id' => $detail['receipt_voucher_id'] ?? null,
-                    'sales_order_id' => $detail['sales_order_id'] ?? null,
-                    'debit_amount' => $debitAmount,
-                    'credit_amount' => $creditAmount,
-                    'description' => $detail['description'] ?? null,
+                $journalVoucher = JournalVoucher::create([
+                    'jv_date' => $request->jv_date,
+                    'jv_no' => $jvNo,
+                    'description' => $request->description,
                     'username' => $username,
                     'status' => 'active',
-                    'timestamp' => now()
+                    'jv_status' => 'pending',
+                    'am_approval_status' => 'pending',
+                    'am_change_made' => 1,
+                    'created_by' => Auth::user()->id,
+                    'approve_user_id' => null,
+                    'company_id' => Auth::user()->current_company_id ?? null
                 ]);
-            }
-        });
+
+                foreach ($request->details as $detail) {
+                    $debitAmount = isset($detail['debit_amount']) ? (float) $detail['debit_amount'] : 0;
+                    $creditAmount = isset($detail['credit_amount']) ? (float) $detail['credit_amount'] : 0;
+
+                    $debitAmount = round($debitAmount, 2);
+                    $creditAmount = round($creditAmount, 2);
+
+                    JournalVoucherDetail::create([
+                        'journal_voucher_id' => $journalVoucher->id,
+                        'acc_id' => $detail['acc_id'],
+                        'receipt_voucher_id' => $detail['receipt_voucher_id'] ?? null,
+                        'sales_order_id' => $detail['sales_order_id'] ?? null,
+                        'debit_amount' => $debitAmount,
+                        'credit_amount' => $creditAmount,
+                        'description' => $detail['description'] ?? null,
+                        'username' => $username,
+                        'status' => 'active',
+                        'timestamp' => now()
+                    ]);
+                }
+            });
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+                'message' => $e->getMessage(),
+                'errors' => ['receipt_voucher' => [$e->getMessage()]]
+            ], 422);
+        }
 
         return response()->json([
             'success' => 'Journal voucher created successfully!',
@@ -531,54 +648,95 @@ class JournalVoucherController extends Controller
 
         $validationError = $this->validateJournalEntries($request, $journalVoucher->id);
         if ($validationError) {
-            return response()->json(['error' => $validationError], 422);
+            return response()->json([
+                'error' => $validationError,
+                'message' => $validationError,
+                'errors' => ['receipt_voucher' => [$validationError]]
+            ], 422);
         }
 
-        DB::transaction(function () use ($request, $journalVoucher) {
-            $username = Auth::user()->name ?? Auth::user()->email ?? 'System';
+        try {
+            DB::transaction(function () use ($request, $journalVoucher) {
+                // Concurrency safety check
+                foreach ($request->details as $detail) {
+                    if (!empty($detail['receipt_voucher_id'])) {
+                        $rvId = $detail['receipt_voucher_id'];
+                        $alreadyCreated = DB::table('journal_voucher_details')
+                            ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
+                            ->where('journal_voucher_details.receipt_voucher_id', $rvId)
+                            ->where('journal_vouchers.id', '!=', $journalVoucher->id)
+                            ->whereNull('journal_voucher_details.deleted_at')
+                            ->whereNull('journal_vouchers.deleted_at')
+                            ->where(function ($q) {
+                                $q->whereNull('journal_vouchers.am_approval_status')
+                                  ->orWhere('journal_vouchers.am_approval_status', '!=', 'rejected');
+                            })
+                            ->where(function ($q) {
+                                $q->whereNull('journal_vouchers.jv_status')
+                                  ->orWhere('journal_vouchers.jv_status', '!=', 'rejected');
+                            })
+                            ->lockForUpdate()
+                            ->exists();
 
-            $journalVoucher->update([
-                'jv_date' => $request->jv_date,
-                'description' => $request->description,
-                'username' => $username,
-                'status' => 'active',
-                'jv_status' => 'pending',
-                'am_approval_status' => 'pending',
-                'am_change_made' => 1,
-                'company_id' => Auth::user()->current_company_id ?? $journalVoucher->company_id
-            ]);
+                        if ($alreadyCreated) {
+                            $rv = ReceiptVoucher::find($rvId);
+                            $rvNo = $rv ? $rv->unique_no : $rvId;
+                            throw new \Exception("Receiving is already created for Receipt Voucher {$rvNo}.");
+                        }
+                    }
+                }
 
-            // Delete old details
-            JournalVoucherDetail::where('journal_voucher_id', $journalVoucher->id)->delete();
+                $username = Auth::user()->name ?? Auth::user()->email ?? 'System';
 
-            // Delete old transactions if any existed
-            Transaction::where('voucher_no', $journalVoucher->jv_no)
-                ->where('purpose', 'like', "journal-voucher-{$journalVoucher->id}%")
-                ->delete();
-
-            // Create new details
-            foreach ($request->details as $detail) {
-                $debitAmount = isset($detail['debit_amount']) ? (float) $detail['debit_amount'] : 0;
-                $creditAmount = isset($detail['credit_amount']) ? (float) $detail['credit_amount'] : 0;
-
-                $debitAmount = round($debitAmount, 2);
-                $creditAmount = round($creditAmount, 2);
-
-                JournalVoucherDetail::create([
-                    'journal_voucher_id' => $journalVoucher->id,
-                    'acc_id' => $detail['acc_id'],
-                    'receipt_voucher_id' => $detail['receipt_voucher_id'] ?? null,
-                    'sales_order_id' => $detail['sales_order_id'] ?? null,
-                    'debit_amount' => $debitAmount,
-                    'credit_amount' => $creditAmount,
-                    'description' => $detail['description'] ?? null,
+                $journalVoucher->update([
+                    'jv_date' => $request->jv_date,
+                    'description' => $request->description,
                     'username' => $username,
                     'status' => 'active',
-                    'timestamp' => now(),
+                    'jv_status' => 'pending',
+                    'am_approval_status' => 'pending',
+                    'am_change_made' => 1,
                     'company_id' => Auth::user()->current_company_id ?? $journalVoucher->company_id
                 ]);
-            }
-        });
+
+                // Delete old details
+                JournalVoucherDetail::where('journal_voucher_id', $journalVoucher->id)->delete();
+
+                // Delete old transactions if any existed
+                Transaction::where('voucher_no', $journalVoucher->jv_no)
+                    ->where('purpose', 'like', "journal-voucher-{$journalVoucher->id}%")
+                    ->delete();
+
+                // Create new details
+                foreach ($request->details as $detail) {
+                    $debitAmount = isset($detail['debit_amount']) ? (float) $detail['debit_amount'] : 0;
+                    $creditAmount = isset($detail['credit_amount']) ? (float) $detail['credit_amount'] : 0;
+
+                    $debitAmount = round($debitAmount, 2);
+                    $creditAmount = round($creditAmount, 2);
+
+                    JournalVoucherDetail::create([
+                        'journal_voucher_id' => $journalVoucher->id,
+                        'acc_id' => $detail['acc_id'],
+                        'receipt_voucher_id' => $detail['receipt_voucher_id'] ?? null,
+                        'sales_order_id' => $detail['sales_order_id'] ?? null,
+                        'debit_amount' => $debitAmount,
+                        'credit_amount' => $creditAmount,
+                        'description' => $detail['description'] ?? null,
+                        'username' => $username,
+                        'status' => 'active',
+                        'timestamp' => now(),
+                        'company_id' => Auth::user()->current_company_id ?? $journalVoucher->company_id
+                    ]);
+                }
+            });
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+                'message' => $e->getMessage(),
+                'errors' => ['receipt_voucher' => [$e->getMessage()]]
+            ], 422);
+        }
 
         return response()->json([
             'success' => 'Journal voucher updated successfully!',

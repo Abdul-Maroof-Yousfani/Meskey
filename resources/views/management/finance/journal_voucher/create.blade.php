@@ -214,7 +214,23 @@
                 if (!rvId) return null;
 
                 if (window.rvMap && window.rvMap[rvId] && window.rvMap[rvId].remaining_amount !== undefined) {
-                    return parseFloat(window.rvMap[rvId].remaining_amount);
+                    const num = parseFloat(window.rvMap[rvId].remaining_amount);
+                    if (!isNaN(num)) return num;
+                }
+
+                const $opt = $rvSelect.find('option:selected');
+                if ($opt.length) {
+                    const attr = $opt.attr('data-remaining-amount') || $opt.data('remaining-amount');
+                    if (attr !== null && attr !== undefined && attr !== '') {
+                        const num = parseFloat(attr);
+                        if (!isNaN(num)) return num;
+                    }
+                    const text = $opt.text();
+                    const match = text.match(/(?:Rem|Current):\s*([\d,]+(?:\.\d+)?)/i);
+                    if (match && match[1]) {
+                        const num = parseFloat(match[1].replace(/,/g, ''));
+                        if (!isNaN(num)) return num;
+                    }
                 }
 
                 const selectElem = $rvSelect[0];
@@ -396,48 +412,55 @@
             $(document).on('change', '.receipt-voucher-select', function () {
                 const $rvSelect = $(this);
                 const $row = $rvSelect.closest('tr');
+                const rvId = $rvSelect.val();
                 const remainingAmount = getRvRemainingForSelect($rvSelect);
 
-                if (remainingAmount !== null && remainingAmount > 0) {
-                    // Set max attribute on all entry rows
-                    $('#journalEntriesBody tr').each(function() {
-                        $(this).find('.debit-input, .credit-input').attr('max', remainingAmount.toFixed(2));
-                    });
-
-                    const currentDebit = parseFloat($row.find('.debit-input').val()) || 0;
-                    const currentCredit = parseFloat($row.find('.credit-input').val()) || 0;
-
-                    if (currentCredit > 0) {
-                        if (currentCredit > remainingAmount) {
-                            $row.find('.credit-input').val(remainingAmount.toFixed(2));
-                            showRvLimitWarning(remainingAmount);
-                        }
-                    } else if (currentDebit > 0) {
-                        if (currentDebit > remainingAmount) {
-                            $row.find('.debit-input').val(remainingAmount.toFixed(2));
-                            showRvLimitWarning(remainingAmount);
-                        }
-                    } else {
-                        // If empty, auto-fill debit with the RV remaining amount
-                        $row.find('.debit-input').val(remainingAmount.toFixed(2));
+                if (rvId && remainingAmount !== null && !isNaN(remainingAmount)) {
+                    if (remainingAmount > 0) {
+                        // Set max attribute on all entry rows
+                        $('#journalEntriesBody tr').each(function() {
+                            $(this).find('.debit-input, .credit-input').attr('max', remainingAmount.toFixed(2));
+                        });
                     }
 
-                    // Check other rows (e.g. Row 1 SO credit) if they already have amount exceeding RV balance
-                    $('#journalEntriesBody tr').each(function() {
-                        const $r = $(this);
-                        if ($r[0] !== $row[0]) {
-                            const d = parseFloat($r.find('.debit-input').val()) || 0;
-                            const c = parseFloat($r.find('.credit-input').val()) || 0;
-                            if (d > remainingAmount) {
-                                $r.find('.debit-input').val(remainingAmount.toFixed(2));
-                                showRvLimitWarning(remainingAmount);
-                            }
-                            if (c > remainingAmount) {
-                                $r.find('.credit-input').val(remainingAmount.toFixed(2));
-                                showRvLimitWarning(remainingAmount);
-                            }
+                    // Update this row's debit amount to the selected RV remaining amount
+                    $row.find('.debit-input').val(remainingAmount.toFixed(2));
+                    $row.find('.credit-input').val('');
+
+                    // In a standard 2-row Receiving voucher (Row 0: RV debit, Row 1: SO credit),
+                    // also auto-update Row 1's credit amount to match the new RV amount
+                    const $allRows = $('#journalEntriesBody tr');
+                    if ($allRows.length === 2) {
+                        const $otherRow = $allRows.not($row);
+                        const otherDebit = parseFloat($otherRow.find('.debit-input').val()) || 0;
+                        const otherCredit = parseFloat($otherRow.find('.credit-input').val()) || 0;
+                        if (otherCredit > 0 || $otherRow.find('.sales-order-select').length > 0 || otherDebit === 0) {
+                            $otherRow.find('.credit-input').val(remainingAmount.toFixed(2));
+                            $otherRow.find('.debit-input').val('');
                         }
-                    });
+                    } else {
+                        // If more than 2 rows, check other rows if their amount exceeds RV limit
+                        $allRows.each(function() {
+                            const $r = $(this);
+                            if ($r[0] !== $row[0]) {
+                                const d = parseFloat($r.find('.debit-input').val()) || 0;
+                                const c = parseFloat($r.find('.credit-input').val()) || 0;
+                                if (d > remainingAmount) {
+                                    $r.find('.debit-input').val(remainingAmount.toFixed(2));
+                                    showRvLimitWarning(remainingAmount);
+                                }
+                                if (c > remainingAmount) {
+                                    $r.find('.credit-input').val(remainingAmount.toFixed(2));
+                                    showRvLimitWarning(remainingAmount);
+                                }
+                            }
+                        });
+                    }
+                } else if (!rvId) {
+                    // If cleared/deselected, reset max and clear row inputs
+                    $('.debit-input, .credit-input').removeAttr('max');
+                    $row.find('.debit-input').val('');
+                    $row.find('.credit-input').val('');
                 } else {
                     $('.debit-input, .credit-input').removeAttr('max');
                 }
