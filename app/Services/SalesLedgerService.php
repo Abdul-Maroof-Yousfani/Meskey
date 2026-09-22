@@ -1107,23 +1107,36 @@ class SalesLedgerService
                 ];
 
                 // B. Recalculate Warehouse Weighted Average Cost (WAC) including this returned stock
-                $previousStocks = Stock::where('product_id', $itemId)
+                // B. Recalculate Warehouse Weighted Average Cost (WAC) including this returned stock
+                // Fetch the most recent stock-in to get the latest valid WAC
+                $latestStockInForWac = Stock::where('product_id', $itemId)
                     ->where('type', 'stock-in')
                     ->where('voucher_no', '!=', $sr_no)
                     ->whereNotNull('avg_cost_price')
                     ->where('avg_cost_price', '>', 0)
-                    ->get();
+                    ->latest('id')
+                    ->first();
+                
+                $currentWac = $latestStockInForWac ? (float)$latestStockInForWac->avg_cost_price : $originalCostRate;
 
+                // Calculate current on-hand quantity
+                $totalStockInQty = Stock::where('product_id', $itemId)
+                    ->where('type', 'stock-in')
+                    ->where('voucher_no', '!=', $sr_no)
+                    ->sum('qty');
+                    
+                $totalStockOutQty = Stock::where('product_id', $itemId)
+                    ->where('type', 'stock-out')
+                    ->sum('qty');
+
+                $currentOnHandQty = max(0, $totalStockInQty - $totalStockOutQty);
                 $returnCostValue = $returnQty * $originalCostRate;
 
-                if ($previousStocks->count() > 0) {
-                    $prevTotalQty = $previousStocks->sum('qty');
-                    $prevTotalValue = $previousStocks->sum(function ($s) {
-                        return (float)($s->price > 0 ? $s->price : ($s->qty * ($s->avg_price_per_kg ?: $s->avg_cost_price)));
-                    });
-
-                    $combinedQty = $prevTotalQty + $returnQty;
-                    $combinedValue = $prevTotalValue + $returnCostValue;
+                if ($currentOnHandQty > 0) {
+                    $currentTotalValue = $currentOnHandQty * $currentWac;
+                    $combinedQty = $currentOnHandQty + $returnQty;
+                    $combinedValue = $currentTotalValue + $returnCostValue;
+                    
                     $newWac = $combinedQty > 0 ? ($combinedValue / $combinedQty) : $originalCostRate;
                 } else {
                     $newWac = $originalCostRate;
@@ -1337,6 +1350,119 @@ class SalesLedgerService
                             'against_reference_no' => $sr_no,
                             'remarks' => "Cost of Goods Sold reversed for returned item {$product?->name} on SR: {$sr_no}.",
                         ]);
+                    }
+                }
+            }
+
+            // 2.3 Weight Gain / Loss Entry (Account 4-1-4)
+            // Compare actual returned qty vs original DC sold qty per item.
+            // If returned > sold  → Weight Gain  → Credit 4-1-4, Debit Customer
+            // If returned < sold  → Weight Loss   → Debit 4-1-4, Credit Customer
+            $weightGainLossAccount = Account::where('hierarchy_path', '4-1-4')->first();
+            $customerAccountId = $salesReturn->customer?->account_id ?? Customer::find($salesReturn->customer_id)?->account_id;
+
+            if ($weightGainLossAccount && $customerAccountId) {
+                foreach ($salesReturn->sale_return_data as $returnData) {
+                    $returnQty    = (float)$returnData->quantity;
+                    $returnRate   = (float)($returnData->rate ?? 0);
+
+                    // Find original sold qty from the linked DC data via sale_invoice_data
+                    $originalSoldQty = 0;
+                    $siData = SalesInvoiceData::find($returnData->sale_invoice_data_id);
+                    if ($siData) {
+                        $originalSoldQty = (float)($siData->qty ?? $siData->quantity ?? 0);
+                    } elseif ($dcData = DeliveryChallanData::find($returnData->sale_invoice_data_id)) {
+                        $originalSoldQty = (float)$dcData->qty;
+                    } elseif ($rrItem = ReceivingRequestItem::find($returnData->sale_invoice_data_id)) {
+                        $originalSoldQty = (float)($rrItem->dispatch_weight ?? $rrItem->receiving_weight ?? 0);
+                    }
+
+                    // No comparison possible if original qty unknown
+                    if ($originalSoldQty <= 0 || $returnRate <= 0) {
+                        continue;
+                    }
+
+                    $diffQty    = $returnQty - $originalSoldQty;   // positive = gain, negative = loss
+                    $diffAmount = round(abs($diffQty) * $returnRate, 2);
+
+                    if ($diffAmount <= 0) {
+                        // Exactly equal — clean up any stale gain/loss entries
+                        Transaction::where('voucher_no', $sr_no)
+                            ->whereIn('purpose', [
+                                "sales-return-weight-gain-item-{$returnData->id}",
+                                "sales-return-weight-loss-item-{$returnData->id}",
+                            ])->delete();
+                        continue;
+                    }
+
+                    if ($diffQty > 0) {
+                        // ---- WEIGHT GAIN ----
+                        // Customer Debit (receivable increases for extra qty)
+                        $handleTransaction($diffAmount, $customerAccountId, $voucherTypeId, $sr_no, 'debit', 'no', [
+                            'company_id'           => $companyId,
+                            'voucher_date'         => $voucherDate,
+                            'created_by'           => $createdBy,
+                            'counter_account_id'   => $weightGainLossAccount->id,
+                            'purpose'              => "sales-return-weight-gain-item-{$returnData->id}",
+                            'payment_against'      => "sale-return-weight-gain",
+                            'against_reference_no' => $sr_no,
+                            'stock'                => abs($diffQty),
+                            'remarks'              => "Weight Gain on SR: {$sr_no}. Returned " . $returnQty . " vs Sold " . $originalSoldQty . ". Diff: " . $diffQty . " kg.",
+                        ]);
+
+                        // Weight Gain / Loss Account Credit
+                        $handleTransaction($diffAmount, $weightGainLossAccount->id, $voucherTypeId, $sr_no, 'credit', 'no', [
+                            'company_id'           => $companyId,
+                            'voucher_date'         => $voucherDate,
+                            'created_by'           => $createdBy,
+                            'counter_account_id'   => $customerAccountId,
+                            'purpose'              => "sales-return-weight-gain-gl-item-{$returnData->id}",
+                            'payment_against'      => "sale-return-weight-gain",
+                            'against_reference_no' => $sr_no,
+                            'stock'                => abs($diffQty),
+                            'remarks'              => "Weight Gain on SR: {$sr_no}. Extra: {$diffQty} kg @ {$returnRate}.",
+                        ]);
+
+                        // Remove any stale loss entries for this line
+                        Transaction::where('voucher_no', $sr_no)
+                            ->whereIn('purpose', [
+                                "sales-return-weight-loss-item-{$returnData->id}",
+                                "sales-return-weight-loss-gl-item-{$returnData->id}",
+                            ])->delete();
+                    } else {
+                        // ---- WEIGHT LOSS ----
+                        // Weight Gain / Loss Account Debit
+                        $handleTransaction($diffAmount, $weightGainLossAccount->id, $voucherTypeId, $sr_no, 'debit', 'no', [
+                            'company_id'           => $companyId,
+                            'voucher_date'         => $voucherDate,
+                            'created_by'           => $createdBy,
+                            'counter_account_id'   => $customerAccountId,
+                            'purpose'              => "sales-return-weight-loss-item-{$returnData->id}",
+                            'payment_against'      => "sale-return-weight-loss",
+                            'against_reference_no' => $sr_no,
+                            'stock'                => abs($diffQty),
+                            'remarks'              => "Weight Loss on SR: {$sr_no}. Returned " . $returnQty . " vs Sold " . $originalSoldQty . ". Diff: " . $diffQty . " kg.",
+                        ]);
+
+                        // Customer Credit (less returned than sold → reduce receivable)
+                        $handleTransaction($diffAmount, $customerAccountId, $voucherTypeId, $sr_no, 'credit', 'no', [
+                            'company_id'           => $companyId,
+                            'voucher_date'         => $voucherDate,
+                            'created_by'           => $createdBy,
+                            'counter_account_id'   => $weightGainLossAccount->id,
+                            'purpose'              => "sales-return-weight-loss-gl-item-{$returnData->id}",
+                            'payment_against'      => "sale-return-weight-loss",
+                            'against_reference_no' => $sr_no,
+                            'stock'                => abs($diffQty),
+                            'remarks'              => "Weight Loss credited from customer on SR: {$sr_no}. Short: " . abs($diffQty) . " kg @ {$returnRate}.",
+                        ]);
+
+                        // Remove any stale gain entries for this line
+                        Transaction::where('voucher_no', $sr_no)
+                            ->whereIn('purpose', [
+                                "sales-return-weight-gain-item-{$returnData->id}",
+                                "sales-return-weight-gain-gl-item-{$returnData->id}",
+                            ])->delete();
                     }
                 }
             }

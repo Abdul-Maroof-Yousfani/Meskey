@@ -24,9 +24,12 @@ class TransactionController extends Controller
     public function getTransactionsReport(Request $request)
     {
         $openingBalance = 0;
-        if ($request->filled('account_id') && $request->filled('start_date')) {
+        if ($request->filled('account_id') && $request->filled('daterange')) {
+            $dates = explode(' - ', $request->daterange);
+            $startDate = \Carbon\Carbon::createFromFormat('m/d/Y', trim($dates[0]))->format('Y-m-d');
+            
             $openingBalance = Transaction::where('account_id', $request->account_id)
-                ->where('voucher_date', '<', $request->start_date)
+                ->where('voucher_date', '<', $startDate)
                 ->sum(DB::raw("CASE WHEN type = 'debit' THEN amount ELSE -amount END"));
         }
 

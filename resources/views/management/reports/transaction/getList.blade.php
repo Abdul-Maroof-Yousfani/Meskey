@@ -1,15 +1,3 @@
-<!-- <div class="mb-2">
-    <span>
-        <strong>Date Range:</strong> {{ $daterange }}
-    </span>
-    @if ($accountName)
-        &nbsp;&nbsp;&nbsp; | &nbsp;&nbsp;&nbsp;
-        <span>
-            <strong>Account:</strong> {{ ucwords($accountName) }}
-        </span>
-    @endif
-</div> -->
-
 <div class="mb-2">
     <button onclick="exportToExcel()" class="btn btn-success btn-sm">
         <i class="fas fa-file-excel"></i> Export to Excel

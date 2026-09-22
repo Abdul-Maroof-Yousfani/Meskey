@@ -333,10 +333,9 @@ class SalesReturnController extends Controller
             foreach($request->item_id as $index => $item_id) {
                 $balance = sale_return_balance($request->si_data_id[$index]);
 
-                if($balance > 0 && $request->no_of_bags[$index] > $balance) {
-                    return response()->json("Total balance is $balance. You cannot exceed this balance.", 422);
-                }
+                // Balance check removed to allow exceeding balance for weight gain scenario
                 
+
                 $sale_return->sale_return_data()->create([
                     "quantity" => $request->qty[$index],
                     "sale_invoice_data_id" => $request->si_data_id[$index],

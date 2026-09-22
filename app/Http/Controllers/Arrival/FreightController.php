@@ -374,21 +374,33 @@ class FreightController extends Controller
                 $avgPricePerKg = $qty > 0 ? ($price / $qty) : 0;
 
                 // Calculate Weighted Average Cost (WAC) across previous Stock-In records (Arrival, Production, etc.) + current Stock-In
-                $previousStocks = Stock::where('product_id', $productId)
+                // Fetch the most recent stock-in to get the latest valid WAC
+                $latestStockIn = Stock::where('product_id', $productId)
                     ->where('type', 'stock-in')
                     ->where('voucher_no', '!=', $grnNumber->unique_no)
                     ->whereNotNull('avg_cost_price')
                     ->where('avg_cost_price', '>', 0)
-                    ->get();
+                    ->latest('id')
+                    ->first();
 
-                if ($previousStocks->count() > 0) {
-                    $prevTotalQty = $previousStocks->sum('qty');
-                    $prevTotalValue = $previousStocks->sum(function ($s) {
-                        return (float) ($s->price > 0 ? $s->price : ($s->qty * ($s->avg_price_per_kg ?: $s->avg_cost_price)));
-                    });
+                $currentWac = $latestStockIn ? (float)$latestStockIn->avg_cost_price : (float)$avgPricePerKg;
 
-                    $combinedTotalQty = $prevTotalQty + $qty;
-                    $combinedTotalValue = $prevTotalValue + $price;
+                // Calculate current on-hand quantity
+                $totalStockInQty = Stock::where('product_id', $productId)
+                    ->where('type', 'stock-in')
+                    ->where('voucher_no', '!=', $grnNumber->unique_no)
+                    ->sum('qty');
+                    
+                $totalStockOutQty = Stock::where('product_id', $productId)
+                    ->where('type', 'stock-out')
+                    ->sum('qty');
+
+                $currentOnHandQty = max(0, $totalStockInQty - $totalStockOutQty);
+
+                if ($currentOnHandQty > 0) {
+                    $currentTotalValue = $currentOnHandQty * $currentWac;
+                    $combinedTotalQty = $currentOnHandQty + $qty;
+                    $combinedTotalValue = $currentTotalValue + $price; // $price is the total value of the incoming stock
 
                     $avgCostPrice = $combinedTotalQty > 0 ? ($combinedTotalValue / $combinedTotalQty) : $avgPricePerKg;
                 } else {

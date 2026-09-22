@@ -85,12 +85,14 @@
                     <div class="form-group">
                         <label class="form-label">Arrival Location:<span class="text-danger">*</span></label>
                         <select name="arrival_location_id" id="arrivals"
+                            onchange="selectArrival(this); get_sale_invoices()"
                             class="form-control select2">
                             <option value="">Select Arrival Location</option>
-                            @foreach (get_arrival_locations() as $arrival_location)
-                                <option value="{{ $arrival_location->id }}" @selected($saleReturn->arrival_location_id == $arrival_location->id)>
-                                    {{ $arrival_location->name }}</option>
-                            @endforeach
+                            @if($saleReturn->arrival_location_id)
+                                <option value="{{ $saleReturn->arrival_location_id }}" selected>
+                                    {{ optional($saleReturn->arrivalLocation)->name ?? 'Current Arrival' }}
+                                </option>
+                            @endif
                         </select>
                     </div>
                 </div>
@@ -98,12 +100,14 @@
                     <div class="form-group">
                         <label class="form-label">Storage:<span class="text-danger">*</span></label>
                         <select name="storage_location_id" id="storages"
+                            onchange="get_sale_invoices()"
                             class="form-control select2">
                             <option value="">Select Storage Location</option>
-                            @foreach (get_sub_arrival_locations() as $sub_arrival_location)
-                                <option value="{{ $sub_arrival_location->id }}" @selected($saleReturn->storage_location_id == $sub_arrival_location->id)>
-                                    {{ $sub_arrival_location->name }}</option>
-                            @endforeach
+                            @if($saleReturn->storage_location_id)
+                                <option value="{{ $saleReturn->storage_location_id }}" selected>
+                                    {{ optional($saleReturn->storageLocation)->name ?? 'Current Storage' }}
+                                </option>
+                            @endif
                         </select>
                     </div>
                 </div>
@@ -426,26 +430,21 @@
 <script>
     salesInvoiceRowIndex = 1;
 
+    const preselectedArrivalId = {{ $saleReturn->arrival_location_id ?? 'null' }};
+    const preselectedStorageId = {{ $saleReturn->storage_location_id ?? 'null' }};
+
     $(document).ready(function() {
         $('.select2').select2();
+
+        // If an arrival location was already saved, load its storages and pre-select
+        if (preselectedArrivalId) {
+            loadStoragesForArrival(preselectedArrivalId, preselectedStorageId);
+        }
     });
 
     
     function check_balance(el, target) {
-        const balance = $(el).data("balance");
-        const value = $("#" + target).val();
-        
-        if(value > balance) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Limit Exceeded',
-                text: 'Cannot proceed more than ' + balance,
-            });
-                
-            $("#" + target).addClass("is-invalid");
-        } else {
-            $("#" + target).removeClass("is-invalid");
-        }
+        // Validation removed to allow excess returns for weight gain
     }
 
     function calculateRow(el) {
@@ -517,38 +516,59 @@
     function selectLocation(el) {
         const company = $(el).val();
 
+        // Reset arrivals and storages
+        $("#arrivals").empty().append(`<option value=''>Select Arrival Location</option>`).select2();
+        $("#storages").empty().append(`<option value=''>Select Storage Location</option>`).select2();
+
         if (!company) {
             $("#arrivals").prop("disabled", true);
-            $("#arrivals").empty();
             return;
-        } else {
-            $("#arrivals").prop("disabled", false);
-            $.ajax({
-                url: "{{ route('sales.get.arrival-locations') }}",
-                method: "GET",
-                data: {
-                    location_id: company
-                },
-                dataType: "json",
-                success: function(res) {
-                    $("#arrivals").empty();
-                    $("#arrivals").append(`<option value=''>Select Arrival Location</option>`)
-
-                    res.forEach(location => {
-                        $("#arrivals").append(`
-                            <option value="${location.id}">
-                                ${location.text}
-                            </option>
-                        `);
-                    });
-
-                    $("#arrivals").select2();
-                },
-                error: function(error) {
-                    console.error("Error:", error);
-                }
-            });
         }
+
+        $("#arrivals").prop("disabled", false);
+        $.ajax({
+            url: "{{ route('sales.get.arrival-locations') }}",
+            method: "GET",
+            data: { location_id: company },
+            dataType: "json",
+            success: function(res) {
+                $("#arrivals").empty().append(`<option value=''>Select Arrival Location</option>`);
+                res.forEach(location => {
+                    $("#arrivals").append(`<option value="${location.id}">${location.text}</option>`);
+                });
+                $("#arrivals").select2();
+            },
+            error: function(error) {
+                console.error("Error:", error);
+            }
+        });
+    }
+
+    function loadStoragesForArrival(arrivalId, preSelectId = null) {
+        $.ajax({
+            url: "{{ route('sales.get.storage-locations') }}",
+            method: "GET",
+            data: { arrival_id: arrivalId },
+            dataType: "json",
+            success: function(res) {
+                $("#storages").empty().append(`<option value=''>Select Storage Location</option>`);
+                res.forEach(storage => {
+                    const selected = preSelectId && storage.id == preSelectId ? 'selected' : '';
+                    $("#storages").append(`<option value="${storage.id}" ${selected}>${storage.text}</option>`);
+                });
+                $("#storages").select2();
+            },
+            error: function(error) {
+                console.error("Error:", error);
+            }
+        });
+    }
+
+    function selectArrival(el) {
+        const arrival_id = $(el).val();
+        $("#storages").empty().append(`<option value=''>Select Storage Location</option>`).select2();
+        if (!arrival_id) return;
+        loadStoragesForArrival(arrival_id);
     }
 
     function get_items(el) {
@@ -724,15 +744,7 @@
     }
 
     function validateBalance(el) {
-        const row = $(el).closest("tr");
-        const maxBalance = parseFloat(row.find(".max_balance").val()) || 0;
         const noOfBags = parseFloat($(el).val()) || 0;
-
-        if (noOfBags > maxBalance) {
-            $(el).val(maxBalance);
-            toastr.warning(`Cannot exceed available balance of ${maxBalance} bags`);
-            calculateRow(el);
-        }
 
         if (noOfBags < 0) {
             $(el).val(0);

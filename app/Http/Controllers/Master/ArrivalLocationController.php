@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use App\Http\Requests\Master\ArrivalLocationRequest;
 use App\Models\Master\CompanyLocation;
 use App\Models\User;
+use App\Models\Master\Account\Account;
 
 class ArrivalLocationController extends Controller
 {
@@ -61,6 +62,14 @@ class ArrivalLocationController extends Controller
         $data = $request->validated();
         $arrival_locations = ArrivalLocation::create($request->all());
 
+        // Create Account under 1-7
+        $account1 = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->name, '1-7', 'arrival_locations'));
+        $account1->update(['model_id' => $arrival_locations->id]);
+
+        // Create Account under 4-4
+        $account2 = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->name . ' Weighbridge', '4-4', 'arrival_locations'));
+        $account2->update(['model_id' => $arrival_locations->id]);
+
         return response()->json(['success' => 'Arrival Location created successfully.', 'data' => $arrival_locations], 201);
     }
 
@@ -79,9 +88,40 @@ class ArrivalLocationController extends Controller
      */
     public function update(ArrivalLocationRequest $request, ArrivalLocation $arrival_location)
     {
+        $oldName = $arrival_location->name;
+        
         $data = $request->validated();
         $data = $request->all();
         $arrival_location->update($data);
+        
+        $account1 = Account::where('table_name', 'arrival_locations')
+            ->where('model_id', $arrival_location->id)
+            ->where('hierarchy_path', 'like', '1-7-%')
+            ->first();
+            
+        if ($account1) {
+            if ($oldName !== $request->name) {
+                $account1->update(['name' => $request->name]);
+            }
+        } else {
+            $newAccount1 = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->name, '1-7', 'arrival_locations'));
+            $newAccount1->update(['model_id' => $arrival_location->id]);
+        }
+        
+        $account2 = Account::where('table_name', 'arrival_locations')
+            ->where('model_id', $arrival_location->id)
+            ->where('hierarchy_path', 'like', '4-4-%')
+            ->first();
+            
+        if ($account2) {
+            if ($oldName !== $request->name) {
+                $account2->update(['name' => $request->name . ' Weighbridge']);
+            }
+        } else {
+            $newAccount2 = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->name . ' Weighbridge', '4-4', 'arrival_locations'));
+            $newAccount2->update(['model_id' => $arrival_location->id]);
+        }
+        
         return response()->json(['success' => 'Arrival Location updated successfully.', 'data' => $arrival_location], 200);
     }
 
