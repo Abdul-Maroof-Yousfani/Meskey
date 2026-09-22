@@ -12,6 +12,7 @@ use App\Models\Master\Account\Transaction;
 use App\Models\Master\Broker;
 use App\Models\Master\Supplier;
 use App\Models\Master\Tax;
+use App\Models\Master\Transporter;
 use App\Models\Master\Vendor;
 use App\Models\PaymentVoucher;
 use App\Models\PaymentVoucherData;
@@ -20,6 +21,8 @@ use App\Models\Procurement\PaymentRequest;
 use App\Models\Procurement\PaymentRequestData;
 use App\Models\SupplierCompanyBankDetail;
 use App\Models\SupplierOwnerBankDetail;
+use App\Models\TransporterCompanyBankDetail;
+use App\Models\TransporterOwnerBankDetail;
 use App\Models\VendorCompanyBankDetail;
 use App\Models\VendorOwnerBankDetail;
 use Illuminate\Http\Request;
@@ -361,19 +364,21 @@ class PaymentVoucherController extends Controller
             } elseif ($paymentVoucher->bank_account_type === 'owner') {
                 $bankAccount = BrokerOwnerBankDetail::find($paymentVoucher->bank_account_id);
             }
-
         } elseif ($table_name == 'vendors') {
             if ($paymentVoucher->bank_account_type === 'company') {
                 $bankAccount = VendorCompanyBankDetail::find($paymentVoucher->bank_account_id);
             } elseif ($paymentVoucher->bank_account_type === 'owner') {
                 $bankAccount = VendorOwnerBankDetail::find($paymentVoucher->bank_account_id);
             }
+        } elseif ($table_name == 'transporters') {
+            if ($paymentVoucher->bank_account_type === 'company') {
+                $bankAccount = TransporterCompanyBankDetail::find($paymentVoucher->bank_account_id);
+            } elseif ($paymentVoucher->bank_account_type === 'owner') {
+                $bankAccount = TransporterOwnerBankDetail::find($paymentVoucher->bank_account_id);
+            }
         } else {
             $bankAccount = null;
-
         }
-
-
 
         return view('management.finance.payment_voucher.show', [
             'paymentVoucher' => $paymentVoucher,
@@ -394,11 +399,34 @@ class PaymentVoucherController extends Controller
         $transactions = Transaction::where('transaction_voucher_type_id', 1)->where('voucher_no', $paymentVoucher->unique_no)
             ->get();
 
+        $table_name = $paymentVoucher->requestAccount->table_name ?? null;
         $bankAccount = null;
-        if ($paymentVoucher->bank_account_type === 'company') {
-            $bankAccount = SupplierCompanyBankDetail::find($paymentVoucher->bank_account_id);
-        } elseif ($paymentVoucher->bank_account_type === 'owner') {
-            $bankAccount = SupplierOwnerBankDetail::find($paymentVoucher->bank_account_id);
+        if ($table_name == 'suppliers') {
+            if ($paymentVoucher->bank_account_type === 'company') {
+                $bankAccount = SupplierCompanyBankDetail::find($paymentVoucher->bank_account_id);
+            } elseif ($paymentVoucher->bank_account_type === 'owner') {
+                $bankAccount = SupplierOwnerBankDetail::find($paymentVoucher->bank_account_id);
+            }
+        } elseif ($table_name == 'brokers') {
+            if ($paymentVoucher->bank_account_type === 'company') {
+                $bankAccount = BrokerCompanyBankDetail::find($paymentVoucher->bank_account_id);
+            } elseif ($paymentVoucher->bank_account_type === 'owner') {
+                $bankAccount = BrokerOwnerBankDetail::find($paymentVoucher->bank_account_id);
+            }
+        } elseif ($table_name == 'vendors') {
+            if ($paymentVoucher->bank_account_type === 'company') {
+                $bankAccount = VendorCompanyBankDetail::find($paymentVoucher->bank_account_id);
+            } elseif ($paymentVoucher->bank_account_type === 'owner') {
+                $bankAccount = VendorOwnerBankDetail::find($paymentVoucher->bank_account_id);
+            }
+        } elseif ($table_name == 'transporters') {
+            if ($paymentVoucher->bank_account_type === 'company') {
+                $bankAccount = TransporterCompanyBankDetail::find($paymentVoucher->bank_account_id);
+            } elseif ($paymentVoucher->bank_account_type === 'owner') {
+                $bankAccount = TransporterOwnerBankDetail::find($paymentVoucher->bank_account_id);
+            }
+        } else {
+            $bankAccount = null;
         }
 
         return view('management.finance.payment_voucher.approvalCanvas', [
@@ -610,8 +638,8 @@ class PaymentVoucherController extends Controller
                                 : '-',
                             'no_of_bags' => $request->paymentRequestData->no_of_bags,
                             'loading_weight' => $request->paymentRequestData->loading_weight,
-                            'module_type' => $request->paymentRequestData->module_type,
-                            'contract_no' => $request->paymentRequestData->purchaseOrder->contract_no ?? 'N/A',
+                            'module_type' => $request->delivery_challan_id ? 'sale_order' : ($request->paymentRequestData->module_type ?? 'purchase_order'),
+                            'contract_no' => $request->deliveryChallan ? $request->deliveryChallan->dc_no : ($request->paymentRequestData->purchaseOrder->contract_no ?? 'N/A'),
                             'amount' => $request->amount,
                             'purpose' => $request->paymentRequestData->notes ?? 'No description',
                             'status' => $request->approval_status,
@@ -665,30 +693,35 @@ class PaymentVoucherController extends Controller
                     }
                 }
 
-                $paymentRequests = PaymentRequest::with(['paymentRequestData', 'approvals'])
+                $paymentRequests = PaymentRequest::with(['paymentRequestData', 'approvals', 'deliveryChallan.delivery_challan_data'])
                     ->where('account_id', $accountId)
                     ->whereDoesntHave('paymentVoucherData')
                     ->where('status', 'approved')
                     ->get()
                     ->map(function ($request) {
+                        $dc = $request->deliveryChallan;
+                        $po = $request->paymentRequestData?->purchaseOrder;
+                        $firstDcData = $dc?->delivery_challan_data?->first();
+
                         return [
                             'id' => $request->id,
-                            'supplier_id' => $request->paymentRequestData->purchaseOrder->supplier_id ?? '',
-                            'purchaseOrder' => $request->paymentRequestData->purchaseOrder,
-                            'truck_no' => $request->paymentRequestData->truck_no ?? '-',
-                            'bilty_no' => $request->paymentRequestData->bilty_no ?? '-',
+                            'supplier_id' => $po->supplier_id ?? '',
+                            'purchaseOrder' => $po,
+                            'truck_no' => $request->paymentRequestData?->truck_no ?? $firstDcData?->truck_no ?? '-',
+                            'bilty_no' => $request->paymentRequestData?->bilty_no ?? $firstDcData?->bilty_no ?? '-',
                             'loading_date' => $request->paymentRequestData && $request->paymentRequestData->loading_date
                                 ? $request->paymentRequestData->loading_date->format('Y-m-d')
-                                : '-',
-                            'no_of_bags' => $request->paymentRequestData->no_of_bags,
-                            'loading_weight' => $request->paymentRequestData->loading_weight,
-                            'module_type' => $request->paymentRequestData->module_type,
-                            'contract_no' => $request->paymentRequestData->purchaseOrder->contract_no ?? 'N/A',
+                                : ($dc?->dispatch_date ? date('Y-m-d', strtotime($dc->dispatch_date)) : '-'),
+                            'no_of_bags' => $request->paymentRequestData?->no_of_bags ?? ($dc ? $dc->delivery_challan_data?->sum('no_of_bags') : ''),
+                            'loading_weight' => $request->paymentRequestData?->loading_weight ?? ($dc ? $dc->delivery_challan_data?->sum('qty') : ''),
+                            'module_type' => $dc ? 'sale_order' : ($request->paymentRequestData?->module_type ?? 'purchase_order'),
+                            'contract_no' => $dc ? $dc->dc_no : ($po->contract_no ?? 'N/A'),
                             'amount' => $request->amount,
-                            'purpose' => $request->paymentRequestData->notes ?? 'No description',
+                            'purpose' => $request->paymentRequestData?->notes ?? ($dc ? "Broker commission for DC: {$dc->dc_no}" : 'No description'),
                             'status' => $request->approval_status,
-                            'saudaType' => $request->paymentRequestData->purchaseOrder->saudaType->name ?? '',
+                            'saudaType' => $dc ? ucfirst($dc->sauda_type ?? '') : ($po?->saudaType?->name ?? ''),
                             'type' => ($request->request_type),
+                            'file' => ($request->paymentRequestData?->attachment ?? null),
                             'request_date' => $request->created_at
                                 ? $request->created_at->format('Y-m-d')
                                 : '',
@@ -735,36 +768,151 @@ class PaymentVoucherController extends Controller
                     }
                 }
 
-                $paymentRequests = PaymentRequest::with(['paymentRequestData', 'approvals'])
+                $paymentRequests = PaymentRequest::with(['paymentRequestData', 'approvals', 'deliveryChallan.delivery_challan_data'])
                     ->where('account_id', $accountId)
                     ->whereDoesntHave('paymentVoucherData')
                     ->where('status', 'approved')
                     ->get()
                     ->map(function ($request) {
+                        $dc = $request->deliveryChallan;
+                        $po = $request->paymentRequestData?->purchaseOrder;
+                        $firstDcData = $dc?->delivery_challan_data?->first();
+
                         return [
                             'id' => $request->id,
-                            'supplier_id' => $request->paymentRequestData->purchaseOrder->supplier_id ?? '',
-                            'purchaseOrder' => $request->paymentRequestData->purchaseOrder ?? null,
-                            'truck_no' => $request->paymentRequestData->truck_no ?? $request->paymentRequestData->arrivalTicket->truck_no ?? '-',
-                            'bilty_no' => $request->paymentRequestData->bilty_no ?? $request->paymentRequestData->arrivalTicket->bilty_no ?? '-',
+                            'supplier_id' => $po->supplier_id ?? '',
+                            'purchaseOrder' => $po ?? null,
+                            'truck_no' => $request->paymentRequestData?->truck_no ?? $request->paymentRequestData?->arrivalTicket?->truck_no ?? $firstDcData?->truck_no ?? '-',
+                            'bilty_no' => $request->paymentRequestData?->bilty_no ?? $request->paymentRequestData?->arrivalTicket?->bilty_no ?? $firstDcData?->bilty_no ?? '-',
                             'loading_date' => $request->paymentRequestData && $request->paymentRequestData->loading_date
                                 ? $request->paymentRequestData->loading_date->format('Y-m-d')
-                                : '-',
-                            'no_of_bags' => $request->paymentRequestData->no_of_bags ?? '',
-                            'loading_weight' => $request->paymentRequestData->loading_weight ?? '',
-                            'module_type' => $request->paymentRequestData->module_type ?? '',
-                            'contract_no' => $request->paymentRequestData->purchaseOrder->contract_no ?? 'N/A',
+                                : ($dc?->dispatch_date ? date('Y-m-d', strtotime($dc->dispatch_date)) : '-'),
+                            'no_of_bags' => $request->paymentRequestData?->no_of_bags ?? ($dc ? $dc->delivery_challan_data?->sum('no_of_bags') : ''),
+                            'loading_weight' => $request->paymentRequestData?->loading_weight ?? ($dc ? $dc->delivery_challan_data?->sum('qty') : ''),
+                            'module_type' => $dc ? 'sale_order' : ($request->paymentRequestData?->module_type ?? 'purchase_order'),
+                            'contract_no' => $dc ? $dc->dc_no : ($po->contract_no ?? 'N/A'),
                             'amount' => $request->amount ?? '',
-                            'purpose' => $request->paymentRequestData->notes ?? 'No description',
+                            'purpose' => $request->paymentRequestData?->notes ?? ($dc ? "Labour for DC: {$dc->dc_no}" : 'No description'),
                             'status' => $request->approval_status ?? '',
-                            'saudaType' => $request->paymentRequestData->purchaseOrder->saudaType->name ?? '',
+                            'saudaType' => $dc ? ucfirst($dc->sauda_type ?? '') : ($po?->saudaType?->name ?? ''),
                             'type' => ($request->request_type) ?? '',
+                            'file' => ($request->paymentRequestData?->attachment ?? null),
                             'request_date' => $request->created_at
                                 ? $request->created_at->format('Y-m-d')
                                 : '',
                         ];
                     });
             }
+        } elseif ($tableName === 'transporters') {
+            $transporter = Transporter::with(['companyBankDetails', 'ownerBankDetails'])
+                ->where('account_id', $account->id)
+                ->first();
+
+            if ($transporter) {
+                $modelId = $transporter->id;
+                $companyBankAccounts = $transporter->companyBankDetails ?? collect();
+                $ownerBankAccounts = $transporter->ownerBankDetails ?? collect();
+
+                if ($companyBankAccounts) {
+                    foreach ($companyBankAccounts as $bank) {
+                        $bankAccounts->push([
+                            'id' => $bank->id,
+                            'type' => 'company',
+                            'title' => $bank->transporter->name ?? $transporter->name ?? '',
+                            'account_title' => $bank->account_title ?? '',
+                            'account_number' => $bank->account_number ?? '',
+                            'bank_name' => $bank->bank_name ?? '',
+                            'branch_name' => $bank->branch_name ?? '',
+                            'branch_code' => $bank->branch_code ?? '',
+                        ]);
+                    }
+                }
+
+                if ($ownerBankAccounts) {
+                    foreach ($ownerBankAccounts as $bank) {
+                        $bankAccounts->push([
+                            'id' => $bank->id,
+                            'type' => 'owner',
+                            'title' => $bank->transporter->name ?? $transporter->name ?? '',
+                            'account_title' => $bank->account_title ?? '',
+                            'account_number' => $bank->account_number ?? '',
+                            'bank_name' => $bank->bank_name ?? '',
+                            'branch_name' => $bank->branch_name ?? '',
+                            'branch_code' => $bank->branch_code ?? '',
+                        ]);
+                    }
+                }
+
+                $paymentRequests = PaymentRequest::with(['paymentRequestData', 'approvals', 'deliveryChallan.delivery_challan_data'])
+                    ->where('account_id', $accountId)
+                    ->whereDoesntHave('paymentVoucherData')
+                    ->where('status', 'approved')
+                    ->get()
+                    ->map(function ($request) {
+                        $dc = $request->deliveryChallan;
+                        $po = $request->paymentRequestData?->purchaseOrder;
+                        $firstDcData = $dc?->delivery_challan_data?->first();
+
+                        return [
+                            'id' => $request->id,
+                            'supplier_id' => $po->supplier_id ?? '',
+                            'purchaseOrder' => $po ?? null,
+                            'truck_no' => $request->paymentRequestData?->truck_no ?? $firstDcData?->truck_no ?? '-',
+                            'bilty_no' => $request->paymentRequestData?->bilty_no ?? $firstDcData?->bilty_no ?? '-',
+                            'loading_date' => $request->paymentRequestData && $request->paymentRequestData->loading_date
+                                ? $request->paymentRequestData->loading_date->format('Y-m-d')
+                                : ($dc?->dispatch_date ? date('Y-m-d', strtotime($dc->dispatch_date)) : '-'),
+                            'no_of_bags' => $request->paymentRequestData?->no_of_bags ?? ($dc ? $dc->delivery_challan_data?->sum('no_of_bags') : ''),
+                            'loading_weight' => $request->paymentRequestData?->loading_weight ?? ($dc ? $dc->delivery_challan_data?->sum('qty') : ''),
+                            'module_type' => $dc ? 'sale_order' : ($request->paymentRequestData?->module_type ?? 'purchase_order'),
+                            'contract_no' => $dc ? $dc->dc_no : ($po->contract_no ?? 'N/A'),
+                            'amount' => $request->amount ?? '',
+                            'purpose' => $request->paymentRequestData?->notes ?? ($dc ? "Freight for DC: {$dc->dc_no}" : 'No description'),
+                            'status' => $request->approval_status ?? '',
+                            'saudaType' => $dc ? ucfirst($dc->sauda_type ?? '') : ($po?->saudaType?->name ?? ''),
+                            'type' => ($request->request_type) ?? '',
+                            'file' => ($request->paymentRequestData?->attachment ?? null),
+                            'request_date' => $request->created_at
+                                ? $request->created_at->format('Y-m-d')
+                                : '',
+                        ];
+                    });
+            }
+        } else {
+            $paymentRequests = PaymentRequest::with(['paymentRequestData', 'approvals', 'deliveryChallan.delivery_challan_data'])
+                ->where('account_id', $accountId)
+                ->whereDoesntHave('paymentVoucherData')
+                ->where('status', 'approved')
+                ->get()
+                ->map(function ($request) {
+                    $dc = $request->deliveryChallan;
+                    $po = $request->paymentRequestData?->purchaseOrder;
+                    $firstDcData = $dc?->delivery_challan_data?->first();
+
+                    return [
+                        'id' => $request->id,
+                        'supplier_id' => $po->supplier_id ?? '',
+                        'purchaseOrder' => $po ?? null,
+                        'truck_no' => $request->paymentRequestData?->truck_no ?? $firstDcData?->truck_no ?? '-',
+                        'bilty_no' => $request->paymentRequestData?->bilty_no ?? $firstDcData?->bilty_no ?? '-',
+                        'loading_date' => $request->paymentRequestData && $request->paymentRequestData->loading_date
+                            ? $request->paymentRequestData->loading_date->format('Y-m-d')
+                            : ($dc?->dispatch_date ? date('Y-m-d', strtotime($dc->dispatch_date)) : '-'),
+                        'no_of_bags' => $request->paymentRequestData?->no_of_bags ?? ($dc ? $dc->delivery_challan_data?->sum('no_of_bags') : ''),
+                        'loading_weight' => $request->paymentRequestData?->loading_weight ?? ($dc ? $dc->delivery_challan_data?->sum('qty') : ''),
+                        'module_type' => $dc ? 'sale_order' : ($request->paymentRequestData?->module_type ?? 'purchase_order'),
+                        'contract_no' => $dc ? $dc->dc_no : ($po->contract_no ?? 'N/A'),
+                        'amount' => $request->amount ?? '',
+                        'purpose' => $request->paymentRequestData?->notes ?? ($dc ? "Commission for DC: {$dc->dc_no}" : 'No description'),
+                        'status' => $request->approval_status ?? '',
+                        'saudaType' => $dc ? ucfirst($dc->sauda_type ?? '') : ($po?->saudaType?->name ?? ''),
+                        'type' => ($request->request_type) ?? '',
+                        'file' => ($request->paymentRequestData?->attachment ?? null),
+                        'request_date' => $request->created_at
+                            ? $request->created_at->format('Y-m-d')
+                            : '',
+                    ];
+                });
         }
 
         return response()->json([
@@ -1011,21 +1159,59 @@ class PaymentVoucherController extends Controller
             $datePrefix = $prefix . '-' . date('m-d-Y') . '-';
             $uniqueNo = generateUniqueNumberByDate('payment_vouchers', $datePrefix, null, 'unique_no', false);
             // dd($request->all());
-            $firstRequest = PaymentRequest::with('paymentRequestData.purchaseOrder')
+            $firstRequest = PaymentRequest::with(['paymentRequestData.purchaseOrder', 'deliveryChallan'])
                 ->find($request->payment_requests[0]);
+
+            $requestAccount = Account::find($request->request_account_id);
+            $tableName = $requestAccount?->table_name ?? null;
 
             $bankAccount = null;
             $bankName = '';
             $accountNumber = '';
-            if ($request->bank_account_type === 'company') {
-                $bankAccount = SupplierCompanyBankDetail::find($request->bank_account_id);
-            } elseif ($request->bank_account_type === 'owner') {
-                $bankAccount = SupplierOwnerBankDetail::find($request->bank_account_id);
+            if ($tableName == 'suppliers') {
+                if ($request->bank_account_type === 'company') {
+                    $bankAccount = SupplierCompanyBankDetail::find($request->bank_account_id);
+                } elseif ($request->bank_account_type === 'owner') {
+                    $bankAccount = SupplierOwnerBankDetail::find($request->bank_account_id);
+                }
+            } elseif ($tableName == 'brokers') {
+                if ($request->bank_account_type === 'company') {
+                    $bankAccount = BrokerCompanyBankDetail::find($request->bank_account_id);
+                } elseif ($request->bank_account_type === 'owner') {
+                    $bankAccount = BrokerOwnerBankDetail::find($request->bank_account_id);
+                }
+            } elseif ($tableName == 'vendors') {
+                if ($request->bank_account_type === 'company') {
+                    $bankAccount = VendorCompanyBankDetail::find($request->bank_account_id);
+                } elseif ($request->bank_account_type === 'owner') {
+                    $bankAccount = VendorOwnerBankDetail::find($request->bank_account_id);
+                }
+            } elseif ($tableName == 'transporters') {
+                if ($request->bank_account_type === 'company') {
+                    $bankAccount = TransporterCompanyBankDetail::find($request->bank_account_id);
+                } elseif ($request->bank_account_type === 'owner') {
+                    $bankAccount = TransporterOwnerBankDetail::find($request->bank_account_id);
+                }
+            } else {
+                if ($request->bank_account_type === 'company') {
+                    $bankAccount = SupplierCompanyBankDetail::find($request->bank_account_id)
+                        ?? TransporterCompanyBankDetail::find($request->bank_account_id)
+                        ?? VendorCompanyBankDetail::find($request->bank_account_id)
+                        ?? BrokerCompanyBankDetail::find($request->bank_account_id);
+                } elseif ($request->bank_account_type === 'owner') {
+                    $bankAccount = SupplierOwnerBankDetail::find($request->bank_account_id)
+                        ?? TransporterOwnerBankDetail::find($request->bank_account_id)
+                        ?? VendorOwnerBankDetail::find($request->bank_account_id)
+                        ?? BrokerOwnerBankDetail::find($request->bank_account_id);
+                }
             }
             if ($bankAccount) {
                 $bankName = $bankAccount->bank_name ?? '';
                 $accountNumber = $bankAccount->account_number ?? '';
             }
+
+            $moduleId = $firstRequest?->delivery_challan_id ?? ($firstRequest?->paymentRequestData?->purchase_order_id ?? null);
+            $moduleType = $firstRequest?->delivery_challan_id ? 'delivery_challan' : 'raw_material_purchase';
 
             $paymentVoucher = PaymentVoucher::create([
                 'unique_no' => $uniqueNo,
@@ -1039,8 +1225,8 @@ class PaymentVoucherController extends Controller
                 'bank_account_type' => $request->bank_account_type,
                 'request_account_id' => $request->request_account_id,
                 'model_id' => $request->model_id,
-                'module_id' => $firstRequest->paymentRequestData->purchase_order_id ?? null,
-                'module_type' => 'raw_material_purchase',
+                'module_id' => $moduleId,
+                'module_type' => $moduleType,
                 'voucher_type' => $request->voucher_type,
                 'remarks' => $request->remarks,
                 'total_amount' => 0,
@@ -1052,40 +1238,42 @@ class PaymentVoucherController extends Controller
             $perRequestData = [];
 
             foreach ($request->payment_requests as $requestId) {
-                $paymentRequest = PaymentRequest::findOrFail($requestId);
+                $paymentRequest = PaymentRequest::with(['paymentRequestData', 'deliveryChallan.delivery_challan_data'])->findOrFail($requestId);
 
-                // Build ticket details based on condition
+                $dc = $paymentRequest->deliveryChallan;
                 $ticketDetails = '';
-                if ($paymentRequest->paymentRequestData->purchase_ticket_id) {
-                    $ticketDetails = "Purchase Ticket #" . ($paymentRequest->paymentRequestData->purchaseTicket->unique_no ?? 'N/A') . " ";
-                    $ticketDetails .= "VEH# " . ($paymentRequest->paymentRequestData->purchaseTicket->purchaseFreight->truck_no ?? 'N/A') . " ";
-                    $ticketDetails .= "Bilty# " . ($paymentRequest->paymentRequestData->purchaseTicket->purchaseFreight->bilty_no ?? 'N/A') . " ";
+
+                if ($dc) {
+                    $ticketNo = $dc->dc_no;
+                    $firstDcData = $dc->delivery_challan_data->first();
+                    $truckNo = $paymentRequest->paymentRequestData->truck_no ?? $firstDcData?->truck_no ?? 'N/A';
+                    $biltyNo = $paymentRequest->paymentRequestData->bilty_no ?? $firstDcData?->bilty_no ?? 'N/A';
+                    $ticketDetails = "DC# {$dc->dc_no} VEH# {$truckNo} Bilty# {$biltyNo}";
+                } elseif ($paymentRequest->paymentRequestData->purchase_ticket_id) {
+                    $ticketNo = $paymentRequest->paymentRequestData->purchaseTicket->unique_no ?? 'N/A';
+                    $truckNo = $paymentRequest->paymentRequestData->purchaseTicket->purchaseFreight->truck_no ?? 'N/A';
+                    $biltyNo = $paymentRequest->paymentRequestData->purchaseTicket->purchaseFreight->bilty_no ?? 'N/A';
+                    $ticketDetails = "Purchase Ticket #" . $ticketNo . " ";
+                    $ticketDetails .= "VEH# " . $truckNo . " ";
+                    $ticketDetails .= "Bilty# " . $biltyNo . " ";
                     $ticketDetails .= "PO# " . ($paymentRequest->paymentRequestData->purchaseOrder->contract_no ?? 'N/A');
                 } elseif ($paymentRequest->paymentRequestData->arrival_ticket_id) {
-                    $ticketDetails = "Arrival Ticket # " . ($paymentRequest->paymentRequestData->arrivalTicket->unique_no ?? 'N/A') . " ";
-                    $ticketDetails .= "VEH# " . ($paymentRequest->paymentRequestData->arrivalTicket->truck_no ?? 'N/A') . " ";
-                    $ticketDetails .= "Bilty No: " . ($paymentRequest->paymentRequestData->arrivalTicket->bilty_no ?? 'N/A') . " ";
+                    $ticketNo = $paymentRequest->paymentRequestData->arrivalTicket->unique_no ?? 'N/A';
+                    $truckNo = $paymentRequest->paymentRequestData->arrivalTicket->truck_no ?? 'N/A';
+                    $biltyNo = $paymentRequest->paymentRequestData->arrivalTicket->bilty_no ?? 'N/A';
+                    $ticketDetails = "Arrival Ticket # " . $ticketNo . " ";
+                    $ticketDetails .= "VEH# " . $truckNo . " ";
+                    $ticketDetails .= "Bilty No: " . $biltyNo . " ";
                     $ticketDetails .= "PO# " . ($paymentRequest->paymentRequestData->purchaseOrder->contract_no ?? 'N/A') . " ";
                     $ticketDetails .= "GRN# " . ($paymentRequest->paymentRequestData->grn_no ?? 'N/A');
+                } else {
+                    $ticketNo = $paymentRequest->request_no ?? 'PR';
+                    $truckNo = $paymentRequest->paymentRequestData->truck_no ?? 'N/A';
+                    $biltyNo = $paymentRequest->paymentRequestData->bilty_no ?? 'N/A';
+                    $ticketDetails = "PR# {$paymentRequest->id} VEH# {$truckNo} Bilty# {$biltyNo}";
                 }
 
-                $ticketNo = ($paymentRequest->paymentRequestData->module_type == 'ticket' || $paymentRequest->paymentRequestData->module_type == 'freight_payment')
-                    ? $paymentRequest->paymentRequestData->arrivalTicket->unique_no
-                    : $paymentRequest->paymentRequestData->purchaseTicket->unique_no;
-
-                $truckNo = $paymentRequest->paymentRequestData->purchase_ticket_id
-                    ? ($paymentRequest->paymentRequestData->purchaseTicket->purchaseFreight->truck_no ?? 'N/A')
-                    : ($paymentRequest->paymentRequestData->arrival_ticket_id
-                        ? ($paymentRequest->paymentRequestData->arrivalTicket->truck_no ?? 'N/A')
-                        : 'N/A');
-
-                $biltyNo = $paymentRequest->paymentRequestData->purchase_ticket_id
-                    ? ($paymentRequest->paymentRequestData->purchaseTicket->purchaseFreight->bilty_no ?? 'N/A')
-                    : ($paymentRequest->paymentRequestData->arrival_ticket_id
-                        ? ($paymentRequest->paymentRequestData->arrivalTicket->bilty_no ?? 'N/A')
-                        : 'N/A');
-
-                $paymentRequestDataId = $paymentRequest->paymentRequestData->id;
+                $paymentRequestDataId = $paymentRequest->paymentRequestData->id ?? $paymentRequest->id;
 
                 $allPaymentAgainst[] = "$ticketNo-$paymentRequestDataId";
                 $allReferenceNos[] = "$truckNo/$biltyNo";
@@ -1101,14 +1289,14 @@ class PaymentVoucherController extends Controller
 
                 $perRequestData[] = [
                     'amount' => $paymentRequest->amount,
-                    'grn_no' => $paymentRequest->paymentRequestData->grn_no,
+                    'grn_no' => $paymentRequest->paymentRequestData->grn_no ?? null,
                     'request_type' => $paymentRequest->request_type,
-                    'purchase_ticket_id' => $paymentRequest->paymentRequestData->purchase_ticket_id,
-                    'purchase_order_id' => $paymentRequest->paymentRequestData->purchase_order_id,
-                    'arrival_ticket_id' => $paymentRequest->paymentRequestData->arrival_ticket_id,
+                    'purchase_ticket_id' => $paymentRequest->paymentRequestData->purchase_ticket_id ?? null,
+                    'purchase_order_id' => $paymentRequest->paymentRequestData->purchase_order_id ?? null,
+                    'arrival_ticket_id' => $paymentRequest->paymentRequestData->arrival_ticket_id ?? null,
                     'arrival_ticket_no' => $paymentRequest->paymentRequestData->arrivalTicket->unique_no ?? '',
                     'purchase_ticket_no' => $paymentRequest->paymentRequestData->purchaseTicket->unique_no ?? '',
-                    'purchase_order_no' => $paymentRequest->paymentRequestData->purchaseOrder->contract_no ?? 'N/A',
+                    'purchase_order_no' => $paymentRequest->paymentRequestData->purchaseOrder->contract_no ?? ($dc ? $dc->dc_no : 'N/A'),
                     'truck_no' => $truckNo,
                     'bilty_no' => $biltyNo,
                     'ticket_details' => $ticketDetails, // Add this for remarks

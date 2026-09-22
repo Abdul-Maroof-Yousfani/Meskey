@@ -355,6 +355,26 @@
                                     $.each(response.payment_requests, function(index, request) {
                                         const isChecked = selectedRequests.includes(
                                             request.id.toString());
+                                        const isSaleOrder = (request.module_type === 'delivery_challan' || request.module_type === 'sale_order' || request.module_type === 'sales_order');
+                                        const moduleLabel = request.module_type === 'purchase_order' ? 'Contract' : (isSaleOrder ? 'Sale Order' : (request.module_type === 'freight_payment' ? 'Advance Freight' : 'Ticket'));
+                                        const moduleBadgeClass = request.module_type === 'purchase_order' ? 'primary' : (isSaleOrder ? 'success' : (request.module_type === 'freight_payment' ? 'secondary' : 'info'));
+
+                                        const typeMap = {
+                                            'payment': 'Payment',
+                                            'advance_payment': 'Advance Payment',
+                                            'freight_payment': 'Freight Payment',
+                                            'freight_labour_payment': 'Labour Payment',
+                                            'labour_payment': 'Labour Payment',
+                                            'broker_commission_payment': 'Broker Commission',
+                                            'seller_commission_payment': 'Seller Commission'
+                                        };
+                                        const typeLabel = typeMap[request.type] || (request.type ? request.type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Payment');
+                                        const typeBadgeClass = request.type === 'payment' ? 'success' : 
+                                                              (request.type === 'freight_payment' ? 'warning' : 
+                                                              (request.type === 'freight_labour_payment' || request.type === 'labour_payment' ? 'info' : 
+                                                              (request.type === 'broker_commission_payment' ? 'secondary' : 
+                                                              (request.type === 'seller_commission_payment' ? 'dark' : 'warning'))));
+
                                         tbody.append(`
                                             <tr>
                                                 <td>
@@ -366,7 +386,7 @@
                                                         data-request-no="${request.contract_no}" 
                                                         data-truck-no="${request.truck_no}"
                                                         data-bilty-no="${request.bilty_no}"
-                                                        data-module-type="${request.module_type == 'purchase_order' ? 'Contract' : (request.module_type == 'freight_payment' ? 'Advance Freight' :'Ticket')} "
+                                                        data-module-type="${moduleLabel}"
                                                         data-loading-date="${request.loading_date}"
                                                         data-loading-weight="${request.loading_weight}"
                                                         ${isChecked ? 'checked' : ''}>
@@ -378,13 +398,13 @@
                                                 <td>
                                                     <span class="badge" style="display: inline-flex; padding: 0; overflow: hidden;">
                                                         <span
-                                                        class="badge badge-${request.module_type == 'purchase_order' ? 'primary' : 'info'}"
+                                                        class="badge badge-${moduleBadgeClass}"
                                                             style="border-radius: 3px 0 0 3px;">
-                                                            ${request.module_type == 'purchase_order' ? 'Contract' : (request.module_type == 'freight_payment' ? 'Advance Freight' :'Ticket')} 
+                                                            ${moduleLabel}
                                                         </span>
-                                                        <span class="badge badge-${request.type == 'payment' ? 'success' : 'warning'}"
+                                                        <span class="badge badge-${typeBadgeClass}"
                                                             style="border-radius: 0 3px 3px 0;">
-                                                            ${request.type == 'payment' ? 'Payment' : 'Freight Payment'}
+                                                            ${typeLabel}
                                                         </span>
                                                     </span>
                                                 </td>

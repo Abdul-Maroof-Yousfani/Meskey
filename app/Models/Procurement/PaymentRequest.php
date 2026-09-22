@@ -17,6 +17,7 @@ class PaymentRequest extends Model
     use HasFactory, HasApproval;
 
     protected $fillable = [
+        'delivery_challan_id',
         'payment_request_data_id',
         'other_deduction_value',
         'is_advance_payment',
@@ -116,5 +117,10 @@ class PaymentRequest extends Model
     public function createdBy()
     {
         return $this->belongsTo(User::class, 'requested_by');
+    }
+
+    public function deliveryChallan()
+    {
+        return $this->belongsTo(\App\Models\Sales\DeliveryChallan::class, 'delivery_challan_id');
     }
 }

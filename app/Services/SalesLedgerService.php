@@ -5,10 +5,15 @@ namespace App\Services;
 use App\Models\Master\Account\Account;
 use App\Models\Master\Account\Stock;
 use App\Models\Master\Account\Transaction;
+use App\Models\Master\Broker;
 use App\Models\Master\Customer;
 use App\Models\Master\Transporter;
 use App\Models\Master\Vendor;
+use App\Models\Procurement\PaymentRequest;
+use App\Models\Procurement\PaymentRequestApproval;
+use App\Models\Procurement\PaymentRequestData;
 use App\Models\Product;
+use App\Models\User;
 use App\Models\Master\Account\TransactionVoucherType;
 use App\Models\Sales\DeliveryChallan;
 use App\Models\Sales\DeliveryChallanData;
@@ -104,7 +109,7 @@ class SalesLedgerService
                     'am_approval_status' => 'draft',
                 ]);
             } else {
-                $receivingRequest->update([
+                $rrUpdate = [
                     'dc_no' => $deliveryChallan->dc_no,
                     'dc_date' => $deliveryChallan->dispatch_date,
                     'truck_number' => $dcDataFirst?->truck_no ?? null,
@@ -114,26 +119,31 @@ class SalesLedgerService
                     'labour_amount' => $deliveryChallan->labour_amount ?? 0,
                     'transporter_amount' => $deliveryChallan->transporter_amount ?? 0,
                     'inhouse_weighbridge_amount' => $deliveryChallan->{'weighbridge-amount'} ?? 0,
-                    'am_approval_status' => 'draft',
                     'created_by_id' => $deliveryChallan->created_by_id,
-                ]);
+                ];
+                if ($receivingRequest->am_approval_status !== 'approved') {
+                    $rrUpdate['am_approval_status'] = 'draft';
+                }
+                $receivingRequest->update($rrUpdate);
             }
 
-            // Sync Receiving Request Items
-            $receivingRequest->items()->delete();
-            foreach ($deliveryChallan->delivery_challan_data as $dcData) {
-                $product = $dcData->product;
-                ReceivingRequestItem::create([
-                    'receiving_request_id' => $receivingRequest->id,
-                    'delivery_challan_data_id' => $dcData->id,
-                    'item_id' => $dcData->item_id,
-                    'item_name' => $product?->name ?? 'N/A',
-                    'dispatch_weight' => $dcData->qty ?? 0,
-                    'receiving_weight' => 0,
-                    'difference_weight' => $dcData->qty ?? 0,
-                    'seller_portion' => 0,
-                    'remaining_amount' => $dcData->qty ?? 0,
-                ]);
+            // Sync Receiving Request Items only if not approved yet
+            if ($receivingRequest->am_approval_status !== 'approved') {
+                $receivingRequest->items()->delete();
+                foreach ($deliveryChallan->delivery_challan_data as $dcData) {
+                    $product = $dcData->product;
+                    ReceivingRequestItem::create([
+                        'receiving_request_id' => $receivingRequest->id,
+                        'delivery_challan_data_id' => $dcData->id,
+                        'item_id' => $dcData->item_id,
+                        'item_name' => $product?->name ?? 'N/A',
+                        'dispatch_weight' => $dcData->qty ?? 0,
+                        'receiving_weight' => 0,
+                        'difference_weight' => $dcData->qty ?? 0,
+                        'seller_portion' => 0,
+                        'remaining_amount' => $dcData->qty ?? 0,
+                    ]);
+                }
             }
 
             // 4. Pohanch Sauda Ledger Entries
@@ -162,7 +172,9 @@ class SalesLedgerService
                     }
                 };
 
-                $customerAccountId = $deliveryChallan->customer?->account_id;
+                $customerAccountId = $deliveryChallan->customer?->account_id 
+                    ?? \App\Models\Master\Customer::find($deliveryChallan->customer_id)?->account_id
+                    ?? Account::where('table_name', 'customers')->where('name', $deliveryChallan->customer?->name)->value('id');
                 $salesRevenueAccount = Account::where('hierarchy_path', '4-2')->first();
                 $inventoryAccountId = $salesRevenueAccount?->id;
 
@@ -582,6 +594,9 @@ class SalesLedgerService
                 $receivingRequest->delete();
             }
         }
+
+        // 6. Sync Payment Requests for Delivery Challan
+        $this->syncDeliveryChallanPaymentRequests($deliveryChallan);
     }
 
     /**
@@ -1044,6 +1059,9 @@ class SalesLedgerService
                 ])->delete();
             }
         });
+
+        // 8. Sync Payment Requests for Receiving Request / Logistics Bill
+        $this->syncReceivingRequestPaymentRequests($receivingRequest);
     }
 
     /**
@@ -1633,5 +1651,386 @@ class SalesLedgerService
                     ->delete();
             }
         });
+    }
+
+    /**
+     * Synchronize Payment Requests for Delivery Challan (Transporter, Loading Labour Vendor, Broker, Seller)
+     */
+    public function syncDeliveryChallanPaymentRequests(DeliveryChallan $deliveryChallan): void
+    {
+        $deliveryChallan->loadMissing(['delivery_challan_data', 'customer', 'delivery_order.salesOrder.broker', 'receivingRequest']);
+
+        $dc_no = $deliveryChallan->dc_no;
+        $saudaType = strtolower(str_replace(['-', ' ', '_'], '', $deliveryChallan->sauda_type ?? ''));
+        $isXmill = in_array($saudaType, ['xmill']);
+        $salesOrder = $deliveryChallan->delivery_order->first()?->salesOrder ?? $deliveryChallan->delivery_order()->first()?->salesOrder;
+
+        $firstItem = $deliveryChallan->delivery_challan_data->first();
+        $truckNo = $firstItem?->truck_no ?? null;
+        $biltyNo = $firstItem?->bilty_no ?? null;
+        $dispatchDate = $deliveryChallan->dispatch_date ?? now()->format('Y-m-d');
+        $totalQty = (float)$deliveryChallan->delivery_challan_data->sum('qty');
+        $totalBags = (float)$deliveryChallan->delivery_challan_data->sum('no_of_bags');
+
+        // Helper to create or update PaymentRequestData and PaymentRequest
+        $upsertPaymentRequest = function (
+            string $requestType,
+            ?int $accountId,
+            float $amount,
+            string $notes,
+            array $extraData = []
+        ) use ($deliveryChallan, $truckNo, $biltyNo, $dispatchDate, $totalQty, $totalBags) {
+            if (!$accountId || $amount <= 0) {
+                // If amount is 0 or no account, delete any existing unpaid PR for this type
+                $existingPr = PaymentRequest::where('delivery_challan_id', $deliveryChallan->id)
+                    ->where('request_type', $requestType)
+                    ->whereDoesntHave('paymentVoucherData')
+                    ->first();
+                if ($existingPr) {
+                    $prData = $existingPr->paymentRequestData;
+                    $existingPr->delete();
+                    if ($prData && $prData->paymentRequests()->count() === 0) {
+                        $prData->delete();
+                    }
+                }
+                return;
+            }
+
+            // Find existing PR for this DC and request_type
+            $paymentRequest = PaymentRequest::where('delivery_challan_id', $deliveryChallan->id)
+                ->where('request_type', $requestType)
+                ->first();
+
+            // Do not alter if already paid via Payment Voucher
+            if ($paymentRequest && $paymentRequest->paymentVoucherData) {
+                return;
+            }
+
+            $paymentRequestData = $paymentRequest?->paymentRequestData;
+
+            $dataPayload = array_merge([
+                'delivery_challan_id' => $deliveryChallan->id,
+                'account_id' => $accountId,
+                'truck_no' => $truckNo,
+                'loading_date' => $dispatchDate,
+                'bilty_no' => $biltyNo,
+                'no_of_bags' => $totalBags,
+                'loading_weight' => $totalQty,
+                'total_amount' => $amount,
+                'remaining_amount' => $amount,
+                'paid_amount' => 0,
+                'module_type' => 'delivery_challan',
+                'notes' => $notes,
+            ], $extraData);
+
+            if (!$paymentRequestData) {
+                $paymentRequestData = PaymentRequestData::create($dataPayload);
+            } else {
+                $paymentRequestData->update($dataPayload);
+            }
+
+            if (!$paymentRequest) {
+                PaymentRequest::create([
+                    'delivery_challan_id' => $deliveryChallan->id,
+                    'payment_request_data_id' => $paymentRequestData->id,
+                    'account_id' => $accountId,
+                    'request_no' => $this->generatePaymentRequestNumber(),
+                    'request_type' => $requestType,
+                    'module_type' => 'delivery_challan',
+                    'amount' => $amount,
+                    'status' => 'pending',
+                    'am_approval_status' => 'pending',
+                    'description' => $notes,
+                ]);
+            } else {
+                $paymentRequest->update([
+                    'account_id' => $accountId,
+                    'amount' => $amount,
+                    'description' => $notes,
+                ]);
+            }
+        };
+
+        // 1. Transporter Payment Request
+        $isTransporterUsed = false;
+        if ($isXmill) {
+            $isTransporterUsed = in_array(strtolower($salesOrder->transporter_used ?? ''), ['yes', '1', 'true']);
+        } else {
+            $isTransporterUsed = true;
+        }
+
+        $existingRr = $deliveryChallan->receivingRequest;
+        if ($existingRr && in_array(strtolower($existingRr->am_approval_status ?? ''), ['approved', 'completed'])) {
+            $this->syncReceivingRequestPaymentRequests($existingRr);
+        } else {
+            $transporterAmount = (float)($deliveryChallan->transporter_amount ?? 0);
+            $transporterObj = Transporter::find($deliveryChallan->transporter) ?? Vendor::find($deliveryChallan->transporter);
+            $transporterAccountId = $transporterObj?->account_id;
+
+            if ($isTransporterUsed && $transporterAmount > 0 && $transporterAccountId) {
+                $notes = "Freight payment for DC: {$dc_no} (Truck: {$truckNo}, Bilty: {$biltyNo})";
+                $upsertPaymentRequest('freight_payment', $transporterAccountId, $transporterAmount, $notes);
+            } else {
+                $upsertPaymentRequest('freight_payment', null, 0, '');
+            }
+        }
+
+        // 2. Loading Labour Vendor Payment Request
+        $labourAmount = (float)($deliveryChallan->labour_amount ?? 0);
+        if ($labourAmount <= 0 && (float)($deliveryChallan->labour_rate ?? 0) > 0) {
+            $labourAmount = $totalBags > 0 ? ($totalBags * (float)$deliveryChallan->labour_rate) : ($totalQty * (float)$deliveryChallan->labour_rate);
+        }
+
+        $shouldPayLabour = true;
+        if ($isXmill) {
+            $isUnpaid = in_array(strtolower(trim($deliveryChallan->labour_status ?? '')), ['not_paid', 'unpaid', 'not paid', 'not-paid']);
+            $shouldPayLabour = $isUnpaid;
+        }
+
+        $labourObj = Vendor::find($deliveryChallan->labour);
+        $labourAccountId = $labourObj?->account_id;
+
+        if ($shouldPayLabour && $labourAmount > 0 && $labourAccountId) {
+            $notes = "Loading labour payment for DC: {$dc_no} ({$labourObj->name})";
+            $upsertPaymentRequest('freight_labour_payment', $labourAccountId, $labourAmount, $notes, [
+                'labour_vendor_id' => $deliveryChallan->labour,
+            ]);
+        } else {
+            $upsertPaymentRequest('freight_labour_payment', null, 0, '');
+        }
+
+        // 3. Broker Commission Payment Request
+        if ($salesOrder && (float)$salesOrder->commission_per_kg > 0 && $totalQty > 0) {
+            $brokerCommission = $totalQty * (float)$salesOrder->commission_per_kg;
+            $brokerAccountId = $salesOrder->broker?->account_id ?? Broker::find($salesOrder->broker_id)?->account_id;
+            if ($brokerCommission > 0 && $brokerAccountId) {
+                $notes = "Broker commission for DC: {$dc_no} (" . ($salesOrder->broker?->name ?? 'Broker') . ")";
+                $upsertPaymentRequest('broker_commission_payment', $brokerAccountId, $brokerCommission, $notes, [
+                    'broker_id' => $salesOrder->broker_id,
+                ]);
+            } else {
+                $upsertPaymentRequest('broker_commission_payment', null, 0, '');
+            }
+        } else {
+            $upsertPaymentRequest('broker_commission_payment', null, 0, '');
+        }
+
+        // 4. Seller Commission Payment Request
+        if ($salesOrder && (float)$salesOrder->seller_commission_per_kg > 0 && $totalQty > 0) {
+            $sellerCommission = $totalQty * (float)$salesOrder->seller_commission_per_kg;
+            $sellerUser = $salesOrder->parent_user ?? ($salesOrder->parent_user_id ? User::find($salesOrder->parent_user_id) : null);
+            $sellerAccountId = $sellerUser?->account_id;
+            if ($sellerCommission > 0 && $sellerAccountId) {
+                $notes = "Seller commission for DC: {$dc_no} (" . ($sellerUser?->name ?? 'Seller') . ")";
+                $upsertPaymentRequest('seller_commission_payment', $sellerAccountId, $sellerCommission, $notes);
+            } else {
+                $upsertPaymentRequest('seller_commission_payment', null, 0, '');
+            }
+        } else {
+            $upsertPaymentRequest('seller_commission_payment', null, 0, '');
+        }
+    }
+
+    /**
+     * Synchronize Payment Requests on Receiving Request / Logistics Bill (Adjusts Transporter PR)
+     */
+    public function syncReceivingRequestPaymentRequests(ReceivingRequest|LogisticsBill $receivingRequest): void
+    {
+        $dc = $receivingRequest->deliveryChallan ?? DeliveryChallan::find($receivingRequest->delivery_challan_id);
+        if (!$dc) {
+            return;
+        }
+
+        $receivingRequest->loadMissing(['items.deliveryChallanData', 'weighbridges', 'deliveryChallan.delivery_challan_data']);
+
+        $baseFreight = (float)($dc->transporter_amount ?? 0);
+        $deduction = (float)($receivingRequest->transporter_deduction ?? 0);
+
+        // Shortage penalty calculation (matching handleReceivingRequestApproval)
+        $totalSaleAmount = 0;
+        $totalDispatchedQty = 0;
+        foreach ($dc->delivery_challan_data as $data) {
+            $totalSaleAmount += ($data->qty * $data->rate);
+            $totalDispatchedQty += $data->qty;
+        }
+        $averageRate = $totalDispatchedQty > 0 ? ($totalSaleAmount / $totalDispatchedQty) : 0;
+        $arrivedWeight = (float)($receivingRequest->arrived_weight ?? 0);
+
+        $penaltyAmount = 0;
+        if ($arrivedWeight > 0 && $arrivedWeight < $totalDispatchedQty) {
+            $shortWeight = max(0, $totalDispatchedQty - $arrivedWeight);
+            $exemptedWeight = min(max(0, (float)($receivingRequest->exempted_weight ?? 0)), $shortWeight);
+            $penaltyWeight = max(0, $shortWeight - $exemptedWeight);
+            $penaltyAmount = $penaltyWeight * $averageRate;
+        }
+
+        // Unloading Labour (only if paid by transporter)
+        $unloadingPaidBy = strtolower($receivingRequest->unloading_paid_by ?? '');
+        $unloadingLabourAmount = 0;
+        if ($unloadingPaidBy === 'transporter') {
+            foreach ($receivingRequest->items as $item) {
+                $bags = (float)($item->deliveryChallanData?->no_of_bags ?? 0);
+                $rate = (float)($item->unloading_labour_rate ?? 0);
+                $unloadingLabourAmount += ($bags * $rate);
+            }
+        }
+
+        // Weighbridges (only if paid by transporter)
+        $weighbridgePaidBy = strtolower($receivingRequest->weighbridge_paid_by ?? '');
+        $weighbridgeAmount = 0;
+        if ($weighbridgePaidBy === 'transporter') {
+            foreach ($receivingRequest->weighbridges as $wb) {
+                $weighbridgeAmount += (float)($wb->amount ?? 0);
+            }
+        }
+
+        $otherAmount = (float)($receivingRequest->transporter_other_amount ?? 0);
+        $demurrageAmount = (float)($receivingRequest->demurrage_detention_amount ?? 0);
+        $srTransporterAmount = (float)($receivingRequest->sales_return_transporter_amount ?? 0);
+
+        $netTransporter = round(
+            $baseFreight
+            - $deduction
+            - $penaltyAmount
+            + $unloadingLabourAmount
+            + $weighbridgeAmount
+            + $otherAmount
+            + $demurrageAmount
+            + $srTransporterAmount,
+            2
+        );
+
+        $breakdown = "Freight: Rs. " . number_format($baseFreight, 2);
+        if ($deduction > 0) $breakdown .= " | Ded: -Rs. " . number_format($deduction, 2);
+        if ($penaltyAmount > 0) $breakdown .= " | Shortage: -Rs. " . number_format($penaltyAmount, 2);
+        if ($unloadingLabourAmount > 0) $breakdown .= " | Unloading: +Rs. " . number_format($unloadingLabourAmount, 2);
+        if ($weighbridgeAmount > 0) $breakdown .= " | Weighbridge: +Rs. " . number_format($weighbridgeAmount, 2);
+        if ($demurrageAmount > 0) $breakdown .= " | Demurrage: +Rs. " . number_format($demurrageAmount, 2);
+        if ($otherAmount > 0) $breakdown .= " | Other: +Rs. " . number_format($otherAmount, 2);
+        if ($srTransporterAmount > 0) $breakdown .= " | SR Freight: +Rs. " . number_format($srTransporterAmount, 2);
+        $breakdown .= " | Net: Rs. " . number_format($netTransporter, 2);
+
+        $transporterPr = PaymentRequest::where('delivery_challan_id', $dc->id)
+            ->where('request_type', 'freight_payment')
+            ->first();
+
+        // Do not edit if already paid via payment voucher
+        if ($transporterPr && $transporterPr->paymentVoucherData) {
+            return;
+        }
+
+        $finalAmount = max(0, $netTransporter);
+
+        if ($transporterPr) {
+            $transporterPr->update([
+                'amount' => $finalAmount,
+                'description' => $breakdown,
+            ]);
+
+            $prData = $transporterPr->paymentRequestData;
+            if ($prData) {
+                $prData->update([
+                    'total_amount' => $finalAmount,
+                    'remaining_amount' => $finalAmount,
+                    'notes' => $breakdown,
+                    'loading_weight' => ($arrivedWeight > 0 ? $arrivedWeight : $totalDispatchedQty),
+                    'exempted_weight' => $receivingRequest->exempted_weight ?? 0,
+                ]);
+            }
+        } else {
+            // If not found but transporter is used, create it
+            $transporterObj = Transporter::find($receivingRequest->transporter ?? $dc->transporter)
+                ?? Vendor::find($receivingRequest->transporter ?? $dc->transporter);
+            $transporterAccountId = $transporterObj?->account_id;
+
+            if ($transporterAccountId && $finalAmount > 0) {
+                $firstItem = $dc->delivery_challan_data->first();
+                $truckNo = $receivingRequest->truck_number ?? $firstItem?->truck_no;
+                $biltyNo = $firstItem?->bilty_no;
+
+                $prData = PaymentRequestData::create([
+                    'delivery_challan_id' => $dc->id,
+                    'account_id' => $transporterAccountId,
+                    'truck_no' => $truckNo,
+                    'loading_date' => $dc->dispatch_date ?? now()->format('Y-m-d'),
+                    'bilty_no' => $biltyNo,
+                    'no_of_bags' => $dc->delivery_challan_data->sum('no_of_bags'),
+                    'loading_weight' => ($arrivedWeight > 0 ? $arrivedWeight : $totalDispatchedQty),
+                    'total_amount' => $finalAmount,
+                    'remaining_amount' => $finalAmount,
+                    'paid_amount' => 0,
+                    'module_type' => 'delivery_challan',
+                    'notes' => $breakdown,
+                ]);
+
+                PaymentRequest::create([
+                    'delivery_challan_id' => $dc->id,
+                    'payment_request_data_id' => $prData->id,
+                    'account_id' => $transporterAccountId,
+                    'request_no' => $this->generatePaymentRequestNumber(),
+                    'request_type' => 'freight_payment',
+                    'module_type' => 'delivery_challan',
+                    'amount' => $finalAmount,
+                    'status' => 'pending',
+                    'am_approval_status' => 'pending',
+                    'description' => $breakdown,
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Auto-approve all pending Payment Requests linked to Delivery Challan upon Logistics Bill finalization
+     */
+    public function autoApproveDeliveryChallanPaymentRequests(int $deliveryChallanId): void
+    {
+        $paymentRequests = PaymentRequest::where('delivery_challan_id', $deliveryChallanId)
+            ->whereDoesntHave('paymentVoucherData')
+            ->get();
+
+        $approverId = auth()->user()->id ?? 1;
+
+        foreach ($paymentRequests as $pr) {
+            $pr->update([
+                'status' => 'approved',
+                'am_approval_status' => 'approved',
+                'approved_by' => $approverId,
+                'approved_at' => now(),
+            ]);
+
+            PaymentRequestApproval::updateOrCreate(
+                [
+                    'payment_request_id' => $pr->id,
+                ],
+                [
+                    'payment_request_data_id' => $pr->payment_request_data_id,
+                    'status' => 'approved',
+                    'approver_id' => $approverId,
+                    'amount' => $pr->amount,
+                    'request_type' => $pr->request_type,
+                    'remarks' => 'Auto-approved via Logistics Bill',
+                ]
+            );
+        }
+    }
+
+    /**
+     * Generate unique payment request number
+     */
+    private function generatePaymentRequestNumber(): string
+    {
+        $prefix = 'PR-';
+        $yearMonth = date('Ym');
+        $latest = PaymentRequest::where('request_no', 'like', $prefix . $yearMonth . '%')
+            ->orderBy('id', 'desc')
+            ->first();
+
+        if ($latest && preg_match('/PR-\d{6}(\d+)/', $latest->request_no, $matches)) {
+            $number = intval($matches[1]) + 1;
+        } else {
+            $number = 1;
+        }
+
+        return $prefix . $yearMonth . str_pad($number, 4, '0', STR_PAD_LEFT);
     }
 }
