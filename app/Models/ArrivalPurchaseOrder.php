@@ -7,6 +7,7 @@ use App\Models\Master\Broker;
 use App\Models\Master\CompanyLocation;
 use App\Models\Master\Division;
 use App\Models\Master\Supplier;
+use App\Models\Master\GrnNumber;
 use App\Models\Procurement\PaymentRequestData;
 use App\Models\Procurement\PurchaseFreight;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -286,6 +287,10 @@ class ArrivalPurchaseOrder extends Model
     {
         return $this->hasMany(ArrivalTicket::class, 'arrival_purchase_order_id')
             ->where('arrival_slip_status', 'generated');
+    }
+    public function grns()
+    {
+        return $this->hasMany(GrnNumber::class, 'purchase_order_id');
     }
     // public function rejectedTickets()
     // {

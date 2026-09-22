@@ -18,6 +18,9 @@ class JournalVoucherDetail extends Model
         'acc_id',
         'receipt_voucher_id',
         'sales_order_id',
+        'voucher_id',
+        'voucher_no',
+        'voucher_type',
         'debit_amount',
         'credit_amount',
         'description',
@@ -50,5 +53,10 @@ class JournalVoucherDetail extends Model
     public function salesOrder()
     {
         return $this->belongsTo(SalesOrder::class, 'sales_order_id');
+    }
+
+    public function grn()
+    {
+        return $this->belongsTo(\App\Models\Master\GrnNumber::class, 'voucher_id');
     }
 }
