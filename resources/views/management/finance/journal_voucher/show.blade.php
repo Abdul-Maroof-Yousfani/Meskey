@@ -100,10 +100,13 @@
                             <label><strong>Journal Entries:</strong></label>
                             @php
                                 $isReceiving = false;
+                                $hasOrders = false;
                                 foreach($journalVoucher->journalVoucherDetails as $detail) {
                                     if($detail->receipt_voucher_id || $detail->sales_order_id) {
                                         $isReceiving = true;
-                                        break;
+                                    }
+                                    if(!empty($detail->voucher_no)) {
+                                        $hasOrders = true;
                                     }
                                 }
                             @endphp
@@ -115,6 +118,8 @@
                                             @if($isReceiving)
                                                 <th>Receipt Voucher</th>
                                                 <th>Sales order</th>
+                                            @elseif($hasOrders)
+                                                <th>Order / GRN</th>
                                             @endif
                                             <th>Description</th>
                                             <th>Debit</th>
@@ -137,6 +142,8 @@
                                                 @if($isReceiving)
                                                     <td>{{ optional($detail->receiptVoucher)->unique_no ?? '—' }}</td>
                                                     <td>{{ optional($detail->salesOrder)->reference_no ?? '—' }}</td>
+                                                @elseif($hasOrders)
+                                                    <td>{{ $detail->voucher_no ?? '—' }}</td>
                                                 @endif
                                                 <td>{{ $detail->description ?? '—' }}</td>
                                                 <td>{{ $detail->debit_amount > 0 ? number_format($detail->debit_amount, 2) : '—' }}</td>
@@ -146,17 +153,17 @@
                                     </tbody>
                                     <tfoot>
                                         <tr>
-                                            <td colspan="{{ $isReceiving ? 4 : 2 }}" class="text-right"><strong>Total Debits:</strong></td>
+                                            <td colspan="{{ $isReceiving ? 4 : ($hasOrders ? 3 : 2) }}" class="text-right"><strong>Total Debits:</strong></td>
                                             <td><strong>{{ number_format($totalDebits, 2) }}</strong></td>
                                             <td></td>
                                         </tr>
                                         <tr>
-                                            <td colspan="{{ $isReceiving ? 4 : 2 }}" class="text-right"><strong>Total Credits:</strong></td>
+                                            <td colspan="{{ $isReceiving ? 4 : ($hasOrders ? 3 : 2) }}" class="text-right"><strong>Total Credits:</strong></td>
                                             <td></td>
                                             <td><strong>{{ number_format($totalCredits, 2) }}</strong></td>
                                         </tr>
                                         <tr>
-                                            <td colspan="{{ $isReceiving ? 4 : 2 }}" class="text-right"><strong>Difference (Debit - Credit):</strong></td>
+                                            <td colspan="{{ $isReceiving ? 4 : ($hasOrders ? 3 : 2) }}" class="text-right"><strong>Difference (Debit - Credit):</strong></td>
                                             <td><strong style="color: {{ abs($totalDebits - $totalCredits) > 0.01 ? 'red' : 'green' }}">{{ number_format($totalDebits - $totalCredits, 2) }}</strong></td>
                                             <td></td>
                                         </tr>

@@ -20,6 +20,8 @@ use App\Models\Sales\DeliveryChallanData;
 use App\Models\Sales\ReceivingRequest;
 use App\Models\Sales\LogisticsBill;
 use App\Models\Sales\ReceivingRequestItem;
+use App\Models\Master\ArrivalLocation;
+use App\Models\Sales\LoadingProgramItem;
 use App\Models\Sales\SalesInvoice;
 use App\Models\Sales\SalesInvoiceData;
 use App\Models\Sales\SalesReturn;
@@ -595,13 +597,144 @@ class SalesLedgerService
             }
         }
 
-        // 6. Sync Payment Requests for Delivery Challan
+        // In-House Weighbridge Ledger Entry for Arrival Location
+        $this->handleInHouseWeighbridgeLedger($deliveryChallan);
+
+        // Sync Payment Requests for Delivery Challan
         $this->syncDeliveryChallanPaymentRequests($deliveryChallan);
     }
 
-    /**
-     * Handle Receiving Request / Logistics Bill Approval: Ledger Transactions
-     */
+    public function handleInHouseWeighbridgeLedger(DeliveryChallan $deliveryChallan): void
+    {
+        $dc_no = $deliveryChallan->dc_no;
+        $voucherTypeId = 3; // Delivery Challan
+        $companyId = $deliveryChallan->company_id ?? 1;
+
+        $handleTransaction = function($amount, $accountId, $voucherTypeId, $voucherNo, $type, $isOpening, $additionalData) {
+            $tx = Transaction::where('voucher_no', $voucherNo)
+                    ->where('purpose', $additionalData['purpose'])
+                    ->where('type', $type)
+                    ->first();
+            if ($tx) {
+                $tx->update([
+                    'amount' => $amount,
+                    'account_id' => $accountId,
+                    'counter_account_id' => $additionalData['counter_account_id'] ?? null,
+                    'payment_against' => $additionalData['payment_against'] ?? null,
+                    'against_reference_no' => $additionalData['against_reference_no'] ?? null,
+                    'remarks' => $additionalData['remarks'] ?? null,
+                ]);
+            } else {
+                createTransaction($amount, $accountId, $voucherTypeId, $voucherNo, $type, $isOpening, $additionalData);
+            }
+        };
+
+        // Collect unique tickets from delivery_challan_data
+        $ticketIds = $deliveryChallan->delivery_challan_data->pluck('ticket_id')->filter()->unique();
+
+        $processedTickets = [];
+
+        if ($ticketIds->isNotEmpty()) {
+            foreach ($ticketIds as $ticketId) {
+                $ticket = LoadingProgramItem::with(['firstWeighbridge', 'arrivalLocation'])->find($ticketId);
+                if (!$ticket) continue;
+
+                // Priority: first_weighbridge_location_id -> arrival_location_id -> DC arrival_id
+                $locationId = $ticket->first_weighbridge_location_id ?? $ticket->arrival_location_id ?? $deliveryChallan->arrival_id;
+                $weighbridgeAmount = 0;
+
+                if ($ticket->firstWeighbridge && (float)$ticket->firstWeighbridge->weighbridge_amount > 0) {
+                    $weighbridgeAmount = (float)$ticket->firstWeighbridge->weighbridge_amount;
+                } elseif ((float)($deliveryChallan->{'weighbridge-amount'} ?? 0) > 0) {
+                    $weighbridgeAmount = (float)$deliveryChallan->{'weighbridge-amount'};
+                }
+
+                $purposeAsset = "inhouse-weighbridge-asset-ticket-{$ticket->id}";
+                $purposeRevenue = "inhouse-weighbridge-revenue-ticket-{$ticket->id}";
+
+                if ($locationId && $weighbridgeAmount > 0) {
+                    $arrivalLocation = ArrivalLocation::find($locationId);
+                    if ($arrivalLocation) {
+                        $accounts = $this->getOrCreateArrivalLocationAccounts($arrivalLocation, $companyId);
+                        $assetAccount = $accounts['asset'] ?? null;
+                        $revenueAccount = $accounts['revenue'] ?? null;
+
+                        if ($assetAccount && $revenueAccount) {
+                            $truckNo = $ticket->truck_number ?? 'N/A';
+
+                            // Debit: In-House Weighbridge Asset (1-7-X)
+                            $handleTransaction($weighbridgeAmount, $assetAccount->id, $voucherTypeId, $dc_no, 'debit', 'no', [
+                                'counter_account_id' => $revenueAccount->id,
+                                'purpose' => $purposeAsset,
+                                'payment_against' => "inhouse-weighbridge-fee",
+                                'against_reference_no' => $dc_no,
+                                'remarks' => "In-house weighbridge collection for {$arrivalLocation->name} on DC: {$dc_no} (Truck: {$truckNo}, Ticket: {$ticket->transaction_number}).",
+                            ]);
+
+                            // Credit: In-House Weighbridge Revenue (4-4-X)
+                            $handleTransaction($weighbridgeAmount, $revenueAccount->id, $voucherTypeId, $dc_no, 'credit', 'no', [
+                                'counter_account_id' => $assetAccount->id,
+                                'purpose' => $purposeRevenue,
+                                'payment_against' => "inhouse-weighbridge-fee",
+                                'against_reference_no' => $dc_no,
+                                'remarks' => "In-house weighbridge service revenue earned by {$arrivalLocation->name} on DC: {$dc_no} (Truck: {$truckNo}, Ticket: {$ticket->transaction_number}).",
+                            ]);
+
+                            $processedTickets[] = $ticket->id;
+                        }
+                    }
+                } else {
+                    // Clean up if amount is 0
+                    Transaction::where('voucher_no', $dc_no)->whereIn('purpose', [$purposeAsset, $purposeRevenue])->delete();
+                }
+            }
+        }
+
+        // Fallback: If no tickets were processed but DC itself has weighbridge-amount and arrival_id
+        if (empty($processedTickets) && (float)($deliveryChallan->{'weighbridge-amount'} ?? 0) > 0) {
+            $locationId = $deliveryChallan->arrival_id ?? $deliveryChallan->location_id;
+            $arrivalLocation = $locationId ? ArrivalLocation::find($locationId) : null;
+            $weighbridgeAmount = (float)$deliveryChallan->{'weighbridge-amount'};
+
+            if ($arrivalLocation && $weighbridgeAmount > 0) {
+                $accounts = $this->getOrCreateArrivalLocationAccounts($arrivalLocation, $companyId);
+                $assetAccount = $accounts['asset'] ?? null;
+                $revenueAccount = $accounts['revenue'] ?? null;
+
+                if ($assetAccount && $revenueAccount) {
+                    $purposeAsset = "inhouse-weighbridge-asset";
+                    $purposeRevenue = "inhouse-weighbridge-revenue";
+
+                    // Debit: In-House Weighbridge Asset (1-7-X)
+                    $handleTransaction($weighbridgeAmount, $assetAccount->id, $voucherTypeId, $dc_no, 'debit', 'no', [
+                        'counter_account_id' => $revenueAccount->id,
+                        'purpose' => $purposeAsset,
+                        'payment_against' => "inhouse-weighbridge-fee",
+                        'against_reference_no' => $dc_no,
+                        'remarks' => "In-house weighbridge collection for {$arrivalLocation->name} on DC: {$dc_no}.",
+                    ]);
+
+                    // Credit: In-House Weighbridge Revenue (4-4-X)
+                    $handleTransaction($weighbridgeAmount, $revenueAccount->id, $voucherTypeId, $dc_no, 'credit', 'no', [
+                        'counter_account_id' => $assetAccount->id,
+                        'purpose' => $purposeRevenue,
+                        'payment_against' => "inhouse-weighbridge-fee",
+                        'against_reference_no' => $dc_no,
+                        'remarks' => "In-house weighbridge service revenue earned by {$arrivalLocation->name} on DC: {$dc_no}.",
+                    ]);
+                }
+            }
+        }
+    }
+
+    public function getOrCreateArrivalLocationAccounts(ArrivalLocation $arrivalLocation, $companyId = 1): array
+    {
+        return [
+            'asset' => $arrivalLocation->getOrCreateAssetAccount($companyId),
+            'revenue' => $arrivalLocation->getOrCreateRevenueAccount($companyId),
+        ];
+    }
+
     public function handleReceivingRequestApproval(ReceivingRequest|LogisticsBill $receivingRequest): void
     {
         $dc = $receivingRequest->deliveryChallan;
@@ -629,9 +762,7 @@ class SalesLedgerService
                 }
             };
 
-            // ==========================================
-            // 1. Unloading Labour Expense Entry
-            // ==========================================
+            // Unloading Labour Expense
             $unloadingPaidBy = strtolower($receivingRequest->unloading_paid_by ?? '');
             
             $unloadingLabourAmount = 0;
@@ -691,9 +822,7 @@ class SalesLedgerService
                 }
             }
 
-            // ==========================================
-            // 2. Weighbridges Expense Entry
-            // ==========================================
+            // Weighbridges Expense 
             $weighbridgePaidBy = strtolower($receivingRequest->weighbridge_paid_by ?? '');
             
             $totalWeighbridgeAmount = 0;
@@ -751,9 +880,7 @@ class SalesLedgerService
                 }
             }
 
-            // ==========================================
-            // 3. Transporter Deduction Entry
-            // ==========================================
+            // Transporter Deduction
             $deductionAmount = floatval($receivingRequest->transporter_deduction ?? 0);
             if ($deductionAmount > 0) {
                 $transporterObj = Transporter::find($receivingRequest->transporter);
@@ -786,9 +913,7 @@ class SalesLedgerService
                 ])->delete();
             }
 
-            // ==========================================
-            // 4. Weight Difference Entries
-            // ==========================================
+            // Weight Difference
             $totalSaleAmount = 0;
             $totalQty = 0;
             foreach ($dc->delivery_challan_data as $data) {
@@ -803,13 +928,11 @@ class SalesLedgerService
             
             // Case 1: Shortage (Arrived < Dispatched)
             if ($arrivedWeight > 0 && $arrivedWeight < $dispatchedWeight) {
-                // Delete excess entries if any
                 Transaction::where('voucher_no', $dc_no)->whereIn('purpose', [
                     'receiving-request-excess-weight-adjustment',
                     'receiving-request-excess-profit'
                 ])->delete();
 
-                // Delete legacy single customer credit entry
                 Transaction::where('voucher_no', $dc_no)
                     ->where('purpose', 'receiving-request-short-weight-adjustment')
                     ->delete();
@@ -952,9 +1075,7 @@ class SalesLedgerService
                 ])->delete();
             }
 
-            // ==========================================
-            // 5. Transporter Other Amount Entry
-            // ==========================================
+            // Transporter Other Amoun
             $otherAmount = floatval($receivingRequest->transporter_other_amount ?? 0);
             if ($otherAmount > 0) {
                 $transporterObj = Transporter::find($receivingRequest->transporter);
@@ -987,9 +1108,7 @@ class SalesLedgerService
                 ])->delete();
             }
 
-            // ==========================================
-            // 6. Demurrage & Detention Expense Entry
-            // ==========================================
+            // Demurrage & Detention Expense
             $demurrageAmount = floatval($receivingRequest->demurrage_detention_amount ?? 0);
             if ($demurrageAmount > 0) {
                 $transporterObj = Transporter::find($receivingRequest->transporter);
@@ -1022,9 +1141,7 @@ class SalesLedgerService
                 ])->delete();
             }
 
-            // ==========================================
-            // 7. Sales Return Transporter Expense Entry
-            // ==========================================
+            // Sales Return Transporter Expense 
             $srTransporterAmount = floatval($receivingRequest->sales_return_transporter_amount ?? 0);
             if ($srTransporterAmount > 0) {
                 $transporterObj = Transporter::find($receivingRequest->transporter);
@@ -1060,13 +1177,10 @@ class SalesLedgerService
             }
         });
 
-        // 8. Sync Payment Requests for Receiving Request / Logistics Bill
+        // Sync Payment Requests for Receiving Request / Logistics Bill
         $this->syncReceivingRequestPaymentRequests($receivingRequest);
     }
 
-    /**
-     * Handle Sales Return Approval: Stock In & Ledger Transactions
-     */
     public function handleSalesReturnApproval(SalesReturn $salesReturn): void
     {
         $sr_no = $salesReturn->sr_no;
@@ -1372,10 +1486,7 @@ class SalesLedgerService
                 }
             }
 
-            // 2.3 Weight Gain / Loss Entry (Account 4-1-4)
-            // Compare actual returned qty vs original DC sold qty per item.
-            // If returned > sold  → Weight Gain  → Credit 4-1-4, Debit Customer
-            // If returned < sold  → Weight Loss   → Debit 4-1-4, Credit Customer
+            // Weight Gain / Loss Entry 
             $weightGainLossAccount = Account::where('hierarchy_path', '4-1-4')->first();
             $customerAccountId = $salesReturn->customer?->account_id ?? Customer::find($salesReturn->customer_id)?->account_id;
 
@@ -1503,7 +1614,7 @@ class SalesLedgerService
             $amtAfterDisc = (float)($data->amount ?? 0);   // = gross - discount
             $netAmt      = (float)($data->net_amount ?? 0); // = amount + gst
 
-            // ── Discount ──────────────────────────────────────────────────────
+            // Discount
             $disc = (float)($data->discount_amount ?? 0);
             if ($disc <= 0 && $gross > $amtAfterDisc) {
                 // Derive from stored amounts (most reliable)
@@ -1514,7 +1625,7 @@ class SalesLedgerService
             }
             $totalDiscount += max(0, $disc);
 
-            // ── GST ───────────────────────────────────────────────────────────
+            // GST 
             $gst = (float)($data->gst_amount ?? 0);
             if ($gst <= 0 && $netAmt > $amtAfterDisc) {
                 // Derive from stored net_amount - amount (most reliable)
@@ -1653,9 +1764,6 @@ class SalesLedgerService
         });
     }
 
-    /**
-     * Synchronize Payment Requests for Delivery Challan (Transporter, Loading Labour Vendor, Broker, Seller)
-     */
     public function syncDeliveryChallanPaymentRequests(DeliveryChallan $deliveryChallan): void
     {
         $deliveryChallan->loadMissing(['delivery_challan_data', 'customer', 'delivery_order.salesOrder.broker', 'receivingRequest']);
@@ -1831,9 +1939,6 @@ class SalesLedgerService
         }
     }
 
-    /**
-     * Synchronize Payment Requests on Receiving Request / Logistics Bill (Adjusts Transporter PR)
-     */
     public function syncReceivingRequestPaymentRequests(ReceivingRequest|LogisticsBill $receivingRequest): void
     {
         $dc = $receivingRequest->deliveryChallan ?? DeliveryChallan::find($receivingRequest->delivery_challan_id);
@@ -1979,9 +2084,6 @@ class SalesLedgerService
         }
     }
 
-    /**
-     * Auto-approve all pending Payment Requests linked to Delivery Challan upon Logistics Bill finalization
-     */
     public function autoApproveDeliveryChallanPaymentRequests(int $deliveryChallanId): void
     {
         $paymentRequests = PaymentRequest::where('delivery_challan_id', $deliveryChallanId)
@@ -2014,9 +2116,6 @@ class SalesLedgerService
         }
     }
 
-    /**
-     * Generate unique payment request number
-     */
     private function generatePaymentRequestNumber(): string
     {
         $prefix = 'PR-';

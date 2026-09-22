@@ -1046,6 +1046,7 @@ class DeliveryChallanController extends Controller
             'dispatchQc',
             'arrivalLocation',
             'subArrivalLocation',
+            'firstWeighbridge.truckType',
             'loadingSlip.secondWeighbridge',
             'transporter'
         ])->findOrFail($ticket_id);
@@ -1224,7 +1225,15 @@ class DeliveryChallanController extends Controller
                 'name' => $ticket->transporter->name ?? 'N/A',
                 'rate' => $transporter_rate,
                 'rate_type' => $transporter_rate_type,
-            ]
+            ],
+            'weighbridge' => [
+                'amount' => $ticket->firstWeighbridge?->weighbridge_amount ? (float)$ticket->firstWeighbridge->weighbridge_amount : 0,
+                'truck_type_id' => $ticket->firstWeighbridge?->truck_type_id,
+                'truck_type_name' => $ticket->firstWeighbridge?->truckType?->name ?? 'N/A',
+                'first_weight' => $ticket->firstWeighbridge?->first_weight ?? null,
+                'first_weighbridge_location_id' => $ticket->first_weighbridge_location_id ?? $ticket->arrival_location_id,
+            ],
+            'weighbridge_amount' => $ticket->firstWeighbridge?->weighbridge_amount ? (float)$ticket->firstWeighbridge->weighbridge_amount : 0,
         ];
 
         return response()->json($data);

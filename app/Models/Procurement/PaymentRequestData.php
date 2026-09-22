@@ -116,6 +116,11 @@ class PaymentRequestData extends Model
         return $this->hasMany(PaymentRequestSamplingResult::class);
     }
 
+    public function grnNumber()
+    {
+        return $this->belongsTo(\App\Models\Master\GrnNumber::class, 'grn_no', 'unique_no');
+    }
+
     public function deliveryChallan()
     {
         return $this->belongsTo(\App\Models\Sales\DeliveryChallan::class, 'delivery_challan_id');

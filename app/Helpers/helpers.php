@@ -532,7 +532,7 @@ if (!function_exists('generateUniqueNumber')) {
     {
         // If company_id is null, use the authenticated user's current company ID
         if (is_null($company_id) && $useCompanyId) {
-            $company_id = auth()->user()->current_company_id;
+            $company_id = auth()->user()?->current_company_id ?? 1;
         }
 
         // Get the latest record from the table

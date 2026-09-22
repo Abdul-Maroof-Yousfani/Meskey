@@ -399,6 +399,11 @@
                         $("#labour_amount").val(0);
                     }
 
+                    // Set Weighbridge Amount from First Weighbridge
+                    if (response.weighbridge_amount !== undefined) {
+                        $("#weighbridge_amount").val(response.weighbridge_amount);
+                    }
+
                     // Set Bardana Checkbox from Ticket SO
                     if (response.is_bardana) {
                         $("#is_bardana").prop("checked", true);
@@ -572,6 +577,7 @@
         $("#transporter_display").empty().append('<option value="">Select Transporter</option>').trigger('change');
         $("#transporter").val('');
         $("#transporter_amount").val('');
+        $("#weighbridge_amount").val('');
         window.currentTransporterRate = 0;
         window.currentTransporterRateType = '';
         addedTicketIds = [];

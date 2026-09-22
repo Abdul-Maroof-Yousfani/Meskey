@@ -63,7 +63,7 @@ class ArrivalLocationController extends Controller
         $arrival_locations = ArrivalLocation::create($request->all());
 
         // Create Account under 1-7
-        $account1 = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->name, '1-7', 'arrival_locations'));
+        $account1 = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->name . ' Weighbridge', '1-7', 'arrival_locations'));
         $account1->update(['model_id' => $arrival_locations->id]);
 
         // Create Account under 4-4
@@ -101,10 +101,10 @@ class ArrivalLocationController extends Controller
             
         if ($account1) {
             if ($oldName !== $request->name) {
-                $account1->update(['name' => $request->name]);
+                $account1->update(['name' => $request->name . ' Weighbridge']);
             }
         } else {
-            $newAccount1 = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->name, '1-7', 'arrival_locations'));
+            $newAccount1 = Account::create(getParamsForAccountCreationByPath($request->company_id, $request->name . ' Weighbridge', '1-7', 'arrival_locations'));
             $newAccount1->update(['model_id' => $arrival_location->id]);
         }
         
