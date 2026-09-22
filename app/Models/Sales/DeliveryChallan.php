@@ -4,6 +4,7 @@ namespace App\Models\Sales;
 
 use App\Models\Master\Account\Account;
 use App\Models\Master\Account\Stock;
+use App\Models\Master\Account\Transaction;
 use App\Models\Master\Customer;
 use App\Models\Master\Transporter;
 use App\Models\Master\Vendor;
@@ -152,6 +153,9 @@ class DeliveryChallan extends Model
         Stock::where('voucher_no', $this->dc_no)
             ->where('voucher_type', 'delivery_challan')
             ->delete();
+
+        // Delete transactions if DC is rejected
+        Transaction::where('voucher_no', $this->dc_no)->delete();
 
         // Reject pending payment requests if DC is rejected
         $this->paymentRequests()->where('status', 'pending')->update(['status' => 'rejected']);
