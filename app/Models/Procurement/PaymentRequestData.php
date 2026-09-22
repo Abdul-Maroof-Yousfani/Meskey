@@ -15,6 +15,7 @@ class PaymentRequestData extends Model
     protected $table = "payment_request_datas";
 
     protected $fillable = [
+        'delivery_challan_id',
         'payment_to_type',
         'payment_to',
         'account_id',
@@ -113,5 +114,10 @@ class PaymentRequestData extends Model
     public function samplingResults()
     {
         return $this->hasMany(PaymentRequestSamplingResult::class);
+    }
+
+    public function deliveryChallan()
+    {
+        return $this->belongsTo(\App\Models\Sales\DeliveryChallan::class, 'delivery_challan_id');
     }
 }

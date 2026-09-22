@@ -195,20 +195,7 @@
 <script>
 
      function check_balance(el, target) {
-        const balance = $(el).data("balance");
-        const value = $("#" + target).val();
-        
-        if(value > balance) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Limit Exceeded',
-                text: 'Cannot proceed more than ' + balance,
-            });
-                
-            $("#" + target).addClass("is-invalid");
-        } else {
-            $("#" + target).removeClass("is-invalid");
-        }
+        // Validation removed to allow excess returns for weight gain
     }
 
     function change_qty(el) {

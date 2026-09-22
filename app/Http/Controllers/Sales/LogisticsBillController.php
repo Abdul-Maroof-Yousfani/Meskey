@@ -222,6 +222,11 @@ class LogisticsBillController extends Controller
             $receivingRequest->refresh();
             app(SalesLedgerService::class)->handleReceivingRequestApproval($receivingRequest);
 
+            // Auto-approve payment requests for this Delivery Challan
+            if ($logisticsBill->delivery_challan_id) {
+                app(SalesLedgerService::class)->autoApproveDeliveryChallanPaymentRequests($logisticsBill->delivery_challan_id);
+            }
+
             DB::commit();
             return response()->json(['data' => 'Logistics Bill has been updated successfully']);
         } catch (\Exception $e) {

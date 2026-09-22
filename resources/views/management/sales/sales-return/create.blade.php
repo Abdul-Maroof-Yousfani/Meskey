@@ -89,11 +89,9 @@
                     <div class="form-group">
                         <label class="form-label">Arrival Location:<span class="text-danger">*</span></label>
                         <select name="arrival_location_id" id="arrivals"
+                            onchange="selectArrival(this); get_sale_invoices()"
                             class="form-control select2">
                             <option value="">Select Arrival Location</option>
-                            @foreach(get_arrival_locations() as $arrival_location)
-                                <option value="{{ $arrival_location->id }}">{{ $arrival_location->name }}</option>
-                            @endforeach
                         </select>
                     </div>
                 </div>
@@ -101,11 +99,9 @@
                     <div class="form-group">
                         <label class="form-label">Storage:<span class="text-danger">*</span></label>
                         <select name="storage_location_id" id="storages"
+                            onchange="get_sale_invoices()"
                             class="form-control select2">
                             <option value="">Select Storage Location</option>
-                            @foreach(get_sub_arrival_locations() as $sub_arrival_location)
-                                <option value="{{ $sub_arrival_location->id }}">{{ $sub_arrival_location->name }}</option>
-                            @endforeach
                         </select>
                     </div>
                 </div>
@@ -212,38 +208,58 @@
     function selectLocation(el) {
         const company = $(el).val();
 
+        // Reset arrivals and storages
+        $("#arrivals").empty().append(`<option value=''>Select Arrival Location</option>`).select2();
+        $("#storages").empty().append(`<option value=''>Select Storage Location</option>`).select2();
+
         if (!company) {
             $("#arrivals").prop("disabled", true);
-            $("#arrivals").empty();
             return;
-        } else {
-            $("#arrivals").prop("disabled", false);
-            $.ajax({
-                url: "{{ route('sales.get.arrival-locations') }}",
-                method: "GET",
-                data: {
-                    location_id: company
-                },
-                dataType: "json",
-                success: function(res) {
-                    $("#arrivals").empty();
-                    $("#arrivals").append(`<option value=''>Select Arrival Location</option>`)
-
-                    res.forEach(location => {
-                        $("#arrivals").append(`
-                            <option value="${location.id}">
-                                ${location.text}
-                            </option>
-                        `);
-                    });
-
-                    $("#arrivals").select2();
-                },
-                error: function(error) {
-                    console.error("Error:", error);
-                }
-            });
         }
+
+        $("#arrivals").prop("disabled", false);
+        $.ajax({
+            url: "{{ route('sales.get.arrival-locations') }}",
+            method: "GET",
+            data: { location_id: company },
+            dataType: "json",
+            success: function(res) {
+                $("#arrivals").empty().append(`<option value=''>Select Arrival Location</option>`);
+                res.forEach(location => {
+                    $("#arrivals").append(`<option value="${location.id}">${location.text}</option>`);
+                });
+                $("#arrivals").select2();
+            },
+            error: function(error) {
+                console.error("Error:", error);
+            }
+        });
+    }
+
+    function selectArrival(el) {
+        const arrival_id = $(el).val();
+
+        // Reset storages
+        $("#storages").empty().append(`<option value=''>Select Storage Location</option>`).select2();
+
+        if (!arrival_id) return;
+
+        $.ajax({
+            url: "{{ route('sales.get.storage-locations') }}",
+            method: "GET",
+            data: { arrival_id: arrival_id },
+            dataType: "json",
+            success: function(res) {
+                $("#storages").empty().append(`<option value=''>Select Storage Location</option>`);
+                res.forEach(storage => {
+                    $("#storages").append(`<option value="${storage.id}">${storage.text}</option>`);
+                });
+                $("#storages").select2();
+            },
+            error: function(error) {
+                console.error("Error:", error);
+            }
+        });
     }
 
     function get_items(el) {
@@ -480,15 +496,7 @@
     }
 
     function validateBalance(el) {
-        const row = $(el).closest("tr");
-        const maxBalance = parseFloat(row.find(".max_balance").val()) || 0;
         const noOfBags = parseFloat($(el).val()) || 0;
-
-        if (noOfBags > maxBalance) {
-            $(el).val(maxBalance);
-            toastr.warning(`Cannot exceed available balance of ${maxBalance} bags`);
-            calculateRow(el);
-        }
 
         if (noOfBags < 0) {
             $(el).val(0);

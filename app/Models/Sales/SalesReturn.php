@@ -72,6 +72,14 @@ class SalesReturn extends Model
         return $this->belongsToMany(ReceivingRequest::class, "sale_return_sale_invoice", "sale_return_id", "sale_invoice_id");
     }
 
+    public function arrivalLocation() {
+        return $this->belongsTo(\App\Models\Master\ArrivalLocation::class, 'arrival_location_id');
+    }
+
+    public function storageLocation() {
+        return $this->belongsTo(\App\Models\Master\ArrivalSubLocation::class, 'storage_location_id');
+    }
+
     protected function onApprovalComplete()
     {
         $this->traitOnApprovalComplete();

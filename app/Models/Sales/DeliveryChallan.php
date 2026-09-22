@@ -108,6 +108,16 @@ class DeliveryChallan extends Model
         return $this->hasOne(ReceivingRequest::class, "delivery_challan_id");
     }
 
+    public function paymentRequests()
+    {
+        return $this->hasMany(\App\Models\Procurement\PaymentRequest::class, 'delivery_challan_id');
+    }
+
+    public function paymentRequestData()
+    {
+        return $this->hasOne(\App\Models\Procurement\PaymentRequestData::class, 'delivery_challan_id');
+    }
+
 
     public function factories()
     {
@@ -142,6 +152,9 @@ class DeliveryChallan extends Model
         Stock::where('voucher_no', $this->dc_no)
             ->where('voucher_type', 'delivery_challan')
             ->delete();
+
+        // Reject pending payment requests if DC is rejected
+        $this->paymentRequests()->where('status', 'pending')->update(['status' => 'rejected']);
     }
 
 }
