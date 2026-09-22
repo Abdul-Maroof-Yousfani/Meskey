@@ -405,7 +405,15 @@
                     updateSelect2Dropdown($soSelect, [], 'Loading Sales Orders...', null, true);
                 }
                 if ($orderSelect.length) {
-                    updateSelect2Dropdown($orderSelect, [], 'Loading Orders...', null, true);
+                    const selectedOpt = $row.find('.account-select option:selected');
+                    const tbl = (selectedOpt.attr('data-table-name') || '').toLowerCase();
+                    let loadingMsg = 'Loading Orders...';
+                    if (tbl === 'suppliers') {
+                        loadingMsg = 'Loading GRNs...';
+                    } else if (tbl === 'customers') {
+                        loadingMsg = 'Loading Sale Orders...';
+                    }
+                    updateSelect2Dropdown($orderSelect, [], loadingMsg, null, true);
                 }
 
                 $.ajax({

@@ -68,7 +68,11 @@
                                                 @php
                                                     $isReceiving = false;
                                                     foreach($journalVoucher->journalVoucherDetails as $detail) {
-                                                        if($detail->receipt_voucher_id || $detail->sales_order_id) {
+                                                        if(!empty($detail->receipt_voucher_id)) {
+                                                            $isReceiving = true;
+                                                            break;
+                                                        }
+                                                        if(!empty($detail->sales_order_id) && empty($detail->voucher_type)) {
                                                             $isReceiving = true;
                                                             break;
                                                         }
@@ -85,6 +89,7 @@
                                                         <th>Account</th>
                                                         <th class="receiving-col" style="{{ $isReceiving ? '' : 'display: none;' }}; width: 200px;">Receipt Voucher</th>
                                                         <th class="receiving-col" style="{{ $isReceiving ? '' : 'display: none;' }}; width: 200px;">Sales order</th>
+                                                        <th class="order-col" style="{{ $isReceiving ? 'display: none;' : '' }}; width: 200px;">Orders</th>
                                                         <th>Description</th>
                                                         <th>Debit</th>
                                                         <th>Credit</th>
@@ -99,6 +104,7 @@
                                                                     <option value="">Select Account</option>
                                                                     @foreach ($accounts as $account)
                                                                         <option value="{{ $account->id }}" 
+                                                                            data-table-name="{{ strtolower($account->table_name ?? '') }}"
                                                                             {{ $detail->acc_id == $account->id ? 'selected' : '' }}>
                                                                             {{ $account->name }} ({{ $account->unique_no }})
                                                                         </option>
@@ -140,6 +146,43 @@
                                                                     {{-- Empty for other rows --}}
                                                                 @endif
                                                             </td>
+                                                            <td class="order-col" style="{{ $isReceiving ? 'display: none;' : '' }}">
+                                                                <select name="details[{{ $index }}][order_id]" class="form-control select2 order-select" style="width: 100%;">
+                                                                    @php
+                                                                        $acc = $accounts->firstWhere('id', $detail->acc_id) ?? $detail->account;
+                                                                        $tableName = strtolower($acc->table_name ?? '');
+                                                                        $orderCount = isset($rowOrders[$index]) ? count($rowOrders[$index]) : 0;
+                                                                        if ($tableName === 'customers') {
+                                                                            $orderPlaceholder = $orderCount > 0 ? 'Select Sale Order' : 'No Sale Orders Available';
+                                                                        } elseif ($tableName === 'suppliers') {
+                                                                            $orderPlaceholder = $orderCount > 0 ? 'Select GRN' : 'No GRNs Available';
+                                                                        } elseif (!empty($detail->acc_id)) {
+                                                                            $orderPlaceholder = 'No Orders Available';
+                                                                        } else {
+                                                                            $orderPlaceholder = 'Select Order (Select Account First)';
+                                                                        }
+                                                                    @endphp
+                                                                    <option value="">{{ $orderPlaceholder }}</option>
+                                                                    @if(isset($rowOrders[$index]))
+                                                                        @foreach ($rowOrders[$index] as $order)
+                                                                            @php
+                                                                                $isSelected = ($detail->voucher_id && $detail->voucher_id == $order['id'])
+                                                                                    || ($detail->sales_order_id && $detail->sales_order_id == $order['id'])
+                                                                                    || ($detail->voucher_no && $detail->voucher_no == ($order['unique_no'] ?? ''));
+                                                                            @endphp
+                                                                            <option value="{{ $order['id'] }}" 
+                                                                                data-unique-no="{{ $order['unique_no'] ?? ($order['reference_no'] ?? '') }}"
+                                                                                data-type="{{ $order['type'] ?? '' }}"
+                                                                                @selected($isSelected)>
+                                                                                {{ $order['text'] }}
+                                                                            </option>
+                                                                        @endforeach
+                                                                    @endif
+                                                                </select>
+                                                                <input type="hidden" name="details[{{ $index }}][voucher_id]" class="voucher-id-input" value="{{ $detail->voucher_id }}">
+                                                                <input type="hidden" name="details[{{ $index }}][voucher_no]" class="voucher-no-input" value="{{ $detail->voucher_no }}">
+                                                                <input type="hidden" name="details[{{ $index }}][voucher_type]" class="voucher-type-input" value="{{ $detail->voucher_type }}">
+                                                            </td>
                                                             <td>
                                                                 <input type="text" name="details[{{ $index }}][description]" class="form-control description-input" placeholder="Line description" value="{{ $detail->description }}">
                                                             </td>
@@ -164,25 +207,25 @@
                                                 </tbody>
                                                 <tfoot>
                                                     <tr>
-                                                        <td colspan="{{ $isReceiving ? 4 : 2 }}" class="text-right"><strong>Total Debits:</strong></td>
+                                                        <td colspan="{{ $isReceiving ? 4 : 3 }}" class="text-right"><strong>Total Debits:</strong></td>
                                                         <td><strong id="totalDebits">0.00</strong></td>
                                                         <td></td>
                                                         <td></td>
                                                     </tr>
                                                     <tr>
-                                                        <td colspan="{{ $isReceiving ? 4 : 2 }}" class="text-right"><strong>Total Credits:</strong></td>
+                                                        <td colspan="{{ $isReceiving ? 4 : 3 }}" class="text-right"><strong>Total Credits:</strong></td>
                                                         <td></td>
                                                         <td><strong id="totalCredits">0.00</strong></td>
                                                         <td></td>
                                                     </tr>
                                                     <tr>
-                                                        <td colspan="{{ $isReceiving ? 4 : 2 }}" class="text-right"><strong>Difference (Debit - Credit):</strong></td>
+                                                        <td colspan="{{ $isReceiving ? 4 : 3 }}" class="text-right"><strong>Difference (Debit - Credit):</strong></td>
                                                         <td><strong id="difference">0.00</strong></td>
                                                         <td></td>
                                                         <td></td>
                                                     </tr>
                                                     <tr>
-                                                        <td colspan="7">
+                                                        <td colspan="{{ $isReceiving ? 7 : 6 }}">
                                                             <button type="button" class="btn btn-sm btn-primary" id="addRow">
                                                                 <i class="ft-plus"></i> Add Row
                                                             </button>
@@ -232,6 +275,7 @@
             function toggleReceivingColumns() {
                 if ($('#receivingToggle').is(':checked')) {
                     $('.receiving-col').show();
+                    $('.order-col').hide();
                     $('#journalEntriesTable tfoot td.text-right').attr('colspan', 4);
                     $('#addRow').closest('td').attr('colspan', 7);
                     // Refresh select2 inside receiving columns so width is 100%
@@ -243,12 +287,27 @@
                     });
                 } else {
                     $('.receiving-col').hide();
-                    $('#journalEntriesTable tfoot td.text-right').attr('colspan', 2);
-                    $('#addRow').closest('td').attr('colspan', 5);
+                    $('.order-col').show();
+                    $('#journalEntriesTable tfoot td.text-right').attr('colspan', 3);
+                    $('#addRow').closest('td').attr('colspan', 6);
+                    // Refresh select2 inside order columns so width is 100%
+                    $('.order-col .select2').each(function() {
+                        if ($(this).hasClass("select2-hidden-accessible")) {
+                            $(this).select2('destroy');
+                        }
+                        $(this).select2({ width: '100%' });
+                    });
                 }
             }
 
             $('#receivingToggle').change(function () {
+                if ($(this).is(':checked')) {
+                    $('.order-select').val('').trigger('change');
+                    $('.voucher-id-input, .voucher-no-input, .voucher-type-input').val('');
+                } else {
+                    $('.receipt-voucher-select').val('').trigger('change');
+                    $('.sales-order-select').val('').trigger('change');
+                }
                 toggleReceivingColumns();
             });
 
@@ -368,6 +427,14 @@
                         if (item.remaining_amount !== undefined) {
                             $(opt).attr('data-remaining-amount', item.remaining_amount);
                         }
+                        if (item.unique_no !== undefined) {
+                            $(opt).attr('data-unique-no', item.unique_no);
+                        } else if (item.reference_no !== undefined) {
+                            $(opt).attr('data-unique-no', item.reference_no);
+                        }
+                        if (item.type !== undefined) {
+                            $(opt).attr('data-type', item.type);
+                        }
                         $select.append(opt);
                     });
                 }
@@ -387,9 +454,10 @@
             }
 
             // Function to load account-specific data for a row
-            function loadAccountData($row, accId, selectedRvId, selectedSoId) {
+            function loadAccountData($row, accId, selectedRvId, selectedSoId, selectedOrderId) {
                 const $rvSelect = $row.find('.receipt-voucher-select');
                 const $soSelect = $row.find('.sales-order-select');
+                const $orderSelect = $row.find('.order-select');
 
                 if (!accId) {
                     if ($rvSelect.length) {
@@ -397,6 +465,9 @@
                     }
                     if ($soSelect.length) {
                         updateSelect2Dropdown($soSelect, [], 'Select Sales Order (Select Account First)', null);
+                    }
+                    if ($orderSelect.length) {
+                        updateSelect2Dropdown($orderSelect, [], 'Select Order (Select Account First)', null);
                     }
                     return;
                 }
@@ -406,6 +477,17 @@
                 }
                 if ($soSelect.length) {
                     updateSelect2Dropdown($soSelect, [], 'Loading Sales Orders...', null, true);
+                }
+                if ($orderSelect.length) {
+                    const selectedOpt = $row.find('.account-select option:selected');
+                    const tbl = (selectedOpt.attr('data-table-name') || '').toLowerCase();
+                    let loadingMsg = 'Loading Orders...';
+                    if (tbl === 'suppliers') {
+                        loadingMsg = 'Loading GRNs...';
+                    } else if (tbl === 'customers') {
+                        loadingMsg = 'Loading Sale Orders...';
+                    }
+                    updateSelect2Dropdown($orderSelect, [], loadingMsg, null, true);
                 }
 
                 $.ajax({
@@ -435,6 +517,25 @@
                                 : 'No Sales Orders Available';
                             updateSelect2Dropdown($soSelect, res.sales_orders || [], soPlaceholder, selectedSoId);
                         }
+
+                        if ($orderSelect.length) {
+                            const tableName = (res.table_name || '').toLowerCase();
+                            if (tableName === 'customers') {
+                                const orders = res.sales_orders || [];
+                                const orderPlaceholder = orders.length > 0
+                                    ? 'Select Sale Order'
+                                    : 'No Sale Orders Available';
+                                updateSelect2Dropdown($orderSelect, orders, orderPlaceholder, selectedOrderId);
+                            } else if (tableName === 'suppliers') {
+                                const grns = res.grns || [];
+                                const grnPlaceholder = grns.length > 0
+                                    ? 'Select GRN'
+                                    : 'No GRNs Available';
+                                updateSelect2Dropdown($orderSelect, grns, grnPlaceholder, selectedOrderId);
+                            } else {
+                                updateSelect2Dropdown($orderSelect, [], 'No Orders Available', null);
+                            }
+                        }
                     },
                     error: function () {
                         if ($rvSelect.length) {
@@ -442,6 +543,9 @@
                         }
                         if ($soSelect.length) {
                             updateSelect2Dropdown($soSelect, [], 'Error loading Sales Orders', null);
+                        }
+                        if ($orderSelect.length) {
+                            updateSelect2Dropdown($orderSelect, [], 'Error loading Orders', null);
                         }
                     }
                 });
@@ -451,7 +555,26 @@
             $(document).on('change', '.account-select', function () {
                 const $row = $(this).closest('tr');
                 const accId = $(this).val();
-                loadAccountData($row, accId, null, null);
+                loadAccountData($row, accId, null, null, null);
+            });
+
+            // Listen for order selection change to populate voucher columns
+            $(document).on('change', '.order-select', function () {
+                const $row = $(this).closest('tr');
+                const $selected = $(this).find('option:selected');
+                const val = $(this).val();
+
+                if (val) {
+                    const uniqueNo = $selected.attr('data-unique-no') || $selected.text() || '';
+                    const type = $selected.attr('data-type') || '';
+                    $row.find('.voucher-id-input').val(val);
+                    $row.find('.voucher-no-input').val(uniqueNo);
+                    $row.find('.voucher-type-input').val(type);
+                } else {
+                    $row.find('.voucher-id-input').val('');
+                    $row.find('.voucher-no-input').val('');
+                    $row.find('.voucher-type-input').val('');
+                }
             });
 
             // Receipt Voucher selection handler: auto-fill and enforce max across all rows
@@ -513,10 +636,13 @@
                 calculateTotals();
             });
 
+            // Set initial state
+            toggleReceivingColumns();
+
             // Add new row
             $('#addRow').click(function () {
-                const isReceiving = $('#receivingToggle').is(':checked');
-                const displayStyle = isReceiving ? '' : 'display: none;';
+                const receivingDisplayStyle = $('#receivingToggle').is(':checked') ? '' : 'display: none;';
+                const orderDisplayStyle = $('#receivingToggle').is(':checked') ? 'display: none;' : '';
 
                 const newRow = `
                     <tr>
@@ -524,12 +650,20 @@
                             <select name="details[${rowCount}][acc_id]" class="form-control select2 account-select" required>
                                 <option value="">Select Account</option>
                                 @foreach ($accounts as $account)
-                                    <option value="{{ $account->id }}">{{ $account->name }} ({{ $account->unique_no }})</option>
+                                    <option value="{{ $account->id }}" data-table-name="{{ strtolower($account->table_name ?? '') }}">{{ $account->name }} ({{ $account->unique_no }})</option>
                                 @endforeach
                             </select>
                         </td>
-                        <td class="receiving-col" style="${displayStyle}"></td>
-                        <td class="receiving-col" style="${displayStyle}"></td>
+                        <td class="receiving-col" style="${receivingDisplayStyle}"></td>
+                        <td class="receiving-col" style="${receivingDisplayStyle}"></td>
+                        <td class="order-col" style="${orderDisplayStyle}">
+                            <select name="details[${rowCount}][order_id]" class="form-control select2 order-select" style="width: 100%;">
+                                <option value="">Select Order (Select Account First)</option>
+                            </select>
+                            <input type="hidden" name="details[${rowCount}][voucher_id]" class="voucher-id-input">
+                            <input type="hidden" name="details[${rowCount}][voucher_no]" class="voucher-no-input">
+                            <input type="hidden" name="details[${rowCount}][voucher_type]" class="voucher-type-input">
+                        </td>
                         <td>
                             <input type="text" name="details[${rowCount}][description]" class="form-control description-input" placeholder="Line description">
                         </td>

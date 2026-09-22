@@ -102,7 +102,7 @@
                                 $isReceiving = false;
                                 $hasOrders = false;
                                 foreach($journalVoucher->journalVoucherDetails as $detail) {
-                                    if($detail->receipt_voucher_id || $detail->sales_order_id) {
+                                    if(!empty($detail->receipt_voucher_id) || (!empty($detail->sales_order_id) && empty($detail->voucher_type))) {
                                         $isReceiving = true;
                                     }
                                     if(!empty($detail->voucher_no)) {

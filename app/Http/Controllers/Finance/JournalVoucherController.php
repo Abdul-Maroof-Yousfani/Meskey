@@ -634,10 +634,48 @@ class JournalVoucherController extends Controller
 
         $rowRvs = [];
         $rowSos = [];
+        $rowOrders = [];
         foreach ($journalVoucher->journalVoucherDetails as $index => $detail) {
             $related = $this->fetchAccountRelatedData($detail->acc_id, $id);
             $rowRvs[$index] = collect($related['receipt_vouchers']);
             $rowSos[$index] = collect($related['sales_orders']);
+            $rowOrders[$index] = collect([]);
+
+            $tableName = strtolower($detail->account->table_name ?? ($related['table_name'] ?? ''));
+
+            if ($tableName === 'customers') {
+                $rowOrders[$index] = collect($related['sales_orders']);
+                $orderId = $detail->voucher_id ?: $detail->sales_order_id;
+                if ($orderId && !$rowOrders[$index]->contains('id', $orderId)) {
+                    $currSo = $detail->salesOrder ?: \App\Models\Sales\SalesOrder::find($orderId);
+                    if ($currSo) {
+                        $rowOrders[$index]->prepend([
+                            'id' => $currSo->id,
+                            'reference_no' => $currSo->reference_no,
+                            'unique_no' => $currSo->reference_no,
+                            'text' => $currSo->reference_no,
+                            'type' => 'sales_order'
+                        ]);
+                    }
+                }
+            } elseif ($tableName === 'suppliers') {
+                $rowOrders[$index] = collect($related['grns']);
+                $orderId = $detail->voucher_id;
+                if ($orderId && !$rowOrders[$index]->contains('id', $orderId)) {
+                    $currGrn = $detail->grn ?: \App\Models\Master\GrnNumber::find($orderId);
+                    if (!$currGrn && $detail->voucher_no) {
+                        $currGrn = \App\Models\Master\GrnNumber::where('unique_no', $detail->voucher_no)->first();
+                    }
+                    if ($currGrn) {
+                        $rowOrders[$index]->prepend([
+                            'id' => $currGrn->id,
+                            'unique_no' => $currGrn->unique_no,
+                            'text' => $currGrn->unique_no,
+                            'type' => 'grn'
+                        ]);
+                    }
+                }
+            }
 
             // Ensure current selected RV is present even if remaining is 0 or consumed
             if ($detail->receipt_voucher_id && !$rowRvs[$index]->contains('id', $detail->receipt_voucher_id)) {
@@ -662,7 +700,9 @@ class JournalVoucherController extends Controller
                     $rowSos[$index]->prepend([
                         'id' => $currSo->id,
                         'reference_no' => $currSo->reference_no,
-                        'text' => $currSo->reference_no
+                        'unique_no' => $currSo->reference_no,
+                        'text' => $currSo->reference_no,
+                        'type' => 'sales_order'
                     ]);
                 }
             }
@@ -673,6 +713,7 @@ class JournalVoucherController extends Controller
             'accounts' => $accounts,
             'rowRvs' => $rowRvs,
             'rowSos' => $rowSos,
+            'rowOrders' => $rowOrders,
             'receiptVouchers' => collect([]),
             'salesOrders' => collect([])
         ];
