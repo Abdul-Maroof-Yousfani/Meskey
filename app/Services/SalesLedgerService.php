@@ -1837,8 +1837,17 @@ class SalesLedgerService
                 $paymentRequestData->update($dataPayload);
             }
 
+            $isDcApprovedType = in_array($requestType, [
+                'freight_labour_payment',
+                'broker_commission_payment',
+                'seller_commission_payment',
+            ]);
+
+            $status = $isDcApprovedType ? 'approved' : 'pending';
+            $approverId = auth()->user()->id ?? 1;
+
             if (!$paymentRequest) {
-                PaymentRequest::create([
+                $paymentRequest = PaymentRequest::create([
                     'delivery_challan_id' => $deliveryChallan->id,
                     'payment_request_data_id' => $paymentRequestData->id,
                     'account_id' => $accountId,
@@ -1846,16 +1855,41 @@ class SalesLedgerService
                     'request_type' => $requestType,
                     'module_type' => 'delivery_challan',
                     'amount' => $amount,
-                    'status' => 'pending',
-                    'am_approval_status' => 'pending',
+                    'status' => $status,
+                    'am_approval_status' => $status,
+                    'approved_by' => $isDcApprovedType ? $approverId : null,
+                    'approved_at' => $isDcApprovedType ? now() : null,
                     'description' => $notes,
                 ]);
             } else {
-                $paymentRequest->update([
+                $updateData = [
                     'account_id' => $accountId,
                     'amount' => $amount,
                     'description' => $notes,
-                ]);
+                ];
+                if ($isDcApprovedType && $paymentRequest->status !== 'approved') {
+                    $updateData['status'] = 'approved';
+                    $updateData['am_approval_status'] = 'approved';
+                    $updateData['approved_by'] = $approverId;
+                    $updateData['approved_at'] = now();
+                }
+                $paymentRequest->update($updateData);
+            }
+
+            if ($isDcApprovedType) {
+                PaymentRequestApproval::updateOrCreate(
+                    [
+                        'payment_request_id' => $paymentRequest->id,
+                    ],
+                    [
+                        'payment_request_data_id' => $paymentRequestData->id,
+                        'status' => 'approved',
+                        'approver_id' => $approverId,
+                        'amount' => $amount,
+                        'request_type' => $requestType,
+                        'remarks' => 'Auto-approved via Delivery Challan',
+                    ]
+                );
             }
         };
 
@@ -2087,6 +2121,7 @@ class SalesLedgerService
     public function autoApproveDeliveryChallanPaymentRequests(int $deliveryChallanId): void
     {
         $paymentRequests = PaymentRequest::where('delivery_challan_id', $deliveryChallanId)
+            ->where('request_type', 'freight_payment')
             ->whereDoesntHave('paymentVoucherData')
             ->get();
 
