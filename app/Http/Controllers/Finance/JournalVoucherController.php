@@ -10,6 +10,7 @@ use App\Models\Master\Account\Transaction;
 use App\Models\Master\Account\TransactionVoucherType;
 use App\Models\Master\GrnNumber;
 use App\Models\Master\Supplier;
+use App\Models\Procurement\PaymentRequest;
 use App\Models\ReceiptVoucher;
 use App\Models\Sales\SalesOrder;
 use Illuminate\Http\Request;
@@ -201,18 +202,28 @@ class JournalVoucherController extends Controller
 
             // Direct query using supplier_id from grn_numbers table
             $data = GrnNumber::where('supplier_id', $supplier->id)
+            // $data = GrnNumber::with('paymentRequestData.paymentRequests.paymentVoucherData.paymentVoucher')
                 ->whereNotNull('unique_no')
-                // ->whereDoesntHave('paymentRequestData.paymentRequests.paymentVoucherData', function ($q) {
-                //     $q->whereHas('paymentVoucher');
-                // })
+                // ->whereHas('paymentRequestData.paymentRequests')
+                ->whereHas('paymentRequestData.paymentRequests', function ($pr) {
+                    $pr->where('status', 'approved')
+                    ->where(function ($q) {
+                        $q->whereDoesntHave('paymentVoucherData')
+                            ->orWhereDoesntHave('paymentVoucherData.paymentVoucher');
+                    });
+                })
                 ->latest('id')
+                // ->limit(5)
                 ->get()
-                ->map(function ($grn) {
+                ->map(function ($grn) use ($excludeJvId) {
+                    $limitInfo = $this->getGrnAvailableLimit($grn->id, $excludeJvId);
+                    $remaining = $limitInfo['available_amount'] ?? 0;
                     return [
                         'id' => $grn->id,
                         'unique_no' => $grn->unique_no,
-                        'text' => $grn->unique_no,
-                        'type' => 'grn'
+                        'text' => $grn->unique_no . ($remaining > 0 ? ' (Rem: ' . number_format($remaining, 2) . ')' : ''),
+                        'type' => 'grn',
+                        'remaining_amount' => $remaining
                     ];
                 });
 
@@ -245,6 +256,104 @@ class JournalVoucherController extends Controller
     {
         $data = $this->fetchAccountRelatedData($request->acc_id, $request->jv_id);
         return response()->json(array_merge(['success' => true], $data));
+    }
+
+    /**
+     * Calculate available approved amount for a GRN after adjusting for Journal Vouchers.
+     */
+    public function getGrnAvailableLimit($grnIdOrNo, $excludeJvId = null)
+    {
+        $grn = GrnNumber::where('id', $grnIdOrNo)
+            ->orWhere('unique_no', $grnIdOrNo)
+            ->first();
+
+        if (!$grn) {
+            return ['success' => false, 'message' => 'GRN was not found.'];
+        }
+
+        // 1. Sum of all related payment_requests where status = 'approved' and (payment_vouchers or payment_voucher_data not exists)
+        $totalApprovedPrAmount = (float) PaymentRequest::whereHas('paymentRequestData', function ($q) use ($grn) {
+                $q->where('grn_no', $grn->unique_no);
+            })
+            ->where('status', 'approved')
+            ->where(function ($q) {
+                $q->whereDoesntHave('paymentVoucherData')
+                  ->orWhereDoesntHave('paymentVoucherData.paymentVoucher');
+            })
+            ->sum('amount');
+
+        // 2. Check if there are Journal Vouchers on related record (adjusting for same JV if provided)
+        $jvDetailsQuery = DB::table('journal_voucher_details')
+            ->join('journal_vouchers', 'journal_vouchers.id', '=', 'journal_voucher_details.journal_voucher_id')
+            ->whereNull('journal_vouchers.deleted_at')
+            ->whereNull('journal_voucher_details.deleted_at')
+            ->where(function ($q) {
+                $q->whereNull('journal_vouchers.am_approval_status')
+                  ->orWhere('journal_vouchers.am_approval_status', '!=', 'rejected');
+            })
+            ->where(function ($q) {
+                $q->whereNull('journal_vouchers.jv_status')
+                  ->orWhere('journal_vouchers.jv_status', '!=', 'rejected');
+            })
+            ->where(function ($q) use ($grn) {
+                $q->where('journal_voucher_details.voucher_id', $grn->id)
+                  ->orWhere('journal_voucher_details.voucher_no', $grn->unique_no);
+            });
+
+        if ($excludeJvId) {
+            $jvDetailsQuery->where('journal_vouchers.id', '!=', $excludeJvId);
+        }
+
+        $jvConsumedAmount = (float) $jvDetailsQuery->sum('journal_voucher_details.debit_amount');
+        $availableLimit = max(0, round($totalApprovedPrAmount - $jvConsumedAmount, 2));
+
+        return [
+            'success' => true,
+            'grn_id' => $grn->id,
+            'unique_no' => $grn->unique_no,
+            'total_approved_amount' => $totalApprovedPrAmount,
+            'jv_consumed_amount' => $jvConsumedAmount,
+            'available_amount' => $availableLimit,
+            'max_amount' => $availableLimit
+        ];
+    }
+
+    /**
+     * AJAX endpoint to check that debit amount does not exceed GRN approved payment request balance.
+     */
+    public function checkGrnLimit(Request $request)
+    {
+        $grnId = $request->grn_id ?: $request->order_id ?: $request->voucher_no ?: $request->voucher_id;
+        $jvId = $request->jv_id;
+        $debitAmount = $request->has('debit_amount') && $request->debit_amount !== '' && $request->debit_amount !== null
+            ? (float) $request->debit_amount
+            : null;
+
+        if (!$grnId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'GRN ID or Number is required.'
+            ], 422);
+        }
+
+        $limitInfo = $this->getGrnAvailableLimit($grnId, $jvId);
+
+        if (!$limitInfo['success']) {
+            return response()->json($limitInfo, 404);
+        }
+
+        $availableAmount = $limitInfo['available_amount'];
+        $isExceeded = ($debitAmount !== null && round($debitAmount, 2) > round($availableAmount + 0.001, 2));
+
+        return response()->json(array_merge($limitInfo, [
+            'is_exceeded' => $isExceeded,
+            'formatted_available' => number_format($availableAmount, 2),
+            'formatted_total_approved' => number_format($limitInfo['total_approved_amount'], 2),
+            'formatted_jv_consumed' => number_format($limitInfo['jv_consumed_amount'], 2),
+            'message' => $isExceeded
+                ? "Debit amount (" . number_format($debitAmount, 2) . ") exceeds GRN ({$limitInfo['unique_no']}) approved balance of " . number_format($availableAmount, 2)
+                : null
+        ]));
     }
 
     /**
@@ -368,6 +477,33 @@ class JournalVoucherController extends Controller
             $remainingAmount = round($baseAmount - ($doConsumed + $jvConsumed), 2);
             if (round($totalEntered, 2) > round($remainingAmount + 0.01, 2)) {
                 return "The entered amount (" . number_format($totalEntered, 2) . ") for Receipt Voucher {$rv->unique_no} exceeds its remaining balance of " . number_format($remainingAmount, 2) . ".";
+            }
+        }
+
+        // Validate GRN debit limits
+        $grnTotalUsage = [];
+        foreach ($request->details as $index => $detail) {
+            $orderId = $detail['order_id'] ?? $detail['voucher_id'] ?? null;
+            $voucherType = $detail['voucher_type'] ?? null;
+            $debitAmount = isset($detail['debit_amount']) ? (float) $detail['debit_amount'] : 0;
+
+            if ($voucherType === 'grn' || (!empty($orderId) && empty($detail['sales_order_id']) && empty($detail['receipt_voucher_id']))) {
+                $grn = GrnNumber::where('id', $orderId)->orWhere('unique_no', $orderId)->first();
+                if ($grn) {
+                    $grnTotalUsage[$grn->id] = ($grnTotalUsage[$grn->id] ?? 0) + $debitAmount;
+                }
+            }
+        }
+
+        foreach ($grnTotalUsage as $grnId => $totalEnteredDebit) {
+            if ($totalEnteredDebit > 0) {
+                $limitInfo = $this->getGrnAvailableLimit($grnId, $excludeJvId);
+                if ($limitInfo['success']) {
+                    $remaining = $limitInfo['available_amount'];
+                    if (round($totalEnteredDebit, 2) > round($remaining + 0.01, 2)) {
+                        return "The entered debit amount (" . number_format($totalEnteredDebit, 2) . ") for GRN {$limitInfo['unique_no']} exceeds its available approved balance of " . number_format($remaining, 2) . ".";
+                    }
+                }
             }
         }
 
@@ -667,11 +803,14 @@ class JournalVoucherController extends Controller
                         $currGrn = \App\Models\Master\GrnNumber::where('unique_no', $detail->voucher_no)->first();
                     }
                     if ($currGrn) {
+                        $limitInfo = $this->getGrnAvailableLimit($currGrn->id, $id);
+                        $remaining = $limitInfo['available_amount'] ?? 0;
                         $rowOrders[$index]->prepend([
                             'id' => $currGrn->id,
                             'unique_no' => $currGrn->unique_no,
-                            'text' => $currGrn->unique_no,
-                            'type' => 'grn'
+                            'text' => $currGrn->unique_no . ($remaining > 0 ? ' (Rem: ' . number_format($remaining, 2) . ')' : ''),
+                            'type' => 'grn',
+                            'remaining_amount' => $remaining
                         ]);
                     }
                 }
