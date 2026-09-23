@@ -29,6 +29,8 @@ class Transaction extends Model
         'amount',
         'purpose',
         'remarks',
+        'jv_narration',
+        'reference_no', // it is use to store unique numbers like grn_no, sale_order_no and more
         'status',
         'created_by',
         'updated_by',
