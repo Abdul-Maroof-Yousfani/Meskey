@@ -43,6 +43,7 @@
                             @elseif($arrivalTicket->is_ticket_verified == 1)
                                 <span class="badge badge-success ml-2">Contract Verified</span>
                             @endif
+                            <button type="button" class="btn btn-primary btn-sm float-right" id="park_arrival_btn">Park Arrival</button>
                         </h4>
                     </div>
                     <div class="card-body">
@@ -940,6 +941,61 @@
             }
 
             function hideLoadingShimmer() {}
+
+            $('#park_arrival_btn').on('click', function(e) {
+                e.preventDefault();
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: 'Are you sure you want to park this arrival?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, park it!',
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        Swal.fire({
+                            title: 'Processing...',
+                            text: 'Please wait while parking the arrival.',
+                            allowOutsideClick: false,
+                            showConfirmButton: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            }
+                        });
+
+                        $.ajax({
+                            url: "{{ route('raw-material.ticket-contracts.park-arrival') }}",
+                            type: "POST",
+                            data: {
+                                _token: "{{ csrf_token() }}",
+                                arrival_ticket_id: "{{ $arrivalTicket->id }}"
+                            },
+                            success: function(response) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Success!',
+                                    text: response.message || 'Arrival parked successfully!',
+                                    confirmButtonColor: '#3085d6',
+                                });
+                            },
+                            error: function(xhr) {
+                                let errorMsg = 'Something went wrong. Please try again.';
+                                if (xhr.responseJSON && xhr.responseJSON.message) {
+                                    errorMsg = xhr.responseJSON.message;
+                                }
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error!',
+                                    text: errorMsg,
+                                    confirmButtonColor: '#d33',
+                                });
+                            }
+                        });
+                    }
+                });
+            });
         });
     </script>
 

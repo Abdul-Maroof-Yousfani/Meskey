@@ -21,6 +21,8 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -30,6 +32,7 @@ class UserTestController extends Controller
     {
         $this->middleware('check.company:user-list', ['only' => ['index']]);
         $this->middleware('check.company:user-list', ['only' => ['getTable']]);
+        $this->middleware('check.company:user-list', ['only' => ['exportToExcel']]);
         $this->middleware('check.company:user-create', ['only' => ['create', 'store']]);
         $this->middleware('check.company:user-edit', ['only' => ['edit', 'update']]);
         $this->middleware('check.company:user-delete', ['only' => ['destroy']]);
@@ -41,8 +44,9 @@ class UserTestController extends Controller
     public function index(Request $request): View
     {
         $data = User::latest()->paginate(5);
+        $locations = CompanyLocation::orderBy('name')->get();
 
-        return view('management.acl.users-test.index', compact('data'))->with('i', ($request->input('page', 1) - 1) * 5);
+        return view('management.acl.users-test.index', compact('data', 'locations'))->with('i', ($request->input('page', 1) - 1) * 5);
     }
 
     public function create(): View
@@ -694,20 +698,41 @@ class UserTestController extends Controller
 
     public function getTable(Request $request)
     {
-        $users = User::with(['companies', 'account.parent'])->when($request->filled('search'), function ($q) use ($request) {
-            $searchTerm = '%' . $request->search . '%';
+        $locationIds = is_array($request->company_location_id)
+            ? $request->company_location_id
+            : ($request->filled('company_location_id') ? [$request->company_location_id] : []);
+        $locationIds = array_values(array_filter($locationIds, fn($id) => !empty($id) && $id !== 'all'));
 
-            return $q->where(function ($sq) use ($searchTerm) {
-                $sq->where('name', 'like', $searchTerm)
-                    ->orWhere('username', 'like', $searchTerm)
-                    ->orWhere('email', 'like', $searchTerm)
-                    ->orWhereHas('account', function ($aq) use ($searchTerm) {
-                        $aq->where('hierarchy_path', 'like', $searchTerm)
-                            ->orWhere('unique_no', 'like', $searchTerm)
-                            ->orWhere('name', 'like', $searchTerm);
-                    });
-            });
-        })
+        $users = User::with(['companies', 'account.parent'])
+            ->when(!empty($locationIds), function ($q) use ($locationIds) {
+                return $q->where(function ($lq) use ($locationIds) {
+                    foreach ($locationIds as $locId) {
+                        $lq->orWhere('company_location_id', $locId)
+                            ->orWhereJsonContains('company_location_ids', (string) $locId)
+                            ->orWhereJsonContains('company_location_ids', (int) $locId)
+                            ->orWhereHas('companies', function ($cq) use ($locId) {
+                                $cq->where(function ($sub) use ($locId) {
+                                    $sub->whereJsonContains('locations', (string) $locId)
+                                        ->orWhereJsonContains('locations', (int) $locId);
+                                });
+                            });
+                    }
+                });
+            })
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $searchTerm = '%' . $request->search . '%';
+
+                return $q->where(function ($sq) use ($searchTerm) {
+                    $sq->where('name', 'like', $searchTerm)
+                        ->orWhere('username', 'like', $searchTerm)
+                        ->orWhere('email', 'like', $searchTerm)
+                        ->orWhereHas('account', function ($aq) use ($searchTerm) {
+                            $aq->where('hierarchy_path', 'like', $searchTerm)
+                                ->orWhere('unique_no', 'like', $searchTerm)
+                                ->orWhere('name', 'like', $searchTerm);
+                        });
+                });
+            })
             ->latest()
             // ->paginate(10);
             ->paginate($request->get('per_page', 25));
@@ -715,23 +740,150 @@ class UserTestController extends Controller
         return view('management.acl.users-test.getList', compact('users'));
     }
 
-    public function exportToExcel()
+    public function exportToExcel(Request $request)
     {
-        $discounts = User::all();
+        $locationIds = is_array($request->company_location_id)
+            ? $request->company_location_id
+            : ($request->filled('company_location_id') ? [$request->company_location_id] : []);
+        $locationIds = array_values(array_filter($locationIds, fn($id) => !empty($id) && $id !== 'all'));
+
+        $users = User::with(['companies', 'account.parent', 'parent'])
+            ->when(!empty($locationIds), function ($q) use ($locationIds) {
+                return $q->where(function ($lq) use ($locationIds) {
+                    foreach ($locationIds as $locId) {
+                        $lq->orWhere('company_location_id', $locId)
+                            ->orWhereJsonContains('company_location_ids', (string) $locId)
+                            ->orWhereJsonContains('company_location_ids', (int) $locId)
+                            ->orWhereHas('companies', function ($cq) use ($locId) {
+                                $cq->where(function ($sub) use ($locId) {
+                                    $sub->whereJsonContains('locations', (string) $locId)
+                                        ->orWhereJsonContains('locations', (int) $locId);
+                                });
+                            });
+                    }
+                });
+            })
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $searchTerm = '%' . $request->search . '%';
+
+                return $q->where(function ($sq) use ($searchTerm) {
+                    $sq->where('name', 'like', $searchTerm)
+                        ->orWhere('username', 'like', $searchTerm)
+                        ->orWhere('email', 'like', $searchTerm)
+                        ->orWhereHas('account', function ($aq) use ($searchTerm) {
+                            $aq->where('hierarchy_path', 'like', $searchTerm)
+                                ->orWhere('unique_no', 'like', $searchTerm)
+                                ->orWhere('name', 'like', $searchTerm);
+                        });
+                });
+            })
+            ->latest()
+            ->get();
+
+        $companyLocations = CompanyLocation::pluck('name', 'id')->toArray();
+        $arrivalLocations = ArrivalLocation::all()->keyBy('id');
 
         $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setCellValue('A1', 'name');
-        $sheet->setCellValue('B1', 'email');
-        $sheet->setCellValue('C1', 'created at');
+        $sheet->setTitle('Users');
+
+        $headers = ['Name', 'Parent', 'PO Approval', 'Location/Sublocation', 'COA Hierarchy'];
+        $columns = ['A', 'B', 'C', 'D', 'E'];
+
+        foreach ($headers as $index => $header) {
+            $sheet->setCellValue($columns[$index] . '1', $header);
+        }
+
+        // Header styling
+        $sheet->getStyle('A1:E1')->applyFromArray([
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '1F497D'],
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
+            ],
+        ]);
+        $sheet->getRowDimension(1)->setRowHeight(25);
 
         $row = 2;
-        foreach ($discounts as $discount) {
-            $sheet->setCellValue('A' . $row, $discount->name);
-            $sheet->setCellValue('B' . $row, $discount->email);
-            $sheet->setCellValue('C' . $row, date('D d M Y', strtotime($discount->created_at)));
+        foreach ($users as $user) {
+            $parent = $user->parent?->name ?? '--';
+            $poApproval = $user->purchase_order_approval ? 'Enabled' : 'Disabled';
+
+            // Location/Sublocation
+            $locEntries = [];
+            foreach ($user->companies as $comp) {
+                $savedLocations = json_decode($comp->pivot->locations, true) ?? [];
+                $flatArrivals = json_decode($comp->pivot->arrival_locations, true) ?? [];
+
+                $savedArrivals = [];
+                foreach ($flatArrivals as $arrId) {
+                    $arr = $arrivalLocations->get($arrId);
+                    if ($arr && $arr->company_location_id) {
+                        $savedArrivals[$arr->company_location_id][] = $arr->name;
+                    }
+                }
+
+                foreach ($savedLocations as $locId) {
+                    $locName = $companyLocations[$locId] ?? 'Location N/A';
+                    $arrNames = $savedArrivals[$locId] ?? [];
+
+                    if (!empty($arrNames)) {
+                        $locEntries[] = $locName . ' (' . implode(', ', $arrNames) . ')';
+                    } else {
+                        $locEntries[] = $locName;
+                    }
+                }
+            }
+
+            if (empty($locEntries)) {
+                if (!empty($user->company_location_ids)) {
+                    $directLocIds = is_array($user->company_location_ids)
+                        ? $user->company_location_ids
+                        : (json_decode($user->company_location_ids, true) ?? []);
+                    foreach ($directLocIds as $locId) {
+                        if (isset($companyLocations[$locId])) {
+                            $locEntries[] = $companyLocations[$locId];
+                        }
+                    }
+                } elseif ($user->company_location_id && isset($companyLocations[$user->company_location_id])) {
+                    $locEntries[] = $companyLocations[$user->company_location_id];
+                }
+            }
+
+            $locationSublocation = !empty($locEntries) ? implode("\n", array_unique($locEntries)) : '--';
+
+            // COA Hierarchy
+            $coaHierarchy = '--';
+            if ($user->account) {
+                $parts = array_filter([
+                    $user->account->hierarchy_path,
+                    $user->account->unique_no,
+                    $user->account->name,
+                ]);
+                $coaHierarchy = !empty($parts) ? implode(' - ', $parts) : '--';
+            }
+
+            $sheet->setCellValue('A' . $row, $user->name);
+            $sheet->setCellValue('B' . $row, $parent);
+            $sheet->setCellValue('C' . $row, $poApproval);
+            $sheet->setCellValue('D' . $row, $locationSublocation);
+            $sheet->setCellValue('E' . $row, $coaHierarchy);
+
+            $sheet->getStyle('C' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('D' . $row)->getAlignment()->setWrapText(true);
+
             $row++;
         }
+
+        $sheet->getColumnDimension('A')->setWidth(25);
+        $sheet->getColumnDimension('B')->setWidth(20);
+        $sheet->getColumnDimension('C')->setWidth(16);
+        $sheet->getColumnDimension('D')->setWidth(50);
+        $sheet->getColumnDimension('E')->setWidth(30);
 
         $writer = new Xlsx($spreadsheet);
         $fileName = 'users.xlsx';

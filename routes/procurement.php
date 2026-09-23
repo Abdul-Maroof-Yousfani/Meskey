@@ -78,6 +78,7 @@ Route::prefix('raw-material')->name('raw-material.')->group(function () {
     Route::resource('sit-vehicle', SITVehicleController::class);
     Route::post('/get-sit-vehicle', [SITVehicleController::class, 'getList'])->name('get.sit-vehicle');
 
+    Route::post('/ticket-contracts/park-arrival', [TicketContractController::class, 'parkArrival'])->name('ticket-contracts.park-arrival');
     Route::get('/ticket-contracts/search-contracts', [TicketContractController::class, 'searchContracts'])->name('ticket-contracts.search-contracts');
     Route::resource('ticket-contracts', TicketContractController::class);
     Route::post('/get-ticket-contracts', [TicketContractController::class, 'getList'])->name('get.ticket-contracts');

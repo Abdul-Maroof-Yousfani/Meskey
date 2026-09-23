@@ -19,6 +19,7 @@ use App\Models\Master\Miller;
 use App\Models\Master\ProductSlab;
 use App\Models\Master\Supplier;
 use App\Models\SaudaType;
+use App\Models\Master\GrnNumber;
 use Illuminate\Http\Request;
 use App\Models\Master\QcReliefParameter;
 use App\Models\Procurement\PurchaseFreight;
@@ -31,7 +32,7 @@ class TicketContractController extends Controller
 {
     function __construct()
     {
-        $this->middleware('check.company:contract-linking', ['only' => ['index', 'getList', 'create']]);
+        $this->middleware('check.company:contract-linking', ['only' => ['index', 'getList', 'create', 'parkArrival']]);
     }
     /**
      * Display a listing of the resource.
@@ -248,7 +249,15 @@ class TicketContractController extends Controller
             $rate = $purchaseOrder->rate_per_kg;
             $totalAmount = $inventoryAmount;
             $loadingWeight = null;
-
+            try {
+                GrnNumber::where('unique_no', $grnNo)->update([
+                    'purchase_order_id' => $arrivalTicket->arrival_purchase_order_id ?? null,
+                    'supplier_id' => $purchaseOrder->supplier_id ?? null,
+                ]);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                return response()->json(['success' => false, 'message' => 'GRN Number not found' ], 404);
+            }
 
             if ($type == 'pohanch') {
                 $loadingWeight = $arrivedWeight;
@@ -857,5 +866,13 @@ class TicketContractController extends Controller
         $html = view('management.procurement.raw_material.ticket_contracts.contract_table', compact('arrivalTicket', 'contracts'))->render();
 
         return response()->json(['success' => true, 'html' => $html, 'data' => $contracts]);
+    }
+
+    public function parkArrival(Request $request)
+    {
+        return response()->json([
+            'success' => true,
+            'message' => 'Arrival parked successfully!',
+        ]);
     }
 }

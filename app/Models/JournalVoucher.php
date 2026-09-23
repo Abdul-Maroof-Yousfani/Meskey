@@ -123,6 +123,7 @@ class JournalVoucher extends Model
                             'debit',
                             'no',
                             [
+                                'reference_no' => $detail->voucher_no ?? '',
                                 'purpose' => "journal-voucher-{$this->id}-{$this->jv_no}",
                                 'remarks' => $detail->description ?? ($this->description ?? "Journal entry for {$this->jv_no}"),
                                 'voucher_date' => $this->jv_date ? $this->jv_date->format('Y-m-d') : now()->format('Y-m-d')

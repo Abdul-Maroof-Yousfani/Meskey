@@ -51,6 +51,7 @@ Route::put("/direct-receipt-voucher/{receipt_voucher}", [ReceiptVoucherControlle
 Route::prefix('journal-voucher')->group(function () {
     Route::post('generate-jv-number', [JournalVoucherController::class, 'generateJvNumber'])->name('journal-voucher.generate-jv-number');
     Route::get('get-account-related-data', [JournalVoucherController::class, 'getAccountRelatedData'])->name('journal-voucher.get-account-related-data');
+    Route::match(['get', 'post'], 'check-grn-limit', [JournalVoucherController::class, 'checkGrnLimit'])->name('journal-voucher.check-grn-limit');
     Route::post('{id}/approve', [JournalVoucherController::class, 'approve'])->name('journal-voucher.approve');
     Route::post('{id}/reject', [JournalVoucherController::class, 'reject'])->name('journal-voucher.reject');
 });

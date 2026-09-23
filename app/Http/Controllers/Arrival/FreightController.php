@@ -115,7 +115,9 @@ class FreightController extends Controller
                     'model_type' => 'arrival-slip',
                     'location_id' => $ticket->location_id,
                     'product_id' => $ticket->qc_product ?? $ticket->product_id ?? null,
-                    'unique_no' => $grnNo
+                    'unique_no' => $grnNo,
+                    'purchase_order_id' => $ticket->arrival_purchase_order_id ?? null,
+                    'supplier_id' => $ticket->purchaseOrder?->supplier_id ?? $ticket->accounts_of_id ?? null,
                 ]);
 
                 $truckNo = $ticket->truck_no ?? 'N/A';

@@ -12,7 +12,7 @@
                         <a href="{{ route('journal-voucher.index') }}" class="btn btn-sm btn-primary">Back</a>
                     </div>
                     <div class="card-body">
-                        @if(strtolower($journalVoucher->am_approval_status ?? $journalVoucher->jv_status ?? '') === 'reverted')
+                        @if(strtolower($journalVoucher->am_approval_status ?? '') === 'reverted')
                             @php
                                 $latestLog = $journalVoucher->approvalLogs()->latest()->first();
                             @endphp
@@ -68,7 +68,11 @@
                                                 @php
                                                     $isReceiving = false;
                                                     foreach($journalVoucher->journalVoucherDetails as $detail) {
-                                                        if($detail->receipt_voucher_id || $detail->sales_order_id) {
+                                                        if(!empty($detail->receipt_voucher_id)) {
+                                                            $isReceiving = true;
+                                                            break;
+                                                        }
+                                                        if(!empty($detail->sales_order_id) && empty($detail->voucher_type)) {
                                                             $isReceiving = true;
                                                             break;
                                                         }
@@ -85,6 +89,7 @@
                                                         <th>Account</th>
                                                         <th class="receiving-col" style="{{ $isReceiving ? '' : 'display: none;' }}; width: 200px;">Receipt Voucher</th>
                                                         <th class="receiving-col" style="{{ $isReceiving ? '' : 'display: none;' }}; width: 200px;">Sales order</th>
+                                                        <th class="order-col" style="{{ $isReceiving ? 'display: none;' : '' }}; width: 200px;">Orders</th>
                                                         <th>Description</th>
                                                         <th>Debit</th>
                                                         <th>Credit</th>
@@ -99,6 +104,7 @@
                                                                     <option value="">Select Account</option>
                                                                     @foreach ($accounts as $account)
                                                                         <option value="{{ $account->id }}" 
+                                                                            data-table-name="{{ strtolower($account->table_name ?? '') }}"
                                                                             {{ $detail->acc_id == $account->id ? 'selected' : '' }}>
                                                                             {{ $account->name }} ({{ $account->unique_no }})
                                                                         </option>
@@ -140,6 +146,44 @@
                                                                     {{-- Empty for other rows --}}
                                                                 @endif
                                                             </td>
+                                                            <td class="order-col" style="{{ $isReceiving ? 'display: none;' : '' }}">
+                                                                <select name="details[{{ $index }}][order_id]" class="form-control select2 order-select" style="width: 100%;">
+                                                                    @php
+                                                                        $acc = $accounts->firstWhere('id', $detail->acc_id) ?? $detail->account;
+                                                                        $tableName = strtolower($acc->table_name ?? '');
+                                                                        $orderCount = isset($rowOrders[$index]) ? count($rowOrders[$index]) : 0;
+                                                                        if ($tableName === 'customers') {
+                                                                            $orderPlaceholder = $orderCount > 0 ? 'Select Sale Order' : 'No Sale Orders Available';
+                                                                        } elseif ($tableName === 'suppliers') {
+                                                                            $orderPlaceholder = $orderCount > 0 ? 'Select GRN' : 'No GRNs Available';
+                                                                        } elseif (!empty($detail->acc_id)) {
+                                                                            $orderPlaceholder = 'No Orders Available';
+                                                                        } else {
+                                                                            $orderPlaceholder = 'Select Order (Select Account First)';
+                                                                        }
+                                                                    @endphp
+                                                                    <option value="">{{ $orderPlaceholder }}</option>
+                                                                    @if(isset($rowOrders[$index]))
+                                                                        @foreach ($rowOrders[$index] as $order)
+                                                                            @php
+                                                                                $isSelected = ($detail->voucher_id && $detail->voucher_id == $order['id'])
+                                                                                    || ($detail->sales_order_id && $detail->sales_order_id == $order['id'])
+                                                                                    || ($detail->voucher_no && $detail->voucher_no == ($order['unique_no'] ?? ''));
+                                                                            @endphp
+                                                                            <option value="{{ $order['id'] }}" 
+                                                                                data-unique-no="{{ $order['unique_no'] ?? ($order['reference_no'] ?? '') }}"
+                                                                                data-type="{{ $order['type'] ?? '' }}"
+                                                                                data-remaining-amount="{{ $order['remaining_amount'] ?? '' }}"
+                                                                                @selected($isSelected)>
+                                                                                {{ $order['text'] }}
+                                                                            </option>
+                                                                        @endforeach
+                                                                    @endif
+                                                                </select>
+                                                                <input type="hidden" name="details[{{ $index }}][voucher_id]" class="voucher-id-input" value="{{ $detail->voucher_id }}">
+                                                                <input type="hidden" name="details[{{ $index }}][voucher_no]" class="voucher-no-input" value="{{ $detail->voucher_no }}">
+                                                                <input type="hidden" name="details[{{ $index }}][voucher_type]" class="voucher-type-input" value="{{ $detail->voucher_type }}">
+                                                            </td>
                                                             <td>
                                                                 <input type="text" name="details[{{ $index }}][description]" class="form-control description-input" placeholder="Line description" value="{{ $detail->description }}">
                                                             </td>
@@ -164,25 +208,25 @@
                                                 </tbody>
                                                 <tfoot>
                                                     <tr>
-                                                        <td colspan="{{ $isReceiving ? 4 : 2 }}" class="text-right"><strong>Total Debits:</strong></td>
+                                                        <td colspan="{{ $isReceiving ? 4 : 3 }}" class="text-right"><strong>Total Debits:</strong></td>
                                                         <td><strong id="totalDebits">0.00</strong></td>
                                                         <td></td>
                                                         <td></td>
                                                     </tr>
                                                     <tr>
-                                                        <td colspan="{{ $isReceiving ? 4 : 2 }}" class="text-right"><strong>Total Credits:</strong></td>
+                                                        <td colspan="{{ $isReceiving ? 4 : 3 }}" class="text-right"><strong>Total Credits:</strong></td>
                                                         <td></td>
                                                         <td><strong id="totalCredits">0.00</strong></td>
                                                         <td></td>
                                                     </tr>
                                                     <tr>
-                                                        <td colspan="{{ $isReceiving ? 4 : 2 }}" class="text-right"><strong>Difference (Debit - Credit):</strong></td>
+                                                        <td colspan="{{ $isReceiving ? 4 : 3 }}" class="text-right"><strong>Difference (Debit - Credit):</strong></td>
                                                         <td><strong id="difference">0.00</strong></td>
                                                         <td></td>
                                                         <td></td>
                                                     </tr>
                                                     <tr>
-                                                        <td colspan="7">
+                                                        <td colspan="{{ $isReceiving ? 7 : 6 }}">
                                                             <button type="button" class="btn btn-sm btn-primary" id="addRow">
                                                                 <i class="ft-plus"></i> Add Row
                                                             </button>
@@ -225,6 +269,28 @@
                 @endforeach
             @endif
 
+            // Global map to store loaded GRN limits by GRN ID and unique number
+            window.grnMap = window.grnMap || {};
+            @if(isset($rowOrders))
+                @foreach($rowOrders as $orderList)
+                    @foreach($orderList as $orderItem)
+                        @if(($orderItem['type'] ?? '') === 'grn')
+                            window.grnMap[{{ $orderItem['id'] }}] = {
+                                id: {{ $orderItem['id'] }},
+                                unique_no: "{{ addslashes($orderItem['unique_no'] ?? '') }}",
+                                remaining_amount: {{ $orderItem['remaining_amount'] ?? 0 }},
+                                text: "{{ addslashes($orderItem['text'] ?? '') }}"
+                            };
+                            @if(!empty($orderItem['unique_no']))
+                                window.grnMap["{{ addslashes($orderItem['unique_no']) }}"] = window.grnMap[{{ $orderItem['id'] }}];
+                            @endif
+                        @endif
+                    @endforeach
+                @endforeach
+            @endif
+
+            const currentJvId = '{{ $journalVoucher->id }}';
+
             // Initialize select2 with 100% width
             $('.select2').select2({ width: '100%' });
 
@@ -232,6 +298,7 @@
             function toggleReceivingColumns() {
                 if ($('#receivingToggle').is(':checked')) {
                     $('.receiving-col').show();
+                    $('.order-col').hide();
                     $('#journalEntriesTable tfoot td.text-right').attr('colspan', 4);
                     $('#addRow').closest('td').attr('colspan', 7);
                     // Refresh select2 inside receiving columns so width is 100%
@@ -243,12 +310,27 @@
                     });
                 } else {
                     $('.receiving-col').hide();
-                    $('#journalEntriesTable tfoot td.text-right').attr('colspan', 2);
-                    $('#addRow').closest('td').attr('colspan', 5);
+                    $('.order-col').show();
+                    $('#journalEntriesTable tfoot td.text-right').attr('colspan', 3);
+                    $('#addRow').closest('td').attr('colspan', 6);
+                    // Refresh select2 inside order columns so width is 100%
+                    $('.order-col .select2').each(function() {
+                        if ($(this).hasClass("select2-hidden-accessible")) {
+                            $(this).select2('destroy');
+                        }
+                        $(this).select2({ width: '100%' });
+                    });
                 }
             }
 
             $('#receivingToggle').change(function () {
+                if ($(this).is(':checked')) {
+                    $('.order-select').val('').trigger('change');
+                    $('.voucher-id-input, .voucher-no-input, .voucher-type-input').val('');
+                } else {
+                    $('.receipt-voucher-select').val('').trigger('change');
+                    $('.sales-order-select').val('').trigger('change');
+                }
                 toggleReceivingColumns();
             });
 
@@ -316,7 +398,7 @@
                 return voucherRvRemaining;
             }
 
-            // Standard SweetAlert Warning Popup
+            // Standard SweetAlert Warning Popup for RV
             let warningPopupTimeout = null;
             function showRvLimitWarning(limit) {
                 if (typeof Swal !== 'undefined' && Swal.isVisible()) {
@@ -336,17 +418,100 @@
                 }, 250);
             }
 
+            // Standard SweetAlert Warning Popup for GRN
+            let grnWarningTimeout = null;
+            function showGrnLimitWarning(limit, grnNo) {
+                if (typeof Swal !== 'undefined' && Swal.isVisible()) {
+                    return; // Avoid multiple overlapping popups
+                }
+                if (grnWarningTimeout) clearTimeout(warningPopupTimeout);
+                grnWarningTimeout = setTimeout(function() {
+                    if (typeof Swal !== 'undefined' && !Swal.isVisible()) {
+                        const formatted = Number(limit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        const title = grnNo ? 'Debit Exceeds GRN Limit (' + grnNo + ')' : 'Debit Exceeds GRN Limit';
+                        Swal.fire({
+                            icon: 'warning',
+                            title: title,
+                            text: 'Debit amount cannot exceed approved GRN available balance of ' + formatted,
+                            confirmButtonColor: '#D95000'
+                        });
+                    }
+                }, 250);
+            }
+
+            // Helper to get GRN info and limit reliably from order select
+            function getGrnInfoForSelect($orderSelect) {
+                if (!$orderSelect || !$orderSelect.length) return null;
+                const orderId = $orderSelect.val();
+                if (!orderId) return null;
+
+                const $opt = $orderSelect.find('option:selected');
+                const type = $opt.attr('data-type') || $orderSelect.closest('tr').find('.voucher-type-input').val();
+                if (type !== 'grn') return null;
+
+                let remaining = null;
+                if (window.grnMap && window.grnMap[orderId] && window.grnMap[orderId].remaining_amount !== undefined) {
+                    const num = parseFloat(window.grnMap[orderId].remaining_amount);
+                    if (!isNaN(num)) remaining = num;
+                }
+                if (remaining === null) {
+                    const uniqueNo = $opt.attr('data-unique-no');
+                    if (uniqueNo && window.grnMap && window.grnMap[uniqueNo] && window.grnMap[uniqueNo].remaining_amount !== undefined) {
+                        const num = parseFloat(window.grnMap[uniqueNo].remaining_amount);
+                        if (!isNaN(num)) remaining = num;
+                    }
+                }
+                if (remaining === null) {
+                    const attr = $opt.attr('data-remaining-amount') || $opt.data('remaining-amount');
+                    if (attr !== null && attr !== undefined && attr !== '') {
+                        const num = parseFloat(attr);
+                        if (!isNaN(num)) remaining = num;
+                    }
+                }
+                if (remaining === null) {
+                    const text = $opt.text();
+                    const match = text.match(/Rem:\s*([\d,]+(?:\.\d+)?)/i);
+                    if (match && match[1]) {
+                        const num = parseFloat(match[1].replace(/,/g, ''));
+                        if (!isNaN(num)) remaining = num;
+                    }
+                }
+
+                const uniqueNo = $opt.attr('data-unique-no') || $opt.text();
+                return {
+                    id: orderId,
+                    unique_no: uniqueNo,
+                    remaining_amount: remaining
+                };
+            }
+
             // Real-time amount validator & clamper for debit/credit inputs
             function validateAndClampInput($input) {
                 const $row = $input.closest('tr');
-                const remainingAmount = getActiveRvRemainingAmount($row);
+                const isReceiving = $('#receivingToggle').is(':checked');
 
-                if (remainingAmount !== null && remainingAmount > 0) {
-                    $input.attr('max', remainingAmount.toFixed(2));
-                    const enteredVal = parseFloat($input.val()) || 0;
-                    if (enteredVal > (remainingAmount + 0.001)) {
-                        $input.val(remainingAmount.toFixed(2));
-                        showRvLimitWarning(remainingAmount);
+                if (isReceiving) {
+                    const remainingAmount = getActiveRvRemainingAmount($row);
+                    if (remainingAmount !== null && remainingAmount > 0) {
+                        $input.attr('max', remainingAmount.toFixed(2));
+                        const enteredVal = parseFloat($input.val()) || 0;
+                        if (enteredVal > (remainingAmount + 0.001)) {
+                            $input.val(remainingAmount.toFixed(2));
+                            showRvLimitWarning(remainingAmount);
+                        }
+                    }
+                } else if ($input.hasClass('debit-input')) {
+                    const grnInfo = getGrnInfoForSelect($row.find('.order-select'));
+                    if (grnInfo && grnInfo.id) {
+                        const remaining = grnInfo.remaining_amount;
+                        if (remaining !== null && !isNaN(remaining)) {
+                            $input.attr('max', Number(remaining).toFixed(2));
+                            const enteredVal = parseFloat($input.val()) || 0;
+                            if (enteredVal > (remaining + 0.001)) {
+                                $input.val(remaining > 0 ? Number(remaining).toFixed(2) : '');
+                                showGrnLimitWarning(remaining, grnInfo.unique_no);
+                            }
+                        }
                     }
                 }
             }
@@ -368,6 +533,14 @@
                         if (item.remaining_amount !== undefined) {
                             $(opt).attr('data-remaining-amount', item.remaining_amount);
                         }
+                        if (item.unique_no !== undefined) {
+                            $(opt).attr('data-unique-no', item.unique_no);
+                        } else if (item.reference_no !== undefined) {
+                            $(opt).attr('data-unique-no', item.reference_no);
+                        }
+                        if (item.type !== undefined) {
+                            $(opt).attr('data-type', item.type);
+                        }
                         $select.append(opt);
                     });
                 }
@@ -387,9 +560,10 @@
             }
 
             // Function to load account-specific data for a row
-            function loadAccountData($row, accId, selectedRvId, selectedSoId) {
+            function loadAccountData($row, accId, selectedRvId, selectedSoId, selectedOrderId) {
                 const $rvSelect = $row.find('.receipt-voucher-select');
                 const $soSelect = $row.find('.sales-order-select');
+                const $orderSelect = $row.find('.order-select');
 
                 if (!accId) {
                     if ($rvSelect.length) {
@@ -397,6 +571,9 @@
                     }
                     if ($soSelect.length) {
                         updateSelect2Dropdown($soSelect, [], 'Select Sales Order (Select Account First)', null);
+                    }
+                    if ($orderSelect.length) {
+                        updateSelect2Dropdown($orderSelect, [], 'Select Order (Select Account First)', null);
                     }
                     return;
                 }
@@ -406,6 +583,17 @@
                 }
                 if ($soSelect.length) {
                     updateSelect2Dropdown($soSelect, [], 'Loading Sales Orders...', null, true);
+                }
+                if ($orderSelect.length) {
+                    const selectedOpt = $row.find('.account-select option:selected');
+                    const tbl = (selectedOpt.attr('data-table-name') || '').toLowerCase();
+                    let loadingMsg = 'Loading Orders...';
+                    if (tbl === 'suppliers') {
+                        loadingMsg = 'Loading GRNs...';
+                    } else if (tbl === 'customers') {
+                        loadingMsg = 'Loading Sale Orders...';
+                    }
+                    updateSelect2Dropdown($orderSelect, [], loadingMsg, null, true);
                 }
 
                 $.ajax({
@@ -422,6 +610,15 @@
                             });
                         }
 
+                        if (res.grns) {
+                            res.grns.forEach(function (grn) {
+                                window.grnMap[grn.id] = grn;
+                                if (grn.unique_no) {
+                                    window.grnMap[grn.unique_no] = grn;
+                                }
+                            });
+                        }
+
                         if ($rvSelect.length) {
                             const rvPlaceholder = (res.receipt_vouchers && res.receipt_vouchers.length > 0)
                                 ? 'Select Receipt Voucher'
@@ -435,6 +632,25 @@
                                 : 'No Sales Orders Available';
                             updateSelect2Dropdown($soSelect, res.sales_orders || [], soPlaceholder, selectedSoId);
                         }
+
+                        if ($orderSelect.length) {
+                            const tableName = (res.table_name || '').toLowerCase();
+                            if (tableName === 'customers') {
+                                const orders = res.sales_orders || [];
+                                const orderPlaceholder = orders.length > 0
+                                    ? 'Select Sale Order'
+                                    : 'No Sale Orders Available';
+                                updateSelect2Dropdown($orderSelect, orders, orderPlaceholder, selectedOrderId);
+                            } else if (tableName === 'suppliers') {
+                                const grns = res.grns || [];
+                                const grnPlaceholder = grns.length > 0
+                                    ? 'Select GRN'
+                                    : 'No GRNs Available';
+                                updateSelect2Dropdown($orderSelect, grns, grnPlaceholder, selectedOrderId);
+                            } else {
+                                updateSelect2Dropdown($orderSelect, [], 'No Orders Available', null);
+                            }
+                        }
                     },
                     error: function () {
                         if ($rvSelect.length) {
@@ -442,6 +658,9 @@
                         }
                         if ($soSelect.length) {
                             updateSelect2Dropdown($soSelect, [], 'Error loading Sales Orders', null);
+                        }
+                        if ($orderSelect.length) {
+                            updateSelect2Dropdown($orderSelect, [], 'Error loading Orders', null);
                         }
                     }
                 });
@@ -451,7 +670,58 @@
             $(document).on('change', '.account-select', function () {
                 const $row = $(this).closest('tr');
                 const accId = $(this).val();
-                loadAccountData($row, accId, null, null);
+                loadAccountData($row, accId, null, null, null);
+            });
+
+            // Listen for order selection change to populate voucher columns & check GRN limit
+            $(document).on('change', '.order-select', function () {
+                const $row = $(this).closest('tr');
+                const $selected = $(this).find('option:selected');
+                const val = $(this).val();
+
+                if (val) {
+                    const uniqueNo = $selected.attr('data-unique-no') || $selected.text() || '';
+                    const type = $selected.attr('data-type') || '';
+                    $row.find('.voucher-id-input').val(val);
+                    $row.find('.voucher-no-input').val(uniqueNo);
+                    $row.find('.voucher-type-input').val(type);
+
+                    if (type === 'grn') {
+                        const currentDebit = parseFloat($row.find('.debit-input').val()) || null;
+                        $.ajax({
+                            url: '{{ route("journal-voucher.check-grn-limit") }}',
+                            type: 'POST',
+                            data: {
+                                _token: '{{ csrf_token() }}',
+                                grn_id: val,
+                                jv_id: typeof currentJvId !== 'undefined' ? currentJvId : null,
+                                debit_amount: currentDebit
+                            },
+                            success: function (res) {
+                                if (res.success) {
+                                    window.grnMap[res.grn_id] = res;
+                                    window.grnMap[res.unique_no] = res;
+                                    $selected.attr('data-remaining-amount', res.available_amount);
+                                    $row.find('.debit-input').attr('max', res.available_amount.toFixed(2));
+
+                                    const enteredDebit = parseFloat($row.find('.debit-input').val()) || 0;
+                                    if (enteredDebit > (res.available_amount + 0.001)) {
+                                        $row.find('.debit-input').val(res.available_amount > 0 ? res.available_amount.toFixed(2) : '');
+                                        showGrnLimitWarning(res.available_amount, res.unique_no);
+                                        calculateTotals();
+                                    }
+                                }
+                            }
+                        });
+                    } else {
+                        $row.find('.debit-input').removeAttr('max');
+                    }
+                } else {
+                    $row.find('.voucher-id-input').val('');
+                    $row.find('.voucher-no-input').val('');
+                    $row.find('.voucher-type-input').val('');
+                    $row.find('.debit-input').removeAttr('max');
+                }
             });
 
             // Receipt Voucher selection handler: auto-fill and enforce max across all rows
@@ -513,10 +783,13 @@
                 calculateTotals();
             });
 
+            // Set initial state
+            toggleReceivingColumns();
+
             // Add new row
             $('#addRow').click(function () {
-                const isReceiving = $('#receivingToggle').is(':checked');
-                const displayStyle = isReceiving ? '' : 'display: none;';
+                const receivingDisplayStyle = $('#receivingToggle').is(':checked') ? '' : 'display: none;';
+                const orderDisplayStyle = $('#receivingToggle').is(':checked') ? 'display: none;' : '';
 
                 const newRow = `
                     <tr>
@@ -524,12 +797,20 @@
                             <select name="details[${rowCount}][acc_id]" class="form-control select2 account-select" required>
                                 <option value="">Select Account</option>
                                 @foreach ($accounts as $account)
-                                    <option value="{{ $account->id }}">{{ $account->name }} ({{ $account->unique_no }})</option>
+                                    <option value="{{ $account->id }}" data-table-name="{{ strtolower($account->table_name ?? '') }}">{{ $account->name }} ({{ $account->unique_no }})</option>
                                 @endforeach
                             </select>
                         </td>
-                        <td class="receiving-col" style="${displayStyle}"></td>
-                        <td class="receiving-col" style="${displayStyle}"></td>
+                        <td class="receiving-col" style="${receivingDisplayStyle}"></td>
+                        <td class="receiving-col" style="${receivingDisplayStyle}"></td>
+                        <td class="order-col" style="${orderDisplayStyle}">
+                            <select name="details[${rowCount}][order_id]" class="form-control select2 order-select" style="width: 100%;">
+                                <option value="">Select Order (Select Account First)</option>
+                            </select>
+                            <input type="hidden" name="details[${rowCount}][voucher_id]" class="voucher-id-input">
+                            <input type="hidden" name="details[${rowCount}][voucher_no]" class="voucher-no-input">
+                            <input type="hidden" name="details[${rowCount}][voucher_type]" class="voucher-type-input">
+                        </td>
                         <td>
                             <input type="text" name="details[${rowCount}][description]" class="form-control description-input" placeholder="Line description">
                         </td>
@@ -586,6 +867,38 @@
             $(document).on('blur change', '.debit-input, .credit-input', function () {
                 validateAndClampInput($(this));
                 calculateTotals();
+
+                // If debit was changed on a GRN row, do server-side verification check
+                const $input = $(this);
+                if ($input.hasClass('debit-input') && !$('#receivingToggle').is(':checked')) {
+                    const $row = $input.closest('tr');
+                    const grnInfo = getGrnInfoForSelect($row.find('.order-select'));
+                    const debitVal = parseFloat($input.val()) || 0;
+                    if (grnInfo && grnInfo.id && debitVal > 0) {
+                        $.ajax({
+                            url: '{{ route("journal-voucher.check-grn-limit") }}',
+                            type: 'POST',
+                            data: {
+                                _token: '{{ csrf_token() }}',
+                                grn_id: grnInfo.id,
+                                jv_id: typeof currentJvId !== 'undefined' ? currentJvId : null,
+                                debit_amount: debitVal
+                            },
+                            success: function (res) {
+                                if (res.success) {
+                                    window.grnMap[res.grn_id] = res;
+                                    window.grnMap[res.unique_no] = res;
+                                    $input.attr('max', res.available_amount.toFixed(2));
+                                    if (res.is_exceeded) {
+                                        $input.val(res.available_amount > 0 ? res.available_amount.toFixed(2) : '');
+                                        showGrnLimitWarning(res.available_amount, res.unique_no);
+                                        calculateTotals();
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }
             });
 
             // Update remove buttons visibility
@@ -645,6 +958,7 @@
 
                 if (invalidLine !== null) {
                     e.preventDefault();
+                    e.stopImmediatePropagation();
                     Swal.fire({
                         icon: 'error',
                         title: 'Validation Error',
@@ -656,6 +970,7 @@
 
                 if (Math.abs(totalDebits - totalCredits) > 0.01) {
                     e.preventDefault();
+                    e.stopImmediatePropagation();
                     Swal.fire({
                         icon: 'error',
                         title: 'Validation Error',
@@ -665,34 +980,82 @@
                     return false;
                 }
 
-                // Check that no RV amount exceeds its remaining balance
-                let rvExceeded = false;
-                let rvExceededMsg = '';
-                $('#journalEntriesBody tr').each(function (index) {
-                    const $rvSelect = $(this).find('.receipt-voucher-select');
-                    const remainingAmount = getRvRemainingForSelect($rvSelect);
-                    if (remainingAmount !== null && remainingAmount > 0) {
-                        const debitAmount = parseFloat($(this).find('.debit-input').val()) || 0;
-                        const creditAmount = parseFloat($(this).find('.credit-input').val()) || 0;
-                        const enteredAmount = Math.max(debitAmount, creditAmount);
-                        if (enteredAmount > (remainingAmount + 0.01)) {
-                            rvExceeded = true;
-                            const rvText = $rvSelect.find('option:selected').text();
-                            rvExceededMsg = `Line ${index + 1}: Entered amount (${enteredAmount.toFixed(2)}) exceeds Receipt Voucher (${rvText}) remaining balance of ${remainingAmount.toFixed(2)}.`;
-                            return false;
+                // Check that no RV amount exceeds its remaining balance (when Receiving is active)
+                if ($('#receivingToggle').is(':checked')) {
+                    let rvExceeded = false;
+                    let rvExceededMsg = '';
+                    $('#journalEntriesBody tr').each(function (index) {
+                        const $rvSelect = $(this).find('.receipt-voucher-select');
+                        const remainingAmount = getRvRemainingForSelect($rvSelect);
+                        if (remainingAmount !== null && remainingAmount > 0) {
+                            const debitAmount = parseFloat($(this).find('.debit-input').val()) || 0;
+                            const creditAmount = parseFloat($(this).find('.credit-input').val()) || 0;
+                            const enteredAmount = Math.max(debitAmount, creditAmount);
+                            if (enteredAmount > (remainingAmount + 0.01)) {
+                                rvExceeded = true;
+                                const rvText = $rvSelect.find('option:selected').text();
+                                rvExceededMsg = `Line ${index + 1}: Entered amount (${enteredAmount.toFixed(2)}) exceeds Receipt Voucher (${rvText}) remaining balance of ${remainingAmount.toFixed(2)}.`;
+                                return false;
+                            }
+                        }
+                    });
+
+                    if (rvExceeded) {
+                        e.preventDefault();
+                        e.stopImmediatePropagation();
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Validation Error',
+                            text: rvExceededMsg,
+                            confirmButtonColor: '#D95000'
+                        });
+                        return false;
+                    }
+                } else {
+                    // Check that no GRN debit exceeds its approved limit
+                    let grnExceeded = false;
+                    let grnExceededMsg = '';
+                    const grnDebitsEntered = {};
+
+                    $('#journalEntriesBody tr').each(function (index) {
+                        const $orderSelect = $(this).find('.order-select');
+                        const grnInfo = getGrnInfoForSelect($orderSelect);
+                        if (grnInfo && grnInfo.id) {
+                            const debitAmount = parseFloat($(this).find('.debit-input').val()) || 0;
+                            if (debitAmount > 0) {
+                                grnDebitsEntered[grnInfo.id] = grnDebitsEntered[grnInfo.id] || {
+                                    unique_no: grnInfo.unique_no,
+                                    remaining_amount: grnInfo.remaining_amount,
+                                    totalDebit: 0,
+                                    line: index + 1
+                                };
+                                grnDebitsEntered[grnInfo.id].totalDebit += debitAmount;
+                            }
+                        }
+                    });
+
+                    for (const gid in grnDebitsEntered) {
+                        const item = grnDebitsEntered[gid];
+                        if (item.remaining_amount !== null && !isNaN(item.remaining_amount)) {
+                            if (item.totalDebit > (item.remaining_amount + 0.01)) {
+                                grnExceeded = true;
+                                grnExceededMsg = `Line ${item.line}: Entered debit amount (${item.totalDebit.toFixed(2)}) for GRN ${item.unique_no} exceeds approved balance of ${Number(item.remaining_amount).toFixed(2)}.`;
+                                break;
+                            }
                         }
                     }
-                });
 
-                if (rvExceeded) {
-                    e.preventDefault();
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Validation Error',
-                        text: rvExceededMsg,
-                        confirmButtonColor: '#D95000'
-                    });
-                    return false;
+                    if (grnExceeded) {
+                        e.preventDefault();
+                        e.stopImmediatePropagation();
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Validation Error',
+                            text: grnExceededMsg,
+                            confirmButtonColor: '#D95000'
+                        });
+                        return false;
+                    }
                 }
             });
 
