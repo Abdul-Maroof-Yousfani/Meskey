@@ -291,10 +291,6 @@ class JournalVoucherController extends Controller
                 $q->whereNull('journal_vouchers.am_approval_status')
                   ->orWhere('journal_vouchers.am_approval_status', '!=', 'rejected');
             })
-            ->where(function ($q) {
-                $q->whereNull('journal_vouchers.jv_status')
-                  ->orWhere('journal_vouchers.jv_status', '!=', 'rejected');
-            })
             ->where(function ($q) use ($grn) {
                 $q->where('journal_voucher_details.voucher_id', $grn->id)
                   ->orWhere('journal_voucher_details.voucher_no', $grn->unique_no);
@@ -403,10 +399,6 @@ class JournalVoucherController extends Controller
                         $q->whereNull('journal_vouchers.am_approval_status')
                           ->orWhere('journal_vouchers.am_approval_status', '!=', 'rejected');
                     })
-                    ->where(function ($q) {
-                        $q->whereNull('journal_vouchers.jv_status')
-                          ->orWhere('journal_vouchers.jv_status', '!=', 'rejected');
-                    })
                     ->when($excludeJvId, function ($q) use ($excludeJvId) {
                         $q->where('journal_vouchers.id', '!=', $excludeJvId);
                     })
@@ -456,10 +448,6 @@ class JournalVoucherController extends Controller
                 ->where(function ($q) {
                     $q->whereNull('journal_vouchers.am_approval_status')
                       ->orWhere('journal_vouchers.am_approval_status', '!=', 'rejected');
-                })
-                ->where(function ($q) {
-                    $q->whereNull('journal_vouchers.jv_status')
-                      ->orWhere('journal_vouchers.jv_status', '!=', 'rejected');
                 })
                 ->when($excludeJvId, function ($q) use ($excludeJvId) {
                     $q->where('journal_vouchers.id', '!=', $excludeJvId);
@@ -610,10 +598,6 @@ class JournalVoucherController extends Controller
                                 $q->whereNull('journal_vouchers.am_approval_status')
                                   ->orWhere('journal_vouchers.am_approval_status', '!=', 'rejected');
                             })
-                            ->where(function ($q) {
-                                $q->whereNull('journal_vouchers.jv_status')
-                                  ->orWhere('journal_vouchers.jv_status', '!=', 'rejected');
-                            })
                             ->lockForUpdate()
                             ->exists();
 
@@ -642,7 +626,7 @@ class JournalVoucherController extends Controller
                     'description' => $request->description,
                     'username' => $username,
                     'status' => 'active',
-                    'jv_status' => 'pending',
+                    'jv_status' => 'approved',
                     'am_approval_status' => 'pending',
                     'am_change_made' => 1,
                     'created_by' => Auth::user()->id,
@@ -760,7 +744,7 @@ class JournalVoucherController extends Controller
         $journalVoucher = JournalVoucher::with(['journalVoucherDetails.account'])->findOrFail($id);
 
         // Prevent editing approved or rejected vouchers
-        $currentApprovalStatus = strtolower($journalVoucher->am_approval_status ?? $journalVoucher->jv_status ?? '');
+        $currentApprovalStatus = strtolower($journalVoucher->am_approval_status ?? 'pending');
         if (in_array($currentApprovalStatus, ['approved', 'rejected'])) {
             return redirect()->route('journal-voucher.index')
                 ->with('error', "Cannot edit a journal voucher that has been {$currentApprovalStatus}.");
@@ -868,7 +852,7 @@ class JournalVoucherController extends Controller
         $journalVoucher = JournalVoucher::findOrFail($id);
 
         // Prevent updating approved or rejected vouchers
-        $currentApprovalStatus = strtolower($journalVoucher->am_approval_status ?? $journalVoucher->jv_status ?? '');
+        $currentApprovalStatus = strtolower($journalVoucher->am_approval_status ?? 'pending');
         if (in_array($currentApprovalStatus, ['approved', 'rejected'])) {
             return response()->json([
                 'error' => "Cannot update a journal voucher that has been {$currentApprovalStatus}."
@@ -946,10 +930,6 @@ class JournalVoucherController extends Controller
                                 $q->whereNull('journal_vouchers.am_approval_status')
                                   ->orWhere('journal_vouchers.am_approval_status', '!=', 'rejected');
                             })
-                            ->where(function ($q) {
-                                $q->whereNull('journal_vouchers.jv_status')
-                                  ->orWhere('journal_vouchers.jv_status', '!=', 'rejected');
-                            })
                             ->lockForUpdate()
                             ->exists();
 
@@ -968,7 +948,7 @@ class JournalVoucherController extends Controller
                     'description' => $request->description,
                     'username' => $username,
                     'status' => 'active',
-                    'jv_status' => 'pending',
+                    'jv_status' => 'approved',
                     'am_approval_status' => 'pending',
                     'am_change_made' => 1,
                     'company_id' => Auth::user()->current_company_id ?? $journalVoucher->company_id
@@ -1119,7 +1099,7 @@ class JournalVoucherController extends Controller
         $journalVoucher = JournalVoucher::findOrFail($id);
 
         // Prevent deleting approved or rejected vouchers
-        $currentApprovalStatus = strtolower($journalVoucher->am_approval_status ?? $journalVoucher->jv_status ?? '');
+        $currentApprovalStatus = strtolower($journalVoucher->am_approval_status ?? 'pending');
         if (in_array($currentApprovalStatus, ['approved', 'rejected'])) {
             return response()->json([
                 'error' => "Cannot delete a journal voucher that has been {$currentApprovalStatus}."

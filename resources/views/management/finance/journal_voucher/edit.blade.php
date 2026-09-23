@@ -12,7 +12,7 @@
                         <a href="{{ route('journal-voucher.index') }}" class="btn btn-sm btn-primary">Back</a>
                     </div>
                     <div class="card-body">
-                        @if(strtolower($journalVoucher->am_approval_status ?? $journalVoucher->jv_status ?? '') === 'reverted')
+                        @if(strtolower($journalVoucher->am_approval_status ?? '') === 'reverted')
                             @php
                                 $latestLog = $journalVoucher->approvalLogs()->latest()->first();
                             @endphp

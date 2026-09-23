@@ -18,7 +18,7 @@
                     <td>{{ Str::limit($voucher->description ?? 'N/A', 50) }}</td>
                     <td>
                         @php
-                            $status = strtolower($voucher->am_approval_status ?? $voucher->jv_status ?? 'pending');
+                            $status = strtolower($voucher->am_approval_status ?? 'pending');
                             $badge = match ($status) {
                                 'approved' => 'badge-success',
                                 'rejected' => 'badge-danger',
@@ -37,7 +37,7 @@
                             class="info p-1 text-center mr-2 position-relative" title="View">
                             <i class="ft-eye font-medium-3"></i>
                         </a>
-                        @if (in_array(strtolower($voucher->am_approval_status ?? $voucher->jv_status ?? ''), ['pending', 'reverted']))
+                        @if (in_array(strtolower($voucher->am_approval_status ?? ''), ['pending', 'reverted']))
                             <a class="info p-1 text-center mr-2 position-relative"
                                 href="{{ route('journal-voucher.edit', $voucher->id) }}" title="Edit">
                                 <i class="ft-edit font-medium-3"></i>

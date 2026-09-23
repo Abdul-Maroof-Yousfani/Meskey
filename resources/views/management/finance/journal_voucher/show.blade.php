@@ -4,12 +4,12 @@
 
 <input type="hidden" id="listRefresh" value="{{ route('get.journal-vouchers') }}" />
 
-@if(in_array(strtolower($journalVoucher->am_approval_status ?? $journalVoucher->jv_status ?? ''), ['approved', 'rejected']))
+@if(in_array(strtolower($journalVoucher->am_approval_status ?? ''), ['approved', 'rejected']))
     @php
-        $isApproved = strtolower($journalVoucher->am_approval_status ?? $journalVoucher->jv_status) === 'approved';
+        $isApproved = strtolower($journalVoucher->am_approval_status ?? '') === 'approved';
         $alertClass = $isApproved ? 'alert-success' : 'alert-danger';
         $iconClass = $isApproved ? 'fa-check-circle' : 'fa-times-circle';
-        $statusText = ucfirst($journalVoucher->am_approval_status ?? $journalVoucher->jv_status);
+        $statusText = ucfirst($journalVoucher->am_approval_status ?? 'pending');
     @endphp
     <div class="alert {{ $alertClass }} px-3 py-2 mt-2 d-flex align-items-center justify-content-between" style="border-radius: 6px;">
         <div>
@@ -17,7 +17,7 @@
             <strong>Status: {{ $statusText }}</strong> - This Journal Voucher has been finalized. Its status cannot be changed.
         </div>
     </div>
-@elseif(strtolower($journalVoucher->am_approval_status ?? $journalVoucher->jv_status ?? '') === 'reverted')
+@elseif(strtolower($journalVoucher->am_approval_status ?? '') === 'reverted')
     <div class="alert alert-warning px-3 py-2 mt-2 d-flex align-items-center justify-content-between" style="border-radius: 6px;">
         <div>
             <i class="fa fa-undo me-2"></i>
@@ -65,7 +65,7 @@
                             <label><strong>Status:</strong></label>
                             <p>
                                 @php
-                                    $currentStatus = strtolower($journalVoucher->am_approval_status ?? $journalVoucher->jv_status ?? 'pending');
+                                    $currentStatus = strtolower($journalVoucher->am_approval_status ?? 'pending');
                                     $badge = match ($currentStatus) {
                                         'approved' => 'badge-success',
                                         'rejected' => 'badge-danger',
