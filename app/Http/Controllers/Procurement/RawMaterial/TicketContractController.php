@@ -32,7 +32,7 @@ class TicketContractController extends Controller
 {
     function __construct()
     {
-        $this->middleware('check.company:contract-linking', ['only' => ['index', 'getList', 'create']]);
+        $this->middleware('check.company:contract-linking', ['only' => ['index', 'getList', 'create', 'parkArrival']]);
     }
     /**
      * Display a listing of the resource.
@@ -866,5 +866,13 @@ class TicketContractController extends Controller
         $html = view('management.procurement.raw_material.ticket_contracts.contract_table', compact('arrivalTicket', 'contracts'))->render();
 
         return response()->json(['success' => true, 'html' => $html, 'data' => $contracts]);
+    }
+
+    public function parkArrival(Request $request)
+    {
+        return response()->json([
+            'success' => true,
+            'message' => 'Arrival parked successfully!',
+        ]);
     }
 }
