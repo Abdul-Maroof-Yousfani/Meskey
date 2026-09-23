@@ -148,6 +148,7 @@
                                                         <tr>
                                                             <th width="2%">*</th>
                                                             <th>Contract No</th>
+                                                            <th>GRN No</th>
                                                             <th>Purpose</th>
                                                             <th>Sauda Type</th>
                                                             <th>Date</th>
@@ -156,14 +157,16 @@
                                                             <th>Bilty No</th>
                                                             <th>Loading Date</th>
                                                             <th>Weight</th>
-                                                            <th>Amount</th>
+                                                            <th>Gross Amount</th>
+                                                            <th>JV Adjustment</th>
+                                                            <th>Net Payable</th>
                                                             <th>Attachment</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
                                                         <tr>
-                                                            <td colspan="12" class="text-center">No payment requests
-                                                                found please select supplier first.</td>
+                                                            <td colspan="15" class="text-center">No payment requests
+                                                                found please select account first.</td>
                                                         </tr>
                                                     </tbody>
                                                 </table>
@@ -339,7 +342,7 @@
                 if (accountId) {
                     tbody.html(`
                                                                         <tr>
-                                                                            <td colspan="12" class="text-center">
+                                                                            <td colspan="15" class="text-center">
                                                                                 <div class="d-flex justify-content-center align-items-center">
                                                                                     <div class="spinner-border spinner-border-sm mr-2" role="status"></div>
                                                                                     Loading payment requests...
@@ -381,13 +384,63 @@
                                                               (request.type === 'broker_commission_payment' ? 'secondary' : 
                                                               (request.type === 'seller_commission_payment' ? 'dark' : 'warning'))));
 
+                                        const grnDisplay = request.grn_no ? `<span class="badge badge-info">${request.grn_no}</span>` : '-';
+                                        const grossAmount = parseFloat(request.amount) || 0;
+                                        const jvAdjAmount = parseFloat(request.jv_adjustment_amount) || 0;
+                                        const initialAdj = Math.min(grossAmount, jvAdjAmount);
+                                        const netAmount = Math.max(0, grossAmount - initialAdj);
+                                        const jvNo = request.jv_no || '';
+                                        const matchingJvs = request.matching_jvs || [];
+
+                                        let jvAdjHtml = '-';
+                                        if (initialAdj > 0) {
+                                            let jvBadgesHtml = '';
+                                            if (matchingJvs && matchingJvs.length > 0) {
+                                                jvBadgesHtml = matchingJvs.map(function (mj) {
+                                                    const formattedAmt = parseFloat(mj.allocated).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                                                    return `
+                                                        <div class="mt-1">
+                                                            <span class="badge badge-warning text-dark text-left" style="font-size: 11px; padding: 4px 6px; display: inline-block;">
+                                                                ${mj.jv_no}: ${formattedAmt}
+                                                            </span>
+                                                        </div>
+                                                    `;
+                                                }).join('');
+                                            } else if (jvNo) {
+                                                jvBadgesHtml = `
+                                                    <div class="mt-1">
+                                                        <span class="badge badge-warning text-dark text-left" style="font-size: 11px; padding: 4px 6px; display: inline-block;">
+                                                            ${jvNo}
+                                                        </span>
+                                                    </div>
+                                                `;
+                                            }
+
+                                            jvAdjHtml = `
+                                                <div class="input-group input-group-sm" style="max-width: 140px;">
+                                                    <input type="number" step="0.01" min="0" max="${initialAdj}" 
+                                                        class="form-control form-control-sm jv-adjustment-input" 
+                                                        data-request-id="${request.id}" 
+                                                        data-max-adj="${initialAdj}" 
+                                                        data-gross="${grossAmount}"
+                                                        value="${initialAdj.toFixed(2)}">
+                                                </div>
+                                                ${jvBadgesHtml}
+                                            `;
+                                        }
+
                                         tbody.append(`
                                                                         <tr>
                                                                             <td>
                                                                                 <input type="checkbox" class="request-checkbox" 
                                                                                     value="${request.id}" 
                                                                                     data-supplier-id="${request.supplier_id || ''}" 
-                                                                                    data-amount="${request.amount}" 
+                                                                                    data-amount="${grossAmount}" 
+                                                                                    data-grn-no="${request.grn_no || ''}"
+                                                                                    data-jv-adj="${initialAdj}"
+                                                                                    data-jv-no="${jvNo}"
+                                                                                    data-matching-jvs='${JSON.stringify(matchingJvs)}'
+                                                                                    data-net-amount="${netAmount}"
                                                                                     data-purpose="${request.purpose}" 
                                                                                     data-request-no="${request.contract_no}" 
                                                                                     data-truck-no="${request.truck_no}"
@@ -397,6 +450,7 @@
                                                                                     data-loading-weight="${request.loading_weight}">
                                                                             </td>
                                                                             <td>${request.contract_no}</td>
+                                                                            <td>${grnDisplay}</td>
                                                                             <td>${request.purpose}</td> 
                                                                             <td>${request.saudaType}</td> 
                                                                             <td>${request.request_date}</td>
@@ -412,28 +466,34 @@
                                                                                         ${typeLabel}
                                                                                     </span>
                                                                                 </span>
-                                                                                </td>
-                                                                                <td>${request.truck_no}</td>
-                                                                                <td>${request.bilty_no}</td>
-                                                                                <td>${request.loading_date}</td>
-                                                                                <td>${request.loading_weight}</td>
-                                                                                <td>${request.amount}</td>
-                                                                                <td>
-                                            ${request.file
-                                                ? `<a href="/${request.file}" target="_blank" class="btn btn-sm btn-outline-primary mt-1">
-                                                        <i class="fa fa-download"></i> Download File
-                                                   </a>`
-                                                : `<button class="btn btn-sm btn-outline-secondary mt-1" disabled>
-                                                        <i class="fa fa-ban mr-1"></i> No File
-                                                   </button>`
-                                            }
-                                        </td>
+                                                                            </td>
+                                                                            <td>${request.truck_no}</td>
+                                                                            <td>${request.bilty_no}</td>
+                                                                            <td>${request.loading_date}</td>
+                                                                            <td>${request.loading_weight}</td>
+                                                                            <td>${grossAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                                                                            <td>${jvAdjHtml}</td>
+                                                                            <td class="text-right">
+                                                                                <strong class="net-payable-text text-primary">
+                                                                                    ${netAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                                                                </strong>
+                                                                            </td>
+                                                                            <td>
+                                                                            ${request.file
+                                                                                ? `<a href="/${request.file}" target="_blank" class="btn btn-sm btn-outline-primary mt-1">
+                                                                                        <i class="fa fa-download"></i> Download File
+                                                                                   </a>`
+                                                                                : `<button class="btn btn-sm btn-outline-secondary mt-1" disabled>
+                                                                                        <i class="fa fa-ban mr-1"></i> No File
+                                                                                   </button>`
+                                                                            }
+                                                                            </td>
                                                                         </tr>
                                                                     `);
                                     });
                                 } else {
                                     tbody.append(
-                                        '<tr><td colspan="12" class="text-center">No payment requests found for this account</td></tr>'
+                                        '<tr><td colspan="15" class="text-center">No payment requests found for this account</td></tr>'
                                     );
                                 }
 
@@ -475,7 +535,7 @@
                         error: function (xhr) {
                             tbody.html(`
                                                             <tr>
-                                                                <td colspan="12" class="text-center text-danger">
+                                                                <td colspan="15" class="text-center text-danger">
                                                                     Error loading payment requests. Please try again.
                                                                 </td>
                                                             </tr>
@@ -486,7 +546,7 @@
                 } else {
                     tbody.html(`
                                                     <tr>
-                                                        <td colspan="12" class="text-center">Please select an account first.</td>
+                                                        <td colspan="15" class="text-center">Please select an account first.</td>
                                                     </tr>
                                                 `);
                 }
@@ -708,18 +768,69 @@
                 }
             });
 
+            $(document).on('input change', '.jv-adjustment-input', function () {
+                const $input = $(this);
+                const maxAdj = parseFloat($input.data('max-adj')) || 0;
+                const gross = parseFloat($input.data('gross')) || 0;
+                let val = parseFloat($input.val());
+
+                if (isNaN(val) || val < 0) {
+                    val = 0;
+                } else if (val > maxAdj) {
+                    val = maxAdj;
+                    $input.val(val.toFixed(2));
+                }
+
+                if (val > gross) {
+                    val = gross;
+                    $input.val(val.toFixed(2));
+                }
+
+                const net = Math.max(0, gross - val);
+                const $row = $input.closest('tr');
+                $row.find('.net-payable-text').text(net.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+
+                const $cb = $row.find('.request-checkbox');
+                $cb.attr('data-jv-adj', val);
+                $cb.data('jv-adj', val);
+                $cb.attr('data-net-amount', net);
+                $cb.data('net-amount', net);
+
+                if ($cb.is(':checked')) {
+                    updateSelectedRequestsList();
+                }
+            });
+
             $(document).on('change', '.request-checkbox', function () {
                 updateSelectedRequestsList();
             });
 
             function updateSelectedRequestsList() {
                 const selectedRequests = [];
-                let totalAmount = 0;
+                let totalGross = 0;
+                let totalJvAdj = 0;
+                let totalNet = 0;
 
                 $('.request-checkbox:checked').each(function () {
+                    const gross = parseFloat($(this).data('amount')) || 0;
+                    const jvAdj = parseFloat($(this).data('jv-adj')) || 0;
+                    const net = $(this).data('net-amount') !== undefined && !isNaN(parseFloat($(this).data('net-amount')))
+                        ? parseFloat($(this).data('net-amount'))
+                        : Math.max(0, gross - jvAdj);
+
+                    let matchingJvs = $(this).data('matching-jvs') || [];
+                    if (typeof matchingJvs === 'string') {
+                        try { matchingJvs = JSON.parse(matchingJvs); } catch(e) { matchingJvs = []; }
+                    }
+
                     selectedRequests.push({
                         id: $(this).val(),
-                        amount: $(this).data('amount'),
+                        amount: gross,
+                        jvAdj: jvAdj,
+                        netAmount: net,
+                        grnNo: $(this).data('grn-no') || '',
+                        jvNo: $(this).data('jv-no') || '',
+                        matchingJvs: matchingJvs,
                         purpose: $(this).data('purpose'),
                         supplierId: $(this).data('supplier-id'),
                         requestNo: $(this).data('request-no'),
@@ -727,7 +838,9 @@
                         biltyNo: $(this).data('bilty-no'),
                         moduleType: $(this).data('module-type')
                     });
-                    totalAmount += parseFloat($(this).data('amount'));
+                    totalGross += gross;
+                    totalJvAdj += jvAdj;
+                    totalNet += net;
                 });
 
                 if (selectedRequests.length > 0) {
@@ -737,26 +850,68 @@
                     $.each(selectedRequests, function (index, request) {
                         $('#supplier_id').val(request.supplierId);
 
+                        let amountBadgeHtml = '';
+                        if (request.jvAdj > 0) {
+                            amountBadgeHtml = `
+                                <div class="text-right">
+                                    <span class="text-muted small mr-1" style="text-decoration: line-through;">${request.amount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                                    <span class="badge badge-warning text-dark mr-1" title="JV Adjustment: ${request.jvNo}">-${request.jvAdj.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                                    <span class="badge badge-primary badge-pill">${request.netAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                                </div>
+                            `;
+                        } else {
+                            amountBadgeHtml = `<span class="badge badge-primary badge-pill">${request.amount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>`;
+                        }
+
+                        let extraInfo = `Truck: ${request.truckNo || '-'} | Bilty: ${request.biltyNo || '-'} | Type: ${request.moduleType || '-'}`;
+                        if (request.grnNo) {
+                            extraInfo += ` | GRN: <span class="badge badge-info">${request.grnNo}</span>`;
+                        }
+                        if (request.matchingJvs && request.matchingJvs.length > 0 && request.jvAdj > 0) {
+                            const jvListText = request.matchingJvs.map(mj => `${mj.jv_no} (${parseFloat(mj.allocated).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})})`).join(', ');
+                            extraInfo += ` | JV: <span class="badge badge-warning text-dark">${jvListText}</span>`;
+                        } else if (request.jvNo && request.jvAdj > 0) {
+                            extraInfo += ` | JV: <span class="badge badge-warning text-dark">${request.jvNo}</span>`;
+                        }
+
                         listContainer.append(`
-                                                            <li class="list-group-item">
-                                                                <div class="d-flex justify-content-between align-items-center">
-                                                                    <span>#${request.requestNo}</span>
-                                                                    <span class="badge badge-primary badge-pill">${request.amount}</span>
-                                                                </div>
-                                                                <div class="small text-muted">
-                                                                    Truck: ${request.truckNo} | Bilty: ${request.biltyNo} | Type: ${request.moduleType}
-                                                                </div>
-                                                                <input type="hidden" name="payment_requests[]" value="${request.id}">
-                                                            </li>
-                                                        `);
+                            <li class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span><strong>#${request.requestNo}</strong></span>
+                                    ${amountBadgeHtml}
+                                </div>
+                                <div class="small text-muted mt-1">
+                                    ${extraInfo}
+                                </div>
+                                <input type="hidden" name="payment_requests[]" value="${request.id}">
+                                <input type="hidden" name="adjustment_amounts[${request.id}]" value="${request.jvAdj.toFixed(2)}">
+                            </li>
+                        `);
                     });
 
-                    listContainer.append(`
-                                                        <li class="list-group-item list-group-item-primary d-flex justify-content-between align-items-center">
-                                                            <strong>Total Amount</strong>
-                                                            <strong>${totalAmount.toFixed(2)}</strong>
-                                                        </li>
-                                                    `);
+                    if (totalJvAdj > 0) {
+                        listContainer.append(`
+                            <li class="list-group-item list-group-item-secondary d-flex justify-content-between align-items-center py-2">
+                                <span>Gross Amount</span>
+                                <span>${totalGross.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                            </li>
+                            <li class="list-group-item list-group-item-warning d-flex justify-content-between align-items-center py-2">
+                                <span>Total JV Adjustment</span>
+                                <span>-${totalJvAdj.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                            </li>
+                            <li class="list-group-item list-group-item-primary d-flex justify-content-between align-items-center py-2">
+                                <strong>Net Payable Total</strong>
+                                <strong class="h5 mb-0">${totalNet.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong>
+                            </li>
+                        `);
+                    } else {
+                        listContainer.append(`
+                            <li class="list-group-item list-group-item-primary d-flex justify-content-between align-items-center py-2">
+                                <strong>Total Amount</strong>
+                                <strong class="h5 mb-0">${totalGross.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong>
+                            </li>
+                        `);
+                    }
 
                     listContainer.show();
                 } else {

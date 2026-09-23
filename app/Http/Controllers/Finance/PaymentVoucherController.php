@@ -14,6 +14,9 @@ use App\Models\Master\Supplier;
 use App\Models\Master\Tax;
 use App\Models\Master\Transporter;
 use App\Models\Master\Vendor;
+use App\Models\JournalVoucher;
+use App\Models\JournalVoucherDetail;
+use App\Models\SettlementAdjustment;
 use App\Models\PaymentVoucher;
 use App\Models\PaymentVoucherData;
 use App\Models\Procurement\Store\PurchaseBill;
@@ -568,6 +571,106 @@ class PaymentVoucherController extends Controller
     }
 
     /**
+     * Attach GRN number and Journal Voucher (JV) adjustments to payment request data
+     */
+    private function attachGrnAndJvDetails(array $item, PaymentRequest $request, array &$jvPool = []): array
+    {
+        $grnNo = $request->paymentRequestData?->grn_no ?? null;
+        $grnId = $request->paymentRequestData?->grn_id ?? null;
+
+        $jvAdjustmentAmount = 0;
+        $jvId = null;
+        $jvNo = null;
+        $matchingJvs = [];
+        $grossAmount = (float) ($item['amount'] ?? $request->amount ?? 0);
+        $needed = $grossAmount;
+
+        if (!empty($grnNo)) {
+            $details = JournalVoucherDetail::with('journalVoucher')
+                ->where(function ($q) use ($grnNo, $grnId) {
+                    $q->where('voucher_no', $grnNo)
+                        ->orWhere('voucher_id', $grnNo);
+                    if ($grnId) {
+                        $q->orWhere('voucher_id', $grnId);
+                    }
+                })
+                ->whereNull('deleted_at')
+                ->whereHas('journalVoucher', function ($q) {
+                    $q->whereNull('deleted_at')
+                        ->where('am_approval_status', 'approved');
+                })
+                ->orderBy('journal_voucher_id', 'asc')
+                ->orderBy('id', 'asc')
+                ->get();
+
+            $processedJvs = [];
+            foreach ($details as $detail) {
+                if ($needed <= 0) {
+                    break;
+                }
+
+                $jv = $detail->journalVoucher;
+                if (!$jv || isset($processedJvs[$jv->id])) {
+                    continue;
+                }
+                $processedJvs[$jv->id] = true;
+
+                if (!isset($jvPool[$jv->id])) {
+                    $jvLineTotal = (float) JournalVoucherDetail::where('journal_voucher_id', $jv->id)
+                        ->where(function ($q) use ($grnNo, $grnId) {
+                            $q->where('voucher_no', $grnNo)
+                                ->orWhere('voucher_id', $grnNo);
+                            if ($grnId) {
+                                $q->orWhere('voucher_id', $grnId);
+                            }
+                        })
+                        ->whereNull('deleted_at')
+                        ->sum(DB::raw('CASE WHEN debit_amount > 0 THEN debit_amount ELSE credit_amount END'));
+
+                    $spent = (float) DB::table('settlement_adjustments')
+                        ->where('reference_type', 'journal_voucher')
+                        ->where('reference_id', $jv->id)
+                        ->sum('amount');
+
+                    $jvPool[$jv->id] = max(0, $jvLineTotal - $spent);
+                }
+
+                $available = $jvPool[$jv->id];
+
+                if ($available > 0) {
+                    $allocated = min($needed, $available);
+                    if ($allocated > 0) {
+                        $matchingJvs[] = [
+                            'jv_id' => $jv->id,
+                            'jv_no' => $jv->jv_no,
+                            'allocated' => $allocated,
+                        ];
+                        $jvAdjustmentAmount += $allocated;
+                        $jvPool[$jv->id] -= $allocated;
+                        $needed -= $allocated;
+                    }
+                }
+            }
+
+            if (!empty($matchingJvs)) {
+                $jvId = $matchingJvs[0]['jv_id'];
+                $jvNo = implode(', ', array_unique(array_column($matchingJvs, 'jv_no')));
+            }
+        }
+
+        $netAmount = max(0, $grossAmount - $jvAdjustmentAmount);
+
+        $item['grn_no'] = $grnNo;
+        $item['jv_id'] = $jvId;
+        $item['jv_no'] = $jvNo;
+        $item['jv_adjustment_amount'] = round($jvAdjustmentAmount, 2);
+        $item['net_amount'] = round($netAmount, 2);
+        $item['matching_jvs'] = $matchingJvs;
+
+        return $item;
+    }
+
+    /**
      * Get payment requests for account
      */
     public function getAccountPaymentRequests($accountId)
@@ -579,6 +682,7 @@ class PaymentVoucherController extends Controller
         $bankAccounts = collect();
         $paymentRequests = collect();
         $modelId = null;
+        $jvPool = [];
 
         if ($tableName === 'suppliers') {
 
@@ -625,9 +729,11 @@ class PaymentVoucherController extends Controller
                     ->where('account_id', $accountId)
                     ->whereDoesntHave('paymentVoucherData')
                     ->where('status', 'approved')
+                    ->orderBy('created_at', 'asc')
+                    ->orderBy('id', 'asc')
                     ->get()
-                    ->map(function ($request) {
-                        return [
+                    ->map(function ($request) use (&$jvPool) {
+                        return $this->attachGrnAndJvDetails([
                             'id' => $request->id,
                             'supplier_id' => $request->paymentRequestData->purchaseOrder->supplier_id ?? '',
                             'purchaseOrder' => $request->paymentRequestData->purchaseOrder,
@@ -649,7 +755,7 @@ class PaymentVoucherController extends Controller
                             'request_date' => $request->created_at
                                 ? $request->created_at->format('Y-m-d')
                                 : '',
-                        ];
+                        ], $request, $jvPool);
                     });
 
             }
@@ -697,13 +803,15 @@ class PaymentVoucherController extends Controller
                     ->where('account_id', $accountId)
                     ->whereDoesntHave('paymentVoucherData')
                     ->where('status', 'approved')
+                    ->orderBy('created_at', 'asc')
+                    ->orderBy('id', 'asc')
                     ->get()
-                    ->map(function ($request) {
+                    ->map(function ($request) use (&$jvPool) {
                         $dc = $request->deliveryChallan;
                         $po = $request->paymentRequestData?->purchaseOrder;
                         $firstDcData = $dc?->delivery_challan_data?->first();
 
-                        return [
+                        return $this->attachGrnAndJvDetails([
                             'id' => $request->id,
                             'supplier_id' => $po->supplier_id ?? '',
                             'purchaseOrder' => $po,
@@ -725,7 +833,7 @@ class PaymentVoucherController extends Controller
                             'request_date' => $request->created_at
                                 ? $request->created_at->format('Y-m-d')
                                 : '',
-                        ];
+                        ], $request, $jvPool);
                     });
             }
         } elseif ($tableName === 'vendors') {
@@ -772,13 +880,15 @@ class PaymentVoucherController extends Controller
                     ->where('account_id', $accountId)
                     ->whereDoesntHave('paymentVoucherData')
                     ->where('status', 'approved')
+                    ->orderBy('created_at', 'asc')
+                    ->orderBy('id', 'asc')
                     ->get()
-                    ->map(function ($request) {
+                    ->map(function ($request) use (&$jvPool) {
                         $dc = $request->deliveryChallan;
                         $po = $request->paymentRequestData?->purchaseOrder;
                         $firstDcData = $dc?->delivery_challan_data?->first();
 
-                        return [
+                        return $this->attachGrnAndJvDetails([
                             'id' => $request->id,
                             'supplier_id' => $po->supplier_id ?? '',
                             'purchaseOrder' => $po ?? null,
@@ -800,7 +910,7 @@ class PaymentVoucherController extends Controller
                             'request_date' => $request->created_at
                                 ? $request->created_at->format('Y-m-d')
                                 : '',
-                        ];
+                        ], $request, $jvPool);
                     });
             }
         } elseif ($tableName === 'transporters') {
@@ -847,13 +957,15 @@ class PaymentVoucherController extends Controller
                     ->where('account_id', $accountId)
                     ->whereDoesntHave('paymentVoucherData')
                     ->where('status', 'approved')
+                    ->orderBy('created_at', 'asc')
+                    ->orderBy('id', 'asc')
                     ->get()
-                    ->map(function ($request) {
+                    ->map(function ($request) use (&$jvPool) {
                         $dc = $request->deliveryChallan;
                         $po = $request->paymentRequestData?->purchaseOrder;
                         $firstDcData = $dc?->delivery_challan_data?->first();
 
-                        return [
+                        return $this->attachGrnAndJvDetails([
                             'id' => $request->id,
                             'supplier_id' => $po->supplier_id ?? '',
                             'purchaseOrder' => $po ?? null,
@@ -875,7 +987,7 @@ class PaymentVoucherController extends Controller
                             'request_date' => $request->created_at
                                 ? $request->created_at->format('Y-m-d')
                                 : '',
-                        ];
+                        ], $request, $jvPool);
                     });
             }
         } else {
@@ -883,13 +995,15 @@ class PaymentVoucherController extends Controller
                 ->where('account_id', $accountId)
                 ->whereDoesntHave('paymentVoucherData')
                 ->where('status', 'approved')
+                ->orderBy('created_at', 'asc')
+                ->orderBy('id', 'asc')
                 ->get()
-                ->map(function ($request) {
+                ->map(function ($request) use (&$jvPool) {
                     $dc = $request->deliveryChallan;
                     $po = $request->paymentRequestData?->purchaseOrder;
                     $firstDcData = $dc?->delivery_challan_data?->first();
 
-                    return [
+                    return $this->attachGrnAndJvDetails([
                         'id' => $request->id,
                         'supplier_id' => $po->supplier_id ?? '',
                         'purchaseOrder' => $po ?? null,
@@ -911,7 +1025,7 @@ class PaymentVoucherController extends Controller
                         'request_date' => $request->created_at
                             ? $request->created_at->format('Y-m-d')
                             : '',
-                    ];
+                    ], $request, $jvPool);
                 });
         }
 
@@ -1237,9 +1351,16 @@ class PaymentVoucherController extends Controller
             $allReferenceNos = [];
             $perRequestData = [];
 
-            foreach ($request->payment_requests as $requestId) {
-                $paymentRequest = PaymentRequest::with(['paymentRequestData', 'deliveryChallan.delivery_challan_data'])->findOrFail($requestId);
+            $jvPool = [];
+            $requestedIds = $request->payment_requests ?? [];
+            $sortedRequests = PaymentRequest::with(['paymentRequestData', 'deliveryChallan.delivery_challan_data'])
+                ->whereIn('id', $requestedIds)
+                ->orderBy('created_at', 'asc')
+                ->orderBy('id', 'asc')
+                ->get();
 
+            foreach ($sortedRequests as $paymentRequest) {
+                $requestId = $paymentRequest->id;
                 $dc = $paymentRequest->deliveryChallan;
                 $ticketDetails = '';
 
@@ -1278,17 +1399,118 @@ class PaymentVoucherController extends Controller
                 $allPaymentAgainst[] = "$ticketNo-$paymentRequestDataId";
                 $allReferenceNos[] = "$truckNo/$biltyNo";
 
+                // Check for GRN and JV adjustments
+                $grnNo = $paymentRequest->paymentRequestData?->grn_no ?? null;
+                $grnId = $paymentRequest->paymentRequestData?->grn_id ?? null;
+                $userAdj = isset($request->adjustment_amounts[$requestId]) ? (float) $request->adjustment_amounts[$requestId] : null;
+
+                $appliedAdj = 0;
+                $matchingJvNos = [];
+                $jvDeductions = [];
+
+                if (!empty($grnNo)) {
+                    $details = JournalVoucherDetail::with('journalVoucher')
+                        ->where(function ($q) use ($grnNo, $grnId) {
+                            $q->where('voucher_no', $grnNo)
+                                ->orWhere('voucher_id', $grnNo);
+                            if ($grnId) {
+                                $q->orWhere('voucher_id', $grnId);
+                            }
+                        })
+                        ->whereNull('deleted_at')
+                        ->whereHas('journalVoucher', function ($q) {
+                            $q->whereNull('deleted_at')
+                                ->where('am_approval_status', 'approved');
+                        })
+                        ->orderBy('journal_voucher_id', 'asc')
+                        ->orderBy('id', 'asc')
+                        ->get();
+
+                    $maxToAdjust = ($userAdj !== null) ? min((float) $paymentRequest->amount, max(0, $userAdj)) : (float) $paymentRequest->amount;
+                    $remainingToAdjust = $maxToAdjust;
+
+                    $processedJvsThisRequest = [];
+                    foreach ($details as $detail) {
+                        if ($remainingToAdjust <= 0) {
+                            break;
+                        }
+
+                        $jv = $detail->journalVoucher;
+                        if (!$jv || isset($processedJvsThisRequest[$jv->id])) {
+                            continue;
+                        }
+                        $processedJvsThisRequest[$jv->id] = true;
+
+                        if (!isset($jvPool[$jv->id])) {
+                            $jvLineTotal = (float) JournalVoucherDetail::where('journal_voucher_id', $jv->id)
+                                ->where(function ($q) use ($grnNo, $grnId) {
+                                    $q->where('voucher_no', $grnNo)
+                                        ->orWhere('voucher_id', $grnNo);
+                                    if ($grnId) {
+                                        $q->orWhere('voucher_id', $grnId);
+                                    }
+                                })
+                                ->whereNull('deleted_at')
+                                ->sum(DB::raw('CASE WHEN debit_amount > 0 THEN debit_amount ELSE credit_amount END'));
+
+                            $spent = (float) DB::table('settlement_adjustments')
+                                ->where('reference_type', 'journal_voucher')
+                                ->where('reference_id', $jv->id)
+                                ->sum('amount');
+
+                            $jvPool[$jv->id] = max(0, $jvLineTotal - $spent);
+                        }
+
+                        $available = $jvPool[$jv->id];
+
+                        if ($available > 0) {
+                            $deduct = min($remainingToAdjust, $available);
+                            if ($deduct > 0) {
+                                DB::table('settlement_adjustments')->insert([
+                                    'reference_type' => 'journal_voucher',
+                                    'reference_id' => $jv->id,
+                                    'voucher_no' => $uniqueNo,
+                                    'amount' => $deduct,
+                                    'created_at' => now(),
+                                    'updated_at' => now(),
+                                ]);
+                                $jvPool[$jv->id] -= $deduct;
+                                $appliedAdj += $deduct;
+                                $remainingToAdjust -= $deduct;
+                                $matchingJvNos[] = $jv->jv_no;
+                                $jvDeductions[] = [
+                                    'jv_no' => $jv->jv_no,
+                                    'amount' => $deduct,
+                                ];
+                            }
+                        }
+                    }
+                }
+
+                $jvNarrationParts = [];
+                foreach ($jvDeductions as $jd) {
+                    $jvNarrationParts[] = "{$jd['jv_no']}: Rs. " . number_format($jd['amount'], 2);
+                }
+                $jvNarration = !empty($jvNarrationParts) ? implode(', ', $jvNarrationParts) : null;
+
+                $payableAmount = max(0, (float) $paymentRequest->amount - $appliedAdj);
+
                 PaymentVoucherData::create([
                     'payment_voucher_id' => $paymentVoucher->id,
                     'payment_request_id' => $requestId,
-                    'amount' => $paymentRequest->amount,
+                    'amount' => $payableAmount,
+                    'net_amount' => $payableAmount,
                     'description' => $paymentRequest->paymentRequestData->notes ?? 'No description',
                 ]);
 
-                $totalAmount += $paymentRequest->amount;
+                $totalAmount += $payableAmount;
 
                 $perRequestData[] = [
-                    'amount' => $paymentRequest->amount,
+                    'amount' => $payableAmount,
+                    'gross_amount' => (float) $paymentRequest->amount,
+                    'applied_adj' => $appliedAdj,
+                    'jv_nos' => implode(', ', array_unique($matchingJvNos)),
+                    'jv_narration' => $jvNarration,
                     'grn_no' => $paymentRequest->paymentRequestData->grn_no ?? null,
                     'request_type' => $paymentRequest->request_type,
                     'purchase_ticket_id' => $paymentRequest->paymentRequestData->purchase_ticket_id ?? null,
@@ -1300,7 +1522,6 @@ class PaymentVoucherController extends Controller
                     'truck_no' => $truckNo,
                     'bilty_no' => $biltyNo,
                     'ticket_details' => $ticketDetails, // Add this for remarks
-                    'request_type' => $paymentRequest->request_type,
                     'ticketNo' => $ticketNo,
                     'paymentRequestDataId' => $paymentRequestDataId,
                     'truckNo' => $truckNo,
@@ -1319,49 +1540,63 @@ class PaymentVoucherController extends Controller
             // }
             $bankRemarks .= $request->voucher_type === 'bank_payment_voucher' ? ' through bank transfer.' : ' in cash ' . count($perRequestData) . ' bills';
 
-            // Create credit transaction
-            createTransaction(
-                $totalAmount,
-                $request->account_id,
-                1,
-                $uniqueNo,
-                'credit',
-                'no',
-                [
-                    'purpose' => "$prefix-{$paymentVoucher->id}-{$paymentVoucher->unique_no}",
-                    'payment_against' => implode(', ', $allPaymentAgainst),
-                    'against_reference_no' => implode(', ', $allReferenceNos),
-                    'counter_account_id' => $request->request_account_id,
-                    'remarks' => $bankRemarks,
-                ]
-            );
+            $allJvNarrations = array_filter(array_column($perRequestData, 'jv_narration'));
+            $combinedJvNarration = !empty($allJvNarrations) ? implode('; ', array_unique($allJvNarrations)) : null;
 
-            // Create debit transactions with full ticket details
-            foreach ($perRequestData as $item) {
-                $supplierRemarks = "A payment of Rs. " . number_format($item['amount'], 2) . " has been made for: " . $item['ticket_details'];
-                if ($bankName) {
-                    $supplierRemarks .= " against bank '{$bankName}'";
-                }
-                if ($accountNumber) {
-                    $supplierRemarks .= " with account number '{$accountNumber}'";
-                }
-                $supplierRemarks .= $request->voucher_type === 'bank_payment_voucher' ? ' through bank transfer.' : ' in cash.';
-
+            // Create credit transaction (only if totalAmount > 0)
+            if ($totalAmount > 0) {
                 createTransaction(
-                    $item['amount'],
-                    $request->request_account_id,
+                    $totalAmount,
+                    $request->account_id,
                     1,
                     $uniqueNo,
-                    'debit',
+                    'credit',
                     'no',
                     [
                         'purpose' => "$prefix-{$paymentVoucher->id}-{$paymentVoucher->unique_no}",
-                        'payment_against' => $item['request_type'],
-                        'against_reference_no' => "{$item['truckNo']}/{$item['biltyNo']}",
-                        'counter_account_id' => $request->account_id,
-                        'remarks' => $item['ticket_details'],
+                        'payment_against' => implode(', ', $allPaymentAgainst),
+                        'against_reference_no' => implode(', ', $allReferenceNos),
+                        'counter_account_id' => $request->request_account_id,
+                        'remarks' => $bankRemarks,
+                        'jv_narration' => $combinedJvNarration ? substr($combinedJvNarration, 0, 255) : null,
                     ]
                 );
+            }
+
+            // Create debit transactions with full ticket details (if amount > 0 or if JV adjustment applied)
+            foreach ($perRequestData as $item) {
+                if ($item['amount'] > 0 || !empty($item['applied_adj'])) {
+                    $supplierRemarks = "A payment of Rs. " . number_format($item['amount'], 2) . " has been made for: " . $item['ticket_details'];
+                    if (!empty($item['applied_adj']) && $item['applied_adj'] > 0) {
+                        $supplierRemarks .= " (Gross: Rs. " . number_format($item['gross_amount'], 2) . ", JV Adj: Rs. " . number_format($item['applied_adj'], 2) . ", Net: Rs. " . number_format($item['amount'], 2) . ($item['jv_nos'] ? " against JV# {$item['jv_nos']}" : "") . ")";
+                    }
+                    if ($bankName) {
+                        $supplierRemarks .= " against bank '{$bankName}'";
+                    }
+                    if ($accountNumber) {
+                        $supplierRemarks .= " with account number '{$accountNumber}'";
+                    }
+                    $supplierRemarks .= $request->voucher_type === 'bank_payment_voucher' ? ' through bank transfer.' : ' in cash.';
+
+                    createTransaction(
+                        $item['amount'],
+                        $request->request_account_id,
+                        1,
+                        $uniqueNo,
+                        'debit',
+                        'no',
+                        [
+                            'purpose' => "$prefix-{$paymentVoucher->id}-{$paymentVoucher->unique_no}",
+                            'payment_against' => $item['request_type'],
+                            'against_reference_no' => "{$item['truckNo']}/{$item['biltyNo']}",
+                            'counter_account_id' => $request->account_id,
+                            'remarks' => $item['ticket_details'],
+                            'jv_narration' => !empty($item['jv_narration']) ? substr($item['jv_narration'], 0, 255) : null,
+                            'reference_no' => $item['grn_no'] ?? null,
+                            'grn_no' => $item['grn_no'] ?? null,
+                        ]
+                    );
+                }
             }
 
             $paymentVoucher->update(['total_amount' => $totalAmount]);
@@ -1741,6 +1976,10 @@ class PaymentVoucherController extends Controller
     public function destroy($id)
     {
         $paymentVoucher = PaymentVoucher::findOrFail($id);
+
+        // Delete linked settlement adjustments to restore JV available balance
+        DB::table('settlement_adjustments')->where('voucher_no', $paymentVoucher->unique_no)->delete();
+
         $paymentVoucher->delete();
 
         return response()->json([
