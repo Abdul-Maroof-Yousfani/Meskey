@@ -54,6 +54,8 @@
                 </div>
             </div>
         </div>
+
+        @include('management.master.company_location.partials.production_phases_table')
     </div>
     <div class="row bottom-button-bar">
         <div class="col-12">

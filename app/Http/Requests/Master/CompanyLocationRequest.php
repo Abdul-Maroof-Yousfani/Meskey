@@ -46,7 +46,8 @@ class CompanyLocationRequest extends FormRequest
             'truck_no_format' => 'nullable|string|max:500',
             'status' => ['required', Rule::in(['active', 'inactive'])],
             'city_id' => 'required|exists:cities,id',
-
+            'production_phases' => 'nullable|array',
+            'production_phases.*' => 'integer|exists:production_phases,id',
         ];
     }
 

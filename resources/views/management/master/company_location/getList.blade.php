@@ -4,9 +4,10 @@
             <th class="col-sm-3">Name </th>
             <th class="col-sm-1">Code </th>
             <th class="col-sm-2">City </th>
-            <th class="col-sm-3">Description</th>
+            <th class="col-sm-1">Description</th>
             <th class="col-sm-1">Status</th>
-            <th class="col-sm-2">Created</th>
+            <th class="col-sm-2">Phases</th>
+            <th class="col-sm-1">Created</th>
             <th class="col-sm-1">Action</th>
         </tr>
     </thead>
@@ -38,6 +39,21 @@
                         <label class="badge bg-light-{{ $row->status == 'inactive' ? 'primary' : 'danger' }}">
                             {{ $row->status }}
                         </label>
+                    </td>
+                    <td>
+
+                        @forelse ($row->getActivePhases() as $actPhase)
+                            @php
+                                $phaseName = is_object($actPhase) ? $actPhase->name : $actPhase['name'] ?? '';
+                            @endphp
+                            <p class="m-0">
+                                {{ $phaseName }}
+                            </p>
+                        @empty
+                            <p class="m-0">
+                                -
+                            </p>
+                        @endforelse
                     </td>
                     <td>
                         <p class="m-0">

@@ -22,6 +22,7 @@ use App\Http\Controllers\Master\{
     LocationTypeController,
     ArrivalSubLocationController,
     PlantController,
+    ProductionRecipeController,
     ProductionMachineController,
     TruckTypeController,
     StationController,
@@ -141,6 +142,9 @@ Route::post('/get-arrival-sub-location', [ArrivalSubLocationController::class, '
 
 Route::resource('plant', PlantController::class);
 Route::post('/get-plant', [PlantController::class, 'getList'])->name('get.plant');
+
+Route::resource('production-recipe', ProductionRecipeController::class);
+Route::post('/get-production-recipe', [ProductionRecipeController::class, 'getList'])->name('get.production-recipe');
 
 Route::resource('production-machine', ProductionMachineController::class);
 Route::post('/get-production-machine', [ProductionMachineController::class, 'getList'])->name('get.production-machine');
