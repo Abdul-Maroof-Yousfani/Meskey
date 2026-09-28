@@ -18,7 +18,7 @@ class StationWiseQCAnalysisReportController extends Controller
         $commodities = Product::all();
         $millers = Miller::all();
         $stations = Station::all();
-        $product_slab_types = ProductSlabType::get();
+        $product_slab_types = ProductSlabType::getForArrivalReport();
         $locations = CompanyLocation::when(auth()->user()->user_type != 'super-admin', function ($q) {
             return $q->whereIn('id', getUserCurrentCompanyLocations());
         })->get();
@@ -31,11 +31,7 @@ class StationWiseQCAnalysisReportController extends Controller
         ini_set('memory_limit', '512M');
         ini_set('max_execution_time', 300);
 
-        $product_slab_types = ProductSlabType::when($request->filled('commodity_id'), function ($q) use ($request) {
-            return $q->whereHas('slabs', function ($query) use ($request) {
-                $query->whereIn('product_id', (array) $request->commodity_id);
-            });
-        })->get();
+        $product_slab_types = ProductSlabType::getForArrivalReport($request->company_location_id, $request->commodity_id);
 
         $tickets = ArrivalTicket::select('arrival_tickets.*')
             ->with([
