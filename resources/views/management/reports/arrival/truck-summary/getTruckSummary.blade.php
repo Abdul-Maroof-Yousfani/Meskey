@@ -1,6 +1,7 @@
 <x-sticky-table :items="$data" :leftSticky="1" :rightSticky="0" :emptyMessage="'No records found'" :pagination="false">
     @slot('head')
         <th>Date</th>
+        <th>Commodity</th>
         <th>Truck Arrived</th>
         <th>Total Unloaded</th>
         <th>Full Approved</th>
@@ -35,28 +36,30 @@
                 $sumInProcess += $inProcess;
                 $sumFully_approved += $fully_approved;
 
-                $formattedDate = $row->summary_date ? \Carbon\Carbon::parse($row->summary_date)->format('d M y') : '';
+                $displayDate = $row->summary_date ?? 'N/A';
             @endphp
             <tr>
-                <td>{{ $formattedDate }}</td>
-                <td>{{ $truckArrived }}</td>
-                <td>{{ $totalUnloaded }}</td>
-                <td>{{ $fully_approved }}</td>
-                <td>{{ $halfRejected }}</td>
-                <td>{{ $fullRejected }}</td>
-                <td>{{ $inProcess }}</td>
+                <td class="font-weight-bold">{{ $displayDate }}</td>
+                <td class="font-weight-bold text-dark">{{ $row->commodity_name ?? 'N/A' }}</td>
+                <td class="font-weight-bold">{{ number_format($truckArrived) }}</td>
+                <td>{{ number_format($totalUnloaded) }}</td>
+                <td>{{ number_format($fully_approved) }}</td>
+                <td>{{ number_format($halfRejected) }}</td>
+                <td>{{ number_format($fullRejected) }}</td>
+                <td>{{ number_format($inProcess) }}</td>
             </tr>
         @endforeach
 
         @if (count($data) > 0)
             <tr class="font-weight-bold bg-light">
                 <td><strong>Total</strong></td>
-                <td><strong>{{ $sumTruckArrived }}</strong></td>
-                <td><strong>{{ $sumTotalUnloaded }}</strong></td>
-                <td><strong>{{ $sumFully_approved }}</strong></td>
-                <td><strong>{{ $sumHalfRejected }}</strong></td>
-                <td><strong>{{ $sumFullRejected }}</strong></td>
-                <td><strong>{{ $sumInProcess }}</strong></td>
+                <td></td>
+                <td><strong>{{ number_format($sumTruckArrived) }}</strong></td>
+                <td><strong>{{ number_format($sumTotalUnloaded) }}</strong></td>
+                <td><strong>{{ number_format($sumFully_approved) }}</strong></td>
+                <td><strong>{{ number_format($sumHalfRejected) }}</strong></td>
+                <td><strong>{{ number_format($sumFullRejected) }}</strong></td>
+                <td><strong>{{ number_format($sumInProcess) }}</strong></td>
             </tr>
         @endif
     @endslot
