@@ -97,10 +97,8 @@
                                                     <input type="text" class="form-control" name="bilty_no"
                                                         placeholder="Bilty No" value="{{ request('bilty_no', '') }}">
                                                 </div>
-                                            </div> --}}
-                                        </div>
+                                            </div>
 
-                                        <div class="row justify-content-nd text mt-2">
                                             <div class="col-md-3">
                                                 <div class="form-group mb-0">
                                                     <label>Commodity:</label>
@@ -148,7 +146,7 @@
                                                         <option value="">Sauda Type Name</option>
                                                     </select>
                                                 </div>
-                                            </div>
+                                            </div> --}}
                                         </div>
                                         <div class="row justify-content-nd text mt-2">
                                             <input type="hidden" name="page" value="{{ request('page', 1) }}">
