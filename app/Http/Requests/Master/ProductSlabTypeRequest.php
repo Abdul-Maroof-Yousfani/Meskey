@@ -35,6 +35,7 @@ class ProductSlabTypeRequest extends FormRequest
             'description' => 'nullable|string|max:500',
             'for_general_item' => 'nullable|in:0,1',
             'status' => ['required', Rule::in(['active', 'inactive'])],
+            'order_by' => 'nullable|integer',
         ];
     }
 

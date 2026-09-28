@@ -112,6 +112,8 @@ Route::post('/get-broker', [BrokerController::class, 'getList'])->name('get.brok
 Route::resource('transporter', TransporterController::class);
 Route::post('/get-transporter', [TransporterController::class, 'getList'])->name('get.transporter');
 
+Route::get('/product-slab-type-order', [ProductSlabTypeController::class, 'orderIndex'])->name('product-slab-type.order.index');
+Route::post('/product-slab-type-order/update', [ProductSlabTypeController::class, 'updateOrder'])->name('product-slab-type.order.update');
 Route::resource('product-slab-type', ProductSlabTypeController::class);
 Route::post('/get-product-slab-type', [ProductSlabTypeController::class, 'getList'])->name('get.product-slab-type');
 

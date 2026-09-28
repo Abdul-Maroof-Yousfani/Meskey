@@ -1,9 +1,10 @@
 <table class="table m-0">
     <thead>
         <tr>
+            <th class="col-sm-1">Order By</th>
             <th class="col-sm-3">Name </th>
             <th class="col-sm-2">Type</th>
-            <th class="col-sm-3">Description</th>
+            <th class="col-sm-2">Description</th>
             <th class="col-sm-1">Status</th>
             <th class="col-sm-2">Created</th>
             <th class="col-sm-1">Action</th>
@@ -13,6 +14,13 @@
         @if (count($product_slab_types) != 0)
             @foreach ($product_slab_types as $key => $row)
                 <tr>
+                    <td>
+                        @if($row->order_by)
+                            <span class="badge badge-primary">{{ $row->order_by }}</span>
+                        @else
+                            <span class="text-muted">--</span>
+                        @endif
+                    </td>
                     <td>
                         <p class="m-0">
                             {{ $row->name }} <br>

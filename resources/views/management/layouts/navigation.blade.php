@@ -1337,6 +1337,14 @@
                             @endcanAccess
                             @canAccess('product')
                             <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                    href="{{ route('product-slab-type.order.index') }}"
+                                    onclick="loadPageContent('{{ route('product-slab-type.order.index') }}')"
+                                    data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
+                                        data-i18n="Basic">Product Slab Type Order By</span></a>
+                            </li>
+                            @endcanAccess
+                            @canAccess('product')
+                            <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                                     href="{{ route('product-slab.index') }}"
                                     onclick="loadPageContent('{{ route('product-slab.index') }}')"
                                     data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i><span
