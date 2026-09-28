@@ -35,11 +35,7 @@ class ArrivalReportController extends Controller
     public function getArrivalReport(Request $request)
     {
 
-        $product_slab_types = ProductSlabType::when($request->filled('commodity_id'), function ($q) use ($request) {
-            return $q->whereHas('slabs', function ($query) use ($request) {
-                $query->whereIn('product_id', (array) $request->commodity_id);
-            });
-        })->get();
+        $product_slab_types = ProductSlabType::getForArrivalReport($request->company_location_id, $request->commodity_id);
         $arrival_compulsory_qc_params = ArrivalCompulsoryQcParam::get();
         // Increase memory and execution time
         ini_set('memory_limit', '512M');
