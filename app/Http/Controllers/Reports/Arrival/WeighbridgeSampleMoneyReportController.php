@@ -85,7 +85,17 @@ class WeighbridgeSampleMoneyReportController extends Controller
                         ->whereDate('arrival_tickets.created_at', '<=', $endDate);
                 }
             })
-            ->when(auth()->user()->user_type != 'super-admin', function ($q) {
+            ->when($request->filled('status') && $request->status !== 'all', function ($q) use ($request) {
+                if ($request->status === 'completed') {
+                    return $q->where('arrival_tickets.second_weighbridge_status', 'completed');
+                } elseif ($request->status === 'pending') {
+                    return $q->where(function ($subQuery) {
+                        $subQuery->whereNull('arrival_tickets.second_weighbridge_status')
+                            ->orWhere('arrival_tickets.second_weighbridge_status', '!=', 'completed');
+                    });
+                }
+            })
+            ->when(auth()->check() && auth()->user()->user_type != 'super-admin', function ($q) {
                 return $q->whereIn('arrival_tickets.location_id', getUserCurrentCompanyLocations());
             })
             ->orderBy('arrival_tickets.created_at', 'asc')

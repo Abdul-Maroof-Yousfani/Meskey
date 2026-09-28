@@ -5,6 +5,7 @@
         <th>Entry Time</th>
         <th>Entry By</th>
         <th>Truck Type</th>
+        <th>Truck No</th>
         <th>First Weight</th>
         <th>Second Weight</th>
         <th>Weighbridge Amount</th>
@@ -25,6 +26,9 @@
 
         @foreach ($tickets as $row)
             @php
+                $firstWeight = (float) ($row->firstWeighbridge?->weight ?? 0);
+                $secondWeight = (float) ($row->secondWeighbridge?->weight ?? 0);
+
                 $isWeighed = !empty($row->first_weight) || !empty($row->second_weight) || $row->firstWeighbridge;
                 $weighbridgeAmount = 0;
                 if ($isWeighed && $row->freight) {
@@ -33,8 +37,8 @@
 
                 $sampleAmount = $row->sample_money ?? 0;
 
-                $totalFirstWeight += (float) ($row->first_weight ?? 0);
-                $totalSecondWeight += (float) ($row->second_weight ?? 0);
+                $totalFirstWeight += $firstWeight;
+                $totalSecondWeight += $secondWeight;
                 $totalWeighbridgeAmount += (float) $weighbridgeAmount;
                 $totalSampleAmount += (float) $sampleAmount;
             @endphp
@@ -44,8 +48,9 @@
                 <td>{{ $row->created_at ? $row->created_at->format('g:i:s A') : '' }}</td>
                 <td>{{ $row->creator?->name ?? 'Main Gate' }}</td>
                 <td>{{ $row->truckType?->name ?? '' }}</td>
-                <td>{{ $row->firstWeighbridge?->weight ? number_format((float)$row->firstWeighbridge->weight, 0, '.', '') : '0' }}</td>
-                <td>{{ $row->secondWeighbridge?->weight ? number_format((float)$row->secondWeighbridge->weight, 0, '.', '') : '0' }}</td>
+                <td>{{ $row->truck_no ?? '' }}</td>
+                <td>{{ $firstWeight ? number_format($firstWeight, 0, '.', '') : '0' }}</td>
+                <td>{{ $secondWeight ? number_format($secondWeight, 0, '.', '') : '0' }}</td>
                 <td>{{ $weighbridgeAmount }}</td>
                 <td>{{ $sampleAmount }}</td>
                 <!-- Action Buttons -->
@@ -87,7 +92,7 @@
 
         @if ($tickets->count() > 0)
             <tr class="font-weight-bold bg-light">
-                <td colspan="5" class="text-right"><strong>Total:</strong></td>
+                <td colspan="6" class="text-right"><strong>Total:</strong></td>
                 <td><strong>{{ number_format($totalFirstWeight, 0, '.', '') }}</strong></td>
                 <td><strong>{{ number_format($totalSecondWeight, 0, '.', '') }}</strong></td>
                 <td><strong>{{ number_format($totalWeighbridgeAmount, 0, '.', '') }}</strong></td>
