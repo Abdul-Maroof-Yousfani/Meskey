@@ -295,7 +295,8 @@
                 <!-- INITIAL Column -->
                 <td>
                     @if($initialValue != 0)
-                        {{ $initialValue }}{{ $slabSymbol }}
+                        {{ $initialValue }}
+                        {{-- {{ $slabSymbol }} --}}
                     @else
                         0
                     @endif
@@ -304,7 +305,8 @@
                 <!-- INNER Column -->
                 <td>
                     @if($innerValue != 0)
-                        {{ $innerValue }}{{ $slabSymbol }}
+                        {{ $innerValue }}
+                        {{-- {{ $slabSymbol }} --}}
                     @else
                         0
                     @endif
@@ -386,10 +388,11 @@
                 @php
                     $initAvg = count($slabInitialTotals[$slab->id]) > 0 ? (array_sum($slabInitialTotals[$slab->id]) / ($totalNetWeight == 0 ? 1 : $totalNetWeight)) : 0;
                     $innerAvg = count($slabInnerTotals[$slab->id]) > 0 ? (array_sum($slabInnerTotals[$slab->id]) / ($totalNetWeight == 0 ? 1 : $totalNetWeight)) : 0;
-                    $slabSymbol = $slab->qc_symbol ?? '';
+                    // $slabSymbol = $slab->qc_symbol ?? '';
+                    // $initAvg > 0 ? (floor($initAvg) == $initAvg ? (int)$initAvg : number_format($initAvg, 3)) . $slabSymbol : 0
                 @endphp
-                <td><strong>{{ $initAvg > 0 ? (floor($initAvg) == $initAvg ? (int)$initAvg : number_format($initAvg, 3)) . $slabSymbol : 0 }}</strong></td>
-                <td><strong>{{ $innerAvg > 0 ? (floor($innerAvg) == $innerAvg ? (int)$innerAvg : number_format($innerAvg, 3)) . $slabSymbol : 0 }}</strong></td>
+                <td><strong>{{ $initAvg > 0 ? (floor($initAvg) == $initAvg ? (int)$initAvg : number_format($initAvg, 3)) : 0 }}</strong></td>
+                <td><strong>{{ $innerAvg > 0 ? (floor($innerAvg) == $innerAvg ? (int)$innerAvg : number_format($innerAvg, 3)) : 0 }}</strong></td>
             @endforeach
             @foreach ($arrival_compulsory_qc_params as $compulsory_slab_type)
                 <td></td>

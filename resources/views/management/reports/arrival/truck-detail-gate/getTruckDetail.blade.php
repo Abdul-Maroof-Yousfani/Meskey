@@ -121,13 +121,14 @@
                 @foreach ($product_slab_types as $slab)
                     @php
                         $initialValue = $deductionValueSlabinitial[$slab->id]['checklist_value'] ?? 0;
-                        $slabSymbol = $slab->qc_symbol ?? '';
+                        // $slabSymbol = $slab->qc_symbol ?? '';
                     @endphp
 
                     <!-- INITIAL Column -->
                     <td>
                         @if ($initialValue != 0)
-                            {{ $initialValue }}{{ $slabSymbol }}
+                            {{ $initialValue }}
+                            {{-- {{ $slabSymbol }} --}}
                         @else
                             0
                         @endif

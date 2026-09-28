@@ -133,7 +133,8 @@
                     @endphp
                     <td>
                         @if ($initialValue !== null && $initialValue !== '' && $initialValue != 0)
-                            {{ $initialValue }}{{ $slabSymbol }}
+                            {{ $initialValue }}
+                            {{-- {{ $slabSymbol }} --}}
                         @else
                             0
                         @endif
