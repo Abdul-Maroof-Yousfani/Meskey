@@ -6,8 +6,9 @@
                 <th style="width: 220px;">Bag Type</th>
                 <th>Packing</th>
                 <th class="text-center" style="width: 140px;">Total Tickets</th>
-                <th class="text-right" style="width: 160px;">Total Bags</th>
-                <th class="text-right" style="width: 200px;">Total Net Weight (kg)</th>
+                <th class="text-right" style="width: 160px;">Filled Bags</th>
+                {{-- <th class="text-right" style="width: 160px;">Total Bags</th> --}}
+                {{-- <th class="text-right" style="width: 200px;">Total Net Weight (kg)</th> --}}
             </tr>
         </thead>
         <tbody>
@@ -38,11 +39,14 @@
                             {{ number_format($packing['ticket_count']) }}
                         </td>
                         <td class="text-right font-weight-bold" style="vertical-align: middle;">
+                            {{ number_format($packing['total_filled_bags']) }}
+                        </td>
+                        {{-- <td class="text-right font-weight-bold" style="vertical-align: middle;">
                             {{ number_format($packing['total_bags']) }}
-                        </td>
-                        <td class="text-right" style="vertical-align: middle;">
+                        </td> --}}
+                        {{-- <td class="text-right" style="vertical-align: middle;">
                             {{ number_format($packing['total_net_weight'], 2) }}
-                        </td>
+                        </td> --}}
                     </tr>
                 @endforeach
                 {{-- Subtotal row for this Bag Type --}}
@@ -54,15 +58,18 @@
                         <strong>{{ number_format($group['total_tickets']) }}</strong>
                     </td>
                     <td class="text-right font-weight-bold">
+                        <strong>{{ number_format($group['subtotal_filled_bags']) }}</strong>
+                    </td>
+                    {{-- <td class="text-right font-weight-bold">
                         <strong>{{ number_format($group['subtotal_bags']) }}</strong>
-                    </td>
-                    <td class="text-right font-weight-bold">
+                    </td> --}}
+                    {{-- <td class="text-right font-weight-bold">
                         <strong>{{ number_format($group['subtotal_net_weight'], 2) }}</strong>
-                    </td>
+                    </td> --}}
                 </tr>
             @empty
                 <tr>
-                    <td colspan="6" class="text-center py-4 text-muted">
+                    <td colspan="5" class="text-center py-4 text-muted">
                         No records found
                     </td>
                 </tr>
@@ -78,11 +85,14 @@
                         <strong>{{ number_format($grandTotalTickets) }}</strong>
                     </td>
                     <td class="text-right font-weight-bold" style="color: #004d40; vertical-align: middle;">
+                        <strong>{{ number_format($grandTotalFilledBags) }}</strong>
+                    </td>
+                    {{-- <td class="text-right font-weight-bold" style="color: #004d40; vertical-align: middle;">
                         <strong>{{ number_format($grandTotalBags) }}</strong>
-                    </td>
-                    <td class="text-right font-weight-bold" style="color: #004d40; vertical-align: middle;">
+                    </td> --}}
+                    {{-- <td class="text-right font-weight-bold" style="color: #004d40; vertical-align: middle;">
                         <strong>{{ number_format($grandTotalNetWeight, 2) }}</strong>
-                    </td>
+                    </td> --}}
                 </tr>
             </tfoot>
         @endif

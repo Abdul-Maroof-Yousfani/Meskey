@@ -40,17 +40,7 @@ class BagWiseArrivalReportController extends Controller
         ini_set('memory_limit', '512M');
         ini_set('max_execution_time', 300);
 
-        $latestApproves = DB::table('arrival_approves')
-            ->select('arrival_ticket_id', 'bag_type_id', 'bag_packing_id', 'total_bags')
-            ->whereIn('id', function ($q) {
-                $q->select(DB::raw('MAX(id)'))
-                    ->from('arrival_approves')
-                    ->groupBy('arrival_ticket_id');
-            });
-
-        $query = ArrivalTicket::joinSub($latestApproves, 'arrival_approves', function ($join) {
-                $join->on('arrival_tickets.id', '=', 'arrival_approves.arrival_ticket_id');
-            })
+        $query = ArrivalTicket::join('arrival_approves', 'arrival_tickets.id', '=', 'arrival_approves.arrival_ticket_id')
             ->leftJoin('bag_types', 'arrival_approves.bag_type_id', '=', 'bag_types.id')
             ->leftJoin('bag_packings', 'arrival_approves.bag_packing_id', '=', 'bag_packings.id')
             ->whereIn('arrival_tickets.document_approval_status', ['fully_approved', 'half_approved'])
@@ -92,6 +82,7 @@ class BagWiseArrivalReportController extends Controller
             'arrival_approves.bag_packing_id',
             DB::raw('COALESCE(bag_packings.name, "Other") as bag_packing_name'),
             DB::raw('COUNT(DISTINCT arrival_tickets.id) as ticket_count'),
+            DB::raw('SUM(COALESCE(CAST(arrival_approves.filling_bags_no AS UNSIGNED), 0)) as total_filled_bags'),
             DB::raw('SUM(COALESCE(arrival_approves.total_bags, 0)) as total_bags'),
             DB::raw('SUM(COALESCE(arrival_tickets.arrived_net_weight, arrival_tickets.net_weight, 0)) as total_net_weight')
         )
@@ -107,8 +98,9 @@ class BagWiseArrivalReportController extends Controller
         ->toArray();
 
         $groupedData = [];
-        $grandTotalBags = 0;
-        $grandTotalNetWeight = 0;
+        $grandTotalFilledBags = 0;
+        // $grandTotalBags = 0;
+        // $grandTotalNetWeight = 0;
 
         foreach ($data as $row) {
             $typeId = $row->bag_type_id ?? 0;
@@ -116,8 +108,9 @@ class BagWiseArrivalReportController extends Controller
                 $groupedData[$typeId] = [
                     'bag_type_name' => $row->bag_type_name,
                     'total_tickets' => $ticketsPerType[$typeId] ?? 0,
-                    'subtotal_bags' => 0,
-                    'subtotal_net_weight' => 0,
+                    'subtotal_filled_bags' => 0,
+                    // 'subtotal_bags' => 0,
+                    // 'subtotal_net_weight' => 0,
                     'packings' => [],
                 ];
             }
@@ -125,26 +118,29 @@ class BagWiseArrivalReportController extends Controller
             $groupedData[$typeId]['packings'][] = [
                 'packing_name' => $row->bag_packing_name,
                 'ticket_count' => (int) $row->ticket_count,
-                'total_bags' => (int) $row->total_bags,
-                'total_net_weight' => (float) $row->total_net_weight,
+                'total_filled_bags' => (int) $row->total_filled_bags,
+                // 'total_bags' => (int) $row->total_bags,
+                // 'total_net_weight' => (float) $row->total_net_weight,
             ];
 
-            $groupedData[$typeId]['subtotal_bags'] += (int) $row->total_bags;
-            $groupedData[$typeId]['subtotal_net_weight'] += (float) $row->total_net_weight;
+            $groupedData[$typeId]['subtotal_filled_bags'] += (int) $row->total_filled_bags;
+            // $groupedData[$typeId]['subtotal_bags'] += (int) $row->total_bags;
+            // $groupedData[$typeId]['subtotal_net_weight'] += (float) $row->total_net_weight;
 
-            $grandTotalBags += (int) $row->total_bags;
-            $grandTotalNetWeight += (float) $row->total_net_weight;
+            $grandTotalFilledBags += (int) $row->total_filled_bags;
+            // $grandTotalBags += (int) $row->total_bags;
+            // $grandTotalNetWeight += (float) $row->total_net_weight;
         }
 
         foreach ($groupedData as &$group) {
             usort($group['packings'], function ($a, $b) {
-                return $b['total_bags'] <=> $a['total_bags'];
+                return $b['total_filled_bags'] <=> $a['total_filled_bags'];
             });
         }
         unset($group);
 
         uasort($groupedData, function ($a, $b) {
-            return $b['subtotal_bags'] <=> $a['subtotal_bags'];
+            return $b['subtotal_filled_bags'] <=> $a['subtotal_filled_bags'];
         });
 
         $grandTotalTickets = (clone $query)->count(DB::raw('DISTINCT arrival_tickets.id'));
@@ -152,8 +148,9 @@ class BagWiseArrivalReportController extends Controller
         return view('management.reports.arrival.bag-wise.getList', compact(
             'groupedData',
             'grandTotalTickets',
-            'grandTotalBags',
-            'grandTotalNetWeight'
+            'grandTotalFilledBags'
+            // 'grandTotalBags',
+            // 'grandTotalNetWeight'
         ));
     }
 }

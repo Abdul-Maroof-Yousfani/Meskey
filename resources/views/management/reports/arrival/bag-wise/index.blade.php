@@ -146,8 +146,9 @@
                                             <th style="width: 220px;">Bag Type</th>
                                             <th>Packing</th>
                                             <th class="text-center" style="width: 140px;">Total Tickets</th>
-                                            <th class="text-right" style="width: 160px;">Total Bags</th>
-                                            <th class="text-right" style="width: 200px;">Total Net Weight (kg)</th>
+                                            <th class="text-right" style="width: 160px;">Filled Bags</th>
+                                            {{-- <th class="text-right" style="width: 160px;">Total Bags</th> --}}
+                                            {{-- <th class="text-right" style="width: 200px;">Total Net Weight (kg)</th> --}}
                                         </tr>
                                     </thead>
                                 </table>
