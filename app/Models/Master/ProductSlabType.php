@@ -170,4 +170,25 @@ class ProductSlabType extends Model
     {
         return self::getForArrivalReport($locationId, $commodityId, $ticketType);
     }
+
+    /**
+     * Get ProductSlabType records for the given commodities.
+     *
+     * @param mixed $commodityIds (int|string|array)
+     * @return \Illuminate\Database\Eloquent\Collection|\Illuminate\Support\Collection
+     */
+    public static function getForCommodities($commodityIds)
+    {
+        $commodityIds = is_array($commodityIds)
+            ? array_values(array_filter($commodityIds, fn($v) => !is_null($v) && $v !== ''))
+            : (!is_null($commodityIds) && $commodityIds !== '' ? [$commodityIds] : []);
+
+        if (empty($commodityIds)) {
+            return collect([]);
+        }
+
+        return self::whereHas('slabs', function ($q) use ($commodityIds) {
+            $q->whereIn('product_id', $commodityIds);
+        })->ordered()->get();
+    }
 }

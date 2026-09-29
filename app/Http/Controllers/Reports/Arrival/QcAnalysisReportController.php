@@ -31,7 +31,6 @@ class QcAnalysisReportController extends Controller
         ini_set('memory_limit', '512M');
         ini_set('max_execution_time', 300);
 
-        $product_slab_types = ProductSlabType::getForArrivalReport($request->company_location_id, $request->commodity_id);
         $arrival_compulsory_qc_params = ArrivalCompulsoryQcParam::get();
 
         $tickets = ArrivalTicket::select('arrival_tickets.*')
@@ -99,6 +98,19 @@ class QcAnalysisReportController extends Controller
             })
             ->orderBy('arrival_tickets.created_at', 'asc')
             ->get();
+
+        $commodityIds = $tickets->pluck('qc_product')
+            ->merge($tickets->pluck('product_id'))
+            ->filter()
+            ->unique()
+            ->values()
+            ->toArray();
+
+        if (empty($commodityIds) && $request->filled('commodity_id')) {
+            $commodityIds = (array) $request->commodity_id;
+        }
+
+        $product_slab_types = ProductSlabType::getForCommodities($commodityIds);
 
         return view('management.reports.arrival.qc-analysis.getQcAnalysis', compact('tickets', 'product_slab_types', 'arrival_compulsory_qc_params'));
     }

@@ -40,7 +40,6 @@ class CustomQcSampleReportController extends Controller
         ini_set('memory_limit', '512M');
         ini_set('max_execution_time', 300);
 
-        $product_slab_types = ProductSlabType::getForArrivalReport($request->company_location_id, $request->commodity_id, 'purchase');
         $arrival_compulsory_qc_params = ArrivalCompulsoryQcParam::get();
 
         $tickets = PurchaseTicket::select('purchase_tickets.*')
@@ -112,6 +111,21 @@ class CustomQcSampleReportController extends Controller
             })
             ->orderBy('purchase_tickets.created_at', 'desc')
             ->get();
+
+        $commodityIds = [];
+        foreach ($tickets as $t) {
+            if ($t->qc_product) $commodityIds[] = $t->qc_product;
+            if ($t->product_id) $commodityIds[] = $t->product_id;
+            if ($t->purchaseOrder?->qc_product) $commodityIds[] = $t->purchaseOrder->qc_product;
+            if ($t->purchaseOrder?->product_id) $commodityIds[] = $t->purchaseOrder->product_id;
+        }
+        $commodityIds = array_values(array_unique(array_filter($commodityIds)));
+
+        if (empty($commodityIds) && $request->filled('commodity_id')) {
+            $commodityIds = (array) $request->commodity_id;
+        }
+
+        $product_slab_types = ProductSlabType::getForCommodities($commodityIds);
 
         return view('management.reports.arrival.custom-qc-sample.getCustomQcSample', compact(
             'tickets',

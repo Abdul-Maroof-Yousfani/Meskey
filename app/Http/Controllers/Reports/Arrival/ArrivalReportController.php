@@ -35,7 +35,6 @@ class ArrivalReportController extends Controller
     public function getArrivalReport(Request $request)
     {
 
-        $product_slab_types = ProductSlabType::getForArrivalReport($request->company_location_id, $request->commodity_id);
         $arrival_compulsory_qc_params = ArrivalCompulsoryQcParam::get();
         // Increase memory and execution time
         ini_set('memory_limit', '512M');
@@ -135,6 +134,20 @@ class ArrivalReportController extends Controller
             })
             ->orderBy('arrival_tickets.created_at', 'asc')
             ->get();
+
+        $commodityIds = $tickets->pluck('qc_product')
+            ->merge($tickets->pluck('product_id'))
+            ->filter()
+            ->unique()
+            ->values()
+            ->toArray();
+
+        if (empty($commodityIds) && $request->filled('commodity_id')) {
+            $commodityIds = (array) $request->commodity_id;
+        }
+
+        $product_slab_types = ProductSlabType::getForCommodities($commodityIds);
+
         return view('management.reports.arrival.arrival-history.getArrivalReport', compact('tickets', 'product_slab_types', 'arrival_compulsory_qc_params'));
     }
 
