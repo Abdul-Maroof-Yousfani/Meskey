@@ -22,8 +22,7 @@ class ProductSlabTypeController extends Controller
      */
     public function orderIndex()
     {
-        $slab_types = ProductSlabType::where('for_general_item', 1)
-            ->ordered()
+        $slab_types = ProductSlabType::ordered()
             ->get();
 
         return view('management.master.product_slab_type.order', compact('slab_types'));
