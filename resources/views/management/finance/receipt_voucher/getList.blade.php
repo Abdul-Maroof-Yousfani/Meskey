@@ -69,9 +69,11 @@
                         @endphp
 
                         @if ($approvalStatus === 'pending' || $approvalStatus === 'reverted')
+                            @can('receipt-voucher')
                             <a class="info p-1 text-center mr-2 position-relative" href="{{ $editRoute }}" title="Edit">
                                 <i class="ft-edit font-medium-3"></i>
                             </a>
+                            @endcan
                         @endif
 
                     </td>

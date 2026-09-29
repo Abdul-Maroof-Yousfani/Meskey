@@ -19,6 +19,8 @@ class LogisticsBillController extends Controller
      */
     public function index()
     {
+        abort_if(!canAccess('logistics') && !auth()->user()->can('logistics'), 403);
+
         $deliveryChallans = LogisticsBill::where('am_approval_status', 'approved')
             ->where(function ($q) {
                 // 1. Pohanch sauda (has RR)
@@ -47,6 +49,8 @@ class LogisticsBillController extends Controller
      */
     public function getList(Request $request)
     {
+        abort_if(!canAccess('logistics') && !auth()->user()->can('logistics'), 403);
+
         $perPage = $request->get('per_page', 25);
 
         $logisticsBills = LogisticsBill::with(['deliveryChallan.customer', 'deliveryChallan.delivery_order.salesOrder', 'items.product'])
@@ -97,11 +101,10 @@ class LogisticsBillController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(int $id)
     {
+        abort_if(!canAccess('logistics') && !auth()->user()->can('logistics'), 403);
+
         $logisticsBill = LogisticsBill::with([
             'deliveryChallan.delivery_challan_data',
             'deliveryChallan.customer',
@@ -139,6 +142,8 @@ class LogisticsBillController extends Controller
      */
     public function update(Request $request, int $id)
     {
+        abort_if(!canAccess('logistics') && !auth()->user()->can('logistics'), 403);
+
         DB::beginTransaction();
         try {
             $logisticsBill = LogisticsBill::findOrFail($id);
@@ -240,6 +245,8 @@ class LogisticsBillController extends Controller
      */
     public function view(int $id)
     {
+        abort_if(!canAccess('logistics') && !auth()->user()->can('logistics'), 403);
+
         $logisticsBill = LogisticsBill::with([
             'deliveryChallan.delivery_challan_data',
             'deliveryChallan.customer',

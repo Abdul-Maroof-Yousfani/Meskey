@@ -110,6 +110,7 @@ class SaleOrderController extends Controller
 
     public function index()
     {
+        abort_if(!canAccess('sale-order') && !auth()->user()->can('sale-order'), 403);
         $customerIds = SalesOrder::distinct()->pluck('customer_id')->filter();
         $customers = Customer::whereIn('id', $customerIds)->get();
 
@@ -128,6 +129,7 @@ class SaleOrderController extends Controller
 
     public function create()
     {
+        abort_if(!canAccess('sale-order') && !auth()->user()->can('sale-order'), 403);
         $payment_terms = PaymentTerm::all();
         $customers = Customer::where("type", "local")->get();
         $inquiries = SalesInquiry::where('am_approval_status', 'approved')
@@ -162,7 +164,16 @@ class SaleOrderController extends Controller
 
     public function edit(int $id)
     {
+        abort_if(!canAccess('sale-order') && !auth()->user()->can('sale-order'), 403);
         $sale_order = SalesOrder::with(['locations', 'factories', 'sections', 'sales_order_data', 'pay_type', 'sales_order_data.sale_inquiry_data', 'parent_user', 'broker'])->find($id);
+        if (!$sale_order) {
+            abort(404, 'Sale Order not found');
+        }
+
+        if ($sale_order->so_approval_stage === 'headoffice_pending') {
+            return view('management.sales.orders.lockedModal', compact('sale_order'));
+        }
+
         $payment_terms = PaymentTerm::all();
         $customers = Customer::where("type", "local")->get();
         $inquiries = SalesInquiry::all();
@@ -193,6 +204,7 @@ class SaleOrderController extends Controller
 
     public function view(Request $request, int $id)
     {
+        abort_if(!canAccess('sale-order') && !auth()->user()->can('sale-order'), 403);
         $sale_order = SalesOrder::with('sales_order_data', 'locations', 'factories', 'sections', 'sales_order_data.sale_inquiry_data', 'pay_type', 'sale_inquiry', 'parent_user', 'broker')->find($id);
         $payment_terms = PaymentTerm::all();
         $customers = Customer::where("type", "local")->get();
@@ -218,6 +230,7 @@ class SaleOrderController extends Controller
 
     public function getDoStats(Request $request, int $id)
     {
+        abort_if(!canAccess('sale-order') && !auth()->user()->can('sale-order'), 403);
         $sale_order = SalesOrder::with([
             'delivery_orders' => function ($q) {
                 $q->with([
@@ -320,6 +333,7 @@ class SaleOrderController extends Controller
 
     public function store(SalesOrderRequest $request)
     {
+        abort_if(!canAccess('sale-order') && !auth()->user()->can('sale-order'), 403);
         $locations = $request->locations ?? [];
         $factoryIds = $request->arrival_location_id ?? [];
         $sectionIds = $request->arrival_sub_location_id ?? [];
@@ -513,11 +527,19 @@ class SaleOrderController extends Controller
 
     public function update(SalesOrderRequest $request, int $id)
     {
+        abort_if(!canAccess('sale-order') && !auth()->user()->can('sale-order'), 403);
         DB::beginTransaction();
         try {
             $sales_order = SalesOrder::find($id);
             if (!$sales_order) {
                 return response()->json(['error' => 'Sale Order not found.', 'message' => 'Sale Order not found.'], 404);
+            }
+
+            if ($sales_order->so_approval_stage === 'headoffice_pending') {
+                return response()->json([
+                    'error' => 'Sale Order has been approved at Stage 1 and is pending Head Office approval. It cannot be edited unless reverted by Head Office.',
+                    'message' => 'Sale Order has been approved at Stage 1 and is pending Head Office approval. It cannot be edited unless reverted by Head Office.'
+                ], 422);
             }
 
             $oldDeliveryDate = $sales_order->delivery_date ? Carbon::parse($sales_order->delivery_date)->format('Y-m-d') : null;
@@ -896,6 +918,11 @@ class SaleOrderController extends Controller
                     ]);
             }
 
+            // If the Sale Order was reverted, resubmit after edit back to Stage 1
+            if ($sales_order->so_approval_stage === 'reverted' || $sales_order->am_approval_status === 'reverted') {
+                $sales_order->resubmitAfterEdit();
+            }
+
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
@@ -907,6 +934,7 @@ class SaleOrderController extends Controller
 
     public function destroy(int $id)
     {
+        abort_if(!canAccess('sale-order') && !auth()->user()->can('sale-order'), 403);
         $sales_order = SalesOrder::find($id);
         if (!$sales_order) {
             return response()->json(['error' => 'Sale Order not found.', 'message' => 'Sale Order not found.'], 404);
@@ -946,6 +974,7 @@ class SaleOrderController extends Controller
 
     public function getList(Request $request)
     {
+        abort_if(!canAccess('sale-order') && !auth()->user()->can('sale-order'), 403);
         $perPage = $request->get('per_page', 25);
 
         // Eager load the inquiry + all its items + related product
@@ -1061,6 +1090,7 @@ class SaleOrderController extends Controller
                 'contract_status' => $SaleOrder->contract_status,
                 'is_closed' => $SaleOrder->isClosed(),
                 'is_bardana' => (bool) $SaleOrder->is_bardana,
+                'so_approval_stage' => $SaleOrder->so_approval_stage ?? 'stage_1_pending',
                 'has_pending_amendment' => $SaleOrder->hasPendingDeliveryDateAmendment(),
                 'pending_amendment' => $SaleOrder->getPendingDeliveryDateAmendment(),
             ];

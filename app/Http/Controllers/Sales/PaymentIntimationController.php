@@ -16,23 +16,35 @@ class PaymentIntimationController extends Controller
 {
     public function index()
     {
+        abort_if(!canAccess('payment-intimation') && !auth()->user()->can('payment-intimation'), 403);
         return view('management.sales.payment-intimation.index');
     }
 
     public function getList(Request $request)
     {
+        abort_if(!canAccess('payment-intimation') && !auth()->user()->can('payment-intimation'), 403);
         $perPage = $request->get('per_page', 25);
         $search = $request->search;
+        $user = auth()->user();
 
         $query = PaymentIntimation::with(['customer', 'sale_order', 'bank'])->latest();
 
+        // If not super-admin, show only payment intimations for SOs created by this user
+        if ($user && $user->user_type !== 'super-admin') {
+            $query->whereHas('sale_order', function ($q) use ($user) {
+                $q->where('created_by', $user->id);
+            });
+        }
+
         if ($search) {
-            $query->whereHas('customer', function($q) use ($search) {
-                $q->where('name', 'like', "%$search%");
-            })->orWhereHas('sale_order', function($q) use ($search) {
-                $q->where('reference_no', 'like', "%$search%");
-            })->orWhereHas('bank', function($q) use ($search) {
-                $q->where('bank_name', 'like', "%$search%");
+            $query->where(function ($sub) use ($search) {
+                $sub->whereHas('customer', function ($q) use ($search) {
+                    $q->where('name', 'like', "%$search%");
+                })->orWhereHas('sale_order', function ($q) use ($search) {
+                    $q->where('reference_no', 'like', "%$search%");
+                })->orWhereHas('bank', function ($q) use ($search) {
+                    $q->where('bank_name', 'like', "%$search%");
+                });
             });
         }
 
@@ -43,19 +55,36 @@ class PaymentIntimationController extends Controller
 
     public function create()
     {
-        $customers = Customer::where("status", "active")->get();
+        abort_if(!canAccess('payment-intimation') && !auth()->user()->can('payment-intimation'), 403);
+        $user = auth()->user();
+        if ($user && $user->user_type !== 'super-admin') {
+            $customerIds = SalesOrder::where('created_by', $user->id)->distinct()->pluck('customer_id');
+            $customers = Customer::whereIn('id', $customerIds)->where("status", "active")->get();
+        } else {
+            $customers = Customer::where("status", "active")->get();
+        }
+
         $banks = Bank::where("status", "active")->get();
         return view('management.sales.payment-intimation.create', compact('customers', 'banks'));
     }
 
     public function store(Request $request)
     {
+        abort_if(!canAccess('payment-intimation') && !auth()->user()->can('payment-intimation'), 403);
         $request->validate([
             'customer_id' => 'required',
             'sale_order_id' => 'required',
             'bank_id' => 'required',
             'payment_deposit' => 'required|numeric',
         ]);
+
+        $user = auth()->user();
+        if ($user && $user->user_type !== 'super-admin') {
+            $so = SalesOrder::where('id', $request->sale_order_id)->where('created_by', $user->id)->first();
+            if (!$so) {
+                return response()->json(['error' => 'You can only create payment intimation for your own Sale Order.'], 403);
+            }
+        }
 
         $payload = $request->except('_token');
 
@@ -91,20 +120,47 @@ class PaymentIntimationController extends Controller
 
     public function edit($id)
     {
-        $payment_intimation = PaymentIntimation::findOrFail($id);
-        $customers = Customer::where("status", "active")->get();
+        abort_if(!canAccess('payment-intimation') && !auth()->user()->can('payment-intimation'), 403);
+        $user = auth()->user();
+        $query = PaymentIntimation::with(['sale_order']);
+        if ($user && $user->user_type !== 'super-admin') {
+            $query->whereHas('sale_order', function ($q) use ($user) {
+                $q->where('created_by', $user->id);
+            });
+        }
+        $payment_intimation = $query->findOrFail($id);
+
+        if ($user && $user->user_type !== 'super-admin') {
+            $customerIds = SalesOrder::where('created_by', $user->id)->distinct()->pluck('customer_id');
+            if ($payment_intimation->customer_id) {
+                $customerIds->push($payment_intimation->customer_id);
+            }
+            $customers = Customer::whereIn('id', $customerIds->unique())->where("status", "active")->get();
+        } else {
+            $customers = Customer::where("status", "active")->get();
+        }
+
         $banks = Bank::where("status", "active")->get();
         return view('management.sales.payment-intimation.edit', compact('payment_intimation', 'customers', 'banks'));
     }
 
     public function show($id)
     {
-        $payment_intimation = PaymentIntimation::with(['customer', 'sale_order', 'bank'])->findOrFail($id);
+        abort_if(!canAccess('payment-intimation') && !auth()->user()->can('payment-intimation'), 403);
+        $user = auth()->user();
+        $query = PaymentIntimation::with(['customer', 'sale_order', 'bank']);
+        if ($user && $user->user_type !== 'super-admin') {
+            $query->whereHas('sale_order', function ($q) use ($user) {
+                $q->where('created_by', $user->id);
+            });
+        }
+        $payment_intimation = $query->findOrFail($id);
         return view('management.sales.payment-intimation.show', compact('payment_intimation'));
     }
 
     public function update(Request $request, $id)
     {
+        abort_if(!canAccess('payment-intimation') && !auth()->user()->can('payment-intimation'), 403);
         $request->validate([
             'customer_id' => 'required',
             'sale_order_id' => 'required',
@@ -112,7 +168,22 @@ class PaymentIntimationController extends Controller
             'payment_deposit' => 'required|numeric',
         ]);
 
-        $payment_intimation = PaymentIntimation::findOrFail($id);
+        $user = auth()->user();
+        $query = PaymentIntimation::with(['sale_order']);
+        if ($user && $user->user_type !== 'super-admin') {
+            $query->whereHas('sale_order', function ($q) use ($user) {
+                $q->where('created_by', $user->id);
+            });
+        }
+        $payment_intimation = $query->findOrFail($id);
+
+        if ($user && $user->user_type !== 'super-admin') {
+            $so = SalesOrder::where('id', $request->sale_order_id)->where('created_by', $user->id)->first();
+            if (!$so) {
+                return response()->json(['error' => 'You can only select your own Sale Order.'], 403);
+            }
+        }
+
         $payload = $request->except('_token', '_method');
 
         if ($request->hasFile('attachment')) {
@@ -130,7 +201,15 @@ class PaymentIntimationController extends Controller
 
     public function destroy($id)
     {
-        $payment_intimation = PaymentIntimation::findOrFail($id);
+        abort_if(!canAccess('payment-intimation') && !auth()->user()->can('payment-intimation'), 403);
+        $user = auth()->user();
+        $query = PaymentIntimation::with(['sale_order']);
+        if ($user && $user->user_type !== 'super-admin') {
+            $query->whereHas('sale_order', function ($q) use ($user) {
+                $q->where('created_by', $user->id);
+            });
+        }
+        $payment_intimation = $query->findOrFail($id);
         $payment_intimation->delete();
 
         return response()->json(['success' => 'Payment Intimation has been deleted successfully']);
@@ -138,10 +217,18 @@ class PaymentIntimationController extends Controller
 
     public function getSaleOrders(Request $request)
     {
+        abort_if(!canAccess('payment-intimation') && !auth()->user()->can('payment-intimation'), 403);
         $customer_id = $request->customer_id;
-        $sale_orders = SalesOrder::where('customer_id', $customer_id)
-            ->select('id', 'reference_no')
-            ->get();
+        $user = auth()->user();
+
+        $query = SalesOrder::where('customer_id', $customer_id);
+
+        // If not super-admin, show only Sale Orders created by this user
+        if ($user && $user->user_type !== 'super-admin') {
+            $query->where('created_by', $user->id);
+        }
+
+        $sale_orders = $query->select('id', 'reference_no')->get();
 
         $data = [];
         foreach ($sale_orders as $so) {

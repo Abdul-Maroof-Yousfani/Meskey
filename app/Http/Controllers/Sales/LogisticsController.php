@@ -17,6 +17,7 @@ class LogisticsController extends Controller
 {
     public function index()
     {
+        abort_if(!canAccess('logistics') && !auth()->user()->can('logistics'), 403);
         $logistics = Logistics::with(['items.transporter'])
             ->orderBy('id', 'desc')
             ->get();
@@ -26,6 +27,7 @@ class LogisticsController extends Controller
 
     public function create()
     {
+        abort_if(!canAccess('logistics') && !auth()->user()->can('logistics'), 403);
         $exportOrders = ExportOrder::with('logistics')
             ->where('am_approval_status', 'approved')
             ->whereNotIn('id', function($q) {
@@ -51,6 +53,7 @@ class LogisticsController extends Controller
 
     public function getSo(Request $request)
     {
+        abort_if(!canAccess('logistics') && !auth()->user()->can('logistics'), 403);
         $customer_id = $request->customer_id;
 
         $saleOrders = \App\Models\Sales\SalesOrder::activeContract()
@@ -90,6 +93,7 @@ class LogisticsController extends Controller
 
     public function getOrderDetails(Request $request, $id)
     {
+        abort_if(!canAccess('logistics') && !auth()->user()->can('logistics'), 403);
         $type = $request->get('type', 'sale_order');
         $isEdit = $request->get('is_edit', 0);
 
@@ -245,6 +249,7 @@ class LogisticsController extends Controller
 
     public function store(Request $request)
     {
+        abort_if(!canAccess('logistics') && !auth()->user()->can('logistics'), 403);
         $request->validate([
             'date' => 'required|date',
             'type' => 'required|in:sale_order,export_order',
@@ -387,6 +392,7 @@ class LogisticsController extends Controller
 
     public function edit($id)
     {
+        abort_if(!canAccess('logistics') && !auth()->user()->can('logistics'), 403);
         $logistics = Logistics::with('saleOrder')->find($id);
         if (!$logistics) {
             return response()->json(['error' => 'Logistics not found'], 404);
@@ -420,6 +426,7 @@ class LogisticsController extends Controller
 
     public function update(Request $request, $id)
     {
+        abort_if(!canAccess('logistics') && !auth()->user()->can('logistics'), 403);
         $logistics = Logistics::find($id);
         if (!$logistics) {
             return response()->json(['error' => 'Logistics not found', 'message' => 'Logistics not found'], 404);
@@ -552,6 +559,7 @@ class LogisticsController extends Controller
 
     public function getList(Request $request)
     {
+        abort_if(!canAccess('logistics') && !auth()->user()->can('logistics'), 403);
         $search = $request->search;
 
         $logistics = Logistics::with(['items.transporter'])
@@ -572,6 +580,7 @@ class LogisticsController extends Controller
 
     public function show($id)
     {
+        abort_if(!canAccess('logistics') && !auth()->user()->can('logistics'), 403);
         $logistics = Logistics::with(['items.transporter'])->find($id);
         if (!$logistics) {
             return response()->json(['error' => 'Logistics not found'], 404);
@@ -581,6 +590,7 @@ class LogisticsController extends Controller
 
     public function destroy($id)
     {
+        abort_if(!canAccess('logistics') && !auth()->user()->can('logistics'), 403);
         $logistics = Logistics::find($id);
         if (!$logistics) {
             return response()->json(['error' => 'Logistics not found', 'message' => 'Logistics not found'], 404);

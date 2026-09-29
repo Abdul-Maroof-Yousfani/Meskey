@@ -78,6 +78,7 @@
 
                             <td rowspan="{{ $group['rowspan'] }}" class="text-center align-middle">
                                 <div class="btn-group" role="group">
+                                    @canAccess('sales-invoice')
                                     <a class="btn btn-sm btn-info" 
                                        onclick="openModal(this,'{{ route('sales.get.sales-invoice.view', ['sales_invoice' => $group['id']]) }}','View Sales Invoice', false, '100%')" 
                                        title="View" style="margin-right: 10px;">
@@ -98,6 +99,7 @@
                                         </button>
                                     @endif
                                     @endif
+                                    @endcanAccess
                                 </div>
                             </td>
                         @endif
@@ -146,6 +148,7 @@
 
                     <td class="text-center align-middle">
                         <div class="btn-group" role="group">
+                            @canAccess('sales-invoice')
                             <a class="btn btn-sm btn-info" 
                                onclick="openModal(this,'{{ route('sales.get.sales-invoice.view', ['sales_invoice' => $group['id']]) }}','View Sales Invoice', false, '100%')" 
                                title="View" style="margin-right: 10px;">
@@ -164,6 +167,7 @@
                                     <i class="ft-trash-2"></i>
                                 </button>
                             @endif
+                            @endcanAccess
                         </div>
                     </td>
                 </tr>

@@ -20,11 +20,25 @@ class SecondWeighBridgeController extends Controller
         // $this->middleware('check.company:sales-second-weighbridge', ['only' => ['edit']]);
     }
 
+    private function getUserArrivalLocations()
+    {
+        $authUser = auth()->user();
+        if (!$authUser) {
+            return [];
+        }
+        $locations = getUserCurrentCompanyArrivalLocations();
+        if (empty($locations) && $authUser->arrival_location_id) {
+            $locations = [$authUser->arrival_location_id];
+        }
+        return $locations ?? [];
+    }
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
+        abort_if(!canAccess('second-weighbridge') && !auth()->user()->can('second-weighbridge'), 403);
         return view('management.sales.second-weighbridge.index');
     }
 
@@ -33,11 +47,21 @@ class SecondWeighBridgeController extends Controller
      */
     public function getList(Request $request)
     {
+        abort_if(!canAccess('second-weighbridge') && !auth()->user()->can('second-weighbridge'), 403);
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
+
         $SecondWeighbridges = SecondWeighbridge::with([
             'loadingSlip.loadingProgramItem.loadingProgram.deliveryOrder.customer',
             'loadingSlip.loadingProgramItem.loadingProgram.deliveryOrder.delivery_order_data.item',
             'truckType'
         ])
+            ->when(!$isSuperAdmin, function ($query) use ($locations) {
+                $query->whereHas('loadingSlip.loadingProgramItem', function ($q) use ($locations) {
+                    $q->whereIn('arrival_location_id', $locations);
+                });
+            })
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
                 return $q->where(function ($sq) use ($searchTerm) {
@@ -58,11 +82,18 @@ class SecondWeighBridgeController extends Controller
      */
     public function create()
     {
+        abort_if(!canAccess('second-weighbridge') && !auth()->user()->can('second-weighbridge'), 403);
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
+
         // Get loading slips that have accepted dispatch QC but don't have a second weighbridge yet
         $LoadingSlips = LoadingSlip::whereDoesntHave('secondWeighbridge')
-            ->whereHas('loadingProgramItem', function ($query) {
-                $query->whereIn('arrival_location_id', getUserCurrentCompanyArrivalLocations())
-                      ->whereDoesntHaveClosedSaleOrder();
+            ->whereHas('loadingProgramItem', function ($query) use ($isSuperAdmin, $locations) {
+                $query->when(!$isSuperAdmin, function ($q) use ($locations) {
+                    $q->whereIn('arrival_location_id', $locations);
+                })
+                ->whereDoesntHaveClosedSaleOrder();
             })
             ->whereHas('loadingProgramItem.dispatchQcs', function ($query) {
                 $query->where('status', 'accept');
@@ -86,12 +117,23 @@ class SecondWeighBridgeController extends Controller
      */
     public function store(Request $request)
     {
+        abort_if(!canAccess('second-weighbridge') && !auth()->user()->can('second-weighbridge'), 403);
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
+
         // Get loading slip
         $loadingSlip = LoadingSlip::with('loadingProgramItem.firstWeighbridge', 'loadingProgramItem.deliveryOrders.delivery_order_data')
             ->find($request->loading_slip_id);
 
         if (!$loadingSlip) {
             return response()->json(['errors' => ['loading_slip_id' => 'Loading slip not found.']], 422);
+        }
+
+        if (!$isSuperAdmin && $loadingSlip->loadingProgramItem && !in_array($loadingSlip->loadingProgramItem->arrival_location_id, $locations)) {
+            return response()->json([
+                'errors' => ['loading_slip_id' => 'You are not authorized to create Second Weighbridge for this location.']
+            ], 422);
         }
 
         // Build validation rules
@@ -195,7 +237,11 @@ class SecondWeighBridgeController extends Controller
      */
     public function edit($id)
     {
+        abort_if(!canAccess('second-weighbridge') && !auth()->user()->can('second-weighbridge'), 403);
         $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
+
         $data['SecondWeighbridge'] = SecondWeighbridge::with([
             'loadingSlip.loadingProgramItem.deliveryOrders.customer',
             'loadingSlip.loadingProgramItem.deliveryOrders.delivery_order_data.item',
@@ -204,7 +250,14 @@ class SecondWeighBridgeController extends Controller
             'loadingSlip.loadingProgramItem.deliveryOrders.subArrivalLocation',
             'loadingSlip.loadingProgramItem.saleOrders.customer',
             'loadingSlip.loadingProgramItem.saleOrders.sales_order_data.item',
-        ])->findOrFail($id);
+        ])
+            ->when(!$isSuperAdmin, function ($query) use ($locations) {
+                $query->whereHas('loadingSlip.loadingProgramItem', function ($q) use ($locations) {
+                    $q->whereIn('arrival_location_id', $locations);
+                });
+            })
+            ->findOrFail($id);
+
         $data['LoadingSlips'] = LoadingSlip::where(function ($q) use ($data) {
             $q->whereDoesntHave('secondWeighbridge')
                 ->whereHas('loadingProgramItem.dispatchQcs', function ($query) {
@@ -212,6 +265,11 @@ class SecondWeighBridgeController extends Controller
                 });
         })
             ->orWhere('id', $data['SecondWeighbridge']->loading_slip_id)
+            ->when(!$isSuperAdmin, function ($query) use ($locations) {
+                $query->whereHas('loadingProgramItem', function ($q) use ($locations) {
+                    $q->whereIn('arrival_location_id', $locations);
+                });
+            })
             ->with([
                 'loadingProgramItem.deliveryOrders.customer',
                 'loadingProgramItem.deliveryOrders.delivery_order_data.item',
@@ -270,7 +328,16 @@ class SecondWeighBridgeController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $secondWeighbridge = SecondWeighbridge::findOrFail($id);
+        abort_if(!canAccess('second-weighbridge') && !auth()->user()->can('second-weighbridge'), 403);
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
+
+        $secondWeighbridge = SecondWeighbridge::when(!$isSuperAdmin, function ($query) use ($locations) {
+            $query->whereHas('loadingSlip.loadingProgramItem', function ($q) use ($locations) {
+                $q->whereIn('arrival_location_id', $locations);
+            });
+        })->findOrFail($id);
 
         // Get loading slip
         $loadingSlip = LoadingSlip::with('loadingProgramItem.firstWeighbridge')
@@ -278,6 +345,10 @@ class SecondWeighBridgeController extends Controller
 
         if (!$loadingSlip) {
             return response()->json(['errors' => ['loading_slip_id' => 'Loading slip not found.']], 422);
+        }
+
+        if (!$isSuperAdmin && $loadingSlip->loadingProgramItem && !in_array($loadingSlip->loadingProgramItem->arrival_location_id, $locations)) {
+            return response()->json(['errors' => ['loading_slip_id' => 'You are not authorized for this location.']], 422);
         }
 
         // Build validation rules
@@ -374,13 +445,27 @@ class SecondWeighBridgeController extends Controller
      */
     public function destroy($id)
     {
-        $secondWeighbridge = SecondWeighbridge::findOrFail($id);
+        abort_if(!canAccess('second-weighbridge') && !auth()->user()->can('second-weighbridge'), 403);
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
+
+        $secondWeighbridge = SecondWeighbridge::when(!$isSuperAdmin, function ($query) use ($locations) {
+            $query->whereHas('loadingSlip.loadingProgramItem', function ($q) use ($locations) {
+                $q->whereIn('arrival_location_id', $locations);
+            });
+        })->findOrFail($id);
         $secondWeighbridge->delete();
         return response()->json(['success' => 'Second Weighbridge deleted successfully.'], 200);
     }
 
     public function getSecondWeighbridgeRelatedData(Request $request)
     {
+        abort_if(!canAccess('second-weighbridge') && !auth()->user()->can('second-weighbridge'), 403);
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
+
         $LoadingSlip = LoadingSlip::with([
             'loadingProgramItem.loadingProgram.deliveryOrder.customer',
             'loadingProgramItem.loadingProgram.deliveryOrder.delivery_order_data.item',
@@ -395,7 +480,13 @@ class SecondWeighBridgeController extends Controller
             'loadingProgramItem.saleOrders.customer',
             'loadingProgramItem.saleOrders.sales_order_data.item',
             'loadingProgramItem.firstWeighbridge'
-        ])->findOrFail($request->loading_slip_id);
+        ])
+            ->when(!$isSuperAdmin, function ($query) use ($locations) {
+                $query->whereHas('loadingProgramItem', function ($q) use ($locations) {
+                    $q->whereIn('arrival_location_id', $locations);
+                });
+            })
+            ->findOrFail($request->loading_slip_id);
 
         // Check if loading slip has delivery_order_id
         $needsDeliveryOrder = !$LoadingSlip->delivery_order_id;
@@ -444,6 +535,7 @@ class SecondWeighBridgeController extends Controller
 
     public function getDeliveryOrdersBySaleOrder(Request $request)
     {
+        abort_if(!canAccess('second-weighbridge') && !auth()->user()->can('second-weighbridge'), 403);
         $validator = Validator::make($request->all(), [
             'sale_order_id' => 'required|exists:sales_orders,id'
         ]);

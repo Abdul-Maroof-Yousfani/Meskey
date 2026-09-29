@@ -11,10 +11,12 @@
                     <h2 class="page-title"> Loading Slip</h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
+                    @canAccess('loading-slip')
                     <button onclick="openModal(this,'{{ route('sales.loading-slip.create') }}','Add Loading Slip')"
                         type="button" class="btn btn-primary position-relative ">
                         Create Loading Slip
                     </button>
+                    @endcanAccess
                 </div>
             </div>
             <div class="row">

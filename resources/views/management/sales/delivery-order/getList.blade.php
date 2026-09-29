@@ -110,6 +110,7 @@
                                     title="DO Stats" style="margin-right: 10px;">
                                     <i class="ft-bar-chart-2"></i>
                                 </button>
+                                @can('delivery-order')
                                 @if(auth()->user()->id == $group['created_by_id'])
                                     @if(isset($group['sale_order']) && $group['sale_order']->do_status !== 'closed')
                                         @if(!$group['sale_order']->is_auto_created_from_so)
@@ -130,6 +131,7 @@
                                         @endif
                                     @endif
                                 @endif
+                                @endcan
                             </div>
                         </td>
                     @endif

@@ -18,6 +18,8 @@ class SalesInvoiceController extends Controller
 {
     public function index()
     {
+        abort_if(!canAccess('sales-invoice') && !auth()->user()->can('sales-invoice'), 403);
+
         $customers = Customer::whereIn('id', SalesInvoice::distinct()->pluck('customer_id'))->get();
         $items = Product::whereIn('id', SalesInvoiceData::distinct()->pluck('item_id'))->get();
         $salesInvoices = SalesInvoice::select('id', 'si_no')->distinct()->get();
@@ -27,6 +29,8 @@ class SalesInvoiceController extends Controller
 
     public function create()
     {
+        abort_if(!canAccess('sales-invoice') && !auth()->user()->can('sales-invoice'), 403);
+
         $customers = Customer::where("type", "local")->get();
         $items = Product::all();
 
@@ -35,6 +39,8 @@ class SalesInvoiceController extends Controller
 
     public function store(SalesInvoiceRequest $request)
     {
+        abort_if(!canAccess('sales-invoice') && !auth()->user()->can('sales-invoice'), 403);
+
         DB::beginTransaction();
         $dc_ids = $request->dc_no;
 
@@ -122,6 +128,8 @@ class SalesInvoiceController extends Controller
 
     public function edit(SalesInvoice $sales_invoice)
     {
+        abort_if(!canAccess('sales-invoice') && !auth()->user()->can('sales-invoice'), 403);
+
         $sales_invoice->load("delivery_challans.delivery_challan_data", "sales_invoice_data");
         $customers = Customer::where("type", "local")->get();
         $items = Product::all();
@@ -150,6 +158,8 @@ class SalesInvoiceController extends Controller
 
     public function update(SalesInvoiceRequest $request, SalesInvoice $sales_invoice)
     {
+        abort_if(!canAccess('sales-invoice') && !auth()->user()->can('sales-invoice'), 403);
+
         DB::beginTransaction();
 
 
@@ -250,6 +260,8 @@ class SalesInvoiceController extends Controller
 
     public function destroy(SalesInvoice $sales_invoice)
     {
+        abort_if(!canAccess('sales-invoice') && !auth()->user()->can('sales-invoice'), 403);
+
         if(in_array(strtolower($sales_invoice->am_approval_status ?? ''), ['approved', 'rejected'])) {
             return response()->json([
                 'error' => "Sales Invoice has been {$sales_invoice->am_approval_status} and cannot be deleted.",
@@ -264,6 +276,8 @@ class SalesInvoiceController extends Controller
 
     public function view(SalesInvoice $sales_invoice)
     {
+        abort_if(!canAccess('sales-invoice') && !auth()->user()->can('sales-invoice'), 403);
+
         $sales_invoice->load("delivery_challans.delivery_challan_data", "sales_invoice_data");
         $customers = Customer::where("type", "local")->get();
         $items = Product::all();
@@ -276,6 +290,8 @@ class SalesInvoiceController extends Controller
 
     public function getList(Request $request)
     {
+        abort_if(!canAccess('sales-invoice') && !auth()->user()->can('sales-invoice'), 403);
+
         $perPage = $request->get('per_page', 25);
 
         $sales_invoices = SalesInvoice::with(['customer', 'sales_invoice_data'])
@@ -351,6 +367,8 @@ class SalesInvoiceController extends Controller
 
     public function getNumber(Request $request, $locationId = null, $invoiceDate = null)
     {
+        abort_if(!canAccess('sales-invoice') && !auth()->user()->can('sales-invoice'), 403);
+
         $date = Carbon::parse($invoiceDate ?? $request->invoice_date)->format('Y-m-d');
 
         $prefix = 'SI-' . Carbon::parse($invoiceDate ?? $request->invoice_date)->format('Y-m-d');
@@ -460,6 +478,8 @@ class SalesInvoiceController extends Controller
 
     public function get_delivery_challans(Request $request)
     {
+        abort_if(!canAccess('sales-invoice') && !auth()->user()->can('sales-invoice'), 403);
+
         $customer_id = $request->customer_id;
         $exclude_sales_invoice_id = $request->exclude_sales_invoice_id;
 
@@ -512,6 +532,8 @@ class SalesInvoiceController extends Controller
 
     public function getItems(Request $request)
     {
+        abort_if(!canAccess('sales-invoice') && !auth()->user()->can('sales-invoice'), 403);
+
         $delivery_challan_ids = $request->delivery_challan_ids;
         $exclude_sales_invoice_id = $request->exclude_sales_invoice_id;
 

@@ -622,6 +622,7 @@
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-dollar-sign"></i><span data-i18n="Apps">Sales</span></a>
                 <ul class="dropdown-menu">
+                    
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('sales.sales-inquiry.index') }}"
                             onclick="loadPageContent('{{ route('sales.sales-inquiry.index') }}')"
@@ -629,14 +630,28 @@
                             <span data-i18n="Task Board">Sales Inquiry</span>
                         </a>
                     </li>
-                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                            href="{{ route('sales.sale-order.index') }}"
-                            onclick="loadPageContent('{{ route('sales.sale-order.index') }}')" data-toggle="dropdown"><i
-                                class="ft-arrow-right submenu-icon"></i>
-                            <span data-i18n="Task Board">Sale Orders</span>
-                        </a>
-                    </li>
 
+                    @canAccess('sale-order')
+                        <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                href="{{ route('sales.sale-order.index') }}"
+                                onclick="loadPageContent('{{ route('sales.sale-order.index') }}')" data-toggle="dropdown"><i
+                                    class="ft-arrow-right submenu-icon"></i>
+                                <span data-i18n="Task Board">Sale Orders</span>
+                            </a>
+                        </li>
+                    @endcanAccess
+                    
+                    @canAccess('payment-intimation')
+                        <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                                href="{{ route('sales.payment-intimation.index') }}"
+                                onclick="loadPageContent('{{ route('sales.payment-intimation.index') }}')"
+                                data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                                <span data-i18n="Task Board">Payment Intimation</span>
+                            </a>
+                        </li>
+                    @endcanAccess
+
+                    @canAccess('delivery-order')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('sales.delivery-order.index') }}"
                             onclick="loadPageContent('{{ route('sales.delivery-order.index') }}')"
@@ -644,7 +659,9 @@
                             <span data-i18n="Task Board">Delivery Order</span>
                         </a>
                     </li>
+                    @endcanAccess
 
+                    @canAccess('loading-program')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('sales.loading-program.index') }}"
                             onclick="loadPageContent('{{ route('sales.loading-program.index') }}')"
@@ -652,7 +669,9 @@
                             <span data-i18n="Task Board">Loading Program</span>
                         </a>
                     </li>
+                    @endcanAccess
 
+                    @canAccess('first-weighbridge')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('sales.first-weighbridge.index') }}"
                             onclick="loadPageContent('{{ route('sales.first-weighbridge.index') }}')"
@@ -660,7 +679,9 @@
                             <span data-i18n="Task Board">First Weighbridge</span>
                         </a>
                     </li>
+                    @endcanAccess
 
+                    @canAccess('sales-qc')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('sales.sales-qc.index') }}"
                             onclick="loadPageContent('{{ route('sales.sales-qc.index') }}')" data-toggle="dropdown"><i
@@ -668,7 +689,9 @@
                             <span data-i18n="Task Board">Sales QC</span>
                         </a>
                     </li>
+                    @endcanAccess
 
+                    @canAccess('loading-slip')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('sales.loading-slip.index') }}"
                             onclick="loadPageContent('{{ route('sales.loading-slip.index') }}')"
@@ -676,7 +699,9 @@
                             <span data-i18n="Task Board">Loading Slip</span>
                         </a>
                     </li>
+                    @endcanAccess
 
+                    @canAccess('dispatch-qc')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('sales.dispatch-qc.index') }}"
                             onclick="loadPageContent('{{ route('sales.dispatch-qc.index') }}')"
@@ -684,7 +709,9 @@
                             <span data-i18n="Task Board">Dispatch QC</span>
                         </a>
                     </li>
+                    @endcanAccess
 
+                    @canAccess('second-weighbridge')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('sales.second-weighbridge.index') }}"
                             onclick="loadPageContent('{{ route('sales.second-weighbridge.index') }}')"
@@ -692,7 +719,9 @@
                             <span data-i18n="Task Board">Second Weighbridge</span>
                         </a>
                     </li>
+                    @endcanAccess
 
+                    @canAccess('delivery-challan')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('sales.delivery-challan.index') }}"
                             onclick="loadPageContent('{{ route('sales.delivery-challan.index') }}')"
@@ -700,7 +729,9 @@
                             <span data-i18n="Task Board">Delivery Challan</span>
                         </a>
                     </li>
+                    @endcanAccess
 
+                    @canAccess('receiving-request')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('sales.receiving-request.index') }}"
                             onclick="loadPageContent('{{ route('sales.receiving-request.index') }}')"
@@ -708,7 +739,9 @@
                             <span data-i18n="Task Board">Receiving Request</span>
                         </a>
                     </li>
+                    @endcanAccess
 
+                    @canAccess('logistics')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('sales.logistics-bill.index') }}"
                             onclick="loadPageContent('{{ route('sales.logistics-bill.index') }}')"
@@ -716,7 +749,9 @@
                             <span data-i18n="Task Board">Logistics Bill</span>
                         </a>
                     </li>
+                    @endcanAccess
 
+                    @canAccess('sales-invoice')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('sales.sales-invoice.index') }}"
                             onclick="loadPageContent('{{ route('sales.sales-invoice.index') }}')"
@@ -724,7 +759,9 @@
                             <span data-i18n="Task Board">Sales Invoice</span>
                         </a>
                     </li>
+                    @endcanAccess
 
+                    @canAccess('sales-return')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('sales.sales-return.index') }}"
                             onclick="loadPageContent('{{ route('sales.sales-return.index') }}')"
@@ -732,14 +769,7 @@
                             <span data-i18n="Task Board">Sales Return</span>
                         </a>
                     </li>
-
-                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
-                            href="{{ route('sales.payment-intimation.index') }}"
-                            onclick="loadPageContent('{{ route('sales.payment-intimation.index') }}')"
-                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
-                            <span data-i18n="Task Board">Payment Intimation</span>
-                        </a>
-                    </li>
+                    @endcanAccess
 
                     {{-- <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('menu.index') }}" onclick="loadPageContent('{{ route('menu.index') }}')"
@@ -749,11 +779,14 @@
                     </li> --}}
                 </ul>
             </li>
+            @endcanAccess
 
+            @canAccess('logistics')
             <li class="dropdown nav-item {{ request()->is('logistics*') ? 'active' : '' }}" data-menu="dropdown"><a
                     class="dropdown-toggle nav-link d-flex align-items-center" href="javascript:;"
                     data-toggle="dropdown"><i class="ft-package"></i><span data-i18n="Apps">Logistics</span></a>
                 <ul class="dropdown-menu">
+                    @canAccess('logistics')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('logistics.logistics.index') }}"
                             onclick="loadPageContent('{{ route('logistics.logistics.index') }}')"
@@ -761,14 +794,17 @@
                             <span data-i18n="Task Board">Logistics</span>
                         </a>
                     </li>
+                    @endcanAccess
 
+                    @canAccess('sea-freight')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('c-freight.index') }}"
                             onclick="loadPageContent('{{ route('c-freight.index') }}')" data-toggle="dropdown"><i
                                 class="ft-arrow-right submenu-icon"></i>
-                            <span data-i18n="Task Board">C Freight</span>
+                            <span data-i18n="Task Board">Sea Freight</span>
                         </a>
                     </li>
+                    @endcanAccess
                 </ul>
             </li>
             @endcanAccess

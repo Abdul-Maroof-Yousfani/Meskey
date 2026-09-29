@@ -20,11 +20,25 @@ class FirstWeighBridgeController extends Controller
         // $this->middleware('check.company:sales-first-weighbridge', ['only' => ['edit']]);
     }
 
+    private function getUserArrivalLocations()
+    {
+        $authUser = auth()->user();
+        if (!$authUser) {
+            return [];
+        }
+        $locations = getUserCurrentCompanyArrivalLocations();
+        if (empty($locations) && $authUser->arrival_location_id) {
+            $locations = [$authUser->arrival_location_id];
+        }
+        return $locations ?? [];
+    }
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
+        abort_if(!canAccess('first-weighbridge') && !auth()->user()->can('first-weighbridge'), 403);
         return view('management.sales.first-weighbridge.index');
     }
 
@@ -33,6 +47,10 @@ class FirstWeighBridgeController extends Controller
      */
     public function getList(Request $request)
     {
+        abort_if(!canAccess('first-weighbridge') && !auth()->user()->can('first-weighbridge'), 403);
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
 
         $FirstWeighbridges = FirstWeighbridge::with([
             'loadingProgramItem.deliveryOrders.customer',
@@ -43,6 +61,11 @@ class FirstWeighBridgeController extends Controller
         ])
             ->whereHas('loadingProgramItem.loadingProgram', function ($query) {
                 $query->where('type', 'sale_order');
+            })
+            ->when(!$isSuperAdmin, function ($query) use ($locations) {
+                $query->whereHas('loadingProgramItem', function ($q) use ($locations) {
+                    $q->whereIn('arrival_location_id', $locations);
+                });
             })
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
@@ -64,6 +87,11 @@ class FirstWeighBridgeController extends Controller
      */
     public function create()
     {
+        abort_if(!canAccess('first-weighbridge') && !auth()->user()->can('first-weighbridge'), 403);
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
+
         $data = [
             'ArrivalTruckTypes' => ArrivalTruckType::where('status', 'active')->get(),
             'Tickets' => LoadingProgramItem::whereHas('loadingProgram', function ($query) {
@@ -71,7 +99,9 @@ class FirstWeighBridgeController extends Controller
             })
                 ->whereDoesntHaveClosedSaleOrder()
                 ->whereDoesntHave('firstWeighbridge')
-                ->whereIn('arrival_location_id', getUserCurrentCompanyArrivalLocations())
+                ->when(!$isSuperAdmin, function ($query) use ($locations) {
+                    $query->whereIn('arrival_location_id', $locations);
+                })
                 ->with([
                     'deliveryOrders.customer',
                     'deliveryOrders.delivery_order_data.item',
@@ -89,14 +119,15 @@ class FirstWeighBridgeController extends Controller
      */
     public function store(Request $request)
     {
-
-        $locations = getUserCurrentCompanyArrivalLocations();
+        abort_if(!canAccess('first-weighbridge') && !auth()->user()->can('first-weighbridge'), 403);
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
         $firstLocationId = collect($locations)->first();
 
-        if (!$firstLocationId) {
+        if (!$isSuperAdmin && !$firstLocationId) {
             return response('User doesn\'t have arrival location assigned please contact admin to assign user arrival location.', 422);
         }
-
 
         $validator = Validator::make($request->all(), [
             'loading_program_item_id' => 'required|exists:loading_program_items,id',
@@ -117,6 +148,12 @@ class FirstWeighBridgeController extends Controller
             ], 422);
         }
 
+        if (!$isSuperAdmin && !in_array($loadingProgramItem->arrival_location_id, $locations)) {
+            return response()->json([
+                'errors' => ['loading_program_item_id' => 'You are not authorized to perform first weighbridge for this location.']
+            ], 422);
+        }
+
         // Check if the ticket already has a first weighbridge
         $existingFirstWeighbridge = FirstWeighbridge::where('loading_program_item_id', $request->loading_program_item_id)->first();
         if ($existingFirstWeighbridge) {
@@ -125,8 +162,12 @@ class FirstWeighBridgeController extends Controller
 
         $loadingProgramItem = LoadingProgramItem::whereHas('loadingProgram', function ($query) {
             $query->where('type', 'sale_order');
-        })->with('deliveryOrders')->findOrFail($request->loading_program_item_id);
-        $loadingProgramItem->first_weighbridge_location_id = $firstLocationId;
+        })
+        ->when(!$isSuperAdmin, function ($query) use ($locations) {
+            $query->whereIn('arrival_location_id', $locations);
+        })
+        ->with('deliveryOrders')->findOrFail($request->loading_program_item_id);
+        $loadingProgramItem->first_weighbridge_location_id = $firstLocationId ?? $loadingProgramItem->arrival_location_id;
         $loadingProgramItem->save();
 
         $deliveryOrders = $loadingProgramItem->deliveryOrders;
@@ -180,6 +221,11 @@ class FirstWeighBridgeController extends Controller
      */
     public function edit($id)
     {
+        abort_if(!canAccess('first-weighbridge') && !auth()->user()->can('first-weighbridge'), 403);
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
+
         $data['FirstWeighbridge'] = FirstWeighbridge::with([
             'loadingProgramItem.saleOrders.customer',
             'loadingProgramItem.saleOrders.sales_order_data.item',
@@ -192,6 +238,11 @@ class FirstWeighBridgeController extends Controller
         ])
             ->whereHas('loadingProgramItem.loadingProgram', function ($query) {
                 $query->where('type', 'sale_order');
+            })
+            ->when(!$isSuperAdmin, function ($query) use ($locations) {
+                $query->whereHas('loadingProgramItem', function ($q) use ($locations) {
+                    $q->whereIn('arrival_location_id', $locations);
+                });
             })
             ->findOrFail($id);
 
@@ -207,6 +258,7 @@ class FirstWeighBridgeController extends Controller
      */
     public function update(Request $request, $id)
     {
+        abort_if(!canAccess('first-weighbridge') && !auth()->user()->can('first-weighbridge'), 403);
         $validator = Validator::make($request->all(), [
             'loading_program_item_id' => 'required|exists:loading_program_items,id',
             'first_weight' => 'required|numeric',
@@ -227,10 +279,27 @@ class FirstWeighBridgeController extends Controller
             return response()->json(['errors' => ['loading_program_item_id' => 'This ticket already has a first weighbridge.']], 422);
         }
 
-        $firstWeighbridge = FirstWeighbridge::findOrFail($id);
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
+
+        $firstWeighbridge = FirstWeighbridge::whereHas('loadingProgramItem.loadingProgram', function ($query) {
+                $query->where('type', 'sale_order');
+            })
+            ->when(!$isSuperAdmin, function ($query) use ($locations) {
+                $query->whereHas('loadingProgramItem', function ($q) use ($locations) {
+                    $q->whereIn('arrival_location_id', $locations);
+                });
+            })
+            ->findOrFail($id);
+
         $loadingProgramItem = LoadingProgramItem::whereHas('loadingProgram', function ($query) {
             $query->where('type', 'sale_order');
-        })->with('deliveryOrders')->findOrFail($request->loading_program_item_id);
+        })
+        ->when(!$isSuperAdmin, function ($query) use ($locations) {
+            $query->whereIn('arrival_location_id', $locations);
+        })
+        ->with('deliveryOrders')->findOrFail($request->loading_program_item_id);
         $deliveryOrders = $loadingProgramItem->deliveryOrders;
         $request['company_id'] = $request->company_id;
 
@@ -270,13 +339,31 @@ class FirstWeighBridgeController extends Controller
      */
     public function destroy($id)
     {
-        $firstWeighbridge = FirstWeighbridge::findOrFail($id);
+        abort_if(!canAccess('first-weighbridge') && !auth()->user()->can('first-weighbridge'), 403);
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
+
+        $firstWeighbridge = FirstWeighbridge::whereHas('loadingProgramItem.loadingProgram', function ($query) {
+                $query->where('type', 'sale_order');
+            })
+            ->when(!$isSuperAdmin, function ($query) use ($locations) {
+                $query->whereHas('loadingProgramItem', function ($q) use ($locations) {
+                    $q->whereIn('arrival_location_id', $locations);
+                });
+            })
+            ->findOrFail($id);
+
         $firstWeighbridge->delete();
         return response()->json(['success' => 'First Weighbridge deleted successfully.'], 200);
     }
 
     public function getFirstWeighbridgeRelatedData(Request $request)
     {
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
+
         $LoadingProgramItem = LoadingProgramItem::with([
             'saleOrders.customer',
             'saleOrders.sales_order_data.item',
@@ -289,6 +376,9 @@ class FirstWeighBridgeController extends Controller
         ])
             ->whereHas('loadingProgram', function ($query) {
                 $query->where('type', 'sale_order');
+            })
+            ->when(!$isSuperAdmin, function ($query) use ($locations) {
+                $query->whereIn('arrival_location_id', $locations);
             })
             ->findOrFail($request->loading_program_item_id);
 
@@ -313,9 +403,17 @@ class FirstWeighBridgeController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
+        $authUser = auth()->user();
+        $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
+        $locations = $this->getUserArrivalLocations();
+
         $loadingProgramItem = LoadingProgramItem::whereHas('loadingProgram', function ($query) {
             $query->where('type', 'sale_order');
-        })->with('deliveryOrders')->findOrFail($request->loading_program_item_id);
+        })
+        ->when(!$isSuperAdmin, function ($query) use ($locations) {
+            $query->whereIn('arrival_location_id', $locations);
+        })
+        ->with('deliveryOrders')->findOrFail($request->loading_program_item_id);
         $deliveryOrders = $loadingProgramItem->deliveryOrders;
 
         // Get company location from delivery order or loading program

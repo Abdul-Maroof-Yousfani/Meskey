@@ -42,15 +42,17 @@
                     </span>
                 </td>
                 <td class="text-center">
-                    @if(auth()->user()->id == $logistic->created_by)
-                        @if(in_array(strtolower($status), ['pending', 'reverted']))
-                            <button
-                                onclick="openModal(this,'{{ route('sales.logistics.edit', ['logistic' => $logistic->id]) }}','Edit Logistics',false,'90%')"
-                                type="button" class="btn btn-sm btn-primary" title="Edit">
-                                <i class="ft-edit"></i>
-                            </button>
+                    @can('logistics')
+                        @if(auth()->user()->id == $logistic->created_by)
+                            @if(in_array(strtolower($status), ['pending', 'reverted']))
+                                <button
+                                    onclick="openModal(this,'{{ route('sales.logistics.edit', ['logistic' => $logistic->id]) }}','Edit Logistics',false,'90%')"
+                                    type="button" class="btn btn-sm btn-primary" title="Edit">
+                                    <i class="ft-edit"></i>
+                                </button>
+                            @endif
                         @endif
-                    @endif
+                    @endcan
                     <button
                         onclick="openModal(this,'{{ route('sales.logistics.show', ['logistic' => $logistic->id]) }}','View Logistics',false,'90%')"
                         type="button" class="btn btn-sm btn-info" title="View">

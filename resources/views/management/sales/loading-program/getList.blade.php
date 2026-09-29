@@ -123,6 +123,7 @@
                                 </td>
                                 <td rowspan="{{ $rowspan }}" style="vertical-align: middle;">
                                     <div class="d-flex gap-1">
+                                        @canAccess('loading-program')
                                         @if($loadingProgram?->loadingProgramItems()->whereDoesntHave("secondWeighbridge")->count() > 0)
                                         <a onclick="openModal(this,'{{ route('sales.loading-program.edit', $loadingProgram->id) }}','Edit Loading Program', false, '90%')"
                                                 class="warning p-1 text-center mr-1 position-relative" title="Edit">
@@ -133,6 +134,7 @@
                                             class="info p-1 text-center mr-1 position-relative" title="View">
                                             <i class="ft-eye font-medium-3"></i>
                                         </a>
+                                        @endcanAccess
                                     </div>
                                 </td>
                                 @php $isFirstRow = false; @endphp

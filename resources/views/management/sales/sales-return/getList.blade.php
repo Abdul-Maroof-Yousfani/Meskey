@@ -78,7 +78,7 @@
 
                                     <td rowspan="{{ $group['rowspan'] }}" class="text-center align-middle">
                                         <div class="btn-group" role="group">
-
+                                            @canAccess('sales-return')
                                             <a 
                                                class="btn btn-sm btn-info" onclick="openModal(this,'{{ route('sales.sales-return.view', ['id' => $group['id']]) }}','View Sale Return', false, '100%')" title="View" style="margin-right: 10px;">
                                                 <i class="ft-eye"></i>
@@ -98,6 +98,7 @@
                                             </button>
                                             @endif
                                             @endif
+                                            @endcanAccess
                                         </div>
                                     </td>
                                 @endif

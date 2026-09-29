@@ -32,8 +32,23 @@ class LoadingProgramController extends Controller
      */
     public function index()
     {
-        // Get customers linked to these loading programs via sale orders
-        $lpIds = LoadingProgram::pluck('id');
+        abort_if(!canAccess('loading-program') && !auth()->user()->can('loading-program'), 403);
+        $userId = auth()->id();
+        $isSuperAdmin = auth()->user() && auth()->user()->user_type === 'super-admin';
+
+        // Get loading programs filtered by user
+        $lpQuery = LoadingProgram::query();
+        if (!$isSuperAdmin) {
+            $lpQuery->where(function($q) use ($userId) {
+                $q->whereHas('saleOrders', function($sq) use ($userId) {
+                    $sq->where('created_by', $userId);
+                })->orWhereHas('saleOrder', function($sq) use ($userId) {
+                    $sq->where('created_by', $userId);
+                });
+            });
+        }
+        $lpIds = $lpQuery->pluck('id');
+
         $soIds = DB::table('loading_program_sale_order')->whereIn('loading_program_id', $lpIds)->pluck('sale_order_id');
         $customerIds = SalesOrder::whereIn('id', $soIds)->distinct()->pluck('customer_id');
         $customers = \App\Models\Master\Customer::whereIn('id', $customerIds)->get();
@@ -57,6 +72,11 @@ class LoadingProgramController extends Controller
      */
     public function getList(Request $request)
     {
+        abort_if(!canAccess('loading-program') && !auth()->user()->can('loading-program'), 403);
+
+        $userId = auth()->id();
+        $isSuperAdmin = auth()->user() && auth()->user()->user_type === 'super-admin';
+
         $LoadingPrograms = LoadingProgram::with([
             'saleOrder.customer',
             'saleOrder.sales_order_data.item',
@@ -69,6 +89,16 @@ class LoadingProgramController extends Controller
             'loadingProgramItems.subArrivalLocation',
             'loadingProgramItems.secondWeighbridge'
         ])
+
+            ->when(!$isSuperAdmin, function ($q) use ($userId) {
+                return $q->where(function($sub) use ($userId) {
+                    $sub->whereHas('saleOrders', function($sq) use ($userId) {
+                        $sq->where('created_by', $userId);
+                    })->orWhereHas('saleOrder', function($sq) use ($userId) {
+                        $sq->where('created_by', $userId);
+                    });
+                });
+            })
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . $request->search . '%';
                 return $q->where(function ($sq) use ($searchTerm) {
@@ -166,6 +196,7 @@ class LoadingProgramController extends Controller
      */
     public function create()
     {
+        abort_if(!canAccess('loading-program') && !auth()->user()->can('loading-program'), 403);
         $data = [
             'SaleOrders' => collect(),
             'DeliveryOrders' => collect(),
@@ -180,6 +211,7 @@ class LoadingProgramController extends Controller
      */
     public function store(Request $request)
     {
+        abort_if(!canAccess('loading-program') && !auth()->user()->can('loading-program'), 403);
         // Debug: Log the incoming data
         \Log::info('Loading Program Store Data:', $request->all());
 
@@ -403,6 +435,10 @@ class LoadingProgramController extends Controller
      */
     public function show($id)
     {
+        abort_if(!canAccess('loading-program') && !auth()->user()->can('loading-program'), 403);
+        $userId = auth()->id();
+        $isSuperAdmin = auth()->user() && auth()->user()->user_type === 'super-admin';
+
         $LoadingProgram = LoadingProgram::with([
             'loadingProgramItems.arrivalLocation',
             'loadingProgramItems.subArrivalLocation',
@@ -421,7 +457,17 @@ class LoadingProgramController extends Controller
             'deliveryOrders.customer',
             'deliveryOrders.delivery_order_data.item',
             'deliveryOrders.delivery_order_data.brand'
-        ])->findOrFail($id);
+        ])
+            ->when(!$isSuperAdmin, function ($q) use ($userId) {
+                return $q->where(function($sub) use ($userId) {
+                    $sub->whereHas('saleOrders', function($sq) use ($userId) {
+                        $sq->where('created_by', $userId);
+                    })->orWhereHas('saleOrder', function($sq) use ($userId) {
+                        $sq->where('created_by', $userId);
+                    });
+                });
+            })
+            ->findOrFail($id);
 
         $data['LoadingProgram'] = $LoadingProgram;
         $data['SalesOrders'] = $LoadingProgram->saleOrders->isEmpty() ? collect([$LoadingProgram->saleOrder]) : $LoadingProgram->saleOrders;
@@ -436,6 +482,10 @@ class LoadingProgramController extends Controller
      */
     public function edit($id)
     {
+        abort_if(!canAccess('loading-program') && !auth()->user()->can('loading-program'), 403);
+        $userId = auth()->id();
+        $isSuperAdmin = auth()->user() && auth()->user()->user_type === 'super-admin';
+
         $data['LoadingProgram'] = LoadingProgram::with([
             'loadingProgramItems.arrivalLocation',
             'loadingProgramItems.subArrivalLocation',
@@ -457,7 +507,17 @@ class LoadingProgramController extends Controller
             'deliveryOrders.customer',
             'deliveryOrders.delivery_order_data.item',
             'deliveryOrders.delivery_order_data.brand'
-        ])->findOrFail($id);
+        ])
+            ->when(!$isSuperAdmin, function ($q) use ($userId) {
+                return $q->where(function($sub) use ($userId) {
+                    $sub->whereHas('saleOrders', function($sq) use ($userId) {
+                        $sq->where('created_by', $userId);
+                    })->orWhereHas('saleOrder', function($sq) use ($userId) {
+                        $sq->where('created_by', $userId);
+                    });
+                });
+            })
+            ->findOrFail($id);
 
         $mainCompanyLoc = $data['LoadingProgram']->company_location_id;
 
@@ -472,7 +532,11 @@ class LoadingProgramController extends Controller
         }
         $existingSoIds = array_values(array_unique(array_filter($existingSoIds)));
 
-        $SaleOrders = SalesOrder::where('am_approval_status', 'approved')
+        $userId = auth()->id();
+        $isSuperAdmin = auth()->user() && auth()->user()->user_type === 'super-admin';
+        $SaleOrders = SalesOrder::where('am_approval_status', 'approved')->when(!$isSuperAdmin, function ($q) use ($userId) {
+                $q->where('created_by', $userId);
+            })
             ->activeContract()
             ->where(function ($q) use ($existingSoIds) {
                 $q->where('delivery_date', '>=', now()->toDateString());
@@ -644,6 +708,7 @@ class LoadingProgramController extends Controller
      */
     public function update(Request $request, $id)
     {
+        abort_if(!canAccess('loading-program') && !auth()->user()->can('loading-program'), 403);
         $loadingProgram = LoadingProgram::findOrFail($id);
 
         $lockedItemIds = $loadingProgram->loadingProgramItems()
@@ -935,7 +1000,20 @@ class LoadingProgramController extends Controller
      */
     public function destroy($id)
     {
-        $loadingProgram = LoadingProgram::findOrFail($id);
+        abort_if(!canAccess('loading-program') && !auth()->user()->can('loading-program'), 403);
+        $userId = auth()->id();
+        $isSuperAdmin = auth()->user() && auth()->user()->user_type === 'super-admin';
+        $query = LoadingProgram::query();
+        if (!$isSuperAdmin) {
+            $query->where(function($q) use ($userId) {
+                $q->whereHas('saleOrders', function($sq) use ($userId) {
+                    $sq->where('created_by', $userId);
+                })->orWhereHas('saleOrder', function($sq) use ($userId) {
+                    $sq->where('created_by', $userId);
+                });
+            });
+        }
+        $loadingProgram = $query->findOrFail($id);
         $loadingProgram->delete();
         return response()->json(['success' => 'Loading Program deleted successfully.'], 200);
     }
@@ -1330,7 +1408,11 @@ class LoadingProgramController extends Controller
             }
         }
 
-        $SaleOrders = SalesOrder::where('am_approval_status', 'approved')
+        $userId = auth()->id();
+        $isSuperAdmin = auth()->user() && auth()->user()->user_type === 'super-admin';
+        $SaleOrders = SalesOrder::where('am_approval_status', 'approved')->when(!$isSuperAdmin, function ($q) use ($userId) {
+                $q->where('created_by', $userId);
+            })
             ->activeContract()
             ->where(function ($q) use ($existingSoIds) {
                 $q->where('delivery_date', '>=', now()->toDateString());

@@ -114,6 +114,7 @@
                                     @endforeach
                                 @endif
 
+                                @canAccess('delivery-challan')
                                 @if(auth()->user()->id == $group['created_by_id'])
                                     @if($group['status'] === 'pending' || $group['status'] === 'reverted')
 
@@ -132,6 +133,7 @@
                                         </button>
                                     @endif
                                 @endif
+                                @endcanAccess
                             </div>
                         </td>
                     @endif
