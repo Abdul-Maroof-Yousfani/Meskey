@@ -47,7 +47,8 @@ use App\Http\Controllers\Master\{
     RequestByController,
     TransporterController,
     VariableController,
-    MillingRateController
+    MillingRateController,
+    PermissionController
 };
 
 
@@ -218,3 +219,8 @@ Route::resource('milling-rate', MillingRateController::class)->except(['destroy'
 Route::post('/get-milling-rates', [MillingRateController::class, 'getList'])->name('get.milling-rates');
 Route::get('/milling-rate/get-sub-locations/{locationId}', [MillingRateController::class, 'getSubLocations'])->name('milling-rate.get-sub-locations');
 Route::get('/milling-rate/get-plants/{subLocationId}', [MillingRateController::class, 'getPlants'])->name('milling-rate.get-plants');
+
+// permissions
+Route::resource('permission', PermissionController::class);
+Route::resource('permissions', PermissionController::class);
+Route::post('/get-permissions', [PermissionController::class, 'getList'])->name('get.permissions');

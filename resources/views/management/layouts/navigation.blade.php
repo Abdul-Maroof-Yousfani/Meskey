@@ -1120,6 +1120,14 @@
                                 Users</span></a>
                     </li>
                     @endcanAccess
+                    {{-- @canAccess('permissions')
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('permission.index') }}"
+                            onclick="loadPageContent('{{ route('permission.index') }}')" data-toggle="dropdown"><i
+                                class="ft-arrow-right submenu-icon"></i><span data-i18n="Chat">Manage
+                                Permissions</span></a>
+                    </li>
+                    @endcanAccess --}}
                 </ul>
             </li>
             @endcanAccess
@@ -1743,8 +1751,6 @@
                         </a>
                     </li>
                     @endcanAccess
-
-
                 </ul>
             </li>
             @endcanAccess
