@@ -17,7 +17,7 @@
         <th>Truck #</th>
         <th>Amanat</th>
         @foreach ($product_slab_types as $slab)
-            <th>Avg. {{ $slab->name }} </th>
+            <th>Avg. {{ $slab->name }} ({{ $slab->qc_symbol ?? '' }})</th>
         @endforeach
         {{-- <th>Avg. Broken</th>
         <th>Avg. Moisture</th>

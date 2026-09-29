@@ -7,7 +7,7 @@
     <th>Total Trucks</th>
     <th>KG Received</th>
     @foreach ($product_slab_types as $slab)
-        <th>{{ $slab->name }}</th>
+        <th>{{ $slab->name }} ({{ $slab->qc_symbol ?? '' }})</th>
     @endforeach
     @endslot
 

@@ -33,8 +33,8 @@
     <th>Gala</th>
     <th>Tabaar Remarks</th>
     @foreach ($product_slab_types as $slab)
-        <th>{{ $slab->name }}</th>
-        <th>Inner {{ $slab->name }} </th>
+        <th>{{ $slab->name }} ({{ $slab->qc_symbol ?? '' }})</th>
+        <th>Inner {{ $slab->name }} ({{ $slab->qc_symbol ?? '' }})</th>
     @endforeach
     @foreach ($arrival_compulsory_qc_params as $compulsory_slab_type)
         <th>{{ $compulsory_slab_type->name }}</th>

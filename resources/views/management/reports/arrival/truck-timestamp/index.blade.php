@@ -144,15 +144,13 @@
 
                                 <table class="table m-0" id="exportableTable">
                                     <thead>
-                                        <tr>
+                                        {{-- <tr>
                                             <th>Ticket #</th>
                                             <th>Gate Entry Time</th>
                                             <th>Entry By</th>
                                             <th>Loading Date</th>
                                             <th>Total Inner Samples</th>
                                             <th>Total Resamples</th>
-                                            {{-- <th>Party Ref. No</th>
-                                            <th>Yield</th> --}}
                                             <th>Location Time</th>
                                             <th>Location By</th>
                                             <th>1st QC Time</th>
@@ -201,7 +199,7 @@
                                             <th>Loading Weight</th>
                                             <th>Arrival Slip</th>
                                             <th>View Complete Details</th>
-                                        </tr>
+                                        </tr> --}}
                                     </thead>
                                 </table>
                             </div>
