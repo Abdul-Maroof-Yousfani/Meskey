@@ -651,7 +651,7 @@
                         </li>
                     @endcanAccess
 
-                    @canAccess('delivery-order')
+                    @canAccess('sales-delivery-order')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('sales.delivery-order.index') }}"
                             onclick="loadPageContent('{{ route('sales.delivery-order.index') }}')"

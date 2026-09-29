@@ -23,7 +23,7 @@ class DeliveryOrderController extends Controller
 {
     public function index()
     {
-        abort_if(!canAccess('delivery-order') && !auth()->user()->can('delivery-order'), 403);
+        abort_if(!canAccess('sales-delivery-order') && !auth()->user()->can('sales-delivery-order'), 403);
         // Only get customers that have delivery order records
         $customerIds = DeliveryOrder::distinct()->pluck('customer_id')->filter();
         $customers = Customer::whereIn('id', $customerIds)->get();
@@ -41,7 +41,7 @@ class DeliveryOrderController extends Controller
 
     public function view(int $id)
     {
-        abort_if(!canAccess('delivery-order') && !auth()->user()->can('delivery-order'), 403);
+        abort_if(!canAccess('sales-delivery-order') && !auth()->user()->can('sales-delivery-order'), 403);
 
         $payment_terms = PaymentTerm::select('id', 'desc')->where('status', 'active')->get();
         $customers = Customer::where("type", "local")->get();
@@ -117,7 +117,7 @@ class DeliveryOrderController extends Controller
 
     public function getStats(Request $request, int $id)
     {
-        abort_if(!canAccess('delivery-order') && !auth()->user()->can('delivery-order'), 403);
+        abort_if(!canAccess('sales-delivery-order') && !auth()->user()->can('sales-delivery-order'), 403);
         $delivery_order = DeliveryOrder::with([
             'customer',
             'salesOrder',
@@ -225,7 +225,7 @@ class DeliveryOrderController extends Controller
 
     public function create()
     {
-        abort_if(!canAccess('delivery-order') && !auth()->user()->can('delivery-order'), 403);
+        abort_if(!canAccess('sales-delivery-order') && !auth()->user()->can('sales-delivery-order'), 403);
         $sale_orders = SalesOrder::select('reference_no', 'id', 'transporter_used')
             ->where('am_approval_status', 'approved')
             ->activeContract()
@@ -248,7 +248,7 @@ class DeliveryOrderController extends Controller
 
     public function store(DeliveryOrderRequest $request)
     {
-        abort_if(!canAccess('delivery-order') && !auth()->user()->can('delivery-order'), 403);
+        abort_if(!canAccess('sales-delivery-order') && !auth()->user()->can('sales-delivery-order'), 403);
         DB::beginTransaction();
 
         $withhold_rv_id = null;
@@ -492,7 +492,7 @@ class DeliveryOrderController extends Controller
 
     public function getList(Request $request)
     {
-        abort_if(!canAccess('delivery-order') && !auth()->user()->can('delivery-order'), 403);
+        abort_if(!canAccess('sales-delivery-order') && !auth()->user()->can('sales-delivery-order'), 403);
         $perPage = $request->get('per_page', 25);
 
         // Eager load the inquiry + all its items + related product
@@ -592,6 +592,7 @@ class DeliveryOrderController extends Controller
 
     public function getNumber(Request $request, $locationId = null, $contractDate = null)
     {
+        abort_if(!canAccess('sales-delivery-order') && !auth()->user()->can('sales-delivery-order'), 403);
 
         $date = Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
 
@@ -625,6 +626,8 @@ class DeliveryOrderController extends Controller
 
     public function getSo(Request $request)
     {
+        abort_if(!canAccess('sales-delivery-order') && !auth()->user()->can('sales-delivery-order'), 403);
+
         $customer_id = $request->customer_id;
 
         $saleOrders = SalesOrder::with("locations")
@@ -682,6 +685,8 @@ class DeliveryOrderController extends Controller
 
     public function getDetails(Request $request)
     {
+        abort_if(!canAccess('sales-delivery-order') && !auth()->user()->can('sales-delivery-order'), 403);
+
         $so_id = $request->so_id;
 
         $sale_order = SalesOrder::with([
@@ -752,6 +757,8 @@ class DeliveryOrderController extends Controller
 
     public function get_so_items(Request $request)
     {
+        abort_if(!canAccess('sales-delivery-order') && !auth()->user()->can('sales-delivery-order'), 403);
+
         $so_id = $request->so_id;
 
         $items = Product::select('id', 'name')->get();
@@ -774,6 +781,8 @@ class DeliveryOrderController extends Controller
 
     public function get_receipt_vouchers(Request $request)
     {
+        abort_if(!canAccess('sales-delivery-order') && !auth()->user()->can('sales-delivery-order'), 403);
+
         $customer_id = $request->customer_id;
         $sale_order_id = $request->sale_order_id;
         $data = [];
@@ -876,6 +885,8 @@ class DeliveryOrderController extends Controller
 
     public function get_journal_vouchers(Request $request)
     {
+        abort_if(!canAccess('sales-delivery-order') && !auth()->user()->can('sales-delivery-order'), 403);
+
         $customer_id = $request->customer_id;
         $sale_order_id = $request->sale_order_id;
         $data = [];
@@ -944,7 +955,7 @@ class DeliveryOrderController extends Controller
 
     public function destroy(DeliveryOrder $delivery_order)
     {
-        abort_if(!canAccess('delivery-order') && !auth()->user()->can('delivery-order'), 403);
+        abort_if(!canAccess('sales-delivery-order') && !auth()->user()->can('sales-delivery-order'), 403);
         if (in_array(strtolower($delivery_order->am_approval_status ?? ''), ['approved', 'rejected'])) {
             return response()->json([
                 'error' => "Delivery Order has been {$delivery_order->am_approval_status} and cannot be deleted.",
@@ -969,7 +980,7 @@ class DeliveryOrderController extends Controller
 
     public function edit(DeliveryOrder $delivery_order)
     {
-        abort_if(!canAccess('delivery-order') && !auth()->user()->can('delivery-order'), 403);
+        abort_if(!canAccess('sales-delivery-order') && !auth()->user()->can('sales-delivery-order'), 403);
         $delivery_order->load('receipt_vouchers', 'locations');
         $sale_orders = SalesOrder::with("locations")
             ->select('reference_no', 'id', 'pay_type_id', 'transporter_used')
@@ -1148,7 +1159,7 @@ class DeliveryOrderController extends Controller
 
     public function update(DeliveryOrderRequest $request, DeliveryOrder $delivery_order)
     {
-        abort_if(!canAccess('delivery-order') && !auth()->user()->can('delivery-order'), 403);
+        abort_if(!canAccess('sales-delivery-order') && !auth()->user()->can('sales-delivery-order'), 403);
         if ($delivery_order->salesOrder && $delivery_order->salesOrder->isClosed()) {
             return response()->json([
                 'error' => "The Sale Order for this Delivery Order is closed and operations are locked.",
@@ -1406,6 +1417,8 @@ class DeliveryOrderController extends Controller
 
     public function get_arrivals(Request $request)
     {
+        abort_if(!canAccess('sales-delivery-order') && !auth()->user()->can('sales-delivery-order'), 403);
+
         $company_id = $request->location_id;
 
         $arrival_locations = ArrivalLocation::where('company_location_id', $company_id)->get();
@@ -1424,6 +1437,8 @@ class DeliveryOrderController extends Controller
 
     public function get_storages(Request $request)
     {
+        abort_if(!canAccess('sales-delivery-order') && !auth()->user()->can('sales-delivery-order'), 403);
+
         $arrival_id = $request->arrival_id;
         $subarrival_locations = ArrivalSubLocation::where('arrival_location_id', $arrival_id)->get();
 
@@ -1440,6 +1455,8 @@ class DeliveryOrderController extends Controller
     }
     public function get_balance_against_second_weighbridge(Request $request)
     {
+        abort_if(!canAccess('sales-delivery-order') && !auth()->user()->can('sales-delivery-order'), 403);
+
         $delivery_order_id = $request->delivery_order_id;
 
         $balance = get_second_weighbridge_balance_by_delivery_order($delivery_order_id);
