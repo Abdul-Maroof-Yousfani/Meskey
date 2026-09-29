@@ -38,7 +38,7 @@ class FirstWeighBridgeController extends Controller
      */
     public function index()
     {
-        abort_if(!canAccess('first-weighbridge') && !auth()->user()->can('first-weighbridge'), 403);
+        abort_if(!canAccess('sales-first-weighbridge') && !auth()->user()->can('sales-first-weighbridge'), 403);
         return view('management.sales.first-weighbridge.index');
     }
 
@@ -47,7 +47,7 @@ class FirstWeighBridgeController extends Controller
      */
     public function getList(Request $request)
     {
-        abort_if(!canAccess('first-weighbridge') && !auth()->user()->can('first-weighbridge'), 403);
+        abort_if(!canAccess('sales-first-weighbridge') && !auth()->user()->can('sales-first-weighbridge'), 403);
         $authUser = auth()->user();
         $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
         $locations = $this->getUserArrivalLocations();
@@ -87,7 +87,7 @@ class FirstWeighBridgeController extends Controller
      */
     public function create()
     {
-        abort_if(!canAccess('first-weighbridge') && !auth()->user()->can('first-weighbridge'), 403);
+        abort_if(!canAccess('sales-first-weighbridge') && !auth()->user()->can('sales-first-weighbridge'), 403);
         $authUser = auth()->user();
         $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
         $locations = $this->getUserArrivalLocations();
@@ -119,7 +119,7 @@ class FirstWeighBridgeController extends Controller
      */
     public function store(Request $request)
     {
-        abort_if(!canAccess('first-weighbridge') && !auth()->user()->can('first-weighbridge'), 403);
+        abort_if(!canAccess('sales-first-weighbridge') && !auth()->user()->can('sales-first-weighbridge'), 403);
         $authUser = auth()->user();
         $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
         $locations = $this->getUserArrivalLocations();
@@ -221,7 +221,7 @@ class FirstWeighBridgeController extends Controller
      */
     public function edit($id)
     {
-        abort_if(!canAccess('first-weighbridge') && !auth()->user()->can('first-weighbridge'), 403);
+        abort_if(!canAccess('sales-first-weighbridge') && !auth()->user()->can('sales-first-weighbridge'), 403);
         $authUser = auth()->user();
         $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
         $locations = $this->getUserArrivalLocations();
@@ -258,7 +258,7 @@ class FirstWeighBridgeController extends Controller
      */
     public function update(Request $request, $id)
     {
-        abort_if(!canAccess('first-weighbridge') && !auth()->user()->can('first-weighbridge'), 403);
+        abort_if(!canAccess('sales-first-weighbridge') && !auth()->user()->can('sales-first-weighbridge'), 403);
         $validator = Validator::make($request->all(), [
             'loading_program_item_id' => 'required|exists:loading_program_items,id',
             'first_weight' => 'required|numeric',
@@ -339,7 +339,7 @@ class FirstWeighBridgeController extends Controller
      */
     public function destroy($id)
     {
-        abort_if(!canAccess('first-weighbridge') && !auth()->user()->can('first-weighbridge'), 403);
+        abort_if(!canAccess('sales-first-weighbridge') && !auth()->user()->can('sales-first-weighbridge'), 403);
         $authUser = auth()->user();
         $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
         $locations = $this->getUserArrivalLocations();
@@ -360,6 +360,8 @@ class FirstWeighBridgeController extends Controller
 
     public function getFirstWeighbridgeRelatedData(Request $request)
     {
+        abort_if(!canAccess('sales-first-weighbridge') && !auth()->user()->can('sales-first-weighbridge'), 403);
+
         $authUser = auth()->user();
         $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
         $locations = $this->getUserArrivalLocations();
@@ -394,6 +396,8 @@ class FirstWeighBridgeController extends Controller
 
     public function getWeighbridgeAmount(Request $request)
     {
+        abort_if(!canAccess('sales-first-weighbridge') && !auth()->user()->can('sales-first-weighbridge'), 403);
+
         $validator = Validator::make($request->all(), [
             'truck_type_id' => 'required|exists:arrival_truck_types,id',
             'loading_program_item_id' => 'required|exists:loading_program_items,id'
@@ -460,6 +464,8 @@ class FirstWeighBridgeController extends Controller
 
     public function getDeliveryOrdersBySaleOrder(Request $request)
     {
+        abort_if(!canAccess('sales-first-weighbridge') && !auth()->user()->can('sales-first-weighbridge'), 403);
+
         $validator = Validator::make($request->all(), [
             'sale_order_id' => 'required|exists:sales_orders,id'
         ]);

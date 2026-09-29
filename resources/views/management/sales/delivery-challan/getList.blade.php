@@ -96,11 +96,13 @@
                         <td rowspan="{{ $group['rowspan'] }}" class="text-center align-middle">
                             <div class="btn-group" role="group">
 
+                                @canAccess('sales-delivery-challan')
                                 <a class="btn btn-sm btn-info"
                                     onclick="openModal(this,'{{ route('sales.get.delivery-challan.view', ['delivery_challan' => $group['id']]) }}','View Delivery Challan', false, '60%')"
                                     title="View" style="margin-right: 10px;">
                                     <i class="ft-eye"></i>
                                 </a>
+                                @endcanAccess
 
                                 {{-- Gate Out Pass Buttons for each item --}}
                                 @if(strtolower($group['status']) === 'approved')
@@ -114,7 +116,7 @@
                                     @endforeach
                                 @endif
 
-                                @canAccess('delivery-challan')
+                                @canAccess('sales-delivery-challan')
                                 @if(auth()->user()->id == $group['created_by_id'])
                                     @if($group['status'] === 'pending' || $group['status'] === 'reverted')
 

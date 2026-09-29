@@ -29,7 +29,7 @@
                         {{ $secondWeighbridge->created_at->format('d-m-Y H:i') }}
                     </td>
                     <td>
-                        @canAccess('second-weighbridge')
+                        @canAccess('sales-second-weighbridge')
                         <a onclick="openModal(this,'{{ route('sales.second-weighbridge.edit', $secondWeighbridge->id) }}','View Second Weighbridge', true)"
                             class="info p-1 text-center mr-2 position-relative">
                             <i class="ft-eye font-medium-3"></i>

@@ -661,7 +661,7 @@
                     </li>
                     @endcanAccess
 
-                    @canAccess('loading-program')
+                    @canAccess('sales-loading-program')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('sales.loading-program.index') }}"
                             onclick="loadPageContent('{{ route('sales.loading-program.index') }}')"
@@ -671,7 +671,7 @@
                     </li>
                     @endcanAccess
 
-                    @canAccess('first-weighbridge')
+                    @canAccess('sales-first-weighbridge')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('sales.first-weighbridge.index') }}"
                             onclick="loadPageContent('{{ route('sales.first-weighbridge.index') }}')"
@@ -711,7 +711,7 @@
                     </li>
                     @endcanAccess
 
-                    @canAccess('second-weighbridge')
+                    @canAccess('sales-second-weighbridge')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('sales.second-weighbridge.index') }}"
                             onclick="loadPageContent('{{ route('sales.second-weighbridge.index') }}')"
@@ -721,7 +721,7 @@
                     </li>
                     @endcanAccess
 
-                    @canAccess('delivery-challan')
+                    @canAccess('sales-delivery-challan')
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('sales.delivery-challan.index') }}"
                             onclick="loadPageContent('{{ route('sales.delivery-challan.index') }}')"

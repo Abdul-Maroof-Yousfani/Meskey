@@ -73,7 +73,7 @@ class DeliveryChallanController extends Controller
     }
 
     public function index() {
-        abort_if(!canAccess('delivery-challan') && !auth()->user()->can('delivery-challan'), 403);
+        abort_if(!canAccess('sales-delivery-challan') && !auth()->user()->can('sales-delivery-challan'), 403);
         $authUser = auth()->user();
         $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
         $locations = $this->getUserArrivalLocations();
@@ -131,7 +131,7 @@ class DeliveryChallanController extends Controller
     }
 
     public function create() {
-        abort_if(!canAccess('delivery-challan') && !auth()->user()->can('delivery-challan'), 403);
+        abort_if(!canAccess('sales-delivery-challan') && !auth()->user()->can('sales-delivery-challan'), 403);
         $authUser = auth()->user();
         $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
         $locations = $this->getUserArrivalLocations();
@@ -159,7 +159,7 @@ class DeliveryChallanController extends Controller
     }
 
     public function store(DeliveryChallanRequest $request) {
-        abort_if(!canAccess('delivery-challan') && !auth()->user()->can('delivery-challan'), 403);
+        abort_if(!canAccess('sales-delivery-challan') && !auth()->user()->can('sales-delivery-challan'), 403);
         $authUser = auth()->user();
         $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
         $locations = $this->getUserArrivalLocations();
@@ -445,7 +445,7 @@ class DeliveryChallanController extends Controller
     }
 
     public function destroy(DeliveryChallan $delivery_challan) {
-        abort_if(!canAccess('delivery-challan') && !auth()->user()->can('delivery-challan'), 403);
+        abort_if(!canAccess('sales-delivery-challan') && !auth()->user()->can('sales-delivery-challan'), 403);
         if (!$this->canUserAccessDeliveryChallan($delivery_challan)) {
             return response()->json([
                 'error' => 'You are not authorized to delete Delivery Challan for this location.',
@@ -466,7 +466,7 @@ class DeliveryChallanController extends Controller
     }
 
     public function update(DeliveryChallanRequest $request, DeliveryChallan $delivery_challan) {
-        abort_if(!canAccess('delivery-challan') && !auth()->user()->can('delivery-challan'), 403);
+        abort_if(!canAccess('sales-delivery-challan') && !auth()->user()->can('sales-delivery-challan'), 403);
         $authUser = auth()->user();
         $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
         $locations = $this->getUserArrivalLocations();
@@ -762,7 +762,7 @@ class DeliveryChallanController extends Controller
     }
 
     public function edit(DeliveryChallan $delivery_challan) {
-        abort_if(!canAccess('delivery-challan') && !auth()->user()->can('delivery-challan'), 403);
+        abort_if(!canAccess('sales-delivery-challan') && !auth()->user()->can('sales-delivery-challan'), 403);
         abort_if(!$this->canUserAccessDeliveryChallan($delivery_challan), 403);
         $delivery_challan->load("delivery_order.delivery_order_data", "delivery_challan_data");
         $customers = Customer::all();
@@ -814,7 +814,7 @@ class DeliveryChallanController extends Controller
     }
 
     public function view(DeliveryChallan $delivery_challan) {
-        abort_if(!canAccess('delivery-challan') && !auth()->user()->can('delivery-challan'), 403);
+        abort_if(!canAccess('sales-delivery-challan') && !auth()->user()->can('sales-delivery-challan'), 403);
         abort_if(!$this->canUserAccessDeliveryChallan($delivery_challan), 403);
         $delivery_challan->load("delivery_order.delivery_order_data");
         $payment_terms = PaymentTerm::all();
@@ -850,7 +850,7 @@ class DeliveryChallanController extends Controller
     }
 
     public function getList(Request $request) {
-        abort_if(!canAccess('delivery-challan') && !auth()->user()->can('delivery-challan'), 403);
+        abort_if(!canAccess('sales-delivery-challan') && !auth()->user()->can('sales-delivery-challan'), 403);
         $authUser = auth()->user();
         $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
         $locations = $this->getUserArrivalLocations();
@@ -985,7 +985,7 @@ class DeliveryChallanController extends Controller
 
     public function getNumber(Request $request, $locationId = null, $contractDate = null)
     {
-        abort_if(!canAccess('delivery-challan') && !auth()->user()->can('delivery-challan'), 403);
+        abort_if(!canAccess('sales-delivery-challan') && !auth()->user()->can('sales-delivery-challan'), 403);
 
         $date = Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
 
@@ -1019,7 +1019,7 @@ class DeliveryChallanController extends Controller
     }
 
     public function get_delivery_orders(Request $request) {
-        abort_if(!canAccess('delivery-challan') && !auth()->user()->can('delivery-challan'), 403);
+        abort_if(!canAccess('sales-delivery-challan') && !auth()->user()->can('sales-delivery-challan'), 403);
         $authUser = auth()->user();
         $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
         $locations = $this->getUserArrivalLocations();
@@ -1087,7 +1087,7 @@ class DeliveryChallanController extends Controller
     }
 
     public function getItems(Request $request) {
-        abort_if(!canAccess('delivery-challan') && !auth()->user()->can('delivery-challan'), 403);
+        abort_if(!canAccess('sales-delivery-challan') && !auth()->user()->can('sales-delivery-challan'), 403);
         $delivery_order_ids = $request->delivery_order_ids;
         $delivery_orders = DeliveryOrder::with("delivery_order_data")->whereIn("id", $delivery_order_ids)->get();
         $items = Product::select("id", "name")->get();
@@ -1105,7 +1105,7 @@ class DeliveryChallanController extends Controller
 
 
     public function getItemsByTickets(Request $request) {
-        abort_if(!canAccess('delivery-challan') && !auth()->user()->can('delivery-challan'), 403);
+        abort_if(!canAccess('sales-delivery-challan') && !auth()->user()->can('sales-delivery-challan'), 403);
         $authUser = auth()->user();
         $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
         $locations = $this->getUserArrivalLocations();
@@ -1125,7 +1125,7 @@ class DeliveryChallanController extends Controller
     }
 
     public function getTickets(Request $request) {
-        abort_if(!canAccess('delivery-challan') && !auth()->user()->can('delivery-challan'), 403);
+        abort_if(!canAccess('sales-delivery-challan') && !auth()->user()->can('sales-delivery-challan'), 403);
         $authUser = auth()->user();
         $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
         $locations = $this->getUserArrivalLocations();
@@ -1192,7 +1192,7 @@ class DeliveryChallanController extends Controller
      * Get tickets with accepted Dispatch QC for initial selection in Delivery Challan
      */
     public function getTicketsWithDispatchQc(Request $request) {
-        abort_if(!canAccess('delivery-challan') && !auth()->user()->can('delivery-challan'), 403);
+        abort_if(!canAccess('sales-delivery-challan') && !auth()->user()->can('sales-delivery-challan'), 403);
         $authUser = auth()->user();
         $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
         $locations = $this->getUserArrivalLocations();
@@ -1242,7 +1242,7 @@ class DeliveryChallanController extends Controller
      * Get ticket data for auto-filling Delivery Challan form
      */
     public function getTicketDataForDC(Request $request) {
-        abort_if(!canAccess('delivery-challan') && !auth()->user()->can('delivery-challan'), 403);
+        abort_if(!canAccess('sales-delivery-challan') && !auth()->user()->can('sales-delivery-challan'), 403);
         $authUser = auth()->user();
         $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
         $locations = $this->getUserArrivalLocations();

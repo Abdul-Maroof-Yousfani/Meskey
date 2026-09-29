@@ -32,7 +32,7 @@ class LoadingProgramController extends Controller
      */
     public function index()
     {
-        abort_if(!canAccess('loading-program') && !auth()->user()->can('loading-program'), 403);
+        abort_if(!canAccess('sales-loading-program') && !auth()->user()->can('sales-loading-program'), 403);
         $userId = auth()->id();
         $isSuperAdmin = auth()->user() && auth()->user()->user_type === 'super-admin';
 
@@ -72,7 +72,7 @@ class LoadingProgramController extends Controller
      */
     public function getList(Request $request)
     {
-        abort_if(!canAccess('loading-program') && !auth()->user()->can('loading-program'), 403);
+        abort_if(!canAccess('sales-loading-program') && !auth()->user()->can('sales-loading-program'), 403);
 
         $userId = auth()->id();
         $isSuperAdmin = auth()->user() && auth()->user()->user_type === 'super-admin';
@@ -196,7 +196,7 @@ class LoadingProgramController extends Controller
      */
     public function create()
     {
-        abort_if(!canAccess('loading-program') && !auth()->user()->can('loading-program'), 403);
+        abort_if(!canAccess('sales-loading-program') && !auth()->user()->can('sales-loading-program'), 403);
         $data = [
             'SaleOrders' => collect(),
             'DeliveryOrders' => collect(),
@@ -211,7 +211,7 @@ class LoadingProgramController extends Controller
      */
     public function store(Request $request)
     {
-        abort_if(!canAccess('loading-program') && !auth()->user()->can('loading-program'), 403);
+        abort_if(!canAccess('sales-loading-program') && !auth()->user()->can('sales-loading-program'), 403);
         // Debug: Log the incoming data
         \Log::info('Loading Program Store Data:', $request->all());
 
@@ -435,7 +435,7 @@ class LoadingProgramController extends Controller
      */
     public function show($id)
     {
-        abort_if(!canAccess('loading-program') && !auth()->user()->can('loading-program'), 403);
+        abort_if(!canAccess('sales-loading-program') && !auth()->user()->can('sales-loading-program'), 403);
         $userId = auth()->id();
         $isSuperAdmin = auth()->user() && auth()->user()->user_type === 'super-admin';
 
@@ -482,7 +482,7 @@ class LoadingProgramController extends Controller
      */
     public function edit($id)
     {
-        abort_if(!canAccess('loading-program') && !auth()->user()->can('loading-program'), 403);
+        abort_if(!canAccess('sales-loading-program') && !auth()->user()->can('sales-loading-program'), 403);
         $userId = auth()->id();
         $isSuperAdmin = auth()->user() && auth()->user()->user_type === 'super-admin';
 
@@ -708,7 +708,7 @@ class LoadingProgramController extends Controller
      */
     public function update(Request $request, $id)
     {
-        abort_if(!canAccess('loading-program') && !auth()->user()->can('loading-program'), 403);
+        abort_if(!canAccess('sales-loading-program') && !auth()->user()->can('sales-loading-program'), 403);
         $loadingProgram = LoadingProgram::findOrFail($id);
 
         $lockedItemIds = $loadingProgram->loadingProgramItems()
@@ -1000,7 +1000,7 @@ class LoadingProgramController extends Controller
      */
     public function destroy($id)
     {
-        abort_if(!canAccess('loading-program') && !auth()->user()->can('loading-program'), 403);
+        abort_if(!canAccess('sales-loading-program') && !auth()->user()->can('sales-loading-program'), 403);
         $userId = auth()->id();
         $isSuperAdmin = auth()->user() && auth()->user()->user_type === 'super-admin';
         $query = LoadingProgram::query();
@@ -1020,6 +1020,8 @@ class LoadingProgramController extends Controller
 
     public function getSaleOrderRelatedData(Request $request)
     {
+        abort_if(!canAccess('sales-loading-program') && !auth()->user()->can('sales-loading-program'), 403);
+
         $sale_order_ids = is_array($request->sale_order_id) ? $request->sale_order_id : [$request->sale_order_id];
         $company_location_id = $request->company_location_id;
 
@@ -1168,6 +1170,8 @@ class LoadingProgramController extends Controller
 
     public function getDeliveryOrdersBySaleOrder(Request $request)
     {
+        abort_if(!canAccess('sales-loading-program') && !auth()->user()->can('sales-loading-program'), 403);
+
         $sale_order_ids = is_array($request->sale_order_id) ? $request->sale_order_id : [$request->sale_order_id];
         $company_location_id = $request->company_location_id;
 
@@ -1245,6 +1249,8 @@ class LoadingProgramController extends Controller
 
     public function getDeliveryOrdersBySaleOrderEdit(Request $request)
     {
+        abort_if(!canAccess('sales-loading-program') && !auth()->user()->can('sales-loading-program'), 403);
+
         $sale_order_ids = is_array($request->sale_order_id) ? $request->sale_order_id : [$request->sale_order_id];
         $company_location_id = $request->company_location_id;
 
@@ -1345,6 +1351,7 @@ class LoadingProgramController extends Controller
 
     public function getNumber(Request $request, $locationId = null, $contractDate = null)
     {
+        abort_if(!canAccess('sales-loading-program') && !auth()->user()->can('sales-loading-program'), 403);
 
         $date = Carbon::parse($contractDate ?? $request->contract_date)->format('Y-m-d');
 
@@ -1377,6 +1384,8 @@ class LoadingProgramController extends Controller
     }
     public function getDo(Request $request)
     {
+        abort_if(!canAccess('sales-loading-program') && !auth()->user()->can('sales-loading-program'), 403);
+
         $do_id = $request->do_id;
         $delivery_order_data = DeliveryOrderData::where("delivery_order_id", $do_id)->first();
 
@@ -1388,6 +1397,8 @@ class LoadingProgramController extends Controller
 
     public function fetchSaleOrdersByLocation(Request $request)
     {
+        abort_if(!canAccess('sales-loading-program') && !auth()->user()->can('sales-loading-program'), 403);
+
         $location_id = $request->location_id;
         $excludeItemIds = null;
         $existingSoIds = [];
@@ -1460,6 +1471,8 @@ class LoadingProgramController extends Controller
 
     public function getLocations(Request $request)
     {
+        abort_if(!canAccess('sales-loading-program') && !auth()->user()->can('sales-loading-program'), 403);
+
         $so_id = $request->so_id;
         $sale_order = SalesOrder::with("factories", "sections")->find($so_id);
 
@@ -1500,6 +1513,8 @@ class LoadingProgramController extends Controller
 
     public function getLocationsOfSaleOrder(Request $request)
     {
+        abort_if(!canAccess('sales-loading-program') && !auth()->user()->can('sales-loading-program'), 403);
+
         $sale_order_ids = is_array($request->sale_order_id) ? $request->sale_order_id : [$request->sale_order_id];
         $company_location = $request->company_location;
 

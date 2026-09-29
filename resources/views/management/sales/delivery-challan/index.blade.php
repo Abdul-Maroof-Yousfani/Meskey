@@ -10,7 +10,7 @@
                     <h2 class="page-title">Delivery Challan</h2>
                 </div>
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
-                    @canAccess('delivery-challan')
+                    @canAccess('sales-delivery-challan')
                     <button
                         onclick="openModal(this,'{{ route('sales.delivery-challan.create') }}','Create Delivery Challan',false,'60%')"
                         type="button" class="btn btn-primary position-relative">
