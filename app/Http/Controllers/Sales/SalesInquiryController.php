@@ -10,6 +10,7 @@ use App\Models\Master\Customer;
 use App\Models\Master\ArrivalLocation;
 use App\Models\Master\ArrivalSubLocation;
 use App\Models\Product;
+use App\Models\Sales\PreSaleInspection;
 use App\Models\Sales\SalesInquiry;
 use Carbon\Carbon;
 use DB;
@@ -43,15 +44,20 @@ class SalesInquiryController extends Controller
             return $matches[0];
         })->unique()->sort()->values();
 
-        return view("management.sales.inquiry.create", compact("customers", "items", "bag_types", "arrivalLocations", "arrivalSubLocations", "packings"));
+        $preSaleInspections = PreSaleInspection::with(['item', 'items.item', 'locationModels.companyLocation', 'factoryModels.factory', 'sectionModels.section'])
+            ->where('status', 'active')
+            ->latest('id')
+            ->get();
+
+        return view("management.sales.inquiry.create", compact("customers", "items", "bag_types", "arrivalLocations", "arrivalSubLocations", "packings", "preSaleInspections"));
     }
 
     public function getList(Request $request)
     {
         $perPage = $request->get('per_page', 25);
 
-        // Eager load the inquiry + all its items + related product
-        $inquiries = SalesInquiry::with(['sales_inquiry_data.item'])
+        // Eager load the inquiry + all its items + related product + pre-sale inspection
+        $inquiries = SalesInquiry::with(['sales_inquiry_data.item', 'preSaleInspection'])
             ->when($request->filled('search'), function ($q) use ($request) {
                 $searchTerm = '%' . strtolower($request->search) . '%';
                 return $q->where(function ($sq) use ($searchTerm) {
@@ -115,6 +121,7 @@ class SalesInquiryController extends Controller
                 'contact_person' => $inquiry->contact_person,
                 'contract_type' => $inquiry->contract_type,
                 'remarks' => $inquiry->remarks,
+                'pre_sale_inspection' => $inquiry->preSaleInspection,
                 'created_at' => $inquiry->created_at,
                 'rowspan' => max(count($itemRows), 1),
                 'items' => $itemRows,
@@ -172,6 +179,7 @@ class SalesInquiryController extends Controller
             $sectionIds = $request->arrival_sub_location_id ?? [];
             $sales_inquiry = SalesInquiry::create([
                 "inquiry_no" => self::getNumber($request, null, $request->inquiry_date),
+                "pre_sale_inspection_id" => $request->pre_sale_inspection_id,
                 "date" => $request->inquiry_date,
                 "customer" => $request->customer,
                 "contract_type" => $request->contract_type,
@@ -188,6 +196,8 @@ class SalesInquiryController extends Controller
                 "am_approval_status" => "pending",
                 "am_change_made" => 1
             ]);
+
+
             foreach($request->item_id as $index => $item) {
                 $sales_inquiry->sales_inquiry_data()->create([
                     "item_id" => $request->item_id[$index],
@@ -253,6 +263,7 @@ class SalesInquiryController extends Controller
         try {
             $data = [
                 "inquiry_no" => $request->reference_no,
+                "pre_sale_inspection_id" => $request->pre_sale_inspection_id,
                 "date" => $request->inquiry_date,
                 "customer" => $request->customer,
                 "contract_type" => $request->contract_type,
@@ -266,6 +277,8 @@ class SalesInquiryController extends Controller
                 "token_money" => $request->token_money,
                 'am_change_made' => 1
             ];
+
+
 
             if($sales_inquiry->am_approval_status === 'reverted') {
                 $data["am_approval_status"] = "pending";
@@ -324,7 +337,7 @@ class SalesInquiryController extends Controller
     }
 
     public function view(SalesInquiry $sales_inquiry) {
-        $sales_inquiry->load("sales_inquiry_data");
+        $sales_inquiry->load("sales_inquiry_data", "preSaleInspection");
         $customers = Customer::where('type', 'local')->get();
         $items = Product::all();
         $bag_types = BagType::select("id", "name")->where("status", 1)->get();
@@ -343,7 +356,7 @@ class SalesInquiryController extends Controller
     }
 
     public function edit(SalesInquiry $sales_inquiry) {
-        $sales_inquiry->load("sales_inquiry_data", "locations", "factories", "sections");
+        $sales_inquiry->load("sales_inquiry_data", "locations", "factories", "sections", "preSaleInspection");
         $customers = Customer::where('type', 'local')->get();
         $items = Product::all();
         $bag_types = BagType::select("id", "name")->where("status", 1)->get(); 
@@ -358,7 +371,12 @@ class SalesInquiryController extends Controller
             return $matches[0];
         })->unique()->sort()->values();
 
-        return view("management.sales.inquiry.edit", compact("customers", "items", "sales_inquiry", "bag_types", "arrivalLocations", "arrivalSubLocations", "packings"));
+        $preSaleInspections = PreSaleInspection::with(['item', 'items.item', 'locationModels.companyLocation', 'factoryModels.factory', 'sectionModels.section'])
+            ->where('status', 'active')
+            ->latest('id')
+            ->get();
+
+        return view("management.sales.inquiry.edit", compact("customers", "items", "sales_inquiry", "bag_types", "arrivalLocations", "arrivalSubLocations", "packings", "preSaleInspections"));
     }
 
     public function destroy(SalesInquiry $sales_inquiry) {

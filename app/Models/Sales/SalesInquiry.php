@@ -59,4 +59,8 @@ class SalesInquiry extends Model
     public function sale_order() {
         return $this->hasOne(SalesOrder::class, "inquiry_id", "id");
     }
+
+    public function preSaleInspection() {
+        return $this->belongsTo(PreSaleInspection::class, "pre_sale_inspection_id");
+    }
 }

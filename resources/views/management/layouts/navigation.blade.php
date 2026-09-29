@@ -624,6 +624,14 @@
                 <ul class="dropdown-menu">
                     
                     <li data-menu=""><a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('sales.pre-sale-inspection.index') }}"
+                            onclick="loadPageContent('{{ route('sales.pre-sale-inspection.index') }}')"
+                            data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>
+                            <span data-i18n="Task Board">Pre Sale Inspection (Dekh)</span>
+                        </a>
+                    </li>
+
+                    <li data-menu=""><a class="dropdown-item d-flex align-items-center"
                             href="{{ route('sales.sales-inquiry.index') }}"
                             onclick="loadPageContent('{{ route('sales.sales-inquiry.index') }}')"
                             data-toggle="dropdown"><i class="ft-arrow-right submenu-icon"></i>

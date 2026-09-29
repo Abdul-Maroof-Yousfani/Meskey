@@ -23,6 +23,7 @@ class SalesInquiryRequest extends FormRequest
     {
         return [
             "reference_no" => "required",
+            "pre_sale_inspection_id" => "nullable|integer|exists:pre_sale_inspections,id",
             "locations" => "required|array",
 
             "inquiry_date" => "required|date|before_or_equal:required_date",
