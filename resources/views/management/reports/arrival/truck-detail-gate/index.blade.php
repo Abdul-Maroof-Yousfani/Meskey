@@ -219,7 +219,11 @@
                                             <th>Completion</th>
                                             <th>Final QC Report</th>
                                             <th>Bilty</th>
-                                            <th>Loading Weight</th>
+                                            <th>Loading 1st Weight</th>
+                                            <th>Loading 2nd Weight</th>
+                                            <th>Loaded Weight (KG)</th>
+                                            <th>Arrival 1st Weight</th>
+                                            <th>Arrival 2nd Weight</th>
                                             <th>Arrival Slip</th>
                                             <th>QC Report</th>
                                             <th>Bilty</th>

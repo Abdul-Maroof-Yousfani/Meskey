@@ -19,7 +19,11 @@
 
 
         <th>No of Bags (Loaded)</th>
+        <th>Loading 1st Weight</th>
+        <th>Loading 2nd Weight</th>
         <th>Loaded Weight (KG)</th>
+        <th>Arrival 1st Weight</th>
+        <th>Arrival 2nd Weight</th>
         <th>Arrived Net Weight (KG)</th>
         <th>Truck #</th>
         <th>QC Remarks</th>
@@ -135,7 +139,11 @@
                     </td>
                 @endforeach
                 <td>{{ $row->bags }}</td>
+                <td>{{ $row->first_weight ?: 0 }}</td>
+                <td>{{ $row->second_weight ?: 0 }}</td>
                 <td>{{ $row->net_weight }}</td>
+                <td>{{ $row->firstWeighbridge?->weight ?: 0 }}</td>
+                <td>{{ $row->secondWeighbridge?->weight ?: 0 }}</td>
                 <td>{{ $row->arrived_net_weight }}</td>
                 <td>{{ $row->truck_no }}</td>
                 <td>{{ $initialRequest->remark ?? '' }}</td>

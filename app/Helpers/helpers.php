@@ -260,6 +260,17 @@ if (!function_exists("sub_arrival_name_by_id")) {
 //     }
 // }
 
+if (!function_exists("getOrdinalSuffix")) {
+    function getOrdinalSuffix(int $number): string
+    {
+        $ends = ['th', 'st', 'nd', 'rd', 'th', 'th', 'th', 'th', 'th', 'th'];
+        if ((($number % 100) >= 11) && (($number % 100) <= 13)) {
+            return $number . 'th';
+        }
+        return $number . $ends[$number % 10];
+    }
+}
+
 if (!function_exists("numberToOrdinalWord")) {
     function numberToOrdinalWord(int $number): string
     {
