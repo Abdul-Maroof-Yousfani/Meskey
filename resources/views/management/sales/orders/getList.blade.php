@@ -143,6 +143,7 @@
                         <td rowspan="{{ $group['rowspan'] }}" class="text-center align-middle">
                             <div class="btn-group" role="group">
 
+                                @canAccess('sale-order-list')
                                 <a class="btn btn-sm btn-info"
                                     onclick="openModal(this,'{{ route('sales.sale-order.view', ['id' => $group['id']]) }}','View Sales Order', false, '90%')"
                                     title="View" style="margin-right: 10px;">
@@ -153,13 +154,14 @@
                                     title="DO Stats" style="margin-right: 10px;">
                                     <i class="ft-bar-chart-2"></i>
                                 </button>
+                                @endcanAccess
                                 @php
                                     $canEdit = (auth()->user()->id == $group['created_by_id']) 
                                         || (auth()->user()->user_type == 'admin') 
                                         || (method_exists(auth()->user(), 'hasAnyRole') && auth()->user()->hasAnyRole(['Admin', 'Super Admin', 'admin', 'super-admin']));
                                     $isLockedPendingHO = ($stage === 'headoffice_pending');
                                 @endphp
-                                @can('sale-order')
+                                @canAccess('sale-order-create')
                                     @if($canEdit && !$isLockedPendingHO)
                                         <button
                                             onclick="openModal(this,'{{ route('sales.sale-order.edit', ['sale_order' => $group['id']]) }}','Edit Sale Order',false, '90%')"
@@ -173,16 +175,16 @@
                                             <i class="ft-lock"></i>
                                         </button>
                                     @endif
-                                @endcan
-                                @if(auth()->user()->id == $group['created_by_id'])
-                                    @if(($status === 'pending' && $stage === 'stage_1_pending') || $status === 'reverted' || $stage === 'reverted')
-                                        <button
-                                            onclick="deletemodal('{{ route('sales.sale-order.destroy', ['sale_order' => $group['id']]) }}', '{{ route('sales.get.sales-order.list') }}')"
-                                            type="button" class="btn btn-sm btn-danger" title="Delete">
-                                            <i class="ft-trash-2"></i>
-                                        </button>
+                                    @if(auth()->user()->id == $group['created_by_id'])
+                                        @if(($status === 'pending' && $stage === 'stage_1_pending') || $status === 'reverted' || $stage === 'reverted')
+                                            <button
+                                                onclick="deletemodal('{{ route('sales.sale-order.destroy', ['sale_order' => $group['id']]) }}', '{{ route('sales.get.sales-order.list') }}')"
+                                                type="button" class="btn btn-sm btn-danger" title="Delete">
+                                                <i class="ft-trash-2"></i>
+                                            </button>
+                                        @endif
                                     @endif
-                                @endif
+                                @endcanAccess
                             </div>
                         </td>
                     @endif

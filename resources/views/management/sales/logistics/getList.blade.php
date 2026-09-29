@@ -42,7 +42,7 @@
                     </span>
                 </td>
                 <td class="text-center">
-                    @can('logistics')
+                    @canAccess('logistics-create')
                         @if(auth()->user()->id == $logistic->created_by)
                             @if(in_array(strtolower($status), ['pending', 'reverted']))
                                 <button
@@ -52,12 +52,14 @@
                                 </button>
                             @endif
                         @endif
-                    @endcan
-                    <button
-                        onclick="openModal(this,'{{ route('sales.logistics.show', ['logistic' => $logistic->id]) }}','View Logistics',false,'90%')"
-                        type="button" class="btn btn-sm btn-info" title="View">
-                        <i class="ft-eye"></i>
-                    </button>
+                    @endcanAccess
+                    @canAccess('logistics-list')
+                        <button
+                            onclick="openModal(this,'{{ route('sales.logistics.show', ['logistic' => $logistic->id]) }}','View Logistics',false,'90%')"
+                            type="button" class="btn btn-sm btn-info" title="View">
+                            <i class="ft-eye"></i>
+                        </button>
+                    @endcanAccess
                 </td>
             </tr>
         @empty

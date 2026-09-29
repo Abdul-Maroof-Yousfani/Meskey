@@ -11,14 +11,16 @@
                  </div>
 
                 <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 text-right">
-                    @can('receipt-voucher')
+                    @canAccess('receipt-voucher-create')
                      <a href="{{ route('receipt-voucher.create') }}" class="btn btn-primary position-relative ">
                         Create Receipt Voucher
                      </a>
+                    @endcanAccess
+                    @canAccess('direct-receipt-voucher-create')
                     <a href="{{ route('direct.receipt-voucher') }}" class="btn btn-success position-relative">
                         <i class="ft-plus-circle"></i> Create Direct Receipt Voucher
                     </a>
-                    @endcan
+                    @endcanAccess
                 </div>
              </div>
              <div class="row">

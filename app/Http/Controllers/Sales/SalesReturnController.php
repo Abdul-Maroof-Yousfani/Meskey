@@ -82,12 +82,12 @@ class SalesReturnController extends Controller
     }
 
     public function index() {
-        abort_if(!canAccess('sales-return') && !auth()->user()->can('sales-return'), 403);
+        abort_if(!canAccess('sales-return-list') && !auth()->user()->can('sales-return-list'), 403);
         return view('management.sales.sales-return.index');
     }
 
     public function create() {
-        abort_if(!canAccess('sales-return') && !auth()->user()->can('sales-return'), 403);
+        abort_if(!canAccess('sales-return-create') && !auth()->user()->can('sales-return-create'), 403);
         $customers = Customer::where("type", "local")->get();
         $items = Product::all();
 
@@ -95,7 +95,7 @@ class SalesReturnController extends Controller
     }
 
     public function view(int $id) {
-        abort_if(!canAccess('sales-return') && !auth()->user()->can('sales-return'), 403);
+        abort_if(!canAccess('sales-return-list') && !auth()->user()->can('sales-return-list'), 403);
         $saleReturn = SalesReturn::with(["sale_return_data", "receiving_requests.deliveryChallan.delivery_challan_data.loadingProgramItem", "sale_invoices"])->findOrFail($id);
         abort_if(!$this->canUserAccessSalesReturn($saleReturn), 403, 'Unauthorized access to this Sales Return.');
 
@@ -106,7 +106,7 @@ class SalesReturnController extends Controller
     }
 
     public function edit(int $id) {
-        abort_if(!canAccess('sales-return') && !auth()->user()->can('sales-return'), 403);
+        abort_if(!canAccess('sales-return-create') && !auth()->user()->can('sales-return-create'), 403);
         $saleReturn = SalesReturn::with(["sale_return_data", "receiving_requests.deliveryChallan.delivery_challan_data.loadingProgramItem", "sale_invoices"])->findOrFail($id);
         abort_if(!$this->canUserAccessSalesReturn($saleReturn), 403, 'Unauthorized access to this Sales Return.');
 
@@ -117,7 +117,7 @@ class SalesReturnController extends Controller
     }
 
     public function update(SaleReturnRequest $request, int $id) {
-        abort_if(!canAccess('sales-return') && !auth()->user()->can('sales-return'), 403);
+        abort_if(!canAccess('sales-return-create') && !auth()->user()->can('sales-return-create'), 403);
         DB::beginTransaction();
         $saleReturn = SalesReturn::with(["receiving_requests.deliveryChallan.delivery_challan_data.loadingProgramItem"])->findOrFail($id);
         abort_if(!$this->canUserAccessSalesReturn($saleReturn), 403, 'Unauthorized access to this Sales Return.');
@@ -243,7 +243,7 @@ class SalesReturnController extends Controller
     }
 
     public function get_sale_invoices(Request $request) {
-        abort_if(!canAccess('sales-return') && !auth()->user()->can('sales-return'), 403);
+        abort_if(!canAccess('sales-return-create') && !auth()->user()->can('sales-return-create'), 403);
         $customer_id = $request->customer_id;
         $locations_id = $request->location_id;
         $storage_id = $request->storage_id;
@@ -305,7 +305,7 @@ class SalesReturnController extends Controller
     }
 
     public function getList(Request $request) {
-        abort_if(!canAccess('sales-return') && !auth()->user()->can('sales-return'), 403);
+        abort_if(!canAccess('sales-return-list') && !auth()->user()->can('sales-return-list'), 403);
         $perPage = $request->get('per_page', 25);
         $authUser = auth()->user();
         $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
@@ -388,7 +388,7 @@ class SalesReturnController extends Controller
     }
 
     public function getitems(Request $request) {
-        abort_if(!canAccess('sales-return') && !auth()->user()->can('sales-return'), 403);
+        abort_if(!canAccess('sales-return-create') && !auth()->user()->can('sales-return-create'), 403);
         $rr_ids = is_array($request->sale_invoice_ids) ? $request->sale_invoice_ids : [$request->sale_invoice_ids];
         $rr_ids = array_filter($rr_ids);
 
@@ -405,7 +405,7 @@ class SalesReturnController extends Controller
 
     public function getNumber(Request $request, $locationId = null, $invoiceDate = null)
     {
-        abort_if(!canAccess('sales-return') && !auth()->user()->can('sales-return'), 403);
+        abort_if(!canAccess('sales-return-create') && !auth()->user()->can('sales-return-create'), 403);
         $date = Carbon::parse($invoiceDate ?? $request->invoice_date)->format('Y-m-d');
 
         $prefix = 'SR-' . Carbon::parse($invoiceDate ?? $request->invoice_date)->format('Y-m-d');
@@ -437,7 +437,7 @@ class SalesReturnController extends Controller
     }
 
     public function store(SaleReturnRequest $request) {
-        abort_if(!canAccess('sales-return') && !auth()->user()->can('sales-return'), 403);
+        abort_if(!canAccess('sales-return-create') && !auth()->user()->can('sales-return-create'), 403);
         $authUser = auth()->user();
         $isSuperAdmin = $authUser && $authUser->user_type === 'super-admin';
         $locations = $this->getUserArrivalLocations();
@@ -562,7 +562,7 @@ class SalesReturnController extends Controller
     }
 
     public function destroy(SalesReturn $sales_return) {
-        abort_if(!canAccess('sales-return') && !auth()->user()->can('sales-return'), 403);
+        abort_if(!canAccess('sales-return-create') && !auth()->user()->can('sales-return-create'), 403);
         abort_if(!$this->canUserAccessSalesReturn($sales_return), 403, 'Unauthorized access to this Sales Return.');
 
         if(in_array(strtolower($sales_return->am_approval_status ?? ''), ['approved', 'rejected'])) {

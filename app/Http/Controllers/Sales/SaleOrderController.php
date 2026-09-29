@@ -110,7 +110,7 @@ class SaleOrderController extends Controller
 
     public function index()
     {
-        abort_if(!canAccess('sale-order') && !auth()->user()->can('sale-order'), 403);
+        abort_if(!canAccess('sale-order-list') && !auth()->user()->can('sale-order-list'), 403);
         $customerIds = SalesOrder::distinct()->pluck('customer_id')->filter();
         $customers = Customer::whereIn('id', $customerIds)->get();
 
@@ -129,7 +129,7 @@ class SaleOrderController extends Controller
 
     public function create()
     {
-        abort_if(!canAccess('sale-order') && !auth()->user()->can('sale-order'), 403);
+        abort_if(!canAccess('sale-order-create') && !auth()->user()->can('sale-order-create'), 403);
         $payment_terms = PaymentTerm::all();
         $customers = Customer::where("type", "local")->get();
         $inquiries = SalesInquiry::where('am_approval_status', 'approved')
@@ -164,7 +164,7 @@ class SaleOrderController extends Controller
 
     public function edit(int $id)
     {
-        abort_if(!canAccess('sale-order') && !auth()->user()->can('sale-order'), 403);
+        abort_if(!canAccess('sale-order-create') && !auth()->user()->can('sale-order-create'), 403);
         $sale_order = SalesOrder::with(['locations', 'factories', 'sections', 'sales_order_data', 'pay_type', 'sales_order_data.sale_inquiry_data', 'parent_user', 'broker'])->find($id);
         if (!$sale_order) {
             abort(404, 'Sale Order not found');
@@ -204,7 +204,7 @@ class SaleOrderController extends Controller
 
     public function view(Request $request, int $id)
     {
-        abort_if(!canAccess('sale-order') && !auth()->user()->can('sale-order'), 403);
+        abort_if(!canAccess('sale-order-list') && !auth()->user()->can('sale-order-list'), 403);
         $sale_order = SalesOrder::with('sales_order_data', 'locations', 'factories', 'sections', 'sales_order_data.sale_inquiry_data', 'pay_type', 'sale_inquiry', 'parent_user', 'broker')->find($id);
         $payment_terms = PaymentTerm::all();
         $customers = Customer::where("type", "local")->get();
@@ -230,7 +230,7 @@ class SaleOrderController extends Controller
 
     public function getDoStats(Request $request, int $id)
     {
-        abort_if(!canAccess('sale-order') && !auth()->user()->can('sale-order'), 403);
+        abort_if(!canAccess('sale-order-list') && !auth()->user()->can('sale-order-list'), 403);
         $sale_order = SalesOrder::with([
             'delivery_orders' => function ($q) {
                 $q->with([
@@ -333,7 +333,7 @@ class SaleOrderController extends Controller
 
     public function store(SalesOrderRequest $request)
     {
-        abort_if(!canAccess('sale-order') && !auth()->user()->can('sale-order'), 403);
+        abort_if(!canAccess('sale-order-create') && !auth()->user()->can('sale-order-create'), 403);
         $locations = $request->locations ?? [];
         $factoryIds = $request->arrival_location_id ?? [];
         $sectionIds = $request->arrival_sub_location_id ?? [];
@@ -527,7 +527,7 @@ class SaleOrderController extends Controller
 
     public function update(SalesOrderRequest $request, int $id)
     {
-        abort_if(!canAccess('sale-order') && !auth()->user()->can('sale-order'), 403);
+        abort_if(!canAccess('sale-order-create') && !auth()->user()->can('sale-order-create'), 403);
         DB::beginTransaction();
         try {
             $sales_order = SalesOrder::find($id);
@@ -934,7 +934,7 @@ class SaleOrderController extends Controller
 
     public function destroy(int $id)
     {
-        abort_if(!canAccess('sale-order') && !auth()->user()->can('sale-order'), 403);
+        abort_if(!canAccess('sale-order-create') && !auth()->user()->can('sale-order-create'), 403);
         $sales_order = SalesOrder::find($id);
         if (!$sales_order) {
             return response()->json(['error' => 'Sale Order not found.', 'message' => 'Sale Order not found.'], 404);
@@ -974,7 +974,7 @@ class SaleOrderController extends Controller
 
     public function getList(Request $request)
     {
-        abort_if(!canAccess('sale-order') && !auth()->user()->can('sale-order'), 403);
+        abort_if(!canAccess('sale-order-list') && !auth()->user()->can('sale-order-list'), 403);
         $perPage = $request->get('per_page', 25);
 
         // Eager load the inquiry + all its items + related product
