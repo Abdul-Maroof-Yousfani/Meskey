@@ -50,13 +50,19 @@ class SalesOrder extends Model
         "receipt_voucher_item_ids",
         "payment_on_kaanta",
         "is_bardana",
-        "so_approval_stage"
+        "so_approval_stage",
+        "pre_sale_inspection_id"
     ];
 
     protected $casts = [
         'receipt_voucher_item_ids' => 'array',
         'is_bardana' => 'boolean',
     ];
+
+    public function preSaleInspection()
+    {
+        return $this->belongsTo(PreSaleInspection::class, 'pre_sale_inspection_id');
+    }
 
     public function parent_user() {
         return $this->belongsTo(\App\Models\User::class, "parent_user_id");

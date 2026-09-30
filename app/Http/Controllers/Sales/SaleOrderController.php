@@ -14,6 +14,7 @@ use App\Models\Master\PayType;
 use App\Models\PaymentTerm;
 use App\Models\Product;
 use App\Models\Master\Broker;
+use App\Models\Sales\PreSaleInspection;
 use App\Models\Sales\SalesInquiry;
 use App\Models\Sales\SalesOrder;
 use Carbon\Carbon;
@@ -158,14 +159,15 @@ class SaleOrderController extends Controller
         $sellers = $sellerData['sellers'];
         $sellerError = $sellerData['sellerError'];
         $defaultSellerId = $sellerData['defaultSellerId'];
+        $preSaleInspections = PreSaleInspection::where('status', 'active')->latest('id')->get();
 
-        return view('management.sales.orders.create', compact('payment_terms', 'customers', 'inquiries', 'items', 'pay_types', 'bag_types', 'arrivalLocations', 'arrivalSubLocations', 'packings', 'brokers', 'sellers', 'sellerError', 'defaultSellerId'));
+        return view('management.sales.orders.create', compact('payment_terms', 'customers', 'inquiries', 'items', 'pay_types', 'bag_types', 'arrivalLocations', 'arrivalSubLocations', 'packings', 'brokers', 'sellers', 'sellerError', 'defaultSellerId', 'preSaleInspections'));
     }
 
     public function edit(int $id)
     {
         abort_if(!canAccess('sale-order-create') && !auth()->user()->can('sale-order-create'), 403);
-        $sale_order = SalesOrder::with(['locations', 'factories', 'sections', 'sales_order_data', 'pay_type', 'sales_order_data.sale_inquiry_data', 'parent_user', 'broker'])->find($id);
+        $sale_order = SalesOrder::with(['locations', 'factories', 'sections', 'sales_order_data', 'pay_type', 'sales_order_data.sale_inquiry_data', 'parent_user', 'broker', 'preSaleInspection'])->find($id);
         if (!$sale_order) {
             abort(404, 'Sale Order not found');
         }
@@ -199,13 +201,14 @@ class SaleOrderController extends Controller
         $sellerError = $sellerData['sellerError'];
         $balanceQuantity = $this->calculateBalanceQuantity($sale_order);
         $isClosed = $sale_order->isClosed();
-        return view('management.sales.orders.edit', compact('payment_terms', 'customers', 'inquiries', 'items', 'sale_order', 'pay_types', 'bag_types', 'arrivalLocations', 'arrivalSubLocations', 'packings', 'brokers', 'latestLog', 'balanceQuantity', 'isClosed', 'sellers', 'sellerError'));
+        $preSaleInspections = PreSaleInspection::where('status', 'active')->latest('id')->get();
+        return view('management.sales.orders.edit', compact('payment_terms', 'customers', 'inquiries', 'items', 'sale_order', 'pay_types', 'bag_types', 'arrivalLocations', 'arrivalSubLocations', 'packings', 'brokers', 'latestLog', 'balanceQuantity', 'isClosed', 'sellers', 'sellerError', 'preSaleInspections'));
     }
 
     public function view(Request $request, int $id)
     {
         abort_if(!canAccess('sale-order-list') && !auth()->user()->can('sale-order-list'), 403);
-        $sale_order = SalesOrder::with('sales_order_data', 'locations', 'factories', 'sections', 'sales_order_data.sale_inquiry_data', 'pay_type', 'sale_inquiry', 'parent_user', 'broker')->find($id);
+        $sale_order = SalesOrder::with('sales_order_data', 'locations', 'factories', 'sections', 'sales_order_data.sale_inquiry_data', 'pay_type', 'sale_inquiry', 'parent_user', 'broker', 'preSaleInspection')->find($id);
         $payment_terms = PaymentTerm::all();
         $customers = Customer::where("type", "local")->get();
         $inquiries = SalesInquiry::all();

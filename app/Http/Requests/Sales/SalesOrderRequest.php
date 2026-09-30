@@ -48,6 +48,7 @@ class SalesOrderRequest extends FormRequest
             "broker_id" => "nullable|numeric",
             "parent_user_id" => "nullable|numeric|exists:users,id",
             "inquiry_id" => "nullable|numeric",
+            "pre_sale_inspection_id" => "nullable|numeric|exists:pre_sale_inspections,id",
             "sauda_type" => "required|in:pohanch,x-mill,thadda",
             "company_id" => "required",
             'pay_type_id' => 'required',
