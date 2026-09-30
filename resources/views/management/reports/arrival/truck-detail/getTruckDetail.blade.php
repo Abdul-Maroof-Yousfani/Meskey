@@ -14,6 +14,7 @@
         <th>Loading Date</th>
         <th>No of Bags (Loaded)</th>
         <th>Loaded Weight (KG)</th>
+        <th>Arrival Weight</th>
         <th>Truck #</th>
         <th>Amanat</th>
         @foreach ($product_slab_types as $slab)
@@ -146,6 +147,7 @@
                 <td>{{ formatDate($row->loading_date, 'd M Y', '') }}</td>
                 <td>{{ $row->bags }}</td>
                 <td>{{ $row->net_weight }}</td>
+                <td>{{ $row->arrived_net_weight ?? '' }}</td>
                 <td>{{ $row->truck_no }}</td>
                 <td>{{ $row->approvals?->amanat ?? 'No' }}</td>
                 @foreach ($product_slab_types as $slab)

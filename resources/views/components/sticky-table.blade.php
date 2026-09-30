@@ -75,20 +75,41 @@
             });
 
             const rows = table.querySelectorAll('tbody tr:not(.normal)');
+            let activeRowspans = {};
+
             rows.forEach(row => {
                 const cells = row.querySelectorAll('td:not(.normal)');
-                cells.forEach((td, index) => {
-                    if (index < leftSticky) {
+                let colIndex = 0;
+
+                cells.forEach(td => {
+                    while (activeRowspans[colIndex] > 0) {
+                        activeRowspans[colIndex]--;
+                        colIndex++;
+                    }
+
+                    const rowspan = parseInt(td.getAttribute('rowspan')) || 1;
+                    const colspan = parseInt(td.getAttribute('colspan')) || 1;
+                    if (rowspan > 1) {
+                        for (let c = 0; c < colspan; c++) {
+                            activeRowspans[colIndex + c] = rowspan - 1;
+                        }
+                    }
+
+                    td.dataset.colIndex = colIndex;
+
+                    if (colIndex < leftSticky) {
                         td.classList.add('sticky-col-left');
-                        if (index === leftSticky - 1) {
+                        if (colIndex === leftSticky - 1 || colIndex + colspan >= leftSticky) {
                             td.classList.add('sticky-col-left-last');
                         }
-                    } else if (index >= cells.length - rightSticky) {
+                    } else if (colIndex >= headers.length - rightSticky) {
                         td.classList.add('sticky-col-right');
-                        if (index === cells.length - rightSticky) {
+                        if (colIndex === headers.length - rightSticky) {
                             td.classList.add('sticky-col-right-first');
                         }
                     }
+
+                    colIndex += colspan;
                 });
             });
 
@@ -99,7 +120,9 @@
                 const firstRowCells = rows[0] ? rows[0].querySelectorAll('td:not(.normal)') : [];
 
                 for (let i = 0; i < leftSticky; i++) {
-                    if (firstRowCells[i]) {
+                    if (headers[i]) {
+                        cumulativeWidth += headers[i].offsetWidth;
+                    } else if (firstRowCells[i]) {
                         cumulativeWidth += firstRowCells[i].offsetWidth;
                     } else {
                         cumulativeWidth += 150;
@@ -109,9 +132,11 @@
 
                 const leftStickyCells = table.querySelectorAll('.sticky-col-left');
                 leftStickyCells.forEach(cell => {
-                    const index = Array.from(cell.parentNode.children).indexOf(cell);
-                    if (index < leftSticky) {
-                        cell.style.left = (index === 0 ? 0 : leftPositions[index - 1]) + 'px';
+                    const colIndex = cell.dataset.colIndex !== undefined
+                        ? parseInt(cell.dataset.colIndex)
+                        : Array.from(cell.parentNode.children).indexOf(cell);
+                    if (colIndex < leftSticky) {
+                        cell.style.left = (colIndex === 0 ? 0 : leftPositions[colIndex - 1]) + 'px';
                     }
                 });
             }
@@ -119,13 +144,11 @@
             if (rightSticky > 0) {
                 let rightPositions = [];
                 let cumulativeWidth = 0;
+                const totalCols = headers.length;
 
-                const firstRowCells = rows[0] ? rows[0].querySelectorAll('td:not(.normal)') : [];
-                const totalCells = firstRowCells.length;
-
-                for (let i = totalCells - 1; i >= totalCells - rightSticky; i--) {
-                    if (firstRowCells[i]) {
-                        cumulativeWidth += firstRowCells[i].offsetWidth;
+                for (let i = totalCols - 1; i >= totalCols - rightSticky; i--) {
+                    if (headers[i]) {
+                        cumulativeWidth += headers[i].offsetWidth;
                     } else {
                         cumulativeWidth += 150;
                     }
@@ -134,9 +157,11 @@
 
                 const rightStickyCells = table.querySelectorAll('.sticky-col-right');
                 rightStickyCells.forEach(cell => {
-                    const index = Array.from(cell.parentNode.children).indexOf(cell);
-                    if (index >= totalCells - rightSticky) {
-                        const posIndex = rightSticky - (totalCells - index);
+                    const colIndex = cell.dataset.colIndex !== undefined
+                        ? parseInt(cell.dataset.colIndex)
+                        : Array.from(cell.parentNode.children).indexOf(cell);
+                    if (colIndex >= totalCols - rightSticky) {
+                        const posIndex = rightSticky - (totalCols - colIndex);
                         cell.style.right = (posIndex === 0 ? 0 : rightPositions[posIndex - 1]) + 'px';
                     }
                 });

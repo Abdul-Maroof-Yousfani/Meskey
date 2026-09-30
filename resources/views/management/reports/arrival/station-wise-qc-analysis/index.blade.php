@@ -130,13 +130,16 @@
                                 <table class="table m-0" id="exportableTable">
                                     <thead>
                                         <tr>
-                                            <th>S. No</th>
+                                            {{-- <th>S. No</th> --}}
                                             <th>Station</th>
-                                            <th>Total Trucks</th>
-                                            <th>KG Received</th>
                                             <th>COMMODITY</th>
+                                            <th>Total Trucks</th>
+                                            <th>Total full unload</th>
+                                            <th>Total half rejected</th>
+                                            <th>Total full rejected</th>
+                                            <th>KG Received</th>
                                             @foreach ($product_slab_types as $slab)
-                                                <th>{{ $slab->name }}</th>
+                                                <th>{{ $slab->name }} ({{ $slab->qc_symbol ?? '' }})</th>
                                             @endforeach
                                         </tr>
                                     </thead>

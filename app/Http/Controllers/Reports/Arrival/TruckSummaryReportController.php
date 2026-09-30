@@ -81,6 +81,10 @@ class TruckSummaryReportController extends Controller
             $dateLabel = ($startDate === $endDate)
                 ? Carbon::parse($startDate)->format('d M Y')
                 : Carbon::parse($startDate)->format('d M Y') . ' - ' . Carbon::parse($endDate)->format('d M Y');
+        } elseif ($dateFilter === 'all') {
+            $startDate = null;
+            $endDate = null;
+            $dateLabel = 'All Dates';
         } else {
             $startDate = Carbon::today()->subDays(6)->format('Y-m-d');
             $endDate = Carbon::today()->format('Y-m-d');
@@ -100,10 +104,10 @@ class TruckSummaryReportController extends Controller
                     (arrival_tickets.first_qc_status != 'rejected') THEN 1 END) as in_process")
             )
             ->when($request->filled('commodity_id'), function ($q) use ($request) {
-                return $q->where(function ($subQuery) use ($request) {
-                    $subQuery->whereIn('arrival_tickets.qc_product', (array)$request->commodity_id)
-                        ->orWhereIn('arrival_tickets.product_id', (array)$request->commodity_id);
-                });
+                $commodityIds = array_filter((array)$request->commodity_id);
+                if (!empty($commodityIds)) {
+                    return $q->whereIn(DB::raw('COALESCE(arrival_tickets.qc_product, arrival_tickets.product_id)'), $commodityIds);
+                }
             })
             ->when($request->filled('miller_id'), function ($q) use ($request) {
                 return $q->where('arrival_tickets.miller_id', $request->miller_id);
@@ -112,7 +116,10 @@ class TruckSummaryReportController extends Controller
                 return $q->where('arrival_tickets.sauda_type_id', $request->sauda_type_id);
             })
             ->when($request->filled('company_location_id'), function ($q) use ($request) {
-                return $q->whereIn('arrival_tickets.location_id', (array)$request->company_location_id);
+                $locationIds = array_filter((array)$request->company_location_id);
+                if (!empty($locationIds)) {
+                    return $q->whereIn('arrival_tickets.location_id', $locationIds);
+                }
             })
             ->when($request->filled('supplier_id'), function ($q) use ($request) {
                 return $q->where('arrival_tickets.accounts_of_id', $request->supplier_id);

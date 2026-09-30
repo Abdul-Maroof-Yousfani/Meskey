@@ -161,6 +161,7 @@
                                             <th>Loading Date</th>
                                             <th>No of Bags (Loaded)</th>
                                             <th>Loaded Weight (KG)</th>
+                                            <th>Arrival Weight</th>
                                             <th>Truck #</th>
                                             <th>Amanat</th>
                                             @foreach ($product_slab_types as $slab)
@@ -182,11 +183,6 @@
                                             <th>Sauda Terms</th>
                                             <th>Status</th>
                                             <th>Tabaar Instructions</th>
-                                            <th>Broken Level</th>
-                                            <th>Moisture Level</th>
-                                            <th>Paddy Level</th>
-                                            <th>Damage Level</th>
-                                            <th>Under Milled Level</th>
                                             <th>Warehouse</th>
                                             <th>Galaa #</th>
                                             <th>Location Type</th>
@@ -199,7 +195,7 @@
                                             <th>Unpaid Labor Charges</th>
                                             <th>Other Charges (-)</th>
                                             <th>Kanta Charges</th>
-                                            <th>Weighbridge Charges</th>
+                                            {{-- <th>Weighbridge Charges</th> --}}
                                             <th>Full Reject</th>
                                             <th>Full Reject By</th>
                                             <th>Full Reject Time</th>
