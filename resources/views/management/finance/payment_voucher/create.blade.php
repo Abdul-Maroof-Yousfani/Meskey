@@ -311,10 +311,10 @@
 
                 const $container = $(
                     `<div class="bank-account-option">
-                                                                    <strong>${type} - ${title}</strong>
-                                                                    <div class="text-muted small">${accountTitle} - (${accountNo})</div>
-                                                                    <div class="text-muted small">${bankName} - ${branchName}</div>
-                                                                </div>`
+                                                                        <strong>${type} - ${title}</strong>
+                                                                        <div class="text-muted small">${accountTitle} - (${accountNo})</div>
+                                                                        <div class="text-muted small">${bankName} - ${branchName}</div>
+                                                                    </div>`
                 );
                 return $container;
             }
@@ -341,15 +341,15 @@
 
                 if (accountId) {
                     tbody.html(`
-                                                                        <tr>
-                                                                            <td colspan="15" class="text-center">
-                                                                                <div class="d-flex justify-content-center align-items-center">
-                                                                                    <div class="spinner-border spinner-border-sm mr-2" role="status"></div>
-                                                                                    Loading payment requests...
-                                                                                </div>
-                                                                            </td>
-                                                                        </tr>
-                                                                    `);
+                                                                            <tr>
+                                                                                <td colspan="15" class="text-center">
+                                                                                    <div class="d-flex justify-content-center align-items-center">
+                                                                                        <div class="spinner-border spinner-border-sm mr-2" role="status"></div>
+                                                                                        Loading payment requests...
+                                                                                    </div>
+                                                                                </td>
+                                                                            </tr>
+                                                                        `);
 
                     $.ajax({
                         url: `/finance/payment-voucher/account-payment-requests/${accountId}`,
@@ -378,11 +378,11 @@
                                             'seller_commission_payment': 'Seller Commission'
                                         };
                                         const typeLabel = typeMap[request.type] || (request.type ? request.type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Payment');
-                                        const typeBadgeClass = request.type === 'payment' ? 'success' : 
-                                                              (request.type === 'freight_payment' ? 'warning' : 
-                                                              (request.type === 'freight_labour_payment' || request.type === 'labour_payment' ? 'info' : 
-                                                              (request.type === 'broker_commission_payment' ? 'secondary' : 
-                                                              (request.type === 'seller_commission_payment' ? 'dark' : 'warning'))));
+                                        const typeBadgeClass = request.type === 'payment' ? 'success' :
+                                            (request.type === 'freight_payment' ? 'warning' :
+                                                (request.type === 'freight_labour_payment' || request.type === 'labour_payment' ? 'info' :
+                                                    (request.type === 'broker_commission_payment' ? 'secondary' :
+                                                        (request.type === 'seller_commission_payment' ? 'dark' : 'warning'))));
 
                                         const grnDisplay = request.grn_no ? `<span class="badge badge-info">${request.grn_no}</span>` : '-';
                                         const grossAmount = parseFloat(request.amount) || 0;
@@ -397,99 +397,99 @@
                                             let jvBadgesHtml = '';
                                             if (matchingJvs && matchingJvs.length > 0) {
                                                 jvBadgesHtml = matchingJvs.map(function (mj) {
-                                                    const formattedAmt = parseFloat(mj.allocated).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                                                    const formattedAmt = parseFloat(mj.allocated).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                                                     return `
-                                                        <div class="mt-1">
-                                                            <span class="badge badge-warning text-dark text-left" style="font-size: 11px; padding: 4px 6px; display: inline-block;">
-                                                                ${mj.jv_no}: ${formattedAmt}
-                                                            </span>
-                                                        </div>
-                                                    `;
+                                                            <div class="mt-1">
+                                                                <span class="badge badge-warning text-dark text-left" style="font-size: 11px; padding: 4px 6px; display: inline-block;">
+                                                                    ${mj.jv_no}: ${formattedAmt}
+                                                                </span>
+                                                            </div>
+                                                        `;
                                                 }).join('');
                                             } else if (jvNo) {
                                                 jvBadgesHtml = `
-                                                    <div class="mt-1">
-                                                        <span class="badge badge-warning text-dark text-left" style="font-size: 11px; padding: 4px 6px; display: inline-block;">
-                                                            ${jvNo}
-                                                        </span>
-                                                    </div>
-                                                `;
+                                                        <div class="mt-1">
+                                                            <span class="badge badge-warning text-dark text-left" style="font-size: 11px; padding: 4px 6px; display: inline-block;">
+                                                                ${jvNo}
+                                                            </span>
+                                                        </div>
+                                                    `;
                                             }
 
                                             jvAdjHtml = `
-                                                <div class="input-group input-group-sm" style="max-width: 140px;">
-                                                    <input type="number" step="0.01" min="0" max="${initialAdj}" 
-                                                        class="form-control form-control-sm jv-adjustment-input" 
-                                                        data-request-id="${request.id}" 
-                                                        data-max-adj="${initialAdj}" 
-                                                        data-gross="${grossAmount}"
-                                                        value="${initialAdj.toFixed(2)}">
-                                                </div>
-                                                ${jvBadgesHtml}
-                                            `;
+                                                    <div class="input-group input-group-sm" style="max-width: 140px;">
+                                                        <input type="number" readonly step="0.01" min="0" max="${initialAdj}" 
+                                                            class="form-control form-control-sm jv-adjustment-input" 
+                                                            data-request-id="${request.id}" 
+                                                            data-max-adj="${initialAdj}" 
+                                                            data-gross="${grossAmount}"
+                                                            value="${initialAdj.toFixed(2)}">
+                                                    </div>
+                                                    ${jvBadgesHtml}
+                                                `;
                                         }
 
                                         tbody.append(`
-                                                                        <tr>
-                                                                            <td>
-                                                                                <input type="checkbox" class="request-checkbox" 
-                                                                                    value="${request.id}" 
-                                                                                    data-supplier-id="${request.supplier_id || ''}" 
-                                                                                    data-amount="${grossAmount}" 
-                                                                                    data-grn-no="${request.grn_no || ''}"
-                                                                                    data-jv-adj="${initialAdj}"
-                                                                                    data-jv-no="${jvNo}"
-                                                                                    data-matching-jvs='${JSON.stringify(matchingJvs)}'
-                                                                                    data-net-amount="${netAmount}"
-                                                                                    data-purpose="${request.purpose}" 
-                                                                                    data-request-no="${request.contract_no}" 
-                                                                                    data-truck-no="${request.truck_no}"
-                                                                                    data-bilty-no="${request.bilty_no}"
-                                                                                    data-module-type="${moduleLabel}"
-                                                                                    data-loading-date="${request.loading_date}"
-                                                                                    data-loading-weight="${request.loading_weight}">
-                                                                            </td>
-                                                                            <td>${request.contract_no}</td>
-                                                                            <td>${grnDisplay}</td>
-                                                                            <td>${request.purpose}</td> 
-                                                                            <td>${request.saudaType}</td> 
-                                                                            <td>${request.request_date}</td>
-                                                                            <td>
-                                                                                <span class="badge" style="display: inline-flex; padding: 0; overflow: hidden;">
-                                                                                    <span
-                                                                                    class="badge badge-${moduleBadgeClass}"
-                                                                                        style="border-radius: 3px 0 0 3px;">
-                                                                                        ${moduleLabel}
+                                                                            <tr>
+                                                                                <td>
+                                                                                    <input type="checkbox" class="request-checkbox" 
+                                                                                        value="${request.id}" 
+                                                                                        data-supplier-id="${request.supplier_id || ''}" 
+                                                                                        data-amount="${grossAmount}" 
+                                                                                        data-grn-no="${request.grn_no || ''}"
+                                                                                        data-jv-adj="${initialAdj}"
+                                                                                        data-jv-no="${jvNo}"
+                                                                                        data-matching-jvs='${JSON.stringify(matchingJvs)}'
+                                                                                        data-net-amount="${netAmount}"
+                                                                                        data-purpose="${request.purpose}" 
+                                                                                        data-request-no="${request.contract_no}" 
+                                                                                        data-truck-no="${request.truck_no}"
+                                                                                        data-bilty-no="${request.bilty_no}"
+                                                                                        data-module-type="${moduleLabel}"
+                                                                                        data-loading-date="${request.loading_date}"
+                                                                                        data-loading-weight="${request.loading_weight}">
+                                                                                </td>
+                                                                                <td>${request.contract_no}</td>
+                                                                                <td>${grnDisplay}</td>
+                                                                                <td>${request.purpose}</td> 
+                                                                                <td>${request.saudaType}</td> 
+                                                                                <td>${request.request_date}</td>
+                                                                                <td>
+                                                                                    <span class="badge" style="display: inline-flex; padding: 0; overflow: hidden;">
+                                                                                        <span
+                                                                                        class="badge badge-${moduleBadgeClass}"
+                                                                                            style="border-radius: 3px 0 0 3px;">
+                                                                                            ${moduleLabel}
+                                                                                        </span>
+                                                                                        <span class="badge badge-${typeBadgeClass}"
+                                                                                            style="border-radius: 0 3px 3px 0;">
+                                                                                            ${typeLabel}
+                                                                                        </span>
                                                                                     </span>
-                                                                                    <span class="badge badge-${typeBadgeClass}"
-                                                                                        style="border-radius: 0 3px 3px 0;">
-                                                                                        ${typeLabel}
-                                                                                    </span>
-                                                                                </span>
-                                                                            </td>
-                                                                            <td>${request.truck_no}</td>
-                                                                            <td>${request.bilty_no}</td>
-                                                                            <td>${request.loading_date}</td>
-                                                                            <td>${request.loading_weight}</td>
-                                                                            <td>${grossAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                                                                            <td>${jvAdjHtml}</td>
-                                                                            <td class="text-right">
-                                                                                <strong class="net-payable-text text-primary">
-                                                                                    ${netAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                                                                                </strong>
-                                                                            </td>
-                                                                            <td>
-                                                                            ${request.file
-                                                                                ? `<a href="/${request.file}" target="_blank" class="btn btn-sm btn-outline-primary mt-1">
-                                                                                        <i class="fa fa-download"></i> Download File
-                                                                                   </a>`
-                                                                                : `<button class="btn btn-sm btn-outline-secondary mt-1" disabled>
-                                                                                        <i class="fa fa-ban mr-1"></i> No File
-                                                                                   </button>`
-                                                                            }
-                                                                            </td>
-                                                                        </tr>
-                                                                    `);
+                                                                                </td>
+                                                                                <td>${request.truck_no}</td>
+                                                                                <td>${request.bilty_no}</td>
+                                                                                <td>${request.loading_date}</td>
+                                                                                <td>${request.loading_weight}</td>
+                                                                                <td>${grossAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                                                                <td>${jvAdjHtml}</td>
+                                                                                <td class="text-right">
+                                                                                    <strong class="net-payable-text text-primary">
+                                                                                        ${netAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                                                    </strong>
+                                                                                </td>
+                                                                                <td>
+                                                                                ${request.file
+                                                ? `<a href="/${request.file}" target="_blank" class="btn btn-sm btn-outline-primary mt-1">
+                                                                                            <i class="fa fa-download"></i> Download File
+                                                                                       </a>`
+                                                : `<button class="btn btn-sm btn-outline-secondary mt-1" disabled>
+                                                                                            <i class="fa fa-ban mr-1"></i> No File
+                                                                                       </button>`
+                                            }
+                                                                                </td>
+                                                                            </tr>
+                                                                        `);
                                     });
                                 } else {
                                     tbody.append(
@@ -534,21 +534,21 @@
                         },
                         error: function (xhr) {
                             tbody.html(`
-                                                            <tr>
-                                                                <td colspan="15" class="text-center text-danger">
-                                                                    Error loading payment requests. Please try again.
-                                                                </td>
-                                                            </tr>
-                                                        `);
+                                                                <tr>
+                                                                    <td colspan="15" class="text-center text-danger">
+                                                                        Error loading payment requests. Please try again.
+                                                                    </td>
+                                                                </tr>
+                                                            `);
                             console.error('Error:', xhr.responseText);
                         }
                     });
                 } else {
                     tbody.html(`
-                                                    <tr>
-                                                        <td colspan="15" class="text-center">Please select an account first.</td>
-                                                    </tr>
-                                                `);
+                                                        <tr>
+                                                            <td colspan="15" class="text-center">Please select an account first.</td>
+                                                        </tr>
+                                                    `);
                 }
             });
 
@@ -710,21 +710,21 @@
                                         } = purchaseOrder;
 
                                         tbody.append(`
-                                                                                        <tr>
-                                                                                            <td>
-                                                                                                <input type="checkbox" class="request-checkbox" value="${id}" data-supplier-id="${supplier_id || ''}" data-amount="${amount}" data-purpose="${purpose}" data-request-no="${request_no}" data-truck-no="${truck_no}">
-                                                                                            </td>
-                                                                                            <td>${request_no}</td>
-                                                                                            <td>${request_date}</td>
-                                                                                            <td>${amount}</td>
-                                                                                            <td>${purpose}</td>
-                                                                                            <td>
-                                                                                                <span class="badge badge-${type === 'Payment' ? 'success' : 'warning'}">
-                                                                                                    ${type}
-                                                                                                </span>
-                                                                                            </td>
-                                                                                        </tr>
-                                                                                    `);
+                                                                                            <tr>
+                                                                                                <td>
+                                                                                                    <input type="checkbox" class="request-checkbox" value="${id}" data-supplier-id="${supplier_id || ''}" data-amount="${amount}" data-purpose="${purpose}" data-request-no="${request_no}" data-truck-no="${truck_no}">
+                                                                                                </td>
+                                                                                                <td>${request_no}</td>
+                                                                                                <td>${request_date}</td>
+                                                                                                <td>${amount}</td>
+                                                                                                <td>${purpose}</td>
+                                                                                                <td>
+                                                                                                    <span class="badge badge-${type === 'Payment' ? 'success' : 'warning'}">
+                                                                                                        ${type}
+                                                                                                    </span>
+                                                                                                </td>
+                                                                                            </tr>
+                                                                                        `);
                                     });
                                 } else {
                                     tbody.append(
@@ -788,7 +788,7 @@
 
                 const net = Math.max(0, gross - val);
                 const $row = $input.closest('tr');
-                $row.find('.net-payable-text').text(net.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+                $row.find('.net-payable-text').text(net.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
                 const $cb = $row.find('.request-checkbox');
                 $cb.attr('data-jv-adj', val);
@@ -820,7 +820,7 @@
 
                     let matchingJvs = $(this).data('matching-jvs') || [];
                     if (typeof matchingJvs === 'string') {
-                        try { matchingJvs = JSON.parse(matchingJvs); } catch(e) { matchingJvs = []; }
+                        try { matchingJvs = JSON.parse(matchingJvs); } catch (e) { matchingJvs = []; }
                     }
 
                     selectedRequests.push({
@@ -853,14 +853,14 @@
                         let amountBadgeHtml = '';
                         if (request.jvAdj > 0) {
                             amountBadgeHtml = `
-                                <div class="text-right">
-                                    <span class="text-muted small mr-1" style="text-decoration: line-through;">${request.amount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                                    <span class="badge badge-warning text-dark mr-1" title="JV Adjustment: ${request.jvNo}">-${request.jvAdj.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                                    <span class="badge badge-primary badge-pill">${request.netAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                                </div>
-                            `;
+                                    <div class="text-right">
+                                        <span class="text-muted small mr-1" style="text-decoration: line-through;">${request.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                        <span class="badge badge-warning text-dark mr-1" title="JV Adjustment: ${request.jvNo}">-${request.jvAdj.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                        <span class="badge badge-primary badge-pill">${request.netAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                    </div>
+                                `;
                         } else {
-                            amountBadgeHtml = `<span class="badge badge-primary badge-pill">${request.amount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>`;
+                            amountBadgeHtml = `<span class="badge badge-primary badge-pill">${request.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>`;
                         }
 
                         let extraInfo = `Truck: ${request.truckNo || '-'} | Bilty: ${request.biltyNo || '-'} | Type: ${request.moduleType || '-'}`;
@@ -868,49 +868,49 @@
                             extraInfo += ` | GRN: <span class="badge badge-info">${request.grnNo}</span>`;
                         }
                         if (request.matchingJvs && request.matchingJvs.length > 0 && request.jvAdj > 0) {
-                            const jvListText = request.matchingJvs.map(mj => `${mj.jv_no} (${parseFloat(mj.allocated).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})})`).join(', ');
+                            const jvListText = request.matchingJvs.map(mj => `${mj.jv_no} (${parseFloat(mj.allocated).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`).join(', ');
                             extraInfo += ` | JV: <span class="badge badge-warning text-dark">${jvListText}</span>`;
                         } else if (request.jvNo && request.jvAdj > 0) {
                             extraInfo += ` | JV: <span class="badge badge-warning text-dark">${request.jvNo}</span>`;
                         }
 
                         listContainer.append(`
-                            <li class="list-group-item">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span><strong>#${request.requestNo}</strong></span>
-                                    ${amountBadgeHtml}
-                                </div>
-                                <div class="small text-muted mt-1">
-                                    ${extraInfo}
-                                </div>
-                                <input type="hidden" name="payment_requests[]" value="${request.id}">
-                                <input type="hidden" name="adjustment_amounts[${request.id}]" value="${request.jvAdj.toFixed(2)}">
-                            </li>
-                        `);
+                                <li class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span><strong>#${request.requestNo}</strong></span>
+                                        ${amountBadgeHtml}
+                                    </div>
+                                    <div class="small text-muted mt-1">
+                                        ${extraInfo}
+                                    </div>
+                                    <input type="hidden" name="payment_requests[]" value="${request.id}">
+                                    <input type="hidden" name="adjustment_amounts[${request.id}]" value="${request.jvAdj.toFixed(2)}">
+                                </li>
+                            `);
                     });
 
                     if (totalJvAdj > 0) {
                         listContainer.append(`
-                            <li class="list-group-item list-group-item-secondary d-flex justify-content-between align-items-center py-2">
-                                <span>Gross Amount</span>
-                                <span>${totalGross.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                            </li>
-                            <li class="list-group-item list-group-item-warning d-flex justify-content-between align-items-center py-2">
-                                <span>Total JV Adjustment</span>
-                                <span>-${totalJvAdj.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                            </li>
-                            <li class="list-group-item list-group-item-primary d-flex justify-content-between align-items-center py-2">
-                                <strong>Net Payable Total</strong>
-                                <strong class="h5 mb-0">${totalNet.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong>
-                            </li>
-                        `);
+                                <li class="list-group-item list-group-item-secondary d-flex justify-content-between align-items-center py-2">
+                                    <span>Gross Amount</span>
+                                    <span>${totalGross.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                </li>
+                                <li class="list-group-item list-group-item-warning d-flex justify-content-between align-items-center py-2">
+                                    <span>Total JV Adjustment</span>
+                                    <span>-${totalJvAdj.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                </li>
+                                <li class="list-group-item list-group-item-primary d-flex justify-content-between align-items-center py-2">
+                                    <strong>Net Payable Total</strong>
+                                    <strong class="h5 mb-0">${totalNet.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                                </li>
+                            `);
                     } else {
                         listContainer.append(`
-                            <li class="list-group-item list-group-item-primary d-flex justify-content-between align-items-center py-2">
-                                <strong>Total Amount</strong>
-                                <strong class="h5 mb-0">${totalGross.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong>
-                            </li>
-                        `);
+                                <li class="list-group-item list-group-item-primary d-flex justify-content-between align-items-center py-2">
+                                    <strong>Total Amount</strong>
+                                    <strong class="h5 mb-0">${totalGross.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                                </li>
+                            `);
                     }
 
                     listContainer.show();
