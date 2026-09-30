@@ -59,7 +59,22 @@
                                                         value="{{ request('arrival_ticket_no', '') }}">
                                                 </div>
                                             </div>
-                                            <div class="col-md-2">
+                                            <div class="col-md-3">
+                                                <div class="form-group mb-0">
+                                                    <label>Commodity:</label>
+                                                    <select name="commodity_id[]" id="commodity_id" multiple
+                                                        class="form-control selectWithoutAjax">
+                                                        <option value="">Select Commodity</option>
+                                                        @foreach ($commodities as $commodity)
+                                                            <option value="{{ $commodity->id }}"
+                                                                {{ is_array(request('commodity_id')) && in_array($commodity->id, request('commodity_id')) ? 'selected' : '' }}>
+                                                                {{ $commodity->name }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            {{-- <div class="col-md-2">
                                                 <div class="form-group mb-0">
                                                     <label>Truck No:</label>
                                                     <input type="text" class="form-control" name="truck_no"
@@ -88,24 +103,7 @@
                                                     </select>
                                                 </div>
                                             </div>
-                                        </div>
 
-                                        <div class="row justify-content-nd text mt-2">
-                                            <div class="col-md-3">
-                                                <div class="form-group mb-0">
-                                                    <label>Commodity:</label>
-                                                    <select name="commodity_id[]" id="commodity_id" multiple
-                                                        class="form-control selectWithoutAjax">
-                                                        <option value="">Select Commodity</option>
-                                                        @foreach ($commodities as $commodity)
-                                                            <option value="{{ $commodity->id }}"
-                                                                {{ is_array(request('commodity_id')) && in_array($commodity->id, request('commodity_id')) ? 'selected' : '' }}>
-                                                                {{ $commodity->name }}
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-                                            </div>
                                             <div class="col-md-3">
                                                 <div class="form-group mb-0">
                                                     <label>Accounts Of:</label>
@@ -123,7 +121,7 @@
                                                         <option value="">Sauda Type Name</option>
                                                     </select>
                                                 </div>
-                                            </div>
+                                            </div> --}}
                                         </div>
                                         <div class="row justify-content-nd text mt-2">
                                             <input type="hidden" name="page" value="{{ request('page', 1) }}">
@@ -147,9 +145,6 @@
                                             <th>Total Inner Samples</th>
                                             <th>Taken By</th>
                                             <th>Analysis By</th>
-                                            <th>QC Advice</th>
-                                            <th>QC Remarks</th>
-                                            <th>Unloading Instructions</th>
                                             <th>Commodity</th>
                                             @foreach ($arrival_compulsory_qc_params as $compulsory_param)
                                                 <th>{{ $compulsory_param->name }}</th>

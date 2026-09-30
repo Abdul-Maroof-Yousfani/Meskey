@@ -1,4 +1,4 @@
-<x-sticky-table :items="$tickets" :leftSticky="3" :rightSticky="1" :emptyMessage="'No records found'" :pagination="false">
+<x-sticky-table :items="$tickets" :leftSticky="3" :rightSticky="0" :emptyMessage="'No records found'" :pagination="false">
     @slot('head')
         <th>Ticket #</th>
         <th>Entry Date</th>
@@ -7,9 +7,6 @@
         <th>Total Inner Samples</th>
         <th>Taken By</th>
         <th>Analysis By</th>
-        <th>QC Advice</th>
-        <th>QC Remarks</th>
-        <th>Unloading Instructions</th>
         <th>Commodity</th>
 
         @foreach ($product_slab_types as $slab)
@@ -29,6 +26,7 @@
         @foreach ($tickets as $row)
             @php
                 $sampling = $row->lastInitialSampling;
+                $firstInitialSampling = $row->firstInitialSampling;
                 $innerSampleCount = $row->arrivalSamplingRequests ? $row->arrivalSamplingRequests->where('sampling_type', 'inner')->count() : 0;
 
                 // Slab Deductions
@@ -68,8 +66,7 @@
                     }
                 }
 
-                $qcRemarks = $sampling?->remark ?? ($sampling?->approved_remarks ?? '-');
-                $unloadingInstructions = $row->unloadingLocation?->remarks ?? '-';
+                $qcRemarks = $sampling?->remark ?? '';
             @endphp
             <tr>
                 <td>#{{ $row->unique_no ?? '' }}</td>
@@ -77,19 +74,8 @@
                 <td>{{ formatDate($sampling?->created_at) }}</td>
                 <td>{{ $sampling?->created_at ? formatTime($sampling->created_at) : '' }}</td>
                 <td>{{ $innerSampleCount }}</td>
-                <td>{{ $sampling?->takenByUser?->name ?? '' }}</td>
+                <td>{{ $sampling?->takenByUser?->name ?? ($firstInitialSampling?->takenByUser?->name ?? '') }}</td>
                 <td>{{ $sampling?->doneByUser?->name ?? ($sampling?->approvedByUser?->name ?? '') }}</td>
-                <td>
-                    @if ($qcAdvice == 'Rejected' || str_contains(strtolower($qcAdvice), 'reject'))
-                        <span class="badge bg-danger">{{ $qcAdvice }}</span>
-                    @elseif ($qcAdvice == 'Approved' || str_contains(strtolower($qcAdvice), 'approv'))
-                        <span class="badge bg-success">{{ $qcAdvice }}</span>
-                    @else
-                        {{ $qcAdvice ?: '-' }}
-                    @endif
-                </td>
-                <td>{{ $qcRemarks ?: '-' }}</td>
-                <td>{{ $unloadingInstructions ?: '-' }}</td>
                 <td>{{ $row->qcProduct?->name ?? '' }}</td>
 
                 <!-- SLAB DEDUCTIONS -->
