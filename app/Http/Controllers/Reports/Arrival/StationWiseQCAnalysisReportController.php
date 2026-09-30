@@ -40,6 +40,7 @@ class StationWiseQCAnalysisReportController extends Controller
                 'miller',
                 'saudaType',
                 'accountsOf',
+                'approvals',
                 'lastInitialSampling' => function ($q) {
                     $q->with([
                         'slabResults.slabType'
@@ -50,14 +51,10 @@ class StationWiseQCAnalysisReportController extends Controller
                 return $q->where('arrival_tickets.station_id', $request->station_id);
             })
             ->when($request->filled('commodity_id'), function ($q) use ($request) {
-                return $q->where(function ($subQuery) use ($request) {
-                    $subQuery->whereHas('qcProduct', function ($query) use ($request) {
-                        $query->whereIn('id', (array) $request->commodity_id);
-                    });
-                    // ->orWhereHas('product', function ($query) use ($request) {
-                    //     $query->whereIn('id', (array) $request->commodity_id);
-                    // });
-                });
+                $commodityIds = array_filter((array) $request->commodity_id);
+                if (!empty($commodityIds)) {
+                    return $q->whereIn(\Illuminate\Support\Facades\DB::raw('COALESCE(arrival_tickets.qc_product, arrival_tickets.product_id)'), $commodityIds);
+                }
             })
             ->when($request->filled('miller_id'), function ($q) use ($request) {
                 return $q->where('arrival_tickets.miller_id', $request->miller_id);
@@ -66,7 +63,10 @@ class StationWiseQCAnalysisReportController extends Controller
                 return $q->where('arrival_tickets.sauda_type_id', $request->sauda_type_id);
             })
             ->when($request->filled('company_location_id'), function ($q) use ($request) {
-                return $q->whereIn('arrival_tickets.location_id', (array) $request->company_location_id);
+                $locationIds = array_filter((array) $request->company_location_id);
+                if (!empty($locationIds)) {
+                    return $q->whereIn('arrival_tickets.location_id', $locationIds);
+                }
             })
             ->when($request->filled('supplier_id'), function ($q) use ($request) {
                 return $q->where('arrival_tickets.accounts_of_id', $request->supplier_id);
@@ -122,6 +122,30 @@ class StationWiseQCAnalysisReportController extends Controller
                 return (float) ($t->arrived_net_weight ?: 0);
             });
 
+            $totalFullUnload = 0;
+            $totalHalfRejected = 0;
+            $totalFullRejected = 0;
+            $totalFullApproved = 0;
+
+            foreach ($groupTickets as $t) {
+                // Exactly matching TruckSummaryReportController logic:
+                if ($t->arrival_slip_status === 'generated' && $t->document_approval_status === 'fully_approved') {
+                    $totalFullApproved++;
+                }
+
+                if ($t->arrival_slip_status === 'generated') {
+                    $totalFullUnload++;
+                }
+
+                if ($t->document_approval_status === 'half_approved') {
+                    $totalHalfRejected++;
+                }
+
+                if ($t->first_qc_status === 'rejected' || $t->status === 'Reject Full' || $t->status === 'rejected') {
+                    $totalFullRejected++;
+                }
+            }
+
             // Calculate average for each slab type across this station + commodity tickets
             $slabAverages = [];
             foreach ($product_slab_types as $slab) {
@@ -150,6 +174,9 @@ class StationWiseQCAnalysisReportController extends Controller
                 'station' => $stationName,
                 'commodity' => $commodityName,
                 'total_trucks' => $totalTrucks,
+                'total_full_unload' => $totalFullUnload,
+                'total_half_rejected' => $totalHalfRejected,
+                'total_full_rejected' => $totalFullRejected,
                 'kg_received' => $kgReceived,
                 'slab_averages' => $slabAverages,
             ];

@@ -91,13 +91,10 @@ class TruckDetailReportController extends Controller
                 return $q->where('arrival_tickets.unique_no', 'like', '%' . $request->arrival_ticket_no . '%');
             })
             ->when($request->filled('commodity_id'), function ($q) use ($request) {
-                return $q->where(function ($subQuery) use ($request) {
-                    $subQuery->whereHas('qcProduct', function ($query) use ($request) {
-                        $query->whereIn('id', (array)$request->commodity_id);
-                    })->orWhereHas('product', function ($query) use ($request) {
-                        $query->whereIn('id', (array)$request->commodity_id);
-                    });
-                });
+                $commodityIds = array_filter((array)$request->commodity_id);
+                if (!empty($commodityIds)) {
+                    return $q->whereIn(\Illuminate\Support\Facades\DB::raw('COALESCE(arrival_tickets.qc_product, arrival_tickets.product_id)'), $commodityIds);
+                }
             })
             ->when($request->filled('miller_id'), function ($q) use ($request) {
                 return $q->where('arrival_tickets.miller_id', $request->miller_id);
@@ -106,7 +103,10 @@ class TruckDetailReportController extends Controller
                 return $q->where('arrival_tickets.sauda_type_id', $request->sauda_type_id);
             })
             ->when($request->filled('company_location_id'), function ($q) use ($request) {
-                return $q->whereIn('arrival_tickets.location_id', (array)$request->company_location_id);
+                $locationIds = array_filter((array)$request->company_location_id);
+                if (!empty($locationIds)) {
+                    return $q->whereIn('arrival_tickets.location_id', $locationIds);
+                }
             })
             ->when($request->filled('supplier_id'), function ($q) use ($request) {
                 return $q->where('arrival_tickets.accounts_of_id', $request->supplier_id);
