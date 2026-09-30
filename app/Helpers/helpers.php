@@ -853,11 +853,70 @@ function get_payment_term($payment_term_id)
     return PaymentTerm::select("id", "desc")->where('status', 'active')->where("id", $payment_term_id)->first();
 }
 
-function get_locations()
+function get_locations($userId = null)
 {
-    $CompanyLocation = CompanyLocation::all();
+    // $CompanyLocation = CompanyLocation::all();
 
-    return $CompanyLocation;
+    // return $CompanyLocation;
+    $user = $userId ? User::find($userId) : auth()->user();
+
+    if (!$user) {
+        return CompanyLocation::all();
+    }
+
+    $locationIds = [];
+
+    // 1. Direct company_location_ids on users table
+    if (!empty($user->company_location_ids)) {
+        $ids = is_array($user->company_location_ids)
+            ? $user->company_location_ids
+            : (json_decode($user->company_location_ids, true) ?: []);
+        $locationIds = array_merge($locationIds, $ids);
+    }
+
+    // 2. Company pivot locations
+    if ($user->relationLoaded('companies') || $user->companies()->exists()) {
+        if (!empty($user->current_company_id)) {
+            $currCompany = $user->companies->where('id', $user->current_company_id)->first();
+            if ($currCompany && !empty($currCompany->pivot?->locations)) {
+                $pLocs = json_decode($currCompany->pivot->locations, true);
+                if (is_array($pLocs)) {
+                    $locationIds = array_merge($locationIds, $pLocs);
+                }
+            }
+        }
+
+        if (empty($locationIds)) {
+            foreach ($user->companies as $comp) {
+                if (!empty($comp->pivot?->locations)) {
+                    $pLocs = json_decode($comp->pivot->locations, true);
+                    if (is_array($pLocs)) {
+                        $locationIds = array_merge($locationIds, $pLocs);
+                    }
+                }
+            }
+        }
+    }
+
+    // 3. Fallback to single company_location_id if present
+    if (!empty($user->company_location_id)) {
+        $locationIds[] = $user->company_location_id;
+    }
+
+    // Normalize IDs to unique integers
+    $locationIds = array_values(array_unique(array_filter(array_map('intval', $locationIds))));
+
+    if (!empty($locationIds)) {
+        return CompanyLocation::whereIn('id', $locationIds)->get();
+    }
+
+    // If super-admin has no specific locations assigned, allow all
+    if ($user->user_type === 'super-admin') {
+        return CompanyLocation::all();
+    }
+
+    // If regular user has no assigned locations, return empty collection
+    return CompanyLocation::whereIn('id', [])->get();
 }
 
 function get_so_locations($so_id)

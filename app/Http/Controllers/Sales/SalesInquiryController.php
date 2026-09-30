@@ -44,7 +44,7 @@ class SalesInquiryController extends Controller
             return $matches[0];
         })->unique()->sort()->values();
 
-        $preSaleInspections = PreSaleInspection::with(['item', 'items.item', 'locationModels.companyLocation', 'factoryModels.factory', 'sectionModels.section'])
+        $preSaleInspections = PreSaleInspection::with(['location', 'items.item', 'items.factory', 'items.section'])
             ->where('status', 'active')
             ->latest('id')
             ->get();
@@ -371,7 +371,7 @@ class SalesInquiryController extends Controller
             return $matches[0];
         })->unique()->sort()->values();
 
-        $preSaleInspections = PreSaleInspection::with(['item', 'items.item', 'locationModels.companyLocation', 'factoryModels.factory', 'sectionModels.section'])
+        $preSaleInspections = PreSaleInspection::with(['location', 'items.item', 'items.factory', 'items.section'])
             ->where('status', 'active')
             ->latest('id')
             ->get();

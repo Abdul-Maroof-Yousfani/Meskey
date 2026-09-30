@@ -21,6 +21,20 @@ class ProductSlabType extends Model
         'order_by',
     ];
 
+    protected static function booted()
+    {
+        static::creating(function ($model) {
+            if (empty($model->order_by)) {
+                $query = static::query();
+                if (!empty($model->company_id)) {
+                    $query->where('company_id', $model->company_id);
+                }
+                $maxOrder = $query->max('order_by') ?: static::max('order_by');
+                $model->order_by = ($maxOrder ?? 0) + 1;
+            }
+        });
+    }
+
     public function getOrderByAttribute()
     {
         return $this->attributes['order_by'] ?? null;

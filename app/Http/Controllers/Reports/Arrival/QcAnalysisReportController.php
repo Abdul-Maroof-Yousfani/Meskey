@@ -53,6 +53,15 @@ class QcAnalysisReportController extends Controller
                         'compulsoryResults.qcParam'
                     ]);
                 },
+                'firstInitialSampling' => function ($q) {
+                    $q->with([
+                        'takenByUser',
+                        'approvedByUser',
+                        'doneByUser',
+                        'slabResults.slabType',
+                        'compulsoryResults.qcParam'
+                    ]);
+                },
             ])
             ->when($request->filled('truck_no'), function ($q) use ($request) {
                 return $q->where('arrival_tickets.truck_no', 'like', '%' . $request->truck_no . '%');

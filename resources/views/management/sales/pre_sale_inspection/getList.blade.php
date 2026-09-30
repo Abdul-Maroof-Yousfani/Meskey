@@ -1,13 +1,12 @@
 <table class="table table-hover m-0">
     <thead class="bg-light">
         <tr>
-            <th width="13%">Inspection #</th>
+            <th width="14%">Inspection #</th>
             <th width="10%">Date</th>
+            <th width="12%">Location</th>
             <th width="18%">Party Name & Contact</th>
-            <th width="20%">Items & Weight</th>
-            <th width="14%">Locations</th>
-            <th width="15%">Factory / Section</th>
-            <th width="10%">Action</th>
+            <th width="34%">Items, Factory, Section & Weight</th>
+            <th width="12%" class="text-center">Action</th>
         </tr>
     </thead>
     <tbody>
@@ -17,8 +16,14 @@
                     <span class="text-primary">#{{ $row->inspection_no }}</span>
                     @if($row->salesInquiries && $row->salesInquiries->count() > 0)
                         <br>
-                        <small class="badge badge-info p-1 mt-1">
-                            <i class="ft-link"></i> {{ $row->salesInquiries->first()->inquiry_no }}
+                        <small class="badge badge-info p-1 mt-1" title="Linked Sales Inquiry">
+                            <i class="ft-file-text"></i> {{ $row->salesInquiries->first()->inquiry_no }}
+                        </small>
+                    @endif
+                    @if($row->salesOrders && $row->salesOrders->count() > 0)
+                        <br>
+                        <small class="badge badge-success p-1 mt-1" title="Linked Sales Order">
+                            <i class="ft-shopping-cart"></i> {{ $row->salesOrders->first()->reference_no }}
                         </small>
                     @endif
                 </td>
@@ -26,6 +31,15 @@
                     {{ $row->date ? \Carbon\Carbon::parse($row->date)->format('d M Y') : 'N/A' }}
                     <br>
                     <small class="text-muted">{{ $row->created_at ? $row->created_at->format('h:i A') : '' }}</small>
+                </td>
+                <td class="align-middle">
+                    @if($row->location)
+                        <span class="badge badge-light border text-dark">
+                            <i class="ft-map-pin text-primary"></i> {{ $row->location->name }}
+                        </span>
+                    @else
+                        <span class="text-muted">-</span>
+                    @endif
                 </td>
                 <td class="align-middle">
                     <strong>{{ $row->party_name }}</strong>
@@ -38,60 +52,27 @@
                 </td>
                 <td class="align-middle">
                     @forelse($row->items as $it)
-                        <div class="mb-1">
+                        <div class="mb-1 pb-1 {{ !$loop->last ? 'border-bottom' : '' }}">
                             <strong class="text-dark">{{ $it->item?->name ?? 'N/A' }}</strong>:
                             <span class="badge badge-light text-primary font-weight-bold border" style="font-size: 11px;">
                                 {{ number_format($it->weight, 2) }} kg
                             </span>
+                            @if($it->factory || $it->section)
+                                <div style="font-size: 11px;" class="text-muted mt-1">
+                                    @if($it->factory)
+                                        <span class="mr-2"><i class="ft-home"></i> <strong>Factory:</strong> {{ $it->factory->name }}</span>
+                                    @endif
+                                    @if($it->section)
+                                        <span><i class="ft-layers"></i> <strong>Section:</strong> {{ $it->section->name }}</span>
+                                    @endif
+                                </div>
+                            @endif
                         </div>
                     @empty
-                        <strong>{{ $row->item?->name ?? 'N/A' }}</strong>
+                        <span class="text-muted">-</span>
                     @endforelse
                     @if($row->remarks)
-                        <small class="text-muted d-block mt-1" title="{{ $row->remarks }}"><i class="ft-message-square"></i> {{ Str::limit($row->remarks, 35) }}</small>
-                    @endif
-                </td>
-                <td class="align-middle">
-                    @php
-                        $locNames = [];
-                        if (is_array($row->locations) && count($row->locations) > 0) {
-                            $locNames = \App\Models\Master\CompanyLocation::whereIn('id', $row->locations)->pluck('name')->toArray();
-                        } elseif ($row->locationModels && $row->locationModels->count() > 0) {
-                            $locNames = $row->locationModels->map(fn($l) => $l->companyLocation?->name)->filter()->toArray();
-                        }
-                    @endphp
-                    @if(count($locNames) > 0)
-                        @foreach($locNames as $locName)
-                            <span class="badge badge-light border mb-1">{{ $locName }}</span>
-                        @endforeach
-                    @else
-                        <span class="text-muted">-</span>
-                    @endif
-                </td>
-                <td class="align-middle">
-                    @php
-                        $factoryNames = [];
-                        if (is_array($row->factories) && count($row->factories) > 0) {
-                            $factoryNames = \App\Models\Master\ArrivalLocation::whereIn('id', $row->factories)->pluck('name')->toArray();
-                        } elseif ($row->factoryModels && $row->factoryModels->count() > 0) {
-                            $factoryNames = $row->factoryModels->map(fn($f) => $f->factory?->name)->filter()->toArray();
-                        }
-
-                        $sectionNames = [];
-                        if (is_array($row->sections) && count($row->sections) > 0) {
-                            $sectionNames = \App\Models\Master\ArrivalSubLocation::whereIn('id', $row->sections)->pluck('name')->toArray();
-                        } elseif ($row->sectionModels && $row->sectionModels->count() > 0) {
-                            $sectionNames = $row->sectionModels->map(fn($s) => $s->section?->name)->filter()->toArray();
-                        }
-                    @endphp
-                    @if(count($factoryNames) > 0)
-                        <div><strong class="text-secondary" style="font-size: 11px;">Factory:</strong> {{ implode(', ', $factoryNames) }}</div>
-                    @endif
-                    @if(count($sectionNames) > 0)
-                        <div><strong class="text-secondary" style="font-size: 11px;">Section:</strong> {{ implode(', ', $sectionNames) }}</div>
-                    @endif
-                    @if(count($factoryNames) === 0 && count($sectionNames) === 0)
-                        <span class="text-muted">-</span>
+                        <small class="text-muted d-block mt-1" title="{{ $row->remarks }}"><i class="ft-message-square"></i> {{ Str::limit($row->remarks, 45) }}</small>
                     @endif
                 </td>
                 <td class="text-center align-middle">
@@ -116,7 +97,7 @@
             </tr>
         @empty
             <tr>
-                <td colspan="7" class="text-center py-4 text-muted">
+                <td colspan="6" class="text-center py-4 text-muted">
                     No Pre Sale Inspection records found.
                 </td>
             </tr>
@@ -124,13 +105,13 @@
     </tbody>
 </table>
 
-<div class="row mx-0 mt-3">
-    <div class="col-12 d-flex justify-content-between align-items-center">
-        <div>
+<div class="row align-items-center mt-3">
+    <div class="col-md-6 col-12">
+        <p class="text-muted mb-0">
             Showing {{ $inspections->firstItem() ?? 0 }} to {{ $inspections->lastItem() ?? 0 }} of {{ $inspections->total() }} entries
-        </div>
-        <div>
-            {!! $inspections->links('pagination::bootstrap-4') !!}
-        </div>
+        </p>
+    </div>
+    <div class="col-md-6 col-12 d-flex justify-content-end">
+        {!! $inspections->links() !!}
     </div>
 </div>

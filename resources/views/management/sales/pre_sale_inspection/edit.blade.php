@@ -10,35 +10,6 @@
 
     <input type="hidden" id="listRefresh" value="{{ route('sales.get.pre-sale-inspection.list') }}" />
 
-    @php
-        $selectedLocations = [];
-        if (is_array($pre_sale_inspection->locations) && count($pre_sale_inspection->locations) > 0) {
-            $selectedLocations = array_map('strval', $pre_sale_inspection->locations);
-        } elseif ($pre_sale_inspection->locationModels && $pre_sale_inspection->locationModels->count() > 0) {
-            $selectedLocations = $pre_sale_inspection->locationModels->pluck('location_id')->map(fn($v) => (string)$v)->toArray();
-        }
-
-        $selectedFactories = [];
-        if (is_array($pre_sale_inspection->factories) && count($pre_sale_inspection->factories) > 0) {
-            $selectedFactories = array_map('strval', $pre_sale_inspection->factories);
-        } elseif ($pre_sale_inspection->factoryModels && $pre_sale_inspection->factoryModels->count() > 0) {
-            $selectedFactories = $pre_sale_inspection->factoryModels->pluck('arrival_location_id')->map(fn($v) => (string)$v)->toArray();
-        }
-        if (empty($selectedFactories) && $pre_sale_inspection->arrival_location_id) {
-            $selectedFactories = [(string)$pre_sale_inspection->arrival_location_id];
-        }
-
-        $selectedSections = [];
-        if (is_array($pre_sale_inspection->sections) && count($pre_sale_inspection->sections) > 0) {
-            $selectedSections = array_map('strval', $pre_sale_inspection->sections);
-        } elseif ($pre_sale_inspection->sectionModels && $pre_sale_inspection->sectionModels->count() > 0) {
-            $selectedSections = $pre_sale_inspection->sectionModels->pluck('arrival_sub_location_id')->map(fn($v) => (string)$v)->toArray();
-        }
-        if (empty($selectedSections) && $pre_sale_inspection->arrival_sub_location_id) {
-            $selectedSections = [(string)$pre_sale_inspection->arrival_sub_location_id];
-        }
-    @endphp
-
     <div class="row form-mar">
         <div class="col-md-12">
             <div class="row">
@@ -46,14 +17,27 @@
                 <div class="col-12">
                     <h6 class="header-heading-sepration">General Information</h6>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Location: <span class="text-danger">*</span></label>
+                        <select name="location_id" id="psi_location_id" class="form-control select2" required>
+                            <option value="">Select Location</option>
+                            @foreach ($locations as $loc)
+                                <option value="{{ $loc->id }}" @selected($pre_sale_inspection->location_id == $loc->id)>
+                                    {{ $loc->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Inspection Number: <span class="text-danger">*</span></label>
                         <input type="text" name="inspection_no" id="inspection_no" class="form-control font-weight-bold"
                             value="{{ $pre_sale_inspection->inspection_no }}" readonly>
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="form-group">
                         <label class="form-label">Inspection Date: <span class="text-danger">*</span></label>
                         <input type="date" name="date" id="inspection_date"
@@ -103,9 +87,11 @@
                         <table class="table table-bordered table-sm mb-0" id="psiItemsTable">
                             <thead class="bg-light">
                                 <tr>
-                                    <th style="width: 55%;">Item (Product) <span class="text-danger">*</span></th>
-                                    <th style="width: 33%;">Weight (kg) <span class="text-danger">*</span></th>
-                                    <th style="width: 12%;" class="text-center">Action</th>
+                                    <th style="width: 28%;">Item (Product) <span class="text-danger">*</span></th>
+                                    <th style="width: 25%;">Factory</th>
+                                    <th style="width: 25%;">Section</th>
+                                    <th style="width: 14%;">Weight (kg) <span class="text-danger">*</span></th>
+                                    <th style="width: 8%;" class="text-center">Action</th>
                                 </tr>
                             </thead>
                             <tbody id="psiItemsBody">
@@ -118,6 +104,30 @@
                                                     <option value="{{ $item->id }}" @selected($rowItem->item_id == $item->id)>
                                                         {{ $item->name }}
                                                     </option>
+                                                @endforeach
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select name="arrival_location_id[]" class="form-control select2 psi-factory-select">
+                                                <option value="">Select Factory</option>
+                                                @foreach ($arrivalLocations as $factory)
+                                                    @if (!$pre_sale_inspection->location_id || $factory->company_location_id == $pre_sale_inspection->location_id)
+                                                        <option value="{{ $factory->id }}" @selected($rowItem->arrival_location_id == $factory->id)>
+                                                            {{ $factory->name }}
+                                                        </option>
+                                                    @endif
+                                                @endforeach
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select name="arrival_sub_location_id[]" class="form-control select2 psi-section-select">
+                                                <option value="">Select Section</option>
+                                                @foreach ($arrivalSubLocations as $section)
+                                                    @if (!$rowItem->arrival_location_id || $section->arrival_location_id == $rowItem->arrival_location_id)
+                                                        <option value="{{ $section->id }}" @selected($rowItem->arrival_sub_location_id == $section->id)>
+                                                            {{ $section->name }}
+                                                        </option>
+                                                    @endif
                                                 @endforeach
                                             </select>
                                         </td>
@@ -137,10 +147,23 @@
                                             <select name="item_id[]" class="form-control select2 psi-item-select" required>
                                                 <option value="">Select Item (Product)</option>
                                                 @foreach ($items ?? [] as $item)
-                                                    <option value="{{ $item->id }}" @selected($pre_sale_inspection->item_id == $item->id)>
-                                                        {{ $item->name }}
-                                                    </option>
+                                                    <option value="{{ $item->id }}">{{ $item->name }}</option>
                                                 @endforeach
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select name="arrival_location_id[]" class="form-control select2 psi-factory-select">
+                                                <option value="">Select Factory</option>
+                                                @foreach ($arrivalLocations as $factory)
+                                                    @if (!$pre_sale_inspection->location_id || $factory->company_location_id == $pre_sale_inspection->location_id)
+                                                        <option value="{{ $factory->id }}">{{ $factory->name }}</option>
+                                                    @endif
+                                                @endforeach
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select name="arrival_sub_location_id[]" class="form-control select2 psi-section-select">
+                                                <option value="">Select Section</option>
                                             </select>
                                         </td>
                                         <td>
@@ -157,59 +180,16 @@
                             </tbody>
                             <tfoot class="bg-light font-weight-bold">
                                 <tr>
-                                    <td class="text-right">Total Weight:</td>
+                                    <td colspan="3" class="text-right">Total Weight:</td>
                                     <td>
-                                        <span id="psi_total_weight" class="text-primary font-medium-1">0.00</span> kg
+                                        <span id="psi_total_weight" class="text-primary font-medium-1">
+                                            {{ number_format($pre_sale_inspection->items->sum('weight'), 2, '.', '') }}
+                                        </span> kg
                                     </td>
                                     <td></td>
                                 </tr>
                             </tfoot>
                         </table>
-                    </div>
-                </div>
-
-                {{-- Location Details --}}
-                <div class="col-12 mt-2">
-                    <h6 class="header-heading-sepration">Location Details</h6>
-                </div>
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label class="form-label">Locations (Multi): <span class="text-danger">*</span></label>
-                        <select name="locations[]" id="psi_locations" class="form-control select2" multiple required>
-                            @foreach (get_locations() as $loc)
-                                <option value="{{ $loc->id }}" @selected(in_array((string)$loc->id, $selectedLocations))>
-                                    {{ $loc->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label class="form-label">Factory (Multi):</label>
-                        <select name="arrival_location_id[]" id="psi_factories" class="form-control select2" multiple>
-                            @foreach ($arrivalLocations as $factory)
-                                @if (in_array((string)$factory->company_location_id, $selectedLocations))
-                                    <option value="{{ $factory->id }}" @selected(in_array((string)$factory->id, $selectedFactories))>
-                                        {{ $factory->name }} ({{ $factory->companyLocation ? $factory->companyLocation->name : '' }})
-                                    </option>
-                                @endif
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label class="form-label">Section (Multi):</label>
-                        <select name="arrival_sub_location_id[]" id="psi_sections" class="form-control select2" multiple>
-                            @foreach ($arrivalSubLocations as $section)
-                                @if (in_array((string)$section->arrival_location_id, $selectedFactories))
-                                    <option value="{{ $section->id }}" @selected(in_array((string)$section->id, $selectedSections))>
-                                        {{ $section->name }} ({{ $section->arrivalLocation ? $section->arrivalLocation->name : '' }})
-                                    </option>
-                                @endif
-                            @endforeach
-                        </select>
                     </div>
                 </div>
 
@@ -237,6 +217,16 @@
                 </select>
             </td>
             <td>
+                <select name="arrival_location_id[]" class="form-control psi-factory-select">
+                    <option value="">Select Factory</option>
+                </select>
+            </td>
+            <td>
+                <select name="arrival_sub_location_id[]" class="form-control psi-section-select">
+                    <option value="">Select Section</option>
+                </select>
+            </td>
+            <td>
                 <input type="number" step="any" min="0" name="weight[]" class="form-control psi-item-weight" placeholder="Enter Weight" required>
             </td>
             <td class="text-center align-middle">
@@ -261,80 +251,76 @@
 
         const allFactories = @json($arrivalLocations);
         const allSections = @json($arrivalSubLocations);
-        const selectedFactoriesInit = (@json($selectedFactories) || []).map(String);
-        const selectedSectionsInit = (@json($selectedSections) || []).map(String);
-        let isInitialLoad = true;
 
-        function populateFactories() {
-            const selectedLocations = ($('#psi_locations').val() || []).map(String);
-            let currentFactories = ($('#psi_factories').val() || []).map(String);
-            if (isInitialLoad && currentFactories.length === 0) {
-                currentFactories = selectedFactoriesInit;
-            }
+        window.psiAllFactories = allFactories;
+        window.psiAllSections = allSections;
 
-            $('#psi_factories').empty();
+        function populateRowFactories($row, selectedFactoryId = null) {
+            const locationId = $('#psi_location_id').val();
+            const $factorySelect = $row.find('.psi-factory-select');
+            const prevVal = selectedFactoryId !== null ? selectedFactoryId : $factorySelect.val();
 
-            if (selectedLocations.length === 0) {
-                $('#psi_factories').val([]).trigger('change.select2');
+            $factorySelect.empty().append('<option value="">Select Factory</option>');
+
+            if (!locationId) {
+                $factorySelect.val('').trigger('change.select2');
+                populateRowSections($row);
                 return;
             }
 
-            const validFactories = [];
-            allFactories
-                .filter(f => selectedLocations.includes(String(f.company_location_id)))
-                .forEach(f => {
-                    const isSelected = currentFactories.includes(String(f.id));
-                    $('#psi_factories').append(`<option value="${f.id}" ${isSelected ? 'selected' : ''}>${f.name} (${f.company_location ? f.company_location.name : ''})</option>`);
-                    if (isSelected) {
-                        validFactories.push(String(f.id));
-                    }
-                });
+            const filtered = allFactories.filter(f => String(f.company_location_id) === String(locationId));
+            filtered.forEach(f => {
+                $factorySelect.append(`<option value="${f.id}">${f.name}</option>`);
+            });
 
-            $('#psi_factories').val(validFactories).trigger('change.select2');
+            if (prevVal && filtered.some(f => String(f.id) === String(prevVal))) {
+                $factorySelect.val(prevVal);
+            } else {
+                $factorySelect.val('');
+            }
+            $factorySelect.trigger('change.select2');
+            populateRowSections($row);
         }
 
-        function populateSections() {
-            const factoryIds = ($('#psi_factories').val() || []).map(String);
-            let currentSections = ($('#psi_sections').val() || []).map(String);
-            if (isInitialLoad && currentSections.length === 0) {
-                currentSections = selectedSectionsInit;
-            }
+        function populateRowSections($row, selectedSectionId = null) {
+            const factoryId = $row.find('.psi-factory-select').val();
+            const $sectionSelect = $row.find('.psi-section-select');
+            const prevVal = selectedSectionId !== null ? selectedSectionId : $sectionSelect.val();
 
-            $('#psi_sections').empty();
+            $sectionSelect.empty().append('<option value="">Select Section</option>');
 
-            if (factoryIds.length === 0) {
-                $('#psi_sections').val([]).trigger('change.select2');
+            if (!factoryId) {
+                $sectionSelect.val('').trigger('change.select2');
                 return;
             }
 
-            const validSections = [];
-            allSections
-                .filter(s => factoryIds.includes(String(s.arrival_location_id)))
-                .forEach(s => {
-                    const isSelected = currentSections.includes(String(s.id));
-                    $('#psi_sections').append(`<option value="${s.id}" ${isSelected ? 'selected' : ''}>${s.name} (${s.arrival_location ? s.arrival_location.name : ''})</option>`);
-                    if (isSelected) {
-                        validSections.push(String(s.id));
-                    }
-                });
+            const filtered = allSections.filter(s => String(s.arrival_location_id) === String(factoryId));
+            filtered.forEach(s => {
+                $sectionSelect.append(`<option value="${s.id}">${s.name}</option>`);
+            });
 
-            $('#psi_sections').val(validSections).trigger('change.select2');
+            if (prevVal && filtered.some(s => String(s.id) === String(prevVal))) {
+                $sectionSelect.val(prevVal);
+            } else {
+                $sectionSelect.val('');
+            }
+            $sectionSelect.trigger('change.select2');
         }
 
-        $('#psi_locations').on('change', function () {
-            isInitialLoad = false;
-            populateFactories();
-            populateSections();
+        window.populateRowFactories = populateRowFactories;
+        window.populateRowSections = populateRowSections;
+
+        $('#psi_location_id').on('change', function () {
+            $('#psiItemsBody tr.psi-item-row').each(function () {
+                populateRowFactories($(this));
+            });
         });
 
-        $('#psi_factories').on('change', function () {
-            isInitialLoad = false;
-            populateSections();
+        $(document).on('change', '.psi-factory-select', function () {
+            const $row = $(this).closest('tr');
+            populateRowSections($row);
         });
 
-        populateFactories();
-        populateSections();
-        isInitialLoad = false;
         updatePsiTotalWeight();
     });
 
@@ -343,7 +329,10 @@
         const clone = template.content.cloneNode(true);
         $('#psiItemsBody').append(clone);
         const $newRow = $('#psiItemsBody tr.psi-item-row:last');
-        $newRow.find('.psi-item-select').select2();
+        if (typeof window.populateRowFactories === 'function') {
+            window.populateRowFactories($newRow);
+        }
+        $newRow.find('select').select2();
         updatePsiTotalWeight();
     }
 

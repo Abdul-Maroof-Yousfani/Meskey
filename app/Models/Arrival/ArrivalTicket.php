@@ -250,6 +250,12 @@ class ArrivalTicket extends Model
         return $this->hasOne(ArrivalSamplingRequest::class)
             ->latestOfMany();
     }
+    public function firstInitialSampling()
+    {
+        return $this->hasOne(ArrivalSamplingRequest::class)
+            ->where('sampling_type', 'initial')
+            ->oldestOfMany();
+    }
 
 
     // In ArrivalTicket.php model
