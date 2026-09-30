@@ -759,8 +759,9 @@
                         //     return false;
                         // }
 
-                        const markCompleted = remainingQty - ticketWeight <= 0 || $(
-                            '#swal-mark-completed').is(':checked');
+                        // const markCompleted = remainingQty - ticketWeight <= 0 || $(
+                        //     '#swal-mark-completed').is(':checked');
+                        const markCompleted =  $('#swal-mark-completed').is(':checked');
 
                         return {
                             trucksQty,
